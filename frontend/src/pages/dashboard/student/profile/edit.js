@@ -200,7 +200,7 @@ const handleAvatarSelect = (e) => {
         avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
-      toast.success("Avatar uploaded successfully!");
+      toast.success(t('avatar_upload_success'));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
@@ -745,14 +745,14 @@ const handleAvatarSelect = (e) => {
                 onClick={handleCropCancel}
                 className="px-4 py-2 bg-gray-200 rounded"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
                 {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                Upload
+                {t('upload')}
               </button>
             </div>
           </div>

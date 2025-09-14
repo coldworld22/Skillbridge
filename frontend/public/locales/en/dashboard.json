@@ -1990,6 +1990,7 @@
     "github_label": "GitHub Profile URL",
     "github_placeholder": "https://github.com/yourusername",
     "cancel": "Cancel",
+    "upload": "Upload",
     "saving": "Saving...",
     "save_changes": "Save Changes",
     "load_failed": "Failed to load profile data",
