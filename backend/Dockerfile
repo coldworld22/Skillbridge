@@ -2,19 +2,21 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache curl
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci && npm cache clean --force
-COPY . .
+COPY backend/ ./
+COPY shared /shared
 
 # Production stage
 FROM node:18-alpine
 WORKDIR /app
 RUN apk add --no-cache curl && \
     (id -u node 2>/dev/null || adduser -S node)
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/knexfile.js ./knexfile.js
+COPY --from=builder /shared /shared
 RUN chown -R node:node /app
 EXPOSE 5002
 USER node

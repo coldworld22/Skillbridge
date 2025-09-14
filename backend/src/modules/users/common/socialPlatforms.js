@@ -6,3 +6,4 @@ const allowedPlatforms = require(path.join(
 ));
 
 module.exports = { allowedPlatforms };
+

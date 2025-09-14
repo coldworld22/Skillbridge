@@ -4,7 +4,7 @@ import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { TUTORIAL_STATUS } from "@/shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
 import {
   FaPlus,
   FaEdit,

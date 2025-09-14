@@ -45,7 +45,9 @@ services:
       - app-network
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: always
     env_file:
       - ./.env
@@ -72,13 +74,13 @@ services:
       - redis
     volumes:
       - ./backend/uploads:/app/uploads
-      - ./shared:/shared:ro
     networks:
       - app-network
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     env_file:
