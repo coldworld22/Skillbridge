@@ -47,6 +47,16 @@ COOKIE_SECURE=false
 COOKIE_SAMESITE=None
 ```
 
+If additional domains need access to the API, add them to
+`EXTRA_CORS_ORIGINS` as a comma-separated list of URLs:
+
+```bash
+EXTRA_CORS_ORIGINS=https://admin.example.com,https://docs.example.com
+```
+
+These origins are merged with `FRONTEND_URL` and the default app domain to
+configure CORS.
+
 A Redis instance (or compatible store) is required to persist sessions in
 production. Set `REDIS_URL` in `backend/.env` to point to your Redis server
 (for example `redis://localhost:6379`).
