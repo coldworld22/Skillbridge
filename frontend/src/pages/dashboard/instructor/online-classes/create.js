@@ -25,6 +25,9 @@ const ReactQuill = dynamic(() => import('react-quill'), {
 });
 import 'react-quill/dist/quill.snow.css';
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
 function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -106,6 +109,11 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('Unsupported image type');
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image must be less than 5MB');
       return;
@@ -139,31 +147,22 @@ function CreateOnlineClass() {
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      toast.error('Unsupported video type');
+      return;
+    }
 
     if (file.size > 100 * 1024 * 1024) {
       toast.error('Video must be less than 100MB');
       return;
     }
 
-    setVideoUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress (replace with actual upload logic)
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setVideoUploading(false);
-          setFormData(prev => ({
-            ...prev,
-            demoVideo: file,
-            demoPreview: URL.createObjectURL(file)
-          }));
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+    setVideoUploading(false);
+    setFormData(prev => ({
+      ...prev,
+      demoVideo: file,
+      demoPreview: URL.createObjectURL(file)
+    }));
   };
 
   const addTag = (tag) => {
@@ -217,6 +216,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
+        setVideoUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -278,9 +278,10 @@ function CreateOnlineClass() {
         router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || 'Failed to create class');
+        toast.error(error.response?.data?.message || 'Upload failed. Please try again.');
       } finally {
         setIsSubmitting(false);
+        setVideoUploading(false);
       }
     }
   };
@@ -566,7 +567,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={ALLOWED_IMAGE_TYPES.join(',')}
                               onChange={handleImageUpload}
                               className="hidden"
                             />
@@ -613,7 +614,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="video/*"
+                              accept={ALLOWED_VIDEO_TYPES.join(',')}
                               onChange={handleVideoUpload}
                               className="hidden"
                             />
