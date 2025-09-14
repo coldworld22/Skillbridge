@@ -220,16 +220,16 @@ exports.updateIdentity = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No identity document uploaded" });
     }
+    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+
     const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
-    if (exists) {
-      if (exists.identity_doc_url) {
-        const oldPath = path.join(
-          __dirname,
-          "../../../../",
-          exists.identity_doc_url
-        );
+
+    if (profile) {
+      if (profile.identity_doc_url) {
+        const sanitized = profile.identity_doc_url.replace(/^\//, "");
+        const oldPath = path.join(process.cwd(), sanitized);
         fs.unlink(oldPath, (err) => {
           if (err) {
             if (err.code === "ENOENT") {
