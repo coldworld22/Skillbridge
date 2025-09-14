@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -6,33 +5,10 @@ import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
-import { fetchAdminClasses } from "@/services/admin/classService";
 import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
 
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const load = async () => {
-      setLoading(true);
-      try {
-        const list = await fetchAdminClasses({ signal: controller.signal });
-        setClasses(list);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Failed to load classes", err);
-        setError(t('classes_load_failed'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    return () => controller.abort();
-  }, []);
 
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
@@ -47,8 +23,7 @@ function AdminOnlineClassesPage() {
           <FaPlus className="w-4 h-4" /> {t('create_class')}
         </Link>
       </div>
-      {error && <p className="text-red-600">{error}</p>}
-      <AdminClassesTable classes={classes} loading={loading} />
+      <AdminClassesTable />
     </div>
   );
 }

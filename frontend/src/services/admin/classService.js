@@ -30,10 +30,20 @@ const formatClass = (cls) => {
   };
 };
 
-export const fetchAdminClasses = async (config = {}) => {
-  const { data } = await api.get("/users/classes/admin", config);
+export const fetchAdminClasses = async ({
+  page = 1,
+  limit = 10,
+  filter = "",
+  approval = "All",
+  status = "All",
+} = {}) => {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (filter) params.set("filter", filter);
+  if (approval && approval !== "All") params.set("approval", approval);
+  if (status && status !== "All") params.set("status", status);
+  const { data } = await api.get(`/users/classes/admin?${params.toString()}`);
   const list = data?.data ?? [];
-  return list.map(formatClass);
+  return { data: list.map(formatClass), meta: data?.meta || {} };
 };
 
 export const fetchAdminClassById = async (id) => {

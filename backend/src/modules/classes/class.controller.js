@@ -186,10 +186,19 @@ exports.createClass = catchAsync(async (req, res) => {
 });
 
 exports.getAllClasses = catchAsync(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    filter,
+    approval,
+    status,
+  } = req.query;
   const result = await service.getAllClasses({
     page: Number(page),
     limit: Number(limit),
+    filter,
+    approval,
+    status,
   });
   sendSuccess(res, result.data, undefined, result.meta);
 });
