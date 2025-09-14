@@ -44,7 +44,6 @@ import { MdOutlineWorkOutline } from "react-icons/md";
 import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
 import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
-import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 export const instructorProfileSchema = (country) => z.object({
