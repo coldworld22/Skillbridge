@@ -26,7 +26,12 @@ const useSEOConfigStore = create(
           set({ settings: data || {}, loaded: true, loading: false, failed: false });
         } catch (err) {
           toast.error("Failed to load SEO settings");
-          set({ loaded: false, loading: false, error: err.message, failed: true });
+          set({ loaded: false, loading: false, error: err.message });
+        }
+      },
+      retry: async () => {
+        if (get().error) {
+          return get().fetch();
         }
       },
       retry: () => {
