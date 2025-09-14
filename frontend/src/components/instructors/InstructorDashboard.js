@@ -28,40 +28,19 @@ import {
   fetchInstructorDashboardStats,
   fetchInstructorTutorialViews,
 } from "@/services/instructor/instructorService";
-import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
+import {
+  fetchInstructorScheduleEvents,
+  fetchInstructorClasses,
+} from "@/services/instructor/classService";
+import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
+import { instructorDashboardMocks } from "@/mocks/data";
 
 const localizer = momentLocalizer(moment);
 
 
-const mockTutorials = [
-  { id: 1, title: "React Basics", status: "Draft" },
-  { id: 2, title: "Advanced Next.js", status: "Published" },
-  { id: 3, title: "JavaScript ES6", status: "Archived" },
-];
-
-const mockClasses = [
-  { id: 1, title: "React Live Session", date: "2025-05-05", time: "10:00 AM" },
-  { id: 2, title: "Final Q&A", date: "2025-05-07", time: "02:00 PM" },
-];
-
-const mockStudents = [
-  { id: 1, name: "Sara Ali", email: "sara@example.com", classTitle: "React Basics" },
-  { id: 2, name: "Omar Nasser", email: "omar@example.com", classTitle: "Advanced Next.js" },
-];
-
-const mockAssignments = [
-  { id: 1, title: "React Components Homework", dueDate: "2025-05-08" },
-  { id: 2, title: "Next.js Dynamic Routing", dueDate: "2025-05-10" },
-];
-
-const mockCertificates = [
-  { id: 1, student: "Sara Ali", classTitle: "React Basics", issueDate: "2025-05-01" },
-  { id: 2, student: "Omar Nasser", classTitle: "Next.js Bootcamp", issueDate: "2025-05-02" },
-];
-
-
-
-const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+// In development we display local mock data. In production the lists below
+// are populated via service calls to the backend API. See the useEffect hook
+// for the fetching logic.
 
 function InstructorDashboard() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorDashboardPage' });
@@ -69,6 +48,11 @@ function InstructorDashboard() {
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
   const [events, setEvents] = useState([]);
+  const [tutorials, setTutorials] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [certificates, setCertificates] = useState([]);
 
   useEffect(() => {
     async function loadStats() {
@@ -92,7 +76,8 @@ function InstructorDashboard() {
     loadStats();
     async function loadEvents() {
       try {
-        const data = await fetchInstructorScheduleEvents();
+        if (!user?.id) return;
+        const data = await fetchInstructorScheduleEvents(user.id);
         const parsed = data.map((e) => ({
           ...e,
           start: new Date(e.start),
@@ -104,6 +89,37 @@ function InstructorDashboard() {
       }
     }
     loadEvents();
+
+    async function loadLists() {
+      if (process.env.NODE_ENV === 'development') {
+        const { tutorials, classes, students, assignments, certificates } =
+          instructorDashboardMocks;
+        setTutorials(tutorials);
+        setClasses(classes);
+        setStudents(students);
+        setAssignments(assignments);
+        setCertificates(certificates);
+        return;
+      }
+
+      try {
+        const tuts = await fetchInstructorTutorials();
+        setTutorials(tuts);
+      } catch (err) {
+        console.error('Failed to load tutorials', err);
+      }
+
+      try {
+        const cls = await fetchInstructorClasses();
+        setClasses(cls);
+      } catch (err) {
+        console.error('Failed to load classes', err);
+      }
+
+      // Students, assignments and certificates would be fetched through
+      // their respective services once available.
+    }
+    loadLists();
   }, []);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
@@ -203,7 +219,7 @@ function InstructorDashboard() {
       {t('create_tutorial')}
     </button>
     <ul className="space-y-2">
-      {mockTutorials.map((tutorial) => (
+      {tutorials.map((tutorial) => (
         <li key={tutorial.id} className="flex items-center justify-between border rounded p-3">
           <div>
             <h4 className="font-semibold">{tutorial.title}</h4>
@@ -226,7 +242,7 @@ function InstructorDashboard() {
       {t('schedule_class')}
     </button>
     <ul className="space-y-3">
-      {mockClasses.map((cls) => (
+      {classes.map((cls) => (
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
@@ -255,7 +271,7 @@ function InstructorDashboard() {
         </tr>
       </thead>
       <tbody>
-        {mockStudents.map((student) => (
+        {students.map((student) => (
           <tr key={student.id} className="border-b">
             <td className="py-2">{student.name}</td>
             <td>{student.email}</td>
@@ -277,7 +293,7 @@ function InstructorDashboard() {
       {t('create_assignment')}
     </button>
     <ul className="space-y-2">
-      {mockAssignments.map((assignment) => (
+      {assignments.map((assignment) => (
         <li key={assignment.id} className="border p-3 rounded flex justify-between items-center">
           <div>
             <h4 className="font-semibold">{assignment.title}</h4>
@@ -302,7 +318,7 @@ function InstructorDashboard() {
       className="border px-3 py-2 rounded w-full mb-4"
     />
     <ul className="space-y-2">
-      {mockCertificates.map(cert => (
+      {certificates.map(cert => (
         <li key={cert.id} className="flex justify-between items-center border rounded p-3">
           <div>
             <h4 className="font-semibold">{cert.student}</h4>

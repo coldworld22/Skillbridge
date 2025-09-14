@@ -33,20 +33,27 @@ export default function StudentClassRoom() {
 
   useEffect(() => {
     if (!id) return;
+    const controller = new AbortController();
+    const { signal } = controller;
     const load = async () => {
       try {
-        const details = await fetchClassDetails(id);
-        const lessons = await fetchClassLessons(id);
-        const assigns = await fetchClassAssignments(id);
+        const details = await fetchClassDetails(id, signal);
+        const lessons = await fetchClassLessons(id, signal);
+        const assigns = await fetchClassAssignments(id, signal);
         const status = computeScheduleStatus(details.start_date, details.end_date);
-        setClassData({ ...details, lessons, scheduleStatus: status });
-        setScheduleStatus(status);
-        setAssignments(assigns);
+        if (!signal.aborted) {
+          setClassData({ ...details, lessons, scheduleStatus: status });
+          setScheduleStatus(status);
+          setAssignments(assigns);
+        }
       } catch (err) {
-        console.error('Failed to load class', err);
+        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+          console.error('Failed to load class', err);
+        }
       }
     };
     load();
+    return () => controller.abort();
   }, [id]);
 
   const markComplete = (index) => {

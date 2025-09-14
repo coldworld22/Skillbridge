@@ -9,16 +9,23 @@ export default function PendingJoinRequests({ groupId, onApprove, onReject }) {
 
   useEffect(() => {
     if (!groupId) return;
+    const controller = new AbortController();
     let isMounted = true;
     groupService
-      .getJoinRequestsForGroup(groupId)
+      .getJoinRequestsForGroup(groupId, { signal: controller.signal })
       .then((data) => {
         if (isMounted) setRequests(data);
       })
-      .catch(() => isMounted && setError('Failed to load requests'))
-      .finally(() => isMounted && setLoading(false));
+      .catch((err) => {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
+        if (isMounted) setError('Failed to load requests');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [groupId]);
 
