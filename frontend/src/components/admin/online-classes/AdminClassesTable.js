@@ -9,6 +9,7 @@ import {
   approveAdminClass,
   rejectAdminClass,
   toggleClassStatus,
+  fetchAdminClasses,
 } from "@/services/admin/classService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -30,18 +31,40 @@ import {
   FaList
 } from "react-icons/fa";
 
+export function compareValues(a, b, key) {
+  const valA = a[key];
+  const valB = b[key];
 
-export default function AdminClassesTable({ classes = [], loading = false }) {
+  if (valA === valB) return 0;
+
+  const numA = typeof valA === 'number' ? valA : Date.parse(valA);
+  const numB = typeof valB === 'number' ? valB : Date.parse(valB);
+
+  if (!isNaN(numA) && !isNaN(numB)) {
+    return numA - numB;
+  }
+
+  if (typeof valA === 'string' && typeof valB === 'string') {
+    return valA.localeCompare(valB);
+  }
+
+  return 0;
+}
+
+export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
   const [sortKey, setSortKey] = useState("start_date");
-  const [classList, setClassList] = useState(classes);
+  const [classList, setClassList] = useState([]);
   const [modalClass, setModalClass] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const user = useAuthStore((state) => state.user);
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -49,39 +72,53 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const canManageRules = user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
-    setClassList(classes);
-  }, [classes]);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const { data, meta } = await fetchAdminClasses({
+          page: currentPage,
+          limit: itemsPerPage,
+          filter: searchTerm,
+          approval: filterApproval !== "All" ? filterApproval : undefined,
+          status: filterStatus !== "All" ? filterStatus : undefined,
+        });
+        setClassList(data.sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1)));
+        setTotalPages(meta?.totalPages || 1);
+        setTotalItems(meta?.total || data.length);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load classes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [currentPage, itemsPerPage, searchTerm, filterApproval, filterStatus, sortKey]);
 
-  const filteredClasses = classList
-    .filter((cls) =>
-      cls.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cls.instructor.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((cls) =>
-      filterStatus === "All" ? true : cls.scheduleStatus === filterStatus
-    )
-    .filter((cls) =>
-      filterApproval === "All" ? true : cls.approvalStatus === filterApproval
-    )
-    .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
-
-  const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
-  const paginatedClasses = filteredClasses.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const formatCSVRow = (row) =>
+    row
+      .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+      .join(",");
 
   const exportCSV = () => {
-    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
-    const rows = classList.map(cls => [
+    const headers = [
+      "Title",
+      "Instructor",
+      "Start Date",
+      "End Date",
+      "Category",
+      "Publish Status",
+    ];
+    const rows = classList.map((cls) => [
       cls.title,
       cls.instructor,
       cls.start_date,
       cls.end_date,
       cls.category,
-      cls.publishStatus
+      cls.publishStatus,
     ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const csvRows = [headers, ...rows].map(formatCSVRow);
+    const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -222,13 +259,13 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
             type="text"
             placeholder="Search by title or instructor"
             className="border border-gray-300 rounded-xl px-4 py-2 w-full text-sm focus:ring-2 focus:ring-yellow-500"
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-1/2 justify-end items-center">
           <select
             className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
             value={filterStatus}
           >
             <option value="All">All Schedule</option>
@@ -238,7 +275,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           </select>
           <select
             className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
-            onChange={(e) => setFilterApproval(e.target.value)}
+            onChange={(e) => { setFilterApproval(e.target.value); setCurrentPage(1); }}
             value={filterApproval}
           >
             <option value="All">All Approval</option>
@@ -262,7 +299,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={25}>25</option>
-            <option value={filteredClasses.length}>All</option>
+            <option value={totalItems}>All</option>
           </select>
           <button
             onClick={exportCSV}
@@ -293,7 +330,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedClasses.map((cls) => (
+            {classList.map((cls) => (
               <tr key={cls.id} className="hover:bg-yellow-50">
                 <td className="px-6 py-4">
                   {cls.cover_image && (
@@ -421,7 +458,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
       {totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredClasses.length)} of {filteredClasses.length} classes
+            Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} classes
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handlePrev} disabled={currentPage === 1} className="text-sm px-3 py-1 bg-gray-200 hover:bg-yellow-100 rounded disabled:opacity-50">
