@@ -17,6 +17,7 @@ const useSEOConfigStore = create(
       loaded: false,
       failed: false,
       error: null,
+      retry: false,
       fetch: async () => {
         if (get().loading) return;
         set({ loading: true, error: null, failed: false });

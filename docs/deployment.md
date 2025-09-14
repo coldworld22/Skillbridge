@@ -223,3 +223,23 @@ COOKIE_SAMESITE=None
 
 This ensures the refresh token cookie is sent across subdomains without HTTPS.
 
+### "Failed to load SEO settings" or network errors
+
+If the dashboard displays **"Failed to load SEO settings"** or other
+`ERR_NETWORK` messages, the frontend is usually pointed at the wrong API or the
+backend is not allowing the frontend's origin.
+
+1. Verify `NEXT_PUBLIC_API_BASE_URL` in your frontend `.env.local` or
+   `.env.production` matches your public backend URL with the `/api` suffix. See
+   the [production example](#production-example-eduskillbridgenet) above for a
+   typical value using `${APP_DOMAIN}`.
+2. Ensure `FRONTEND_URL` in `backend/.env` lists the exact origin of your
+   frontend, including both `www` and non-`www` domains if applicable. Refer to
+   the earlier `FRONTEND_URL` snippet under **Configure environment variables**.
+3. Check the backend logs or browser console for CORS messages such as
+   `No 'Access-Control-Allow-Origin'` or `Origin ... not allowed by CORS` to
+   confirm which domain is being rejected.
+
+Updating these variables and restarting the affected service should resolve most
+SEO and networking issues.
+
