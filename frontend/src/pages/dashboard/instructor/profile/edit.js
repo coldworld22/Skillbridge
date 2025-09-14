@@ -24,8 +24,6 @@ import {
   deleteInstructorAvatar,
   deleteInstructorDemo,
   toggleInstructorStatus,
-  uploadCertificateFile,
-  deleteCertificateFile,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -38,25 +36,21 @@ import {
   FaVenusMars,
   FaUser,
   FaCheck,
-  FaCertificate,
-  FaFilePdf,
-  FaFileImage,
-  FaTrash,
-  FaUpload,
-  FaPlus,
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 
 import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
 import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
+import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
+import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 export const instructorProfileSchema = (country) => z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
+    .refine((val) => isValidPhoneNumber(val, country), {
       message: "invalid_phone_number",
     }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -123,9 +117,6 @@ export default function InstructorProfileEdit() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingDemo, setIsUploadingDemo] = useState(false);
 
-  const [avatarInputKey, setAvatarInputKey] = useState(0);
-  const [demoInputKey, setDemoInputKey] = useState(0);
-
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -134,13 +125,6 @@ export default function InstructorProfileEdit() {
   const [tempFileName, setTempFileName] = useState("");
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [available, setAvailable] = useState(user?.is_online ?? false);
-  const [newExpertise, setNewExpertise] = useState("");
-  const [newCertificate, setNewCertificate] = useState({
-    title: "",
-    file: null,
-    preview: null,
-  });
-  const [certificateUploading, setCertificateUploading] = useState(false);
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -241,7 +225,7 @@ export default function InstructorProfileEdit() {
       const sanitizedLinks = Object.fromEntries(
         Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
       );
-      instructorProfileSchema(user?.country).parse({
+      instructorProfileSchema(user?.country || getUserCountry()).parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
@@ -478,7 +462,6 @@ export default function InstructorProfileEdit() {
         {/* Avatar and Demo Upload Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           <AvatarUploader
-            key={avatarInputKey}
             avatarPreview={formData.avatarPreview}
             isUploadingAvatar={isUploadingAvatar}
             t={t}
@@ -486,7 +469,6 @@ export default function InstructorProfileEdit() {
             onRemove={handleAvatarRemove}
           />
           <DemoVideoUploader
-            key={demoInputKey}
             demoPreview={formData.demoPreview}
             isUploadingDemo={isUploadingDemo}
             t={t}
