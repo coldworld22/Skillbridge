@@ -9,6 +9,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import dynamic from "next/dynamic";
@@ -35,9 +36,6 @@ import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
-
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 export const profileSchema = z.object({
@@ -45,7 +43,7 @@ export const profileSchema = z.object({
   email: z.string().email("invalid_email_address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
       message: "invalid_phone_number",
     }),
   job_title: z.string().min(2, 'job_title_min'),

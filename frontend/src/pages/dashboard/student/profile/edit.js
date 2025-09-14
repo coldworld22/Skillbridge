@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
@@ -28,12 +29,9 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
-
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+  phone: z.string().refine((val) => isValidPhoneNumber(val, getUserCountry()), {
     message: "invalid_phone_number",
   }),
   gender: z.enum(['male', 'female']),
