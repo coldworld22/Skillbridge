@@ -23,7 +23,16 @@ referenced in `nginx/conf.d/ssl.conf`.
 
 ## Configure environment variables
 
-1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
+1. **Nginx** – set the `ALLOWED_ORIGINS` environment variable to a
+   comma-separated list of origins that should be allowed by the reverse
+   proxy (e.g. `https://foo.com,https://bar.com`). After updating this list
+   reload Nginx so the new value takes effect:
+
+   ```bash
+   docker compose exec nginx nginx -s reload
+   ```
+
+2. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
    - `PORT` – typically `5000` unless changed.
    - `APP_DOMAIN` – your production domain (e.g. `yourdomain.com`).
    - `SUPPORT_EMAIL` – address used for outbound messages.
@@ -88,7 +97,7 @@ referenced in `nginx/conf.d/ssl.conf`.
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
- 2. **Frontend** – for Docker Compose production builds, set variables in
+ 3. **Frontend** – for Docker Compose production builds, set variables in
    `frontend/.env.production`:
 
  ```bash
