@@ -506,18 +506,18 @@ const handleAvatarSelect = (e) => {
                     ) : (
                       <div className="space-y-3">
                         <div className="inline-flex items-center justify-center p-3 bg-gray-100 rounded-full">
-                          <FaUpload className="w-6 h-6 text-gray-500" />
+                          {isUploadingIdentity ? (
+                            <FaSpinner className="w-6 h-6 text-gray-500 animate-spin" />
+                          ) : (
+                            <FaUpload className="w-6 h-6 text-gray-500" />
+                          )}
                         </div>
                         <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
                         <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
-                        <label className="cursor-pointer inline-block mt-2">
-                          <div className={`px-4 py-2 bg-purple-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'}`}>
-                            {isUploadingIdentity ? (
-                              <FaSpinner className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <FaUpload className="w-4 h-4" />
-                            )}
-                            <span>{isUploadingIdentity ? t('uploading') : t('select_file')}</span>
+                        <label className={`cursor-pointer inline-block mt-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                            {isUploadingIdentity ? <FaSpinner className="w-4 h-4 animate-spin" /> : <FaUpload className="w-4 h-4" />}
+                            <span>{t('select_file')}</span>
                           </div>
                           <input
                             type="file"
