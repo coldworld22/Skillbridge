@@ -23,7 +23,16 @@ referenced in `nginx/conf.d/ssl.conf`.
 
 ## Configure environment variables
 
-1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
+1. **Nginx** – set the `ALLOWED_ORIGINS` environment variable to a
+   comma-separated list of origins that should be allowed by the reverse
+   proxy (e.g. `https://foo.com,https://bar.com`). After updating this list
+   reload Nginx so the new value takes effect:
+
+   ```bash
+   docker compose exec nginx nginx -s reload
+   ```
+
+2. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
    - `PORT` – typically `5000` unless changed.
    - `APP_DOMAIN` – your production domain (e.g. `yourdomain.com`).
    - `SUPPORT_EMAIL` – address used for outbound messages.
@@ -88,7 +97,7 @@ referenced in `nginx/conf.d/ssl.conf`.
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
- 2. **Frontend** – for Docker Compose production builds, set variables in
+ 3. **Frontend** – for Docker Compose production builds, set variables in
    `frontend/.env.production`:
 
  ```bash
@@ -97,7 +106,7 @@ referenced in `nginx/conf.d/ssl.conf`.
  ```
 
    The root `.env` is intended for local development and defaults
-   `NEXT_PUBLIC_API_BASE_URL` to `http://backend:5002/api` for internal
+   `NEXT_PUBLIC_API_BASE_URL` to `http://localhost:5002/api` for internal
    container communication. Remove or override this file in production so the
    frontend uses your public HTTPS domain.
 
@@ -171,10 +180,10 @@ domains you can still extend `remotePatterns` in
 
 ## Troubleshooting
 
-### Login page requests `http://localhost:5000`
+### Login page requests `http://localhost:5002`
 
 If you deploy the frontend and see network errors pointing to
-`http://localhost:5000/api` it means the build did not have
+`http://localhost:5002/api` it means the build did not have
 `NEXT_PUBLIC_API_BASE_URL` set.  Update `frontend/.env.local` with the correct
 backend URL and rebuild/restart the frontend container so the new value is
 picked up.
@@ -222,4 +231,24 @@ COOKIE_SAMESITE=None
 ```
 
 This ensures the refresh token cookie is sent across subdomains without HTTPS.
+
+### "Failed to load SEO settings" or network errors
+
+If the dashboard displays **"Failed to load SEO settings"** or other
+`ERR_NETWORK` messages, the frontend is usually pointed at the wrong API or the
+backend is not allowing the frontend's origin.
+
+1. Verify `NEXT_PUBLIC_API_BASE_URL` in your frontend `.env.local` or
+   `.env.production` matches your public backend URL with the `/api` suffix. See
+   the [production example](#production-example-eduskillbridgenet) above for a
+   typical value using `${APP_DOMAIN}`.
+2. Ensure `FRONTEND_URL` in `backend/.env` lists the exact origin of your
+   frontend, including both `www` and non-`www` domains if applicable. Refer to
+   the earlier `FRONTEND_URL` snippet under **Configure environment variables**.
+3. Check the backend logs or browser console for CORS messages such as
+   `No 'Access-Control-Allow-Origin'` or `Origin ... not allowed by CORS` to
+   confirm which domain is being rejected.
+
+Updating these variables and restarting the affected service should resolve most
+SEO and networking issues.
 

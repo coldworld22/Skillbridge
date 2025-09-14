@@ -60,8 +60,12 @@ api.interceptors.response.use(
       (error.code === "ERR_NETWORK" || !error.response) &&
       Date.now() - lastNetworkToast > 5000
     ) {
+      const failedUrl = error.config?.url;
+      const errMsg = error.message;
+      const logMessage = `Network error on ${failedUrl || "unknown endpoint"}: ${errMsg}`;
+      logger.error(logMessage);
       toast.error(
-        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings."
+        `${logMessage}. Check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.`
       );
       lastNetworkToast = Date.now();
     }
