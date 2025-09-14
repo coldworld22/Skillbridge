@@ -87,14 +87,13 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  const hasUserFields =
-    full_name && phone && gender && date_of_birth;
-  const hasStudentDetails =
+  const hasUserFields = [full_name, phone, gender, date_of_birth].every(Boolean);
+  const hasStudentFields =
     education_level &&
-    (Array.isArray(topics) ? topics.length > 0 : topics) &&
-    (Array.isArray(learning_goals) ? learning_goals.length > 0 : learning_goals);
-  const isProfileComplete =
-    Boolean(hasUserFields && hasStudentDetails && sanitizedLinks.length > 0);
+    (Array.isArray(topics) ? topics.length > 0 : !!topics) &&
+    (Array.isArray(learning_goals) ? learning_goals.length > 0 : !!learning_goals);
+  const hasSocialLinks = sanitizedLinks.length > 0;
+  const isProfileComplete = hasUserFields && hasStudentFields && hasSocialLinks;
 
   let trx;
   try {
