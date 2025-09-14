@@ -474,7 +474,11 @@ const handleAvatarSelect = (e) => {
               {expanded.identity && (
                 <div className="p-4 space-y-4">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    {formData.identityPreview ? (
+                    {isUploadingIdentity ? (
+                      <div className="flex justify-center">
+                        <FaSpinner className="w-6 h-6 text-purple-600 animate-spin" />
+                      </div>
+                    ) : formData.identityPreview ? (
                       <div className="space-y-3">
                         <div className="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full">
                           <FaFilePdf className="w-8 h-8 text-purple-600" />
