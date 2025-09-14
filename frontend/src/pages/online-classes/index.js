@@ -15,7 +15,6 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const [visibleCount, setVisibleCount] = useState(6);
   const [loading, setLoading] = useState(initialClasses.length === 0);
   const [error, setError] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
   const [ads, setAds] = useState([]);
   const [adsError, setAdsError] = useState(false);
@@ -48,9 +47,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
     fetchAdBanners({ limit: 10 })
       .then((res) => setAds(res.data))
       .catch((err) => {
-        console.error('Failed to load ad banners', err);
-        toast.error('Failed to load ad banners');
-        setAdsError(true);
+        console.error('Failed to load ads', err);
       });
   }, []);
 
@@ -87,11 +84,8 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const hasMore = visibleCount < filtered.length;
 
   const handleLoadMore = () => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setVisibleCount((prev) => prev + 3);
-      setLoadingMore(false);
-    }, 300);
+    // No additional data is fetched; simply reveal more preloaded classes.
+    setVisibleCount((prev) => prev + 3);
   };
 
   return (
@@ -135,7 +129,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
               <ClassesGrid classes={visibleClasses} />
               <LoadMoreButton
                 onClick={handleLoadMore}
-                isLoading={loadingMore}
+                isLoading={false}
                 hasMore={hasMore}
               />
             </>
