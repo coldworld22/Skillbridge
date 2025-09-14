@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
+import { toast } from "react-toastify";
 
 export const fetchAds = async ({ role, limit, offset } = {}, config = {}) => {
   try {
@@ -44,10 +45,11 @@ export const fetchAds = async ({ role, limit, offset } = {}, config = {}) => {
 
     return { data: mapped, meta: data?.meta };
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Failed to fetch ads", error);
+    console.error("Failed to fetch ads", error);
+    if (typeof window !== "undefined") {
+      toast.error("Failed to load ads");
     }
-    return { data: [], meta: {} };
+    throw error;
   }
 };
 
