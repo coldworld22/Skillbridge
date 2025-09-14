@@ -251,10 +251,10 @@ exports.updateAvatar = async (req, res) => {
  * @access Instructor
  */
 exports.deleteAvatar = async (req, res) => {
-    const userId = parseInt(req.params.id, 10);
-    if (parseInt(req.user.id, 10) !== userId) {
-        return res.status(403).json({ message: "Forbidden" });
+    if (req.params.id !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized" });
     }
+    const userId = req.user.id;
 
     const [user] = await db("users").where({ id: userId }).select("avatar_url");
     if (!user || !user.avatar_url) {
@@ -320,10 +320,10 @@ exports.uploadDemoVideo = async (req, res) => {
  * @access Instructor
  */
 exports.deleteDemoVideo = async (req, res) => {
-    const userId = parseInt(req.params.id, 10);
-    if (parseInt(req.user.id, 10) !== userId) {
-        return res.status(403).json({ message: "Forbidden" });
+    if (req.params.id !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized" });
     }
+    const userId = req.user.id;
 
     const [profile] = await db("instructor_profiles").where({ user_id: userId }).select("demo_video_url");
     if (!profile || !profile.demo_video_url) {
