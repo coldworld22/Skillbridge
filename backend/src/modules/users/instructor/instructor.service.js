@@ -71,6 +71,7 @@ const getInstructorProfile = async (userId) => {
 
 const normalizeUrl = (url = "") => {
   const trimmed = url.trim();
+  if (!trimmed) return "";
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
@@ -87,6 +88,7 @@ const updateInstructorProfile = async (
           (link) =>
             link &&
             typeof link.url === "string" &&
+            link.url.trim() !== "" &&
             typeof link.platform === "string" &&
             allowedPlatforms.includes(link.platform.trim().toLowerCase())
         )
