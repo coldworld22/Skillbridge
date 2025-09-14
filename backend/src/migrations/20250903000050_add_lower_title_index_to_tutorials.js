@@ -1,5 +1,7 @@
 exports.up = function (knex) {
-  return knex.raw('CREATE INDEX tutorials_lower_title_idx ON tutorials (LOWER(title));');
+  return knex.raw(
+    'CREATE UNIQUE INDEX tutorials_lower_title_idx ON tutorials (LOWER(title));'
+  );
 };
 
 exports.down = function (knex) {

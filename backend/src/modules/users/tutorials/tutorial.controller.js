@@ -17,6 +17,7 @@ const { v4: uuidv4 } = require("uuid");
 const { getActiveInstructorPlan } = require("../../plans/instructor.helper");
 const planService = require("../../plans/plans.service");
 const { parsePlanFeatures } = require("../../../utils/planFeatures");
+const tutorialValidator = require("./tutorial.validator");
 
 
 const { sendSuccess } = require("../../../utils/response");
@@ -40,19 +41,7 @@ const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
-  let body;
-  try {
-    ({ body } = await tutorialValidator.create.parseAsync({ body: req.body }));
-  } catch (err) {
-    if (err instanceof ZodError) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: err.errors,
-      });
-    }
-    throw err;
-  }
-
+  const { body } = tutorialValidator.create.parse({ body: req.body });
   const {
     title,
     description,
@@ -69,12 +58,6 @@ exports.createTutorial = catchAsync(async (req, res) => {
 
   const parsedChapters = parseChapters(rawChapters);
   const tags = parseTags(rawTags);
-
-  // 🚫 Prevent duplicate titles
-  const existing = await service.findByTitle(title);
-  if (existing) {
-    return res.status(400).json({ message: "Tutorial title already exists" });
-  }
 
   let instructor_id;
   if (
@@ -135,15 +118,24 @@ exports.createTutorial = catchAsync(async (req, res) => {
       : null,
   };
 
-  const tutorial = await service.createTutorialWithRelations(
-    tutorialData,
-    tags,
-    parsedChapters
-  );
+  try {
+    const tutorial = await service.createTutorialWithRelations(
+      tutorialData,
+      tags,
+      parsedChapters
+    );
 
-  await sendCreationNotifications(instructor_id, title);
+    await sendCreationNotifications(instructor_id, title);
 
-  sendSuccess(res, tutorial, "Tutorial with chapters created");
+    sendSuccess(res, tutorial, "Tutorial with chapters created");
+  } catch (err) {
+    if (err.code === "23505") {
+      return res
+        .status(409)
+        .json({ message: "Tutorial title already exists" });
+    }
+    throw err;
+  }
 });
 
 
