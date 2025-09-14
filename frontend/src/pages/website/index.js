@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -39,7 +39,12 @@ export default function Home() {
     { component: Footer }, // ✅ Removed last section before the footer
   ];
 
-  const sectionRefs = useRef(sections.map(() => useRef(null)));
+  const sectionRefs = useRef([]);
+  if (sectionRefs.current.length !== sections.length) {
+    sectionRefs.current = sections.map(
+      (_, i) => sectionRefs.current[i] || React.createRef()
+    );
+  }
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data
@@ -67,8 +72,9 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    if (sectionRefs.current[index]?.current) {
-      sectionRefs.current[index].current.scrollIntoView({ behavior: "smooth" });
+    const ref = sectionRefs.current[index];
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
       setCurrentSection(index);
     }
   };
