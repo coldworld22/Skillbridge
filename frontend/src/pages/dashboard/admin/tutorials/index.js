@@ -29,6 +29,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
@@ -149,7 +150,10 @@ function AdminTutorialsPage() {
         return;
       }
       await toggleTutorialStatus(id);
-      const newStatus = existing.status === "Published" ? "Draft" : "Published";
+      const newStatus =
+        existing.status === TUTORIAL_STATUS.PUBLISHED
+          ? TUTORIAL_STATUS.DRAFT
+          : TUTORIAL_STATUS.PUBLISHED;
       const target = { ...existing, status: newStatus };
       setTutorials((prev) =>
         prev.map((tut) =>
@@ -440,13 +444,13 @@ function AdminTutorialsPage() {
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
             <p className="text-gray-600">Published</p>
             <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Published").length}
+              {tutorials.filter((t) => t.status === TUTORIAL_STATUS.PUBLISHED).length}
             </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
             <p className="text-gray-600">Drafts</p>
             <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Draft").length}
+              {tutorials.filter((t) => t.status === TUTORIAL_STATUS.DRAFT).length}
             </p>
           </div>
         </div>

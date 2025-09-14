@@ -2,6 +2,7 @@
 // Admin specific API calls for managing tutorials
 
 import api from "@/services/api/api";
+import { TUTORIAL_STATUS } from "../../../../shared/tutorialStatus";
 
 /**
  * Create a new tutorial as an admin or instructor.
@@ -39,7 +40,10 @@ export const fetchAllTutorials = async (config = {}) => {
     updatedAt: t.updated_at,
     instructor: t.instructor_name,
     category: t.category_name,
-    status: t.status === "published" ? "Published" : "Draft",
+    status:
+      t.status === TUTORIAL_STATUS.PUBLISHED
+        ? TUTORIAL_STATUS.PUBLISHED
+        : TUTORIAL_STATUS.DRAFT,
     approvalStatus: t.moderation_status ?? "Pending",
     rating: t.rating,
     views: t.views,
