@@ -41,16 +41,24 @@ export default function MyEnrolledClassesPage() {
     load();
   }, []);
 
-  const filteredClasses = useMemo(() => {
-    return classes
-      .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
-      .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => {
-        const dateA = new Date(a.startDate);
-        const dateB = new Date(b.startDate);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      });
-  }, [classes, filter, search, sortOrder]);
+  const handleNotify = async (classId) => {
+    try {
+      await subscribeToClassReminder(classId);
+      toast.success('Subscribed to class reminder');
+    } catch (err) {
+      console.error('Failed to subscribe to class reminder', err);
+      toast.error('Failed to subscribe to reminder');
+    }
+  };
+
+  const filteredClasses = classes
+    .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
+    .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
 
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
