@@ -1,9 +1,7 @@
 // 📁 src/utils/validationSchemas.js
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
-
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
+import { getUserCountry } from "@/utils/getUserCountry";
 // These helpers generate validation schemas using i18n translations
 // 🔐 Login Schema
 export const loginSchema = (t) =>
@@ -23,7 +21,7 @@ export const registerSchema = (t) =>
       email: z.string().email(t("invalid_email_address")),
       phone: z
         .string()
-        .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+        .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
           message: t("invalid_phone_number"),
         }),
 

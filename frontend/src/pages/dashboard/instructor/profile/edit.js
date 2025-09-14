@@ -9,6 +9,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import { API_BASE_URL } from "@/config/config";
 import { getCurrencies } from "@/services/currencyService";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
@@ -55,7 +56,7 @@ export const instructorProfileSchema = (country) => z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, country), {
+    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
       message: "invalid_phone_number",
     }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
