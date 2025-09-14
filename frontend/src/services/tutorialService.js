@@ -88,8 +88,12 @@ export const fetchFeaturedTutorials = async () => {
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
-export const fetchPublishedTutorials = async (config = {}) => {
-  const res = await api.get("/users/tutorials", config);
+export const fetchPublishedTutorials = async ({ page, limit, ...config } = {}) => {
+  const params = { ...(config?.params || {}) };
+  if (page != null) params.page = page;
+  if (limit != null) params.limit = limit;
+
+  const res = await api.get("/users/tutorials", { ...config, params });
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
