@@ -1,6 +1,7 @@
 // pages/dashboard/instructor/assignments/[classId]/create.js
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,20 +27,22 @@ export default function CreateAssignmentPage() {
   const [previewMode, setPreviewMode] = useState(false);
 
   const [classes, setClasses] = useState([]);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     setMounted(true);
     if (routerClassId) setClassId(routerClassId);
     const load = async () => {
       try {
-        const data = await fetchInstructorClasses();
+        if (!user?.id) return;
+        const data = await fetchInstructorClasses(user.id);
         setClasses(data || []);
       } catch (err) {
         console.error('Failed to load classes', err);
       }
     };
     load();
-  }, [routerClassId]);
+  }, [routerClassId, user?.id]);
 
   const handleAddQuestion = () => {
     setQuestions(prev => [...prev, { id: uuidv4(), question: '', options: ['', '', '', ''], correct: 0, points: 1 }]);

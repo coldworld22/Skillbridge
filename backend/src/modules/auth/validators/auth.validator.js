@@ -3,8 +3,16 @@ const { z } = require("zod");
 const { PASSWORD_REGEX, OTP_LENGTH } = require("../constants");
 const { isValidPhoneNumber } = require("libphonenumber-js");
 
-// Default country used for phone number validation
-const DEFAULT_COUNTRY = "US";
+// Determine user country for phone validation with fallback to US
+const getUserCountry = () => {
+  try {
+    const locale = process.env.USER_LOCALE || Intl.DateTimeFormat().resolvedOptions().locale;
+    const country = locale?.split("-")[1];
+    return country || "US";
+  } catch {
+    return "US";
+  }
+};
 
 /**
  * @desc Validation for user registration
@@ -14,7 +22,7 @@ exports.registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
       message: "Invalid phone number",
     }),
   password: z

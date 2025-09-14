@@ -14,12 +14,27 @@ exports.countPublishedClasses = async (instructorId) => {
   return parseInt(row.count, 10) || 0;
 };
 
-exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
+exports.getAllClasses = async (
+  { page = 1, limit = 10, filter, approval, status } = {}
+) => {
   const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
-  const totalRow = await db("online_classes").count("id as count").first();
+
+  const countQuery = db("online_classes as c")
+    .leftJoin("users as u", "c.instructor_id", "u.id");
+  if (filter) {
+    countQuery.where(function () {
+      this.whereILike("c.title", `%${filter}%`).orWhereILike(
+        "u.full_name",
+        `%${filter}%`
+      );
+    });
+  }
+  if (approval) countQuery.where("c.moderation_status", approval);
+  if (status) countQuery.where("c.status", status);
+  const totalRow = await countQuery.countDistinct("c.id as count").first();
   const total = parseInt(totalRow.count, 10) || 0;
 
-  const classes = await db("online_classes as c")
+  const query = db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .leftJoin("class_tag_map as m", "c.id", "m.class_id")
@@ -41,7 +56,20 @@ exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
       db.raw(
         "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
       )
-    )
+    );
+
+  if (filter) {
+    query.where(function () {
+      this.whereILike("c.title", `%${filter}%`).orWhereILike(
+        "u.full_name",
+        `%${filter}%`
+      );
+    });
+  }
+  if (approval) query.where("c.moderation_status", approval);
+  if (status) query.where("c.status", status);
+
+  const classes = await query
     .groupBy(
       "c.id",
       "c.title",

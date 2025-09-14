@@ -1,15 +1,18 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
+import { toast } from "react-toastify";
 
-export const fetchAds = async ({ role, limit, offset } = {}) => {
+export const fetchAds = async ({ role, limit, offset } = {}, config = {}) => {
   try {
     const params = {
       ...(role ? { role } : {}),
       ...(limit !== undefined ? { limit } : {}),
       ...(offset !== undefined ? { offset } : {}),
     };
-    const config = Object.keys(params).length ? { params } : undefined;
-    const { data } = await api.get("/ads", config);
+    const hasParams = Object.keys(params).length > 0;
+    const hasConfig = Object.keys(config).length > 0;
+    const reqConfig = hasParams || hasConfig ? { ...config, ...(hasParams ? { params } : {}) } : undefined;
+    const { data } = await api.get("/ads", reqConfig);
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
 
@@ -42,10 +45,11 @@ export const fetchAds = async ({ role, limit, offset } = {}) => {
 
     return { data: mapped, meta: data?.meta };
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Failed to fetch ads", error);
+    console.error("Failed to fetch ads", error);
+    if (typeof window !== "undefined") {
+      toast.error("Failed to load ads");
     }
-    return { data: [], meta: {} };
+    throw error;
   }
 };
 

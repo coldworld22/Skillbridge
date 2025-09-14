@@ -21,6 +21,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 import logger from "@/utils/logger";
+import { handleError } from "@/utils/error";
 
 // ─────────────────────
 // 🔐 Validation schema
@@ -118,33 +119,8 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       router.push(targetPath);
     }, 500);
   } catch (err) {
-    logger.error("❌ login onSubmit error", { message: err?.message });
-    let msg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
-      err?.message ||
-      t("login_failed");
-
-    if (err?.response?.status === 403 || msg === "Account is not active") {
-      msg = t("account_inactive");
-    } else if (msg === "Invalid credentials") {
-      msg = t("invalid_credentials");
-    } else if (msg === "Account is not active") {
-      msg = t("account_not_active");
-    }
-
-    if (
-      msg ===
-      "Account pending activation. Please verify your email or contact support."
-    ) {
-      msg = t("account_pending_activation");
-    }
-
-    if (err.code === "ERR_NETWORK") {
-      msg = t("network_error_check_config");
-    }
-
-    toast.error(msg);
+    logger.error("❌ login onSubmit error", err);
+    handleError(err, t("login_failed"));
     setValue("password", "");
     document.activeElement?.blur();
 
