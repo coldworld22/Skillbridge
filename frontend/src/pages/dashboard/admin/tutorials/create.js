@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -23,12 +22,26 @@ import {
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useTutorialCreation from "@/hooks/useTutorialCreation";
 
 function CreateTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+  const router = useRouter();
+
+  const {
+    step,
+    setStep,
+    nextStep,
+    prevStep,
+    tutorialData,
+    setTutorialData,
+    categories,
+    buildFormData,
+  } = useTutorialCreation({ fetchCategories: fetchAllCategories });
+
   const notify = async (type, message) => {
     if (!user?.id) {
       toast.warn('Notification skipped: missing user data.');
@@ -46,6 +59,7 @@ function CreateTutorialPage() {
       toast.error(msg);
     }
   };
+
   const [step, setStep] = useState(1);
   const router = useRouter();
   const defaultTutorial = {
@@ -88,7 +102,7 @@ function CreateTutorialPage() {
       return;
     }
 
-    const formData = buildTutorialFormData(tutorialData, status);
+    const formData = buildFormData(status);
 
     try {
       await createTutorial(formData);

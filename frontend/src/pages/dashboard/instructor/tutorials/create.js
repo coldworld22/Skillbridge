@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
@@ -17,9 +16,9 @@ import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import useTutorialCreation from "@/hooks/useTutorialCreation";
 
 export default function CreateTutorialPage() {
-  const [step, setStep] = useState(1);
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "tutorials"]);
   const defaultTutorial = {

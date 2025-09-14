@@ -1,7 +1,9 @@
 import api from "@/services/api/api";
 
-export const fetchAllCategories = async (params = {}) => {
-  const { data } = await api.get("/users/categories", { params });
+export const fetchAllCategories = async (params = {}, config = {}) => {
+  const hasConfig = Object.keys(config).length > 0;
+  const cfg = hasConfig ? { params, ...config } : { params };
+  const { data } = await api.get("/users/categories", cfg);
   return data?.data;
 };
 
