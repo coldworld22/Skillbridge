@@ -26,9 +26,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
-import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
+import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
@@ -85,7 +83,10 @@ function AdminTutorialsPage() {
         return;
       }
       await toggleTutorialStatus(id);
-      const newStatus = existing.status === "Published" ? "Draft" : "Published";
+      const newStatus =
+        existing.status === TUTORIAL_STATUS.PUBLISHED
+          ? TUTORIAL_STATUS.DRAFT
+          : TUTORIAL_STATUS.PUBLISHED;
       const target = { ...existing, status: newStatus };
       setTutorials((prev) =>
         prev.map((tut) =>
@@ -355,7 +356,30 @@ function AdminTutorialsPage() {
         />
 
         {/* Stats Summary */}
-        <Stats tutorials={tutorials} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
+            <p className="text-gray-600">Total Tutorials</p>
+            <p className="text-2xl font-bold">{tutorials.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
+            <p className="text-gray-600">Pending Approval</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
+            <p className="text-gray-600">Published</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === TUTORIAL_STATUS.PUBLISHED).length}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
+            <p className="text-gray-600">Drafts</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === TUTORIAL_STATUS.DRAFT).length}
+            </p>
+          </div>
+        </div>
 
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">

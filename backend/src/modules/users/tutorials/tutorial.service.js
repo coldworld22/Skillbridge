@@ -5,7 +5,7 @@ const chapterService = require("./chapters/tutorialChapter.service");
 const { withTransaction } = require("../../../services/transaction.service");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
-const cache = require("../../../utils/cache");
+const { TUTORIAL_STATUS } = require("../../../../../shared/tutorialStatus");
 
 exports.createTutorial = async (data, trx = db) => {
   const insertData = { included_plans: [], ...data };
@@ -22,7 +22,7 @@ exports.findByTitle = async (title) => {
 
 exports.countPublishedTutorials = async (instructorId) => {
   const row = await db("tutorials")
-    .where({ instructor_id: instructorId, status: "published" })
+    .where({ instructor_id: instructorId, status: TUTORIAL_STATUS.PUBLISHED })
     .count("id as count")
     .first();
   return parseInt(row.count, 10) || 0;
@@ -67,7 +67,7 @@ exports.getAllTutorials = async (filters = {}) => {
   const baseQuery = db("tutorials as t")
     .leftJoin("categories as c", "t.category_id", "c.id")
     .leftJoin("users as u", "t.instructor_id", "u.id")
-    .whereNot("t.status", "archived")
+    .whereNot("t.status", TUTORIAL_STATUS.ARCHIVED)
     .modify((query) => {
       if (status) query.andWhere("t.status", status);
       if (category) query.andWhere("t.category_id", category);
@@ -155,11 +155,18 @@ exports.getTutorialsByInstructor = async (instructorId) => {
     .whereNot('t.status', 'archived')
     .orderBy('t.created_at', 'desc')
     .select(
-      't.*',
-      'c.name as category_name',
-      'c.image_url as category_image_url',
-      'u.full_name as instructor_name'
-    );
+      "t.*",
+      "c.name as category_name",
+      "c.image_url as category_image_url",
+      "u.full_name as instructor_name",
+      db.raw("COALESCE(r.avg_rating, 0) as rating"),
+      db.raw("COALESCE(com.comment_count, 0) as comment_count"),
+      db.raw("COALESCE(en.enrollments, 0) as enrollments"),
+      db.raw("COALESCE(v.views, 0) as views")
+    )
+    .where("t.instructor_id", instructorId)
+    .whereNot("t.status", TUTORIAL_STATUS.ARCHIVED)
+    .orderBy("t.created_at", "desc");
 
   for (const tut of tutorials) {
     const [aggregates, tags] = await Promise.all([
@@ -199,10 +206,13 @@ exports.togglePublishStatus = async (id) => {
     return null;
   }
 
-  const newStatus = tutorial.status === "published" ? "draft" : "published";
+  const newStatus =
+    tutorial.status === TUTORIAL_STATUS.PUBLISHED
+      ? TUTORIAL_STATUS.DRAFT
+      : TUTORIAL_STATUS.PUBLISHED;
   const updateData = { status: newStatus };
 
-  if (newStatus === "published") {
+  if (newStatus === TUTORIAL_STATUS.PUBLISHED) {
     updateData.moderation_status = "Pending";
     updateData.rejection_reason = null;
   }
@@ -244,7 +254,7 @@ exports.bulkDeleteTutorials = async (ids) => {
 
 exports.getArchivedTutorials = async () => {
   return db("tutorials")
-    .where({ status: "archived" })
+    .where({ status: TUTORIAL_STATUS.ARCHIVED })
     .orderBy("updated_at", "desc");
 };
 
@@ -257,7 +267,7 @@ exports.getFeaturedTutorials = async () => {
   return db({ t: "tutorials" })
     .leftJoin("users as u", "t.instructor_id", "u.id")
     .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
-    .where({ "t.status": "published", "t.moderation_status": "Approved" })
+    .where({ "t.status": TUTORIAL_STATUS.PUBLISHED, "t.moderation_status": "Approved" })
     .select(
       "t.*",
       "u.full_name as instructor_name",
@@ -282,7 +292,7 @@ exports.getPublishedTutorials = async () => {
     .leftJoin("users as u", "t.instructor_id", "u.id")
     .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
     .leftJoin(chapterCountSubquery.as("c"), "c.tutorial_id", "t.id")
-    .where({ "t.status": "published", "t.moderation_status": "Approved" })
+    .where({ "t.status": TUTORIAL_STATUS.PUBLISHED, "t.moderation_status": "Approved" })
     .select(
       "t.*",
       "u.full_name as instructor_name",
@@ -297,7 +307,7 @@ exports.getTutorialsByCategory = async (categoryId) => {
   return db("tutorials")
     .where({
       category_id: categoryId,
-      status: "published",
+      status: TUTORIAL_STATUS.PUBLISHED,
       moderation_status: "Approved",
     })
     .orderBy("created_at", "desc");
@@ -313,7 +323,7 @@ exports.getPublicTutorialDetails = async (id) => {
     .leftJoin("users as u", "t.instructor_id", "u.id")
     .leftJoin("instructor_profiles as p", "u.id", "p.user_id")
     .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
-    .where({ "t.id": id, "t.status": "published", "t.moderation_status": "Approved" })
+    .where({ "t.id": id, "t.status": TUTORIAL_STATUS.PUBLISHED, "t.moderation_status": "Approved" })
     .first(
       "t.*",
       "u.full_name as instructor_name",
