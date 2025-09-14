@@ -574,6 +574,8 @@
     "invalid_date": "Invalid date format",
     "experience_positive": "Experience must be a positive number",
     "amount_positive": "Amount must be positive",
+    "pricing_amount_required": "Please enter an amount",
+    "pricing_currency_required": "Please select a currency",
     "bio_max_words": "Bio must be 150 words or fewer",
     "url_invalid": "Must be a valid URL"
   },
