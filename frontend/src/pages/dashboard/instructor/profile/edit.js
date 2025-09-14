@@ -72,7 +72,25 @@ export const instructorProfileSchema = (country) => z.object({
   socialLinks: z
     .record(z.string().url("invalid_url").or(z.literal("")))
     .optional(),
-});
+})
+  .superRefine((data, ctx) => {
+    const hasAmount = typeof data.pricing_amount === "number";
+    const hasCurrency = !!data.pricing_currency;
+    if (hasAmount && !hasCurrency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pricing_currency"],
+        message: "pricing_currency_required",
+      });
+    }
+    if (!hasAmount && hasCurrency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pricing_amount"],
+        message: "pricing_amount_required",
+      });
+    }
+  });
 // Currency options will be loaded from the backend configuration
 export default function InstructorProfileEdit() {
   const router = useRouter();
@@ -320,7 +338,7 @@ export default function InstructorProfileEdit() {
 
       // Combine pricing amount and currency
       const pricing =
-        typeof formData.pricing_amount === "number"
+        typeof formData.pricing_amount === "number" && formData.pricing_currency
           ? `${formData.pricing_amount} ${formData.pricing_currency}`
           : "";
       const social_links = toSocialLinksArray(formData.socialLinks);
@@ -597,6 +615,12 @@ export default function InstructorProfileEdit() {
                   ))}
                 </select>
               </div>
+              {errors.pricing_amount && (
+                <p className="text-sm text-red-600 mt-1">{errors.pricing_amount}</p>
+              )}
+              {errors.pricing_currency && (
+                <p className="text-sm text-red-600 mt-1">{errors.pricing_currency}</p>
+              )}
               <p className="text-sm text-gray-500 mt-1">e.g. 100 USD per hour</p>
             </div>
           </div>
