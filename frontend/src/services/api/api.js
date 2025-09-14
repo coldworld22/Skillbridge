@@ -32,4 +32,18 @@ const api = axios.create({
   xsrfHeaderName: "x-csrf-token", // and sends it in this header automatically
 });
 
+// Attach a response interceptor so we can inspect status codes centrally.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401) {
+      error.statusMessage = "Please log in to continue";
+    } else if (status && status >= 500) {
+      error.statusMessage = "Server error. Please try again later.";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

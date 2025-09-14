@@ -30,8 +30,8 @@ const formatClass = (cls) => {
   };
 };
 
-export const fetchAdminClasses = async () => {
-  const { data } = await api.get("/users/classes/admin");
+export const fetchAdminClasses = async (config = {}) => {
+  const { data } = await api.get("/users/classes/admin", config);
   const list = data?.data ?? [];
   return list.map(formatClass);
 };
