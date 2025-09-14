@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -60,6 +60,7 @@ function CreateOnlineClass() {
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const videoIntervalRef = useRef(null);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -93,6 +94,14 @@ function CreateOnlineClass() {
       setFormData((prev) => ({ ...prev, instructor: user.full_name }));
     }
   }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (videoIntervalRef.current) {
+        clearInterval(videoIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -148,11 +157,18 @@ function CreateOnlineClass() {
     setVideoUploading(true);
     setUploadProgress(0);
 
+    if (videoIntervalRef.current) {
+      clearInterval(videoIntervalRef.current);
+    }
+
     // Simulate upload progress (replace with actual upload logic)
-    const interval = setInterval(() => {
+    videoIntervalRef.current = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 100) {
-          clearInterval(interval);
+          if (videoIntervalRef.current) {
+            clearInterval(videoIntervalRef.current);
+            videoIntervalRef.current = null;
+          }
           setVideoUploading(false);
           setFormData(prev => ({
             ...prev,
