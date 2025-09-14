@@ -141,8 +141,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar:", err)
+      );
     }
 
     res.json({ avatar_url: avatarUrl });
@@ -165,11 +168,27 @@ exports.updateIdentity = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No identity document uploaded" });
     }
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-    const exists = await db("student_profiles")
+    const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
     if (exists) {
+      if (exists.identity_doc_url) {
+        const oldPath = path.join(
+          __dirname,
+          "../../../../",
+          exists.identity_doc_url
+        );
+        fs.unlink(oldPath, (err) => {
+          if (err) {
+            if (err.code === "ENOENT") {
+              logger.warn("Old identity document not found:", err);
+            } else {
+              logger.error("Failed to remove old identity document:", err);
+            }
+          }
+        });
+      }
+
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
@@ -179,8 +198,12 @@ exports.updateIdentity = async (req, res) => {
         identity_doc_url: identityUrl,
       });
     }
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
     logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
   }

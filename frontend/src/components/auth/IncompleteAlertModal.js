@@ -28,7 +28,7 @@ export default function IncompleteAlertModal() {
       <div className="bg-white p-6 rounded-lg text-center max-w-md">
         <h2 className="text-xl font-semibold text-red-600 mb-2">Complete Your Profile</h2>
         <p className="text-gray-700 mb-4">
-          You must verify your email and phone, and complete your profile before using the platform.
+          You must verify your email and phone, and complete your profile (including expertise, bio, and pricing) before using the platform.
         </p>
         <button
           onClick={() => {
