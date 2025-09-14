@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import InstructorCard from "@/components/student/instructors/InstructorCard";
 import InstructorFilters from "@/components/student/instructors/InstructorFilters";
@@ -7,18 +8,21 @@ import BookingRequestModal from "@/components/student/instructors/BookingRequest
 import ChatRedirectModal from "@/components/student/instructors/ChatRedirectModal";
 import { fetchPublicInstructors } from "@/services/public/instructorService";
 
-const sortOptions = ["Highest Rated", "Most Experienced"];
-
 export default function StudentInstructorsAll() {
   const router = useRouter();
+  const { t } = useTranslation("dashboard", { keyPrefix: "studentInstructorsPage" });
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState([]);
-  const [sortBy, setSortBy] = useState("Highest Rated");
+  const [sortBy, setSortBy] = useState("highest_rated");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const sortOptions = [
+    { value: "highest_rated", label: t("sort.highest_rated") },
+    { value: "most_experienced", label: t("sort.most_experienced") },
+  ];
 
   const [bookingInstructor, setBookingInstructor] = useState(null);
   const [chatInstructorId, setChatInstructorId] = useState(null);
@@ -48,13 +52,13 @@ export default function StudentInstructorsAll() {
         setInstructors(mapped);
       } catch (err) {
         console.error("Failed to load instructors", err);
-        setError("Failed to load instructors.");
+        setError(t("load_error"));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const toggleFavorite = (id) => {
     const updated = favorites.includes(id)
@@ -64,7 +68,7 @@ export default function StudentInstructorsAll() {
     localStorage.setItem("favorites", JSON.stringify(updated));
   };
   const categories = useMemo(
-    () => ["All", ...new Set(instructors.flatMap((i) => i.tags))],
+    () => ["all", ...new Set(instructors.flatMap((i) => i.tags))],
     [instructors]
   );
 
@@ -72,12 +76,12 @@ export default function StudentInstructorsAll() {
     .filter(
       (i) =>
         (!onlyAvailable || i.availableNow) &&
-        (selectedCategory === "All" || i.tags.includes(selectedCategory)) &&
+        (selectedCategory === "all" || i.tags.includes(selectedCategory)) &&
         i.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortBy === "Highest Rated") return b.rating - a.rating;
-      if (sortBy === "Most Experienced") {
+      if (sortBy === "highest_rated") return b.rating - a.rating;
+      if (sortBy === "most_experienced") {
         const getYears = (exp) => parseInt(exp);
         return getYears(b.experience) - getYears(a.experience);
       }
@@ -87,7 +91,7 @@ export default function StudentInstructorsAll() {
   return (
     <StudentLayout>
       <section className="py-10 px-4">
-        <h1 className="text-2xl font-bold mb-6">Find Instructors</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
 
         <InstructorFilters
           categories={categories}
@@ -104,7 +108,7 @@ export default function StudentInstructorsAll() {
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
         {loading ? (
-          <p>Loading instructors...</p>
+          <p>{t('loading')}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((i) => (
