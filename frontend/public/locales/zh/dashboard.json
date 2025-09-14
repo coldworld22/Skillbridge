@@ -138,6 +138,13 @@
   "user_info_unavailable": "用户信息不可用",
   "step_of_total": "第 {{current}} 步，共 {{total}} 步",
   "preview_alt": "预览",
+  "dashboardPage": {
+    "progress": "进度",
+    "continue_learning": "继续学习",
+    "ai_recommendations_title": "🤖 基于AI的推荐",
+    "category": "类别",
+    "view_course": "查看课程"
+  },
   "categoriesPage": {
     "title": "类别",
     "new_category": "新建类别",
@@ -1345,6 +1352,40 @@
     "purchased_on": "在{{date}}上购买",
     "no_books": "您的图书馆没有书籍。"
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "管理员：管理所有优惠",
     "all_roles": "所有角色",
@@ -1895,6 +1936,21 @@
       "paid": "已支付",
       "pending_payment": "待付款"
     }
+  },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
   },
   "studentSchedulePage": {
     "title": "我预订的课程",

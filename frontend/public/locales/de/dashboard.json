@@ -138,6 +138,13 @@
   "user_info_unavailable": "User information unavailable",
   "step_of_total": "Step {{current}} of {{total}}",
   "preview_alt": "Preview",
+  "dashboardPage": {
+    "progress": "Fortschritt",
+    "continue_learning": "Weiter lernen",
+    "ai_recommendations_title": "🤖 KI-basierte Empfehlungen",
+    "category": "Kategorie",
+    "view_course": "Kurs ansehen"
+  },
   "categoriesPage": {
     "title": "Categories",
     "new_category": "New Category",
@@ -1359,6 +1366,40 @@
     "purchased_on": "Purchased on {{date}}",
     "no_books": "No books in your library."
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "Admin: Manage All Offers",
     "all_roles": "All Roles",
@@ -1940,6 +1981,21 @@
       "paid": "Bezahlt",
       "pending_payment": "Zahlung ausstehend"
     }
+  },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
   },
   "studentSchedulePage": {
     "title": "Meine gebuchten Lektionen",

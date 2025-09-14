@@ -30,10 +30,11 @@ const formatClass = (cls) => {
   };
 };
 
-export const fetchInstructorClasses = async () => {
-  // Fetch only classes belonging to the current instructor
-  // using the dedicated "/instructor/my" endpoint
-  const { data } = await api.get("/users/classes/instructor/my");
+export const fetchInstructorClasses = async (instructorId) => {
+  // Fetch only classes belonging to the specified instructor
+  const { data } = await api.get("/users/classes/instructor/my", {
+    params: { instructorId },
+  });
   const list = data?.data ?? [];
   return list.map(formatClass);
 };
@@ -108,8 +109,8 @@ export const deleteClassAssignment = async (assignmentId) => {
 
 // Fetch upcoming schedule events for the current instructor
 // Combines class start dates and lesson times
-export const fetchInstructorScheduleEvents = async () => {
-  const classes = await fetchInstructorClasses();
+export const fetchInstructorScheduleEvents = async (instructorId) => {
+  const classes = await fetchInstructorClasses(instructorId);
   const now = new Date();
   const events = [];
 

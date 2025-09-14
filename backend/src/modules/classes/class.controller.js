@@ -203,8 +203,9 @@ exports.getClassById = catchAsync(async (req, res) => {
 });
 
 exports.getMyClasses = catchAsync(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-  const result = await service.getClassesByInstructor(req.user.id, {
+  const { page = 1, limit = 10, instructorId } = req.query;
+  const targetId = instructorId || req.user.id;
+  const result = await service.getClassesByInstructor(targetId, {
     page: Number(page),
     limit: Number(limit),
   });

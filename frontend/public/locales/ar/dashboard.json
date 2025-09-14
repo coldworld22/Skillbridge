@@ -138,6 +138,13 @@
   "user_info_unavailable": "معلومات المستخدم غير متاحة",
   "step_of_total": "الخطوة {{current}} من {{total}}",
   "preview_alt": "معاينة",
+  "dashboardPage": {
+    "progress": "التقدم",
+    "continue_learning": "متابعة التعلم",
+    "ai_recommendations_title": "🤖 توصيات تعتمد على الذكاء الاصطناعي",
+    "category": "الفئة",
+    "view_course": "عرض الدورة"
+  },
   "categoriesPage": {
     "title": "الفئات",
     "new_category": "فئة جديدة",
@@ -1345,6 +1352,40 @@
     "purchased_on": "تم شراؤها على {{date}}",
     "no_books": "لا توجد كتب في مكتبتك."
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "المسؤول: إدارة جميع العروض",
     "all_roles": "جميع الأدوار",
@@ -1934,6 +1975,21 @@
       "paid": "مدفوع",
       "pending_payment": "دفع معلق"
     }
+  },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
   },
   "studentSchedulePage": {
     "title": "دروسي المحجوزة",
