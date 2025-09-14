@@ -10,6 +10,7 @@ const notificationService = require("../../notifications/notifications.service")
 
 const messageService = require("../../messages/messages.service");
 const { allowedPlatforms } = require("../common/socialPlatforms");
+const { getStudentProfile, updateStudentProfile } = require("./student.service");
 
 
 /**
@@ -89,70 +90,21 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  let trx;
+  const userData = { full_name, phone, gender, date_of_birth };
+  const studentData = { education_level, topics, learning_goals };
+
   try {
-    trx = await db.transaction();
+    const result = await updateStudentProfile(
+      userId,
+      userData,
+      studentData,
+      sanitizedLinks
+    );
 
-    await trx("users")
-      .where({ id: userId })
-      .update({
-        full_name,
-        phone,
-        gender,
-        date_of_birth,
-        profile_complete: isProfileComplete,
-      });
+    const profile = await getStudentProfile(userId);
 
-    const exists = await trx("student_profiles").where({ user_id: userId }).first();
-    const studentData = { education_level, topics, learning_goals };
-    if (exists) {
-      await trx("student_profiles").where({ user_id: userId }).update(studentData);
-    } else {
-      await trx("student_profiles").insert({ user_id: userId, ...studentData });
-    }
-
-    await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of sanitizedLinks) {
-      await trx("user_social_links").insert({
-        user_id: userId,
-        platform: link.platform,
-        url: link.url,
-      });
-    }
-
-    await trx.commit();
-
-    const [user] = await db("users")
-      .where({ id: userId })
-      .select(
-        "id",
-        "full_name",
-        "email",
-        "phone",
-        "gender",
-        "date_of_birth",
-        "avatar_url",
-        "is_email_verified",
-        "is_phone_verified",
-        "profile_complete",
-        "created_at",
-        "updated_at"
-      );
-
-    const [student] = await db("student_profiles")
-      .where({ user_id: userId })
-      .select("education_level", "topics", "learning_goals", "identity_doc_url");
-
-    const socialLinks = await db("user_social_links")
-      .where({ user_id: userId })
-      .select("platform", "url");
-
-    res.json({ ...user, student, social_links: socialLinks });
+    res.json({ ...profile, ...result });
   } catch (err) {
-    if (trx) {
-      await trx.rollback();
-    }
-
     // Handle unique constraint violations for email and phone
     if (err.code === "23505") {
       if (err.constraint === "users_email_unique") {
