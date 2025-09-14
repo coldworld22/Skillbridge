@@ -138,6 +138,13 @@
   "user_info_unavailable": "Informations utilisateur indisponibles",
   "step_of_total": "Étape {{current}} sur {{total}}",
   "preview_alt": "Aperçu",
+  "dashboardPage": {
+    "progress": "Progression",
+    "continue_learning": "Continuer à apprendre",
+    "ai_recommendations_title": "🤖 Recommandations basées sur l'IA",
+    "category": "Catégorie",
+    "view_course": "Voir le cours"
+  },
   "categoriesPage": {
     "title": "Catégories",
     "new_category": "Nouvelle catégorie",
@@ -1345,6 +1352,40 @@
     "purchased_on": "Acheté le {{date}}",
     "no_books": "Aucun livre dans votre bibliothèque."
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "Admin : Gérer toutes les offres",
     "all_roles": "Tous les rôles",
@@ -1935,6 +1976,21 @@
       "pending_payment": "Paiement en attente"
     }
   },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
+  },
   "studentSchedulePage": {
     "title": "Mes leçons réservées",
     "failed_live_session": "Échec de la connexion à la session en direct",
@@ -1997,5 +2053,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 Mes cours inscrits",
+    "search_placeholder": "Rechercher des cours...",
+    "sort_by_date": "Trier par date",
+    "status_all": "Tous",
+    "status_live": "En direct",
+    "status_upcoming": "À venir",
+    "status_completed": "Terminés",
+    "no_classes": "Aucun cours trouvé pour ce filtre.",
+    "instructor": "Formateur :",
+    "progress_completed": "{{progress}}% terminé",
+    "notify_me": "Me notifier",
+    "view_certificate": "Voir le certificat",
+    "view_assignments": "Voir les devoirs",
+    "join_class": "Rejoindre le cours",
+    "starts_soon": "Commence bientôt",
+    "completed": "Terminé",
+    "class_ended": "Cours terminé",
+    "load_more": "Charger plus"
   }
 }

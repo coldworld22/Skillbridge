@@ -9,7 +9,7 @@ const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
 
 const messageService = require("../../messages/messages.service");
-const { allowedPlatforms } = require("../common/socialPlatforms");
+const studentService = require("./student.service");
 
 
 /**
@@ -89,6 +89,15 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
+  const isProfileComplete = Boolean(
+    full_name &&
+    phone &&
+    gender &&
+    date_of_birth &&
+    education_level &&
+    sanitizedLinks.length
+  );
+
   let trx;
   try {
     trx = await db.transaction();
@@ -101,6 +110,7 @@ exports.updateProfile = async (req, res) => {
         gender,
         date_of_birth,
         profile_complete: isProfileComplete,
+        updated_at: new Date(),
       });
 
     const exists = await trx("student_profiles").where({ user_id: userId }).first();
@@ -147,12 +157,14 @@ exports.updateProfile = async (req, res) => {
       .where({ user_id: userId })
       .select("platform", "url");
 
-    res.json({ ...user, student, social_links: socialLinks });
-  } catch (err) {
-    if (trx) {
-      await trx.rollback();
-    }
+    res.json({
+      ...user,
+      profile_complete: isProfileComplete,
+      student,
+      social_links: socialLinks,
+    });
 
+  } catch (err) {
     // Handle unique constraint violations for email and phone
     if (err.code === "23505") {
       if (err.constraint === "users_email_unique") {
@@ -189,8 +201,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar:", err)
+      );
     }
 
     res.json({ avatar_url: avatarUrl });
@@ -213,8 +228,7 @@ exports.updateIdentity = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No identity document uploaded" });
     }
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-    const exists = await db("student_profiles")
+    const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
     if (exists) {
@@ -244,8 +258,12 @@ exports.updateIdentity = async (req, res) => {
         identity_doc_url: identityUrl,
       });
     }
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
     logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
