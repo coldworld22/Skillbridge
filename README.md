@@ -127,7 +127,7 @@ npm --prefix frontend install
    docker-compose up --build
    ```
 
-4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5000/api`.
+4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.

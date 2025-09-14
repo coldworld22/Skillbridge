@@ -24,7 +24,7 @@ referenced in `nginx/conf.d/ssl.conf`.
 ## Configure environment variables
 
 1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
-   - `PORT` – typically `5000` unless changed.
+   - `PORT` – typically `5002` unless changed.
    - `APP_DOMAIN` – your production domain (e.g. `yourdomain.com`).
    - `SUPPORT_EMAIL` – address used for outbound messages.
    - `FRONTEND_URL` – set this to the full URL of your frontend. You can
@@ -97,7 +97,7 @@ referenced in `nginx/conf.d/ssl.conf`.
  ```
 
    The root `.env` is intended for local development and defaults
-   `NEXT_PUBLIC_API_BASE_URL` to `http://backend:5002/api` for internal
+   `NEXT_PUBLIC_API_BASE_URL` to `http://localhost:5002/api` for internal
    container communication. Remove or override this file in production so the
    frontend uses your public HTTPS domain.
 
@@ -171,10 +171,10 @@ domains you can still extend `remotePatterns` in
 
 ## Troubleshooting
 
-### Login page requests `http://localhost:5000`
+### Login page requests `http://localhost:5002`
 
 If you deploy the frontend and see network errors pointing to
-`http://localhost:5000/api` it means the build did not have
+`http://localhost:5002/api` it means the build did not have
 `NEXT_PUBLIC_API_BASE_URL` set.  Update `frontend/.env.local` with the correct
 backend URL and rebuild/restart the frontend container so the new value is
 picked up.

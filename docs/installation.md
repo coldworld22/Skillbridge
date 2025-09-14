@@ -102,7 +102,7 @@ hosts for payment method icons. URLs outside this list will fall back to a
 default icon.
 
 The root `.env` file defaults `NEXT_PUBLIC_API_BASE_URL` to
-`http://backend:5002/api` so Docker services can reach the backend container
+`http://localhost:5002/api` so Docker services can reach the backend container
 internally during development. For production builds use
 `frontend/.env.production` instead and remove or override the root `.env` so the
 frontend points to your public domain (for example,
