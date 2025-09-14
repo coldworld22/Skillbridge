@@ -1,7 +1,7 @@
 import React from "react";
 import { FaSearch } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@/shared/tutorialStatus";
 
 function Filters({
   searchQuery,
