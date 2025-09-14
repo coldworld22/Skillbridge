@@ -231,22 +231,24 @@ exports.updateIdentity = async (req, res) => {
     const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
+    if (exists) {
+      if (exists.identity_doc_url) {
+        const oldPath = path.join(
+          __dirname,
+          "../../../../",
+          exists.identity_doc_url
+        );
+        fs.unlink(oldPath, (err) => {
+          if (err) {
+            if (err.code === "ENOENT") {
+              logger.warn("Old identity document not found:", err);
+            } else {
+              logger.error("Failed to remove old identity document:", err);
+            }
+          }
+        });
+      }
 
-    if (profile && profile.identity_doc_url) {
-      const oldPath = path.join(
-        __dirname,
-        "../../../../",
-        profile.identity_doc_url
-      );
-      fs.unlink(oldPath, (err) =>
-        err &&
-        logger.error("Failed to remove old identity document:", err)
-      );
-    }
-
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-
-    if (profile) {
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
