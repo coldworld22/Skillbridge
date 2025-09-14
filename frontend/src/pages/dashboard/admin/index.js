@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
@@ -26,7 +25,6 @@ import { fetchLicenseStatus } from "@/services/admin/licenseService";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -41,16 +39,6 @@ function AdminDashboardHome() {
   useEffect(() => {
     setHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      if (!user) {
-        router.replace("/auth/login");
-      } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-        router.replace("/error/403");
-      }
-    }
-  }, [user, hydrated, router]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -100,12 +88,12 @@ function AdminDashboardHome() {
         setLicenseLoading(false);
       }
     };
-    if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+    if (hydrated) {
       loadData();
     }
-  }, [hydrated, user]);
+  }, [hydrated]);
 
-  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+  if (!hydrated) {
     return null;
   }
 
