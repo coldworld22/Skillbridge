@@ -14,6 +14,7 @@ const DynamicAds = () => {
         const { data } = await fetchAds();
         if (isMounted) setAds(data);
       } catch (err) {
+        console.error("Failed to load ads", err);
         if (isMounted) setError("Failed to load ads");
       } finally {
         if (isMounted) setLoading(false);

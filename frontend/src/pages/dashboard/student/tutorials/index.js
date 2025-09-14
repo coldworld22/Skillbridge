@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import {
+  fetchPublishedTutorials,
+  fetchTutorialProgress,
+  saveTutorialProgress,
+} from "@/services/tutorialService";
 import StudentTutorialCard from "@/components/tutorials/StudentTutorialCard";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
@@ -38,18 +42,36 @@ export default function StudentTutorialsPage() {
           let progress = { completedChapters: [], completedQuiz: false };
           if (saved) {
             try {
-              progress = JSON.parse(saved);
-            } catch {
-              progress = { completedChapters: [], completedQuiz: false };
+              server = await fetchTutorialProgress(tut.id);
+            } catch {}
+
+            if (
+              localPercent > 0 &&
+              (!server || Number(server.progress || 0) < localPercent)
+            ) {
+              try {
+                await saveTutorialProgress(tut.id, localPercent);
+              } catch {}
             }
-          }
-          return {
-            ...tut,
-            completedLessons: progress.completedChapters.length,
-            totalLessons: tut.chapter_count || 0,
-            isCompleted: progress.completedQuiz,
-          };
-        });
+
+            const percent =
+              server && server.progress != null
+                ? Number(server.progress)
+                : localPercent;
+
+            return {
+              ...tut,
+              completedLessons: totalLessons
+                ? Math.round((percent / 100) * totalLessons)
+                : 0,
+              totalLessons,
+              isCompleted:
+                (server?.status && server.status === "completed") ||
+                percent >= 100 ||
+                local.completedQuiz,
+            };
+          })
+        );
         setTutorials(enriched);
         setHasMore(data.length === limit);
       } catch (err) {

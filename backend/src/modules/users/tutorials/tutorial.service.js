@@ -5,6 +5,7 @@ const chapterService = require("./chapters/tutorialChapter.service");
 const { withTransaction } = require("../../../services/transaction.service");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
+const cache = require("../../../utils/cache");
 
 exports.createTutorial = async (data, trx = db) => {
   const insertData = { included_plans: [], ...data };
@@ -13,12 +14,48 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.findByTitle = async (title) => {
+  return db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
+};
+
 exports.countPublishedTutorials = async (instructorId) => {
   const row = await db("tutorials")
     .where({ instructor_id: instructorId, status: "published" })
     .count("id as count")
     .first();
   return parseInt(row.count, 10) || 0;
+};
+
+/**
+ * Fetches heavy aggregate metrics for a tutorial while caching the results.
+ * This helps avoid repeating expensive COUNT queries on frequently accessed
+ * tutorials.
+ */
+exports.getTutorialAggregates = async (tutorialId) => {
+  const cached = cache.get(`tutorial:${tutorialId}:aggregates`);
+  if (cached) return cached;
+
+  const [viewRow, enrollmentRow, commentRow, ratingRow] = await Promise.all([
+    db('tutorial_views').where({ tutorial_id: tutorialId }).count().first(),
+    db('tutorial_enrollments')
+      .where({ tutorial_id: tutorialId })
+      .countDistinct({ count: 'user_id' })
+      .first(),
+    db('tutorial_comments').where({ tutorial_id: tutorialId }).count().first(),
+    db('tutorial_reviews').where({ tutorial_id: tutorialId }).avg({ rating: 'rating' }).first()
+  ]);
+
+  const aggregates = {
+    views: parseInt(viewRow.count, 10) || 0,
+    enrollments: parseInt(enrollmentRow.count, 10) || 0,
+    comment_count: parseInt(commentRow.count, 10) || 0,
+    rating: parseFloat(ratingRow.rating) || 0
+  };
+
+  cache.set(`tutorial:${tutorialId}:aggregates`, aggregates);
+  return aggregates;
 };
 
 const { parsePagination } = require("../../../utils/pagination");
@@ -76,43 +113,7 @@ exports.getAllTutorials = async (filters = {}) => {
 exports.getTutorialById = async (id, userId = null) => {
   const query = db({ t: 'tutorials' })
     .leftJoin('categories as c', 't.category_id', 'c.id')
-    .leftJoin('users as u', 't.instructor_id', 'u.id')
-    .leftJoin(
-      db('tutorial_reviews')
-        .select('tutorial_id')
-        .avg({ avg_rating: 'rating' })
-        .groupBy('tutorial_id')
-        .as('r'),
-      'r.tutorial_id',
-      't.id'
-    )
-    .leftJoin(
-      db('tutorial_comments')
-        .select('tutorial_id')
-        .count({ comment_count: 'id' })
-        .groupBy('tutorial_id')
-        .as('com'),
-      'com.tutorial_id',
-      't.id'
-    )
-    .leftJoin(
-      db('tutorial_enrollments')
-        .select('tutorial_id')
-        .countDistinct({ enrollments: 'user_id' })
-        .groupBy('tutorial_id')
-        .as('en'),
-      'en.tutorial_id',
-      't.id'
-    )
-    .leftJoin(
-      db('tutorial_views')
-        .select('tutorial_id')
-        .count({ views: 'id' })
-        .groupBy('tutorial_id')
-        .as('v'),
-      'v.tutorial_id',
-      't.id'
-    );
+    .leftJoin('users as u', 't.instructor_id', 'u.id');
 
   if (userId) {
     query.leftJoin('tutorial_enrollments as te', function () {
@@ -127,10 +128,6 @@ exports.getTutorialById = async (id, userId = null) => {
     'c.name as category_name',
     'c.image_url as category_image_url',
     'u.full_name as instructor_name',
-    db.raw('COALESCE(r.avg_rating,0) as rating'),
-    db.raw('COALESCE(com.comment_count,0) as comment_count'),
-    db.raw('COALESCE(en.enrollments,0) as enrollments'),
-    db.raw('COALESCE(v.views,0) as views'),
   ];
 
   if (userId) {
@@ -143,65 +140,34 @@ exports.getTutorialById = async (id, userId = null) => {
     columns.push(db.raw('false as is_enrolled'));
   }
 
-  return query.select(columns).first();
+  const tutorial = await query.select(columns).first();
+  if (!tutorial) return null;
+
+  const aggregates = await exports.getTutorialAggregates(id);
+  return { ...tutorial, ...aggregates };
 };
 
 exports.getTutorialsByInstructor = async (instructorId) => {
-  const tutorials = await db("tutorials as t")
-    .leftJoin("categories as c", "t.category_id", "c.id")
-    .leftJoin("users as u", "t.instructor_id", "u.id")
-    .leftJoin(
-      db("tutorial_reviews")
-        .select("tutorial_id")
-        .avg({ avg_rating: "rating" })
-        .groupBy("tutorial_id")
-        .as("r"),
-      "r.tutorial_id",
-      "t.id"
-    )
-    .leftJoin(
-      db("tutorial_comments")
-        .select("tutorial_id")
-        .count({ comment_count: "id" })
-        .groupBy("tutorial_id")
-        .as("com"),
-      "com.tutorial_id",
-      "t.id"
-    )
-    .leftJoin(
-      db("tutorial_enrollments")
-        .select("tutorial_id")
-        .countDistinct({ enrollments: "user_id" })
-        .groupBy("tutorial_id")
-        .as("en"),
-      "en.tutorial_id",
-      "t.id"
-    )
-    .leftJoin(
-      db("tutorial_views")
-        .select("tutorial_id")
-        .count({ views: "id" })
-        .groupBy("tutorial_id")
-        .as("v"),
-      "v.tutorial_id",
-      "t.id"
-    )
+  const tutorials = await db('tutorials as t')
+    .leftJoin('categories as c', 't.category_id', 'c.id')
+    .leftJoin('users as u', 't.instructor_id', 'u.id')
+    .where('t.instructor_id', instructorId)
+    .whereNot('t.status', 'archived')
+    .orderBy('t.created_at', 'desc')
     .select(
-      "t.*",
-      "c.name as category_name",
-      "c.image_url as category_image_url",
-      "u.full_name as instructor_name",
-      db.raw("COALESCE(r.avg_rating, 0) as rating"),
-      db.raw("COALESCE(com.comment_count, 0) as comment_count"),
-      db.raw("COALESCE(en.enrollments, 0) as enrollments"),
-      db.raw("COALESCE(v.views, 0) as views")
-    )
-    .where("t.instructor_id", instructorId)
-    .whereNot("t.status", "archived")
-    .orderBy("t.created_at", "desc");
+      't.*',
+      'c.name as category_name',
+      'c.image_url as category_image_url',
+      'u.full_name as instructor_name'
+    );
 
   for (const tut of tutorials) {
-    tut.tags = await exports.getTutorialTags(tut.id);
+    const [aggregates, tags] = await Promise.all([
+      exports.getTutorialAggregates(tut.id),
+      exports.getTutorialTags(tut.id),
+    ]);
+    Object.assign(tut, aggregates);
+    tut.tags = tags;
   }
 
   return tutorials;

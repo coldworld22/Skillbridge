@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -15,16 +14,29 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
-import { buildTutorialFormData } from "@/utils/tutorialForm";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useTutorialCreation from "@/hooks/useTutorialCreation";
 
 function CreateTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+  const router = useRouter();
+
+  const {
+    step,
+    setStep,
+    nextStep,
+    prevStep,
+    tutorialData,
+    setTutorialData,
+    categories,
+    buildFormData,
+  } = useTutorialCreation({ fetchCategories: fetchAllCategories });
+
   const notify = async (type, message) => {
     if (!user?.id) {
       toast.warn('Notification skipped: missing user data.');
@@ -42,63 +54,6 @@ function CreateTutorialPage() {
       toast.error(msg);
     }
   };
-  const [step, setStep] = useState(1);
-  const router = useRouter();
-  const [tutorialData, setTutorialData] = useState({
-    title: "",
-    shortDescription: "",
-    category: "",
-    categoryName: "",
-    level: "",
-    lessonCount: 1,
-    tags: [],
-    chapters: [],
-    thumbnail: null,
-    preview: null,
-    language: "",
-    price: "",
-    isFree: false,
-  });
-
-  const [categories, setCategories] = useState([]);
-
-  useEffect(() => {
-    const savedDraft = localStorage.getItem("tutorialDraft");
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        setTutorialData({
-          ...draft,
-          thumbnail: null,
-          preview: null,
-          language: draft.language || "",
-          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
-        });
-      } catch (err) {
-        console.error("Failed to parse tutorialDraft", err);
-        localStorage.removeItem("tutorialDraft");
-      }
-    }
-
-    const loadCategories = async () => {
-      try {
-        const result = await fetchAllCategories();
-
-        setCategories(result || []);
-
-      
-      } catch (err) {
-        console.error("Failed to load categories", err);
-        toast.error(t('load_categories_failed'));
-      }
-    };
-
-    loadCategories();
-  }, []);
-
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
-
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
@@ -106,7 +61,7 @@ function CreateTutorialPage() {
       return;
     }
 
-    const formData = buildTutorialFormData(tutorialData, status);
+    const formData = buildFormData(status);
 
     try {
       await createTutorial(formData);
