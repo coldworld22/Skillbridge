@@ -71,6 +71,11 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     currentPage * itemsPerPage
   );
 
+  const formatCSVRow = (row) =>
+    row
+      .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+      .join(",");
+
   const exportCSV = () => {
     const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
     const rows = classList.map(cls => [
@@ -81,7 +86,8 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
       cls.category,
       cls.publishStatus
     ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const csvRows = [headers, ...rows].map(formatCSVRow);
+    const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
