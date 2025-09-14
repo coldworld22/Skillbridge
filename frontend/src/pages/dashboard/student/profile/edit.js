@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
