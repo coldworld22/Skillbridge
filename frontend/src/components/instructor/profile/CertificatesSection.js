@@ -134,7 +134,7 @@ export default function CertificatesSection({ certificates, onChange, t, baseUrl
                   const file = e.target.files[0];
                   if (!file) return;
                   if (file.size > 10 * 1024 * 1024) {
-                    toast.error('File size must be 10MB or less');
+                    toast.error(t('file_size_limit'));
                     return;
                   }
                   let preview = null;
