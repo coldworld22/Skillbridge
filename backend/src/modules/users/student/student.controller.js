@@ -4,11 +4,8 @@ const path = require("path");
 /**
  * Student controller
  */
-const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
-const notificationService = require("../../notifications/notifications.service");
-
-const messageService = require("../../messages/messages.service");
+const userService = require("../user.service");
 const { allowedPlatforms } = require("../common/socialPlatforms");
 
 
@@ -241,7 +238,7 @@ exports.updateIdentity = async (req, res) => {
  */
 exports.changePassword = async (req, res) => {
   const userId = req.user.id;
-  const { currentPassword, newPassword } = req.body;
+  const { newPassword } = req.body;
 
   if (!newPassword || newPassword.length < 8) {
     return res
@@ -249,34 +246,7 @@ exports.changePassword = async (req, res) => {
       .json({ message: "New password must be at least 8 characters." });
   }
 
-  const [user] = await db("users").where({ id: userId }).select("password_hash");
-  if (!user) {
-    return res.status(404).json({ message: "User not found." });
-  }
-
-  const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-  if (!isMatch) {
-    return res.status(401).json({ message: "Current password is incorrect." });
-  }
-
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
-
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed successfully",
-  });
-
-  await messageService.createMessage({
-    sender_id: userId,
-    receiver_id: userId,
-    message: "Your password was changed successfully",
-  });
+  await userService.updateUser(userId, { password: newPassword });
 
   res.json({ message: "Password changed successfully." });
 };
