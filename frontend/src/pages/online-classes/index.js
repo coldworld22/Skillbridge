@@ -8,6 +8,7 @@ import ClassesGrid from '@/components/online-classes/ClassesGrid';
 import LoadMoreButton from '@/components/online-classes/LoadMoreButton';
 import { fetchPublishedClasses } from '@/services/classService';
 import { fetchAds as fetchAdBanners } from '@/services/adsService';
+import { toast } from 'react-toastify';
 
 export default function OnlineClassesPage({ initialClasses = [] }) {
   const [allClasses, setAllClasses] = useState(initialClasses);
@@ -17,6 +18,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
   const [ads, setAds] = useState([]);
+  const [adsError, setAdsError] = useState(false);
 
   useEffect(() => {
     if (initialClasses.length > 0) {
@@ -43,7 +45,13 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   }, [initialClasses]);
 
   useEffect(() => {
-    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
+    fetchAdBanners({ limit: 10 })
+      .then((res) => setAds(res.data))
+      .catch((err) => {
+        console.error('Failed to load ad banners', err);
+        toast.error('Failed to load ad banners');
+        setAdsError(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -91,19 +99,29 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
 
       <main className="container mx-auto px-6 py-12 mt-16 max-w-7xl">
         <OnlineClassesHero />
-        {ads.map((ad) => (
-          <div key={ad.id} className="my-6">
-            <a href={ad.link} target="_blank" rel="noopener noreferrer">
-              {ad.image && (
-                <img
-                  src={ad.image}
-                  alt={ad.title}
-                  className="w-full h-48 object-cover rounded"
-                />
-              )}
-            </a>
+        {adsError ? (
+          <div className="my-6">
+            <img
+              src="https://via.placeholder.com/728x90?text=Advertisement"
+              alt="Ad placeholder"
+              className="w-full h-48 object-cover rounded"
+            />
           </div>
-        ))}
+        ) : (
+          ads.map((ad) => (
+            <div key={ad.id} className="my-6">
+              <a href={ad.link} target="_blank" rel="noopener noreferrer">
+                {ad.image && (
+                  <img
+                    src={ad.image}
+                    alt={ad.title}
+                    className="w-full h-48 object-cover rounded"
+                  />
+                )}
+              </a>
+            </div>
+          ))
+        )}
 
         <section className="mt-10 space-y-10">
           <ClassFilters filters={filters} onChange={setFilters} />

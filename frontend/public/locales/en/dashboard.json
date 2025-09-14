@@ -138,6 +138,13 @@
   "user_info_unavailable": "User information unavailable",
   "step_of_total": "Step {{current}} of {{total}}",
   "preview_alt": "Preview",
+  "dashboardPage": {
+    "progress": "Progress",
+    "continue_learning": "Continue Learning",
+    "ai_recommendations_title": "🤖 AI-Based Recommendations",
+    "category": "Category",
+    "view_course": "View Course"
+  },
   "categoriesPage": {
     "title": "Categories",
     "new_category": "New Category",

@@ -138,6 +138,13 @@
   "user_info_unavailable": "用户信息不可用",
   "step_of_total": "第 {{current}} 步，共 {{total}} 步",
   "preview_alt": "预览",
+  "dashboardPage": {
+    "progress": "进度",
+    "continue_learning": "继续学习",
+    "ai_recommendations_title": "🤖 基于AI的推荐",
+    "category": "类别",
+    "view_course": "查看课程"
+  },
   "categoriesPage": {
     "title": "类别",
     "new_category": "新建类别",

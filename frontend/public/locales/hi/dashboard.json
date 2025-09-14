@@ -138,6 +138,13 @@
   "user_info_unavailable": "उपयोगकर्ता जानकारी अनुपलब्ध है",
   "step_of_total": "{{total}} का चरण {{current}}",
   "preview_alt": "पूर्व दर्शन",
+  "dashboardPage": {
+    "progress": "प्रगति",
+    "continue_learning": "सीखना जारी रखें",
+    "ai_recommendations_title": "🤖 एआई आधारित सिफारिशें",
+    "category": "श्रेणी",
+    "view_course": "कोर्स देखें"
+  },
   "categoriesPage": {
     "title": "श्रेणियां",
     "new_category": "नई श्रेणी",
