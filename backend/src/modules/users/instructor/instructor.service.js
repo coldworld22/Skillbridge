@@ -87,6 +87,7 @@ const updateInstructorProfile = async (
           (link) =>
             link &&
             typeof link.url === "string" &&
+            link.url.trim() !== "" &&
             typeof link.platform === "string" &&
             allowedPlatforms.includes(link.platform.trim().toLowerCase())
         )
@@ -95,6 +96,10 @@ const updateInstructorProfile = async (
           url: normalizeUrl(link.url),
         }))
     : [];
+
+  const nonEmptyLinks = sanitizedLinks.filter(
+    (link) => link.url && link.url.trim() !== ""
+  );
 
   const hasUserFields =
     userData.full_name &&
@@ -105,7 +110,7 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null;
   const isProfileComplete =
-    hasUserFields && hasInstructorFields && sanitizedLinks.length > 0;
+    hasUserFields && hasInstructorFields && nonEmptyLinks.length > 0;
 
   await db.transaction(async (trx) => {
     // ✅ Update users table
