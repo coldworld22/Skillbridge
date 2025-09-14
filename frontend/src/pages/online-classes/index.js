@@ -53,21 +53,22 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const applyFilters = (cls) => {
     if (filters.search) {
       const term = filters.search.toLowerCase();
-      if (
-        !cls.title.toLowerCase().includes(term) &&
-        !cls.instructor.toLowerCase().includes(term)
-      )
-        return false;
+      const title = (cls?.title || '').toLowerCase();
+      const instructor = (cls?.instructor || '').toLowerCase();
+      if (!title.includes(term) && !instructor.includes(term)) return false;
     }
-    if (filters.category && cls.category !== filters.category) return false;
-    if (filters.date && cls.start_date) {
-      const d = new Date(cls.start_date).toISOString().slice(0, 10);
+    if (filters.category && cls?.category !== filters.category) return false;
+    if (filters.date) {
+      const d = cls?.start_date
+        ? new Date(cls.start_date).toISOString().slice(0, 10)
+        : '';
       if (d !== filters.date) return false;
     }
     if (filters.priceRange) {
-      if (filters.priceRange === 'free' && cls.price !== 0) return false;
-      if (filters.priceRange === 'under50' && cls.price >= 50) return false;
-      if (filters.priceRange === 'over50' && cls.price < 50) return false;
+      const price = cls?.price ?? 0;
+      if (filters.priceRange === 'free' && price !== 0) return false;
+      if (filters.priceRange === 'under50' && price >= 50) return false;
+      if (filters.priceRange === 'over50' && price < 50) return false;
     }
     return true;
   };
