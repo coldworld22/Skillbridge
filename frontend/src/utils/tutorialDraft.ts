@@ -306,11 +306,13 @@ export function buildTutorialFormData(
     }));
     formData.append("chapters", JSON.stringify(chapters));
   }
+
   if (tutorialData.thumbnail instanceof File) {
     formData.append("thumbnail", tutorialData.thumbnail);
   }
   if (tutorialData.preview instanceof File) {
     formData.append("preview", tutorialData.preview);
   }
+
   return formData;
 }
