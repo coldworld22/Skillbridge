@@ -5,12 +5,20 @@ interface DraftDefaults {
   [key: string]: unknown;
 }
 
-export function loadDraft(key: string, defaults: DraftDefaults = {}) {
+interface TutorialDraftDefaults extends DraftDefaults {
+  thumbnail?: File | string | null;
+  preview?: File | string | null;
+}
+
+export function loadDraft(
+  key: string,
+  defaults: TutorialDraftDefaults = {}
+): TutorialDraftDefaults {
   if (typeof window === 'undefined') return { ...defaults };
   const saved = localStorage.getItem(key);
-  if (!saved) return { ...defaults } as DraftDefaults;
+  if (!saved) return { ...defaults };
   try {
-    const draft = JSON.parse(saved) as DraftDefaults;
+    const draft = JSON.parse(saved) as TutorialDraftDefaults;
     return {
       ...defaults,
       ...draft,
@@ -22,15 +30,15 @@ export function loadDraft(key: string, defaults: DraftDefaults = {}) {
         draft?.chapters?.length ??
         defaults.lessonCount ??
         1,
-    } as TutorialDraftDefaults;
+    };
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults } as TutorialDraftDefaults;
+    return { ...defaults };
   }
 }
 
-export function saveDraft(key, data) {
+export function saveDraft(key: string, data: TutorialDraftDefaults): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(key, JSON.stringify(data));
 }
