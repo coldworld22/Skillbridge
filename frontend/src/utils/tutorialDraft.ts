@@ -8,7 +8,7 @@ interface DraftDefaults {
 export function loadDraft(key: string, defaults: DraftDefaults = {}) {
   if (typeof window === 'undefined') return { ...defaults };
   const saved = localStorage.getItem(key);
-  if (!saved) return { ...defaults } as TutorialDraftDefaults;
+  if (!saved) return { ...defaults } as DraftDefaults;
   try {
     const draft = JSON.parse(saved) as DraftDefaults;
     return {
