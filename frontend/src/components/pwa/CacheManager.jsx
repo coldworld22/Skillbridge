@@ -6,23 +6,16 @@ import { toast } from "react-toastify";
 import { i18n } from "next-i18next";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
-const pwaWarmList: string[] = [];
+const pwaWarmList = [];
 const WARM_CACHE = `SKILLBRIDGE-WARM-${CACHE_VERSION}`;
-
-type Status = "idle" | "caching" | "success" | "error";
-
-interface CacheManagerProps {
-  warmList?: string[];
-  strategy?: "A" | "B"; // A: fetch URLs, B: postMessage to service worker
-}
 
 export default function CacheManager({
   warmList = pwaWarmList,
   strategy = "A",
-}: CacheManagerProps) {
-  const [status, setStatus] = useState<Status>("idle");
+} = {}) {
+  const [status, setStatus] = useState("idle");
   const [ready, setReady] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState(null);
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
@@ -111,4 +104,3 @@ export default function CacheManager({
     </div>
   );
 }
-

@@ -1,68 +1,73 @@
-export interface TutorialChapterDraft {
-  id?: number;
-  order?: number;
-  title: string;
-  duration: string | number;
-  video?: string | null;
-  videoUrl?: string;
-  preview: boolean;
-}
+/**
+ * @typedef {Object} TutorialChapterDraft
+ * @property {number=} id
+ * @property {number=} order
+ * @property {string} title
+ * @property {string|number} duration
+ * @property {string|null=} video
+ * @property {string=} videoUrl
+ * @property {boolean} preview
+ */
 
-interface DraftDefaults extends Record<string, unknown> {
-  id?: number;
-  title?: string;
-  shortDescription?: string;
-  short_description?: string;
-  description?: string;
-  category?: string | number;
-  categoryId?: string | number;
-  category_id?: string | number;
-  categoryName?: string;
-  category_name?: string;
-  level?: string;
-  language?: string;
-  lessonCount?: number;
-  chapters?: unknown[];
-  thumbnail?: File | string | null;
-  preview?: File | string | null;
-  status?: string;
-  isFree?: boolean;
-  is_free?: boolean;
-  price?: string | number;
-  currency?: string;
-  currencyCode?: string;
-  currency_code?: string;
-  tags?: unknown[];
-  instructorId?: number;
-  instructor_id?: number;
-}
+/**
+ * @typedef {Object} DraftDefaults
+ * @property {number=} id
+ * @property {string=} title
+ * @property {string=} shortDescription
+ * @property {string=} short_description
+ * @property {string=} description
+ * @property {string|number=} category
+ * @property {string|number=} categoryId
+ * @property {string|number=} category_id
+ * @property {string=} categoryName
+ * @property {string=} category_name
+ * @property {string=} level
+ * @property {string=} language
+ * @property {number=} lessonCount
+ * @property {unknown[]=} chapters
+ * @property {File|string|null=} thumbnail
+ * @property {File|string|null=} preview
+ * @property {string=} status
+ * @property {boolean=} isFree
+ * @property {boolean=} is_free
+ * @property {string|number=} price
+ * @property {string=} currency
+ * @property {string=} currencyCode
+ * @property {string=} currency_code
+ * @property {unknown[]=} tags
+ * @property {number=} instructorId
+ * @property {number=} instructor_id
+ */
 
-export interface TutorialDraft extends Record<string, unknown> {
-  id?: number;
-  title: string;
-  shortDescription: string;
-  description?: string;
-  category: string;
-  categoryName?: string;
-  level: string;
-  language: string;
-  lessonCount: number;
-  chapters: TutorialChapterDraft[];
-  thumbnail: File | string | null;
-  preview: File | string | null;
-  status?: string;
-  isFree: boolean;
-  price: string;
-  currency?: string;
-  tags: string[];
-  instructorId?: number;
-}
+/**
+ * @typedef {Object} TutorialDraft
+ * @property {number=} id
+ * @property {string} title
+ * @property {string} shortDescription
+ * @property {string=} description
+ * @property {string} category
+ * @property {string=} categoryName
+ * @property {string} level
+ * @property {string} language
+ * @property {number} lessonCount
+ * @property {TutorialChapterDraft[]} chapters
+ * @property {File|string|null} thumbnail
+ * @property {File|string|null} preview
+ * @property {string=} status
+ * @property {boolean} isFree
+ * @property {string} price
+ * @property {string=} currency
+ * @property {string[]} tags
+ * @property {number=} instructorId
+ */
 
-export function createTutorialDraft(
-  defaults: DraftDefaults = {},
-  draft?: DraftDefaults
-): TutorialDraft {
-  const combined: DraftDefaults = { ...defaults, ...draft };
+/**
+ * @param {DraftDefaults} [defaults]
+ * @param {DraftDefaults} [draft]
+ * @returns {TutorialDraft}
+ */
+export function createTutorialDraft(defaults = {}, draft) {
+  const combined = { ...defaults, ...draft };
 
   const thumbnail = resolveFileLike(draft?.thumbnail, defaults.thumbnail);
   const preview = resolveFileLike(draft?.preview, defaults.preview);
@@ -145,15 +150,17 @@ export function createTutorialDraft(
   };
 }
 
-export function loadDraft(
-  key: string,
-  defaults: DraftDefaults = {}
-): TutorialDraft {
+/**
+ * @param {string} key
+ * @param {DraftDefaults} [defaults]
+ * @returns {TutorialDraft}
+ */
+export function loadDraft(key, defaults = {}) {
   if (typeof window === "undefined") return createTutorialDraft(defaults);
   const saved = localStorage.getItem(key);
   if (!saved) return createTutorialDraft(defaults);
   try {
-    const draft = JSON.parse(saved) as DraftDefaults;
+    const draft = JSON.parse(saved);
     return createTutorialDraft(defaults, draft);
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
@@ -162,22 +169,35 @@ export function loadDraft(
   }
 }
 
-export function saveDraft(key: string, data: TutorialDraft): void {
+/**
+ * @param {string} key
+ * @param {TutorialDraft} data
+ * @returns {void}
+ */
+export function saveDraft(key, data) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-export async function loadCategories<T>(
-  fetchFn: () => Promise<{ data?: T } | T>
-): Promise<T | { data?: T } | T[]> {
+/**
+ * @template T
+ * @param {() => Promise<{ data?: T } | T>} fetchFn
+ * @returns {Promise<T | { data?: T } | T[]>}
+ */
+export async function loadCategories(fetchFn) {
   const result = await fetchFn();
-  return (result as { data?: T })?.data || (result as T) || [];
+  if (result && typeof result === "object" && "data" in result) {
+    return result.data ?? [];
+  }
+  return result ?? [];
 }
 
-export function buildTutorialFormData(
-  tutorialData: TutorialDraft,
-  status?: string
-): FormData {
+/**
+ * @param {TutorialDraft} tutorialData
+ * @param {string} [status]
+ * @returns {FormData}
+ */
+export function buildTutorialFormData(tutorialData, status) {
   const formData = new FormData();
   formData.append("title", toStringValue(tutorialData.title, ""));
   formData.append(
@@ -214,20 +234,17 @@ export function buildTutorialFormData(
     formData.append("chapters", JSON.stringify(chapters));
   }
 
-  if (tutorialData.thumbnail instanceof File) {
+  if (isFileInstance(tutorialData.thumbnail)) {
     formData.append("thumbnail", tutorialData.thumbnail);
   }
-  if (tutorialData.preview instanceof File) {
+  if (isFileInstance(tutorialData.preview)) {
     formData.append("preview", tutorialData.preview);
   }
 
   return formData;
 }
 
-function resolveFileLike(
-  primary?: File | string | null,
-  fallback?: File | string | null
-): File | string | null {
+function resolveFileLike(primary, fallback) {
   const candidates = [primary, fallback];
   for (const candidate of candidates) {
     if (isFileInstance(candidate) || typeof candidate === "string") {
@@ -240,11 +257,11 @@ function resolveFileLike(
   return null;
 }
 
-function isFileInstance(value: unknown): value is File {
+function isFileInstance(value) {
   return typeof File !== "undefined" && value instanceof File;
 }
 
-function pickString(...values: unknown[]): string | undefined {
+function pickString(...values) {
   for (const value of values) {
     if (typeof value === "string") {
       return value;
@@ -253,7 +270,7 @@ function pickString(...values: unknown[]): string | undefined {
   return undefined;
 }
 
-function pickNumber(...values: unknown[]): number | undefined {
+function pickNumber(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
       return value;
@@ -262,7 +279,7 @@ function pickNumber(...values: unknown[]): number | undefined {
   return undefined;
 }
 
-function pickBoolean(...values: unknown[]): boolean | undefined {
+function pickBoolean(...values) {
   for (const value of values) {
     if (typeof value === "boolean") {
       return value;
@@ -276,7 +293,7 @@ function pickBoolean(...values: unknown[]): boolean | undefined {
   return undefined;
 }
 
-function pickPrice(...values: unknown[]): string {
+function pickPrice(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
       return value.toString();
@@ -288,29 +305,25 @@ function pickPrice(...values: unknown[]): string {
   return "";
 }
 
-function pickTags(
-  ...values: (unknown[] | undefined)[]
-): string[] | undefined {
+function pickTags(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
       return value
         .map((tag) => {
           if (typeof tag === "string") return tag;
           if (tag && typeof tag === "object" && "name" in tag) {
-            const name = (tag as Record<string, unknown>).name;
+            const name = tag.name;
             return typeof name === "string" ? name : undefined;
           }
           return undefined;
         })
-        .filter((tag): tag is string => typeof tag === "string");
+        .filter((tag) => typeof tag === "string");
     }
   }
   return undefined;
 }
 
-function pickChapters(
-  ...values: (unknown[] | undefined)[]
-): TutorialChapterDraft[] | undefined {
+function pickChapters(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
       return value.map((chapter, index) => normalizeChapter(chapter, index));
@@ -319,10 +332,7 @@ function pickChapters(
   return undefined;
 }
 
-function normalizeChapter(
-  input: unknown,
-  index: number
-): TutorialChapterDraft {
+function normalizeChapter(input, index) {
   if (!input || typeof input !== "object") {
     return {
       order: index + 1,
@@ -333,8 +343,7 @@ function normalizeChapter(
       preview: false,
     };
   }
-
-  const data = input as Record<string, unknown>;
+  const data = /** @type {{ [key: string]: any }} */ (input);
   const durationValue = data.duration;
   const videoValue = data.video;
 
@@ -374,17 +383,14 @@ function normalizeChapter(
   };
 }
 
-function pickCategory(
-  draft?: DraftDefaults,
-  defaults?: DraftDefaults
-): string {
+function pickCategory(draft = {}, defaults = {}) {
   const values = [
-    draft?.category,
-    draft?.categoryId,
-    draft?.category_id,
-    defaults?.category,
-    defaults?.categoryId,
-    defaults?.category_id,
+    draft.category,
+    draft.categoryId,
+    draft.category_id,
+    defaults.category,
+    defaults.categoryId,
+    defaults.category_id,
   ];
 
   for (const value of values) {
@@ -399,7 +405,7 @@ function pickCategory(
   return "";
 }
 
-function normalizePrice(value: unknown, fallback: string): string {
+function normalizePrice(value, fallback) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value.toString() : fallback;
   }
@@ -412,7 +418,7 @@ function normalizePrice(value: unknown, fallback: string): string {
   return fallback;
 }
 
-function toStringValue(value: unknown, fallback: string): string {
+function toStringValue(value, fallback) {
   if (value === null || value === undefined) {
     return fallback;
   }
