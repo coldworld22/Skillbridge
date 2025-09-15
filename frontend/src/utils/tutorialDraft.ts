@@ -16,17 +16,17 @@ export function loadDraft(key: string, defaults: DraftDefaults = {}) {
       ...draft,
       thumbnail: null,
       preview: null,
-      language: draft.language || defaults.language || '',
+      language: draft?.language ?? defaults.language ?? '',
       lessonCount:
-        draft.lessonCount ||
-        draft.chapters?.length ||
-        defaults.lessonCount ||
+        draft?.lessonCount ??
+        draft?.chapters?.length ??
+        defaults.lessonCount ??
         1,
-    };
+    } as TutorialDraftDefaults;
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults };
+    return { ...defaults } as TutorialDraftDefaults;
   }
 }
 
