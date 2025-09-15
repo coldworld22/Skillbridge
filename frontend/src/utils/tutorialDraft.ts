@@ -63,11 +63,11 @@ export function loadDraft(
         draft?.chapters?.length ??
         defaults.lessonCount ??
         1,
-    } as TutorialDraftDefaults;
+    } as DraftDefaults;
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults } as TutorialDraftDefaults;
+    return { ...defaults } as DraftDefaults;
   }
 }
 
@@ -133,7 +133,6 @@ export function buildTutorialFormData(
   }
 
   formData.append('is_paid', (!tutorialData.isFree).toString());
-
   if (!tutorialData.isFree) {
     if (tutorialData.price !== undefined && tutorialData.price !== null) {
       formData.append('price', String(tutorialData.price));
