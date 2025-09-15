@@ -1,15 +1,44 @@
 import nextI18NextConfig from './next-i18next.config.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import dotenvExpand from 'dotenv-expand';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenvExpand.expand(
+  dotenv.config({
+    path: path.join(
+      __dirname,
+      `.env${process.env.NODE_ENV ? `.${process.env.NODE_ENV}` : ''}`,
+    ),
+  }),
+);
 
 /** @type {import('next').NextConfig} */
 const defaultApiBase = 'http://localhost:5002/api';
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
 let apiBase = apiBaseEnv || defaultApiBase;
-const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
+const defaultPgAdminBase = 'http://localhost:5050';
+const pgAdminEnv = process.env.NEXT_PUBLIC_PGADMIN_URL;
+let pgAdminBase = pgAdminEnv || defaultPgAdminBase;
+
+try {
+  if (!/^https?:\/\//i.test(pgAdminBase)) {
+    throw new Error(
+      `NEXT_PUBLIC_PGADMIN_URL must be an absolute URL. Received: ${pgAdminBase}`,
+    );
+  }
+
+  // Ensure URL is well-formed
+  new URL(pgAdminBase);
+} catch (error) {
+  console.warn(
+    `Invalid NEXT_PUBLIC_PGADMIN_URL ("${pgAdminBase}"): ${error.message}. Falling back to ${defaultPgAdminBase}.`,
+  );
+  pgAdminBase = defaultPgAdminBase;
+}
 
 let protocol, hostname, port;
 try {
