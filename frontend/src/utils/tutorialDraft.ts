@@ -1,7 +1,20 @@
-export function loadDraft(key, defaults = {}) {
-  if (typeof window === 'undefined') return { ...defaults };
+export interface TutorialDraftDefaults {
+  language?: string;
+  lessonCount?: number;
+  thumbnail?: File | null;
+  preview?: File | null;
+  chapters?: any[];
+  [key: string]: any;
+}
+
+export function loadDraft(
+  key: string,
+  defaults: TutorialDraftDefaults = {}
+): TutorialDraftDefaults {
+  if (typeof window === 'undefined')
+    return { ...defaults } as TutorialDraftDefaults;
   const saved = localStorage.getItem(key);
-  if (!saved) return { ...defaults };
+  if (!saved) return { ...defaults } as TutorialDraftDefaults;
   try {
     const draft = JSON.parse(saved);
     return {
@@ -9,17 +22,17 @@ export function loadDraft(key, defaults = {}) {
       ...draft,
       thumbnail: null,
       preview: null,
-      language: draft.language || defaults.language || '',
+      language: draft?.language ?? defaults.language ?? '',
       lessonCount:
-        draft.lessonCount ||
-        draft.chapters?.length ||
-        defaults.lessonCount ||
+        draft?.lessonCount ??
+        draft?.chapters?.length ??
+        defaults.lessonCount ??
         1,
-    };
+    } as TutorialDraftDefaults;
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults };
+    return { ...defaults } as TutorialDraftDefaults;
   }
 }
 
