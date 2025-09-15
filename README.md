@@ -71,6 +71,10 @@ npm --prefix frontend install
         - `BOOK_PRICE_RANGE_DEFAULT`, `BOOK_PRICE_RANGE_MAX` – default price filter bounds for books
         - OAuth provider keys (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`) to enable social logins
 
+    Nginx uses `ALLOWED_ORIGINS` to emit CORS headers. Provide a
+    comma-separated list of origins, e.g. `http://localhost:3000,https://example.com`.
+    The default `http://localhost:3000` supports local development.
+
     A Redis instance (or compatible session store) is required in production
     to persist user sessions. Set `REDIS_URL` to your store's connection
     string.

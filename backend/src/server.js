@@ -1,5 +1,4 @@
-require("dotenv").config();
-
+const config = require("./config/env");
 const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -23,7 +22,6 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
-const config = require("./config/env");
 // Expose a global cache-clearing utility so other modules (like routes) can
 // programmatically flush any server-side caches. This clears Redis, the socket
 // store, and the in-memory cache.
@@ -79,16 +77,8 @@ app.use(
 );
 
 // 🌐 Fix CORS (must be very early)
-const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || "http://localhost:3000")
-  .split(",")
-  .map((url) => {
-    try {
-      return new URL(url.trim()).origin;
-    } catch {
-      throw new Error(`Invalid FRONTEND_URL: ${url}`);
-    }
-  });
-const APP_DOMAIN = process.env.APP_DOMAIN;
+const FRONTEND_ORIGINS = config.FRONTEND_ORIGINS;
+const APP_DOMAIN = config.APP_DOMAIN;
 const defaultOrigins = APP_DOMAIN
   ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
   : [];
