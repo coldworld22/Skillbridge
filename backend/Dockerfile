@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache curl netcat-openbsd
 COPY package*.json ./
@@ -8,7 +8,7 @@ COPY ./ ./
 COPY shared /shared
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 RUN apk add --no-cache curl netcat-openbsd && \
     (id -u node 2>/dev/null || adduser -S node)
