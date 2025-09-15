@@ -1,5 +1,4 @@
-// EditTutorialPage.js
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
@@ -7,8 +6,7 @@ import BasicInfoStep from '@/components/tutorials/create/BasicInfoStep';
 import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
-import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
-import { updateTutorial } from "@/services/instructor/tutorialService";
+import { fetchInstructorTutorialById, updateTutorial } from "@/services/instructor/tutorialService";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -19,45 +17,74 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
+  buildTutorialFormData,
+  loadCategories,
   loadDraft,
   saveDraft,
-  loadCategories,
-  buildTutorialFormData,
+  tutorialDraftDefaults,
+  type TutorialDraft,
 } from "@/utils/tutorialDraft";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const extractErrorMessage = (error: unknown): string | undefined => {
+  if (!isRecord(error) || !("response" in error)) {
+    return undefined;
+  }
+
+  const response = error.response;
+  if (!isRecord(response) || !("data" in response)) {
+    return undefined;
+  }
+
+  const data = response.data;
+  if (!isRecord(data) || typeof data.message !== "string") {
+    return undefined;
+  }
+
+  return data.message;
+};
 
 export default function EditTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
+  const tutorialId = Array.isArray(id) ? id[0] : id;
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(null);
+  const [tutorialData, setTutorialData] = useState<TutorialDraft | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<unknown[]>([]);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    if (!id) return;
-    const draft = loadDraft(`editTutorialDraft-${id}`);
-    if (draft) {
-      setTutorialData(draft);
-      loadCategories(fetchAllCategories)
-        .then((cats) => setCategories(cats?.data || cats || []))
-        .catch((err) => {
-          console.error(err);
-          setError(t("tutorials:detail.load_error"));
-        })
-        .finally(() => setLoading(false));
-      return;
+    if (!tutorialId) return;
+
+    const storageKey = `editTutorialDraft-${tutorialId}`;
+    if (typeof window !== "undefined") {
+      const savedDraft = localStorage.getItem(storageKey);
+      if (savedDraft) {
+        const draft = loadDraft(storageKey, tutorialDraftDefaults);
+        setTutorialData(draft);
+        loadCategories(fetchAllCategories)
+          .then((cats) => setCategories(cats))
+          .catch((err) => {
+            console.error(err);
+            setError(t("tutorials:detail.load_error"));
+          })
+          .finally(() => setLoading(false));
+        return;
+      }
     }
 
     const load = async () => {
       try {
         const [tutorial, cats] = await Promise.all([
-          fetchInstructorTutorialById(id),
+          fetchInstructorTutorialById(tutorialId),
           loadCategories(fetchAllCategories),
         ]);
         const formatted = tutorial?.data || tutorial || null;
@@ -73,19 +100,20 @@ export default function EditTutorialPage() {
         setCategories(cats);
       } catch (err) {
         console.error(err);
-        setError(t("tutorials:detail.load_error"));
+        setError(extractErrorMessage(err) ?? t("tutorials:detail.load_error"));
       } finally {
         setLoading(false);
       }
     };
+
     load();
-  }, [id]);
+  }, [tutorialId, t]);
 
   useEffect(() => {
-    if (tutorialData && id) {
-      saveDraft(`editTutorialDraft-${id}`, tutorialData);
+    if (tutorialData && tutorialId) {
+      saveDraft(`editTutorialDraft-${tutorialId}`, tutorialData);
     }
-  }, [tutorialData, id]);
+  }, [tutorialData, tutorialId]);
 
   const onNext = () => setStep((prev) => prev + 1);
   const onBack = () => setStep((prev) => prev - 1);
@@ -127,10 +155,11 @@ export default function EditTutorialPage() {
             onBack={onBack}
             actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
+              if (!tutorialId) return;
               const formData = buildTutorialFormData(tutorialData);
 
               try {
-                await updateTutorial(id, formData);
+                await updateTutorial(tutorialId, formData);
                 toast.success(t("dashboard:tutorialEditPage.update_success"));
 
                 try {
@@ -144,12 +173,12 @@ export default function EditTutorialPage() {
                   });
                 } catch (err) {
                   console.error(err);
-                  toast.error('Failed to send notification or message');
+                  toast.error("Failed to send notification or message");
                 }
 
                 refreshNotifications?.();
                 refreshMessages?.();
-                localStorage.removeItem(`editTutorialDraft-${id}`);
+                localStorage.removeItem(`editTutorialDraft-${tutorialId}`);
                 router.push("/dashboard/instructor/tutorials");
               } catch (err) {
                 console.error(err);
@@ -170,5 +199,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-

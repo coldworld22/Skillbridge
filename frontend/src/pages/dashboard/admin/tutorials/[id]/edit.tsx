@@ -1,5 +1,4 @@
-// EditTutorialPage.js
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -11,10 +10,7 @@ import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
 import ReviewStep from "@/components/tutorials/create/ReviewStep";
-import {
-  fetchTutorialById,
-  updateTutorial,
-} from "@/services/admin/tutorialService";
+import { fetchTutorialById, updateTutorial } from "@/services/admin/tutorialService";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchChaptersByTutorial } from "@/services/admin/tutorialChapterService";
 import { createNotification } from "@/services/notificationService";
@@ -23,49 +19,77 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import {
+  buildTutorialFormData,
+  loadCategories,
   loadDraft,
   saveDraft,
-  loadCategories,
-  buildTutorialFormData,
+  tutorialDraftDefaults,
+  type TutorialDraft,
 } from "@/utils/tutorialDraft";
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const extractErrorMessage = (error: unknown): string | undefined => {
+  if (!isRecord(error) || !("response" in error)) {
+    return undefined;
+  }
+
+  const response = error.response;
+  if (!isRecord(response) || !("data" in response)) {
+    return undefined;
+  }
+
+  const data = response.data;
+  if (!isRecord(data) || typeof data.message !== "string") {
+    return undefined;
+  }
+
+  return data.message;
+};
+
 function EditTutorialPage() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
+  const { t } = useTranslation("dashboard", { keyPrefix: "tutorialEditPage" });
   const router = useRouter();
   const { id } = router.query;
+  const tutorialId = Array.isArray(id) ? id[0] : id;
 
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [error, setError] = useState(null);
+  const [tutorialData, setTutorialData] = useState<TutorialDraft | null>(null);
+  const [categories, setCategories] = useState<unknown[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    if (!id) return;
+    if (!tutorialId) return;
 
-    const draft = loadDraft(`editTutorialDraft-${id}`);
-    if (draft) {
-      setTutorialData(draft);
-      loadCategories(fetchAllCategories)
-        .then((cats) => setCategories(cats))
-        .catch((err) => {
-          console.error(err);
-          setError("Failed to load tutorial.");
-        });
-      return;
+    const storageKey = `editTutorialDraft-${tutorialId}`;
+    if (typeof window !== "undefined") {
+      const savedDraft = localStorage.getItem(storageKey);
+      if (savedDraft) {
+        const draft = loadDraft(storageKey, tutorialDraftDefaults);
+        setTutorialData(draft);
+        loadCategories(fetchAllCategories)
+          .then((cats) => setCategories(cats))
+          .catch((err) => {
+            console.error(err);
+            setError("Failed to load tutorial.");
+          });
+        return;
+      }
     }
 
     const load = async () => {
       try {
         setError(null);
         const [tutorial, chapters, cats] = await Promise.all([
-          fetchTutorialById(id),
-          fetchChaptersByTutorial(id),
+          fetchTutorialById(tutorialId),
+          fetchChaptersByTutorial(tutorialId),
           loadCategories(fetchAllCategories),
         ]);
-        const mappedChapters = chapters.map((ch) => ({
+        const mappedChapters = chapters.map((ch: any) => ({
           title: ch.title,
           duration: ch.duration,
           video: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ch.video_url}`,
@@ -87,34 +111,35 @@ function EditTutorialPage() {
           thumbnail: tutorial.thumbnail,
           preview: tutorial.preview,
           price: tutorial.price || "",
+          currency: tutorial.currency || "",
           isFree: tutorial.isFree,
         });
         setCategories(cats);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial.");
+        setError(extractErrorMessage(err) ?? "Failed to load tutorial.");
       }
     };
 
     load();
-  }, [id]);
+  }, [tutorialId]);
 
   useEffect(() => {
-    if (tutorialData && id) {
-      saveDraft(`editTutorialDraft-${id}`, tutorialData);
+    if (tutorialData && tutorialId) {
+      saveDraft(`editTutorialDraft-${tutorialId}`, tutorialData);
     }
-  }, [tutorialData, id]);
+  }, [tutorialData, tutorialId]);
 
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (error)
-    return (
-      <div className="p-6 max-w-4xl mx-auto text-red-600">{error}</div>
-    );
+  if (error) {
+    return <div className="p-6 max-w-4xl mx-auto text-red-600">{error}</div>;
+  }
 
-  if (!tutorialData)
+  if (!tutorialData) {
     return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
+  }
 
   return (
     <AdminLayout>
@@ -144,16 +169,17 @@ function EditTutorialPage() {
           />
         )}
         {step === 4 && (
-            <ReviewStep
-              tutorialData={tutorialData}
-              onPrev={onPrev}
-              actionLabel="Save Changes"
-              onPublish={async () => {
-                const formData = buildTutorialFormData(tutorialData);
+          <ReviewStep
+            tutorialData={tutorialData}
+            onPrev={onPrev}
+            actionLabel="Save Changes"
+            onPublish={async () => {
+              if (!tutorialId) return;
+              const formData = buildTutorialFormData(tutorialData);
 
-                try {
-                  await updateTutorial(id, formData);
-                  toast.success(t('update_success'));
+              try {
+                await updateTutorial(tutorialId, formData);
+                toast.success(t("update_success"));
 
                 try {
                   await createNotification({
@@ -176,15 +202,15 @@ function EditTutorialPage() {
                   });
                 } catch (err) {
                   console.error(err);
-                  toast.error('Failed to send notification or message');
+                  toast.error("Failed to send notification or message");
                 }
                 refreshNotifications?.();
                 refreshMessages?.();
-                localStorage.removeItem(`editTutorialDraft-${id}`);
+                localStorage.removeItem(`editTutorialDraft-${tutorialId}`);
                 router.push("/dashboard/admin/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error(t('update_failed'));
+                toast.error(t("update_failed"));
               }
             }}
           />
@@ -201,7 +227,7 @@ export default withAuthProtection(EditTutorialPage, {
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
     },
   };
 }

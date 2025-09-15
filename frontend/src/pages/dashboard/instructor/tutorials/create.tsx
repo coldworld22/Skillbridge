@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
@@ -11,36 +12,47 @@ import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import useTutorialCreation from "@/hooks/useTutorialCreation";
+import {
+  buildTutorialFormData,
+  loadCategories,
+  loadDraft,
+  tutorialDraftDefaults,
+  type TutorialDraft,
+} from "@/utils/tutorialDraft";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const extractErrorMessage = (error: unknown): string | undefined => {
+  if (!isRecord(error) || !("response" in error)) {
+    return undefined;
+  }
+
+  const response = error.response;
+  if (!isRecord(response) || !("data" in response)) {
+    return undefined;
+  }
+
+  const data = response.data;
+  if (!isRecord(data) || typeof data.message !== "string") {
+    return undefined;
+  }
+
+  return data.message;
+};
 
 export default function CreateTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "tutorials"]);
-  const defaultTutorial = {
-    title: "",
-    shortDescription: "",
-    category: "",
-    categoryName: "",
-    level: "",
-    language: "",
-    lessonCount: 1,
-    tags: [],
-    chapters: [],
-    thumbnail: null,
-    preview: null,
-    price: "",
-    currency: "",
-    isFree: false,
-  };
-  const [tutorialData, setTutorialData] = useState(() =>
-    loadDraft("tutorialDraft", defaultTutorial)
+  const [step, setStep] = useState(1);
+  const [tutorialData, setTutorialData] = useState<TutorialDraft>(() =>
+    loadDraft("tutorialDraft", tutorialDraftDefaults)
   );
-
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<unknown[]>([]);
 
   useEffect(() => {
     loadCategories(fetchAllCategories)
-      .then((res) => setCategories(res?.data || res || []))
+      .then((res) => setCategories(res))
       .catch((err) => {
         console.error(
           t('tutorialCreatePage.load_categories_failed', { ns: 'dashboard' }),
@@ -52,7 +64,7 @@ export default function CreateTutorialPage() {
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
 
-  const submitTutorial = async (status) => {
+  const submitTutorial = async (status: "draft" | "published") => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
       toast.error(t("dashboard:tutorialCreatePage.upload_video_each_lesson"));
       return;
@@ -69,7 +81,10 @@ export default function CreateTutorialPage() {
       router.push("/dashboard/instructor/tutorials");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || t("dashboard:tutorialCreatePage.failed_create"));
+      const message =
+        extractErrorMessage(err) ??
+        t("dashboard:tutorialCreatePage.failed_create");
+      toast.error(message);
     }
   };
 
