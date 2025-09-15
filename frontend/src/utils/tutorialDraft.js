@@ -3,8 +3,8 @@
  * @property {number} [id]
  * @property {number} [order]
  * @property {string} title
- * @property {string | number} duration
- * @property {string | null | undefined} [video]
+ * @property {string|number} duration
+ * @property {string|null} [video]
  * @property {string} [videoUrl]
  * @property {boolean} preview
  */
@@ -16,25 +16,25 @@
  * @property {string} [shortDescription]
  * @property {string} [short_description]
  * @property {string} [description]
- * @property {string | number} [category]
- * @property {string | number} [categoryId]
- * @property {string | number} [category_id]
+ * @property {string|number} [category]
+ * @property {string|number} [categoryId]
+ * @property {string|number} [category_id]
  * @property {string} [categoryName]
  * @property {string} [category_name]
  * @property {string} [level]
  * @property {string} [language]
  * @property {number} [lessonCount]
- * @property {Array<any>} [chapters]
- * @property {(File | string | null | undefined)} [thumbnail]
- * @property {(File | string | null | undefined)} [preview]
+ * @property {Array<*>} [chapters]
+ * @property {File|string|null} [thumbnail]
+ * @property {File|string|null} [preview]
  * @property {string} [status]
  * @property {boolean} [isFree]
  * @property {boolean} [is_free]
- * @property {string | number} [price]
+ * @property {string|number} [price]
  * @property {string} [currency]
  * @property {string} [currencyCode]
  * @property {string} [currency_code]
- * @property {Array<any>} [tags]
+ * @property {Array<*>} [tags]
  * @property {number} [instructorId]
  * @property {number} [instructor_id]
  */
@@ -50,14 +50,14 @@
  * @property {string} level
  * @property {string} language
  * @property {number} lessonCount
- * @property {Array<TutorialChapterDraft>} chapters
- * @property {File | string | null} thumbnail
- * @property {File | string | null} preview
+ * @property {TutorialChapterDraft[]} chapters
+ * @property {File|string|null} thumbnail
+ * @property {File|string|null} preview
  * @property {string} [status]
  * @property {boolean} isFree
  * @property {string} price
  * @property {string} [currency]
- * @property {Array<string>} tags
+ * @property {string[]} tags
  * @property {number} [instructorId]
  */
 
@@ -235,10 +235,10 @@ export function buildTutorialFormData(tutorialData, status) {
     formData.append("chapters", JSON.stringify(chapters));
   }
 
-  if (tutorialData.thumbnail instanceof File) {
+  if (typeof File !== "undefined" && tutorialData.thumbnail instanceof File) {
     formData.append("thumbnail", tutorialData.thumbnail);
   }
-  if (tutorialData.preview instanceof File) {
+  if (typeof File !== "undefined" && tutorialData.preview instanceof File) {
     formData.append("preview", tutorialData.preview);
   }
 
@@ -246,9 +246,9 @@ export function buildTutorialFormData(tutorialData, status) {
 }
 
 /**
- * @param {(File | string | null | undefined)} [primary]
- * @param {(File | string | null | undefined)} [fallback]
- * @returns {File | string | null}
+ * @param {File|string|null|undefined} primary
+ * @param {File|string|null|undefined} fallback
+ * @returns {File|string|null}
  */
 function resolveFileLike(primary, fallback) {
   const candidates = [primary, fallback];
@@ -264,7 +264,7 @@ function resolveFileLike(primary, fallback) {
 }
 
 /**
- * @param {any} value
+ * @param {*} value
  * @returns {boolean}
  */
 function isFileInstance(value) {
@@ -272,8 +272,8 @@ function isFileInstance(value) {
 }
 
 /**
- * @param {...any} values
- * @returns {string | undefined}
+ * @param {...*} values
+ * @returns {string|undefined}
  */
 function pickString(...values) {
   for (const value of values) {
@@ -285,8 +285,8 @@ function pickString(...values) {
 }
 
 /**
- * @param {...any} values
- * @returns {number | undefined}
+ * @param {...*} values
+ * @returns {number|undefined}
  */
 function pickNumber(...values) {
   for (const value of values) {
@@ -298,8 +298,8 @@ function pickNumber(...values) {
 }
 
 /**
- * @param {...any} values
- * @returns {boolean | undefined}
+ * @param {...*} values
+ * @returns {boolean|undefined}
  */
 function pickBoolean(...values) {
   for (const value of values) {
@@ -316,7 +316,7 @@ function pickBoolean(...values) {
 }
 
 /**
- * @param {...any} values
+ * @param {...*} values
  * @returns {string}
  */
 function pickPrice(...values) {
@@ -332,8 +332,8 @@ function pickPrice(...values) {
 }
 
 /**
- * @param {...(Array<any> | undefined)} values
- * @returns {Array<string> | undefined}
+ * @param {...(Array<*>|undefined)} values
+ * @returns {string[]|undefined}
  */
 function pickTags(...values) {
   for (const value of values) {
@@ -354,8 +354,8 @@ function pickTags(...values) {
 }
 
 /**
- * @param {...(Array<any> | undefined)} values
- * @returns {Array<TutorialChapterDraft> | undefined}
+ * @param {...(Array<*>|undefined)} values
+ * @returns {TutorialChapterDraft[]|undefined}
  */
 function pickChapters(...values) {
   for (const value of values) {
@@ -367,7 +367,7 @@ function pickChapters(...values) {
 }
 
 /**
- * @param {any} input
+ * @param {*} input
  * @param {number} index
  * @returns {TutorialChapterDraft}
  */
@@ -451,7 +451,7 @@ function pickCategory(draft, defaults) {
 }
 
 /**
- * @param {any} value
+ * @param {*} value
  * @param {string} fallback
  * @returns {string}
  */
@@ -469,7 +469,7 @@ function normalizePrice(value, fallback) {
 }
 
 /**
- * @param {any} value
+ * @param {*} value
  * @param {string} fallback
  * @returns {string}
  */
