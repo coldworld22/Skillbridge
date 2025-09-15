@@ -5,28 +5,65 @@ interface DraftDefaults {
   [key: string]: unknown;
 }
 
-export function loadDraft(key: string, defaults: DraftDefaults = {}) {
-  if (typeof window === 'undefined') return { ...defaults };
+export interface TutorialDraftDefaults extends DraftDefaults {
+  thumbnail: File | string | null;
+  preview: File | string | null;
+  language: string;
+  lessonCount: number;
+}
+
+function createTutorialDraft(
+  defaults: DraftDefaults = {},
+  draft?: DraftDefaults
+): TutorialDraftDefaults {
+  const defaultThumbnail =
+    (defaults.thumbnail as File | string | null | undefined) ?? null;
+  const defaultPreview =
+    (defaults.preview as File | string | null | undefined) ?? null;
+  const defaultLanguage =
+    typeof defaults.language === 'string' ? defaults.language : '';
+  const defaultLessonCount =
+    typeof defaults.lessonCount === 'number' ? defaults.lessonCount : 1;
+
+  const draftThumbnail =
+    (draft?.thumbnail as File | string | null | undefined) ?? defaultThumbnail;
+  const draftPreview =
+    (draft?.preview as File | string | null | undefined) ?? defaultPreview;
+  const draftLanguage =
+    typeof draft?.language === 'string' ? draft.language : undefined;
+  const draftChaptersLength =
+    draft && Array.isArray(draft.chapters)
+      ? (draft.chapters as unknown[]).length
+      : undefined;
+  const draftLessonCount =
+    typeof draft?.lessonCount === 'number'
+      ? draft.lessonCount
+      : draftChaptersLength;
+
+  return {
+    ...defaults,
+    ...draft,
+    thumbnail: draftThumbnail,
+    preview: draftPreview,
+    language: draftLanguage ?? defaultLanguage,
+    lessonCount: draftLessonCount ?? defaultLessonCount,
+  };
+}
+
+export function loadDraft(
+  key: string,
+  defaults: DraftDefaults = {}
+): TutorialDraftDefaults {
+  if (typeof window === 'undefined') return createTutorialDraft(defaults);
   const saved = localStorage.getItem(key);
-  if (!saved) return { ...defaults } as DraftDefaults;
+  if (!saved) return createTutorialDraft(defaults);
   try {
     const draft = JSON.parse(saved) as DraftDefaults;
-    return {
-      ...defaults,
-      ...draft,
-      thumbnail: null,
-      preview: null,
-      language: draft?.language ?? defaults.language ?? '',
-      lessonCount:
-        draft?.lessonCount ??
-        draft?.chapters?.length ??
-        defaults.lessonCount ??
-        1,
-    } as TutorialDraftDefaults;
+    return createTutorialDraft(defaults, draft);
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults } as TutorialDraftDefaults;
+    return createTutorialDraft(defaults);
   }
 }
 
