@@ -1,22 +1,16 @@
-export interface TutorialDraftDefaults {
+interface DraftDefaults {
   language?: string;
   lessonCount?: number;
-  thumbnail?: File | null;
-  preview?: File | null;
-  chapters?: any[];
-  [key: string]: any;
+  chapters?: unknown[];
+  [key: string]: unknown;
 }
 
-export function loadDraft(
-  key: string,
-  defaults: TutorialDraftDefaults = {}
-): TutorialDraftDefaults {
-  if (typeof window === 'undefined')
-    return { ...defaults } as TutorialDraftDefaults;
+export function loadDraft(key: string, defaults: DraftDefaults = {}) {
+  if (typeof window === 'undefined') return { ...defaults };
   const saved = localStorage.getItem(key);
   if (!saved) return { ...defaults } as TutorialDraftDefaults;
   try {
-    const draft = JSON.parse(saved);
+    const draft = JSON.parse(saved) as DraftDefaults;
     return {
       ...defaults,
       ...draft,
