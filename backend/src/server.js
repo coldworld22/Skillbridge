@@ -21,8 +21,7 @@ const path = require("path");
 const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
-const routes = require("./routes");
-// Expose a global cache-clearing utility so other modules (like routes) can
+// Expose a cache-clearing utility so other modules (like routes) can
 // programmatically flush any server-side caches. This clears Redis, the socket
 // store, and the in-memory cache.
 async function clearServerCache() {
@@ -33,7 +32,8 @@ async function clearServerCache() {
   await cache.clear();
 };
 
-global.clearServerCache = clearServerCache;
+exports.clearServerCache = clearServerCache;
+const routes = require("./routes");
 // Ensure required environment secrets are present
 const requiredSecrets = [
   "JWT_SECRET",
