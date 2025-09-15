@@ -9,6 +9,15 @@ import { i18n } from "next-i18next";
 const pwaWarmList = [];
 const WARM_CACHE = `SKILLBRIDGE-WARM-${CACHE_VERSION}`;
 
+/**
+ * @typedef {"idle" | "caching" | "success" | "error"} Status
+ */
+
+/**
+ * @param {Object} [props]
+ * @param {string[]} [props.warmList]
+ * @param {"A"|"B"} [props.strategy]
+ */
 export default function CacheManager({
   warmList = pwaWarmList,
   strategy = "A",

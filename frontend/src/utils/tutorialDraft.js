@@ -1,131 +1,77 @@
 /**
- * @typedef {Object} TutorialChapterDraft
- * @property {number=} id
- * @property {number=} order
- * @property {string} title
- * @property {string|number} duration
- * @property {string|null=} video
- * @property {string=} videoUrl
- * @property {boolean} preview
+ * Utility helpers for creating and managing tutorial drafts.
  */
 
 /**
- * @typedef {Object} DraftDefaults
- * @property {number=} id
- * @property {string=} title
- * @property {string=} shortDescription
- * @property {string=} short_description
- * @property {string=} description
- * @property {string|number=} category
- * @property {string|number=} categoryId
- * @property {string|number=} category_id
- * @property {string=} categoryName
- * @property {string=} category_name
- * @property {string=} level
- * @property {string=} language
- * @property {number=} lessonCount
- * @property {unknown[]=} chapters
- * @property {File|string|null=} thumbnail
- * @property {File|string|null=} preview
- * @property {string=} status
- * @property {boolean=} isFree
- * @property {boolean=} is_free
- * @property {string|number=} price
- * @property {string=} currency
- * @property {string=} currencyCode
- * @property {string=} currency_code
- * @property {unknown[]=} tags
- * @property {number=} instructorId
- * @property {number=} instructor_id
+ * @param {Object} [defaults]
+ * @param {Object} [draftInput]
+ * @returns {Object}
  */
+export function createTutorialDraft(defaults = {}, draftInput = {}) {
+  const baseDefaults = isPlainObject(defaults) ? defaults : {};
+  const draft = isPlainObject(draftInput) ? draftInput : {};
+  const combined = { ...baseDefaults, ...draft };
 
-/**
- * @typedef {Object} TutorialDraft
- * @property {number=} id
- * @property {string} title
- * @property {string} shortDescription
- * @property {string=} description
- * @property {string} category
- * @property {string=} categoryName
- * @property {string} level
- * @property {string} language
- * @property {number} lessonCount
- * @property {TutorialChapterDraft[]} chapters
- * @property {File|string|null} thumbnail
- * @property {File|string|null} preview
- * @property {string=} status
- * @property {boolean} isFree
- * @property {string} price
- * @property {string=} currency
- * @property {string[]} tags
- * @property {number=} instructorId
- */
-
-/**
- * @param {DraftDefaults} [defaults]
- * @param {DraftDefaults} [draft]
- * @returns {TutorialDraft}
- */
-export function createTutorialDraft(defaults = {}, draft) {
-  const combined = { ...defaults, ...draft };
-
-  const thumbnail = resolveFileLike(draft?.thumbnail, defaults.thumbnail);
-  const preview = resolveFileLike(draft?.preview, defaults.preview);
-  const language = pickString(draft?.language, defaults.language) ?? "";
-  const chapters = pickChapters(draft?.chapters, defaults.chapters) ?? [];
+  const thumbnail = resolveFileLike(draft.thumbnail, baseDefaults.thumbnail);
+  const preview = resolveFileLike(draft.preview, baseDefaults.preview);
+  const language = pickString(draft.language, baseDefaults.language) ?? "";
+  const chapters =
+    pickChapters(draft.chapters, baseDefaults.chapters) ?? [];
   const defaultLessonCount =
-    typeof defaults.lessonCount === "number" ? defaults.lessonCount : 1;
+    typeof baseDefaults.lessonCount === "number"
+      ? baseDefaults.lessonCount
+      : 1;
   const lessonCount =
-    typeof draft?.lessonCount === "number"
+    typeof draft.lessonCount === "number"
       ? draft.lessonCount
       : chapters.length || defaultLessonCount;
 
-  const tags = pickTags(draft?.tags, defaults.tags) ?? [];
+  const tags = pickTags(draft.tags, baseDefaults.tags) ?? [];
 
-  const title = pickString(draft?.title, defaults.title) ?? "";
+  const title = pickString(draft.title, baseDefaults.title) ?? "";
   const shortDescription =
     pickString(
-      draft?.shortDescription,
-      draft?.short_description,
-      defaults.shortDescription,
-      defaults.short_description
+      draft.shortDescription,
+      draft.short_description,
+      baseDefaults.shortDescription,
+      baseDefaults.short_description
     ) ?? "";
-  const description = pickString(draft?.description, defaults.description);
+  const description = pickString(draft.description, baseDefaults.description);
 
-  const category = pickCategory(draft, defaults);
+  const category = pickCategory(draft, baseDefaults);
   const categoryName =
     pickString(
-      draft?.categoryName,
-      draft?.category_name,
-      defaults.categoryName,
-      defaults.category_name
+      draft.categoryName,
+      draft.category_name,
+      baseDefaults.categoryName,
+      baseDefaults.category_name
     ) ?? undefined;
-  const level = pickString(draft?.level, defaults.level) ?? "";
-  const status = pickString(draft?.status, defaults.status);
+  const level = pickString(draft.level, baseDefaults.level) ?? "";
+  const status = pickString(draft.status, baseDefaults.status);
 
   const isFree =
     pickBoolean(
-      draft?.isFree,
-      draft?.is_free,
-      defaults.isFree,
-      defaults.is_free
+      draft.isFree,
+      draft.is_free,
+      baseDefaults.isFree,
+      baseDefaults.is_free
     ) ?? false;
-  const price = pickPrice(draft?.price, defaults.price);
+  const price = pickPrice(draft.price, baseDefaults.price);
   const currency =
     pickString(
-      draft?.currency,
-      draft?.currencyCode,
-      draft?.currency_code,
-      defaults.currency,
-      defaults.currencyCode,
-      defaults.currency_code
+      draft.currency,
+      draft.currencyCode,
+      draft.currency_code,
+      baseDefaults.currency,
+      baseDefaults.currencyCode,
+      baseDefaults.currency_code
     ) ?? undefined;
 
   const instructorId = pickNumber(
-    draft?.instructorId,
-    draft?.instructor_id,
-    defaults.instructorId,
-    defaults.instructor_id
+    draft.instructorId,
+    draft.instructor_id,
+    baseDefaults.instructorId,
+    baseDefaults.instructor_id
   );
 
   return {
@@ -152,8 +98,8 @@ export function createTutorialDraft(defaults = {}, draft) {
 
 /**
  * @param {string} key
- * @param {DraftDefaults} [defaults]
- * @returns {TutorialDraft}
+ * @param {Object} [defaults]
+ * @returns {Object}
  */
 export function loadDraft(key, defaults = {}) {
   if (typeof window === "undefined") return createTutorialDraft(defaults);
@@ -171,8 +117,7 @@ export function loadDraft(key, defaults = {}) {
 
 /**
  * @param {string} key
- * @param {TutorialDraft} data
- * @returns {void}
+ * @param {Object} data
  */
 export function saveDraft(key, data) {
   if (typeof window === "undefined") return;
@@ -181,19 +126,19 @@ export function saveDraft(key, data) {
 
 /**
  * @template T
- * @param {() => Promise<{ data?: T } | T>} fetchFn
- * @returns {Promise<T | { data?: T } | T[]>}
+ * @param {() => Promise<T | { data?: T }>} fetchFn
+ * @returns {Promise<T | T[] | { [key: string]: any }>}
  */
 export async function loadCategories(fetchFn) {
   const result = await fetchFn();
   if (result && typeof result === "object" && "data" in result) {
-    return result.data ?? [];
+    return result.data ?? result;
   }
   return result ?? [];
 }
 
 /**
- * @param {TutorialDraft} tutorialData
+ * @param {Object} tutorialData
  * @param {string} [status]
  * @returns {FormData}
  */
@@ -220,10 +165,10 @@ export function buildTutorialFormData(tutorialData, status) {
       formData.append("currency", toStringValue(tutorialData.currency, ""));
     }
   }
-  if (tutorialData.tags.length) {
+  if (tutorialData.tags?.length) {
     formData.append("tags", JSON.stringify(tutorialData.tags));
   }
-  if (tutorialData.chapters.length) {
+  if (tutorialData.chapters?.length) {
     const chapters = tutorialData.chapters.map((ch, idx) => ({
       title: toStringValue(ch.title, ""),
       duration: ch.duration,
@@ -242,6 +187,10 @@ export function buildTutorialFormData(tutorialData, status) {
   }
 
   return formData;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function resolveFileLike(primary, fallback) {
@@ -332,7 +281,6 @@ function pickChapters(...values) {
   return undefined;
 }
 
-
 function normalizeChapter(input, index) {
   if (!input || typeof input !== "object") {
     return {
@@ -344,7 +292,8 @@ function normalizeChapter(input, index) {
       preview: false,
     };
   }
-  const data = /** @type {{ [key: string]: any }} */ (input);
+
+  const data = input;
   const durationValue = data.duration;
   const videoValue = data.video;
 
