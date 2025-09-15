@@ -93,7 +93,7 @@ services:
       - "3000:3000"
     env_file:
       - ./.env
-      - ./frontend/.env.production
+      - ./frontend/.env.production.expanded
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000"]
       interval: 30s
