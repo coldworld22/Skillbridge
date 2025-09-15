@@ -57,9 +57,9 @@ services:
     env_file:
       - ./.env
     ports:
-      - "5002:5002"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:
-      PORT: ${PORT}
+      BACKEND_PORT: ${BACKEND_PORT}
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
@@ -70,7 +70,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     command: ["sh", "-c", "./scripts/wait-for-db.sh && npx knex migrate:latest && node src/server.js"]
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5002/api/health"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:${BACKEND_PORT}/api/health"]
       interval: 30s
       timeout: 30s
       retries: 3

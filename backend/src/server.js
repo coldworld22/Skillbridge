@@ -214,7 +214,7 @@ if (!config.ENABLE_INSTALL) {
   });
 }
 app.use(require("./middleware/errorHandler"));
-const PORT = config.PORT;
+const BACKEND_PORT = config.BACKEND_PORT;
 
 async function startServer() {
   if (redisClient) {
@@ -242,12 +242,12 @@ async function startServer() {
     }
     await initStrategies();
     await new Promise((resolve, reject) => {
-      server.listen(PORT, "0.0.0.0", (err) => {
+      server.listen(BACKEND_PORT, "0.0.0.0", (err) => {
         if (err) {
           reject(err);
           return;
         }
-        logger.log(`✅ Server running on port ${PORT}`);
+        logger.log(`✅ Server running on port ${BACKEND_PORT}`);
         initSockets(server, ALLOWED_ORIGINS);
         const { io, userSockets } = socketState;
         global.io = io;
