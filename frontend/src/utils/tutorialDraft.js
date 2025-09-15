@@ -332,6 +332,7 @@ function pickChapters(...values) {
   return undefined;
 }
 
+
 function normalizeChapter(input, index) {
   if (!input || typeof input !== "object") {
     return {
