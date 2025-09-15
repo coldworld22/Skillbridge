@@ -59,11 +59,21 @@ npm --prefix frontend install
      for local development. Docker Compose loads sensitive values from here,
      including:
 
-       - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-      - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
-      - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
-      - `FRONTEND_URL`
-      - `REDIS_URL`
+        - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+        - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
+        - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
+        - `FRONTEND_URL`
+        - `REDIS_URL`
+        - `SUPPORT_EMAIL` – address used for outbound messages
+        - `DISABLE_SMS` and `DISABLE_EMAILS` – set to `true` to disable SMS or email delivery
+        - `BACKEND_URL` – public base URL used in webhook callbacks
+        - `IP_API_BASE_URL` – base URL for IP geolocation lookups
+        - `BOOK_PRICE_RANGE_DEFAULT`, `BOOK_PRICE_RANGE_MAX` – default price filter bounds for books
+        - OAuth provider keys (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`) to enable social logins
+
+    Nginx uses `ALLOWED_ORIGINS` to emit CORS headers. Provide a
+    comma-separated list of origins, e.g. `http://localhost:3000,https://example.com`.
+    The default `http://localhost:3000` supports local development.
 
     A Redis instance (or compatible session store) is required in production
     to persist user sessions. Set `REDIS_URL` to your store's connection

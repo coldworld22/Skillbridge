@@ -78,15 +78,6 @@
     add_header Access-Control-Allow-Credentials true always;
   }
 
-  location ^~ /install/ {
-    proxy_pass http://backend:5002/install/;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-
   location = /install {
     proxy_pass http://backend:5002/install/;
     proxy_http_version 1.1;
@@ -105,4 +96,3 @@
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
   }
-
