@@ -22,11 +22,11 @@ export function loadDraft(key: string, defaults: DraftDefaults = {}) {
         draft?.chapters?.length ??
         defaults.lessonCount ??
         1,
-    } as TutorialDraftDefaults;
+    } as DraftDefaults;
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
     localStorage.removeItem(key);
-    return { ...defaults } as TutorialDraftDefaults;
+    return { ...defaults } as DraftDefaults;
   }
 }
 
