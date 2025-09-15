@@ -129,7 +129,7 @@ APP_DOMAIN=eduskillbridge.net
 FRONTEND_URL=https://eduskillbridge.net
 NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
 NEXT_PUBLIC_PGADMIN_URL=https://eduskillbridge.net/pgadmin
-NEXT_PUBLIC_SOCKET_URL=https://eduskillbridge.net
+NEXT_PUBLIC_SOCKET_URL=wss://eduskillbridge.net
 ```
 
 Keep these files out of git and store the secrets in your hosting

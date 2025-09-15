@@ -17,7 +17,7 @@ The production build reads configuration from `.env.production`. Define the foll
 - `APP_DOMAIN` – domain where the app is hosted (e.g. `eduskillbridge.net`).
 - `NEXT_PUBLIC_API_BASE_URL` – base URL for backend API requests.
 - `NEXT_PUBLIC_PGADMIN_URL` – pgAdmin interface endpoint.
-- `NEXT_PUBLIC_SOCKET_URL` – WebSocket endpoint, typically `https://${APP_DOMAIN}`.
+- `NEXT_PUBLIC_SOCKET_URL` – WebSocket endpoint, typically `wss://${APP_DOMAIN}`.
 
 Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services.
 
