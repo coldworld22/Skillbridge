@@ -63,7 +63,12 @@ npm --prefix frontend install
       - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
       - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
       - `FRONTEND_URL`
+      - `ALLOWED_ORIGINS`
       - `REDIS_URL`
+
+    Nginx uses `ALLOWED_ORIGINS` to emit CORS headers. Provide a
+    comma-separated list of origins, e.g. `http://localhost:3000,https://example.com`.
+    The default `http://localhost:3000` supports local development.
 
     A Redis instance (or compatible session store) is required in production
     to persist user sessions. Set `REDIS_URL` to your store's connection
