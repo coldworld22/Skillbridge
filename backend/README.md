@@ -18,7 +18,7 @@ any are missing:
 - `JWT_SECRET` – signing key for access tokens
 - `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
 - `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests). For production deployments, you may instead provide `PRODUCTION_DATABASE_URL`.
-- `PORT` – port for the HTTP server
+- `BACKEND_PORT` – port for the HTTP server
 - `SESSION_SECRET` – session cookie signing secret
 
 Provide these variables via a `.env` file or the hosting environment.

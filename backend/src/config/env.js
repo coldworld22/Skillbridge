@@ -7,7 +7,7 @@ dotenvExpand.expand(myEnv);
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().default(5002),
+  BACKEND_PORT: z.coerce.number().default(5002),
   JWT_SECRET: z.string(),
   REFRESH_TOKEN_SECRET: z.string(),
   SESSION_SECRET: z.string(),
@@ -49,7 +49,7 @@ if (!DATABASE_URL) {
 
 module.exports = {
   NODE_ENV: env.NODE_ENV,
-  PORT: env.PORT,
+  BACKEND_PORT: env.BACKEND_PORT,
   JWT_SECRET: env.JWT_SECRET,
   REFRESH_TOKEN_SECRET: env.REFRESH_TOKEN_SECRET,
   SESSION_SECRET: env.SESSION_SECRET,
