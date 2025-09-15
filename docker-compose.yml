@@ -94,6 +94,8 @@ services:
     env_file:
       - ./.env
       - ./frontend/.env.production.expanded
+    environment:
+      PORT: 3000
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000"]
       interval: 30s
