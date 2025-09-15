@@ -15,6 +15,7 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().url().optional(),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   APP_DOMAIN: z.string().optional(),
+  COOKIE_DOMAIN: z.string().optional(),
   ENABLE_INSTALL: z.coerce.boolean().default(false),
 });
 
@@ -47,5 +48,6 @@ module.exports = {
   REDIS_URL: env.REDIS_URL,
   FRONTEND_URL,
   APP_DOMAIN: env.APP_DOMAIN,
+  COOKIE_DOMAIN: env.COOKIE_DOMAIN,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
 };
