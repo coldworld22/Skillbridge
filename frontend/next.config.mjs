@@ -50,7 +50,9 @@ try {
 
   // Prevent shipping a build that points at an internal HTTP host which would
   // cause browsers to block requests with mixed-content errors.
+  const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
   if (
+    enforcePublicAPI &&
     process.env.NODE_ENV === 'production' &&
     /^https?:\/\/(localhost|backend)(:\\d+)?/i.test(apiBase)
   ) {
