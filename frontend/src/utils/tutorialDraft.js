@@ -1,64 +1,64 @@
 /**
  * @typedef {Object} TutorialChapterDraft
- * @property {number} [id]
- * @property {number} [order]
+ * @property {number=} id
+ * @property {number=} order
  * @property {string} title
  * @property {string|number} duration
- * @property {string|null} [video]
- * @property {string} [videoUrl]
+ * @property {string|null=} video
+ * @property {string=} videoUrl
  * @property {boolean} preview
  */
 
 /**
  * @typedef {Object} DraftDefaults
- * @property {number} [id]
- * @property {string} [title]
- * @property {string} [shortDescription]
- * @property {string} [short_description]
- * @property {string} [description]
- * @property {string|number} [category]
- * @property {string|number} [categoryId]
- * @property {string|number} [category_id]
- * @property {string} [categoryName]
- * @property {string} [category_name]
- * @property {string} [level]
- * @property {string} [language]
- * @property {number} [lessonCount]
- * @property {Array<*>} [chapters]
- * @property {File|string|null} [thumbnail]
- * @property {File|string|null} [preview]
- * @property {string} [status]
- * @property {boolean} [isFree]
- * @property {boolean} [is_free]
- * @property {string|number} [price]
- * @property {string} [currency]
- * @property {string} [currencyCode]
- * @property {string} [currency_code]
- * @property {Array<*>} [tags]
- * @property {number} [instructorId]
- * @property {number} [instructor_id]
+ * @property {number=} id
+ * @property {string=} title
+ * @property {string=} shortDescription
+ * @property {string=} short_description
+ * @property {string=} description
+ * @property {string|number=} category
+ * @property {string|number=} categoryId
+ * @property {string|number=} category_id
+ * @property {string=} categoryName
+ * @property {string=} category_name
+ * @property {string=} level
+ * @property {string=} language
+ * @property {number=} lessonCount
+ * @property {unknown[]=} chapters
+ * @property {File|string|null=} thumbnail
+ * @property {File|string|null=} preview
+ * @property {string=} status
+ * @property {boolean=} isFree
+ * @property {boolean=} is_free
+ * @property {string|number=} price
+ * @property {string=} currency
+ * @property {string=} currencyCode
+ * @property {string=} currency_code
+ * @property {unknown[]=} tags
+ * @property {number=} instructorId
+ * @property {number=} instructor_id
  */
 
 /**
  * @typedef {Object} TutorialDraft
- * @property {number} [id]
+ * @property {number=} id
  * @property {string} title
  * @property {string} shortDescription
- * @property {string} [description]
+ * @property {string=} description
  * @property {string} category
- * @property {string} [categoryName]
+ * @property {string=} categoryName
  * @property {string} level
  * @property {string} language
  * @property {number} lessonCount
  * @property {TutorialChapterDraft[]} chapters
  * @property {File|string|null} thumbnail
  * @property {File|string|null} preview
- * @property {string} [status]
+ * @property {string=} status
  * @property {boolean} isFree
  * @property {string} price
- * @property {string} [currency]
+ * @property {string=} currency
  * @property {string[]} tags
- * @property {number} [instructorId]
+ * @property {number=} instructorId
  */
 
 /**
@@ -186,11 +186,10 @@ export function saveDraft(key, data) {
  */
 export async function loadCategories(fetchFn) {
   const result = await fetchFn();
-  const data =
-    result && typeof result === "object" && "data" in result
-      ? result.data
-      : undefined;
-  return data || result || [];
+  if (result && typeof result === "object" && "data" in result) {
+    return result.data ?? [];
+  }
+  return result ?? [];
 }
 
 /**
@@ -235,21 +234,16 @@ export function buildTutorialFormData(tutorialData, status) {
     formData.append("chapters", JSON.stringify(chapters));
   }
 
-  if (typeof File !== "undefined" && tutorialData.thumbnail instanceof File) {
+  if (isFileInstance(tutorialData.thumbnail)) {
     formData.append("thumbnail", tutorialData.thumbnail);
   }
-  if (typeof File !== "undefined" && tutorialData.preview instanceof File) {
+  if (isFileInstance(tutorialData.preview)) {
     formData.append("preview", tutorialData.preview);
   }
 
   return formData;
 }
 
-/**
- * @param {File|string|null|undefined} primary
- * @param {File|string|null|undefined} fallback
- * @returns {File|string|null}
- */
 function resolveFileLike(primary, fallback) {
   const candidates = [primary, fallback];
   for (const candidate of candidates) {
@@ -263,18 +257,10 @@ function resolveFileLike(primary, fallback) {
   return null;
 }
 
-/**
- * @param {*} value
- * @returns {boolean}
- */
 function isFileInstance(value) {
   return typeof File !== "undefined" && value instanceof File;
 }
 
-/**
- * @param {...*} values
- * @returns {string|undefined}
- */
 function pickString(...values) {
   for (const value of values) {
     if (typeof value === "string") {
@@ -284,10 +270,6 @@ function pickString(...values) {
   return undefined;
 }
 
-/**
- * @param {...*} values
- * @returns {number|undefined}
- */
 function pickNumber(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -297,10 +279,6 @@ function pickNumber(...values) {
   return undefined;
 }
 
-/**
- * @param {...*} values
- * @returns {boolean|undefined}
- */
 function pickBoolean(...values) {
   for (const value of values) {
     if (typeof value === "boolean") {
@@ -315,10 +293,6 @@ function pickBoolean(...values) {
   return undefined;
 }
 
-/**
- * @param {...*} values
- * @returns {string}
- */
 function pickPrice(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -331,10 +305,6 @@ function pickPrice(...values) {
   return "";
 }
 
-/**
- * @param {...(Array<*>|undefined)} values
- * @returns {string[]|undefined}
- */
 function pickTags(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
@@ -353,10 +323,6 @@ function pickTags(...values) {
   return undefined;
 }
 
-/**
- * @param {...(Array<*>|undefined)} values
- * @returns {TutorialChapterDraft[]|undefined}
- */
 function pickChapters(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
@@ -366,11 +332,7 @@ function pickChapters(...values) {
   return undefined;
 }
 
-/**
- * @param {*} input
- * @param {number} index
- * @returns {TutorialChapterDraft}
- */
+
 function normalizeChapter(input, index) {
   if (!input || typeof input !== "object") {
     return {
@@ -382,8 +344,7 @@ function normalizeChapter(input, index) {
       preview: false,
     };
   }
-
-  const data = input;
+  const data = /** @type {{ [key: string]: any }} */ (input);
   const durationValue = data.duration;
   const videoValue = data.video;
 
@@ -423,19 +384,14 @@ function normalizeChapter(input, index) {
   };
 }
 
-/**
- * @param {DraftDefaults} [draft]
- * @param {DraftDefaults} [defaults]
- * @returns {string}
- */
-function pickCategory(draft, defaults) {
+function pickCategory(draft = {}, defaults = {}) {
   const values = [
-    draft?.category,
-    draft?.categoryId,
-    draft?.category_id,
-    defaults?.category,
-    defaults?.categoryId,
-    defaults?.category_id,
+    draft.category,
+    draft.categoryId,
+    draft.category_id,
+    defaults.category,
+    defaults.categoryId,
+    defaults.category_id,
   ];
 
   for (const value of values) {
@@ -450,11 +406,6 @@ function pickCategory(draft, defaults) {
   return "";
 }
 
-/**
- * @param {*} value
- * @param {string} fallback
- * @returns {string}
- */
 function normalizePrice(value, fallback) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value.toString() : fallback;
@@ -468,11 +419,6 @@ function normalizePrice(value, fallback) {
   return fallback;
 }
 
-/**
- * @param {*} value
- * @param {string} fallback
- * @returns {string}
- */
 function toStringValue(value, fallback) {
   if (value === null || value === undefined) {
     return fallback;
