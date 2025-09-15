@@ -89,6 +89,10 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://your-domain/api
+        NEXT_PUBLIC_PGADMIN_URL: https://your-domain/pgadmin
+        APP_DOMAIN: your-domain
     ports:
       - "3000:3000"
     env_file:
@@ -97,7 +101,7 @@ services:
     environment:
       PORT: 3000
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${PORT:-3000}/api/health"]
       interval: 30s
       timeout: 30s
       retries: 3
