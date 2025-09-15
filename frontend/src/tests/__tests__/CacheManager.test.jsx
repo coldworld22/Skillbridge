@@ -6,7 +6,7 @@ jest.mock('../../services/admin/cacheService', () => ({
   clearCache: jest.fn(),
 }));
 jest.mock('next-i18next', () => ({
-  i18n: { t: (key: string) => key },
+  i18n: { t: (key) => key },
 }));
 
 const setupEnvironment = () => {
@@ -23,11 +23,11 @@ const setupEnvironment = () => {
 describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
-    (mockClearCache as jest.Mock).mockReset();
+    mockClearCache.mockReset();
   });
 
   it('shows message when cache cleared', async () => {
-    (mockClearCache as jest.Mock).mockResolvedValue({});
+    mockClearCache.mockResolvedValue({});
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
@@ -36,7 +36,7 @@ describe('CacheManager', () => {
   });
 
   it('shows error message when clearing cache fails', async () => {
-    (mockClearCache as jest.Mock).mockRejectedValue(new Error('fail'));
+    mockClearCache.mockRejectedValue(new Error('fail'));
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);

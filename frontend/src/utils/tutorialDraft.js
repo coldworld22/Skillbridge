@@ -1,126 +1,77 @@
-export interface TutorialChapterDraft {
-  id?: number;
-  order?: number;
-  title: string;
-  duration: string | number;
-  video?: string | null;
-  videoUrl?: string;
-  preview: boolean;
-}
+/**
+ * Utility helpers for creating and managing tutorial drafts.
+ */
 
-interface DraftDefaults extends Record<string, unknown> {
-  id?: number;
-  title?: string;
-  shortDescription?: string;
-  short_description?: string;
-  description?: string;
-  category?: string | number;
-  categoryId?: string | number;
-  category_id?: string | number;
-  categoryName?: string;
-  category_name?: string;
-  level?: string;
-  language?: string;
-  lessonCount?: number;
-  chapters?: unknown[];
-  thumbnail?: File | string | null;
-  preview?: File | string | null;
-  status?: string;
-  isFree?: boolean;
-  is_free?: boolean;
-  price?: string | number;
-  currency?: string;
-  currencyCode?: string;
-  currency_code?: string;
-  tags?: unknown[];
-  instructorId?: number;
-  instructor_id?: number;
-}
+/**
+ * @param {Object} [defaults]
+ * @param {Object} [draftInput]
+ * @returns {Object}
+ */
+export function createTutorialDraft(defaults = {}, draftInput = {}) {
+  const baseDefaults = isPlainObject(defaults) ? defaults : {};
+  const draft = isPlainObject(draftInput) ? draftInput : {};
+  const combined = { ...baseDefaults, ...draft };
 
-export interface TutorialDraft extends Record<string, unknown> {
-  id?: number;
-  title: string;
-  shortDescription: string;
-  description?: string;
-  category: string;
-  categoryName?: string;
-  level: string;
-  language: string;
-  lessonCount: number;
-  chapters: TutorialChapterDraft[];
-  thumbnail: File | string | null;
-  preview: File | string | null;
-  status?: string;
-  isFree: boolean;
-  price: string;
-  currency?: string;
-  tags: string[];
-  instructorId?: number;
-}
-
-export function createTutorialDraft(
-  defaults: DraftDefaults = {},
-  draft?: DraftDefaults
-): TutorialDraft {
-  const combined: DraftDefaults = { ...defaults, ...draft };
-
-  const thumbnail = resolveFileLike(draft?.thumbnail, defaults.thumbnail);
-  const preview = resolveFileLike(draft?.preview, defaults.preview);
-  const language = pickString(draft?.language, defaults.language) ?? "";
-  const chapters = pickChapters(draft?.chapters, defaults.chapters) ?? [];
+  const thumbnail = resolveFileLike(draft.thumbnail, baseDefaults.thumbnail);
+  const preview = resolveFileLike(draft.preview, baseDefaults.preview);
+  const language = pickString(draft.language, baseDefaults.language) ?? "";
+  const chapters =
+    pickChapters(draft.chapters, baseDefaults.chapters) ?? [];
   const defaultLessonCount =
-    typeof defaults.lessonCount === "number" ? defaults.lessonCount : 1;
+    typeof baseDefaults.lessonCount === "number"
+      ? baseDefaults.lessonCount
+      : 1;
   const lessonCount =
-    typeof draft?.lessonCount === "number"
+    typeof draft.lessonCount === "number"
       ? draft.lessonCount
       : chapters.length || defaultLessonCount;
 
-  const tags = pickTags(draft?.tags, defaults.tags) ?? [];
+  const tags = pickTags(draft.tags, baseDefaults.tags) ?? [];
 
-  const title = pickString(draft?.title, defaults.title) ?? "";
+  const title = pickString(draft.title, baseDefaults.title) ?? "";
   const shortDescription =
     pickString(
-      draft?.shortDescription,
-      draft?.short_description,
-      defaults.shortDescription,
-      defaults.short_description
+      draft.shortDescription,
+      draft.short_description,
+      baseDefaults.shortDescription,
+      baseDefaults.short_description
     ) ?? "";
-  const description = pickString(draft?.description, defaults.description);
+  const description = pickString(draft.description, baseDefaults.description);
 
-  const category = pickCategory(draft, defaults);
+  const category = pickCategory(draft, baseDefaults);
   const categoryName =
     pickString(
-      draft?.categoryName,
-      draft?.category_name,
-      defaults.categoryName,
-      defaults.category_name
+      draft.categoryName,
+      draft.category_name,
+      baseDefaults.categoryName,
+      baseDefaults.category_name
     ) ?? undefined;
-  const level = pickString(draft?.level, defaults.level) ?? "";
-  const status = pickString(draft?.status, defaults.status);
+  const level = pickString(draft.level, baseDefaults.level) ?? "";
+  const status = pickString(draft.status, baseDefaults.status);
 
   const isFree =
     pickBoolean(
-      draft?.isFree,
-      draft?.is_free,
-      defaults.isFree,
-      defaults.is_free
+      draft.isFree,
+      draft.is_free,
+      baseDefaults.isFree,
+      baseDefaults.is_free
     ) ?? false;
-  const price = pickPrice(draft?.price, defaults.price);
+  const price = pickPrice(draft.price, baseDefaults.price);
   const currency =
     pickString(
-      draft?.currency,
-      draft?.currencyCode,
-      draft?.currency_code,
-      defaults.currency,
-      defaults.currencyCode,
-      defaults.currency_code
+      draft.currency,
+      draft.currencyCode,
+      draft.currency_code,
+      baseDefaults.currency,
+      baseDefaults.currencyCode,
+      baseDefaults.currency_code
     ) ?? undefined;
 
   const instructorId = pickNumber(
-    draft?.instructorId,
-    draft?.instructor_id,
-    defaults.instructorId,
-    defaults.instructor_id
+    draft.instructorId,
+    draft.instructor_id,
+    baseDefaults.instructorId,
+    baseDefaults.instructor_id
   );
 
   return {
@@ -145,15 +96,17 @@ export function createTutorialDraft(
   };
 }
 
-export function loadDraft(
-  key: string,
-  defaults: DraftDefaults = {}
-): TutorialDraft {
+/**
+ * @param {string} key
+ * @param {Object} [defaults]
+ * @returns {Object}
+ */
+export function loadDraft(key, defaults = {}) {
   if (typeof window === "undefined") return createTutorialDraft(defaults);
   const saved = localStorage.getItem(key);
   if (!saved) return createTutorialDraft(defaults);
   try {
-    const draft = JSON.parse(saved) as DraftDefaults;
+    const draft = JSON.parse(saved);
     return createTutorialDraft(defaults, draft);
   } catch (err) {
     console.error(`Failed to parse ${key}`, err);
@@ -162,22 +115,34 @@ export function loadDraft(
   }
 }
 
-export function saveDraft(key: string, data: TutorialDraft): void {
+/**
+ * @param {string} key
+ * @param {Object} data
+ */
+export function saveDraft(key, data) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-export async function loadCategories<T>(
-  fetchFn: () => Promise<{ data?: T } | T>
-): Promise<T | { data?: T } | T[]> {
+/**
+ * @template T
+ * @param {() => Promise<T | { data?: T }>} fetchFn
+ * @returns {Promise<T | T[] | { [key: string]: any }>}
+ */
+export async function loadCategories(fetchFn) {
   const result = await fetchFn();
-  return (result as { data?: T })?.data || (result as T) || [];
+  if (result && typeof result === "object" && "data" in result) {
+    return result.data ?? result;
+  }
+  return result ?? [];
 }
 
-export function buildTutorialFormData(
-  tutorialData: TutorialDraft,
-  status?: string
-): FormData {
+/**
+ * @param {Object} tutorialData
+ * @param {string} [status]
+ * @returns {FormData}
+ */
+export function buildTutorialFormData(tutorialData, status) {
   const formData = new FormData();
   formData.append("title", toStringValue(tutorialData.title, ""));
   formData.append(
@@ -200,10 +165,10 @@ export function buildTutorialFormData(
       formData.append("currency", toStringValue(tutorialData.currency, ""));
     }
   }
-  if (tutorialData.tags.length) {
+  if (tutorialData.tags?.length) {
     formData.append("tags", JSON.stringify(tutorialData.tags));
   }
-  if (tutorialData.chapters.length) {
+  if (tutorialData.chapters?.length) {
     const chapters = tutorialData.chapters.map((ch, idx) => ({
       title: toStringValue(ch.title, ""),
       duration: ch.duration,
@@ -214,20 +179,21 @@ export function buildTutorialFormData(
     formData.append("chapters", JSON.stringify(chapters));
   }
 
-  if (tutorialData.thumbnail instanceof File) {
+  if (isFileInstance(tutorialData.thumbnail)) {
     formData.append("thumbnail", tutorialData.thumbnail);
   }
-  if (tutorialData.preview instanceof File) {
+  if (isFileInstance(tutorialData.preview)) {
     formData.append("preview", tutorialData.preview);
   }
 
   return formData;
 }
 
-function resolveFileLike(
-  primary?: File | string | null,
-  fallback?: File | string | null
-): File | string | null {
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function resolveFileLike(primary, fallback) {
   const candidates = [primary, fallback];
   for (const candidate of candidates) {
     if (isFileInstance(candidate) || typeof candidate === "string") {
@@ -240,11 +206,11 @@ function resolveFileLike(
   return null;
 }
 
-function isFileInstance(value: unknown): value is File {
+function isFileInstance(value) {
   return typeof File !== "undefined" && value instanceof File;
 }
 
-function pickString(...values: unknown[]): string | undefined {
+function pickString(...values) {
   for (const value of values) {
     if (typeof value === "string") {
       return value;
@@ -253,7 +219,7 @@ function pickString(...values: unknown[]): string | undefined {
   return undefined;
 }
 
-function pickNumber(...values: unknown[]): number | undefined {
+function pickNumber(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
       return value;
@@ -262,7 +228,7 @@ function pickNumber(...values: unknown[]): number | undefined {
   return undefined;
 }
 
-function pickBoolean(...values: unknown[]): boolean | undefined {
+function pickBoolean(...values) {
   for (const value of values) {
     if (typeof value === "boolean") {
       return value;
@@ -276,7 +242,7 @@ function pickBoolean(...values: unknown[]): boolean | undefined {
   return undefined;
 }
 
-function pickPrice(...values: unknown[]): string {
+function pickPrice(...values) {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) {
       return value.toString();
@@ -288,29 +254,25 @@ function pickPrice(...values: unknown[]): string {
   return "";
 }
 
-function pickTags(
-  ...values: (unknown[] | undefined)[]
-): string[] | undefined {
+function pickTags(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
       return value
         .map((tag) => {
           if (typeof tag === "string") return tag;
           if (tag && typeof tag === "object" && "name" in tag) {
-            const name = (tag as Record<string, unknown>).name;
+            const name = tag.name;
             return typeof name === "string" ? name : undefined;
           }
           return undefined;
         })
-        .filter((tag): tag is string => typeof tag === "string");
+        .filter((tag) => typeof tag === "string");
     }
   }
   return undefined;
 }
 
-function pickChapters(
-  ...values: (unknown[] | undefined)[]
-): TutorialChapterDraft[] | undefined {
+function pickChapters(...values) {
   for (const value of values) {
     if (Array.isArray(value)) {
       return value.map((chapter, index) => normalizeChapter(chapter, index));
@@ -319,10 +281,7 @@ function pickChapters(
   return undefined;
 }
 
-function normalizeChapter(
-  input: unknown,
-  index: number
-): TutorialChapterDraft {
+function normalizeChapter(input, index) {
   if (!input || typeof input !== "object") {
     return {
       order: index + 1,
@@ -334,7 +293,7 @@ function normalizeChapter(
     };
   }
 
-  const data = input as Record<string, unknown>;
+  const data = input;
   const durationValue = data.duration;
   const videoValue = data.video;
 
@@ -374,17 +333,14 @@ function normalizeChapter(
   };
 }
 
-function pickCategory(
-  draft?: DraftDefaults,
-  defaults?: DraftDefaults
-): string {
+function pickCategory(draft = {}, defaults = {}) {
   const values = [
-    draft?.category,
-    draft?.categoryId,
-    draft?.category_id,
-    defaults?.category,
-    defaults?.categoryId,
-    defaults?.category_id,
+    draft.category,
+    draft.categoryId,
+    draft.category_id,
+    defaults.category,
+    defaults.categoryId,
+    defaults.category_id,
   ];
 
   for (const value of values) {
@@ -399,7 +355,7 @@ function pickCategory(
   return "";
 }
 
-function normalizePrice(value: unknown, fallback: string): string {
+function normalizePrice(value, fallback) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value.toString() : fallback;
   }
@@ -412,7 +368,7 @@ function normalizePrice(value: unknown, fallback: string): string {
   return fallback;
 }
 
-function toStringValue(value: unknown, fallback: string): string {
+function toStringValue(value, fallback) {
   if (value === null || value === undefined) {
     return fallback;
   }
