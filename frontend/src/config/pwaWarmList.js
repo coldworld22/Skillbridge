@@ -1,4 +1,4 @@
-export const pages: string[] = [
+export const pages = [
   '/',
   '/about',
   '/contact',
@@ -11,7 +11,7 @@ export const pages: string[] = [
   '/ar/dashboard',
 ];
 
-export const jsonEndpoints: string[] = [
+export const jsonEndpoints = [
   '/api/public/config',
   '/api/public/categories',
   '/api/public/courses',
