@@ -137,6 +137,10 @@ const nextConfig = {
         destination: `${pgAdminBase}/:path*`,
       },
       {
+        source: '/api/health',
+        destination: '/api/health',
+      },
+      {
         source: '/api/:path*',
         destination: `${apiBase}/:path*`,
       },
