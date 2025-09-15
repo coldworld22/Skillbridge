@@ -89,6 +89,10 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://your-domain/api
+        NEXT_PUBLIC_PGADMIN_URL: https://your-domain/pgadmin
+        APP_DOMAIN: your-domain
     ports:
       - "3000:3000"
     env_file:
