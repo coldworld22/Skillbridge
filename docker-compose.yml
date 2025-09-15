@@ -90,9 +90,9 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: https://your-domain/api
-        NEXT_PUBLIC_PGADMIN_URL: https://your-domain/pgadmin
-        APP_DOMAIN: your-domain
+        NEXT_PUBLIC_API_BASE_URL: https://eduskillbridge.net/api
+        NEXT_PUBLIC_PGADMIN_URL: https://eduskillbridge.net/pgadmin
+        APP_DOMAIN: eduskillbridge.net
     ports:
       - "3000:3000"
     env_file:
