@@ -48,7 +48,8 @@ export function buildTutorialFormData(tutorialData, status) {
   formData.append('level', tutorialData.level);
   formData.append('language', tutorialData.language);
   formData.append('status', status ?? tutorialData.status);
-  formData.append('is_paid', (!tutorialData.isFree).toString());
+  // The API expects `is_paid` to be serialized as "0" for free tutorials and "1" for paid ones.
+  formData.append('is_paid', tutorialData.isFree ? '0' : '1');
   if (!tutorialData.isFree) {
     formData.append('price', tutorialData.price);
     if (tutorialData.currency) {

@@ -3,7 +3,14 @@ const { TUTORIAL_STATUS } = require("../../../../../shared/tutorialStatus");
 
 // Helper preprocessor for boolean values coming from multipart/form-data
 const toBoolean = (val) => {
-  if (typeof val === "string") return val === "true";
+  if (typeof val === "string") {
+    if (val === "true" || val === "1") return true;
+    if (val === "false" || val === "0") return false;
+    return val === "true";
+  }
+  if (typeof val === "number") {
+    return val === 1;
+  }
   return val;
 };
 
