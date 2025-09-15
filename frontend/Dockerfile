@@ -16,7 +16,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
 
 # Source optional production env file if present before building.
 RUN if [ -f .env.production ]; then \
-        set -a && . .env.production; \
+        set -a && . ./.env.production; \
     fi; \
     npm run build
 
