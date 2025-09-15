@@ -1,7 +1,9 @@
 const { z } = require('zod');
 const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
 
-dotenv.config();
+const myEnv = dotenv.config();
+dotenvExpand.expand(myEnv);
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -25,6 +27,13 @@ if (FRONTEND_URL.startsWith('FRONTEND_URL=')) {
   FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, '');
 }
 
+let FRONTEND_ORIGINS;
+try {
+  FRONTEND_ORIGINS = FRONTEND_URL.split(',').map((url) => new URL(url.trim()).origin);
+} catch {
+  throw new Error(`Invalid FRONTEND_URL: ${FRONTEND_URL}`);
+}
+
 const DATABASE_URL =
   env.NODE_ENV === 'test'
     ? env.TEST_DATABASE_URL
@@ -46,6 +55,7 @@ module.exports = {
   DATABASE_URL,
   REDIS_URL: env.REDIS_URL,
   FRONTEND_URL,
+  FRONTEND_ORIGINS,
   APP_DOMAIN: env.APP_DOMAIN,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
 };
