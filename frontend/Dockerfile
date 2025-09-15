@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18 AS builder
+FROM node:20 AS builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci && npm cache clean --force
@@ -18,7 +18,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
 RUN set -a && [ -f .env.production ] && . .env.production; npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js ./
