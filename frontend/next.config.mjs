@@ -133,6 +133,10 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: '/api/health',
+        destination: '/api/health',
+      },
+      {
         source: '/api/pgadmin/:path*',
         destination: `${pgAdminBase}/:path*`,
       },
