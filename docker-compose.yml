@@ -96,8 +96,9 @@ services:
       - ./frontend/.env.production.expanded
     environment:
       PORT: 3000
+      HOST: 0.0.0.0
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}"]
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://localhost:${PORT}"]
       interval: 30s
       timeout: 30s
       retries: 3
