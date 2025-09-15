@@ -77,9 +77,9 @@
     }
     add_header Access-Control-Allow-Credentials true always;
   }
-
+  # Forward installer requests to the backend
   location ^~ /install/ {
-    proxy_pass http://backend:5002/install/;
+    proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -98,16 +98,6 @@
 
   # Proxy uploaded files to the backend
   location ^~ /uploads/ {
-    proxy_pass http://backend:5002;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-
-  # Forward installer requests to the backend
-  location ^~ /install/ {
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
