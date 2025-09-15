@@ -57,9 +57,9 @@ services:
     env_file:
       - ./.env
     ports:
-      - "5002:5002"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:
-      PORT: ${PORT}
+      BACKEND_PORT: ${BACKEND_PORT}
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
@@ -70,7 +70,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     command: ["sh", "-c", "./scripts/wait-for-db.sh && npx knex migrate:latest && node src/server.js"]
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5002/api/health"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:${BACKEND_PORT}/api/health"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -89,6 +89,10 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://your-domain/api
+        NEXT_PUBLIC_PGADMIN_URL: https://your-domain/pgadmin
+        APP_DOMAIN: your-domain
     ports:
       - "3000:3000"
     env_file:
@@ -96,6 +100,7 @@ services:
       - ./frontend/.env.production.expanded
     environment:
       PORT: 3000
+      HOST: 0.0.0.0
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/health"]
       interval: 30s
