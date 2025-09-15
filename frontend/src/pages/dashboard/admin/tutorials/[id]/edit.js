@@ -23,11 +23,14 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import {
+  createTutorialDraft,
   loadDraft,
   saveDraft,
   loadCategories,
   buildTutorialFormData,
 } from "@/utils/tutorialDraft";
+
+/** @typedef {import('@/utils/tutorialDraft').TutorialDraft} TutorialDraft */
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -35,7 +38,9 @@ function EditTutorialPage() {
   const { id } = router.query;
 
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(null);
+  const [tutorialData, setTutorialData] = useState(
+    /** @type {TutorialDraft | null} */ (null)
+  );
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const user = useAuthStore((state) => state.user);
@@ -72,23 +77,14 @@ function EditTutorialPage() {
           videoUrl: ch.video_url,
           preview: ch.is_preview,
         }));
-        setTutorialData({
-          title: tutorial.title,
-          shortDescription: tutorial.shortDescription || "",
-          category: tutorial.category,
-          categoryName: tutorial.categoryName,
-          level: tutorial.level,
-          language: tutorial.language || "",
-          instructorId: tutorial.instructorId,
-          status: tutorial.status,
-          lessonCount: mappedChapters.length,
-          tags: tutorial.tags || [],
+        const normalized = createTutorialDraft({
+          ...tutorial,
           chapters: mappedChapters,
-          thumbnail: tutorial.thumbnail,
-          preview: tutorial.preview,
-          price: tutorial.price || "",
-          isFree: tutorial.isFree,
+          lessonCount: mappedChapters.length,
+          currency:
+            tutorial.currency || tutorial.currencyCode || tutorial.currency_code || "",
         });
+        setTutorialData(normalized);
         setCategories(cats);
       } catch (err) {
         console.error(err);
