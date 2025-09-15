@@ -19,18 +19,23 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
+  createTutorialDraft,
   loadDraft,
   saveDraft,
   loadCategories,
   buildTutorialFormData,
 } from "@/utils/tutorialDraft";
 
+/** @typedef {import('@/utils/tutorialDraft').TutorialDraft} TutorialDraft */
+
 export default function EditTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(null);
+  const [tutorialData, setTutorialData] = useState(
+    /** @type {TutorialDraft | null} */ (null)
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -62,11 +67,11 @@ export default function EditTutorialPage() {
         ]);
         const formatted = tutorial?.data || tutorial || null;
         if (formatted) {
-          setTutorialData({
+          const normalized = createTutorialDraft({
             ...formatted,
-            language: formatted.language || "",
-            lessonCount: formatted.chapters?.length || 1,
+            chapters: formatted.chapters,
           });
+          setTutorialData(normalized);
         } else {
           setTutorialData(null);
         }
