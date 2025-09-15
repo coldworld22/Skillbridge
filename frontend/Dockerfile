@@ -3,8 +3,8 @@ FROM node:18 AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci && npm cache clean --force
-COPY . ./
-COPY shared /shared
+COPY . .
+COPY ../shared /shared
 
 # Default build-time environment variables.
 ARG NEXT_PUBLIC_API_BASE_URL="http://localhost:5002/api"
