@@ -79,14 +79,16 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 
 ### Installation API
 
-The backend exposes protected setup endpoints at `/api/install` for automated deployments. They are disabled by default and can be enabled by adding `INSTALL_API_ENABLED=true` to `backend/.env`:
+The backend exposes protected setup endpoints at `/api/install` for automated deployments. They are disabled by default to reduce the attack surface. When you need to run the installer, explicitly enable the endpoints by setting `INSTALL_API_ENABLED=true` in `backend/.env` and restarting the backend service so the change takes effect:
 
 ```
 # backend/.env
 INSTALL_API_ENABLED=true
 ```
 
-All `/api/install` requests must be authenticated with an administrator token.
+Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes.
+
+After you finish the installation or automation tasks, immediately disable the API again by removing the setting or switching it back to `false` and redeploying/restarting the backend. Leaving the installer enabled in production is not recommended.
 
 ### Initial admin passwords
 
