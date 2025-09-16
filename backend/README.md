@@ -17,7 +17,7 @@ any are missing:
 
 - `JWT_SECRET` – signing key for access tokens
 - `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
-- `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests). For production deployments, you may instead provide `PRODUCTION_DATABASE_URL`.
+- Database connection details – either provide a full connection string via `DATABASE_URL`/`PRODUCTION_DATABASE_URL` (and `TEST_DATABASE_URL` when running tests) or set the individual `POSTGRES_*` variables so the server can build one automatically.
 - `BACKEND_PORT` – port for the HTTP server
 - `SESSION_SECRET` – session cookie signing secret
 

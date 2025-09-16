@@ -1,24 +1,26 @@
+const config = require('./src/config/env');
+
 const baseConfig = {
   client: 'pg',
   migrations: {
-    directory: './src/migrations'
+    directory: './src/migrations',
   },
   seeds: {
-    directory: './src/seeds'
-  }
+    directory: './src/seeds',
+  },
 };
 
 module.exports = {
   development: {
     ...baseConfig,
-    connection: process.env.DATABASE_URL
+    connection: config.getDatabaseUrl('development'),
   },
   test: {
     ...baseConfig,
-    connection: process.env.TEST_DATABASE_URL
+    connection: config.getDatabaseUrl('test'),
   },
   production: {
     ...baseConfig,
-    connection: process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL
-  }
+    connection: config.getDatabaseUrl('production'),
+  },
 };
