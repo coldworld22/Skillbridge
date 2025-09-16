@@ -17,7 +17,8 @@ any are missing:
 
 - `JWT_SECRET` – signing key for access tokens
 - `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
-- `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests). For production deployments, you may instead provide `PRODUCTION_DATABASE_URL`.
+- `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests). For production deployments, you may instead provide `PRODUCTION_DATABASE_URL`. When running inside Docker Compose the backend derives this value automatically from the `POSTGRES_*` variables so you only need to update the individual credentials.
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT` – optional credentials that are combined into `DATABASE_URL` when the server starts. These are especially useful when running in Docker so the application cannot drift out of sync with the database container configuration.
 - `BACKEND_PORT` – port for the HTTP server
 - `SESSION_SECRET` – session cookie signing secret
 

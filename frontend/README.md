@@ -21,7 +21,7 @@ The production build reads configuration from `.env.production`. Define the foll
 
 Environment files support variable expansion using [`dotenv-expand`](https://github.com/motdotla/dotenv-expand). Values such as `NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api` will resolve `APP_DOMAIN` during `npm run build`.
 
-Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services.
+Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services. The Docker build context excludes `.env.local`, ensuring container images read the API host from the `DOCKER_NEXT_PUBLIC_API_BASE_URL` build argument (defaulting to the in-stack backend) or from a supplied `.env.production`.
 
 ## Development Server
 
