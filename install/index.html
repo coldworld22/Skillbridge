@@ -39,7 +39,25 @@
     <a href="/docs" class="text-blue-600 underline transition hover:text-blue-800">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
-  <section id="step1" class="mb-8 step-container step-visible" aria-hidden="false">
+  <div class="mb-6 space-y-3">
+    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
+      <div
+        id="progressBar"
+        class="h-2 bg-blue-500 transition-all duration-300"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        style="width: 0%;"
+      ></div>
+    </div>
+    <div
+      id="errorBox"
+      class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
+      role="alert"
+    ></div>
+  </div>
+  <section id="step1" class="mb-8">
     <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
     <button id="checkBtn" class="px-4 py-2 bg-blue-500 text-white rounded">Recheck</button>
     <div
