@@ -1,196 +1,531 @@
-const prereqOutput = document.getElementById('prereqOutput');
-const checkBtn = document.getElementById('checkBtn');
-const step2 = document.getElementById('step2');
-const form = document.getElementById('configForm');
-const installBtn = document.getElementById('installBtn');
-const installOutput = document.getElementById('installOutput');
+const STEP_ORDER = ['prereq', 'config', 'install'];
+const STEP_PROGRESS = {
+  config: 55,
+  install: 80,
+};
+const FRIENDLY_LABELS = {
+  node: 'Node.js',
+  npm: 'npm',
+  docker: 'Docker',
+  dockerCompose: 'Docker Compose',
+  git: 'Git',
+  postgres: 'PostgreSQL',
+  redis: 'Redis',
+  yarn: 'Yarn',
+  pnpm: 'pnpm',
+  python: 'Python',
+};
 
-const { container: progressContainer, bar: progressBar } = (() => {
-  let container = document.getElementById('progressContainer');
-  let bar = document.getElementById('progressBar');
-  if (!container || !bar) {
-    container = document.createElement('div');
-    container.id = 'progressContainer';
-    container.className = 'w-full bg-gray-200 rounded h-2 mt-4 hidden overflow-hidden';
-    bar = document.createElement('div');
-    bar.id = 'progressBar';
-    bar.className = 'h-2 w-0 bg-blue-500 transition-all duration-200';
-    container.appendChild(bar);
-    installOutput.parentNode.insertBefore(container, installOutput);
+document.addEventListener('DOMContentLoaded', () => {
+  const progressBar = document.getElementById('progressBar');
+  const errorBox = document.getElementById('errorBox');
+  const stepSections = {
+    prereq: document.getElementById('step-prereq'),
+    config: document.getElementById('step-config'),
+    install: document.getElementById('step-install'),
+  };
+  const stepperItems = Array.from(document.querySelectorAll('[data-stepper-item]'));
+  const prereqStatus = document.getElementById('prereqStatus');
+  const prereqSummary = document.getElementById('prereqSummary');
+  const checkBtn = document.getElementById('checkBtn');
+  const configForm = document.getElementById('configForm');
+  const installBtn = document.getElementById('installBtn');
+  const installOutput = document.getElementById('installOutput');
+  const completionCard = document.getElementById('completionCard');
+  const completionMessage = document.getElementById('completionMessage');
+  const completionNextSteps = document.getElementById('completionNextSteps');
+  const backToConfigBtn = document.getElementById('backToConfigBtn');
+
+  function setProgress(percent) {
+    if (!progressBar) return;
+    const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+    progressBar.style.width = `${clamped}%`;
+    progressBar.setAttribute('aria-valuenow', String(clamped));
   }
-  bar.style.width = '0%';
-  return { container, bar };
-})();
 
-function setProgress(percent) {
-  progressBar.style.width = `${percent}%`;
-}
+  function showError(message) {
+    if (!errorBox) return;
+    errorBox.textContent = message;
+    errorBox.classList.remove('hidden');
+  }
 
-function setProgressColor(colorClass) {
-  progressBar.classList.remove('bg-blue-500', 'bg-green-500', 'bg-red-500');
-  progressBar.classList.add(colorClass);
-}
+  function clearError() {
+    if (!errorBox) return;
+    errorBox.textContent = '';
+    errorBox.classList.add('hidden');
+  }
 
-let progressInterval;
-function beginProgress() {
-  clearInterval(progressInterval);
-  progressContainer.classList.remove('hidden');
-  setProgressColor('bg-blue-500');
-  setProgress(5);
-  progressInterval = setInterval(() => {
-    const current = parseFloat(progressBar.style.width) || 0;
-    if (current >= 95) {
-      return;
+  function updateStep(step, options = {}) {
+    if (!STEP_ORDER.includes(step)) return;
+    const { preserveProgress = false } = options;
+    const targetIndex = STEP_ORDER.indexOf(step);
+
+    STEP_ORDER.forEach((key, index) => {
+      const section = stepSections[key];
+      if (!section) return;
+      section.classList.remove('step-visible', 'step-hidden-left', 'step-hidden-right');
+      if (index === targetIndex) {
+        section.classList.add('step-visible');
+        section.setAttribute('aria-hidden', 'false');
+      } else if (index < targetIndex) {
+        section.classList.add('step-hidden-left');
+        section.setAttribute('aria-hidden', 'true');
+      } else {
+        section.classList.add('step-hidden-right');
+        section.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    stepperItems.forEach((item) => {
+      const itemStep = item.dataset.stepperItem;
+      const itemIndex = STEP_ORDER.indexOf(itemStep);
+      if (itemIndex === -1) return;
+      item.classList.remove('stepper-active', 'stepper-complete', 'stepper-upcoming');
+      if (itemIndex === targetIndex) {
+        item.classList.add('stepper-active');
+        item.setAttribute('aria-current', 'step');
+      } else if (itemIndex < targetIndex) {
+        item.classList.add('stepper-complete');
+        item.removeAttribute('aria-current');
+      } else {
+        item.classList.add('stepper-upcoming');
+        item.removeAttribute('aria-current');
+      }
+    });
+
+    if (!preserveProgress) {
+      const base = STEP_PROGRESS[step];
+      if (typeof base === 'number') {
+        setProgress(base);
+      }
     }
-    setProgress(Math.min(current + Math.random() * 10, 95));
-  }, 500);
-}
+  }
 
-function completeProgress(success) {
-  clearInterval(progressInterval);
-  setProgress(100);
-  setProgressColor(success ? 'bg-green-500' : 'bg-red-500');
-}
+  function formatKey(key) {
+    if (!key) return 'Requirement';
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^./, (char) => char.toUpperCase());
+  }
 
-function resetProgress() {
-  clearInterval(progressInterval);
-  setProgress(0);
-  setProgressColor('bg-blue-500');
-  progressContainer.classList.add('hidden');
-}
-
-function updateButtonState(btn, disabled) {
-  btn.disabled = disabled;
-  btn.classList.toggle('opacity-50', disabled);
-  btn.classList.toggle('cursor-not-allowed', disabled);
-}
-
-function disableFormControls() {
-  Array.from(form.elements).forEach((el) => {
-    el.disabled = true;
-  });
-}
-
-function enableFormControls() {
-  Array.from(form.elements).forEach((el) => {
-    el.disabled = false;
-  });
-}
-
-let installInProgress = false;
-let installCompletedSuccessfully = false;
-
-function lockInstallerUI() {
-  installCompletedSuccessfully = true;
-  disableFormControls();
-  updateButtonState(installBtn, true);
-  updateButtonState(checkBtn, true);
-  step2.classList.add('opacity-50', 'pointer-events-none');
-}
-
-async function checkPrereqs() {
-  const output = prereqOutput;
-  output.textContent = 'Checking...';
-  output.className = 'mt-2 text-gray-600 whitespace-pre-wrap';
-  updateButtonState(checkBtn, true);
-
-  try {
-    const response = await fetch('/api/install/prereqs');
-    if (response.status === 401 || response.status === 403) {
-      alert('Please log in to continue.');
-      output.textContent = 'Authentication required. Please log in.';
-      output.className = 'mt-2 text-red-600 whitespace-pre-wrap';
-      step2.style.display = 'none';
-      resetProgress();
-      return;
+  function normalizePrereqResponse(raw) {
+    const normalized = { requirements: [], summary: '', allPassing: false, rawText: '' };
+    if (raw == null) {
+      normalized.summary = 'No prerequisite information was returned.';
+      return normalized;
     }
 
-    const data = await response.json();
-    if (data.ok) {
-      output.className = 'mt-2 text-green-600 whitespace-pre-wrap';
-      output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));
-      step2.style.display = 'block';
-      step2.classList.remove('opacity-50', 'pointer-events-none');
-      if (!installCompletedSuccessfully && !installInProgress) {
-        enableFormControls();
-        const shouldInstall = confirm(
-          'Prerequisite checks passed. Do you want to run the installation now?'
-        );
-        if (shouldInstall) {
-          runInstall();
-        }
+    let payload;
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) {
+        normalized.summary = 'No prerequisite information was returned.';
+        return normalized;
+      }
+      try {
+        payload = JSON.parse(trimmed);
+      } catch {
+        normalized.rawText = trimmed;
+        normalized.summary = trimmed;
+        return normalized;
       }
     } else {
-      output.className = 'mt-2 text-red-600 whitespace-pre-wrap';
-      output.textContent = 'Error:\n' + (data.output || JSON.stringify(data, null, 2));
-      step2.style.display = 'none';
-      resetProgress();
+      payload = { ...raw };
     }
-  } catch (err) {
-    output.textContent = 'Error: ' + err.message;
-    output.className = 'mt-2 text-red-600 whitespace-pre-wrap';
-    step2.style.display = 'none';
-    resetProgress();
-  } finally {
-    if (!installInProgress && !installCompletedSuccessfully) {
-      updateButtonState(checkBtn, false);
+
+    if (typeof payload.output === 'string') {
+      const trimmedOutput = payload.output.trim();
+      if (trimmedOutput) {
+        try {
+          const parsed = JSON.parse(trimmedOutput);
+          if (parsed && typeof parsed === 'object') {
+            payload = { ...parsed, ...payload };
+          }
+        } catch {
+          normalized.rawText = trimmedOutput;
+        }
+      }
     }
-  }
-}
 
-async function runInstall() {
-  if (installInProgress || installCompletedSuccessfully) {
-    return;
-  }
-
-  installInProgress = true;
-  let success = false;
-
-  updateButtonState(installBtn, true);
-  updateButtonState(checkBtn, true);
-  disableFormControls();
-
-  const out = installOutput;
-  out.textContent = 'Running install...';
-  out.className = 'mt-2 text-gray-600 whitespace-pre-wrap';
-
-  beginProgress();
-
-  try {
-    const res = await fetch('/api/install/run', { method: 'POST' });
-    if (res.status === 401 || res.status === 403) {
-      alert('Please log in to continue.');
-      out.textContent = 'Authentication required. Please log in.';
-      out.className = 'mt-2 text-red-600 whitespace-pre-wrap';
+    let requirements = [];
+    if (Array.isArray(payload.requirements)) {
+      requirements = payload.requirements.map((req, index) => {
+        const id = req?.id || req?.key || req?.name || `requirement-${index}`;
+        const label = req?.label || req?.name || FRIENDLY_LABELS[id] || formatKey(id);
+        const value = req?.ok ?? req?.passed ?? req?.status ?? req?.value ?? req?.isMet ?? false;
+        const passed =
+          typeof value === 'boolean'
+            ? value
+            : typeof value === 'string'
+              ? ['ok', 'pass', 'passed', 'true', 'ready'].includes(value.toLowerCase())
+              : Boolean(value);
+        const details = req?.details || req?.message || req?.hint || '';
+        return { id, label, passed, details };
+      });
     } else {
-      const data = await res.json();
-      success = Boolean(data.ok);
-      out.textContent = (success ? 'Success:\n' : 'Error:\n') +
-        (data.output || JSON.stringify(data, null, 2));
-      out.className =
-        'mt-2 ' + (success ? 'text-green-600' : 'text-red-600') + ' whitespace-pre-wrap';
+      const ignoreKeys = new Set(['ok', 'summary', 'message', 'output', 'requirements']);
+      requirements = Object.entries(payload)
+        .filter(([key, value]) => !ignoreKeys.has(key) && value !== undefined && value !== null)
+        .map(([key, value]) => {
+          const label = FRIENDLY_LABELS[key] || formatKey(key);
+          let passed = false;
+          let details = '';
+          if (typeof value === 'boolean') {
+            passed = value;
+          } else if (typeof value === 'string') {
+            const lowered = value.toLowerCase();
+            passed = ['ok', 'pass', 'passed', 'true', 'ready', 'success'].includes(lowered);
+            if (!passed && lowered.length) {
+              details = value;
+            }
+          } else if (typeof value === 'number') {
+            passed = value > 0;
+          } else if (typeof value === 'object') {
+            if (typeof value.ok === 'boolean') {
+              passed = value.ok;
+            } else if (typeof value.passed === 'boolean') {
+              passed = value.passed;
+            } else if (typeof value.status === 'string') {
+              passed = ['ok', 'pass', 'passed', 'ready', 'success'].includes(value.status.toLowerCase());
+            } else if (typeof value.value === 'boolean') {
+              passed = value.value;
+            } else if (typeof value.isMet === 'boolean') {
+              passed = value.isMet;
+            }
+            details = value.message || value.details || value.hint || '';
+          }
+          return { id: key, label, passed, details };
+        });
     }
-  } catch (err) {
-    out.textContent = 'Error: ' + err.message;
-    out.className = 'mt-2 text-red-600 whitespace-pre-wrap';
-  } finally {
-    completeProgress(success);
-    installInProgress = false;
 
-    if (success) {
-      lockInstallerUI();
-    } else if (!installCompletedSuccessfully) {
-      enableFormControls();
-      updateButtonState(installBtn, false);
-      updateButtonState(checkBtn, false);
+    normalized.requirements = requirements;
+    const requirementsPassing = requirements.length ? requirements.every((req) => req.passed) : false;
+
+    if (typeof payload.ok === 'boolean') {
+      normalized.allPassing = payload.ok && (requirements.length ? requirementsPassing : true);
+    } else if (requirements.length) {
+      normalized.allPassing = requirementsPassing;
+    } else if (normalized.rawText) {
+      normalized.allPassing = false;
+    }
+
+    normalized.summary =
+      payload.summary ||
+      payload.message ||
+      (normalized.allPassing
+        ? 'All prerequisites satisfied.'
+        : requirements.length
+          ? 'Some prerequisites need attention.'
+          : normalized.rawText || 'No prerequisite information was returned.');
+
+    return normalized;
+  }
+
+  function renderRequirements(requirements, rawText = '') {
+    if (!prereqStatus) return;
+    prereqStatus.innerHTML = '';
+    if (!requirements.length) {
+      if (rawText) {
+        const pre = document.createElement('pre');
+        pre.className =
+          'whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700';
+        pre.textContent = rawText;
+        prereqStatus.appendChild(pre);
+      } else {
+        const empty = document.createElement('p');
+        empty.className = 'text-sm text-gray-600';
+        empty.textContent = 'No prerequisite details were returned.';
+        prereqStatus.appendChild(empty);
+      }
+      return;
+    }
+
+    requirements.forEach((req) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = [
+        'flex items-start gap-3 rounded border p-3 text-sm transition-colors duration-300',
+        req.passed ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-700',
+      ].join(' ');
+
+      const icon = document.createElement('span');
+      icon.className = `mt-0.5 text-base ${req.passed ? 'text-green-600' : 'text-red-600'}`;
+      icon.textContent = req.passed ? '✓' : '!';
+      icon.setAttribute('aria-hidden', 'true');
+
+      const content = document.createElement('div');
+      content.className = 'space-y-1';
+      const title = document.createElement('p');
+      title.className = 'font-medium';
+      title.textContent = req.label || 'Requirement';
+      content.appendChild(title);
+
+      if (req.details) {
+        const details = document.createElement('p');
+        details.className = 'text-xs';
+        details.textContent = req.details;
+        content.appendChild(details);
+      }
+
+      wrapper.append(icon, content);
+      prereqStatus.appendChild(wrapper);
+    });
+  }
+
+  function setSummary(message, status = 'info') {
+    if (!prereqSummary) return;
+    prereqSummary.textContent = message || '';
+    prereqSummary.className = 'mt-2 text-sm';
+    if (status === 'success') {
+      prereqSummary.classList.add('text-green-700');
+    } else if (status === 'error') {
+      prereqSummary.classList.add('text-red-600');
+    } else {
+      prereqSummary.classList.add('text-gray-600');
     }
   }
-}
 
-checkBtn.addEventListener('click', checkPrereqs);
-window.addEventListener('DOMContentLoaded', checkPrereqs);
+  function showCompletion(data, credentials) {
+    if (!completionCard) return;
+    const messageFromApi =
+      data?.message || data?.summary || data?.success || data?.statusMessage || '';
+    const instructionsFromApi = Array.isArray(data?.nextSteps)
+      ? data.nextSteps
+      : typeof data?.nextSteps === 'string'
+        ? [data.nextSteps]
+        : [];
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  runInstall();
+    if (completionMessage) {
+      completionMessage.className = 'mt-1 text-green-700';
+      completionMessage.textContent =
+        messageFromApi || 'SkillBridge is installed and ready to go.';
+    }
+
+    if (completionNextSteps) {
+      completionNextSteps.innerHTML = '';
+      const steps =
+        instructionsFromApi.length > 0
+          ? instructionsFromApi
+          : [
+              credentials?.adminEmail
+                ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
+                : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
+              'Complete the organization setup and invite your teammates.',
+              'Visit the documentation for deployment and integration guidance.',
+            ];
+      steps
+        .filter((step) => typeof step === 'string' && step.trim().length > 0)
+        .forEach((step) => {
+          const li = document.createElement('li');
+          li.textContent = step.trim();
+          completionNextSteps.appendChild(li);
+        });
+    }
+
+    completionCard.classList.remove('hidden');
+    backToConfigBtn?.classList.add('hidden');
+  }
+
+  async function checkPrereqs() {
+    updateStep('prereq', { preserveProgress: true });
+    clearError();
+    completionCard?.classList.add('hidden');
+    backToConfigBtn?.classList.add('hidden');
+
+    if (prereqStatus) {
+      prereqStatus.innerHTML = '';
+      const loading = document.createElement('p');
+      loading.className = 'text-sm text-gray-600';
+      loading.textContent = 'Checking prerequisites...';
+      prereqStatus.appendChild(loading);
+    }
+    setSummary('Checking prerequisites...', 'info');
+    setProgress(12);
+    if (checkBtn) checkBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
+      if (res.status === 401 || res.status === 403) {
+        setSummary('Authentication required. Please log in and try again.', 'error');
+        showError('Please log in to continue.');
+        setProgress(0);
+        return;
+      }
+
+      const bodyText = await res.text();
+      let data;
+      if (bodyText) {
+        try {
+          data = JSON.parse(bodyText);
+        } catch {
+          data = { output: bodyText };
+        }
+      } else {
+        data = {};
+      }
+
+      const normalized = normalizePrereqResponse(data);
+      renderRequirements(normalized.requirements, normalized.rawText);
+      const summaryStatus = normalized.allPassing
+        ? 'success'
+        : normalized.requirements.length
+          ? 'error'
+          : 'info';
+      setSummary(normalized.summary, summaryStatus);
+
+      if (normalized.allPassing && res.ok) {
+        clearError();
+        updateStep('config');
+      } else {
+        showError(
+          res.ok
+            ? 'Prerequisite check failed. Review the requirements below.'
+            : `Prerequisite check failed${res.status ? ` (HTTP ${res.status})` : ''}.`,
+        );
+        setProgress(20);
+      }
+    } catch (err) {
+      showError(`Error checking prerequisites: ${err.message}`);
+      setSummary('Unable to verify prerequisites. Please try again.', 'error');
+      setProgress(10);
+    } finally {
+      if (checkBtn) checkBtn.disabled = false;
+    }
+  }
+
+  async function handleInstallSubmit(event) {
+    event.preventDefault();
+    clearError();
+    completionCard?.classList.add('hidden');
+    backToConfigBtn?.classList.add('hidden');
+
+    if (!configForm) return;
+
+    const formData = new FormData(configForm);
+    const credentials = {
+      adminEmail: String(formData.get('adminEmail') || '').trim(),
+      adminPassword: String(formData.get('adminPassword') || ''),
+    };
+
+    updateStep('install');
+    setProgress(90);
+
+    if (installBtn) installBtn.disabled = true;
+
+    if (installOutput) {
+      installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
+      installOutput.classList.add('text-gray-700');
+      installOutput.textContent = 'Running install...';
+    }
+
+    try {
+      const res = await fetch('/api/install/run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        showError('Please log in to continue.');
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = 'Authentication required. Please log in.';
+        }
+        updateStep('config');
+        return;
+      }
+
+      const responseText = await res.text();
+      let data;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { output: responseText };
+        }
+      } else {
+        data = {};
+      }
+
+      const success = typeof data.ok === 'boolean' ? data.ok : res.ok;
+      const outputText =
+        typeof data.output === 'string' && data.output.trim().length > 0
+          ? data.output
+          : typeof data.log === 'string'
+            ? data.log
+            : responseText;
+
+      if (installOutput) {
+        installOutput.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
+        installOutput.classList.add(success ? 'text-green-700' : 'text-red-700');
+        if (outputText && outputText.trim().length > 0) {
+          installOutput.classList.remove('hidden');
+          installOutput.textContent = outputText.trim();
+        } else if (!success) {
+          installOutput.classList.remove('hidden');
+          installOutput.textContent = 'Installation failed with no additional output.';
+        } else {
+          installOutput.classList.add('hidden');
+          installOutput.textContent = '';
+        }
+      }
+
+      if (success) {
+        setProgress(100);
+        clearError();
+        showCompletion(data, credentials);
+      } else {
+        showError('Installation failed. Review the log below and try again.');
+        backToConfigBtn?.classList.remove('hidden');
+        setProgress(STEP_PROGRESS.install);
+      }
+    } catch (err) {
+      showError(`Error running install: ${err.message}`);
+      if (installOutput) {
+        installOutput.classList.remove('hidden', 'text-green-700');
+        installOutput.classList.add('text-red-700');
+        installOutput.textContent = `Error: ${err.message}`;
+      }
+      backToConfigBtn?.classList.remove('hidden');
+      setProgress(STEP_PROGRESS.install);
+    } finally {
+      if (installBtn) installBtn.disabled = false;
+    }
+  }
+
+  if (checkBtn) {
+    checkBtn.addEventListener('click', checkPrereqs);
+  }
+  if (configForm) {
+    configForm.addEventListener('submit', handleInstallSubmit);
+  }
+  if (backToConfigBtn) {
+    backToConfigBtn.addEventListener('click', () => {
+      clearError();
+      updateStep('config');
+      setProgress(STEP_PROGRESS.config);
+      completionCard?.classList.add('hidden');
+      if (installOutput) {
+        installOutput.classList.add('hidden');
+        installOutput.classList.remove('text-green-700', 'text-red-700');
+        installOutput.classList.add('text-gray-700');
+        installOutput.textContent = '';
+      }
+      if (configForm) {
+        const firstInput = configForm.querySelector('input');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }
+    });
+  }
+
+  updateStep('prereq', { preserveProgress: true });
+  setProgress(0);
+  checkPrereqs();
 });

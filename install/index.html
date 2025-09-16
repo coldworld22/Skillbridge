@@ -31,6 +31,97 @@
       max-height: 0;
       pointer-events: none;
     }
+
+    .stepper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .stepper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .stepper-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1 1 0%;
+    }
+
+    .stepper-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -0.5rem;
+      transform: translateY(-50%);
+      height: 2px;
+      width: calc(100% + 1rem);
+      background-color: #e5e7eb;
+      z-index: 0;
+    }
+
+    @media (max-width: 639px) {
+      .stepper-item:not(:last-child)::after {
+        display: none;
+      }
+    }
+
+    .stepper-index {
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.5rem;
+      width: 2.5rem;
+      border-radius: 9999px;
+      border: 2px solid #d1d5db;
+      background-color: #ffffff;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.3s ease;
+    }
+
+    .stepper-item.stepper-active .stepper-index {
+      border-color: #2563eb;
+      background-color: #2563eb;
+      color: #ffffff;
+    }
+
+    .stepper-item.stepper-complete .stepper-index {
+      border-color: #16a34a;
+      background-color: #16a34a;
+      color: #ffffff;
+    }
+
+    .stepper-item.stepper-complete::after {
+      background-color: #16a34a;
+    }
+
+    .stepper-item.stepper-active::after {
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+    }
+
+    .stepper-item.stepper-upcoming .stepper-index {
+      border-color: #d1d5db;
+      background-color: #ffffff;
+      color: #6b7280;
+    }
+
+    .stepper-item .stepper-title {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .stepper-item .stepper-caption {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
   </style>
 </head>
 <body class="p-4 font-sans">
@@ -39,37 +130,99 @@
     <a href="/docs" class="text-blue-600 underline">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
-  <section id="step1" class="mb-8">
-    <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
-    <button id="checkBtn" class="px-4 py-2 bg-blue-500 text-white rounded">Recheck</button>
-    <pre id="prereqOutput" class="mt-2"></pre>
-  </section>
-  <section id="step2" style="display: none;" class="mb-8">
-    <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
-    <form id="configForm" class="space-y-4">
-      <label class="block">
-        <span class="block">Admin Email</span>
-        <input type="email" name="adminEmail" required class="border p-2 w-full" />
-      </label>
-      <label class="block">
-        <span class="block">Admin Password</span>
-        <input type="password" name="adminPassword" required class="border p-2 w-full" />
-      </label>
-      <button type="submit" id="installBtn" class="px-4 py-2 bg-green-600 text-white rounded">Run Install</button>
-    </form>
-    <div
-      id="progressContainer"
-      class="w-full bg-gray-200 rounded h-2 mt-4 hidden"
-      role="progressbar"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-valuenow="0"
-      aria-live="polite"
-    >
-      <div id="progressBar" class="h-2 bg-blue-500 rounded" style="width: 0%;"></div>
+  <div class="mb-6 space-y-4">
+    <ol id="stepper" class="stepper" aria-label="Installation steps" role="list">
+      <li class="stepper-item stepper-active" data-stepper-item="prereq">
+        <span class="stepper-index">1</span>
+        <div>
+          <p class="stepper-title">Prerequisites</p>
+          <p class="stepper-caption">Verify environment</p>
+        </div>
+      </li>
+      <li class="stepper-item stepper-upcoming" data-stepper-item="config">
+        <span class="stepper-index">2</span>
+        <div>
+          <p class="stepper-title">Configuration</p>
+          <p class="stepper-caption">Define admin access</p>
+        </div>
+      </li>
+      <li class="stepper-item stepper-upcoming" data-stepper-item="install">
+        <span class="stepper-index">3</span>
+        <div>
+          <p class="stepper-title">Run Install</p>
+          <p class="stepper-caption">Finalize setup</p>
+        </div>
+      </li>
+    </ol>
+    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
+      <div
+        id="progressBar"
+        class="h-2 bg-blue-500 transition-all duration-300"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        style="width: 0%;"
+      ></div>
     </div>
-    <p id="progressStatus" class="mt-2 text-sm text-gray-600 hidden" aria-live="polite"></p>
-    <pre id="installOutput" class="mt-2"></pre>
+    <div
+      id="errorBox"
+      class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
+      role="alert"
+    ></div>
+  </div>
+  <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
+    <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
+    <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
+    <button id="checkBtn" class="mt-4 rounded bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600">Recheck</button>
+    <div
+      id="prereqStatus"
+      class="mt-4 space-y-3"
+      aria-live="polite"
+    ></div>
+    <p id="prereqSummary" class="mt-2 text-sm text-gray-600" role="status" aria-live="polite"></p>
+  </section>
+  <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
+
+    <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
+    <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
+    <form id="configForm" class="mt-4 space-y-4">
+      <label class="block">
+        <span class="block font-medium">Admin Email</span>
+        <input type="email" name="adminEmail" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      </label>
+      <label class="block">
+        <span class="block font-medium">Admin Password</span>
+        <input type="password" name="adminPassword" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      </label>
+      <button type="submit" id="installBtn" class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700">Run Install</button>
+    </form>
+  </section>
+  <section id="step-install" class="mb-8 step-container step-hidden-right" aria-hidden="true">
+    <h2 class="text-xl font-semibold mb-2">Step 3: Run Installation</h2>
+    <p class="text-sm text-gray-600">We’ll execute the installer and share the results along with recommended next steps.</p>
+    <div class="mt-4 space-y-4">
+      <pre
+        id="installOutput"
+        class="hidden whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700"
+        aria-live="polite"
+      ></pre>
+      <div
+        id="completionCard"
+        class="hidden rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+      >
+        <h3 class="text-base font-semibold text-green-700">Installation complete</h3>
+        <p id="completionMessage" class="mt-1 text-green-700"></p>
+        <ul id="completionNextSteps" class="mt-3 list-disc space-y-1 pl-5"></ul>
+      </div>
+      <button
+        type="button"
+        id="backToConfigBtn"
+        class="hidden text-sm font-medium text-blue-600 transition hover:text-blue-800"
+      >
+        ← Back to configuration
+      </button>
+    </div>
   </section>
   <script src="install.js" defer></script>
 </body>
