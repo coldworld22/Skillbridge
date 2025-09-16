@@ -3,19 +3,29 @@ const errorBox = document.getElementById('errorBox');
 const step2 = document.getElementById('step2');
 
 function setProgress(p) {
-  progressBar.style.width = `${p}%`;
+  if (!progressBar) {
+    return;
+  }
+  const value = clampProgress(p);
+  progressBar.style.width = `${value}%`;
+  progressBar.setAttribute('aria-valuenow', `${value}`);
 }
 
 function showError(msg) {
+  if (!errorBox) {
+    return;
+  }
   errorBox.textContent = msg;
   errorBox.classList.remove('hidden');
 }
 
 function clearError() {
+  if (!errorBox) {
+    return;
+  }
   errorBox.textContent = '';
   errorBox.classList.add('hidden');
 }
-
 function renderChecklist(output, results, allPassed) {
   const requirements = [
     { key: 'node', label: 'Node.js (v18+)' },
@@ -76,6 +86,7 @@ async function checkPrereqs() {
   step2.style.display = 'none';
   try {
     const res = await fetch('/api/install/prereqs');
+    setProgress(30);
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
@@ -104,11 +115,21 @@ async function checkPrereqs() {
     step2.style.display = 'none';
   }
 }
+const checkBtn = document.getElementById('checkBtn');
+if (checkBtn) {
+  checkBtn.addEventListener('click', checkPrereqs);
+}
 
-document.getElementById('checkBtn').addEventListener('click', checkPrereqs);
+window.addEventListener('DOMContentLoaded', () => {
+  setProgress(0);
+  clearError();
+  checkPrereqs();
+});
 
-window.addEventListener('DOMContentLoaded', checkPrereqs);
-
+window.addEventListener('DOMContentLoaded', () => {
+  setProgress(0);
+  checkPrereqs();
+});
 const form = document.getElementById('configForm');
 const installBtn = document.getElementById('installBtn');
 form.addEventListener('submit', async (e) => {
@@ -124,6 +145,11 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
@@ -131,13 +157,5 @@ form.addEventListener('submit', async (e) => {
       out.classList.add('error');
       return;
     }
-    const data = await res.json();
-    out.textContent = (data.ok ? 'Success:\n' : 'Error:\n') + (data.output || JSON.stringify(data, null, 2));
-    out.className = data.ok ? 'text-green-600' : 'text-red-600';
-  } catch (err) {
-    out.textContent = 'Error: ' + err.message;
-    out.className = 'text-red-600';
-  } finally {
-    installBtn.disabled = false;
-  }
-});
+  });
+}

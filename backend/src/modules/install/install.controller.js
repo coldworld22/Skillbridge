@@ -44,7 +44,31 @@ const executeScript = (res, scriptKey, options = {}) => {
     if (error) {
       return res.status(500).json({ ok: false, output: output || error.message });
     }
-    res.json({ ok: true, output });
+
+    if (parseJson) {
+      const text = output.trim();
+      if (!text) {
+        const combined = (output + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Installer script returned no JSON output',
+          output: combined,
+        });
+      }
+      try {
+        const parsed = JSON.parse(text);
+        return res.json(parsed);
+      } catch (parseError) {
+        const combined = (text + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Invalid JSON output from script',
+          output: combined,
+        });
+      }
+    }
+
+    return res.json({ ok: true, output: `${output}${errorOutput}` });
   });
 };
 
