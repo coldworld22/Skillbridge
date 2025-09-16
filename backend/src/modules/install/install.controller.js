@@ -15,7 +15,13 @@ const executeScript = (res, scriptKey, options = {}) => {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
 
-  execFile(script, { shell: false }, (error, stdout, stderr) => {
+  const envOverrides = options.env || {};
+  const execOptions = {
+    shell: false,
+    env: { ...process.env, ...envOverrides },
+  };
+
+  execFile(script, execOptions, (error, stdout, stderr) => {
     const rawOutput = stdout + stderr;
     const trimmedStdout = stdout.trim();
     let parsedOutput;
@@ -49,4 +55,10 @@ exports.checkPrereqs = (req, res) =>
     evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
     determineStatusCode: () => 200,
   });
-exports.runInstall = (req, res) => executeScript(res, 'install');
+exports.runInstall = (req, res) =>
+  executeScript(res, 'install', {
+    env: {
+      ADMIN_EMAIL: req.body.adminEmail,
+      ADMIN_PASSWORD: req.body.adminPassword,
+    },
+  });
