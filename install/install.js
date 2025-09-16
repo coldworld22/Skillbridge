@@ -1,250 +1,159 @@
-const stepItems = Array.from(document.querySelectorAll('[data-step-index]'));
-const stepPanels = Array.from(document.querySelectorAll('[data-panel-index]'));
-const connectors = Array.from(document.querySelectorAll('[data-step-connector]'));
-const panelContainer = document.getElementById('stepPanels');
+const progressBar = document.getElementById('progressBar');
+const progressContainer = document.getElementById('progressContainer');
+const progressStatus = document.getElementById('progressStatus');
 const checkBtn = document.getElementById('checkBtn');
-const prereqOutput = document.getElementById('prereqOutput');
-const configForm = document.getElementById('configForm');
-const installStatus = document.getElementById('installStatus');
+const step2 = document.getElementById('step2');
+const form = document.getElementById('configForm');
+const installBtn = document.getElementById('installBtn');
 const installOutput = document.getElementById('installOutput');
 
-let activeStepIndex = 0;
-const completedSteps = new Set();
+let installInProgress = false;
+let installCompleted = false;
+let progressIntervalId;
 
-const STATUS_CLASSES = {
-  neutral: ['border-slate-200', 'bg-slate-50', 'text-slate-600'],
-  loading: ['border-blue-200', 'bg-blue-50', 'text-blue-700'],
-  success: ['border-emerald-300', 'bg-emerald-50', 'text-emerald-700'],
-  error: ['border-rose-300', 'bg-rose-50', 'text-rose-700'],
-};
-
-const ALL_STATUS_CLASSES = Array.from(new Set(Object.values(STATUS_CLASSES).flat()));
-const CIRCLE_STATE_CLASSES = [
-  'bg-blue-600',
-  'bg-green-600',
-  'bg-white',
-  'border-blue-600',
-  'border-green-600',
-  'border-gray-300',
-  'text-white',
-  'text-gray-400',
-  'shadow-lg',
-  'scale-110',
-];
-const LABEL_STATE_CLASSES = ['text-blue-600', 'text-green-600', 'text-slate-500', 'font-semibold'];
-const CONNECTOR_STATE_CLASSES = ['bg-slate-200', 'bg-blue-500', 'bg-emerald-500'];
-
-function applyStatusClasses(element, state = 'neutral') {
-  if (!element) return;
-  element.classList.remove(...ALL_STATUS_CLASSES);
-  const classes = STATUS_CLASSES[state] || STATUS_CLASSES.neutral;
-  element.classList.add(...classes);
-}
-
-function refreshPanelHeight() {
-  const activePanel = stepPanels[activeStepIndex];
-  if (!panelContainer || !activePanel) return;
-  window.requestAnimationFrame(() => {
-    panelContainer.style.height = `${activePanel.scrollHeight}px`;
-  });
-}
-
-function updateStepItems() {
-  stepItems.forEach((item, index) => {
-    const circle = item.querySelector('.step-circle');
-    const label = item.querySelector('.step-label');
-    const isActive = index === activeStepIndex;
-    const isCompleted = completedSteps.has(index);
-    const isAccessible = index <= activeStepIndex;
-
-    if (circle) {
-      circle.classList.remove(...CIRCLE_STATE_CLASSES);
-      if (isCompleted) {
-        circle.classList.add('bg-green-600', 'border-green-600', 'text-white');
-      } else if (isActive) {
-        circle.classList.add('bg-blue-600', 'border-blue-600', 'text-white', 'shadow-lg', 'scale-110');
-      } else {
-        circle.classList.add('bg-white', 'border-gray-300', 'text-gray-400');
-      }
-    }
-
-    if (label) {
-      label.classList.remove(...LABEL_STATE_CLASSES);
-      if (isCompleted) {
-        label.classList.add('text-green-600', 'font-semibold');
-      } else if (isActive) {
-        label.classList.add('text-blue-600', 'font-semibold');
-      } else {
-        label.classList.add('text-slate-500');
-      }
-    }
-
-    item.classList.toggle('cursor-pointer', isAccessible);
-    item.classList.toggle('cursor-not-allowed', !isAccessible);
-    item.setAttribute('tabindex', isAccessible ? '0' : '-1');
-    item.setAttribute('aria-disabled', isAccessible ? 'false' : 'true');
-  });
-}
-
-function updateConnectors() {
-  connectors.forEach((connector) => {
-    if (!connector) return;
-    const index = Number(connector.dataset.stepConnector);
-    connector.classList.remove(...CONNECTOR_STATE_CLASSES);
-    if (completedSteps.has(index)) {
-      connector.classList.add('bg-emerald-500');
-    } else if (activeStepIndex > index) {
-      connector.classList.add('bg-blue-500');
-    } else {
-      connector.classList.add('bg-slate-200');
-    }
-  });
-}
-
-function updatePanels(nextIndex) {
-  stepPanels.forEach((panel, index) => {
-    if (!panel) return;
-    panel.classList.remove(
-      'relative',
-      'absolute',
-      'inset-0',
-      'opacity-0',
-      'opacity-100',
-      'pointer-events-none',
-      'pointer-events-auto',
-      'translate-x-0',
-      'translate-x-6',
-      '-translate-x-6',
-    );
-    if (index === nextIndex) {
-      panel.classList.add('relative', 'opacity-100', 'translate-x-0');
-    } else {
-      panel.classList.add('absolute', 'inset-0', 'opacity-0', 'pointer-events-none');
-      panel.classList.add(index < nextIndex ? '-translate-x-6' : 'translate-x-6');
-    }
-  });
-}
-
-function goToStep(nextIndex) {
-  const targetIndex = Math.max(0, Math.min(nextIndex, stepPanels.length - 1));
-  activeStepIndex = targetIndex;
-  updateStepItems();
-  updateConnectors();
-  updatePanels(targetIndex);
-  refreshPanelHeight();
-}
-
-function markStepComplete(stepIndex) {
-  completedSteps.add(stepIndex);
-  updateStepItems();
-  updateConnectors();
-}
-
-function resetStepsFrom(startIndex) {
-  for (let i = startIndex; i < stepItems.length; i += 1) {
-    completedSteps.delete(i);
+function setProgress(p) {
+  if (progressBar) {
+    progressBar.style.width = `${p}%`;
   }
-  updateStepItems();
-  updateConnectors();
-}
-
-function setInstallStatus(text) {
-  if (!installStatus) return;
-  installStatus.textContent = text;
-  refreshPanelHeight();
-}
-
-function updateOutput(element, text, state) {
-  if (!element) return;
-  applyStatusClasses(element, state);
-  element.textContent = text;
-  refreshPanelHeight();
-}
-
-function setConfigFormDisabled(disabled) {
-  if (!configForm) return;
-  const fields = configForm.querySelectorAll('input, button');
-  fields.forEach((field) => {
-    field.disabled = disabled;
-  });
-}
-
-function buildOutputMessage(prefix, payload) {
-  if (!payload) {
-    return prefix;
+  if (progressContainer) {
+    progressContainer.setAttribute('aria-valuenow', String(Math.round(p)));
   }
-  const details = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
-  return `${prefix}\n${details}`;
+}
+
+function hideProgress() {
+  clearInterval(progressIntervalId);
+  progressIntervalId = undefined;
+  setProgress(0);
+  if (progressContainer) {
+    progressContainer.classList.add('hidden');
+    progressContainer.setAttribute('aria-valuenow', '0');
+  }
+  if (progressStatus) {
+    progressStatus.textContent = '';
+    progressStatus.className = 'mt-2 text-sm text-gray-600 hidden';
+  }
+}
+
+function startProgress(statusText) {
+  if (progressContainer) {
+    progressContainer.classList.remove('hidden');
+  }
+  setProgress(10);
+  if (progressStatus) {
+    progressStatus.textContent = statusText;
+    progressStatus.className = 'mt-2 text-sm text-gray-600';
+  }
+  clearInterval(progressIntervalId);
+  let current = 10;
+  progressIntervalId = setInterval(() => {
+    current = Math.min(current + Math.random() * 10, 95);
+    setProgress(current);
+  }, 500);
+}
+
+function completeProgress(success) {
+  clearInterval(progressIntervalId);
+  progressIntervalId = undefined;
+  setProgress(100);
+  if (progressStatus) {
+    progressStatus.textContent = success
+      ? 'Installation complete.'
+      : 'Installation failed.';
+    progressStatus.className = success
+      ? 'mt-2 text-sm text-green-600'
+      : 'mt-2 text-sm text-red-600';
+  }
+}
+
+function disableInstallerInterface() {
+  if (installBtn) {
+    installBtn.disabled = true;
+    installBtn.classList.add('cursor-not-allowed', 'opacity-60');
+  }
+  if (checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.classList.add('cursor-not-allowed', 'opacity-60');
+  }
+  if (form) {
+    Array.from(form.elements).forEach((el) => {
+      el.disabled = true;
+    });
+  }
+  if (step2) {
+    step2.classList.add('opacity-60');
+  }
 }
 
 async function checkPrereqs() {
-  resetStepsFrom(0);
-  goToStep(0);
-  updateOutput(prereqOutput, 'Checking prerequisites...', 'loading');
-  setConfigFormDisabled(true);
-
+  const output = document.getElementById('prereqOutput');
+  if (!output) return;
+  output.textContent = 'Checking...';
+  output.className = 'text-gray-600';
   try {
     const response = await fetch('/api/install/prereqs');
     if (response.status === 401 || response.status === 403) {
       alert('Please log in to continue.');
-      updateOutput(prereqOutput, 'Authentication required. Please log in.', 'error');
+      output.textContent = 'Authentication required. Please log in.';
+      output.className = 'text-red-600';
       return;
     }
 
     const data = await response.json();
     if (data.ok) {
-      const message = buildOutputMessage('Success:', data.output || data);
-      updateOutput(prereqOutput, message, 'success');
-      markStepComplete(0);
-      resetStepsFrom(1);
-      setInstallStatus('Waiting to start installation');
-      updateOutput(
-        installOutput,
-        'Installation output will appear here once the process starts.',
-        'neutral',
-      );
-      setConfigFormDisabled(false);
-      goToStep(1);
-      if (configForm && typeof configForm.adminEmail?.focus === 'function') {
-        window.setTimeout(() => {
-          configForm.adminEmail.focus();
-        }, 200);
+      output.className = 'text-green-600';
+      output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));
+      if (step2) {
+        step2.style.display = 'block';
+      }
+      if (!installInProgress && !installCompleted) {
+        const confirmationMessage =
+          form && form.adminEmail?.value && form.adminPassword?.value
+            ? 'Prerequisite checks passed. Start the installation now?'
+            : 'Prerequisite checks passed. Start the installation now? You can cancel to adjust configuration values first.';
+        if (window.confirm(confirmationMessage)) {
+          runInstall();
+        }
       }
     } else {
-      const message = buildOutputMessage('Error:', data.output || data);
-      updateOutput(prereqOutput, message, 'error');
+      output.className = 'text-red-600';
+      output.textContent = 'Error:\n' + (data.output || JSON.stringify(data, null, 2));
+      if (step2) {
+        step2.style.display = 'none';
+      }
     }
   } catch (error) {
     updateOutput(prereqOutput, `Error: ${error.message}`, 'error');
   }
 }
 
-async function handleInstall(event) {
-  event.preventDefault();
-  if (!completedSteps.has(0)) {
-    goToStep(0);
-    updateOutput(
-      prereqOutput,
-      'Please complete the prerequisite check before starting the installation.',
-      'error',
-    );
-    return;
-  }
+if (checkBtn) {
+  checkBtn.addEventListener('click', checkPrereqs);
+}
 
   if (!configForm) return;
 
-  const payload = {
-    adminEmail: configForm.adminEmail.value,
-    adminPassword: configForm.adminPassword.value,
-  };
 
-  setConfigFormDisabled(true);
-  markStepComplete(1);
-  resetStepsFrom(2);
-  setInstallStatus('Running installation');
-  updateOutput(installOutput, 'Running installation...', 'loading');
-  goToStep(2);
+async function runInstall() {
+  if (installInProgress || installCompleted) {
+    return;
+  }
+  if (!form || !form.reportValidity()) {
+    return;
+  }
+  installInProgress = true;
+  if (installBtn) {
+    installBtn.disabled = true;
+  }
+  if (checkBtn) {
+    checkBtn.disabled = true;
+  }
+  if (installOutput) {
+    installOutput.textContent = 'Running install...';
+    installOutput.className = 'mt-2 text-gray-600';
+  }
+  startProgress('Running install.sh...');
 
+  let shouldDisable = false;
   try {
     const response = await fetch('/api/install/run', {
       method: 'POST',
@@ -256,62 +165,53 @@ async function handleInstall(event) {
 
     if (response.status === 401 || response.status === 403) {
       alert('Please log in to continue.');
-      updateOutput(installOutput, 'Authentication required. Please log in.', 'error');
-      setInstallStatus('Authentication required');
+      if (installOutput) {
+        installOutput.textContent = 'Authentication required. Please log in.';
+        installOutput.className = 'mt-2 text-red-600';
+      }
+      hideProgress();
       return;
     }
-
-    const data = await response.json();
-    if (data.ok) {
-      const message = buildOutputMessage('Success:', data.output || data);
-      updateOutput(installOutput, message, 'success');
-      setInstallStatus('Installation completed successfully');
-      markStepComplete(2);
-    } else {
-      const message = buildOutputMessage('Error:', data.output || data);
-      updateOutput(installOutput, message, 'error');
-      setInstallStatus('Installation failed. Review the output for details.');
+    const data = await res.json();
+    const success = Boolean(data.ok);
+    if (installOutput) {
+      installOutput.textContent =
+        (success ? 'Success:\n' : 'Error:\n') +
+        (data.output || JSON.stringify(data, null, 2));
+      installOutput.className = success
+        ? 'mt-2 text-green-600'
+        : 'mt-2 text-red-600';
     }
-  } catch (error) {
-    updateOutput(installOutput, `Error: ${error.message}`, 'error');
-    setInstallStatus('Installation encountered an unexpected error.');
+    completeProgress(success);
+    shouldDisable = true;
+  } catch (err) {
+    if (installOutput) {
+      installOutput.textContent = 'Error: ' + err.message;
+      installOutput.className = 'mt-2 text-red-600';
+    }
+    completeProgress(false);
+    shouldDisable = true;
   } finally {
-    setConfigFormDisabled(false);
+    installInProgress = false;
+    if (shouldDisable) {
+      installCompleted = true;
+      disableInstallerInterface();
+    } else {
+      if (installBtn) {
+        installBtn.disabled = false;
+        installBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+      if (checkBtn) {
+        checkBtn.disabled = false;
+        checkBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+    }
   }
 }
 
-stepItems.forEach((item, index) => {
-  item.addEventListener('click', () => {
-    if (index <= activeStepIndex) {
-      goToStep(index);
-    }
-  });
-
-  item.addEventListener('keydown', (event) => {
-    if ((event.key === 'Enter' || event.key === ' ') && index <= activeStepIndex) {
-      event.preventDefault();
-      goToStep(index);
-    }
-  });
-});
-
-if (checkBtn) {
-  checkBtn.addEventListener('click', () => {
-    checkPrereqs();
+if (form) {
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    runInstall();
   });
 }
-
-if (configForm) {
-  configForm.addEventListener('submit', handleInstall);
-}
-
-function init() {
-  applyStatusClasses(prereqOutput, 'neutral');
-  applyStatusClasses(installOutput, 'neutral');
-  setConfigFormDisabled(true);
-  goToStep(0);
-  window.addEventListener('resize', refreshPanelHeight);
-  checkPrereqs();
-}
-
-init();
