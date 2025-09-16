@@ -73,7 +73,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl --noproxy '*' -fsS -o /dev/null http://127.0.0.1:${BACKEND_PORT}/api/health",
+          "curl --noproxy 127.0.0.1,localhost -fsS -o /dev/null http://127.0.0.1:${BACKEND_PORT}/api/health",
         ]
       interval: 30s
       timeout: 30s
@@ -110,7 +110,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl --noproxy '*' -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/health",
+          "curl --noproxy 127.0.0.1,localhost -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/health",
         ]
       interval: 30s
       timeout: 30s
