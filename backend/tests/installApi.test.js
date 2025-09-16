@@ -2,7 +2,9 @@ const request = require('supertest');
 const express = require('express');
 
 jest.mock('child_process', () => ({
-  execFile: jest.fn((_script, _opts, cb) => cb(null, 'ok', '')),
+  execFile: jest.fn((_script, _opts, cb) =>
+    cb(null, '{"ok":true,"errors":{},"details":{}}', ''),
+  ),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -14,10 +16,10 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const { execFile } = require('child_process');
-const routes = require('../src/modules/install/install.routes');
+const { router } = require('../src/modules/install/install.routes');
 
 const app = express();
-app.use('/api/install', routes);
+app.use('/api/install', router);
 
 describe('/api/install/prereqs', () => {
   afterEach(() => {
@@ -37,6 +39,25 @@ describe('/api/install/prereqs', () => {
     const res = await request(app).get('/api/install/prereqs');
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
+    expect(res.body.details).toEqual({});
+    expect(execFile).toHaveBeenCalled();
+  });
+
+  it('returns parsed errors when the prereq script reports failures', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    execFile.mockImplementationOnce((_script, _opts, cb) =>
+      cb(
+        new Error('missing dependency'),
+        '{"ok":false,"errors":{"docker":"Docker CLI not found"},"details":{"docker":"missing","node":"ok","dockerCompose":"missing","git":"ok"}}',
+        '',
+      ),
+    );
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.errors.docker).toBe('Docker CLI not found');
     expect(execFile).toHaveBeenCalled();
   });
 });

@@ -5,11 +5,28 @@
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .step-content {
+      transition: opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease;
+      overflow: hidden;
+    }
+    .step-hidden {
+      opacity: 0;
+      transform: translateY(0.75rem);
+      max-height: 0;
+      pointer-events: none;
+    }
+    .step-visible {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 2000px;
+    }
+  </style>
 </head>
-<body class="p-4 font-sans">
-  <nav class="mb-4 space-x-4">
-    <a href="/" class="text-blue-600 underline">Main Site</a>
-    <a href="/docs" class="text-blue-600 underline">Documentation</a>
+<body class="min-h-screen bg-gray-50 p-6 font-sans text-gray-900">
+  <nav class="mb-6 flex gap-4 text-sm">
+    <a href="/" class="text-blue-600 underline transition hover:text-blue-800">Main Site</a>
+    <a href="/docs" class="text-blue-600 underline transition hover:text-blue-800">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
   <div class="mb-4">
