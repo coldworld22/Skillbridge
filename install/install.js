@@ -62,6 +62,10 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
@@ -70,8 +74,14 @@ form.addEventListener('submit', async (e) => {
       return;
     }
     const data = await res.json();
-    out.textContent = (data.ok ? 'Success:\n' : 'Error:\n') + (data.output || JSON.stringify(data, null, 2));
-    out.className = data.ok ? 'text-green-600' : 'text-red-600';
+    const message = data.output || JSON.stringify(data, null, 2);
+    if (data.ok) {
+      out.textContent = 'Installation completed successfully.\n' + message;
+      out.className = 'text-green-600';
+    } else {
+      out.textContent = 'Installation failed.\n' + message;
+      out.className = 'text-red-600';
+    }
   } catch (err) {
     out.textContent = 'Error: ' + err.message;
     out.className = 'text-red-600';
