@@ -18,9 +18,17 @@ router.use(requireInstallApiEnabled);
 // Require an authenticated administrator for all install endpoints.
 router.use(verifyToken, isAdmin);
 
-// No input is accepted for these endpoints; validate empty payloads strictly.
+// No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();
+
+const installSchema = z
+  .object({
+    adminEmail: z.string().trim().email(),
+    adminPassword: z.string().min(8),
+  })
+  .strict();
+
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
-router.post('/run', validate({ body: emptySchema }), controller.runInstall);
+router.post('/run', validate({ body: installSchema }), controller.runInstall);
 
 module.exports = { requireInstallApiEnabled, router };
