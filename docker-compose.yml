@@ -68,13 +68,16 @@ services:
       MAX_BLOG_IMAGE_BYTES: ${MAX_BLOG_IMAGE_BYTES}
       NODE_ENV: ${NODE_ENV}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
     command: ["sh", "-c", "./scripts/wait-for-db.sh && npx knex migrate:latest && node src/server.js"]
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "curl --noproxy 127.0.0.1,localhost -fsS -o /dev/null http://127.0.0.1:${BACKEND_PORT}/api/health",
-        ]
+        - CMD-SHELL
+        - >-
+          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
+          --connect-timeout 5 --max-time 10
+          http://127.0.0.1:${BACKEND_PORT}/api/health
       interval: 30s
       timeout: 30s
       retries: 3
@@ -106,12 +109,15 @@ services:
       PORT: 3000
       HOST: 0.0.0.0
       NODE_ENV: production
+      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "curl --noproxy 127.0.0.1,localhost -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/health",
-        ]
+        - CMD-SHELL
+        - >-
+          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
+          --connect-timeout 5 --max-time 10
+          http://127.0.0.1:${PORT:-3000}/api/health
       interval: 30s
       timeout: 30s
       retries: 3
