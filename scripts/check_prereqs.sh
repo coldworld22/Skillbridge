@@ -1,37 +1,34 @@
 #!/usr/bin/env bash
 set -e
 
-# Verify Node.js
-if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js is required. Please install Node.js 18 or newer." >&2
-  exit 1
-fi
-NODE_MAJOR=$(node -v | sed -E 's/^v([0-9]+).*/\1/')
-if [ "$NODE_MAJOR" -lt 18 ]; then
-  echo "Node.js version 18 or higher is required. Current version: $(node -v)" >&2
-  exit 1
+node_status=false
+if command -v node >/dev/null 2>&1; then
+  NODE_VERSION=$(node -v 2>/dev/null)
+  NODE_MAJOR=$(echo "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
+  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && [ "$NODE_MAJOR" -ge 18 ]; then
+    node_status=true
+  fi
 fi
 
-# Verify Docker
-if ! command -v docker >/dev/null 2>&1; then
-  echo "Docker is required. Please install Docker." >&2
-  exit 1
+docker_status=false
+if command -v docker >/dev/null 2>&1; then
+  docker_status=true
 fi
 
-# Verify Docker Compose
+docker_compose_status=false
 if command -v docker-compose >/dev/null 2>&1; then
-  :
+  docker_compose_status=true
 elif docker compose version >/dev/null 2>&1; then
-  :
-else
-  echo "Docker Compose is required. Please install Docker Compose." >&2
-  exit 1
+  docker_compose_status=true
 fi
 
-# Verify Git
-if ! command -v git >/dev/null 2>&1; then
-  echo "Git is required. Please install Git." >&2
-  exit 1
+git_status=false
+if command -v git >/dev/null 2>&1; then
+  git_status=true
 fi
 
-echo "All prerequisites met."
+printf '{"node":%s,"docker":%s,"dockerCompose":%s,"git":%s}\n' \
+  "$node_status" \
+  "$docker_status" \
+  "$docker_compose_status" \
+  "$git_status"
