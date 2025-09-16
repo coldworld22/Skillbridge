@@ -44,7 +44,6 @@ try {
 } catch {
   throw new Error(`Invalid FRONTEND_URL: ${FRONTEND_URL}`);
 }
-
 const DEFAULT_HOSTS = {
   development: 'db',
   production: 'db',
@@ -181,7 +180,6 @@ const DATABASE_URLS = {
 };
 
 const DATABASE_URL = DATABASE_URLS[env.NODE_ENV];
-
 if (!DATABASE_URL) {
   const requirement =
     env.NODE_ENV === 'test'

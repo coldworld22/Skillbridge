@@ -69,9 +69,10 @@ services:
       MAX_BLOG_IMAGE_BYTES: ${MAX_BLOG_IMAGE_BYTES}
       NODE_ENV: ${NODE_ENV}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
       no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
-    command: ["sh", "-c", "./scripts/wait-for-db.sh && npx knex migrate:latest && node src/server.js"]
     healthcheck:
       test:
         - CMD-SHELL
@@ -98,7 +99,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://backend:${BACKEND_PORT:-5002}/api}
+        NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-http://backend:${BACKEND_PORT:-5002}/api}
         NEXT_PUBLIC_PGADMIN_URL: ${NEXT_PUBLIC_PGADMIN_URL:-http://pgadmin:80}
         APP_DOMAIN: ${APP_DOMAIN:-eduskillbridge.net}
     ports:
