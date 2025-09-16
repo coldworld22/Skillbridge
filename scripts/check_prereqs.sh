@@ -49,74 +49,30 @@ json_escape() {
 
 all_passed=true
 
-# Verify Node.js
-node_passed=false
-node_message="Node.js is required. Please install Node.js 18 or newer."
+node_status=false
 if command -v node >/dev/null 2>&1; then
-  NODE_VERSION=$(node -v)
-  NODE_MAJOR=$(printf '%s' "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
-  if [ "$NODE_MAJOR" -ge 18 ]; then
-    node_passed=true
-    node_message="Node.js ${NODE_VERSION} detected."
-  else
-    node_message="Node.js version 18 or higher is required. Current version: ${NODE_VERSION}."
+  NODE_VERSION=$(node -v 2>/dev/null)
+  NODE_MAJOR=$(echo "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
+  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && [ "$NODE_MAJOR" -ge 18 ]; then
+    node_status=true
   fi
 fi
-if [ "$node_passed" != true ]; then
-  all_passed=false
-fi
 
-# Verify Docker
-docker_passed=false
-docker_message="Docker is required. Please install Docker."
+docker_status=false
 if command -v docker >/dev/null 2>&1; then
-  docker_passed=true
-  docker_version=$(docker --version 2>/dev/null | head -n 1)
-  if [ -n "$docker_version" ]; then
-    docker_message="$docker_version"
-  else
-    docker_message="Docker is installed."
-  fi
-fi
-if [ "$docker_passed" != true ]; then
-  all_passed=false
+  docker_status=true
 fi
 
-# Verify Docker Compose
-docker_compose_passed=false
-docker_compose_message="Docker Compose is required. Please install Docker Compose."
+docker_compose_status=false
 if command -v docker-compose >/dev/null 2>&1; then
-  docker_compose_passed=true
-  docker_compose_version=$(docker-compose --version 2>/dev/null | head -n 1)
-  if [ -n "$docker_compose_version" ]; then
-    docker_compose_message="$docker_compose_version"
-  else
-    docker_compose_message="Docker Compose is installed."
-  fi
+  docker_compose_status=true
 elif docker compose version >/dev/null 2>&1; then
-  docker_compose_passed=true
-  docker_compose_version=$(docker compose version 2>/dev/null | head -n 1)
-  if [ -n "$docker_compose_version" ]; then
-    docker_compose_message="$docker_compose_version"
-  else
-    docker_compose_message="Docker Compose (via docker CLI) is available."
-  fi
-fi
-if [ "$docker_compose_passed" != true ]; then
-  all_passed=false
+  docker_compose_status=true
 fi
 
-# Verify Git
-git_passed=false
-git_message="Git is required. Please install Git."
+git_status=false
 if command -v git >/dev/null 2>&1; then
-  git_passed=true
-  git_version=$(git --version 2>/dev/null | head -n 1)
-  if [ -n "$git_version" ]; then
-    git_message="$git_version"
-  else
-    git_message="Git is installed."
-  fi
+  git_status=true
 fi
 if [ "$git_passed" != true ]; then
   all_passed=false
@@ -127,10 +83,9 @@ docker_message_escaped=$(json_escape "$docker_message")
 docker_compose_message_escaped=$(json_escape "$docker_compose_message")
 git_message_escaped=$(json_escape "$git_message")
 
-printf '{\n'
-printf '  "node": {"passed": %s, "message": "%s"},\n' "$node_passed" "$node_message_escaped"
-printf '  "docker": {"passed": %s, "message": "%s"},\n' "$docker_passed" "$docker_message_escaped"
-printf '  "dockerCompose": {"passed": %s, "message": "%s"},\n' "$docker_compose_passed" "$docker_compose_message_escaped"
-printf '  "git": {"passed": %s, "message": "%s"},\n' "$git_passed" "$git_message_escaped"
-printf '  "allPassed": %s\n' "$all_passed"
-printf '}\n'
+
+printf '{"node":%s,"docker":%s,"dockerCompose":%s,"git":%s}\n' \
+  "$node_status" \
+  "$docker_status" \
+  "$docker_compose_status" \
+  "$git_status"

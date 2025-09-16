@@ -16,59 +16,30 @@ const executeScript = (res, scriptKey, options = {}) => {
   }
 
   execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const trimmedStdout = stdout ? stdout.trim() : '';
-    const trimmedStderr = stderr ? stderr.trim() : '';
+    const rawOutput = stdout + stderr;
+    const trimmedStdout = stdout.trim();
+    let parsedOutput;
 
-    if (options.expectJson) {
-      const rawForParsing = trimmedStdout || trimmedStderr;
-      if (rawForParsing) {
-        try {
-          const parsed = JSON.parse(trimmedStdout || rawForParsing);
-          const ok = options.evaluateOk ? options.evaluateOk(parsed, error) : !error;
-          const statusCode = options.determineStatusCode
-            ? options.determineStatusCode(ok, error)
-            : error && ok
-              ? 500
-              : 200;
-          return res.status(statusCode).json({ ok, output: parsed });
-        } catch (parseError) {
-          const fallback = rawForParsing || (error ? error.message : '');
-          return res.status(500).json({ ok: false, output: fallback || 'Invalid JSON output.' });
-        }
-      }
-
-      return res.status(500).json({ ok: false, output: 'No output received from script.' });
-    }
-
-    const output = (stdout + stderr).trim();
-    if (error) {
-      return res.status(500).json({ ok: false, output: output || error.message });
-    }
-
-    if (parseJson) {
-      const text = output.trim();
-      if (!text) {
-        const combined = (output + errorOutput).trim();
-        return res.status(500).json({
-          ok: false,
-          error: 'Installer script returned no JSON output',
-          output: combined,
-        });
-      }
+    if (trimmedStdout) {
       try {
-        const parsed = JSON.parse(text);
-        return res.json(parsed);
-      } catch (parseError) {
-        const combined = (text + errorOutput).trim();
-        return res.status(500).json({
-          ok: false,
-          error: 'Invalid JSON output from script',
-          output: combined,
-        });
+        parsedOutput = JSON.parse(trimmedStdout);
+      } catch (_err) {
+        parsedOutput = undefined;
       }
     }
 
-    return res.json({ ok: true, output: `${output}${errorOutput}` });
+    if (error) {
+      if (parsedOutput && typeof parsedOutput === 'object') {
+        return res.status(500).json(parsedOutput);
+      }
+      return res.status(500).json({ ok: false, output: rawOutput });
+    }
+
+    if (parsedOutput && typeof parsedOutput === 'object') {
+      return res.json(parsedOutput);
+    }
+
+    res.json({ ok: true, output: rawOutput });
   });
 };
 

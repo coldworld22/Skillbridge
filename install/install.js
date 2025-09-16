@@ -2,6 +2,15 @@ const progressBar = document.getElementById('progressBar');
 const errorBox = document.getElementById('errorBox');
 const step2 = document.getElementById('step2');
 
+const DEPENDENCY_LABELS = {
+  node: 'Node.js (>= 18)',
+  docker: 'Docker',
+  dockerCompose: 'Docker Compose',
+  git: 'Git',
+};
+
+const step2Section = document.getElementById('step2');
+
 function setProgress(p) {
   if (!progressBar) {
     return;
@@ -82,37 +91,53 @@ async function checkPrereqs() {
   const output = document.getElementById('prereqOutput');
   output.removeAttribute('role');
   output.textContent = 'Checking...';
-  output.className = 'text-gray-600';
-  step2.style.display = 'none';
+  output.className = 'mt-2 text-gray-600';
   try {
     const res = await fetch('/api/install/prereqs');
     setProgress(30);
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
+      output.className = 'mt-2 text-red-600';
       output.classList.add('error');
-      step2.style.display = 'none';
+      step2Section.style.display = 'none';
       return;
     }
     const data = await res.json();
-    const results =
-      data && data.output && typeof data.output === 'object' ? data.output : null;
-    const allPassed = Boolean(data && data.ok);
-    if (results) {
-      renderChecklist(output, results, allPassed);
-    } else {
-      output.className = allPassed ? 'text-green-600' : 'text-red-600';
-      const fallback = data && data.output ? data.output : data;
-      const formattedFallback =
-        typeof fallback === 'string' ? fallback : JSON.stringify(fallback, null, 2);
-      output.textContent = (allPassed ? 'Success:\n' : 'Error:\n') + formattedFallback;
+    if (!res.ok) {
+      output.className = 'mt-2 text-red-600';
+      output.textContent = 'Error:\n' + (data.output || JSON.stringify(data, null, 2));
+      step2Section.style.display = 'none';
+      return;
     }
-    step2.style.display = allPassed ? 'block' : 'none';
+    const dependencyEntries = Object.entries(data).filter(
+      ([key, value]) =>
+        Object.prototype.hasOwnProperty.call(DEPENDENCY_LABELS, key) && typeof value === 'boolean'
+    );
+
+    if (dependencyEntries.length === 0) {
+      output.className = 'mt-2 text-gray-600';
+      output.textContent = 'Result:\n' + JSON.stringify(data, null, 2);
+      step2Section.style.display = 'none';
+      return;
+    }
+
+    const allPassing = dependencyEntries.every(([, value]) => value === true);
+    const lines = dependencyEntries.map(([key, value]) => {
+      const label = DEPENDENCY_LABELS[key];
+      const icon = value ? '✅' : '❌';
+      const colorClass = value ? 'text-green-600' : 'text-red-600';
+      return `<span class="${colorClass}">${icon} ${label}</span>`;
+    });
+
+    output.className = 'mt-2';
+    output.innerHTML = lines.join('<br />');
+    step2Section.style.display = allPassing ? 'block' : 'none';
   } catch (err) {
     output.removeAttribute('role');
     output.textContent = 'Error: ' + err.message;
-    output.className = 'text-red-600';
-    step2.style.display = 'none';
+    output.className = 'mt-2 text-red-600';
+    step2Section.style.display = 'none';
   }
 }
 const checkBtn = document.getElementById('checkBtn');

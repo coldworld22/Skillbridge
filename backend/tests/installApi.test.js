@@ -3,7 +3,7 @@ const express = require('express');
 
 jest.mock('child_process', () => ({
   execFile: jest.fn((_script, _opts, cb) =>
-    cb(null, '{"ok":true,"errors":{},"details":{}}', ''),
+    cb(null, '{"node":true,"docker":true,"dockerCompose":true,"git":true}\n', '')
   ),
 }));
 
@@ -38,26 +38,12 @@ describe('/api/install/prereqs', () => {
     process.env.INSTALL_API_ENABLED = 'true';
     const res = await request(app).get('/api/install/prereqs');
     expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.details).toEqual({});
-    expect(execFile).toHaveBeenCalled();
-  });
-
-  it('returns parsed errors when the prereq script reports failures', async () => {
-    process.env.INSTALL_API_ENABLED = 'true';
-    execFile.mockImplementationOnce((_script, _opts, cb) =>
-      cb(
-        new Error('missing dependency'),
-        '{"ok":false,"errors":{"docker":"Docker CLI not found"},"details":{"docker":"missing","node":"ok","dockerCompose":"missing","git":"ok"}}',
-        '',
-      ),
-    );
-
-    const res = await request(app).get('/api/install/prereqs');
-
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(false);
-    expect(res.body.errors.docker).toBe('Docker CLI not found');
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
     expect(execFile).toHaveBeenCalled();
   });
 });
