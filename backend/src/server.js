@@ -40,13 +40,6 @@ const requiredSecrets = [
   "REFRESH_TOKEN_SECRET",
   "SESSION_SECRET",
 ];
-let dbKey;
-if (process.env.NODE_ENV === "test") {
-  dbKey = "TEST_DATABASE_URL";
-} else {
-  dbKey = process.env.DATABASE_URL ? "DATABASE_URL" : "PRODUCTION_DATABASE_URL";
-}
-requiredSecrets.push(dbKey);
 const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
 if (missingSecrets.length) {
   console.error(
