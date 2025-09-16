@@ -95,8 +95,8 @@ async function checkPrereqs() {
   updateButtonState(checkBtn, true);
 
   try {
-    const res = await fetch('/api/install/prereqs');
-    if (res.status === 401 || res.status === 403) {
+    const response = await fetch('/api/install/prereqs');
+    if (response.status === 401 || response.status === 403) {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
       output.className = 'mt-2 text-red-600 whitespace-pre-wrap';
@@ -104,7 +104,8 @@ async function checkPrereqs() {
       resetProgress();
       return;
     }
-    const data = await res.json();
+
+    const data = await response.json();
     if (data.ok) {
       output.className = 'mt-2 text-green-600 whitespace-pre-wrap';
       output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));

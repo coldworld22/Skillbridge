@@ -9,19 +9,44 @@ const SAFE_SCRIPTS = {
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
 
-const executeScript = (res, scriptKey) => {
+const executeScript = (res, scriptKey, options = {}) => {
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
+
   execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const output = stdout + stderr;
-    if (error) {
-      return res.status(500).json({ ok: false, output });
+    const rawOutput = stdout + stderr;
+    const trimmedStdout = stdout.trim();
+    let parsedOutput;
+
+    if (trimmedStdout) {
+      try {
+        parsedOutput = JSON.parse(trimmedStdout);
+      } catch (_err) {
+        parsedOutput = undefined;
+      }
     }
-    res.json({ ok: true, output });
+
+    if (error) {
+      if (parsedOutput && typeof parsedOutput === 'object') {
+        return res.status(500).json(parsedOutput);
+      }
+      return res.status(500).json({ ok: false, output: rawOutput });
+    }
+
+    if (parsedOutput && typeof parsedOutput === 'object') {
+      return res.json(parsedOutput);
+    }
+
+    res.json({ ok: true, output: rawOutput });
   });
 };
 
-exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
+exports.checkPrereqs = (req, res) =>
+  executeScript(res, 'prereqs', {
+    expectJson: true,
+    evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
+    determineStatusCode: () => 200,
+  });
 exports.runInstall = (req, res) => executeScript(res, 'install');

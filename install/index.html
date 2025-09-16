@@ -4,7 +4,34 @@
   <meta charset="UTF-8" />
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .step-container {
+      transition: opacity 250ms ease, transform 250ms ease, max-height 250ms ease;
+      overflow: hidden;
+    }
+
+    .step-visible {
+      opacity: 1;
+      transform: translateX(0);
+      max-height: 2000px;
+    }
+
+    .step-hidden-left {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+      max-height: 0;
+      pointer-events: none;
+    }
+
+    .step-hidden-right {
+      opacity: 0;
+      transform: translateX(1.5rem);
+      max-height: 0;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body class="p-4 font-sans">
   <nav class="mb-4 space-x-4">
@@ -30,6 +57,18 @@
       </label>
       <button type="submit" id="installBtn" class="px-4 py-2 bg-green-600 text-white rounded">Run Install</button>
     </form>
+    <div
+      id="progressContainer"
+      class="w-full bg-gray-200 rounded h-2 mt-4 hidden"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-live="polite"
+    >
+      <div id="progressBar" class="h-2 bg-blue-500 rounded" style="width: 0%;"></div>
+    </div>
+    <p id="progressStatus" class="mt-2 text-sm text-gray-600 hidden" aria-live="polite"></p>
     <pre id="installOutput" class="mt-2"></pre>
   </section>
   <script src="install.js" defer></script>
