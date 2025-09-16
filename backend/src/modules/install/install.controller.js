@@ -8,15 +8,15 @@ const SAFE_SCRIPTS = {
   prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
+
 const executeScript = (res, scriptKey, options = {}) => {
-  const { parseJson = false } = options;
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-  execFile(script, { shell: false }, (error, stdout = '', stderr = '') => {
-    const output = stdout.toString();
-    const errorOutput = stderr.toString();
+  const env = options.env ? { ...process.env, ...options.env } : process.env;
+  execFile(script, { shell: false, env }, (error, stdout, stderr) => {
+    const output = stdout + stderr;
     if (error) {
       const combined = `${output}${errorOutput}`.trim();
       return res.status(500).json({ ok: false, output: combined });
@@ -49,5 +49,11 @@ const executeScript = (res, scriptKey, options = {}) => {
   });
 };
 
-exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs', { parseJson: true });
-exports.runInstall = (req, res) => executeScript(res, 'install');
+exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
+exports.runInstall = (req, res) =>
+  executeScript(res, 'install', {
+    env: {
+      ADMIN_EMAIL: req.body.adminEmail,
+      ADMIN_PASSWORD: req.body.adminPassword,
+    },
+  });

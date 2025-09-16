@@ -148,49 +148,30 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 const form = document.getElementById('configForm');
 const installBtn = document.getElementById('installBtn');
-
-if (form && installBtn) {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const out = document.getElementById('installOutput');
-    clearError();
-    setProgress(65);
-    out.textContent = 'Running install...';
-    out.className = 'text-gray-600';
-    installBtn.disabled = true;
-    const payload = {
-      adminEmail: form.adminEmail.value,
-      adminPassword: form.adminPassword.value,
-    };
-    try {
-      const res = await fetch('/api/install/run', {
-        method: 'POST',
-      });
-      setProgress(80);
-      if (res.status === 401 || res.status === 403) {
-        alert('Please log in to continue.');
-        out.textContent = 'Authentication required. Please log in.';
-        out.classList.add('error');
-        showError('Authentication required. Please log in.');
-        return;
-      }
-      const data = await res.json();
-      out.textContent = (data.ok ? 'Success:\n' : 'Error:\n') + (data.output || JSON.stringify(data, null, 2));
-      out.className = data.ok ? 'text-green-600' : 'text-red-600';
-      if (data.ok) {
-        setProgress(100);
-        clearError();
-      } else {
-        setProgress(65);
-        showError('Installation failed. Review the output below.');
-      }
-    } catch (err) {
-      out.textContent = 'Error: ' + err.message;
-      out.className = 'text-red-600';
-      setProgress(50);
-      showError('Installation failed: ' + err.message);
-    } finally {
-      installBtn.disabled = false;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('installOutput');
+  out.textContent = 'Running install...';
+  out.className = 'text-gray-600';
+  installBtn.disabled = true;
+  const payload = {
+    adminEmail: form.adminEmail.value,
+    adminPassword: form.adminPassword.value,
+  };
+  try {
+    const res = await fetch('/api/install/run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401 || res.status === 403) {
+      alert('Please log in to continue.');
+      out.textContent = 'Authentication required. Please log in.';
+      out.classList.add('error');
+      return;
     }
   });
 }
