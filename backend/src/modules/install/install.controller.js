@@ -8,7 +8,6 @@ const SAFE_SCRIPTS = {
   prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
-
 const executeScript = (res, scriptKey, options = {}) => {
   const { parseJson = false } = options;
   const script = SAFE_SCRIPTS[scriptKey];
