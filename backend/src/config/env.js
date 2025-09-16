@@ -31,7 +31,25 @@ const EnvSchema = z.object({
   ENABLE_INSTALL: z.coerce.boolean().default(false),
 });
 
-const env = EnvSchema.parse(process.env);
+const OPTIONAL_URL_KEYS = [
+  'DATABASE_URL',
+  'PRODUCTION_DATABASE_URL',
+  'TEST_DATABASE_URL',
+  'REDIS_URL',
+];
+
+const coerceEmptyStringToUndefined = (value) =>
+  value === '' ? undefined : value;
+
+const rawEnv = { ...process.env };
+
+OPTIONAL_URL_KEYS.forEach((key) => {
+  if (Object.prototype.hasOwnProperty.call(rawEnv, key)) {
+    rawEnv[key] = coerceEmptyStringToUndefined(rawEnv[key]);
+  }
+});
+
+const env = EnvSchema.parse(rawEnv);
 
 let FRONTEND_URL = env.FRONTEND_URL;
 if (FRONTEND_URL.startsWith('FRONTEND_URL=')) {
