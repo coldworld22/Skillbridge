@@ -5,6 +5,32 @@
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .step-container {
+      transition: opacity 250ms ease, transform 250ms ease, max-height 250ms ease;
+      overflow: hidden;
+    }
+
+    .step-visible {
+      opacity: 1;
+      transform: translateX(0);
+      max-height: 2000px;
+    }
+
+    .step-hidden-left {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+      max-height: 0;
+      pointer-events: none;
+    }
+
+    .step-hidden-right {
+      opacity: 0;
+      transform: translateX(1.5rem);
+      max-height: 0;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body class="p-4 font-sans">
   <nav class="mb-4 space-x-4">
@@ -12,12 +38,17 @@
     <a href="/docs" class="text-blue-600 underline">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
-  <section id="step1" class="mb-8">
+  <section id="step1" class="mb-8 step-container step-visible" aria-hidden="false">
     <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
     <button id="checkBtn" class="px-4 py-2 bg-blue-500 text-white rounded">Recheck</button>
-    <pre id="prereqOutput" class="mt-2"></pre>
+    <div
+      id="prereqStatus"
+      class="mt-4 space-y-3"
+      aria-live="polite"
+    ></div>
+    <p id="prereqSummary" class="mt-2 text-sm text-gray-600" role="status" aria-live="polite"></p>
   </section>
-  <section id="step2" style="display: none;" class="mb-8">
+  <section id="step2" class="mb-8 step-container step-hidden-right" aria-hidden="true">
     <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
     <form id="configForm" class="space-y-4">
       <label class="block">
