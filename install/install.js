@@ -347,13 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
-      if (res.status === 401 || res.status === 403) {
-        setSummary('Authentication required. Please log in and try again.', 'error');
-        showError('Please log in to continue.');
-        setProgress(0);
-        return;
-      }
-
       const bodyText = await res.text();
       let data;
       if (bodyText) {
@@ -364,6 +357,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         data = {};
+      }
+
+      if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
+        const message =
+          data?.message ||
+          'Installation locked. An administrator has already completed the setup. Please sign in.';
+        setSummary(message, 'error');
+        showError(
+          'SkillBridge is already installed. Sign in with an administrator account to manage your site.'
+        );
+        setProgress(0);
+        return;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        const message = data?.message || 'Authentication required. Please log in and try again.';
+        setSummary(message, 'error');
+        showError(message);
+        setProgress(0);
+        return;
       }
 
       const normalized = normalizePrereqResponse(data);
@@ -429,17 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(credentials),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        showError('Please log in to continue.');
-        if (installOutput) {
-          installOutput.classList.remove('text-gray-700', 'text-green-700');
-          installOutput.classList.add('text-red-700');
-          installOutput.textContent = 'Authentication required. Please log in.';
-        }
-        updateStep('config');
-        return;
-      }
-
       const responseText = await res.text();
       let data;
       if (responseText) {
@@ -450,6 +452,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         data = {};
+      }
+
+      if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
+        const message =
+          data?.message ||
+          'Installation locked. An administrator already exists. Sign in to manage this instance.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
+        }
+        updateStep('config');
+        return;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        const message = data?.message || 'Please log in to continue.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
+        }
+        updateStep('config');
+        return;
       }
 
       const success = typeof data.ok === 'boolean' ? data.ok : res.ok;
