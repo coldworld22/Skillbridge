@@ -8,52 +8,46 @@ const SAFE_SCRIPTS = {
   prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
-
-const tryParseJson = (value) => {
-  if (!value) {
-    return null;
-  }
-  try {
-    return JSON.parse(value);
-  } catch (err) {
-    return null;
-  }
-};
-
-const combineOutput = (stdout, stderr) => {
-  const trimmedStdout = (stdout || '').trim();
-  const trimmedStderr = (stderr || '').trim();
-  return {
-    trimmedStdout,
-    trimmedStderr,
-    combined: [trimmedStdout, trimmedStderr].filter(Boolean).join('\n'),
-  };
-};
-
-const executeScript = (res, scriptKey) => {
+const executeScript = (res, scriptKey, options = {}) => {
+  const { parseJson = false } = options;
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-  execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const { trimmedStdout, combined } = combineOutput(stdout, stderr);
-    const parsed = tryParseJson(trimmedStdout);
-
+  execFile(script, { shell: false }, (error, stdout = '', stderr = '') => {
+    const output = stdout.toString();
+    const errorOutput = stderr.toString();
     if (error) {
-      if (parsed && typeof parsed === 'object') {
-        const statusCode = parsed.ok === false ? 200 : 500;
-        return res.status(statusCode).json(parsed);
-      }
+      const combined = `${output}${errorOutput}`.trim();
       return res.status(500).json({ ok: false, output: combined });
     }
 
-    if (parsed && typeof parsed === 'object') {
-      return res.json(parsed);
+    if (parseJson) {
+      const text = output.trim();
+      if (!text) {
+        const combined = (output + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Installer script returned no JSON output',
+          output: combined,
+        });
+      }
+      try {
+        const parsed = JSON.parse(text);
+        return res.json(parsed);
+      } catch (parseError) {
+        const combined = (text + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Invalid JSON output from script',
+          output: combined,
+        });
+      }
     }
 
-    return res.json({ ok: true, output: combined });
+    return res.json({ ok: true, output: `${output}${errorOutput}` });
   });
 };
 
-exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
+exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs', { parseJson: true });
 exports.runInstall = (req, res) => executeScript(res, 'install');

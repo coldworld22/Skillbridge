@@ -1,234 +1,245 @@
-const summaryEl = document.getElementById('prereqOutput');
+const progressBar = document.getElementById('progressBar');
+const errorBox = document.getElementById('errorBox');
+const prereqOutput = document.getElementById('prereqOutput');
 const prereqList = document.getElementById('prereqList');
 const step2 = document.getElementById('step2');
-const SUMMARY_BASE_CLASS = 'mt-2 text-sm';
+const checkBtn = document.getElementById('checkBtn');
+const form = document.getElementById('configForm');
+const installBtn = document.getElementById('installBtn');
+const installOutput = document.getElementById('installOutput');
 
-const PREREQUISITES = {
-  node: {
-    label: 'Node.js 18+',
-    defaultError: 'Node.js 18 or newer is required for the SkillBridge toolchain.',
-    guidance:
-      'Install the active LTS release or use a version manager such as nvm to provide Node.js 18.',
-    upgrade: 'Update Node.js to version 18 or newer, then rerun the prerequisite check.',
-    resources: [
-      { href: 'https://nodejs.org/en/download', label: 'Download Node.js' },
-      { href: 'https://github.com/nvm-sh/nvm', label: 'Install nvm' },
-    ],
-  },
-  docker: {
-    label: 'Docker',
-    defaultError: 'Docker must be installed to run SkillBridge services locally.',
-    guidance:
-      'Install Docker Desktop (macOS/Windows) or Docker Engine (Linux) before continuing.',
-    resources: [{ href: 'https://docs.docker.com/get-docker/', label: 'Install Docker' }],
-  },
-  dockerCompose: {
-    label: 'Docker Compose v2',
-    defaultError: 'Docker Compose is required to orchestrate the application containers.',
-    guidance:
-      'Enable the Docker Compose plugin or install the standalone docker-compose binary.',
-    resources: [
-      { href: 'https://docs.docker.com/compose/install/', label: 'Install Docker Compose' },
-    ],
-  },
-  git: {
-    label: 'Git',
-    defaultError: 'Git is required to manage SkillBridge source code.',
-    guidance:
-      'Install Git using your system package manager or from the official downloads page.',
-    resources: [{ href: 'https://git-scm.com/downloads', label: 'Install Git' }],
-  },
-};
-
-const STATUS_LABELS = {
-  ok: 'Ready',
-  missing: 'Not installed',
-  version_too_old: 'Update required',
-  unknown: 'Check required',
-};
-
-function statusLabel(status) {
-  return STATUS_LABELS[status] || STATUS_LABELS.unknown;
+function setProgress(value) {
+  if (!progressBar) return;
+  const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+  progressBar.style.width = `${clamped}%`;
 }
 
-function updateSummary(message, toneClass) {
-  if (!summaryEl) return;
-  summaryEl.textContent = message;
-  summaryEl.className = `${SUMMARY_BASE_CLASS} ${toneClass}`;
+function showError(message) {
+  if (!errorBox) {
+    console.error(message);
+    return;
+  }
+  errorBox.textContent = message;
+  errorBox.classList.remove('hidden');
 }
 
-function setStep2Visible(visible) {
-  if (!step2) return;
-  step2.style.display = visible ? 'block' : 'none';
-  step2.setAttribute('aria-hidden', visible ? 'false' : 'true');
+function clearError() {
+  if (!errorBox) return;
+  errorBox.textContent = '';
+  errorBox.classList.add('hidden');
 }
 
-function appendResourceLinks(container, resources) {
-  if (!Array.isArray(resources) || resources.length === 0) {
+function toggleStep(stepElement, visible) {
+  if (!stepElement) return;
+  stepElement.classList.toggle('step-visible', visible);
+  stepElement.classList.toggle('step-hidden', !visible);
+  stepElement.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function renderRequirements(requirements = []) {
+  if (!prereqList) return;
+  prereqList.innerHTML = '';
+
+  if (!requirements.length) {
+    const item = document.createElement('li');
+    item.className = 'text-sm text-gray-500';
+    item.textContent = 'No requirement details were returned.';
+    prereqList.appendChild(item);
     return;
   }
 
-  const list = document.createElement('div');
-  list.className = 'mt-2 flex flex-wrap gap-3 text-sm';
-
-  resources.forEach((resource) => {
-    if (!resource || !resource.href || !resource.label) {
-      return;
-    }
-
-    const link = document.createElement('a');
-    link.href = resource.href;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.className = 'text-blue-600 underline';
-    link.textContent = resource.label;
-    list.appendChild(link);
-  });
-
-  if (list.childNodes.length > 0) {
-    container.appendChild(list);
-  }
-}
-
-function renderPrereqStatus(data) {
-  if (!prereqList) return;
-
-  const details = (data && data.details) || {};
-  const errors = (data && data.errors) || {};
-
-  prereqList.innerHTML = '';
-
-  Object.entries(PREREQUISITES).forEach(([key, meta]) => {
-    const status = details[key] || (data && data.ok ? 'ok' : 'unknown');
-    const isOk = status === 'ok';
-
-    const card = document.createElement('div');
-    card.className = `rounded-md border p-4 shadow-sm transition-colors ${
-      isOk ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-300 bg-amber-50 text-amber-800'
+  requirements.forEach((req) => {
+    const ok = req?.ok === true;
+    const container = document.createElement('li');
+    container.className = `flex gap-3 rounded border px-3 py-2 transition-colors duration-300 ${
+      ok ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
     }`;
 
-    const header = document.createElement('div');
-    header.className = 'flex items-center justify-between';
+    const icon = document.createElement('span');
+    icon.className = 'mt-0.5 text-xl';
+    icon.textContent = ok ? '✅' : '❌';
+    icon.setAttribute('aria-hidden', 'true');
 
-    const title = document.createElement('span');
-    title.className = 'font-medium';
-    title.textContent = meta.label;
+    const content = document.createElement('div');
+    content.className = 'flex flex-col gap-1';
 
-    const statusText = document.createElement('span');
-    statusText.className = `text-sm font-medium ${isOk ? 'text-green-700' : 'text-amber-700'}`;
-    statusText.textContent = statusLabel(status);
+    const title = document.createElement('p');
+    title.className = `font-semibold ${ok ? 'text-green-800' : 'text-red-800'}`;
+    title.textContent = req?.name || req?.id || 'Requirement';
 
-    header.appendChild(title);
-    header.appendChild(statusText);
-    card.appendChild(header);
+    const message = document.createElement('p');
+    message.className = `text-sm ${ok ? 'text-green-700' : 'text-red-700'}`;
+    message.textContent = req?.message || (ok ? 'Available' : 'Unavailable');
 
-    if (!isOk) {
-      const message = document.createElement('p');
-      message.className = 'mt-2 text-sm font-medium';
-      message.textContent = errors[key] || meta.defaultError;
-      card.appendChild(message);
+    content.appendChild(title);
+    content.appendChild(message);
 
-      const guidanceText = status === 'version_too_old' && meta.upgrade ? meta.upgrade : meta.guidance;
-      if (guidanceText) {
-        const guidance = document.createElement('p');
-        guidance.className = 'mt-1 text-sm';
-        guidance.textContent = guidanceText;
-        card.appendChild(guidance);
-      }
-
-      appendResourceLinks(card, meta.resources);
+    if (req?.version) {
+      const version = document.createElement('p');
+      version.className = `text-xs ${ok ? 'text-green-600' : 'text-red-600'}`;
+      version.textContent = `Version: ${req.version}`;
+      content.appendChild(version);
     }
 
-    prereqList.appendChild(card);
+    container.appendChild(icon);
+    container.appendChild(content);
+    prereqList.appendChild(container);
   });
 }
 
 async function checkPrereqs() {
-  updateSummary('Checking prerequisites...', 'text-gray-600');
-  if (prereqList) {
-    prereqList.innerHTML = '<p class="text-sm text-gray-500">Running checks...</p>';
+  clearError();
+  toggleStep(step2, false);
+  setProgress(10);
+
+  if (prereqOutput) {
+    prereqOutput.textContent = 'Checking prerequisites...';
+    prereqOutput.className = 'text-sm text-gray-600';
   }
-  setStep2Visible(false);
+  if (prereqList) {
+    prereqList.innerHTML = '';
+  }
 
   try {
     const res = await fetch('/api/install/prereqs');
-    if (res.status === 401 || res.status === 403) {
-      alert('Please log in to continue.');
-      updateSummary('Authentication required. Please log in.', 'text-red-600');
-      if (prereqList) {
-        prereqList.innerHTML = '';
+    const text = await res.text();
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        throw new Error(text.trim() || 'Unable to parse installer response.');
       }
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      const message = 'Authentication required. Please log in.';
+      showError(message);
+      if (prereqOutput) {
+        prereqOutput.textContent = message;
+        prereqOutput.className = 'text-sm text-red-700 font-medium';
+      }
+      setProgress(0);
       return;
     }
 
-    const data = await res.json();
-    renderPrereqStatus(data);
+    if (!res.ok) {
+      const message =
+        (data && (data.error || data.output || data.message)) ||
+        text.trim() ||
+        'Failed to check prerequisites.';
+      throw new Error(message);
+    }
 
-    if (data.ok) {
-      updateSummary('All prerequisite checks passed. Continue to configuration.', 'text-green-600');
-      setStep2Visible(true);
+    if (!data || typeof data !== 'object') {
+      throw new Error('Unexpected response from the installer service.');
+    }
+
+    const requirements = Array.isArray(data.requirements)
+      ? data.requirements
+      : [];
+    renderRequirements(requirements);
+
+    const requirementsOk =
+      !requirements.length || requirements.every((req) => req?.ok === true);
+
+    if (data.ok && requirementsOk) {
+      if (prereqOutput) {
+        prereqOutput.textContent = 'All prerequisites are satisfied.';
+        prereqOutput.className = 'text-sm text-green-700 font-medium';
+      }
+      toggleStep(step2, true);
+      setProgress(50);
     } else {
-      const tone = res.ok ? 'text-amber-700' : 'text-red-600';
-      const message = res.ok
-        ? 'Resolve the highlighted prerequisites before continuing.'
-        : data.output
-        ? `Prerequisite check failed: ${data.output}`
-        : 'Prerequisite check failed. Review the highlighted items for details.';
-      updateSummary(message, tone);
-      setStep2Visible(false);
+      if (prereqOutput) {
+        prereqOutput.textContent =
+          'Some prerequisites are missing or outdated. Please review the list above.';
+        prereqOutput.className = 'text-sm text-red-700 font-medium';
+      }
+      toggleStep(step2, false);
+      setProgress(25);
     }
   } catch (err) {
-    updateSummary(`Error checking prerequisites: ${err.message}`, 'text-red-600');
-    if (prereqList) {
-      prereqList.innerHTML = '';
+    if (prereqOutput) {
+      prereqOutput.textContent = `Error: ${err.message}`;
+      prereqOutput.className = 'text-sm text-red-700 font-medium';
     }
-    setStep2Visible(false);
+    showError(err.message);
+    toggleStep(step2, false);
+    setProgress(0);
   }
 }
 
-if (document.getElementById('checkBtn')) {
-  document.getElementById('checkBtn').addEventListener('click', checkPrereqs);
+if (checkBtn) {
+  checkBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    checkPrereqs();
+  });
 }
 
-window.addEventListener('DOMContentLoaded', checkPrereqs);
+window.addEventListener('DOMContentLoaded', () => {
+  setProgress(0);
+  checkPrereqs();
+});
 
-const form = document.getElementById('configForm');
-const installBtn = document.getElementById('installBtn');
-
-if (form && installBtn) {
+if (form) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const out = document.getElementById('installOutput');
-    if (out) {
-      out.textContent = 'Running install...';
-      out.className = 'text-gray-600';
+    clearError();
+    if (installOutput) {
+      installOutput.textContent = 'Running install...';
+      installOutput.className = 'mt-4 whitespace-pre-wrap text-sm text-gray-600';
     }
-    installBtn.disabled = true;
+    if (installBtn) {
+      installBtn.disabled = true;
+    }
+    setProgress(75);
 
     try {
       const res = await fetch('/api/install/run', {
         method: 'POST',
       });
+
       if (res.status === 401 || res.status === 403) {
-        alert('Please log in to continue.');
-        if (out) {
-          out.textContent = 'Authentication required. Please log in.';
-          out.classList.add('error');
+        const message = 'Authentication required. Please log in.';
+        showError(message);
+        if (installOutput) {
+          installOutput.textContent = message;
+          installOutput.className = 'mt-4 whitespace-pre-wrap text-sm text-red-700';
         }
+        setProgress(50);
         return;
       }
+
       const data = await res.json();
-      if (out) {
-        out.textContent = (data.ok ? 'Success:\n' : 'Error:\n') + (data.output || JSON.stringify(data, null, 2));
-        out.className = data.ok ? 'text-green-600' : 'text-red-600';
+
+      if (installOutput) {
+        const prefix = data.ok ? 'Success:\n' : 'Error:\n';
+        const details = data.output || JSON.stringify(data, null, 2);
+        installOutput.textContent = `${prefix}${details}`;
+        installOutput.className = `mt-4 whitespace-pre-wrap text-sm ${
+          data.ok ? 'text-green-700' : 'text-red-700'
+        }`;
+      }
+
+      if (data.ok) {
+        clearError();
+        setProgress(100);
+      } else {
+        showError('Install encountered errors.');
+        setProgress(50);
       }
     } catch (err) {
-      if (out) {
-        out.textContent = 'Error: ' + err.message;
-        out.className = 'text-red-600';
+      showError(err.message);
+      if (installOutput) {
+        installOutput.textContent = `Error: ${err.message}`;
+        installOutput.className = 'mt-4 whitespace-pre-wrap text-sm text-red-700';
       }
+      setProgress(50);
     } finally {
-      installBtn.disabled = false;
+      if (installBtn) {
+        installBtn.disabled = false;
+      }
     }
   });
 }
