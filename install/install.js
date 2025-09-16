@@ -1,5 +1,3 @@
-const progressBar = document.getElementById('progressBar');
-const errorBox = document.getElementById('errorBox');
 
 function setProgress(p) {
   if (!progressBar) return;
@@ -28,6 +26,7 @@ async function checkPrereqs() {
   setProgress(10);
   try {
     const res = await fetch('/api/install/prereqs');
+    setProgress(30);
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
@@ -36,7 +35,36 @@ async function checkPrereqs() {
       showError('Please log in to continue.');
       return;
     }
+
     const data = await res.json();
+    let parsedOutput = null;
+
+    if (typeof data.output === 'string') {
+      try {
+        parsedOutput = JSON.parse(data.output);
+      } catch (err) {
+        parsedOutput = null;
+      }
+    }
+
+    if (parsedOutput && Array.isArray(parsedOutput.requirements)) {
+      renderRequirements(parsedOutput.requirements);
+      const summaryText = parsedOutput.summary
+        || (data.ok ? 'All prerequisites satisfied.' : 'Please address the issues above.');
+      setSummary(summaryText, data.ok ? 'success' : 'error');
+    } else {
+      const pre = document.createElement('pre');
+      pre.className = 'whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800';
+      pre.textContent = data.output || 'No output received.';
+      prereqStatus.appendChild(pre);
+      setSummary(
+        data.ok
+          ? 'All prerequisites satisfied.'
+          : 'An unexpected error occurred while checking prerequisites.',
+        data.ok ? 'success' : 'error',
+      );
+    }
+
     if (data.ok) {
       output.className = 'text-green-600';
       output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));
@@ -50,6 +78,18 @@ async function checkPrereqs() {
       setProgress(0);
       showError('Prerequisite check failed. Review the output below.');
     }
+
+    const allPassing = dependencyEntries.every(([, value]) => value === true);
+    const lines = dependencyEntries.map(([key, value]) => {
+      const label = DEPENDENCY_LABELS[key];
+      const icon = value ? '✅' : '❌';
+      const colorClass = value ? 'text-green-600' : 'text-red-600';
+      return `<span class="${colorClass}">${icon} ${label}</span>`;
+    });
+
+    output.className = 'mt-2';
+    output.innerHTML = lines.join('<br />');
+    step2Section.style.display = allPassing ? 'block' : 'none';
   } catch (err) {
     output.textContent = 'Error: ' + err.message;
     output.className = 'text-red-600';
@@ -57,11 +97,20 @@ async function checkPrereqs() {
     showError('Error checking prerequisites: ' + err.message);
   }
 }
-
-document.getElementById('checkBtn').addEventListener('click', checkPrereqs);
+const checkBtn = document.getElementById('checkBtn');
+if (checkBtn) {
+  checkBtn.addEventListener('click', checkPrereqs);
+}
+if (checkBtn) {
+  checkBtn.addEventListener('click', checkPrereqs);
+}
 
 window.addEventListener('DOMContentLoaded', checkPrereqs);
 
+window.addEventListener('DOMContentLoaded', () => {
+  setProgress(0);
+  checkPrereqs();
+});
 const form = document.getElementById('configForm');
 const installBtn = document.getElementById('installBtn');
 form.addEventListener('submit', async (e) => {
