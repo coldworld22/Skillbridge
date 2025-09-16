@@ -1,91 +1,120 @@
 #!/usr/bin/env bash
-set -u -o pipefail
+set -euo pipefail
 
-declare -a result_ids=()
-declare -a result_names=()
-declare -a result_ok=()
-declare -a result_messages=()
-declare -a result_versions=()
-overall_ok=true
+requirements=()
+all_ok=true
 
-json_escape() {
-  local str="${1-}"
-  local backslash='\\'
-  local double_quote='"'
-  str=${str//${backslash}/${backslash}${backslash}}
-  str=${str//${double_quote}/${backslash}${double_quote}}
-  str=${str//$'\n'/\n}
-  str=${str//$'\r'/\r}
-  str=${str//$'\t'/\t}
-  printf '%s' "$str"
+escape_json() {
+  local s="${1-}"
+  s=${s//\\/\\\\}
+  s=${s//\"/\\\"}
+  s=${s//$'\n'/\\n}
+  s=${s//$'\r'/}
+  s=${s//$'\t'/\\t}
+  echo "$s"
 }
 
-add_result() {
+add_requirement() {
   local id="$1"
   local name="$2"
-  local ok="$3"
+  local status="$3"
   local message="$4"
-  local version="${5-}"
 
-  result_ids+=("$id")
-  result_names+=("$name")
-  result_ok+=("$ok")
-  result_messages+=("$message")
-  result_versions+=("$version")
-  if [ "$ok" != "true" ]; then
-    overall_ok=false
+  local escaped_name
+  escaped_name=$(escape_json "$name")
+  local escaped_message
+  escaped_message=$(escape_json "$message")
+
+  requirements+=("{\"id\":\"$id\",\"name\":\"$escaped_name\",\"status\":\"$status\",\"message\":\"$escaped_message\"}")
+
+  if [ "$status" != "pass" ]; then
+    all_ok=false
   fi
 }
 
-json_escape() {
-  local str="$1"
-  str=${str//\\/\\\\}
-  str=${str//"/\\"}
-  str=${str//$'\n'/\\n}
-  str=${str//$'\r'/\\r}
-  str=${str//$'\t'/\\t}
-  printf '%s' "$str"
-}
-
-all_passed=true
-
-node_status=false
+# Verify Node.js
 if command -v node >/dev/null 2>&1; then
-  NODE_VERSION=$(node -v 2>/dev/null)
+  NODE_VERSION=$(node -v 2>/dev/null || true)
   NODE_MAJOR=$(echo "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
-  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && [ "$NODE_MAJOR" -ge 18 ]; then
-    node_status=true
+  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ && "$NODE_MAJOR" -ge 18 ]]; then
+    add_requirement "node" "Node.js >= 18" "pass" "Detected ${NODE_VERSION}"
+  else
+    add_requirement "node" "Node.js >= 18" "fail" "Detected ${NODE_VERSION:-unknown}. Version 18 or newer required."
   fi
+else
+  add_requirement "node" "Node.js >= 18" "fail" "Node.js executable not found."
 fi
 
-docker_status=false
+# Verify Docker
+docker_present=false
 if command -v docker >/dev/null 2>&1; then
-  docker_status=true
+  docker_present=true
+  DOCKER_VERSION=$(docker --version 2>/dev/null || true)
+  if [ -n "$DOCKER_VERSION" ]; then
+    add_requirement "docker" "Docker" "pass" "$DOCKER_VERSION"
+  else
+    add_requirement "docker" "Docker" "pass" "Docker CLI detected."
+  fi
+else
+  add_requirement "docker" "Docker" "fail" "Docker CLI not found."
 fi
 
 docker_compose_status=false
 if command -v docker-compose >/dev/null 2>&1; then
-  docker_compose_status=true
-elif docker compose version >/dev/null 2>&1; then
-  docker_compose_status=true
+  COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
+  if [ -n "$COMPOSE_VERSION" ]; then
+    add_requirement "docker_compose" "Docker Compose" "pass" "$COMPOSE_VERSION"
+  else
+    add_requirement "docker_compose" "Docker Compose" "pass" "docker-compose command available."
+  fi
+elif [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
+  COMPOSE_VERSION=$(docker compose version 2>/dev/null | head -n 1)
+  if [ -n "$COMPOSE_VERSION" ]; then
+    add_requirement "docker_compose" "Docker Compose" "pass" "$COMPOSE_VERSION"
+  else
+    add_requirement "docker_compose" "Docker Compose" "pass" "Docker Compose plugin available."
+  fi
+else
+  add_requirement "docker_compose" "Docker Compose" "fail" "Docker Compose not found."
 fi
 
-git_status=false
+# Verify Git
 if command -v git >/dev/null 2>&1; then
-  git_status=true
+  GIT_VERSION=$(git --version 2>/dev/null || true)
+  if [ -n "$GIT_VERSION" ]; then
+    add_requirement "git" "Git" "pass" "$GIT_VERSION"
+  else
+    add_requirement "git" "Git" "pass" "Git executable detected."
+  fi
+else
+  add_requirement "git" "Git" "fail" "Git executable not found."
 fi
-if [ "$git_passed" != true ]; then
-  all_passed=false
+
+if [ "$all_ok" = true ]; then
+  SUMMARY="All prerequisites met."
+else
+  SUMMARY="One or more prerequisites are missing. Please review the list above."
 fi
 
-node_message_escaped=$(json_escape "$node_message")
-docker_message_escaped=$(json_escape "$docker_message")
-docker_compose_message_escaped=$(json_escape "$docker_compose_message")
-git_message_escaped=$(json_escape "$git_message")
+if [ "${#requirements[@]}" -gt 0 ]; then
+  printf -v joined '%s,' "${requirements[@]}"
+  joined=${joined%,}
+else
+  joined=''
+fi
 
+SUMMARY_ESCAPED=$(escape_json "$SUMMARY")
+OVERALL=$([ "$all_ok" = true ] && echo "true" || echo "false")
 
-printf '{"node":%s,"docker":%s,"dockerCompose":%s,"git":%s}\n' \
-  "$node_status" \
-  "$docker_status" \
-  "$docker_compose_status" \
-  "$git_status"
+printf '{'
+printf '"ok": %s,' "$OVERALL"
+printf '"summary": "%s",' "$SUMMARY_ESCAPED"
+printf '"requirements": [%s]' "$joined"
+printf '}'
+printf '\n'
+
+if [ "$all_ok" = true ]; then
+  exit 0
+else
+  exit 1
+fi
