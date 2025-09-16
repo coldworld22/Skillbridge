@@ -9,12 +9,13 @@ const SAFE_SCRIPTS = {
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
 
-const executeScript = (res, scriptKey) => {
+const executeScript = (res, scriptKey, options = {}) => {
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-  execFile(script, { shell: false }, (error, stdout, stderr) => {
+  const env = options.env ? { ...process.env, ...options.env } : process.env;
+  execFile(script, { shell: false, env }, (error, stdout, stderr) => {
     const output = stdout + stderr;
     if (error) {
       return res.status(500).json({ ok: false, output });
@@ -24,4 +25,10 @@ const executeScript = (res, scriptKey) => {
 };
 
 exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
-exports.runInstall = (req, res) => executeScript(res, 'install');
+exports.runInstall = (req, res) =>
+  executeScript(res, 'install', {
+    env: {
+      ADMIN_EMAIL: req.body.adminEmail,
+      ADMIN_PASSWORD: req.body.adminPassword,
+    },
+  });

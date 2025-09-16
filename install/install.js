@@ -62,6 +62,11 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
