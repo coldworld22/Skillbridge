@@ -60,7 +60,6 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:
       BACKEND_PORT: ${BACKEND_PORT}
-      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       SESSION_SECRET: ${SESSION_SECRET}
@@ -68,9 +67,17 @@ services:
       MAX_BLOG_IMAGE_BYTES: ${MAX_BLOG_IMAGE_BYTES}
       NODE_ENV: ${NODE_ENV}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-    command: ["sh", "-c", "./scripts/wait-for-db.sh && npx knex migrate:latest && node src/server.js"]
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:${BACKEND_PORT}/api/health"]
+      test:
+        - CMD-SHELL
+        - >-
+          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
+          --connect-timeout 5 --max-time 10
+          http://127.0.0.1:${BACKEND_PORT}/api/health
       interval: 30s
       timeout: 30s
       retries: 3
@@ -90,7 +97,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://backend:${BACKEND_PORT:-5002}/api}
+        NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-http://backend:${BACKEND_PORT:-5002}/api}
         NEXT_PUBLIC_PGADMIN_URL: ${NEXT_PUBLIC_PGADMIN_URL:-http://pgadmin:80}
         APP_DOMAIN: ${APP_DOMAIN:-eduskillbridge.net}
     ports:
@@ -102,8 +109,15 @@ services:
       PORT: 3000
       HOST: 0.0.0.0
       NODE_ENV: production
+      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/health"]
+      test:
+        - CMD-SHELL
+        - >-
+          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
+          --connect-timeout 5 --max-time 10
+          http://127.0.0.1:${PORT:-3000}/api/health
       interval: 30s
       timeout: 30s
       retries: 3

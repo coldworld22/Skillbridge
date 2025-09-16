@@ -14,6 +14,11 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   PRODUCTION_DATABASE_URL: z.string().url().optional(),
   TEST_DATABASE_URL: z.string().url().optional(),
+  POSTGRES_USER: z.string().optional(),
+  POSTGRES_PASSWORD: z.string().optional(),
+  POSTGRES_DB: z.string().optional(),
+  POSTGRES_HOST: z.string().default('localhost'),
+  POSTGRES_PORT: z.coerce.number().default(5432),
   REDIS_URL: z.string().url().optional(),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   APP_DOMAIN: z.string().optional(),
@@ -35,10 +40,22 @@ try {
   throw new Error(`Invalid FRONTEND_URL: ${FRONTEND_URL}`);
 }
 
+const buildDatabaseUrlFromParts = () => {
+  if (!env.POSTGRES_USER || !env.POSTGRES_PASSWORD || !env.POSTGRES_DB) {
+    return undefined;
+  }
+
+  const username = encodeURIComponent(env.POSTGRES_USER);
+  const password = encodeURIComponent(env.POSTGRES_PASSWORD);
+  return `postgres://${username}:${password}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`;
+};
+
+const derivedDatabaseUrl = buildDatabaseUrlFromParts();
+
 const DATABASE_URL =
   env.NODE_ENV === 'test'
-    ? env.TEST_DATABASE_URL
-    : env.DATABASE_URL || env.PRODUCTION_DATABASE_URL;
+    ? env.TEST_DATABASE_URL || derivedDatabaseUrl
+    : env.DATABASE_URL || env.PRODUCTION_DATABASE_URL || derivedDatabaseUrl;
 if (!DATABASE_URL) {
   const key =
     env.NODE_ENV === 'test'
