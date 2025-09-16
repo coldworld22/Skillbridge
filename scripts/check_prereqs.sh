@@ -59,7 +59,7 @@ else
   add_requirement "docker" "Docker" "fail" "Docker CLI not found."
 fi
 
-# Verify Docker Compose
+docker_compose_status=false
 if command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
   if [ -n "$COMPOSE_VERSION" ]; then
