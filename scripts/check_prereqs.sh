@@ -37,70 +37,100 @@ add_result() {
   fi
 }
 
+json_escape() {
+  local str="$1"
+  str=${str//\\/\\\\}
+  str=${str//"/\\"}
+  str=${str//$'\n'/\\n}
+  str=${str//$'\r'/\\r}
+  str=${str//$'\t'/\\t}
+  printf '%s' "$str"
+}
+
+all_passed=true
+
 # Verify Node.js
+node_passed=false
+node_message="Node.js is required. Please install Node.js 18 or newer."
 if command -v node >/dev/null 2>&1; then
-  node_version=$(node -v 2>&1 || true)
-  if [[ "$node_version" =~ ^v([0-9]+) ]]; then
-    node_major=${BASH_REMATCH[1]}
+  NODE_VERSION=$(node -v)
+  NODE_MAJOR=$(printf '%s' "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
+  if [ "$NODE_MAJOR" -ge 18 ]; then
+    node_passed=true
+    node_message="Node.js ${NODE_VERSION} detected."
   else
-    node_major=0
+    node_message="Node.js version 18 or higher is required. Current version: ${NODE_VERSION}."
   fi
-  if [ "$node_major" -ge 18 ] 2>/dev/null; then
-    add_result "node" "Node.js" "true" "Node.js ${node_version} detected." "$node_version"
-  else
-    add_result "node" "Node.js" "false" "Node.js version 18 or higher is required. Current version: ${node_version}" "$node_version"
-  fi
-else
-  add_result "node" "Node.js" "false" "Node.js is required. Please install Node.js 18 or newer."
+fi
+if [ "$node_passed" != true ]; then
+  all_passed=false
 fi
 
 # Verify Docker
+docker_passed=false
+docker_message="Docker is required. Please install Docker."
 if command -v docker >/dev/null 2>&1; then
-  docker_version=$(docker --version 2>&1 || true)
-  add_result "docker" "Docker" "true" "Docker detected." "$docker_version"
-else
-  add_result "docker" "Docker" "false" "Docker is required. Please install Docker."
+  docker_passed=true
+  docker_version=$(docker --version 2>/dev/null | head -n 1)
+  if [ -n "$docker_version" ]; then
+    docker_message="$docker_version"
+  else
+    docker_message="Docker is installed."
+  fi
+fi
+if [ "$docker_passed" != true ]; then
+  all_passed=false
 fi
 
 # Verify Docker Compose
+docker_compose_passed=false
+docker_compose_message="Docker Compose is required. Please install Docker Compose."
 if command -v docker-compose >/dev/null 2>&1; then
-  docker_compose_version=$(docker-compose version --short 2>/dev/null || docker-compose version 2>&1 || true)
-  add_result "dockerCompose" "Docker Compose" "true" "Docker Compose detected." "$docker_compose_version"
-elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-  docker_compose_version=$(docker compose version 2>&1 | head -n 1)
-  add_result "dockerCompose" "Docker Compose" "true" "Docker Compose plugin detected." "$docker_compose_version"
-else
-  add_result "dockerCompose" "Docker Compose" "false" "Docker Compose is required. Please install Docker Compose V2 or the docker-compose plugin."
+  docker_compose_passed=true
+  docker_compose_version=$(docker-compose --version 2>/dev/null | head -n 1)
+  if [ -n "$docker_compose_version" ]; then
+    docker_compose_message="$docker_compose_version"
+  else
+    docker_compose_message="Docker Compose is installed."
+  fi
+elif docker compose version >/dev/null 2>&1; then
+  docker_compose_passed=true
+  docker_compose_version=$(docker compose version 2>/dev/null | head -n 1)
+  if [ -n "$docker_compose_version" ]; then
+    docker_compose_message="$docker_compose_version"
+  else
+    docker_compose_message="Docker Compose (via docker CLI) is available."
+  fi
+fi
+if [ "$docker_compose_passed" != true ]; then
+  all_passed=false
 fi
 
 # Verify Git
+git_passed=false
+git_message="Git is required. Please install Git."
 if command -v git >/dev/null 2>&1; then
-  git_version=$(git --version 2>&1 || true)
-  add_result "git" "Git" "true" "Git detected." "$git_version"
-else
-  add_result "git" "Git" "false" "Git is required. Please install Git."
+  git_passed=true
+  git_version=$(git --version 2>/dev/null | head -n 1)
+  if [ -n "$git_version" ]; then
+    git_message="$git_version"
+  else
+    git_message="Git is installed."
+  fi
+fi
+if [ "$git_passed" != true ]; then
+  all_passed=false
 fi
 
+node_message_escaped=$(json_escape "$node_message")
+docker_message_escaped=$(json_escape "$docker_message")
+docker_compose_message_escaped=$(json_escape "$docker_compose_message")
+git_message_escaped=$(json_escape "$git_message")
+
 printf '{\n'
-if [ "$overall_ok" = true ]; then
-  printf '  "ok": true,\n'
-else
-  printf '  "ok": false,\n'
-fi
-printf '  "requirements": [\n'
-for ((i = 0; i < ${#result_ids[@]}; i++)); do
-  if [ "$i" -ne 0 ] 2>/dev/null; then
-    printf ',\n'
-  fi
-  id_escaped=$(json_escape "${result_ids[$i]}")
-  name_escaped=$(json_escape "${result_names[$i]}")
-  message_escaped=$(json_escape "${result_messages[$i]}")
-  printf '    {"id":"%s","name":"%s","ok":%s,"message":"%s"' \
-    "$id_escaped" "$name_escaped" "${result_ok[$i]}" "$message_escaped"
-  if [ -n "${result_versions[$i]}" ]; then
-    version_escaped=$(json_escape "${result_versions[$i]}")
-    printf ',"version":"%s"' "$version_escaped"
-  fi
-  printf '}'
-done
-printf '\n  ]\n}\n'
+printf '  "node": {"passed": %s, "message": "%s"},\n' "$node_passed" "$node_message_escaped"
+printf '  "docker": {"passed": %s, "message": "%s"},\n' "$docker_passed" "$docker_message_escaped"
+printf '  "dockerCompose": {"passed": %s, "message": "%s"},\n' "$docker_compose_passed" "$docker_compose_message_escaped"
+printf '  "git": {"passed": %s, "message": "%s"},\n' "$git_passed" "$git_message_escaped"
+printf '  "allPassed": %s\n' "$all_passed"
+printf '}\n'

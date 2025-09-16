@@ -14,12 +14,35 @@ const executeScript = (res, scriptKey, options = {}) => {
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-  const env = options.env ? { ...process.env, ...options.env } : process.env;
-  execFile(script, { shell: false, env }, (error, stdout, stderr) => {
-    const output = stdout + stderr;
+
+  execFile(script, { shell: false }, (error, stdout, stderr) => {
+    const trimmedStdout = stdout ? stdout.trim() : '';
+    const trimmedStderr = stderr ? stderr.trim() : '';
+
+    if (options.expectJson) {
+      const rawForParsing = trimmedStdout || trimmedStderr;
+      if (rawForParsing) {
+        try {
+          const parsed = JSON.parse(trimmedStdout || rawForParsing);
+          const ok = options.evaluateOk ? options.evaluateOk(parsed, error) : !error;
+          const statusCode = options.determineStatusCode
+            ? options.determineStatusCode(ok, error)
+            : error && ok
+              ? 500
+              : 200;
+          return res.status(statusCode).json({ ok, output: parsed });
+        } catch (parseError) {
+          const fallback = rawForParsing || (error ? error.message : '');
+          return res.status(500).json({ ok: false, output: fallback || 'Invalid JSON output.' });
+        }
+      }
+
+      return res.status(500).json({ ok: false, output: 'No output received from script.' });
+    }
+
+    const output = (stdout + stderr).trim();
     if (error) {
-      const combined = `${output}${errorOutput}`.trim();
-      return res.status(500).json({ ok: false, output: combined });
+      return res.status(500).json({ ok: false, output: output || error.message });
     }
 
     if (parseJson) {
@@ -49,11 +72,10 @@ const executeScript = (res, scriptKey, options = {}) => {
   });
 };
 
-exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
-exports.runInstall = (req, res) =>
-  executeScript(res, 'install', {
-    env: {
-      ADMIN_EMAIL: req.body.adminEmail,
-      ADMIN_PASSWORD: req.body.adminPassword,
-    },
+exports.checkPrereqs = (req, res) =>
+  executeScript(res, 'prereqs', {
+    expectJson: true,
+    evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
+    determineStatusCode: () => 200,
   });
+exports.runInstall = (req, res) => executeScript(res, 'install');

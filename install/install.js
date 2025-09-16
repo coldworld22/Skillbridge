@@ -1,14 +1,6 @@
 const progressBar = document.getElementById('progressBar');
 const errorBox = document.getElementById('errorBox');
-const step2Section = document.getElementById('step2');
-
-function clampProgress(value) {
-  if (typeof value !== 'number') {
-    const parsed = parseFloat(value);
-    value = Number.isNaN(parsed) ? 0 : parsed;
-  }
-  return Math.min(100, Math.max(0, value));
-}
+const step2 = document.getElementById('step2');
 
 function setProgress(p) {
   if (!progressBar) {
@@ -34,71 +26,64 @@ function clearError() {
   errorBox.textContent = '';
   errorBox.classList.add('hidden');
 }
+function renderChecklist(output, results, allPassed) {
+  const requirements = [
+    { key: 'node', label: 'Node.js (v18+)' },
+    { key: 'docker', label: 'Docker' },
+    { key: 'dockerCompose', label: 'Docker Compose' },
+    { key: 'git', label: 'Git' },
+  ];
 
-function toggleStep(stepElement, visible) {
-  if (!stepElement) return;
-  stepElement.classList.toggle('step-visible', visible);
-  stepElement.classList.toggle('step-hidden', !visible);
-  stepElement.setAttribute('aria-hidden', visible ? 'false' : 'true');
-}
-
-function renderRequirements(requirements = []) {
-  if (!prereqList) return;
-  prereqList.innerHTML = '';
-
-  if (!requirements.length) {
-    const item = document.createElement('li');
-    item.className = 'text-sm text-gray-500';
-    item.textContent = 'No requirement details were returned.';
-    prereqList.appendChild(item);
-    return;
+  if (typeof output.replaceChildren === 'function') {
+    output.replaceChildren();
+  } else {
+    while (output.firstChild) {
+      output.removeChild(output.firstChild);
+    }
   }
+  output.className = 'mt-2 whitespace-pre-wrap';
+  output.setAttribute('role', 'list');
 
   requirements.forEach((req) => {
-    const ok = req?.ok === true;
-    const container = document.createElement('li');
-    container.className = `flex gap-3 rounded border px-3 py-2 transition-colors duration-300 ${
-      ok ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-    }`;
+    const status = (results && results[req.key]) || {};
+    const passed = Boolean(status.passed);
+
+    const item = document.createElement('span');
+    item.classList.add('block', 'leading-6');
+    item.setAttribute('role', 'listitem');
 
     const icon = document.createElement('span');
-    icon.className = 'mt-0.5 text-xl';
-    icon.textContent = ok ? '✅' : '❌';
+    icon.className = `${passed ? 'text-green-600' : 'text-red-600'} font-bold mr-2`;
     icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = passed ? '✔' : '✖';
 
-    const content = document.createElement('div');
-    content.className = 'flex flex-col gap-1';
+    const label = document.createElement('span');
+    label.classList.add('font-semibold');
+    label.textContent = req.label;
 
-    const title = document.createElement('p');
-    title.className = `font-semibold ${ok ? 'text-green-800' : 'text-red-800'}`;
-    title.textContent = req?.name || req?.id || 'Requirement';
+    const message = document.createElement('span');
+    message.classList.add('ml-2', 'text-gray-700');
+    message.textContent =
+      status.message || (passed ? 'Requirement satisfied.' : 'Requirement missing.');
 
-    const message = document.createElement('p');
-    message.className = `text-sm ${ok ? 'text-green-700' : 'text-red-700'}`;
-    message.textContent = req?.message || (ok ? 'Available' : 'Unavailable');
-
-    content.appendChild(title);
-    content.appendChild(message);
-
-    if (req?.version) {
-      const version = document.createElement('p');
-      version.className = `text-xs ${ok ? 'text-green-600' : 'text-red-600'}`;
-      version.textContent = `Version: ${req.version}`;
-      content.appendChild(version);
-    }
-
-    container.appendChild(icon);
-    container.appendChild(content);
-    prereqList.appendChild(container);
+    item.append(icon, label, message);
+    output.appendChild(item);
   });
+
+  const summary = document.createElement('span');
+  summary.classList.add('block', 'mt-3', 'font-semibold', allPassed ? 'text-green-600' : 'text-red-600');
+  summary.textContent = allPassed
+    ? 'All prerequisites are satisfied.'
+    : 'Please address the missing prerequisites before continuing.';
+  output.appendChild(summary);
 }
 
 async function checkPrereqs() {
   const output = document.getElementById('prereqOutput');
-  clearError();
-  setProgress(10);
+  output.removeAttribute('role');
   output.textContent = 'Checking...';
   output.className = 'text-gray-600';
+  step2.style.display = 'none';
   try {
     const res = await fetch('/api/install/prereqs');
     setProgress(30);
@@ -106,29 +91,28 @@ async function checkPrereqs() {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
       output.classList.add('error');
-      showError('Authentication required. Please log in.');
+      step2.style.display = 'none';
       return;
     }
     const data = await res.json();
-    setProgress(45);
-    if (data.ok) {
-      output.className = 'text-green-600';
-      output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));
-      document.getElementById('step2').style.display = 'block';
-      setProgress(50);
-      clearError();
+    const results =
+      data && data.output && typeof data.output === 'object' ? data.output : null;
+    const allPassed = Boolean(data && data.ok);
+    if (results) {
+      renderChecklist(output, results, allPassed);
     } else {
-      output.className = 'text-red-600';
-      output.textContent = 'Error:\n' + (data.output || JSON.stringify(data, null, 2));
-      document.getElementById('step2').style.display = 'none';
-      setProgress(15);
-      showError('Prerequisite check failed. Review the details below.');
+      output.className = allPassed ? 'text-green-600' : 'text-red-600';
+      const fallback = data && data.output ? data.output : data;
+      const formattedFallback =
+        typeof fallback === 'string' ? fallback : JSON.stringify(fallback, null, 2);
+      output.textContent = (allPassed ? 'Success:\n' : 'Error:\n') + formattedFallback;
     }
+    step2.style.display = allPassed ? 'block' : 'none';
   } catch (err) {
+    output.removeAttribute('role');
     output.textContent = 'Error: ' + err.message;
     output.className = 'text-red-600';
-    setProgress(0);
-    showError('Prerequisite check failed: ' + err.message);
+    step2.style.display = 'none';
   }
 }
 const checkBtn = document.getElementById('checkBtn');
