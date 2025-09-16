@@ -31,7 +31,32 @@ const EnvSchema = z.object({
   ENABLE_INSTALL: z.coerce.boolean().default(false),
 });
 
-const env = EnvSchema.parse(process.env);
+const OPTIONAL_URL_ENV_VARS = [
+  'DATABASE_URL',
+  'PRODUCTION_DATABASE_URL',
+  'TEST_DATABASE_URL',
+  'REDIS_URL',
+];
+
+const normalizeOptionalUrl = (value) => (value === '' ? undefined : value);
+
+const createValidatedEnv = () => {
+  const modifiedEnv = { ...process.env };
+
+  OPTIONAL_URL_ENV_VARS.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(modifiedEnv, key)) {
+      modifiedEnv[key] = normalizeOptionalUrl(modifiedEnv[key]);
+    }
+  });
+
+  const sanitizedEnv = EnvSchema.parse(modifiedEnv);
+
+  // Re-run validation after sanitizing optional URLs to ensure the final
+  // environment object still satisfies the schema.
+  return EnvSchema.parse(sanitizedEnv);
+};
+
+const env = createValidatedEnv();
 
 let FRONTEND_URL = env.FRONTEND_URL;
 if (FRONTEND_URL.startsWith('FRONTEND_URL=')) {
