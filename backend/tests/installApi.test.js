@@ -2,7 +2,9 @@ const request = require('supertest');
 const express = require('express');
 
 jest.mock('child_process', () => ({
-  execFile: jest.fn((_script, _opts, cb) => cb(null, 'ok', '')),
+  execFile: jest.fn((_script, _opts, cb) =>
+    cb(null, '{"node":true,"docker":true,"dockerCompose":true,"git":true}\n', '')
+  ),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -14,10 +16,10 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const { execFile } = require('child_process');
-const routes = require('../src/modules/install/install.routes');
+const { router } = require('../src/modules/install/install.routes');
 
 const app = express();
-app.use('/api/install', routes);
+app.use('/api/install', router);
 
 describe('/api/install/prereqs', () => {
   afterEach(() => {
@@ -36,7 +38,12 @@ describe('/api/install/prereqs', () => {
     process.env.INSTALL_API_ENABLED = 'true';
     const res = await request(app).get('/api/install/prereqs');
     expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
     expect(execFile).toHaveBeenCalled();
   });
 });

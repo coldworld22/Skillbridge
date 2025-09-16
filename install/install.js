@@ -90,14 +90,15 @@ async function checkPrereqs() {
   output.textContent = 'Checking...';
   output.className = 'text-gray-600';
   try {
-    const res = await fetch('/api/install/prereqs');
-    if (res.status === 401 || res.status === 403) {
+    const response = await fetch('/api/install/prereqs');
+    if (response.status === 401 || response.status === 403) {
       alert('Please log in to continue.');
       output.textContent = 'Authentication required. Please log in.';
       output.className = 'text-red-600';
       return;
     }
-    const data = await res.json();
+
+    const data = await response.json();
     if (data.ok) {
       output.className = 'text-green-600';
       output.textContent = 'Success:\n' + (data.output || JSON.stringify(data, null, 2));
@@ -120,9 +121,8 @@ async function checkPrereqs() {
         step2.style.display = 'none';
       }
     }
-  } catch (err) {
-    output.textContent = 'Error: ' + err.message;
-    output.className = 'text-red-600';
+  } catch (error) {
+    updateOutput(prereqOutput, `Error: ${error.message}`, 'error');
   }
 }
 
@@ -130,7 +130,8 @@ if (checkBtn) {
   checkBtn.addEventListener('click', checkPrereqs);
 }
 
-window.addEventListener('DOMContentLoaded', checkPrereqs);
+  if (!configForm) return;
+
 
 async function runInstall() {
   if (installInProgress || installCompleted) {
@@ -154,10 +155,15 @@ async function runInstall() {
 
   let shouldDisable = false;
   try {
-    const res = await fetch('/api/install/run', {
+    const response = await fetch('/api/install/run', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
-    if (res.status === 401 || res.status === 403) {
+
+    if (response.status === 401 || response.status === 403) {
       alert('Please log in to continue.');
       if (installOutput) {
         installOutput.textContent = 'Authentication required. Please log in.';
