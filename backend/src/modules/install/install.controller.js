@@ -9,19 +9,46 @@ const SAFE_SCRIPTS = {
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
 
-const executeScript = (res, scriptKey) => {
+const executeScript = (res, scriptKey, options = {}) => {
+  const { parseJson = false } = options;
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-  execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const output = stdout + stderr;
+  execFile(script, { shell: false }, (error, stdout = '', stderr = '') => {
+    const output = stdout.toString();
+    const errorOutput = stderr.toString();
     if (error) {
-      return res.status(500).json({ ok: false, output });
+      const combined = `${output}${errorOutput}`.trim();
+      return res.status(500).json({ ok: false, output: combined });
     }
-    res.json({ ok: true, output });
+
+    if (parseJson) {
+      const text = output.trim();
+      if (!text) {
+        const combined = (output + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Installer script returned no JSON output',
+          output: combined,
+        });
+      }
+      try {
+        const parsed = JSON.parse(text);
+        return res.json(parsed);
+      } catch (parseError) {
+        const combined = (text + errorOutput).trim();
+        return res.status(500).json({
+          ok: false,
+          error: 'Invalid JSON output from script',
+          output: combined,
+        });
+      }
+    }
+
+    return res.json({ ok: true, output: `${output}${errorOutput}` });
   });
 };
 
-exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
+exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs', { parseJson: true });
 exports.runInstall = (req, res) => executeScript(res, 'install');
