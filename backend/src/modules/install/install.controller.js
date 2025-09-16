@@ -9,17 +9,49 @@ const SAFE_SCRIPTS = {
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
 
+const tryParseJson = (value) => {
+  if (!value) {
+    return null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (err) {
+    return null;
+  }
+};
+
+const combineOutput = (stdout, stderr) => {
+  const trimmedStdout = (stdout || '').trim();
+  const trimmedStderr = (stderr || '').trim();
+  return {
+    trimmedStdout,
+    trimmedStderr,
+    combined: [trimmedStdout, trimmedStderr].filter(Boolean).join('\n'),
+  };
+};
+
 const executeScript = (res, scriptKey) => {
   const script = SAFE_SCRIPTS[scriptKey];
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
   execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const output = stdout + stderr;
+    const { trimmedStdout, combined } = combineOutput(stdout, stderr);
+    const parsed = tryParseJson(trimmedStdout);
+
     if (error) {
-      return res.status(500).json({ ok: false, output });
+      if (parsed && typeof parsed === 'object') {
+        const statusCode = parsed.ok === false ? 200 : 500;
+        return res.status(statusCode).json(parsed);
+      }
+      return res.status(500).json({ ok: false, output: combined });
     }
-    res.json({ ok: true, output });
+
+    if (parsed && typeof parsed === 'object') {
+      return res.json(parsed);
+    }
+
+    return res.json({ ok: true, output: combined });
   });
 };
 
