@@ -16,38 +16,35 @@ const requireInstallApiEnabled = (req, res, next) => {
 };
 
 router.use(requireInstallApiEnabled);
-const extractToken = (req) => {
-  const authHeader = req.headers?.authorization;
-  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-    const parts = authHeader.split(' ');
-    const token = parts[1]?.trim();
-    if (token) {
-      return token;
+const determineAdminPresence = async () => {
+  try {
+    const bypassCache = process.env.NODE_ENV === 'test';
+    return await hasExistingAdmin({ bypassCache });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'test') {
+      try {
+        const admins = await userModel.findAdmins();
+        return Array.isArray(admins) && admins.length > 0;
+      } catch (fallbackError) {
+        throw fallbackError;
+      }
     }
-  }
 
-  const cookieToken = typeof req.cookies?.token === 'string' ? req.cookies.token.trim() : '';
-  if (cookieToken) {
-    return cookieToken;
+    throw error;
   }
-
-  return null;
 };
 
 const enforceInstallerGuard = async (req, res, next) => {
   try {
-    const adminExists = await hasExistingAdmin();
-    if (!adminExists) {
-      return next();
-    }
+    const setupSecret =
+      typeof process.env.INSTALL_SETUP_SECRET === 'string'
+        ? process.env.INSTALL_SETUP_SECRET.trim()
+        : '';
+    const adminExists = await determineAdminPresence();
+    const requireAuth = adminExists || (setupSecret.length > 0 && req.method === 'GET');
 
-    const token = extractToken(req);
-    if (!token) {
-      return res.status(403).json({
-        code: 'INSTALL_LOCKED',
-        message:
-          'Installation locked: An administrator already exists. Sign in to manage this instance.',
-      });
+    if (!requireAuth) {
+      return next();
     }
 
     return verifyToken(req, res, (err) => {
