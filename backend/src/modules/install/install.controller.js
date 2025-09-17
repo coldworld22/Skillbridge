@@ -14,6 +14,11 @@ const executeScript = (res, scriptKey, options = {}) => {
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
+  const envOverrides = options.env || {};
+  const execOptions = {
+    shell: false,
+    env: { ...process.env, ...envOverrides },
+  };
 
   const { env: customEnv, ...execOptions } = options;
   const mergedEnv = { ...process.env, ...(customEnv || {}) };
