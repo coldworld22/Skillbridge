@@ -1,6 +1,8 @@
 const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../../utils/logger');
+const { refreshAdminPresence, markAdminExists } = require('./install.helpers');
 
 // Whitelisted scripts that can be executed via the install API. Paths are
 // resolved absolutely and must exist on disk to be executed.
@@ -20,8 +22,10 @@ const executeScript = (res, scriptKey, options = {}) => {
     env: { ...process.env, ...envOverrides },
   };
 
-  const { env: customEnv, ...execOptions } = options;
-  const mergedEnv = { ...process.env, ...(customEnv || {}) };
+  execFile(script, { shell: false }, async (error, stdout, stderr) => {
+    const rawOutput = stdout + stderr;
+    const trimmedStdout = stdout.trim();
+    let parsedOutput;
 
   execFile(
     script,
@@ -50,7 +54,17 @@ const executeScript = (res, scriptKey, options = {}) => {
         return res.json(parsedOutput);
       }
 
-      res.json({ ok: true, output: rawOutput });
+    if (scriptKey === 'install') {
+      try {
+        markAdminExists();
+        await refreshAdminPresence();
+      } catch (refreshError) {
+        logger.warn('Failed to refresh install guard after successful run', refreshError);
+      }
+    }
+
+    if (parsedOutput && typeof parsedOutput === 'object') {
+      return res.json(parsedOutput);
     }
   );
 };

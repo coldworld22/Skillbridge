@@ -4,6 +4,7 @@ const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware')
 const validate = require('../../middleware/validate');
 const userModel = require('../users/user.model');
 const { z } = require('zod');
+const { hasExistingAdmin } = require('./install.helpers');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -15,44 +16,52 @@ const requireInstallApiEnabled = (req, res, next) => {
 };
 
 router.use(requireInstallApiEnabled);
-
-const hasSetupSecretConfigured = () => {
-  const secret = process.env.INSTALL_SETUP_SECRET;
-  return typeof secret === 'string' && secret.trim() !== '';
-};
-
-const shouldBypassInstallAuth = async () => {
-  if (hasSetupSecretConfigured()) {
-    return false;
+const extractToken = (req) => {
+  const authHeader = req.headers?.authorization;
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const parts = authHeader.split(' ');
+    const token = parts[1]?.trim();
+    if (token) {
+      return token;
+    }
   }
 
+  const cookieToken = typeof req.cookies?.token === 'string' ? req.cookies.token.trim() : '';
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  return null;
+};
+
+const enforceInstallerGuard = async (req, res, next) => {
   try {
-    const admins = await userModel.findAdmins();
-    if (Array.isArray(admins)) {
-      return admins.length === 0;
+    const adminExists = await hasExistingAdmin();
+    if (!adminExists) {
+      return next();
     }
-    return true;
-  } catch (_error) {
-    return false;
+
+    const token = extractToken(req);
+    if (!token) {
+      return res.status(403).json({
+        code: 'INSTALL_LOCKED',
+        message:
+          'Installation locked: An administrator already exists. Sign in to manage this instance.',
+      });
+    }
+
+    return verifyToken(req, res, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return isAdmin(req, res, next);
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 
-// Require an authenticated administrator for install endpoints when an admin
-// exists or when a setup secret is configured.
-const enforceInstallAuth = async (req, res, next) => {
-  if (await shouldBypassInstallAuth()) {
-    return next();
-  }
-
-  return verifyToken(req, res, (err) => {
-    if (err) {
-      return next(err);
-    }
-    return isAdmin(req, res, next);
-  });
-};
-
-router.use(enforceInstallAuth);
+router.use(enforceInstallerGuard);
 
 // No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();

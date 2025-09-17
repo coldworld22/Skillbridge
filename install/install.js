@@ -395,15 +395,22 @@ document.addEventListener('DOMContentLoaded', () => {
         data = {};
       }
 
+      if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
+        const message =
+          data?.message ||
+          'Installation locked. An administrator has already completed the setup. Please sign in.';
+        setSummary(message, 'error');
+        showError(
+          'SkillBridge is already installed. Sign in with an administrator account to manage your site.'
+        );
+        setProgress(0);
+        return;
+      }
+
       if (res.status === 401 || res.status === 403) {
-        const message = extractResponseMessage(data, bodyText);
-        if (isInstallerApiDisabledMessage(message)) {
-          setSummary('Installer API disabled. Enable it in your environment and try again.', 'error');
-          showError(INSTALLER_DISABLED_GUIDANCE);
-        } else {
-          setSummary('Authentication required. Please log in and try again.', 'error');
-          showError('Please log in to continue.');
-        }
+        const message = data?.message || 'Authentication required. Please log in and try again.';
+        setSummary(message, 'error');
+        showError(message);
         setProgress(0);
         return;
       }
@@ -471,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(credentials),
       });
 
-      const bodyText = await res.text();
+      const responseText = await res.text();
       let data;
       if (bodyText) {
         try {
@@ -483,24 +490,27 @@ document.addEventListener('DOMContentLoaded', () => {
         data = {};
       }
 
+      if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
+        const message =
+          data?.message ||
+          'Installation locked. An administrator already exists. Sign in to manage this instance.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
+        }
+        updateStep('config');
+        return;
+      }
+
       if (res.status === 401 || res.status === 403) {
-        const message = extractResponseMessage(data, bodyText);
-        if (isInstallerApiDisabledMessage(message)) {
-          showError(INSTALLER_DISABLED_GUIDANCE);
-          if (installOutput) {
-            installOutput.classList.remove('text-gray-700', 'text-green-700');
-            installOutput.classList.add('text-red-700');
-            installOutput.classList.remove('hidden');
-            installOutput.textContent = INSTALLER_DISABLED_GUIDANCE;
-          }
-        } else {
-          showError('Please log in to continue.');
-          if (installOutput) {
-            installOutput.classList.remove('text-gray-700', 'text-green-700');
-            installOutput.classList.add('text-red-700');
-            installOutput.classList.remove('hidden');
-            installOutput.textContent = 'Authentication required. Please log in.';
-          }
+        const message = data?.message || 'Please log in to continue.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
         }
         updateStep('config');
         return;
