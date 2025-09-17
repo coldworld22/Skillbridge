@@ -29,7 +29,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /shared /shared
-RUN adduser -S app && chown -R app:app /app
+RUN addgroup -S app \
+    && adduser -S app -G app \
+    && chown -R app:app /app
 EXPOSE 3000
 USER app
 CMD ["npm", "start"]
