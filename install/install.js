@@ -55,6 +55,42 @@ document.addEventListener('DOMContentLoaded', () => {
     errorBox.classList.add('hidden');
   }
 
+  const INSTALLER_DISABLED_GUIDANCE =
+    'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
+
+  function extractResponseMessage(data, bodyText) {
+    if (data && typeof data === 'object') {
+      const candidates = [
+        data.message,
+        data.error,
+        data.error?.message,
+        data.summary,
+        data.statusMessage,
+        data.details,
+      ];
+      for (const value of candidates) {
+        if (typeof value === 'string' && value.trim().length > 0) {
+          return value.trim();
+        }
+      }
+    }
+
+    if (typeof bodyText === 'string') {
+      const trimmed = bodyText.trim();
+      if (trimmed.length > 0 && trimmed.length <= 500) {
+        return trimmed;
+      }
+    }
+
+    return '';
+  }
+
+  function isInstallerApiDisabledMessage(message) {
+    if (typeof message !== 'string' || !message.trim()) return false;
+    const normalized = message.toLowerCase();
+    return normalized.includes('installer api') && normalized.includes('disabled');
+  }
+
   function updateStep(step, options = {}) {
     if (!STEP_ORDER.includes(step)) return;
     const { preserveProgress = false } = options;
@@ -444,11 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const responseText = await res.text();
       let data;
-      if (responseText) {
+      if (bodyText) {
         try {
-          data = JSON.parse(responseText);
+          data = JSON.parse(bodyText);
         } catch {
-          data = { output: responseText };
+          data = { output: bodyText };
         }
       } else {
         data = {};
@@ -486,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? data.output
           : typeof data.log === 'string'
             ? data.log
-            : responseText;
+            : bodyText;
 
       if (installOutput) {
         installOutput.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');

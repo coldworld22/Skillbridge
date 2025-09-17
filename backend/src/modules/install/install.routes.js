@@ -2,6 +2,7 @@ const router = require('express').Router();
 const controller = require('./install.controller');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
+const userModel = require('../users/user.model');
 const { z } = require('zod');
 const { hasExistingAdmin } = require('./install.helpers');
 
@@ -15,7 +16,6 @@ const requireInstallApiEnabled = (req, res, next) => {
 };
 
 router.use(requireInstallApiEnabled);
-
 const extractToken = (req) => {
   const authHeader = req.headers?.authorization;
   if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
