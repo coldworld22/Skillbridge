@@ -33,7 +33,15 @@ describe('/install route', () => {
     server.close();
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
-    expect(res.text).not.toContain('Admin Email');
-    expect(res.text).not.toContain('Admin Password');
+    expect(res.text).toContain('id="configForm"');
+    expect(res.text).toContain('Admin Email');
+    expect(res.text).toContain('Admin Password');
+    expect(res.text).toContain('id="progressBar"');
+    expect(res.text).toContain('data-stepper-item="prereq"');
+    expect(res.text).toContain('data-stepper-item="config"');
+    expect(res.text).toContain('data-stepper-item="install"');
+    expect(res.text).toContain('Prerequisites');
+    expect(res.text).toContain('Configuration');
+    expect(res.text).toContain('Run Install');
   });
 });
