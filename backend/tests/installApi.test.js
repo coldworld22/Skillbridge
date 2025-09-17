@@ -35,20 +35,6 @@ afterEach(() => {
 });
 
 describe('/api/install/prereqs', () => {
-  beforeEach(() => {
-    mockVerifyToken.mockReset();
-    mockIsAdmin.mockReset();
-    mockFindAdmins.mockReset();
-    execFile.mockClear();
-    delete process.env.INSTALL_API_ENABLED;
-    delete process.env.INSTALL_SETUP_SECRET;
-  });
-
-  afterEach(() => {
-    delete process.env.INSTALL_API_ENABLED;
-    delete process.env.INSTALL_SETUP_SECRET;
-  });
-
   it('returns 403 when INSTALL_API_ENABLED is false', async () => {
     process.env.INSTALL_API_ENABLED = 'false';
     mockFindAdmins.mockResolvedValue([]);
@@ -187,5 +173,41 @@ describe('runInstall controller', () => {
       message: 'Admin email and password are required.',
     });
     expect(execFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('/api/install/run', () => {
+  it('passes sanitized credentials to the install script via environment', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .send({
+        adminEmail: '  admin@example.com  \n',
+        adminPassword: '  pass\nword  ',
+      });
+
+    expect(res.status).toBe(200);
+
+    expect(execFile).toHaveBeenCalledTimes(1);
+    const execOptions = execFile.mock.calls[0][1];
+    expect(execOptions.shell).toBe(false);
+    expect(execOptions.env).toEqual(
+      expect.objectContaining({
+        ADMIN_EMAIL: 'admin@example.com',
+        ADMIN_PASSWORD: 'password',
+      })
+    );
+
+    if (process.env.PATH) {
+      expect(execOptions.env.PATH).toBe(process.env.PATH);
+    }
+
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
   });
 });
