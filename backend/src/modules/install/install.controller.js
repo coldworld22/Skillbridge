@@ -15,32 +15,41 @@ const executeScript = (res, scriptKey, options = {}) => {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
 
-  execFile(script, { shell: false }, (error, stdout, stderr) => {
-    const rawOutput = stdout + stderr;
-    const trimmedStdout = stdout.trim();
-    let parsedOutput;
+  const mergedEnv = { ...process.env, ...(options.env || {}) };
 
-    if (trimmedStdout) {
-      try {
-        parsedOutput = JSON.parse(trimmedStdout);
-      } catch (_err) {
-        parsedOutput = undefined;
+  execFile(
+    script,
+    {
+      shell: false,
+      env: mergedEnv,
+    },
+    (error, stdout, stderr) => {
+      const rawOutput = stdout + stderr;
+      const trimmedStdout = stdout.trim();
+      let parsedOutput;
+
+      if (trimmedStdout) {
+        try {
+          parsedOutput = JSON.parse(trimmedStdout);
+        } catch (_err) {
+          parsedOutput = undefined;
+        }
       }
-    }
 
-    if (error) {
+      if (error) {
+        if (parsedOutput && typeof parsedOutput === 'object') {
+          return res.status(500).json(parsedOutput);
+        }
+        return res.status(500).json({ ok: false, output: rawOutput });
+      }
+
       if (parsedOutput && typeof parsedOutput === 'object') {
-        return res.status(500).json(parsedOutput);
+        return res.json(parsedOutput);
       }
-      return res.status(500).json({ ok: false, output: rawOutput });
-    }
 
-    if (parsedOutput && typeof parsedOutput === 'object') {
-      return res.json(parsedOutput);
+      res.json({ ok: true, output: rawOutput });
     }
-
-    res.json({ ok: true, output: rawOutput });
-  });
+  );
 };
 
 exports.checkPrereqs = (req, res) =>
@@ -49,4 +58,20 @@ exports.checkPrereqs = (req, res) =>
     evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
     determineStatusCode: () => 200,
   });
-exports.runInstall = (req, res) => executeScript(res, 'install');
+exports.runInstall = (req, res) => {
+  const { adminEmail, adminPassword } = req.body || {};
+
+  if (!adminEmail || !adminPassword) {
+    return res.status(400).json({
+      ok: false,
+      message: 'Admin email and password are required.',
+    });
+  }
+
+  return executeScript(res, 'install', {
+    env: {
+      ADMIN_EMAIL: adminEmail,
+      ADMIN_PASSWORD: adminPassword,
+    },
+  });
+};
