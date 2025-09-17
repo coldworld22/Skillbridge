@@ -14,33 +14,22 @@ const executeScript = (res, scriptKey, options = {}) => {
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
+  const envOverrides = options.env || {};
+  const execOptions = {
+    shell: false,
+    env: { ...process.env, ...envOverrides },
+  };
 
-  const mergedEnv = { ...process.env, ...(options.env || {}) };
+  execFile(script, execOptions, (error, stdout, stderr) => {
+    const rawOutput = stdout + stderr;
+    const trimmedStdout = stdout.trim();
+    let parsedOutput;
 
-  execFile(
-    script,
-    {
-      shell: false,
-      env: mergedEnv,
-    },
-    (error, stdout, stderr) => {
-      const rawOutput = stdout + stderr;
-      const trimmedStdout = stdout.trim();
-      let parsedOutput;
-
-      if (trimmedStdout) {
-        try {
-          parsedOutput = JSON.parse(trimmedStdout);
-        } catch (_err) {
-          parsedOutput = undefined;
-        }
-      }
-
-      if (error) {
-        if (parsedOutput && typeof parsedOutput === 'object') {
-          return res.status(500).json(parsedOutput);
-        }
-        return res.status(500).json({ ok: false, output: rawOutput });
+    if (trimmedStdout) {
+      try {
+        parsedOutput = JSON.parse(trimmedStdout);
+      } catch (_err) {
+        parsedOutput = undefined;
       }
 
       if (parsedOutput && typeof parsedOutput === 'object') {
@@ -58,20 +47,10 @@ exports.checkPrereqs = (req, res) =>
     evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
     determineStatusCode: () => 200,
   });
-exports.runInstall = (req, res) => {
-  const { adminEmail, adminPassword } = req.body || {};
-
-  if (!adminEmail || !adminPassword) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Admin email and password are required.',
-    });
-  }
-
-  return executeScript(res, 'install', {
+exports.runInstall = (req, res) =>
+  executeScript(res, 'install', {
     env: {
-      ADMIN_EMAIL: adminEmail,
-      ADMIN_PASSWORD: adminPassword,
+      ADMIN_EMAIL: req.body.adminEmail,
+      ADMIN_PASSWORD: req.body.adminPassword,
     },
   });
-};
