@@ -14,7 +14,6 @@ const executeScript = (res, scriptKey, options = {}) => {
   if (!script || !fs.existsSync(script)) {
     return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-
   const envOverrides = options.env || {};
   const execOptions = {
     shell: false,
@@ -32,21 +31,14 @@ const executeScript = (res, scriptKey, options = {}) => {
       } catch (_err) {
         parsedOutput = undefined;
       }
-    }
 
-    if (error) {
       if (parsedOutput && typeof parsedOutput === 'object') {
-        return res.status(500).json(parsedOutput);
+        return res.json(parsedOutput);
       }
-      return res.status(500).json({ ok: false, output: rawOutput });
-    }
 
-    if (parsedOutput && typeof parsedOutput === 'object') {
-      return res.json(parsedOutput);
+      res.json({ ok: true, output: rawOutput });
     }
-
-    res.json({ ok: true, output: rawOutput });
-  });
+  );
 };
 
 exports.checkPrereqs = (req, res) =>

@@ -55,6 +55,42 @@ document.addEventListener('DOMContentLoaded', () => {
     errorBox.classList.add('hidden');
   }
 
+  const INSTALLER_DISABLED_GUIDANCE =
+    'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
+
+  function extractResponseMessage(data, bodyText) {
+    if (data && typeof data === 'object') {
+      const candidates = [
+        data.message,
+        data.error,
+        data.error?.message,
+        data.summary,
+        data.statusMessage,
+        data.details,
+      ];
+      for (const value of candidates) {
+        if (typeof value === 'string' && value.trim().length > 0) {
+          return value.trim();
+        }
+      }
+    }
+
+    if (typeof bodyText === 'string') {
+      const trimmed = bodyText.trim();
+      if (trimmed.length > 0 && trimmed.length <= 500) {
+        return trimmed;
+      }
+    }
+
+    return '';
+  }
+
+  function isInstallerApiDisabledMessage(message) {
+    if (typeof message !== 'string' || !message.trim()) return false;
+    const normalized = message.toLowerCase();
+    return normalized.includes('installer api') && normalized.includes('disabled');
+  }
+
   function updateStep(step, options = {}) {
     if (!STEP_ORDER.includes(step)) return;
     const { preserveProgress = false } = options;
@@ -347,13 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
-      if (res.status === 401 || res.status === 403) {
-        setSummary('Authentication required. Please log in and try again.', 'error');
-        showError('Please log in to continue.');
-        setProgress(0);
-        return;
-      }
-
       const bodyText = await res.text();
       let data;
       if (bodyText) {
@@ -364,6 +393,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         data = {};
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        const message = extractResponseMessage(data, bodyText);
+        if (isInstallerApiDisabledMessage(message)) {
+          setSummary('Installer API disabled. Enable it in your environment and try again.', 'error');
+          showError(INSTALLER_DISABLED_GUIDANCE);
+        } else {
+          setSummary('Authentication required. Please log in and try again.', 'error');
+          showError('Please log in to continue.');
+        }
+        setProgress(0);
+        return;
       }
 
       const normalized = normalizePrereqResponse(data);
@@ -429,27 +471,39 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(credentials),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        showError('Please log in to continue.');
-        if (installOutput) {
-          installOutput.classList.remove('text-gray-700', 'text-green-700');
-          installOutput.classList.add('text-red-700');
-          installOutput.textContent = 'Authentication required. Please log in.';
-        }
-        updateStep('config');
-        return;
-      }
-
-      const responseText = await res.text();
+      const bodyText = await res.text();
       let data;
-      if (responseText) {
+      if (bodyText) {
         try {
-          data = JSON.parse(responseText);
+          data = JSON.parse(bodyText);
         } catch {
-          data = { output: responseText };
+          data = { output: bodyText };
         }
       } else {
         data = {};
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        const message = extractResponseMessage(data, bodyText);
+        if (isInstallerApiDisabledMessage(message)) {
+          showError(INSTALLER_DISABLED_GUIDANCE);
+          if (installOutput) {
+            installOutput.classList.remove('text-gray-700', 'text-green-700');
+            installOutput.classList.add('text-red-700');
+            installOutput.classList.remove('hidden');
+            installOutput.textContent = INSTALLER_DISABLED_GUIDANCE;
+          }
+        } else {
+          showError('Please log in to continue.');
+          if (installOutput) {
+            installOutput.classList.remove('text-gray-700', 'text-green-700');
+            installOutput.classList.add('text-red-700');
+            installOutput.classList.remove('hidden');
+            installOutput.textContent = 'Authentication required. Please log in.';
+          }
+        }
+        updateStep('config');
+        return;
       }
 
       const success = typeof data.ok === 'boolean' ? data.ok : res.ok;
@@ -458,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? data.output
           : typeof data.log === 'string'
             ? data.log
-            : responseText;
+            : bodyText;
 
       if (installOutput) {
         installOutput.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
