@@ -152,14 +152,17 @@ exports.updateIdentity = async (req, res) => {
   }
 
   const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+  const uploadedFilePath = req.file.path;
 
-  const removeFile = async (targetPath) => {
-    if (!targetPath) return;
+  const safeUnlink = async (targetPath) => {
+    if (!targetPath) {
+      return;
+    }
 
     try {
       await fs.promises.unlink(targetPath);
     } catch (err) {
-      if (err.code !== "ENOENT") {
+      if (err && err.code !== "ENOENT") {
         logger.error("Failed to remove identity document", err);
       }
     }
@@ -170,10 +173,11 @@ exports.updateIdentity = async (req, res) => {
       .where({ user_id: req.user.id })
       .first();
 
+    let previousDocumentPath;
+
     if (existingProfile && existingProfile.identity_doc_url) {
-      const sanitizedOldDoc = existingProfile.identity_doc_url.replace(/^\//, "");
-      const oldPath = path.join(process.cwd(), sanitizedOldDoc);
-      await removeFile(oldPath);
+      const sanitizedOldDoc = existingProfile.identity_doc_url.replace(/^\/+/, "");
+      previousDocumentPath = path.join(process.cwd(), sanitizedOldDoc);
     }
 
     if (existingProfile) {
@@ -187,10 +191,12 @@ exports.updateIdentity = async (req, res) => {
       });
     }
 
+    await safeUnlink(previousDocumentPath);
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
-    await removeFile(req.file && req.file.path);
-    logger.error(error);
+    await safeUnlink(uploadedFilePath);
+    logger.error("Failed to update identity document", error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
 };
