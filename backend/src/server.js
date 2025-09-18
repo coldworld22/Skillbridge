@@ -128,6 +128,11 @@ app.use(
       config.NODE_ENV === "production" && req.url === "/api/health",
   })
 );
+
+// Lightweight health check that stays available even if downstream middleware fails
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 const sessionOptions = {
   secret: config.SESSION_SECRET,
   resave: false,
