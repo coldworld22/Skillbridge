@@ -209,13 +209,75 @@ if (!config.ENABLE_INSTALL) {
 app.use(require("./middleware/errorHandler"));
 const BACKEND_PORT = config.BACKEND_PORT;
 
+const DEFAULT_REDIS_RETRY_OPTIONS = {
+  maxAttempts: 5,
+  baseDelayMs: 1000,
+  backoffFactor: 2,
+  maxDelayMs: 10000,
+};
+
+async function connectRedisWithRetry(
+  client,
+  {
+    maxAttempts = DEFAULT_REDIS_RETRY_OPTIONS.maxAttempts,
+    baseDelayMs = DEFAULT_REDIS_RETRY_OPTIONS.baseDelayMs,
+    backoffFactor = DEFAULT_REDIS_RETRY_OPTIONS.backoffFactor,
+    maxDelayMs = DEFAULT_REDIS_RETRY_OPTIONS.maxDelayMs,
+  } = DEFAULT_REDIS_RETRY_OPTIONS
+) {
+  if (!client) {
+    return;
+  }
+
+  if (client.isOpen) {
+    logger.log("ℹ️ Redis client already connected");
+    return;
+  }
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      logger.log(
+        `🔄 Connecting to Redis (attempt ${attempt} of ${maxAttempts})`
+      );
+      await client.connect();
+      logger.log("✅ Redis connected");
+      return;
+    } catch (err) {
+      logger.error(`❌ Redis connection attempt ${attempt} failed:`, err);
+
+      if (attempt === maxAttempts) {
+        logger.error(
+          `❌ Redis connection failed after ${maxAttempts} attempts. Exhausting retry budget.`,
+          err
+        );
+        throw err;
+      }
+
+      const delay = Math.min(
+        maxDelayMs,
+        Math.round(baseDelayMs * Math.pow(backoffFactor, attempt - 1))
+      );
+      try {
+        if (client.isOpen) {
+          await client.disconnect();
+        }
+      } catch (disconnectErr) {
+        logger.warn("⚠️ Failed to cleanly disconnect Redis client before retry:", disconnectErr);
+      }
+
+      logger.warn(`Retrying Redis connection in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function startServer() {
   if (redisClient) {
     try {
-      await redisClient.connect();
+      await connectRedisWithRetry(redisClient);
       await socketStore.clearAll();
     } catch (err) {
-      logger.error("❌ Failed to connect to Redis:", err);
+      logger.error("❌ Failed to connect to Redis after retries:", err);
       process.exit(1);
     }
   }
@@ -263,6 +325,7 @@ module.exports = {
   app,
   server,
   startServer,
+  connectRedisWithRetry,
   clearServerCache,
   get io() {
     return socketState.io;
