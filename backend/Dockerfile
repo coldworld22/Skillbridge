@@ -16,7 +16,7 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/knexfile.js ./knexfile.js
-COPY --from=builder /shared /shared
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
 RUN chmod +x scripts/wait-for-db.sh scripts/docker-entrypoint.sh && \
     chown -R node:node /app
