@@ -79,10 +79,10 @@ services:
           curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
           --connect-timeout 5 --max-time 10
           http://127.0.0.1:${BACKEND_PORT}/api/health
-      interval: 30s
+      interval: 60s
       timeout: 30s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 5m
     depends_on:
       db:
         condition: service_healthy
