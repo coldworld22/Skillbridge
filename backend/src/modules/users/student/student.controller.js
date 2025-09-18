@@ -147,26 +147,40 @@ exports.updateAvatar = async (req, res) => {
  * @access Student
  */
 exports.updateIdentity = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No identity document uploaded" });
-    }
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+  if (!req.file) {
+    return res.status(400).json({ message: "No identity document uploaded" });
+  }
 
-    const existing = await db("student_profiles")
+  const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+  const uploadedFilePath = req.file.path;
+
+  const safeUnlink = async (targetPath) => {
+    if (!targetPath) {
+      return;
+    }
+
+    try {
+      await fs.promises.unlink(targetPath);
+    } catch (err) {
+      if (err && err.code !== "ENOENT") {
+        logger.error("Failed to remove identity document", err);
+      }
+    }
+  };
+
+  try {
+    const existingProfile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
 
-    if (existing) {
-      if (existing.identity_doc_url) {
-        const sanitizedOldDoc = existing.identity_doc_url.replace(/^\//, "");
-        const oldPath = path.join(process.cwd(), sanitizedOldDoc);
-        fs.unlink(oldPath, (err) =>
-          err && logger.error("Failed to remove old identity document:", err)
-        );
-      }
+    let previousDocumentPath;
 
-    if (profile) {
+    if (existingProfile && existingProfile.identity_doc_url) {
+      const sanitizedOldDoc = existingProfile.identity_doc_url.replace(/^\/+/, "");
+      previousDocumentPath = path.join(process.cwd(), sanitizedOldDoc);
+    }
+
+    if (existingProfile) {
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
@@ -177,12 +191,12 @@ exports.updateIdentity = async (req, res) => {
       });
     }
 
+    await safeUnlink(previousDocumentPath);
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => err && logger.error(err));
-    }
-    logger.error(error);
+    await safeUnlink(uploadedFilePath);
+    logger.error("Failed to update identity document", error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
 };
