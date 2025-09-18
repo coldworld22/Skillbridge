@@ -9,6 +9,11 @@ module.exports = {
     const cfg = (await getSettings()) || {};
     const transporter = await createTransporter();
 
+    if (!transporter) {
+      logger.log(`Emails disabled. Email to ${to} not sent.`);
+      return;
+    }
+
     const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
     const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
 
