@@ -19,6 +19,9 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     APP_DOMAIN=$APP_DOMAIN \
     STRICT_PUBLIC_API=true
 
+# Ensure subsequent RUN commands execute with pipefail enabled.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Source optional production env file if present before building.
 RUN \
     if [ -f .env.production ]; then \
