@@ -51,18 +51,27 @@ try {
   // Prevent shipping a build that points at an internal HTTP host which would
   // cause browsers to block requests with mixed-content errors.
   const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
-  if (
-    enforcePublicAPI &&
-    process.env.NODE_ENV === 'production' &&
-    /^https?:\/\/(localhost|backend)(:\\d+)?/i.test(apiBase)
-  ) {
-    throw new Error(
-      `NEXT_PUBLIC_API_BASE_URL (${apiBase}) points to a non-public host. Set this to your public HTTPS domain in frontend/.env.production.`,
-    );
+  const isStrictProduction = enforcePublicAPI && process.env.NODE_ENV === 'production';
+  if (isStrictProduction) {
+    const localHostPattern =
+      /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|backend)(:\\d+)?/i;
+    if (localHostPattern.test(apiBase)) {
+      throw new Error(
+        `NEXT_PUBLIC_API_BASE_URL (${apiBase}) points to a non-public host. Set this to your public HTTPS domain in frontend/.env.production.`,
+      );
+    }
+    if (!/^https:\/\//i.test(apiBase)) {
+      throw new Error(
+        `NEXT_PUBLIC_API_BASE_URL (${apiBase}) must use HTTPS when building production images.`,
+      );
+    }
   }
 
   ({ protocol, hostname, port } = new URL(apiBase));
 } catch (error) {
+  if (process.env.STRICT_PUBLIC_API === 'true' && process.env.NODE_ENV === 'production') {
+    throw error;
+  }
   console.warn(
     `Invalid NEXT_PUBLIC_API_BASE_URL ("${apiBase}"): ${error.message}. Falling back to ${defaultApiBase}.`,
   );

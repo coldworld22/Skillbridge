@@ -7,16 +7,28 @@ COPY frontend/ ./
 COPY shared /shared
 
 # Default build-time environment variables.
-ARG NEXT_PUBLIC_API_BASE_URL="http://localhost:5002/api"
+ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_PGADMIN_URL="http://localhost:5050"
 ARG APP_DOMAIN=""
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     NEXT_PUBLIC_PGADMIN_URL=$NEXT_PUBLIC_PGADMIN_URL \
-    APP_DOMAIN=$APP_DOMAIN
+    APP_DOMAIN=$APP_DOMAIN \
+    STRICT_PUBLIC_API=true
 
 # Source optional production env file if present before building.
-RUN if [ -f .env.production ]; then \
-        set -a && . ./.env.production; \
+RUN set -euo pipefail; \
+    if [ -f .env.production ]; then \
+        set -a && . ./.env.production && set +a; \
+    fi; \
+    if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then \
+        echo "NEXT_PUBLIC_API_BASE_URL must be provided via --build-arg or .env.production" >&2; \
+        exit 1; \
+    fi; \
+    if printf '%s' "$NEXT_PUBLIC_API_BASE_URL" | grep -Eq '^http://'; then \
+        if ! printf '%s' "$NEXT_PUBLIC_API_BASE_URL" | grep -Eq '^http://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]|backend)(:\\d+)?(/|$)'; then \
+            echo "NEXT_PUBLIC_API_BASE_URL (${NEXT_PUBLIC_API_BASE_URL}) must use HTTPS for public hosts" >&2; \
+            exit 1; \
+        fi; \
     fi; \
     npm run build
 

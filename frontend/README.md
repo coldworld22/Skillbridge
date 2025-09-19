@@ -15,13 +15,13 @@ npm install
 The production build reads configuration from `.env.production`. Define the following keys before building:
 
 - `APP_DOMAIN` – domain where the app is hosted (e.g. `eduskillbridge.net`).
-- `NEXT_PUBLIC_API_BASE_URL` – base URL for backend API requests.
+- `NEXT_PUBLIC_API_BASE_URL` – base URL for backend API requests. Production builds must point to an HTTPS endpoint.
 - `NEXT_PUBLIC_PGADMIN_URL` – pgAdmin interface endpoint.
 - `NEXT_PUBLIC_SOCKET_URL` – WebSocket endpoint, typically `wss://${APP_DOMAIN}`.
 
 Environment files support variable expansion using [`dotenv-expand`](https://github.com/motdotla/dotenv-expand). Values such as `NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api` will resolve `APP_DOMAIN` during `npm run build`.
 
-Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services. The Docker build context excludes `.env.local`, ensuring container images read the API host from the `DOCKER_NEXT_PUBLIC_API_BASE_URL` build argument (defaulting to the in-stack backend) or from a supplied `.env.production`.
+Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services. The Docker build context excludes `.env.local`, so container images **must** provide `NEXT_PUBLIC_API_BASE_URL` either by passing `--build-arg NEXT_PUBLIC_API_BASE_URL=https://your-domain/api` or by including it in `.env.production`. Builds fail if the value is missing or if a non-local host still uses `http://`.
 
 ## Development Server
 
