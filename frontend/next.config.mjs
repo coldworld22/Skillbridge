@@ -21,6 +21,38 @@ const defaultApiBase = 'http://localhost:5002/api';
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
 const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
 const isStrictProduction = enforcePublicAPI && process.env.NODE_ENV === 'production';
+const appDomain = process.env.APP_DOMAIN;
+
+const resolveApiBase = (candidate) => {
+  if (!candidate) {
+    return defaultApiBase;
+  }
+
+  if (/^https?:\/\//i.test(candidate)) {
+    return candidate;
+  }
+
+  if (candidate.startsWith('/')) {
+    if (!appDomain) {
+      throw new Error(
+        `NEXT_PUBLIC_API_BASE_URL (${candidate}) is a relative path, but APP_DOMAIN is not set.`,
+      );
+    }
+
+    const hasProtocol = /^https?:\/\//i.test(appDomain);
+    const normalizedDomain = appDomain.replace(/\/+$/, '');
+    const normalizedPath = `/${candidate.replace(/^\/+/, '')}`;
+    const domainWithProtocol = hasProtocol
+      ? normalizedDomain
+      : `https://${normalizedDomain}`;
+    return `${domainWithProtocol}${normalizedPath}`;
+  }
+
+  throw new Error(
+    `NEXT_PUBLIC_API_BASE_URL must be an absolute URL or start with "/". Received: ${candidate}`,
+  );
+};
+
 let apiBase;
 if (isStrictProduction) {
   if (!apiBaseEnv) {
@@ -28,9 +60,16 @@ if (isStrictProduction) {
       'NEXT_PUBLIC_API_BASE_URL must be defined when STRICT_PUBLIC_API is enabled for production builds.',
     );
   }
-  apiBase = apiBaseEnv;
+  apiBase = resolveApiBase(apiBaseEnv);
 } else {
-  apiBase = apiBaseEnv || defaultApiBase;
+  try {
+    apiBase = resolveApiBase(apiBaseEnv);
+  } catch (error) {
+    console.warn(
+      `Invalid NEXT_PUBLIC_API_BASE_URL ("${apiBaseEnv}"): ${error.message}. Falling back to ${defaultApiBase}.`,
+    );
+    apiBase = defaultApiBase;
+  }
 }
 const defaultPgAdminBase = 'http://localhost:5050';
 const pgAdminEnv = process.env.NEXT_PUBLIC_PGADMIN_URL;
@@ -88,7 +127,6 @@ try {
   apiBase = defaultApiBase;
   ({ protocol, hostname, port } = new URL(defaultApiBase));
 }
-const appDomain = process.env.APP_DOMAIN;
 const nextConfig = {
   images: {
     unoptimized: true,
