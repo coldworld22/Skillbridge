@@ -2,6 +2,7 @@
 const db = require("../../../config/database");
 const tagService = require("./tutorialTag.service");
 const chapterService = require("./chapters/tutorialChapter.service");
+const cache = require("../../../utils/cache");
 const { withTransaction } = require("../../../services/transaction.service");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
@@ -54,7 +55,7 @@ exports.getTutorialAggregates = async (tutorialId) => {
     rating: parseFloat(ratingRow.rating) || 0
   };
 
-  cache.set(`tutorial:${tutorialId}:aggregates`, aggregates);
+  cache.set(`tutorial:${tutorialId}:aggregates`, aggregates, { ttl: 300 });
   return aggregates;
 };
 
