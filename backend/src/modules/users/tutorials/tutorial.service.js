@@ -16,38 +16,70 @@ exports.createTutorial = async (data, trx = db) => {
 };
 
 exports.createTutorialWithRelations = async (
-  data,
+  tutorialData,
   tags = [],
   chapters = []
 ) => {
   return withTransaction(async (trx) => {
-    const tutorial = await exports.createTutorial(data, trx);
-    let tutorialTags = [];
-    if (Array.isArray(tags) && tags.length) {
-      await exports.updateTutorialTags(tutorial.id, tags, trx);
-      tutorialTags = await exports.getTutorialTags(tutorial.id, trx);
+    const tutorial = await exports.createTutorial(tutorialData, trx);
+
+    const normalizedTagNames = Array.from(
+      new Set(
+        (tags || [])
+          .map((tag) =>
+            typeof tag === "string" ? tag.trim() : tag?.name?.trim?.() ?? ""
+          )
+          .filter(Boolean)
+      )
+    );
+
+    const tagIds = [];
+    for (const name of normalizedTagNames) {
+      const existing = await tagService.findByName(name, trx);
+      const tag =
+        existing ||
+        (await tagService.createTag(
+          { name, slug: slugify(name, { lower: true, strict: true }) },
+          trx
+        ));
+      tagIds.push(tag.id);
     }
 
-    let createdChapters = [];
-    if (Array.isArray(chapters) && chapters.length) {
-      const normalizedChapters = chapters.map((chapter, index) => ({
-        id: chapter.id || uuidv4(),
-        tutorial_id: tutorial.id,
-        title: chapter.title,
-        video_url: chapter.video_url ?? null,
-        duration: chapter.duration ?? null,
-        order: chapter.order ?? index + 1,
-        is_preview: chapter.is_preview ?? false,
-      }));
+    if (tagIds.length) {
+      await exports.addTutorialTags(tutorial.id, tagIds, trx);
+    }
 
-      for (const chapterData of normalizedChapters) {
+    if (Array.isArray(chapters) && chapters.length) {
+      for (let index = 0; index < chapters.length; index += 1) {
+        const chapter = chapters[index];
+        if (!chapter || !chapter.title) continue;
+
+        const chapterData = {
+          id: chapter.id || uuidv4(),
+          tutorial_id: tutorial.id,
+          title: chapter.title,
+          video_url: chapter.video_url || null,
+          duration: chapter.duration ?? null,
+          order: chapter.order ?? index + 1,
+          is_preview: chapter.is_preview ?? false,
+        };
+
         await chapterService.create(chapterData, trx);
       }
-
-      createdChapters = normalizedChapters;
     }
 
-    return { ...tutorial, tags: tutorialTags, chapters: createdChapters };
+    const [createdChapters, tutorialTags] = await Promise.all([
+      trx("tutorial_chapters")
+        .where({ tutorial_id: tutorial.id })
+        .orderBy("order"),
+      tagIds.length ? exports.getTutorialTags(tutorial.id, trx) : Promise.resolve([]),
+    ]);
+
+    return {
+      ...tutorial,
+      chapters: createdChapters,
+      tags: tutorialTags,
+    };
   });
 };
 
