@@ -6,9 +6,8 @@ RUN npm ci && npm cache clean --force
 COPY frontend/ ./
 COPY shared /shared
 
-# Ensure Bash with pipefail support is used for the following build step while
-# retaining the -e and -u safeguards.
-SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+# Ensure subsequent RUN instructions use bash so pipefail is respected.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Default build-time environment variables.
 ARG NEXT_PUBLIC_API_BASE_URL
