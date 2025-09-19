@@ -19,7 +19,19 @@ dotenvExpand.expand(
 /** @type {import('next').NextConfig} */
 const defaultApiBase = 'http://localhost:5002/api';
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
-let apiBase = apiBaseEnv || defaultApiBase;
+const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
+const isStrictProduction = enforcePublicAPI && process.env.NODE_ENV === 'production';
+let apiBase;
+if (isStrictProduction) {
+  if (!apiBaseEnv) {
+    throw new Error(
+      'NEXT_PUBLIC_API_BASE_URL must be defined when STRICT_PUBLIC_API is enabled for production builds.',
+    );
+  }
+  apiBase = apiBaseEnv;
+} else {
+  apiBase = apiBaseEnv || defaultApiBase;
+}
 const defaultPgAdminBase = 'http://localhost:5050';
 const pgAdminEnv = process.env.NEXT_PUBLIC_PGADMIN_URL;
 let pgAdminBase = pgAdminEnv || defaultPgAdminBase;
@@ -50,8 +62,6 @@ try {
 
   // Prevent shipping a build that points at an internal HTTP host which would
   // cause browsers to block requests with mixed-content errors.
-  const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
-  const isStrictProduction = enforcePublicAPI && process.env.NODE_ENV === 'production';
   if (isStrictProduction) {
     const localHostPattern =
       /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|backend)(:\\d+)?/i;
@@ -69,7 +79,7 @@ try {
 
   ({ protocol, hostname, port } = new URL(apiBase));
 } catch (error) {
-  if (process.env.STRICT_PUBLIC_API === 'true' && process.env.NODE_ENV === 'production') {
+  if (isStrictProduction) {
     throw error;
   }
   console.warn(
