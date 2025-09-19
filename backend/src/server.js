@@ -172,11 +172,17 @@ app.use(passport.session());
 const uploadsPath = path.join(__dirname, "../uploads");
 const serveUploads = express.static(uploadsPath, {
   maxAge: "1h",
+  redirect: false,
   setHeaders: (res) => {
     res.setHeader("Cache-Control", "public, max-age=3600");
   },
 });
 const blockPdfMiddleware = (req, res, next) => {
+  const normalizedPath = req.path || "";
+
+  if (normalizedPath === "" || normalizedPath === "/") {
+    return res.status(404).json({ message: "Not Found" });
+  }
   if (req.path.toLowerCase().endsWith(".pdf")) {
     return res.status(403).json({ message: "Direct PDF access is forbidden" });
   }
