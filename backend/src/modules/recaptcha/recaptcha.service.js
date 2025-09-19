@@ -16,6 +16,14 @@ exports.verify = async (token, remoteIp) => {
   if (!recaptcha.active) {
     return true; // disabled -> skip verification
   }
+  if (!recaptcha.secretKey) {
+    logger.warn('reCAPTCHA is active but missing a secret key – skipping verification');
+    return true;
+  }
+  if (!recaptcha.siteKey) {
+    logger.warn('reCAPTCHA is active but missing a site key – skipping verification');
+    return true; // disabled -> skip verification
+  }
   if (!token) {
     return false;
   }

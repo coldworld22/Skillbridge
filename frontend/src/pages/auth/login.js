@@ -84,52 +84,60 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   // 🔑 Handle form submission
   // ─────────────────────────────
   const onSubmit = async (data) => {
-  try {
-    logger.log("➡️ login onSubmit invoked");
-    let cfg = recaptchaCfg;
-    if (!cfg) {
-      setCfgLoading(true);
-      cfg = await fetchSocialLoginConfig().catch(() => null);
-      setRecaptchaCfg(cfg);
-      setCfgLoading(false);
-    }
-    if (!cfg) {
-      toast.error(t("recaptcha_config_failed"));
-      return;
-    }
-    if (cfg?.recaptcha?.active && !executeRecaptcha) {
-      toast.error(t("recaptcha_config_failed"));
-      return;
-    }
-    let token;
-    if (cfg?.recaptcha?.active && executeRecaptcha) {
-      token = await executeRecaptcha("login");
-    }
-    const loggedInUser = await login({ ...data, recaptchaToken: token });
-    toast.success(t("login_successful"));
-    fetchNotifications();
+    try {
+      logger.log("➡️ login onSubmit invoked");
+      let cfg = recaptchaCfg;
+      if (!cfg && cfgLoading) {
+        setCfgLoading(true);
+        cfg = await fetchSocialLoginConfig().catch(() => null);
+        setRecaptchaCfg(cfg);
+        setCfgLoading(false);
+      }
 
-    const targetPath =
-      loggedInUser.profile_complete === false
-        ? profileRoutes[loggedInUser.role?.toLowerCase()] || "/website"
-        : "/website";
+      const recaptchaConfigured = Boolean(
+        cfg?.recaptcha?.active &&
+          cfg?.recaptcha?.siteKey &&
+          executeRecaptcha
+      );
 
-    // 🚀 Redirect after a short delay so the toast is visible
-    setTimeout(() => {
-      router.push(targetPath);
-    }, 500);
-  } catch (err) {
-    logger.error("❌ login onSubmit error", err);
-    handleError(err, t("login_failed"));
-    setValue("password", "");
-    document.activeElement?.blur();
+      if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
+        logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
+      }
 
-    setTimeout(() => {
-      const loginBtn = document.querySelector("button[type=submit]");
-      loginBtn?.blur();
-    }, 100);
-  }
-};
+      let token;
+      if (recaptchaConfigured) {
+        try {
+          token = await executeRecaptcha("login");
+        } catch (recaptchaErr) {
+          logger.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
+        }
+      }
+
+      const loggedInUser = await login({ ...data, recaptchaToken: token });
+      toast.success(t("login_successful"));
+      fetchNotifications();
+
+      const targetPath =
+        loggedInUser.profile_complete === false
+          ? profileRoutes[loggedInUser.role?.toLowerCase()] || "/website"
+          : "/website";
+
+      // 🚀 Redirect after a short delay so the toast is visible
+      setTimeout(() => {
+        router.push(targetPath);
+      }, 500);
+    } catch (err) {
+      logger.error("❌ login onSubmit error", err);
+      handleError(err, t("login_failed"));
+      setValue("password", "");
+      document.activeElement?.blur();
+
+      setTimeout(() => {
+        const loginBtn = document.querySelector("button[type=submit]");
+        loginBtn?.blur();
+      }, 100);
+    }
+  };
 
 
 
@@ -234,7 +242,11 @@ export default function Login() {
       .finally(() => setCfgLoading(false));
   }, []);
 
-  if (recaptchaCfg?.recaptcha?.active) {
+  const recaptchaEnabled = Boolean(
+    recaptchaCfg?.recaptcha?.active && recaptchaCfg?.recaptcha?.siteKey
+  );
+
+  if (recaptchaEnabled) {
     return (
       <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
         <LoginForm
