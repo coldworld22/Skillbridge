@@ -8,7 +8,7 @@ exports.updateProgress = {
 
 exports.batchStatus = {
   body: z.object({
-    tutorialIds: z.array(z.number()),
+    tutorialIds: z.array(z.string().uuid()),
   }),
 };
 
