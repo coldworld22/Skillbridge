@@ -30,8 +30,12 @@ RUN \
         echo "NEXT_PUBLIC_API_BASE_URL must be provided via --build-arg or .env.production" >&2; \
         exit 1; \
     fi; \
+    if [[ "$NEXT_PUBLIC_API_BASE_URL" == /* ]] && [ -z "${APP_DOMAIN:-}" ]; then \
+        echo "APP_DOMAIN must be set when NEXT_PUBLIC_API_BASE_URL is provided as a relative path" >&2; \
+        exit 1; \
+    fi; \
     case "$NEXT_PUBLIC_API_BASE_URL" in \
-        http://localhost*|http://127.0.0.1*|http://0.0.0.0*|http://\[::1\]*|http://backend*) \
+        http://localhost*|http://127.0.0.1*|http://0.0.0.0*|http://\[::1\]*|http://backend*|/*) \
             ;; \
         http://*) \
             echo "NEXT_PUBLIC_API_BASE_URL (${NEXT_PUBLIC_API_BASE_URL}) must use HTTPS for public hosts" >&2; \

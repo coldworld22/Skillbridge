@@ -100,19 +100,24 @@ referenced in `nginx/conf.d/ssl.conf`.
 3. **Frontend** – for Docker Compose production builds, set variables in
   `frontend/.env.production`:
 
- ```bash
- APP_DOMAIN=yourdomain.com
- NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
- NEXT_PUBLIC_PGADMIN_URL=https://${APP_DOMAIN}/pgadmin
- ```
+```bash
+APP_DOMAIN=yourdomain.com
+NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
+NEXT_PUBLIC_PGADMIN_URL=https://${APP_DOMAIN}/pgadmin
+```
 
-  Commit only placeholder values. Provide real production settings via
-  environment variables or by mounting a `.env.production` file at deploy time
-  so secrets stay out of version control. The root `.env` is intended for local
-  development and defaults `NEXT_PUBLIC_API_BASE_URL` to
-  `http://localhost:5002/api` for internal container communication. Remove or
-  override this file in production so the frontend uses your public HTTPS
-  domain.
+> **Tip:** When `APP_DOMAIN` is defined you can alternatively set
+> `NEXT_PUBLIC_API_BASE_URL=/api`. During the build the relative value expands
+> to `https://${APP_DOMAIN}/api`, letting reverse proxies expose the API at the
+> same origin without hard-coding the domain in your environment file.
+
+Commit only placeholder values. Provide real production settings via
+environment variables or by mounting a `.env.production` file at deploy time
+so secrets stay out of version control. The root `.env` is intended for local
+development and defaults `NEXT_PUBLIC_API_BASE_URL` to
+`http://localhost:5002/api` for internal container communication. Remove or
+override this file in production so the frontend uses your public HTTPS
+domain.
 
  Without these variables the frontend defaults to `/api` which may point to the
  wrong server when deployed.
