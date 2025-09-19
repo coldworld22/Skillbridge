@@ -14,6 +14,43 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.createTutorialWithRelations = async (
+  data,
+  tags = [],
+  chapters = []
+) => {
+  return withTransaction(async (trx) => {
+    const tutorial = await exports.createTutorial(data, trx);
+
+    let tutorialTags = [];
+    if (Array.isArray(tags) && tags.length) {
+      await exports.updateTutorialTags(tutorial.id, tags, trx);
+      tutorialTags = await exports.getTutorialTags(tutorial.id, trx);
+    }
+
+    let createdChapters = [];
+    if (Array.isArray(chapters) && chapters.length) {
+      const normalizedChapters = chapters.map((chapter, index) => ({
+        id: chapter.id || uuidv4(),
+        tutorial_id: tutorial.id,
+        title: chapter.title,
+        video_url: chapter.video_url ?? null,
+        duration: chapter.duration ?? null,
+        order: chapter.order ?? index + 1,
+        is_preview: chapter.is_preview ?? false,
+      }));
+
+      for (const chapterData of normalizedChapters) {
+        await chapterService.create(chapterData, trx);
+      }
+
+      createdChapters = normalizedChapters;
+    }
+
+    return { ...tutorial, tags: tutorialTags, chapters: createdChapters };
+  });
+};
+
 exports.findByTitle = async (title) => {
   return db("tutorials")
     .whereRaw('LOWER(title) = ?', title.toLowerCase())
@@ -362,6 +399,13 @@ exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
     tagIds.push(tag.id);
   }
   await exports.addTutorialTags(tutorialId, tagIds, trx);
+};
+
+exports.updateTutorialTagsTransactional = async (tutorialId, tags) => {
+  return withTransaction(async (trx) => {
+    await exports.updateTutorialTags(tutorialId, tags, trx);
+    return exports.getTutorialTags(tutorialId, trx);
+  });
 };
 
 exports.getTutorialTags = async (tutorialId, trx = db) => {
