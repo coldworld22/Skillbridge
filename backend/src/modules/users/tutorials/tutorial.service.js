@@ -3,6 +3,7 @@ const db = require("../../../config/database");
 const tagService = require("./tutorialTag.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const { withTransaction } = require("../../../services/transaction.service");
+const cache = require("../../../utils/cache");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 const { TUTORIAL_STATUS } = require("../../../../shared/tutorialStatus");
