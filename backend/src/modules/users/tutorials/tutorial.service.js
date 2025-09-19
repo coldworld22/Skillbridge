@@ -6,7 +6,6 @@ const { withTransaction } = require("../../../services/transaction.service");
 const cache = require("../../../utils/cache");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
-const cache = require("../../../utils/cache");
 const { TUTORIAL_STATUS } = require("../../../../shared/tutorialStatus");
 
 exports.createTutorial = async (data, trx = db) => {
