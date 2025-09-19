@@ -178,7 +178,9 @@ const serveUploads = express.static(uploadsPath, {
   },
 });
 const blockPdfMiddleware = (req, res, next) => {
-  if (!req.path || req.path === "/") {
+  const normalizedPath = req.path || "";
+
+  if (normalizedPath === "" || normalizedPath === "/") {
     return res.status(404).json({ message: "Not Found" });
   }
   if (req.path.toLowerCase().endsWith(".pdf")) {
