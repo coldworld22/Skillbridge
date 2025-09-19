@@ -19,6 +19,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
+import logger from "@/utils/logger";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
@@ -67,14 +68,43 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
       const { full_name, email, phone, password, role } = data;
       let cfg = recaptchaCfg;
       if (!cfg && cfgLoading) {
+        setCfgLoading(true);
         cfg = await fetchSocialLoginConfig().catch(() => null);
         setRecaptchaCfg(cfg);
         setCfgLoading(false);
       }
-      let token;
-      if (cfg?.recaptcha?.active && executeRecaptcha) {
-        token = await executeRecaptcha("register");
+
+      const recaptchaConfigured = Boolean(
+        cfg?.recaptcha?.active &&
+          cfg?.recaptcha?.siteKey &&
+          executeRecaptcha
+      );
+
+      let shouldBypassRecaptcha = Boolean(
+        cfg?.recaptcha?.active && !recaptchaConfigured
+      );
+
+      if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
+        logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
       }
+
+      let token;
+      if (recaptchaConfigured) {
+        try {
+          token = await executeRecaptcha("register");
+          if (!token) {
+            shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
+          }
+        } catch (recaptchaErr) {
+          shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
+          logger.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
+        }
+      }
+
+      if (shouldBypassRecaptcha) {
+        logger.warn("⚠️ Bypassing reCAPTCHA for registration so the request can proceed");
+      }
+
       await registerUser({
         full_name,
         email,
@@ -82,6 +112,7 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
         password,
         role,
         recaptchaToken: token,
+        recaptchaBypass: shouldBypassRecaptcha,
       });
       toast.success(t("registration_successful"));
       fetchNotifications();
@@ -201,9 +232,9 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
         <motion.button
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
-          disabled={isSubmitting || (cfgLoading && !recaptchaCfg)}
+          disabled={isSubmitting}
           className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
-            isSubmitting || (cfgLoading && !recaptchaCfg)
+            isSubmitting
               ? "bg-gray-500 cursor-not-allowed"
               : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
           }`}
@@ -237,7 +268,11 @@ export default function Register() {
       .finally(() => setCfgLoading(false));
   }, []);
 
-  if (recaptchaCfg?.recaptcha?.active) {
+  const recaptchaEnabled = Boolean(
+    recaptchaCfg?.recaptcha?.active && recaptchaCfg?.recaptcha?.siteKey
+  );
+
+  if (recaptchaEnabled) {
     return (
       <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
         <RegisterForm
