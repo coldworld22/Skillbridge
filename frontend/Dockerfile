@@ -6,6 +6,10 @@ RUN npm ci && npm cache clean --force
 COPY frontend/ ./
 COPY shared /shared
 
+# Ensure Bash with pipefail support is used for the following build step while
+# retaining the -e and -u safeguards.
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
 # Default build-time environment variables.
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_PGADMIN_URL="http://localhost:5050"
@@ -16,7 +20,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     STRICT_PUBLIC_API=true
 
 # Source optional production env file if present before building.
-RUN set -euo pipefail; \
+RUN \
     if [ -f .env.production ]; then \
         set -a && . ./.env.production && set +a; \
     fi; \
@@ -33,6 +37,9 @@ RUN set -euo pipefail; \
             ;; \
     esac; \
     npm run build
+
+# Revert to the default shell for subsequent stages.
+SHELL ["/bin/sh", "-c"]
 
 # Production stage
 FROM node:20-alpine AS production
