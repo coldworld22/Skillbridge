@@ -24,12 +24,14 @@ RUN set -euo pipefail; \
         echo "NEXT_PUBLIC_API_BASE_URL must be provided via --build-arg or .env.production" >&2; \
         exit 1; \
     fi; \
-    if printf '%s' "$NEXT_PUBLIC_API_BASE_URL" | grep -Eq '^http://'; then \
-        if ! printf '%s' "$NEXT_PUBLIC_API_BASE_URL" | grep -Eq '^http://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]|backend)(:\\d+)?(/|$)'; then \
+    case "$NEXT_PUBLIC_API_BASE_URL" in \
+        http://localhost*|http://127.0.0.1*|http://0.0.0.0*|http://\[::1\]*|http://backend*) \
+            ;; \
+        http://*) \
             echo "NEXT_PUBLIC_API_BASE_URL (${NEXT_PUBLIC_API_BASE_URL}) must use HTTPS for public hosts" >&2; \
             exit 1; \
-        fi; \
-    fi; \
+            ;; \
+    esac; \
     npm run build
 
 # Production stage
