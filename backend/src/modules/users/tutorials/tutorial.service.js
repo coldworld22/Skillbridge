@@ -185,21 +185,46 @@ exports.getTutorialById = async (id, userId = null) => {
 };
 
 exports.getTutorialsByInstructor = async (instructorId) => {
+  const ratingSubquery = db('tutorial_reviews')
+    .select('tutorial_id')
+    .avg({ avg_rating: 'rating' })
+    .groupBy('tutorial_id');
+
+  const commentCountSubquery = db('tutorial_comments')
+    .select('tutorial_id')
+    .count({ comment_count: 'id' })
+    .groupBy('tutorial_id');
+
+  const enrollmentCountSubquery = db('tutorial_enrollments')
+    .select('tutorial_id')
+    .countDistinct({ enrollments: 'user_id' })
+    .groupBy('tutorial_id');
+
+  const viewCountSubquery = db('tutorial_views')
+    .select('tutorial_id')
+    .count({ views: 'id' })
+    .groupBy('tutorial_id');
+
   const tutorials = await db('tutorials as t')
     .leftJoin('categories as c', 't.category_id', 'c.id')
     .leftJoin('users as u', 't.instructor_id', 'u.id')
+    .leftJoin(ratingSubquery.as('r'), 'r.tutorial_id', 't.id')
+    .leftJoin(commentCountSubquery.as('com'), 'com.tutorial_id', 't.id')
+    .leftJoin(enrollmentCountSubquery.as('en'), 'en.tutorial_id', 't.id')
+    .leftJoin(viewCountSubquery.as('v'), 'v.tutorial_id', 't.id')
     .where('t.instructor_id', instructorId)
-    .whereNot('t.status', 'archived')
+    .whereNot('t.status', TUTORIAL_STATUS.ARCHIVED)
     .orderBy('t.created_at', 'desc')
     .select(
-      "t.*",
-      "c.name as category_name",
-      "c.image_url as category_image_url",
-      "u.full_name as instructor_name"
-    )
-    .where("t.instructor_id", instructorId)
-    .whereNot("t.status", TUTORIAL_STATUS.ARCHIVED)
-    .orderBy("t.created_at", "desc");
+      't.*',
+      'c.name as category_name',
+      'c.image_url as category_image_url',
+      'u.full_name as instructor_name',
+      db.raw('COALESCE(r.avg_rating, 0) as rating'),
+      db.raw('COALESCE(com.comment_count, 0) as comment_count'),
+      db.raw('COALESCE(en.enrollments, 0) as enrollments'),
+      db.raw('COALESCE(v.views, 0) as views')
+    );
 
   for (const tut of tutorials) {
     const [aggregates, tags] = await Promise.all([
