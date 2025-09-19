@@ -3,6 +3,7 @@ const db = require("../../../config/database");
 const tagService = require("./tutorialTag.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const { withTransaction } = require("../../../services/transaction.service");
+const cache = require("../../../utils/cache");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 const { TUTORIAL_STATUS } = require("../../../../shared/tutorialStatus");
@@ -21,7 +22,6 @@ exports.createTutorialWithRelations = async (
 ) => {
   return withTransaction(async (trx) => {
     const tutorial = await exports.createTutorial(data, trx);
-
     let tutorialTags = [];
     if (Array.isArray(tags) && tags.length) {
       await exports.updateTutorialTags(tutorial.id, tags, trx);
@@ -195,11 +195,7 @@ exports.getTutorialsByInstructor = async (instructorId) => {
       "t.*",
       "c.name as category_name",
       "c.image_url as category_image_url",
-      "u.full_name as instructor_name",
-      db.raw("COALESCE(r.avg_rating, 0) as rating"),
-      db.raw("COALESCE(com.comment_count, 0) as comment_count"),
-      db.raw("COALESCE(en.enrollments, 0) as enrollments"),
-      db.raw("COALESCE(v.views, 0) as views")
+      "u.full_name as instructor_name"
     )
     .where("t.instructor_id", instructorId)
     .whereNot("t.status", TUTORIAL_STATUS.ARCHIVED)
