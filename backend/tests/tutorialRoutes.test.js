@@ -14,6 +14,7 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   getTutorialAnalytics: jest.fn(),
   getTutorialById: jest.fn(),
   updateTutorial: jest.fn(),
+  updateTutorialTagsTransactional: jest.fn(),
   permanentlyDeleteTutorial: jest.fn(),
   togglePublishStatus: jest.fn(),
   getPublicTutorialDetails: jest.fn(),
