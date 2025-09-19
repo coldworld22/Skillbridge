@@ -14,6 +14,74 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.createTutorialWithRelations = async (
+  tutorialData,
+  tags = [],
+  chapters = []
+) => {
+  return withTransaction(async (trx) => {
+    const tutorial = await exports.createTutorial(tutorialData, trx);
+
+    const normalizedTagNames = Array.from(
+      new Set(
+        (tags || [])
+          .map((tag) =>
+            typeof tag === "string" ? tag.trim() : tag?.name?.trim?.() ?? ""
+          )
+          .filter(Boolean)
+      )
+    );
+
+    const tagIds = [];
+    for (const name of normalizedTagNames) {
+      const existing = await tagService.findByName(name, trx);
+      const tag =
+        existing ||
+        (await tagService.createTag(
+          { name, slug: slugify(name, { lower: true, strict: true }) },
+          trx
+        ));
+      tagIds.push(tag.id);
+    }
+
+    if (tagIds.length) {
+      await exports.addTutorialTags(tutorial.id, tagIds, trx);
+    }
+
+    if (Array.isArray(chapters) && chapters.length) {
+      for (let index = 0; index < chapters.length; index += 1) {
+        const chapter = chapters[index];
+        if (!chapter || !chapter.title) continue;
+
+        const chapterData = {
+          id: chapter.id || uuidv4(),
+          tutorial_id: tutorial.id,
+          title: chapter.title,
+          video_url: chapter.video_url || null,
+          duration: chapter.duration ?? null,
+          order: chapter.order ?? index + 1,
+          is_preview: chapter.is_preview ?? false,
+        };
+
+        await chapterService.create(chapterData, trx);
+      }
+    }
+
+    const [createdChapters, tutorialTags] = await Promise.all([
+      trx("tutorial_chapters")
+        .where({ tutorial_id: tutorial.id })
+        .orderBy("order"),
+      tagIds.length ? exports.getTutorialTags(tutorial.id, trx) : Promise.resolve([]),
+    ]);
+
+    return {
+      ...tutorial,
+      chapters: createdChapters,
+      tags: tutorialTags,
+    };
+  });
+};
+
 exports.findByTitle = async (title) => {
   return db("tutorials")
     .whereRaw('LOWER(title) = ?', title.toLowerCase())
