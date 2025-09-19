@@ -16,23 +16,25 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     STRICT_PUBLIC_API=true
 
 # Source optional production env file if present before building.
-RUN set -euo pipefail; \
-    if [ -f .env.production ]; then \
-        set -a && . ./.env.production && set +a; \
-    fi; \
-    if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then \
-        echo "NEXT_PUBLIC_API_BASE_URL must be provided via --build-arg or .env.production" >&2; \
-        exit 1; \
-    fi; \
-    case "$NEXT_PUBLIC_API_BASE_URL" in \
-        http://localhost*|http://127.0.0.1*|http://0.0.0.0*|http://\[::1\]*|http://backend*) \
-            ;; \
-        http://*) \
-            echo "NEXT_PUBLIC_API_BASE_URL (${NEXT_PUBLIC_API_BASE_URL}) must use HTTPS for public hosts" >&2; \
-            exit 1; \
-            ;; \
-    esac; \
-    npm run build
+RUN bash -euo pipefail <<'EOF'
+if [ -f .env.production ]; then
+    set -a
+    . ./.env.production
+    set +a
+fi
+if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then
+    echo "NEXT_PUBLIC_API_BASE_URL must be provided via --build-arg or .env.production" >&2
+    exit 1
+fi
+case "$NEXT_PUBLIC_API_BASE_URL" in
+    http://localhost*|http://127.0.0.1*|http://0.0.0.0*|http://[::1]*|http://backend*) ;;
+    http://*)
+        echo "NEXT_PUBLIC_API_BASE_URL (${NEXT_PUBLIC_API_BASE_URL}) must use HTTPS for public hosts" >&2
+        exit 1
+        ;;
+esac
+npm run build
+EOF
 
 # Production stage
 FROM node:20-alpine AS production
