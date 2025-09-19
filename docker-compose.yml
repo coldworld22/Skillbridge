@@ -98,7 +98,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-http://backend:${BACKEND_PORT:-5002}/api}
+        NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-/api}
         NEXT_PUBLIC_PGADMIN_URL: ${NEXT_PUBLIC_PGADMIN_URL:-http://pgadmin:80}
         APP_DOMAIN: ${APP_DOMAIN:-eduskillbridge.net}
     ports:
