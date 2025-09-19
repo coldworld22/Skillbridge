@@ -197,11 +197,7 @@ exports.getTutorialsByInstructor = async (instructorId) => {
       "t.*",
       "c.name as category_name",
       "c.image_url as category_image_url",
-      "u.full_name as instructor_name",
-      db.raw("COALESCE(r.avg_rating, 0) as rating"),
-      db.raw("COALESCE(com.comment_count, 0) as comment_count"),
-      db.raw("COALESCE(en.enrollments, 0) as enrollments"),
-      db.raw("COALESCE(v.views, 0) as views")
+      "u.full_name as instructor_name"
     )
     .where("t.instructor_id", instructorId)
     .whereNot("t.status", TUTORIAL_STATUS.ARCHIVED)
