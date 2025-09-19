@@ -6,6 +6,9 @@ RUN npm ci && npm cache clean --force
 COPY frontend/ ./
 COPY shared /shared
 
+# Ensure subsequent RUN instructions use bash so pipefail is respected.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Default build-time environment variables.
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_PGADMIN_URL="http://localhost:5050"
