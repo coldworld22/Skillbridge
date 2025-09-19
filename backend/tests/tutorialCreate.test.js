@@ -3,6 +3,7 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   addTutorialTags: jest.fn(),
   getTutorialTags: jest.fn(),
   countPublishedTutorials: jest.fn(),
+  updateTutorialTagsTransactional: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/tutorials/chapters/tutorialChapter.service', () => ({
@@ -26,6 +27,13 @@ jest.mock('../src/modules/messages/messages.service', () => ({
 jest.mock('../src/modules/users/user.model', () => ({
   findById: jest.fn(),
   findAdmins: jest.fn(),
+}));
+
+jest.mock('../src/modules/users/tutorials/certificate/certificate.service', () => ({
+  generateCode: jest.fn(),
+  isUserCompletedTutorial: jest.fn(),
+  findExisting: jest.fn(),
+  issueCertificate: jest.fn(),
 }));
 
 jest.mock('../src/utils/email', () => ({

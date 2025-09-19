@@ -14,6 +14,44 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.createTutorialWithRelations = async (
+  data,
+  tags = [],
+  chapters = []
+) => {
+  return withTransaction(async (trx) => {
+    const tutorial = await exports.createTutorial(data, trx);
+
+    if (tags && tags.length) {
+      await exports.updateTutorialTags(tutorial.id, tags, trx);
+    }
+
+    const createdChapters = [];
+    if (chapters && chapters.length) {
+      for (let index = 0; index < chapters.length; index += 1) {
+        const chapter = chapters[index];
+        const chapterData = {
+          id: uuidv4(),
+          tutorial_id: tutorial.id,
+          title: chapter.title,
+          video_url: chapter.video_url || null,
+          duration: chapter.duration ?? null,
+          order: chapter.order ?? index + 1,
+          is_preview: Boolean(chapter.is_preview),
+        };
+        await chapterService.create(chapterData, trx);
+        createdChapters.push(chapterData);
+      }
+    }
+
+    const tutorialTags = tags && tags.length
+      ? await exports.getTutorialTags(tutorial.id, trx)
+      : [];
+
+    return { ...tutorial, tags: tutorialTags, chapters: createdChapters };
+  });
+};
+
 exports.findByTitle = async (title) => {
   return db("tutorials")
     .whereRaw('LOWER(title) = ?', title.toLowerCase())
@@ -362,6 +400,13 @@ exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
     tagIds.push(tag.id);
   }
   await exports.addTutorialTags(tutorialId, tagIds, trx);
+};
+
+exports.updateTutorialTagsTransactional = async (tutorialId, tags) => {
+  return withTransaction(async (trx) => {
+    await exports.updateTutorialTags(tutorialId, tags, trx);
+    return exports.getTutorialTags(tutorialId, trx);
+  });
 };
 
 exports.getTutorialTags = async (tutorialId, trx = db) => {
