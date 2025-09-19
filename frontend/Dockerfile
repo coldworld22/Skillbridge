@@ -18,8 +18,11 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     APP_DOMAIN=$APP_DOMAIN \
     STRICT_PUBLIC_API=true
 
+# Ensure subsequent RUN commands execute with pipefail enabled.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Source optional production env file if present before building.
-RUN set -euo pipefail; \
+RUN \
     if [ -f .env.production ]; then \
         set -a && . ./.env.production && set +a; \
     fi; \
@@ -36,6 +39,9 @@ RUN set -euo pipefail; \
             ;; \
     esac; \
     npm run build
+
+# Revert to the default shell for subsequent stages.
+SHELL ["/bin/sh", "-c"]
 
 # Production stage
 FROM node:20-alpine AS production
