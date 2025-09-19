@@ -3,6 +3,7 @@ const db = require("../../../config/database");
 const tagService = require("./tutorialTag.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const { withTransaction } = require("../../../services/transaction.service");
+const cache = require("../../../utils/cache");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 const { TUTORIAL_STATUS } = require("../../../../shared/tutorialStatus");
@@ -12,6 +13,42 @@ exports.createTutorial = async (data, trx = db) => {
   if (!insertData.included_plans) insertData.included_plans = [];
   const [tutorial] = await trx("tutorials").insert(insertData).returning("*");
   return tutorial;
+};
+
+exports.createTutorialWithRelations = async (
+  data,
+  tags = [],
+  chapters = []
+) => {
+  return withTransaction(async (trx) => {
+    const tutorial = await exports.createTutorial(data, trx);
+    let tutorialTags = [];
+    if (Array.isArray(tags) && tags.length) {
+      await exports.updateTutorialTags(tutorial.id, tags, trx);
+      tutorialTags = await exports.getTutorialTags(tutorial.id, trx);
+    }
+
+    let createdChapters = [];
+    if (Array.isArray(chapters) && chapters.length) {
+      const normalizedChapters = chapters.map((chapter, index) => ({
+        id: chapter.id || uuidv4(),
+        tutorial_id: tutorial.id,
+        title: chapter.title,
+        video_url: chapter.video_url ?? null,
+        duration: chapter.duration ?? null,
+        order: chapter.order ?? index + 1,
+        is_preview: chapter.is_preview ?? false,
+      }));
+
+      for (const chapterData of normalizedChapters) {
+        await chapterService.create(chapterData, trx);
+      }
+
+      createdChapters = normalizedChapters;
+    }
+
+    return { ...tutorial, tags: tutorialTags, chapters: createdChapters };
+  });
 };
 
 exports.findByTitle = async (title) => {
@@ -383,6 +420,13 @@ exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
     tagIds.push(tag.id);
   }
   await exports.addTutorialTags(tutorialId, tagIds, trx);
+};
+
+exports.updateTutorialTagsTransactional = async (tutorialId, tags) => {
+  return withTransaction(async (trx) => {
+    await exports.updateTutorialTags(tutorialId, tags, trx);
+    return exports.getTutorialTags(tutorialId, trx);
+  });
 };
 
 exports.getTutorialTags = async (tutorialId, trx = db) => {
