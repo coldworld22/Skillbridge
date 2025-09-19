@@ -67,13 +67,29 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
       const { full_name, email, phone, password, role } = data;
       let cfg = recaptchaCfg;
       if (!cfg && cfgLoading) {
+        setCfgLoading(true);
         cfg = await fetchSocialLoginConfig().catch(() => null);
         setRecaptchaCfg(cfg);
         setCfgLoading(false);
       }
+
+      const recaptchaConfigured = Boolean(
+        cfg?.recaptcha?.active &&
+          cfg?.recaptcha?.siteKey &&
+          executeRecaptcha
+      );
+
+      if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
+        console.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
+      }
+
       let token;
-      if (cfg?.recaptcha?.active && executeRecaptcha) {
-        token = await executeRecaptcha("register");
+      if (recaptchaConfigured) {
+        try {
+          token = await executeRecaptcha("register");
+        } catch (recaptchaErr) {
+          console.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
+        }
       }
       await registerUser({
         full_name,
@@ -201,9 +217,9 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
         <motion.button
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
-          disabled={isSubmitting || (cfgLoading && !recaptchaCfg)}
+          disabled={isSubmitting}
           className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
-            isSubmitting || (cfgLoading && !recaptchaCfg)
+            isSubmitting
               ? "bg-gray-500 cursor-not-allowed"
               : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
           }`}
@@ -237,7 +253,11 @@ export default function Register() {
       .finally(() => setCfgLoading(false));
   }, []);
 
-  if (recaptchaCfg?.recaptcha?.active) {
+  const recaptchaEnabled = Boolean(
+    recaptchaCfg?.recaptcha?.active && recaptchaCfg?.recaptcha?.siteKey
+  );
+
+  if (recaptchaEnabled) {
     return (
       <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
         <RegisterForm
