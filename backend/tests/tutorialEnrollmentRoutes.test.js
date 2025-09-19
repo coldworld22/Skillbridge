@@ -277,8 +277,16 @@ describe('POST /api/users/tutorials/enrollments/status/batch', () => {
           where: () => ({
             whereIn: () =>
               Promise.resolve([
-                { tutorial_id: 1, status: 'completed', progress: null },
-                { tutorial_id: 2, status: 'enrolled', progress: 40 },
+                {
+                  tutorial_id: '123e4567-e89b-12d3-a456-426614174100',
+                  status: 'completed',
+                  progress: null,
+                },
+                {
+                  tutorial_id: '123e4567-e89b-12d3-a456-426614174101',
+                  status: 'enrolled',
+                  progress: 40,
+                },
               ]),
           }),
         };
@@ -286,13 +294,31 @@ describe('POST /api/users/tutorials/enrollments/status/batch', () => {
 
     const res = await request(app)
       .post('/api/users/tutorials/enrollments/status/batch')
-      .send({ tutorialIds: [1, 2, 3] });
+      .send({
+        tutorialIds: [
+          '123e4567-e89b-12d3-a456-426614174100',
+          '123e4567-e89b-12d3-a456-426614174101',
+          '123e4567-e89b-12d3-a456-426614174102',
+        ],
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual({
-      1: { enrolled: true, status: 'completed', progress: 100 },
-      2: { enrolled: true, status: 'enrolled', progress: 40 },
-      3: { enrolled: false, status: null, progress: 0 },
+      '123e4567-e89b-12d3-a456-426614174100': {
+        enrolled: true,
+        status: 'completed',
+        progress: 100,
+      },
+      '123e4567-e89b-12d3-a456-426614174101': {
+        enrolled: true,
+        status: 'enrolled',
+        progress: 40,
+      },
+      '123e4567-e89b-12d3-a456-426614174102': {
+        enrolled: false,
+        status: null,
+        progress: 0,
+      },
     });
   });
 });
