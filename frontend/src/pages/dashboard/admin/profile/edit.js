@@ -404,7 +404,32 @@ function ProfileEditTemplate() {
       await fetchMessages();
       router.push("/dashboard/admin/profile/steps/verification");
     } catch (err) {
-      toast.error(err.message || t('profile_update_failed'));
+      const responseData = err?.response?.data;
+      const backendErrors = Array.isArray(responseData?.errors)
+        ? responseData.errors
+        : [];
+
+      if (backendErrors.length) {
+        const formattedErrors = backendErrors.reduce((acc, current) => {
+          if (current?.field) {
+            acc[current.field] = current?.message || t('fix_errors');
+          }
+          return acc;
+        }, {});
+
+        setErrors((prev) => ({
+          ...prev,
+          ...formattedErrors,
+        }));
+      }
+
+      const fallbackMessage = t('profile_update_failed');
+      const errorMessage =
+        (typeof responseData === 'string'
+          ? responseData
+          : responseData?.message) || err?.message || fallbackMessage;
+
+      toast.error(errorMessage);
       console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
