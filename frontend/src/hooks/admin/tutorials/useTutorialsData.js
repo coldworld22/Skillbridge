@@ -16,12 +16,18 @@ export default function useTutorialsData(t) {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [tuts, cats] = await Promise.all([
+        const [tutorialResponse, cats] = await Promise.all([
           fetchAllTutorials(undefined, undefined, { signal: controller.signal }),
           fetchAllCategories({}, { signal: controller.signal }),
         ]);
         if (!isMounted) return;
-        setTutorials(tuts);
+        const fetchedTutorials = Array.isArray(tutorialResponse)
+          ? tutorialResponse
+          : tutorialResponse?.tutorials || [];
+        const paginationMeta = Array.isArray(tutorialResponse)
+          ? null
+          : tutorialResponse?.meta || null;
+        setTutorials(fetchedTutorials);
         setCategories(cats?.data || cats || []);
         setMeta(paginationMeta || null);
       } catch (err) {
