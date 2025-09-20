@@ -68,7 +68,9 @@ export const profileSchema = z.object({
 
 function ProfileEditTemplate() {
   const router = useRouter();
-  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminProfilePage' });
+  const { t, i18n, ready } = useTranslation("dashboard", {
+    keyPrefix: "adminProfilePage",
+  });
   const { user, hasHydrated, setUser } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
@@ -98,66 +100,52 @@ function ProfileEditTemplate() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    return () => {
-      if (tempAvatar) {
-        URL.revokeObjectURL(tempAvatar);
-      }
-    };
-  }, [tempAvatar]);
+    if (!hasHydrated) {
+      return undefined;
+    }
 
-  useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
 
-    if (!hasHydrated) {
-      return () => {
-        isMounted = false;
-        controller.abort();
-      };
-    }
     if (!user) {
-      if (isMounted) setLoadingProfile(false);
+      setLoadingProfile(false);
       return () => {
-        controller.abort();
         isMounted = false;
         controller.abort();
       };
     }
+
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
-      if (isMounted) setLoadingProfile(false);
+      setLoadingProfile(false);
       return () => {
-        controller.abort();
         isMounted = false;
         controller.abort();
       };
     }
 
-    // Pre-fill with existing user info while fetching latest data
-    if (isMounted) {
-      setFormData((prev) => ({
-        ...prev,
-        full_name: user.full_name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        gender: user.gender || "male",
-        date_of_birth: user.date_of_birth?.split("T")[0] || "",
-        avatar_url: user.avatar_url,
-        avatarPreview: user.avatar_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-          : null,
-        job_title: user.job_title || "",
-        department: user.department || "",
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      full_name: user.full_name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      gender: user.gender || "male",
+      date_of_birth: user.date_of_birth?.split("T")[0] || "",
+      avatar_url: user.avatar_url,
+      avatarPreview: user.avatar_url
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+        : null,
+      job_title: user.job_title || "",
+      department: user.department || "",
+    }));
 
     const loadProfile = async () => {
-      try {
-        if (!isMounted) return;
-        setLoadingProfile(true);
+      setLoadingProfile(true);
 
+      try {
         const res = await getAdminProfile({ signal: controller.signal });
         if (!isMounted) return;
+
         const {
           full_name,
           email,
@@ -177,7 +165,6 @@ function ProfileEditTemplate() {
           }
         });
 
-        if (!isMounted) return;
         setFormData((prev) => ({
           ...prev,
           full_name,
@@ -195,31 +182,31 @@ function ProfileEditTemplate() {
         }));
       } catch (err) {
         if (err?.name === "AbortError") return;
-        if (!isMounted) return;
-        if (err.name === "AbortError") return;
-        toast.error(t('load_profile_failed'));
+        toast.error(t("load_profile_failed"));
         console.error("Profile load error:", err);
       } finally {
-        if (!isMounted) return;
-        setLoadingProfile(false);
+        if (isMounted) {
+          setLoadingProfile(false);
+        }
       }
     };
 
     loadProfile();
 
     return () => {
-      controller.abort();
       isMounted = false;
       controller.abort();
     };
-  }, [hasHydrated, user, fetchNotifications, fetchMessages]);
+  }, [hasHydrated, t, user]);
 
 
   const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
 
   useEffect(() => {
     return () => {
-      if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+      if (tempAvatar) {
+        URL.revokeObjectURL(tempAvatar);
+      }
     };
   }, [tempAvatar]);
 
@@ -243,25 +230,25 @@ function ProfileEditTemplate() {
   }, []);
 
   const isClientReady =
-    typeof window !== "undefined" && hasHydrated && i18n.isInitialized;
+    typeof window !== "undefined" && hasHydrated && ready;
   if (!isClientReady) {
     return null;
   }
 
   const handleAvatarSelect = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) {
-      e.target.value = '';
+      e.target.value = "";
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      toast.error(t('invalid_image_type'));
-      e.target.value = '';
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("invalid_image_type"));
+      e.target.value = "";
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(t('avatar_max_size'));
-      e.target.value = '';
+      toast.error(t("avatar_max_size"));
+      e.target.value = "";
       return;
     }
     if (tempAvatar) {
@@ -273,7 +260,7 @@ function ProfileEditTemplate() {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setShowCropper(true);
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const handleCropUpload = async () => {
