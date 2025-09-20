@@ -9,6 +9,10 @@ function PaginationControls({
   endIndex,
   totalResults,
 }) {
+  const safeTotalResults = Number.isFinite(totalResults) && totalResults > 0 ? totalResults : 0;
+  const displayStart = safeTotalResults === 0 ? 0 : Math.min(startIndex + 1, safeTotalResults);
+  const displayEnd = safeTotalResults === 0 ? 0 : Math.min(endIndex, safeTotalResults);
+
   const renderPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
@@ -56,9 +60,9 @@ function PaginationControls({
   return (
     <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between">
       <div className="text-sm text-gray-700 mb-4 sm:mb-0">
-        Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-        <span className="font-medium">{endIndex}</span> of{' '}
-        <span className="font-medium">{totalResults}</span> results
+        Showing <span className="font-medium">{displayStart}</span> to{' '}
+        <span className="font-medium">{displayEnd}</span> of{' '}
+        <span className="font-medium">{safeTotalResults}</span> results
       </div>
 
       <div className="flex items-center space-x-2">

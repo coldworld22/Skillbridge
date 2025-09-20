@@ -50,16 +50,32 @@ function EditTutorialPage() {
   useEffect(() => {
     if (!id) return;
 
-    const draft = loadDraft(`editTutorialDraft-${id}`);
-    if (draft) {
-      setTutorialData(draft);
-      loadCategories(fetchAllCategories)
-        .then((cats) => setCategories(cats))
-        .catch((err) => {
-          console.error(err);
-          setError("Failed to load tutorial.");
-        });
-      return;
+    const draftKey = `editTutorialDraft-${id}`;
+    const draftExists = () => {
+      if (typeof window === "undefined") return false;
+      try {
+        return localStorage.getItem(draftKey) !== null;
+      } catch (err) {
+        console.error("Failed to access localStorage", err);
+        return false;
+      }
+    };
+    const hasSavedDraft = draftExists();
+
+    if (hasSavedDraft) {
+      const draft = loadDraft(draftKey);
+      const draftStillExists = typeof window === "undefined" ? hasSavedDraft : draftExists();
+
+      if (draft && draftStillExists) {
+        setTutorialData(draft);
+        loadCategories(fetchAllCategories)
+          .then((cats) => setCategories(cats))
+          .catch((err) => {
+            console.error(err);
+            setError("Failed to load tutorial.");
+          });
+        return;
+      }
     }
 
     const load = async () => {

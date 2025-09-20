@@ -20,8 +20,8 @@ export default function useAdminTutorials(t) {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [tuts, cats] = await Promise.all([
-          fetchAllTutorials({ signal: controller.signal }),
+        const [{ tutorials: tuts }, cats] = await Promise.all([
+          fetchAllTutorials(1, 10, { signal: controller.signal }),
           fetchAllCategories({}, { signal: controller.signal }),
         ]);
         if (!isMounted) return;

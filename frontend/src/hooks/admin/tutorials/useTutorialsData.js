@@ -7,6 +7,7 @@ export default function useTutorialsData(t) {
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [meta, setMeta] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -16,12 +17,13 @@ export default function useTutorialsData(t) {
       try {
         setLoading(true);
         const [tuts, cats] = await Promise.all([
-          fetchAllTutorials({ signal: controller.signal }),
+          fetchAllTutorials(undefined, undefined, { signal: controller.signal }),
           fetchAllCategories({}, { signal: controller.signal }),
         ]);
         if (!isMounted) return;
         setTutorials(tuts);
         setCategories(cats?.data || cats || []);
+        setMeta(paginationMeta || null);
       } catch (err) {
         if (err.name === "AbortError" || err.name === "CanceledError") return;
         console.error(err);
@@ -39,5 +41,5 @@ export default function useTutorialsData(t) {
     };
   }, [t]);
 
-  return { tutorials, setTutorials, categories, loading };
+  return { tutorials, setTutorials, categories, loading, meta, setMeta };
 }
