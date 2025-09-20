@@ -18,6 +18,6 @@ export const adminProfileSchema = z.object({
   job_title: z.string().min(2, "Job title is required"),
   department: z.string().min(2, "Department is required"),
   socialLinks: z
-    .record(z.string().url("invalid_url"))
+    .record(z.string().url("url_invalid"))
     .optional(), // optional dictionary { platform: url }
 });

@@ -592,6 +592,8 @@
     "invalid_image_type": "केवल छवि फ़ाइलों की अनुमति है।",
     "avatar_upload_failed": "अवतार अपलोड करने में विफल",
     "avatar_crop_failed": "अवतार क्रॉप विफल हुआ",
+    "avatar_remove_success": "अवतार सफलतापूर्वक हटाया गया!",
+    "avatar_remove_failed": "अवतार हटाने में विफल",
     "profile_update_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट किया गया!",
     "profile_update_failed": "प्रोफ़ाइल अपडेट करने में विफल",
     "full_name_min": "पूरा नाम कम से कम 3 अक्षर होना चाहिए",

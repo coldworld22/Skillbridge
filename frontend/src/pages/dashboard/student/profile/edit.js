@@ -45,7 +45,7 @@ export const studentProfileSchema = z.object({
   learning_goals: z.string().optional(),
   // Social links validated as URLs but allow empty strings for optional entries
   socialLinks: z
-    .record(z.string().url("invalid_url").or(z.literal("")))
+    .record(z.string().url("url_invalid").or(z.literal("")))
     .optional(),
 });
 
