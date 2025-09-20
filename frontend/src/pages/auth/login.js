@@ -103,7 +103,6 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       let shouldBypassRecaptcha = Boolean(
         cfg?.recaptcha?.active && !recaptchaConfigured
       );
-
       if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
         logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
       }
