@@ -6,7 +6,18 @@ SLEEP_SECONDS=${DB_WAIT_INTERVAL_SECONDS:-2}
 
 resolve_from_database_url() {
   key="$1"
-  node -e "const value = new URL(process.argv[1]); const map = { host: value.hostname || 'db', port: value.port || '5432', user: value.username || 'postgres', password: value.password || '' }; process.stdout.write(map['$key']);" "$DATABASE_URL"
+  node -e "
+    const value = new URL(process.argv[1]);
+    const pathname = value.pathname ? value.pathname.replace(/^\//, '') : '';
+    const map = {
+      host: value.hostname || 'db',
+      port: value.port || '5432',
+      user: value.username || 'postgres',
+      password: value.password || '',
+      database: pathname || ''
+    };
+    process.stdout.write(map['$key'] ?? '');
+  " "$DATABASE_URL"
 }
 
 if [ -n "${DATABASE_URL:-}" ]; then
@@ -14,11 +25,13 @@ if [ -n "${DATABASE_URL:-}" ]; then
   DB_PORT=$(resolve_from_database_url port)
   DB_USER=$(resolve_from_database_url user)
   DB_PASSWORD=$(resolve_from_database_url password)
+  DB_NAME=$(resolve_from_database_url database)
 else
   DB_HOST=${POSTGRES_HOST:-db}
   DB_PORT=${POSTGRES_PORT:-5432}
   DB_USER=${POSTGRES_USER:-postgres}
   DB_PASSWORD=${POSTGRES_PASSWORD:-}
+  DB_NAME=${POSTGRES_DB:-}
 fi
 
 if [ -n "$DB_PASSWORD" ]; then
@@ -29,7 +42,7 @@ attempt=0
 
 if command -v pg_isready >/dev/null 2>&1; then
   while true; do
-    if output=$(pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" 2>&1); then
+    if output=$(pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" ${DB_NAME:+-d "$DB_NAME"} 2>&1); then
       break
     fi
 
