@@ -380,6 +380,8 @@ function ProfileEditTemplate() {
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
         profile_complete: fresh.profile_complete,
+        job_title: fresh.job_title,
+        department: fresh.department,
       });
 
       setFormData((prev) => ({
