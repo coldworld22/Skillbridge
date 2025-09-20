@@ -53,7 +53,7 @@ export const profileSchema = z.object({
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
   // Additionally ensure provided keys correspond to allowed platforms
   socialLinks: z
-    .record(z.string().url("invalid_url").or(z.literal("")))
+    .record(z.string().url("url_invalid").or(z.literal("")))
     .refine(
       (links) =>
         Object.keys(links).every((key) =>
