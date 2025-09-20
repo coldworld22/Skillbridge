@@ -41,19 +41,25 @@ const authService = require('../src/modules/auth/services/auth.service');
 const routes = require('../src/routes/auth');
 const errorHandler = require('../src/middleware/errorHandler');
 
-const app = express();
-app.use(express.json());
-app.use((req, res, next) => {
-  req.csrfToken = jest.fn(() => {
-    if (req.headers['x-force-csrf-error']) {
-      throw new Error('csrf failure');
+const createApp = ({ csrfMode = 'normal' } = {}) => {
+  const app = express();
+  app.use(express.json());
+  app.use((req, res, next) => {
+    if (csrfMode === 'missing') {
+      req.csrfToken = undefined;
+    } else if (csrfMode === 'throws') {
+      req.csrfToken = jest.fn(() => {
+        throw new Error('csrf failure');
+      });
+    } else {
+      req.csrfToken = jest.fn(() => 'csrf-token');
     }
-    return 'csrf-token';
+    next();
   });
-  next();
-});
-app.use(routes);
-app.use(errorHandler);
+  app.use(routes);
+  app.use(errorHandler);
+  return app;
+};
 
 describe('POST /api/auth/login', () => {
   const payload = { email: 'test@example.com', password: 'StrongPass1!' };
@@ -65,6 +71,7 @@ describe('POST /api/auth/login', () => {
 
   it('logs in a user successfully', async () => {
     authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    const app = createApp();
     const res = await request(app).post('/api/auth/login').send(payload);
     expect(res.status).toBe(200);
     expect(authService.loginUser).toHaveBeenCalledWith(expect.objectContaining(payload));
@@ -76,19 +83,21 @@ describe('POST /api/auth/login', () => {
     const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
     authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
 
+    const app = createApp({ csrfMode: 'missing' });
     const res = await request(app).post('/api/auth/login').send(payload);
 
     expect(res.status).toBe(200);
     const cookies = res.headers['set-cookie'] || [];
     expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/CSRF token helper missing on login request; skipping csrfToken cookie/)
+      expect.stringContaining('⚠️ CSRF token helper missing on login request; skipping csrfToken cookie.')
     );
   });
 
   it('returns 401 for invalid credentials', async () => {
     const AppError = require('../src/utils/AppError');
     authService.loginUser.mockRejectedValue(new AppError('Invalid credentials', 401));
+    const app = createApp();
     const res = await request(app).post('/api/auth/login').send(payload);
     expect(res.status).toBe(401);
     expect(res.body.message).toMatch(/invalid credentials/i);
@@ -97,6 +106,7 @@ describe('POST /api/auth/login', () => {
   it('locks out after too many failed attempts', async () => {
     const AppError = require('../src/utils/AppError');
     authService.loginUser.mockRejectedValue(new AppError('Too many failed login attempts. Try again later.', 429));
+    const app = createApp();
     const res = await request(app).post('/api/auth/login').send(payload);
     expect(res.status).toBe(429);
     expect(res.body.message).toMatch(/too many failed login attempts/i);
@@ -104,9 +114,10 @@ describe('POST /api/auth/login', () => {
 
   it('still succeeds when csrf token generation fails', async () => {
     authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+    const app = createApp({ csrfMode: 'throws' });
     const res = await request(app)
       .post('/api/auth/login')
-      .set('x-force-csrf-error', '1')
       .send(payload);
 
     expect(res.status).toBe(200);
@@ -116,6 +127,9 @@ describe('POST /api/auth/login', () => {
     );
     expect(res.headers['set-cookie']).toEqual(
       expect.not.arrayContaining([expect.stringMatching(/^csrfToken=/)]),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to generate CSRF token during login: csrf failure'),
     );
   });
 });
