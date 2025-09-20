@@ -109,11 +109,12 @@ function ProfileEditTemplate() {
     let isMounted = true;
     const controller = new AbortController();
 
-    if (!hasHydrated)
+    if (!hasHydrated) {
       return () => {
         isMounted = false;
         controller.abort();
       };
+    }
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
