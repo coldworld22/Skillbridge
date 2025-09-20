@@ -606,6 +606,8 @@
     "invalid_image_type": "Sono consentiti solo i file di immagine.",
     "avatar_upload_failed": "Impossibile caricare Avatar",
     "avatar_crop_failed": "Ritaglio avatar non riuscito",
+    "avatar_remove_success": "Avatar rimosso con successo!",
+    "avatar_remove_failed": "Impossibile rimuovere l'avatar",
     "profile_update_success": "Profilo aggiornato correttamente!",
     "profile_update_failed": "Impossibile aggiornare il profilo",
     "full_name_min": "Il nome completo deve essere almeno 3 caratteri",
