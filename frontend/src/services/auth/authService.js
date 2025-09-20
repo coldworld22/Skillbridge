@@ -14,13 +14,23 @@ import { normalizeError } from "@/utils/error";
  * @param {string} credentials.password
  * @returns {Promise<{ message: string, user: object }>}
  */
-export const loginUser = async ({ email, password, recaptchaToken }) => {
+export const loginUser = async ({
+  email,
+  password,
+  recaptchaToken,
+  recaptchaBypass,
+}) => {
   try {
     logger.log(
       "🔐 loginUser requesting",
       `${api.defaults.baseURL}/auth/login`
     );
-    const res = await api.post("/auth/login", { email, password, recaptchaToken });
+    const res = await api.post("/auth/login", {
+      email,
+      password,
+      recaptchaToken,
+      recaptchaBypass,
+    });
     // Ensure the CSRF cookie from the backend is present for subsequent requests
     await ensureCsrfToken();
     return res.data;

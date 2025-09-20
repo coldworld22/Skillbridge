@@ -19,6 +19,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
+import logger from "@/utils/logger";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
@@ -79,18 +80,31 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
           executeRecaptcha
       );
 
+      let shouldBypassRecaptcha = Boolean(
+        cfg?.recaptcha?.active && !recaptchaConfigured
+      );
+
       if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
-        console.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
+        logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
       }
 
       let token;
       if (recaptchaConfigured) {
         try {
           token = await executeRecaptcha("register");
+          if (!token) {
+            shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
+          }
         } catch (recaptchaErr) {
-          console.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
+          shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
+          logger.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
         }
       }
+
+      if (shouldBypassRecaptcha) {
+        logger.warn("⚠️ Bypassing reCAPTCHA for registration so the request can proceed");
+      }
+
       await registerUser({
         full_name,
         email,
@@ -98,6 +112,7 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
         password,
         role,
         recaptchaToken: token,
+        recaptchaBypass: shouldBypassRecaptcha,
       });
       toast.success(t("registration_successful"));
       fetchNotifications();

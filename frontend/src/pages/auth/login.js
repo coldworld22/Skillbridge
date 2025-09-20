@@ -100,6 +100,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
           executeRecaptcha
       );
 
+      let shouldBypassRecaptcha = Boolean(
+        cfg?.recaptcha?.active && !recaptchaConfigured
+      );
       if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
         logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
       }
@@ -108,12 +111,24 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       if (recaptchaConfigured) {
         try {
           token = await executeRecaptcha("login");
+          if (!token) {
+            shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
+          }
         } catch (recaptchaErr) {
+          shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
           logger.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
         }
       }
 
-      const loggedInUser = await login({ ...data, recaptchaToken: token });
+      if (shouldBypassRecaptcha) {
+        logger.warn("⚠️ Bypassing reCAPTCHA for login so the request can proceed");
+      }
+
+      const loggedInUser = await login({
+        ...data,
+        recaptchaToken: token,
+        recaptchaBypass: shouldBypassRecaptcha,
+      });
       toast.success(t("login_successful"));
       fetchNotifications();
 

@@ -17,7 +17,10 @@ const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cook
 exports.register = catchAsync(async (req, res, next) => {
   try {
     const cfg = await socialLoginConfigService.getSettings();
-    if (cfg?.recaptcha?.active) {
+    const bypassRecaptcha = recaptchaService.shouldBypass(cfg, req.body);
+    if (bypassRecaptcha) {
+      logger.warn('reCAPTCHA bypass requested during registration – allowing request without verification');
+    } else if (cfg?.recaptcha?.active) {
       const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
       if (!valid) {
         throw new AppError('Failed reCAPTCHA verification', 400);
@@ -60,7 +63,10 @@ exports.register = catchAsync(async (req, res, next) => {
  */
 exports.login = catchAsync(async (req, res) => {
   const cfg = await socialLoginConfigService.getSettings();
-  if (cfg?.recaptcha?.active) {
+  const bypassRecaptcha = recaptchaService.shouldBypass(cfg, req.body);
+  if (bypassRecaptcha) {
+    logger.warn('reCAPTCHA bypass requested during login – allowing request without verification');
+  } else if (cfg?.recaptcha?.active) {
     const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
     if (!valid) {
       throw new AppError('Failed reCAPTCHA verification', 400);

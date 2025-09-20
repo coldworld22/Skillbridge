@@ -10,6 +10,16 @@ const fetchFn =
     ? fetch
     : (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
+const FAILS_OPEN = process.env.RECAPTCHA_FAILS_OPEN !== 'false';
+
+exports.shouldBypass = (cfg, body = {}) => {
+  if (!cfg?.recaptcha?.active) return false;
+  if (!FAILS_OPEN) return false;
+  if (!body?.recaptchaBypass) return false;
+  if (body?.recaptchaToken) return false;
+  return true;
+};
+
 exports.verify = async (token, remoteIp) => {
   const cfg = await socialLoginConfigService.getSettings();
   const recaptcha = cfg?.recaptcha || {};
@@ -41,6 +51,10 @@ exports.verify = async (token, remoteIp) => {
     return !!data.success;
   } catch (err) {
     logger.error('reCAPTCHA verify failed:', err.message);
+    if (FAILS_OPEN) {
+      logger.warn('reCAPTCHA verification failed but fails-open mode is enabled – skipping verification');
+      return true;
+    }
     return false;
   }
 };
