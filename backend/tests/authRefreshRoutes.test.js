@@ -4,6 +4,11 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
 process.env.NODE_ENV = 'production';
+process.env.JWT_SECRET = 'testsecret';
+process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
+process.env.SESSION_SECRET = 'sessionsecret';
+process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+process.env.TEST_DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
 
 jest.mock('../src/config/database', () => ({
   raw: jest.fn(() => Promise.resolve()),
@@ -67,12 +72,6 @@ describe('POST /api/auth/refresh', () => {
       refreshToken: 'newR',
     });
     authService.generateAccessToken.mockReturnValue('newA');
-    const tokenRes = await request(app).get('/api/auth/refresh');
-    const cookies = tokenRes.headers['set-cookie'];
-    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken=')).split(';')[0];
-    const sessionCookie = cookies.find((c) => c.startsWith('connect.sid=')).split(';')[0];
-    const csrfToken = csrfCookie.split('=')[1];
-
     const { sessionCookie, csrfCookie, csrfToken } = await getCsrf();
 
     const refreshRes = await request(app)

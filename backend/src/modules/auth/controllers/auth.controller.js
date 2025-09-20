@@ -74,10 +74,21 @@ exports.login = catchAsync(async (req, res) => {
   }
   const { accessToken, refreshToken, user } =
     await authService.loginUser({ ...req.body, ip: req.ip });
-  res
-    .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .cookie("csrfToken", req.csrfToken(), csrfCookieOptions)
-    .json({ message: "Login successful", accessToken, user });
+
+  let csrfToken;
+  if (typeof req.csrfToken === "function") {
+    try {
+      csrfToken = req.csrfToken();
+    } catch (err) {
+      logger.warn("Failed to generate CSRF token during login: %s", err.message);
+    }
+  }
+
+  const response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+  if (csrfToken) {
+    response.cookie("csrfToken", csrfToken, csrfCookieOptions);
+  }
+  response.json({ message: "Login successful", accessToken, user });
 });
 
 /**
@@ -106,10 +117,24 @@ exports.refreshToken = catchAsync(async (req, res) => {
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
-    res
-      .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
-      .cookie("csrfToken", req.csrfToken(), csrfCookieOptions)
-      .json({ message: "Token refreshed", accessToken });
+    let csrfToken;
+    if (typeof req.csrfToken === "function") {
+      try {
+        csrfToken = req.csrfToken();
+      } catch (err) {
+        logger.warn(
+          "Failed to generate CSRF token during refresh for user %s: %s",
+          decoded.id,
+          err.message
+        );
+      }
+    }
+
+    const response = res.cookie("refreshToken", newRefreshToken, refreshCookieOptions);
+    if (csrfToken) {
+      response.cookie("csrfToken", csrfToken, csrfCookieOptions);
+    }
+    response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
     return res.status(401).json({ message: "Invalid or expired refresh token" });
