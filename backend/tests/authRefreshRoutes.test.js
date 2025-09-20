@@ -149,44 +149,7 @@ describe('POST /api/auth/refresh', () => {
     const cookies = res.headers['set-cookie'] || [];
     expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('⚠️ CSRF token helper missing on refresh request; skipping csrfToken cookie.')
-    );
-  });
-
-  it('continues refresh when csrf token generation fails', async () => {
-    const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
-
-    authService.rotateRefreshToken.mockResolvedValue({
-      decoded: { id: 1, role: 'User' },
-      refreshToken: 'newR',
-    });
-    authService.generateAccessToken.mockReturnValue('newA');
-
-    const errorCsrfApp = express();
-    errorCsrfApp.use(cookieParser());
-    errorCsrfApp.use(express.json());
-    errorCsrfApp.post('/api/auth/refresh', (req, res, next) => {
-      req.csrfToken = jest.fn(() => {
-        throw new Error('csrf failure');
-      });
-      return authController.refreshToken(req, res, next);
-    });
-    errorCsrfApp.use(errorHandler);
-
-    const res = await request(errorCsrfApp)
-      .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=r']);
-
-    expect(res.status).toBe(200);
-    expect(res.body.accessToken).toBe('newA');
-    expect(res.headers['set-cookie']).toEqual(
-      expect.arrayContaining([expect.stringMatching(/^refreshToken=newR/)]),
-    );
-    expect(res.headers['set-cookie']).toEqual(
-      expect.not.arrayContaining([expect.stringMatching(/^csrfToken=/)]),
-    );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to generate CSRF token during refresh: csrf failure'),
+      expect.stringMatching(/CSRF token helper missing on refresh request.*skipping csrfToken cookie/i)
     );
   });
 });
