@@ -31,9 +31,6 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
-import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
-import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
@@ -59,12 +56,6 @@ function AdminTutorialsPage() {
     goToPage,
   } = useTutorialFilters(tutorials);
 
-  const totalResults = filteredTutorials.length;
-  const paginatedCount = paginatedTutorials.length;
-  const displayEndIndex =
-    totalResults === 0
-      ? 0
-      : Math.min(startIndex + paginatedCount, totalResults);
 
   const {
     selectedTutorials,
@@ -80,6 +71,11 @@ function AdminTutorialsPage() {
   ]);
 
   const totalResults = filteredTutorials.length;
+  const paginatedCount = paginatedTutorials.length;
+  const displayEndIndex =
+    totalResults === 0
+      ? 0
+      : Math.min(startIndex + paginatedCount, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
