@@ -111,12 +111,13 @@ function ProfileEditTemplate() {
 
     if (!hasHydrated)
       return () => {
-        isMounted = false;
         controller.abort();
+        isMounted = false;
       };
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
         controller.abort();
       };
@@ -125,6 +126,7 @@ function ProfileEditTemplate() {
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
         controller.abort();
       };
@@ -204,6 +206,7 @@ function ProfileEditTemplate() {
     loadProfile();
 
     return () => {
+      controller.abort();
       isMounted = false;
       controller.abort();
     };
