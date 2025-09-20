@@ -27,7 +27,7 @@ export default function Sidebar({ role = 'admin' }) {
 
   useEffect(() => {
     const year = new Date().getFullYear();
-    setCurrentYear((prevYear) => (prevYear !== year ? year : prevYear));
+    setCurrentYear((prev) => (prev === year ? prev : year));
   }, []);
 
   useEffect(() => {
