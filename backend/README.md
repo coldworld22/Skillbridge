@@ -20,6 +20,9 @@ any are missing:
 - Database connection details – either provide a full connection string via `DATABASE_URL`/`PRODUCTION_DATABASE_URL` (and `TEST_DATABASE_URL` when running tests) or set the individual `POSTGRES_*` variables so the server can build one automatically.
 - `BACKEND_PORT` – port for the HTTP server
 - `SESSION_SECRET` – session cookie signing secret
+- `GLOBAL_RATE_LIMIT_MAX` – optional ceiling for the shared rate limiter (defaults to 1000). Increase this if dashboards or other
+  authenticated flows legitimately send large bursts of requests; lowering it again risks reintroducing HTTP 429 responses when
+  admins keep multiple monitoring tabs open.
 
 Provide these variables via a `.env` file or the hosting environment.
 
