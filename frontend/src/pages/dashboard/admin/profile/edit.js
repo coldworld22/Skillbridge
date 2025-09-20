@@ -73,6 +73,7 @@ function ProfileEditTemplate() {
   });
   const { user, hasHydrated, setUser } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -98,6 +99,10 @@ function ProfileEditTemplate() {
   const [tempFileName, setTempFileName] = useState("");
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -229,11 +234,7 @@ function ProfileEditTemplate() {
     setCroppedAreaPixels(area);
   }, []);
 
-  const isClientReady =
-    typeof window !== "undefined" && hasHydrated && ready;
-  if (!isClientReady) {
-    return null;
-  }
+  const isReady = mounted && hasHydrated && ready;
 
   const handleAvatarSelect = (e) => {
     const file = e.target.files?.[0];
@@ -411,7 +412,7 @@ function ProfileEditTemplate() {
   };
 
 
-  if (!hasHydrated || loadingProfile) {
+  if (!isReady || loadingProfile) {
     return (
       <div className="flex justify-center items-center h-64">
         <FaSpinner className="animate-spin text-4xl text-yellow-600" />
