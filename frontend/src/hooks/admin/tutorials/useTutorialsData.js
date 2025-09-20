@@ -16,7 +16,7 @@ export default function useTutorialsData(t) {
       try {
         setLoading(true);
         const [tuts, cats] = await Promise.all([
-          fetchAllTutorials({ signal: controller.signal }),
+          fetchAllTutorials(1, 10, { signal: controller.signal }),
           fetchAllCategories({}, { signal: controller.signal }),
         ]);
         if (!isMounted) return;
