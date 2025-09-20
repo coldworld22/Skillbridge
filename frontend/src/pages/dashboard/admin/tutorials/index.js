@@ -64,6 +64,8 @@ function AdminTutorialsPage() {
     goToPage,
   } = useTutorialFilters(tutorials);
 
+  const totalFilteredTutorials = filteredTutorials.length;
+
   const {
     selectedTutorials,
     setSelectedTutorials,
@@ -424,14 +426,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {filteredTutorials.length > 0 && !loading && (
+          {totalFilteredTutorials > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
               endIndex={endIndex}
-              totalResults={filteredTutorials.length}
+              totalResults={totalFilteredTutorials}
             />
           )}
         </div>
