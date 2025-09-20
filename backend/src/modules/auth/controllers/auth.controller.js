@@ -77,17 +77,12 @@ exports.login = catchAsync(async (req, res) => {
   let response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
   if (typeof req.csrfToken === "function") {
-    response = response.cookie(
-      "csrfToken",
-      req.csrfToken(),
-      csrfCookieOptions
-    );
+    response = response.cookie("csrfToken", req.csrfToken(), csrfCookieOptions);
   } else {
     logger.warn(
-      "CSRF token function unavailable during login response; skipping csrfToken cookie"
+      "⚠️ CSRF token helper missing on login request; skipping csrfToken cookie. Verify session/Redis configuration."
     );
   }
-
 
   response.json({ message: "Login successful", accessToken, user });
 });
@@ -132,7 +127,7 @@ exports.refreshToken = catchAsync(async (req, res) => {
       );
     } else {
       logger.warn(
-        "CSRF token function unavailable during refresh response; skipping csrfToken cookie"
+        "⚠️ CSRF token helper missing on refresh request; skipping csrfToken cookie. Verify session/Redis configuration."
       );
     }
     response.json({ message: "Token refreshed", accessToken });
