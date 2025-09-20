@@ -13,10 +13,11 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_PGADMIN_URL="http://localhost:5050"
 ARG APP_DOMAIN=""
+ARG STRICT_PUBLIC_API=true
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     NEXT_PUBLIC_PGADMIN_URL=$NEXT_PUBLIC_PGADMIN_URL \
     APP_DOMAIN=$APP_DOMAIN \
-    STRICT_PUBLIC_API=true
+    STRICT_PUBLIC_API=$STRICT_PUBLIC_API
 
 # Ensure subsequent RUN commands execute with pipefail enabled.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
