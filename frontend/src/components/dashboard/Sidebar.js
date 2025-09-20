@@ -18,8 +18,8 @@ export default function Sidebar({ role = 'admin' }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
-  const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+  const [settings, setSettings] = useState({ appName: 'SkillBridge', logo_url: null });
 
   useEffect(() => {
     setIsHydrated(true);
@@ -31,7 +31,21 @@ export default function Sidebar({ role = 'admin' }) {
   }, []);
 
   useEffect(() => {
+    setSettings((prev) => ({ ...prev, ...useAppConfigStore.getState().settings }));
+    const unsubscribe = useAppConfigStore.subscribe(
+      (state) => state.settings,
+      (newSettings) => {
+        setSettings((prev) => ({ ...prev, ...newSettings }));
+      }
+    );
+
     fetchAppConfig();
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [fetchAppConfig]);
 
   const handleClearCache = async () => {
