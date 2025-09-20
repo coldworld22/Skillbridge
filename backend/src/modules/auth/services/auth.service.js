@@ -43,6 +43,25 @@ const OTP_ATTEMPT_PREFIX = "otpAttempt:";
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 
+async function getActivePasswordResetRequests(userId) {
+  return db("password_resets")
+    .where({ user_id: userId, used: false })
+    .andWhere("expires_at", ">", new Date())
+    .orderBy("created_at", "desc")
+    .select("*");
+}
+
+async function findMatchingResetRecord(records, code) {
+  for (const record of records) {
+    if (!record?.code_hash) continue;
+    const match = await bcrypt.compare(code, record.code_hash);
+    if (match) {
+      return record;
+    }
+  }
+  return null;
+}
+
 function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
@@ -470,19 +489,14 @@ exports.verifyOtp = async ({ email, code }) => {
     );
   }
 
-  const record = await db("password_resets")
-    .where({ user_id: user.id, used: false })
-    .andWhere("expires_at", ">", new Date())
-    .orderBy("created_at", "desc")
-    .first();
-
-  if (!record) {
+  const activeResets = await getActivePasswordResetRequests(user.id);
+  if (!activeResets.length) {
     await recordFailedOtpAttempt(user.id);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
-  const match = await bcrypt.compare(code, record.code_hash);
-  if (!match) {
+  const matchingRecord = await findMatchingResetRecord(activeResets, code);
+  if (!matchingRecord) {
     await recordFailedOtpAttempt(user.id);
     throw new AppError("Invalid or expired OTP", 400);
   }
@@ -513,19 +527,14 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
     throw new AppError("Too many failed OTP attempts. Try again later.", 429);
   }
 
-  const resetRecord = await db("password_resets")
-    .where({ user_id: user.id, used: false })
-    .andWhere("expires_at", ">", new Date())
-    .orderBy("created_at", "desc")
-    .first();
-
-  if (!resetRecord) {
+  const activeResets = await getActivePasswordResetRequests(user.id);
+  if (!activeResets.length) {
     await recordFailedOtpAttempt(user.id);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
-  const match = await bcrypt.compare(code, resetRecord.code_hash);
-  if (!match) {
+  const matchingRecord = await findMatchingResetRecord(activeResets, code);
+  if (!matchingRecord) {
     await recordFailedOtpAttempt(user.id);
     throw new AppError("Invalid or expired OTP", 400);
   }
@@ -538,7 +547,7 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const hashed = await bcrypt.hash(new_password, SALT_ROUNDS);
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
-  await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+  await db("password_resets").where({ id: matchingRecord.id }).update({ used: true });
 
   // Revoke all refresh tokens for this user
   await db("refresh_tokens").where({ user_id: user.id }).del();
