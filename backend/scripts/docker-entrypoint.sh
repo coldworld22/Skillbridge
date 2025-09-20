@@ -1,6 +1,60 @@
 #!/bin/sh
 set -eu
 
+ensure_upload_dirs() {
+  if [ "$(id -u)" -ne 0 ]; then
+    return
+  fi
+
+  base_dir="/app/uploads"
+  mkdir -p "$base_dir"
+
+  for dir in \
+    app \
+    languages \
+    certificateTemplates \
+    demo-videos \
+    chat \
+    groups \
+    payment-methods \
+    payment-receipts \
+    invoices \
+    books \
+    ads \
+    avatars \
+    avatars/student \
+    avatars/instructor \
+    identity/student \
+    admin \
+    admin/avatars \
+    admin/identity \
+    categories \
+    currencies \
+    community \
+    lessons \
+    classes \
+    blog \
+    demos/instructor \
+    certificates/instructor \
+    tutorials \
+    tutorials/chapters \
+    support_attachments \
+    ticket_attachments \
+    seo; do
+    mkdir -p "$base_dir/$dir"
+  done
+
+  chown -R node:node "$base_dir"
+}
+
+run_as_node() {
+  if [ "$(id -u)" -eq 0 ]; then
+    su-exec node "$@"
+  else
+    "$@"
+  fi
+}
+
 url_encode() {
   node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
 }
@@ -63,10 +117,15 @@ main() {
 
   if [ "$1" = "node" ] && [ "${2:-}" = "src/server.js" ]; then
     if should_run_migrations; then
-      npx knex migrate:latest
+      run_as_node npx knex migrate:latest
     else
       echo "Skipping automatic database migrations because RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS}."
     fi
+  fi
+
+  if [ "$(id -u)" -eq 0 ]; then
+    ensure_upload_dirs
+    exec su-exec node "$@"
   fi
 
   exec "$@"
