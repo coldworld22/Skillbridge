@@ -1,16 +1,3 @@
-  # Determine if the request Origin is allowed based on a comma-separated
-  # list supplied via the ALLOWED_ORIGINS environment variable.
-  # Example: "https://foo.com,https://bar.com"
-  set $cors_allowed_origin "";
-  if ($allowed_origins != "") {
-    set $allowed_origins_list ",$allowed_origins,";
-    if ($http_origin != "") {
-      if ($allowed_origins_list ~ ",$http_origin,") {
-        set $cors_allowed_origin $http_origin;
-      }
-    }
-  }
-
   location / {
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
@@ -20,10 +7,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
 
   # Serve Next.js static assets directly from the frontend service
@@ -36,10 +20,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
@@ -56,10 +37,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
 
   location ^~ /api/ {
@@ -72,10 +50,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
   # Forward installer requests to the backend
   location ^~ /install/ {
