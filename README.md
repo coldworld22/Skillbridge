@@ -139,6 +139,12 @@ npm --prefix frontend install
    docker-compose up --build
    ```
 
+   If `docker-compose` exits with `KeyError: 'ContainerConfig'`, set
+   `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0` in your `.env`
+   file (both are included in `.env.example`). This disables BuildKit for
+   compose v1 so images retain the legacy metadata structure expected by
+   older docker-compose releases.
+
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
