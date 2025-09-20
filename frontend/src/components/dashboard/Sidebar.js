@@ -17,11 +17,17 @@ export default function Sidebar({ role = 'admin' }) {
   const { t } = useTranslation('dashboard');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   useEffect(() => {
     setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    setCurrentYear((prevYear) => (prevYear !== year ? year : prevYear));
   }, []);
 
   useEffect(() => {
@@ -142,7 +148,7 @@ export default function Sidebar({ role = 'admin' }) {
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}
+        &copy; {currentYear} {settings.appName || 'SkillBridge'}
       </div>
     </aside>
   );
