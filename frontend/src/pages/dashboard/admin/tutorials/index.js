@@ -27,11 +27,15 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const { tutorials, setTutorials, categories, loading } = useTutorialsData(t);
+  const { tutorials, setTutorials, categories, loading, meta, setMeta } =
+    useTutorialsData(t);
 
   const {
     searchQuery,
@@ -148,6 +152,11 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
+      setMeta((prev) =>
+        prev && typeof prev.total === "number"
+          ? { ...prev, total: Math.max(0, prev.total - 1) }
+          : prev,
+      );
       toast.success(t("deleted"));
     } catch (err) {
       console.error(err);
@@ -282,6 +291,11 @@ function AdminTutorialsPage() {
       setTutorials((prev) =>
         prev.filter((tut) => !selectedTutorials.includes(tut.id)),
       );
+      setMeta((prev) =>
+        prev && typeof prev.total === "number"
+          ? { ...prev, total: Math.max(0, prev.total - selectedTutorials.length) }
+          : prev,
+      );
       toast.success(t("bulk_deleted"));
     } catch (err) {
       console.error(err);
@@ -400,14 +414,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {meta.total > 0 && !loading && (
+          {meta?.total > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
               endIndex={endIndex}
-              totalResults={meta.total || 0}
+              totalResults={meta?.total ?? 0}
             />
           )}
         </div>
