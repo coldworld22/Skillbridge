@@ -107,14 +107,19 @@ function ProfileEditTemplate() {
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    if (!hasHydrated) return () => {
-      isMounted = false;
-    };
+    if (!hasHydrated) {
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
+    }
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
         isMounted = false;
+        controller.abort();
       };
     }
     const role = user.role?.toLowerCase();
@@ -122,6 +127,7 @@ function ProfileEditTemplate() {
       if (isMounted) setLoadingProfile(false);
       return () => {
         isMounted = false;
+        controller.abort();
       };
     }
 
@@ -199,6 +205,7 @@ function ProfileEditTemplate() {
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
