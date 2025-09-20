@@ -145,7 +145,6 @@ services:
       - ./nginx/snippets/common_locations.inc:/etc/nginx/snippets/common_locations.inc:ro
       - ./nginx/snippets/cors.inc:/etc/nginx/snippets/cors.inc:ro
       - ./nginx/snippets/cors_allowed_origin.inc:/etc/nginx/snippets/cors_allowed_origin.inc:ro
-      - ./nginx/snippets/cors.inc:/etc/nginx/snippets/cors.inc:ro
       - ./nginx/conf.d/ssl.conf:/etc/nginx/conf.d/ssl.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
