@@ -203,8 +203,18 @@ exports.verifyOtp = catchAsync(async (req, res) => {
  */
 exports.resetPassword = catchAsync(async (req, res) => {
   const { email, code, new_password } = req.body;
-  await authService.resetPassword({ email, code, new_password });
-  res.json({ message: "Password reset successful" });
+  const { warnings = [] } = await authService.resetPassword({
+    email,
+    code,
+    new_password,
+  });
+
+  const response = { message: "Password reset successful" };
+  if (warnings.length) {
+    response.warnings = warnings;
+  }
+
+  res.json(response);
 });
 
 /**
