@@ -65,6 +65,8 @@ function AdminTutorialsPage() {
     filterApproval,
   ]);
 
+  const totalResults = filteredTutorials.length;
+
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
@@ -400,14 +402,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {meta.total > 0 && !loading && (
+          {totalResults > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
               endIndex={endIndex}
-              totalResults={meta.total || 0}
+              totalResults={totalResults}
             />
           )}
         </div>
