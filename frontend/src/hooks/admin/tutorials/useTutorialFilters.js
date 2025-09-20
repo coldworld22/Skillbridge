@@ -30,8 +30,12 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
   }, [currentPage, totalPages]);
 
   const startIndex = (currentPage - 1) * tutorialsPerPage;
-  const endIndex = startIndex + tutorialsPerPage;
-  const paginatedTutorials = filteredTutorials.slice(startIndex, endIndex);
+  const tentativeEndIndex = startIndex + tutorialsPerPage;
+  const paginatedTutorials = filteredTutorials.slice(startIndex, tentativeEndIndex);
+  const endIndex = Math.min(
+    startIndex + paginatedTutorials.length,
+    filteredTutorials.length
+  );
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
