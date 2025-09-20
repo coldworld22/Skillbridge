@@ -552,15 +552,39 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
     }
   }
 
-  await sendPasswordChangeEmail(user.email);
+  const warnings = [];
 
-  await notificationService.createNotification({
-    user_id: user.id,
-    type: "security",
-    message: "Your password was changed successfully",
-  });
+  try {
+    await sendPasswordChangeEmail(user.email);
+  } catch (err) {
+    logger.error("Failed to send password change email", err);
+    warnings.push({
+      type: "email",
+      message:
+        "Password reset succeeded, but the confirmation email could not be sent.",
+    });
+  }
+
+  try {
+    await notificationService.createNotification({
+      user_id: user.id,
+      type: "security",
+      message: "Your password was changed successfully",
+    });
+  } catch (err) {
+    logger.error("Failed to create password change notification", err);
+    warnings.push({
+      type: "notification",
+      message:
+        "Password reset succeeded, but the security notification could not be recorded.",
+    });
+  }
+
   await clearOtpAttempts(user.id);
-  return sanitizeUserUtil(user);
+  return {
+    user: sanitizeUserUtil(user),
+    warnings,
+  };
 };
 
 /**
