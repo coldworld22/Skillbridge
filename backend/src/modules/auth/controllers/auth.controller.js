@@ -88,6 +88,7 @@ exports.login = catchAsync(async (req, res) => {
     );
   }
 
+
   response.json({ message: "Login successful", accessToken, user });
 });
 
@@ -134,7 +135,6 @@ exports.refreshToken = catchAsync(async (req, res) => {
         "CSRF token function unavailable during refresh response; skipping csrfToken cookie"
       );
     }
-
     response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);

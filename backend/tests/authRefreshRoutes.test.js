@@ -6,6 +6,11 @@ const session = require('express-session');
 const logger = require('../src/utils/logger');
 
 process.env.NODE_ENV = 'production';
+process.env.JWT_SECRET = 'testsecret';
+process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
+process.env.SESSION_SECRET = 'sessionsecret';
+process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+process.env.TEST_DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
 
 jest.mock('../src/config/database', () => ({
   raw: jest.fn(() => Promise.resolve()),
