@@ -130,7 +130,6 @@ exports.refreshToken = catchAsync(async (req, res) => {
         "⚠️ CSRF token helper missing on refresh request; skipping csrfToken cookie. Verify session/Redis configuration."
       );
     }
-
     response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
