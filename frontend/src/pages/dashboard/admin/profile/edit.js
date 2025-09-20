@@ -80,7 +80,7 @@ function ProfileEditTemplate() {
     phone: "",
     gender: "male",
     date_of_birth: "",
-    avatar_url: null,
+    avatar_url: undefined,
     avatarPreview: null,
     job_title: "",
     department: "",
@@ -136,7 +136,7 @@ function ProfileEditTemplate() {
       phone: user.phone || "",
       gender: user.gender || "male",
       date_of_birth: user.date_of_birth?.split("T")[0] || "",
-      avatar_url: user.avatar_url,
+      avatar_url: user.avatar_url ?? undefined,
       avatarPreview: user.avatar_url
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
         : null,
@@ -177,7 +177,7 @@ function ProfileEditTemplate() {
           phone,
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
-          avatar_url,
+          avatar_url: avatar_url ?? undefined,
           avatarPreview: avatar_url
             ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
             : null,
@@ -277,11 +277,11 @@ function ProfileEditTemplate() {
         type: blob.type,
       });
       const res = await uploadAdminAvatar(user.id, file);
-      setUser({ ...user, avatar_url: res.avatar_url });
+      setUser({ ...user, avatar_url: res.avatar_url ?? undefined });
       const cacheBust = Date.now();
       setFormData((prev) => ({
         ...prev,
-        avatar_url: res.avatar_url,
+        avatar_url: res.avatar_url ?? undefined,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${cacheBust}`,
       }));
       setShowCropper(false);
@@ -314,8 +314,8 @@ function ProfileEditTemplate() {
     setIsRemovingAvatar(true);
     try {
       await deleteAdminAvatar(user.id);
-      setUser({ ...user, avatar_url: null });
-      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
+      setUser({ ...user, avatar_url: undefined });
+      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: undefined }));
       toast.success(t("avatar_remove_success"));
     } catch (error) {
       console.error("Avatar delete error:", error.response);
@@ -358,17 +358,22 @@ function ProfileEditTemplate() {
       setIsSubmitting(true);
       const social_links = toSocialLinksArray(formData.socialLinks);
 
-      await updateAdminProfile({
+      const payload = {
         full_name: formData.full_name,
         email: formData.email,
         phone: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
-        avatar_url: formData.avatar_url,
         job_title: formData.job_title,
         department: formData.department,
         social_links,
-      });
+      };
+
+      if (typeof formData.avatar_url === "string" && formData.avatar_url.trim() !== "") {
+        payload.avatar_url = formData.avatar_url;
+      }
+
+      await updateAdminProfile(payload);
 
       const fresh = await getAdminProfile();
       setUser({
@@ -378,7 +383,7 @@ function ProfileEditTemplate() {
         phone: fresh.phone,
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
-        avatar_url: fresh.avatar_url,
+        avatar_url: fresh.avatar_url ?? undefined,
         profile_complete: fresh.profile_complete,
         job_title: fresh.job_title,
         department: fresh.department,
@@ -386,7 +391,7 @@ function ProfileEditTemplate() {
 
       setFormData((prev) => ({
         ...prev,
-        avatar_url: fresh.avatar_url,
+        avatar_url: fresh.avatar_url ?? undefined,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
