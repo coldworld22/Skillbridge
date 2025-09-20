@@ -10,10 +10,6 @@ import Filters from "@/components/dashboard/admin/tutorials/Filters";
 import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTable";
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
-import Stats from "@/components/dashboard/admin/tutorials/Stats";
-import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
-import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -60,11 +56,15 @@ function AdminTutorialsPage() {
     paginatedTutorials,
     totalPages,
     startIndex,
-    endIndex,
     goToPage,
   } = useTutorialFilters(tutorials);
 
-  const totalFilteredTutorials = filteredTutorials.length;
+  const totalResults = filteredTutorials.length;
+  const paginatedCount = paginatedTutorials.length;
+  const displayEndIndex =
+    totalResults === 0
+      ? 0
+      : Math.min(startIndex + paginatedCount, totalResults);
 
   const {
     selectedTutorials,
@@ -426,14 +426,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {totalFilteredTutorials > 0 && !loading && (
+          {totalResults > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
-              endIndex={endIndex}
-              totalResults={totalFilteredTutorials}
+              endIndex={displayEndIndex}
+              totalResults={totalResults}
             />
           )}
         </div>
