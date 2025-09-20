@@ -174,7 +174,7 @@ function ProfileEditTemplate() {
           ...prev,
           full_name,
           email: email || "",
-          phone,
+          phone: phone || "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           avatar_url,
