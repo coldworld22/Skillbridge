@@ -107,13 +107,17 @@ function ProfileEditTemplate() {
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    if (!hasHydrated) return () => {
-      isMounted = false;
-    };
+    if (!hasHydrated)
+      return () => {
+        controller.abort();
+        isMounted = false;
+      };
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
       };
     }
@@ -121,6 +125,7 @@ function ProfileEditTemplate() {
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
       };
     }
@@ -198,6 +203,7 @@ function ProfileEditTemplate() {
     loadProfile();
 
     return () => {
+      controller.abort();
       isMounted = false;
     };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
