@@ -1,4 +1,8 @@
   location / {
+    # Determine if the request Origin is allowed based on a comma-separated
+    # list supplied via the ALLOWED_ORIGINS environment variable.
+    # Example: "https://foo.com,https://bar.com"
+    include /etc/nginx/snippets/cors_allowed_origin.inc;
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -12,6 +16,7 @@
 
   # Serve Next.js static assets directly from the frontend service
   location ^~ /_next/static/ {
+    include /etc/nginx/snippets/cors_allowed_origin.inc;
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -27,6 +32,7 @@
 
   # Forward Socket.IO traffic to backend and enable WebSocket upgrades
   location /socket.io/ {
+    include /etc/nginx/snippets/cors_allowed_origin.inc;
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -41,6 +47,7 @@
   }
 
   location ^~ /api/ {
+    include /etc/nginx/snippets/cors_allowed_origin.inc;
     # forward API requests without rewriting the path
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
