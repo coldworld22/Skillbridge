@@ -19,9 +19,12 @@ dotenvExpand.expand(
 /** @type {import('next').NextConfig} */
 const defaultApiBase = 'http://localhost:5002/api';
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
+const internalApiBaseEnv = process.env.INTERNAL_API_BASE_URL;
 const enforcePublicAPI = process.env.STRICT_PUBLIC_API === 'true';
 const isStrictProduction = enforcePublicAPI && process.env.NODE_ENV === 'production';
 const appDomain = process.env.APP_DOMAIN;
+
+const normalizeBase = (value) => value.replace(/\/+$/, '');
 
 const resolveApiBase = (candidate) => {
   if (!candidate) {
@@ -29,7 +32,7 @@ const resolveApiBase = (candidate) => {
   }
 
   if (/^https?:\/\//i.test(candidate)) {
-    return candidate;
+    return normalizeBase(candidate);
   }
 
   if (candidate.startsWith('/')) {
@@ -45,7 +48,7 @@ const resolveApiBase = (candidate) => {
     const domainWithProtocol = hasProtocol
       ? normalizedDomain
       : `https://${normalizedDomain}`;
-    return `${domainWithProtocol}${normalizedPath}`;
+    return normalizeBase(`${domainWithProtocol}${normalizedPath}`);
   }
 
   throw new Error(
@@ -90,6 +93,7 @@ try {
   );
   pgAdminBase = defaultPgAdminBase;
 }
+pgAdminBase = normalizeBase(pgAdminBase);
 
 let protocol, hostname, port;
 try {
@@ -127,6 +131,31 @@ try {
   apiBase = defaultApiBase;
   ({ protocol, hostname, port } = new URL(defaultApiBase));
 }
+let internalApiBase = apiBase;
+let internalProtocol = protocol;
+let internalHostname = hostname;
+let internalPort = port;
+
+if (internalApiBaseEnv) {
+  try {
+    if (!/^https?:\/\//i.test(internalApiBaseEnv)) {
+      throw new Error(
+        `INTERNAL_API_BASE_URL must be an absolute URL. Received: ${internalApiBaseEnv}`,
+      );
+    }
+
+    const normalizedInternal = normalizeBase(internalApiBaseEnv);
+    const parsedInternal = new URL(normalizedInternal);
+    internalApiBase = normalizedInternal;
+    internalProtocol = parsedInternal.protocol;
+    internalHostname = parsedInternal.hostname;
+    internalPort = parsedInternal.port;
+  } catch (error) {
+    console.warn(
+      `Invalid INTERNAL_API_BASE_URL ("${internalApiBaseEnv}"): ${error.message}. Falling back to ${apiBase}.`,
+    );
+  }
+}
 const nextConfig = {
   images: {
     unoptimized: true,
@@ -159,6 +188,28 @@ const nextConfig = {
         port,
         pathname: '/uploads/**',
       },
+      ...((internalHostname !== hostname || internalPort !== port || internalProtocol !== protocol)
+        ? [
+            {
+              protocol: internalProtocol.replace(':', ''),
+              hostname: internalHostname,
+              port: internalPort,
+              pathname: '/**',
+            },
+            {
+              protocol: internalProtocol.replace(':', ''),
+              hostname: internalHostname,
+              port: internalPort,
+              pathname: '/api/uploads/**',
+            },
+            {
+              protocol: internalProtocol.replace(':', ''),
+              hostname: internalHostname,
+              port: internalPort,
+              pathname: '/uploads/**',
+            },
+          ]
+        : []),
       ...(appDomain
         ? [
             { protocol: 'https', hostname: appDomain, pathname: '/api/uploads/**' },
@@ -195,11 +246,11 @@ const nextConfig = {
       },
       {
         source: '/api/:path((?!health$).*)',
-        destination: `${apiBase}/:path`,
+        destination: `${internalApiBase}/:path`,
       },
       {
         source: '/uploads/:path*',
-        destination: `${apiBase}/uploads/:path*`,
+        destination: `${internalApiBase}/uploads/:path*`,
       },
     ];
   },
