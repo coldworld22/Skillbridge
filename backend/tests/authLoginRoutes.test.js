@@ -82,7 +82,7 @@ describe('POST /api/auth/login', () => {
     const cookies = res.headers['set-cookie'] || [];
     expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/CSRF token function unavailable during login response/)
+      expect.stringMatching(/CSRF token helper missing on login request; skipping csrfToken cookie/)
     );
   });
 
