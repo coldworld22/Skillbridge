@@ -104,6 +104,11 @@ should_wait_for_db() {
   return 1
 }
 
+prepare_upload_dirs() {
+  mkdir -p /app/uploads/app /app/uploads/languages
+  chown -R node:node /app/uploads
+}
+
 main() {
   derive_database_url
 
@@ -121,6 +126,8 @@ main() {
     else
       echo "Skipping automatic database migrations because RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS}."
     fi
+
+    prepare_upload_dirs
   fi
 
   if [ "$(id -u)" -eq 0 ]; then
@@ -129,6 +136,7 @@ main() {
   fi
 
   exec "$@"
+
 }
 
 main "$@"
