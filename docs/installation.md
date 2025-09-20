@@ -57,6 +57,18 @@ EXTRA_CORS_ORIGINS=https://admin.example.com,https://docs.example.com
 These origins are merged with `FRONTEND_URL` and the default app domain to
 configure CORS.
 
+Rate limiting defaults to 1,000 requests per IP every 15 minutes. Adjust the
+allowance if your deployment expects heavier bursts of traffic by setting:
+
+```
+RATE_LIMIT_MAX=2000
+RATE_LIMIT_WINDOW_MS=300000 # 5 minutes
+```
+
+Increase or decrease these numbers to match your usage profile. The health
+check endpoint (`/api/health`) is excluded so uptime probes continue to work
+even when the limit is reached.
+
 A Redis instance (or compatible store) is required to persist sessions in
 production. Set `REDIS_URL` in `backend/.env` to point to your Redis server
 (for example `redis://localhost:6379`).

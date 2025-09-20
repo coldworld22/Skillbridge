@@ -8,6 +8,12 @@ dotenvExpand.expand(myEnv);
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BACKEND_PORT: z.coerce.number().default(5002),
+  RATE_LIMIT_WINDOW_MS: z
+    .coerce.number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
   JWT_SECRET: z
     .string()
     .trim()
@@ -234,6 +240,8 @@ const getDatabaseUrl = (targetEnv = env.NODE_ENV) => DATABASE_URLS[targetEnv];
 module.exports = {
   NODE_ENV: env.NODE_ENV,
   BACKEND_PORT: env.BACKEND_PORT,
+  RATE_LIMIT_WINDOW_MS: env.RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX: env.RATE_LIMIT_MAX,
   JWT_SECRET: env.JWT_SECRET,
   REFRESH_TOKEN_SECRET: env.REFRESH_TOKEN_SECRET,
   SESSION_SECRET: env.SESSION_SECRET,

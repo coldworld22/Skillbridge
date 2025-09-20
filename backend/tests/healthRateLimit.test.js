@@ -23,6 +23,8 @@ function loadServer() {
   process.env.REFRESH_TOKEN_SECRET = 'test';
   process.env.SESSION_SECRET = 'test';
   process.env.TEST_DATABASE_URL = 'postgresql://localhost/testdb';
+  process.env.RATE_LIMIT_MAX = '5';
+  process.env.RATE_LIMIT_WINDOW_MS = '60000';
   delete process.env.REDIS_URL;
   return require('../src/server');
 }
@@ -43,7 +45,7 @@ describe('global rate limiter', () => {
     try {
       const agent = request(app);
 
-      for (let i = 0; i < 100; i += 1) {
+      for (let i = 0; i < 5; i += 1) {
         const res = await agent.get('/api/not-real');
         expect(res.status).toBe(404);
       }
