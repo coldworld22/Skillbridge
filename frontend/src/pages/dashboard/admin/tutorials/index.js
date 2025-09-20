@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import Filters from "@/components/dashboard/admin/tutorials/Filters";
@@ -8,6 +11,9 @@ import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTabl
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
 import Stats from "@/components/dashboard/admin/tutorials/Stats";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -20,6 +26,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkApproveTutorials,
+  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -27,11 +35,15 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const { tutorials, setTutorials, categories, loading } = useTutorialsData(t);
+  const { tutorials, setTutorials, categories, loading, meta, setMeta } =
+    useTutorialsData(t);
 
   const {
     searchQuery,
@@ -66,6 +78,8 @@ function AdminTutorialsPage() {
     filterStatus,
     filterApproval,
   ]);
+
+  const totalResults = filteredTutorials.length;
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -150,6 +164,11 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
+      setMeta((prev) =>
+        prev && typeof prev.total === "number"
+          ? { ...prev, total: Math.max(0, prev.total - 1) }
+          : prev,
+      );
       toast.success(t("deleted"));
     } catch (err) {
       console.error(err);
@@ -284,6 +303,11 @@ function AdminTutorialsPage() {
       setTutorials((prev) =>
         prev.filter((tut) => !selectedTutorials.includes(tut.id)),
       );
+      setMeta((prev) =>
+        prev && typeof prev.total === "number"
+          ? { ...prev, total: Math.max(0, prev.total - selectedTutorials.length) }
+          : prev,
+      );
       toast.success(t("bulk_deleted"));
     } catch (err) {
       console.error(err);
@@ -386,7 +410,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={tutorials}
+            paginatedTutorials={paginatedTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
