@@ -111,8 +111,8 @@ function ProfileEditTemplate() {
 
     if (!hasHydrated)
       return () => {
-        controller.abort();
         isMounted = false;
+        controller.abort();
       };
     if (!user) {
       if (isMounted) setLoadingProfile(false);
@@ -193,6 +193,7 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
+        if (err?.name === "AbortError") return;
         if (!isMounted) return;
         if (err.name === "AbortError") return;
         toast.error(t('load_profile_failed'));
