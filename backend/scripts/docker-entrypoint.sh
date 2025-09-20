@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 
+
 run_as_node() {
   if [ "$(id -u)" -eq 0 ]; then
     exec_cmd="su-exec"
@@ -18,7 +19,6 @@ ensure_upload_permissions() {
   if [ "$(id -u)" -ne 0 ]; then
     return
   fi
-
   upload_dirs="
 /app/uploads
 /app/uploads/ads
@@ -110,6 +110,11 @@ should_wait_for_db() {
   return 1
 }
 
+prepare_upload_dirs() {
+  mkdir -p /app/uploads/app /app/uploads/languages
+  chown -R node:node /app/uploads
+}
+
 main() {
   ensure_upload_permissions
 
@@ -129,6 +134,13 @@ main() {
     else
       echo "Skipping automatic database migrations because RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS}."
     fi
+
+    prepare_upload_dirs
+  fi
+
+  if [ "$(id -u)" -eq 0 ]; then
+    ensure_upload_dirs
+    exec su-exec node "$@"
   fi
 
   if [ "$(id -u)" -eq 0 ]; then
@@ -136,6 +148,7 @@ main() {
   fi
 
   exec "$@"
+
 }
 
 main "$@"
