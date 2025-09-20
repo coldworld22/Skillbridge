@@ -7,7 +7,6 @@ import Filters from "@/components/dashboard/admin/tutorials/Filters";
 import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTable";
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
-import Stats from "@/components/dashboard/admin/tutorials/Stats";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -48,9 +47,15 @@ function AdminTutorialsPage() {
     paginatedTutorials,
     totalPages,
     startIndex,
-    endIndex,
     goToPage,
   } = useTutorialFilters(tutorials);
+
+  const totalResults = filteredTutorials.length;
+  const paginatedCount = paginatedTutorials.length;
+  const displayEndIndex =
+    totalResults === 0
+      ? 0
+      : Math.min(startIndex + paginatedCount, totalResults);
 
   const {
     selectedTutorials,
@@ -384,7 +389,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={tutorials}
+            paginatedTutorials={paginatedTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -400,14 +405,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {meta.total > 0 && !loading && (
+          {totalResults > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
-              endIndex={endIndex}
-              totalResults={meta.total || 0}
+              endIndex={displayEndIndex}
+              totalResults={totalResults}
             />
           )}
         </div>
