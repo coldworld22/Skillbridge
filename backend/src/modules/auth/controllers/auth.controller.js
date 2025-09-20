@@ -74,10 +74,17 @@ exports.login = catchAsync(async (req, res) => {
   }
   const { accessToken, refreshToken, user } =
     await authService.loginUser({ ...req.body, ip: req.ip });
-  res
-    .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .cookie("csrfToken", req.csrfToken(), csrfCookieOptions)
-    .json({ message: "Login successful", accessToken, user });
+  let response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
+  if (typeof req.csrfToken === "function") {
+    response = response.cookie("csrfToken", req.csrfToken(), csrfCookieOptions);
+  } else {
+    logger.warn(
+      "⚠️ CSRF token helper missing on login request; skipping csrfToken cookie. Verify session/Redis configuration."
+    );
+  }
+
+  response.json({ message: "Login successful", accessToken, user });
 });
 
 /**
@@ -106,10 +113,25 @@ exports.refreshToken = catchAsync(async (req, res) => {
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
-    res
-      .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
-      .cookie("csrfToken", req.csrfToken(), csrfCookieOptions)
-      .json({ message: "Token refreshed", accessToken });
+    let response = res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      refreshCookieOptions
+    );
+
+    if (typeof req.csrfToken === "function") {
+      response = response.cookie(
+        "csrfToken",
+        req.csrfToken(),
+        csrfCookieOptions
+      );
+    } else {
+      logger.warn(
+        "⚠️ CSRF token helper missing on refresh request; skipping csrfToken cookie. Verify session/Redis configuration."
+      );
+    }
+
+    response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
     return res.status(401).json({ message: "Invalid or expired refresh token" });
