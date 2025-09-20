@@ -152,10 +152,13 @@ app.use(session(sessionOptions));
 
 app.use(csrf);
 
-// Apply rate limiting to all requests
+// Apply rate limiting to all requests. Allow the ceiling to be tuned via
+// GLOBAL_RATE_LIMIT_MAX so that heavy dashboard usage does not trigger 429s.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: config.GLOBAL_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (req) => {
     const path = req.path || req.url;
     return path === '/api/health' || path === '/api/health/';
