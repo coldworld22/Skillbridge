@@ -11,6 +11,9 @@ import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTabl
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
 import Stats from "@/components/dashboard/admin/tutorials/Stats";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -23,8 +26,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
-  bulkDeleteTutorials,
   bulkApproveTutorials,
+  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
