@@ -107,14 +107,18 @@ function ProfileEditTemplate() {
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    if (!hasHydrated) return () => {
-      isMounted = false;
-    };
+    if (!hasHydrated)
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
         isMounted = false;
+        controller.abort();
       };
     }
     const role = user.role?.toLowerCase();
@@ -122,6 +126,7 @@ function ProfileEditTemplate() {
       if (isMounted) setLoadingProfile(false);
       return () => {
         isMounted = false;
+        controller.abort();
       };
     }
 
@@ -186,6 +191,7 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
+        if (err?.name === "AbortError") return;
         if (!isMounted) return;
         toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
@@ -199,6 +205,7 @@ function ProfileEditTemplate() {
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
