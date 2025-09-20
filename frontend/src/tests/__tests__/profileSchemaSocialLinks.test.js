@@ -23,7 +23,7 @@ describe('profile schema socialLinks URL validation', () => {
     try {
       adminProfileSchema.parse(data);
     } catch (err) {
-      expect(err.errors[0].message).toBe('invalid_url');
+      expect(err.errors[0].message).toBe('url_invalid');
     }
   });
 
@@ -37,7 +37,7 @@ describe('profile schema socialLinks URL validation', () => {
     try {
       instructorProfileSchema('US').parse(data);
     } catch (err) {
-      expect(err.errors[0].message).toBe('invalid_url');
+      expect(err.errors[0].message).toBe('url_invalid');
     }
   });
 
@@ -51,7 +51,7 @@ describe('profile schema socialLinks URL validation', () => {
     try {
       studentProfileSchema.parse(data);
     } catch (err) {
-      expect(err.errors[0].message).toBe('invalid_url');
+      expect(err.errors[0].message).toBe('url_invalid');
     }
   });
 });

@@ -68,7 +68,7 @@ export const instructorProfileSchema = (country) => z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("invalid_url").or(z.literal("")))
+    .record(z.string().url("url_invalid").or(z.literal("")))
     .optional(),
 })
   .superRefine((data, ctx) => {

@@ -592,6 +592,8 @@
     "invalid_image_type": "Solo se permiten archivos de imagen.",
     "avatar_upload_failed": "No se pudo subir avatar",
     "avatar_crop_failed": "No se pudo recortar el avatar",
+    "avatar_remove_success": "¡Avatar eliminado con éxito!",
+    "avatar_remove_failed": "No se pudo eliminar el avatar",
     "profile_update_success": "Perfil actualizado con éxito!",
     "profile_update_failed": "No se pudo actualizar el perfil",
     "full_name_min": "El nombre completo debe ser al menos 3 caracteres",
