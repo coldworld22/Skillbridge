@@ -53,7 +53,7 @@ export const profileSchema = z.object({
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
   // Additionally ensure provided keys correspond to allowed platforms
   socialLinks: z
-    .record(z.string().url("invalid_url").or(z.literal("")))
+    .record(z.string().url("url_invalid").or(z.literal("")))
     .refine(
       (links) =>
         Object.keys(links).every((key) =>
@@ -118,6 +118,7 @@ function ProfileEditTemplate() {
     if (!user) {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
         controller.abort();
       };
@@ -126,6 +127,7 @@ function ProfileEditTemplate() {
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
       return () => {
+        controller.abort();
         isMounted = false;
         controller.abort();
       };
@@ -192,7 +194,9 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
+        if (err?.name === "AbortError") return;
         if (!isMounted) return;
+        if (err.name === "AbortError") return;
         toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
@@ -204,6 +208,7 @@ function ProfileEditTemplate() {
     loadProfile();
 
     return () => {
+      controller.abort();
       isMounted = false;
       controller.abort();
     };
@@ -387,6 +392,8 @@ function ProfileEditTemplate() {
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
         profile_complete: fresh.profile_complete,
+        job_title: fresh.job_title,
+        department: fresh.department,
       });
 
       setFormData((prev) => ({
