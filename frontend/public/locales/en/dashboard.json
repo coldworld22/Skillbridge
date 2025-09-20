@@ -612,6 +612,8 @@
     "invalid_image_type": "Only image files are allowed.",
     "avatar_upload_failed": "Failed to upload avatar",
     "avatar_crop_failed": "Failed to crop avatar",
+    "avatar_remove_success": "Avatar removed successfully!",
+    "avatar_remove_failed": "Failed to remove avatar",
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
     "full_name_min": "Full name must be at least 3 characters",

@@ -592,6 +592,8 @@
     "invalid_image_type": "只允许图片文件。",
     "avatar_upload_failed": "无法上传头像",
     "avatar_crop_failed": "头像裁剪失败",
+    "avatar_remove_success": "头像已成功移除！",
+    "avatar_remove_failed": "移除头像失败",
     "profile_update_success": "个人资料成功更新了！",
     "profile_update_failed": "无法更新个人资料",
     "full_name_min": "全名必须至少为3个字符",
