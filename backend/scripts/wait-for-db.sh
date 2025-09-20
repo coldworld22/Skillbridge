@@ -34,6 +34,8 @@ else
   DB_NAME=${POSTGRES_DB:-}
 fi
 
+DB_NAME=${DB_NAME:-${POSTGRES_DB:-postgres}}
+
 if [ -n "$DB_PASSWORD" ]; then
   export PGPASSWORD="$DB_PASSWORD"
 fi
@@ -54,11 +56,11 @@ if command -v pg_isready >/dev/null 2>&1; then
       exit 1
     fi
 
-    echo "Waiting for database at $DB_HOST:$DB_PORT (attempt ${attempt}/${MAX_ATTEMPTS})... $output"
+    echo "Waiting for database at $DB_HOST:$DB_PORT (database $DB_NAME) (attempt ${attempt}/${MAX_ATTEMPTS})... $output"
     sleep "$SLEEP_SECONDS"
   done
 else
-  echo "pg_isready not available; falling back to TCP probe for $DB_HOST:$DB_PORT."
+  echo "pg_isready not available; falling back to TCP probe for $DB_HOST:$DB_PORT (database $DB_NAME)."
   while true; do
     if nc -z "$DB_HOST" "$DB_PORT"; then
       break
@@ -71,7 +73,7 @@ else
       exit 1
     fi
 
-    echo "Waiting for database port $DB_PORT on $DB_HOST (attempt ${attempt}/${MAX_ATTEMPTS})..."
+    echo "Waiting for database port $DB_PORT on $DB_HOST (database $DB_NAME) (attempt ${attempt}/${MAX_ATTEMPTS})..."
     sleep "$SLEEP_SECONDS"
   done
 fi
