@@ -1,3 +1,9 @@
+process.env.JWT_SECRET = 'testsecret';
+process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
+process.env.SESSION_SECRET = 'sessionsecret';
+process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+process.env.TEST_DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
+
 const request = require('supertest');
 const express = require('express');
 const cookieParser = require('cookie-parser');

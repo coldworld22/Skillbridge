@@ -5,8 +5,14 @@ const logger = require('../utils/logger');
 
 router.get('/', (req, res) => {
   if (typeof req.csrfToken === 'function') {
-    const token = req.csrfToken();
-    res.cookie('csrfToken', token, csrfCookieOptions);
+    try {
+      const token = req.csrfToken();
+      res.cookie('csrfToken', token, csrfCookieOptions);
+    } catch (err) {
+      logger.warn(
+        `⚠️ Failed to issue CSRF cookie on CSRF route: ${err.message}`
+      );
+    }
   } else {
     logger.warn(
       '⚠️ CSRF token helper missing on CSRF route; skipping csrfToken cookie. Verify session/Redis configuration.'
