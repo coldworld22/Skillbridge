@@ -20,10 +20,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
 
   # Serve Next.js static assets directly from the frontend service
@@ -46,10 +43,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
@@ -66,6 +60,7 @@
       }
     }
 
+
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -76,10 +71,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
 
   location ^~ /api/ {
@@ -102,10 +94,7 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($cors_allowed_origin != "") {
-      add_header Access-Control-Allow-Origin $cors_allowed_origin always;
-    }
-    add_header Access-Control-Allow-Credentials true always;
+    include /etc/nginx/snippets/cors_headers.inc;
   }
   # Forward installer requests to the backend
   location ^~ /install/ {
