@@ -8,9 +8,18 @@ dotenvExpand.expand(myEnv);
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BACKEND_PORT: z.coerce.number().default(5002),
-  JWT_SECRET: z.string(),
-  REFRESH_TOKEN_SECRET: z.string(),
-  SESSION_SECRET: z.string(),
+  JWT_SECRET: z
+    .string()
+    .trim()
+    .min(1, 'JWT_SECRET must not be empty'),
+  REFRESH_TOKEN_SECRET: z
+    .string()
+    .trim()
+    .min(1, 'REFRESH_TOKEN_SECRET must not be empty'),
+  SESSION_SECRET: z
+    .string()
+    .trim()
+    .min(1, 'SESSION_SECRET must not be empty'),
   DATABASE_URL: z.string().url().optional(),
   PRODUCTION_DATABASE_URL: z.string().url().optional(),
   TEST_DATABASE_URL: z.string().url().optional(),
@@ -38,7 +47,14 @@ const OPTIONAL_URL_ENV_VARS = [
   'REDIS_URL',
 ];
 
-const normalizeOptionalUrl = (value) => (value === '' ? undefined : value);
+const normalizeOptionalUrl = (value) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue === '' ? undefined : trimmedValue;
+};
 
 const createValidatedEnv = () => {
   const modifiedEnv = { ...process.env };
