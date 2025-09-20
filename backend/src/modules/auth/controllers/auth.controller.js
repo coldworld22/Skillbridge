@@ -74,20 +74,21 @@ exports.login = catchAsync(async (req, res) => {
   }
   const { accessToken, refreshToken, user } =
     await authService.loginUser({ ...req.body, ip: req.ip });
+  let response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
-  let csrfToken;
   if (typeof req.csrfToken === "function") {
-    try {
-      csrfToken = req.csrfToken();
-    } catch (err) {
-      logger.warn("Failed to generate CSRF token during login: %s", err.message);
-    }
+    response = response.cookie(
+      "csrfToken",
+      req.csrfToken(),
+      csrfCookieOptions
+    );
+  } else {
+    logger.warn(
+      "CSRF token function unavailable during login response; skipping csrfToken cookie"
+    );
   }
 
-  const response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
-  if (csrfToken) {
-    response.cookie("csrfToken", csrfToken, csrfCookieOptions);
-  }
+
   response.json({ message: "Login successful", accessToken, user });
 });
 
@@ -117,22 +118,22 @@ exports.refreshToken = catchAsync(async (req, res) => {
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
-    let csrfToken;
-    if (typeof req.csrfToken === "function") {
-      try {
-        csrfToken = req.csrfToken();
-      } catch (err) {
-        logger.warn(
-          "Failed to generate CSRF token during refresh for user %s: %s",
-          decoded.id,
-          err.message
-        );
-      }
-    }
+    let response = res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      refreshCookieOptions
+    );
 
-    const response = res.cookie("refreshToken", newRefreshToken, refreshCookieOptions);
-    if (csrfToken) {
-      response.cookie("csrfToken", csrfToken, csrfCookieOptions);
+    if (typeof req.csrfToken === "function") {
+      response = response.cookie(
+        "csrfToken",
+        req.csrfToken(),
+        csrfCookieOptions
+      );
+    } else {
+      logger.warn(
+        "CSRF token function unavailable during refresh response; skipping csrfToken cookie"
+      );
     }
     response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
