@@ -424,14 +424,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-          {meta?.total > 0 && !loading && (
+          {filteredTutorials.length > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
               endIndex={endIndex}
-              totalResults={meta?.total ?? 0}
+              totalResults={filteredTutorials.length}
             />
           )}
         </div>
