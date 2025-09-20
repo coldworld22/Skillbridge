@@ -31,12 +31,18 @@ import {
   uploadAdminAvatar,
   deleteAdminAvatar,
 } from "@/services/admin/adminService";
+import { API_BASE_URL } from "@/config/config";
 const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+
+const buildAvatarUrl = (url) =>
+  url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
 
 export const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
@@ -136,10 +142,8 @@ function ProfileEditTemplate() {
       phone: user.phone || "",
       gender: user.gender || "male",
       date_of_birth: user.date_of_birth?.split("T")[0] || "",
-      avatar_url: user.avatar_url ?? undefined,
-      avatarPreview: user.avatar_url
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-        : null,
+      avatar_url: user.avatar_url,
+      avatarPreview: buildAvatarUrl(user.avatar_url),
       job_title: user.job_title || "",
       department: user.department || "",
     }));
@@ -177,10 +181,9 @@ function ProfileEditTemplate() {
           phone: phone || "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
-          avatar_url: avatar_url ?? undefined,
-          avatarPreview: avatar_url
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
-            : null,
+          avatar_url,
+          avatarPreview: buildAvatarUrl(avatar_url),
+
           job_title: job_title || "",
           department: department || "",
           socialLinks: socialMap,
@@ -281,8 +284,11 @@ function ProfileEditTemplate() {
       const cacheBust = Date.now();
       setFormData((prev) => ({
         ...prev,
-        avatar_url: res.avatar_url ?? undefined,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${cacheBust}`,
+        avatar_url: res.avatar_url,
+        avatarPreview: buildAvatarUrl(
+          res.avatar_url ? `${res.avatar_url}?v=${cacheBust}` : null
+        ),
+
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
@@ -395,9 +401,7 @@ function ProfileEditTemplate() {
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
-        avatarPreview: fresh.avatar_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fresh.avatar_url}`
-          : null,
+        avatarPreview: buildAvatarUrl(fresh.avatar_url),
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
           acc[cur.platform] = cur.url;
           return acc;
