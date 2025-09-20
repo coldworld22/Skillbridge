@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import Filters from "@/components/dashboard/admin/tutorials/Filters";
@@ -20,6 +23,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkApproveTutorials,
+  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
