@@ -1,6 +1,8 @@
 const request = require('supertest');
 const express = require('express');
 
+const logger = require('../src/utils/logger');
+
 process.env.NODE_ENV = 'production';
 
 jest.mock('../src/config/database', () => ({
@@ -17,6 +19,7 @@ jest.mock('../src/modules/socialLoginConfig/socialLoginConfig.service', () => ({
 
 jest.mock('../src/modules/recaptcha/recaptcha.service', () => ({
   verify: jest.fn(),
+  shouldBypass: jest.fn().mockReturnValue(false),
 }));
 
 // Mock unrelated grouped routes
@@ -42,6 +45,11 @@ app.use(errorHandler);
 describe('POST /api/auth/login', () => {
   const payload = { email: 'test@example.com', password: 'StrongPass1!' };
 
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
   it('logs in a user successfully', async () => {
     authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
     const res = await request(app).post('/api/auth/login').send(payload);
@@ -49,6 +57,20 @@ describe('POST /api/auth/login', () => {
     expect(authService.loginUser).toHaveBeenCalledWith(expect.objectContaining(payload));
     expect(res.body.accessToken).toBe('a');
     expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringMatching(/^refreshToken=r/)]));
+  });
+
+  it('skips csrf cookie and logs warning when csrf helper missing', async () => {
+    const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+    authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+
+    const res = await request(app).post('/api/auth/login').send(payload);
+
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/CSRF token function unavailable during login response/)
+    );
   });
 
   it('returns 401 for invalid credentials', async () => {

@@ -3,6 +3,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
+const logger = require('../src/utils/logger');
+
 process.env.NODE_ENV = 'production';
 
 jest.mock('../src/config/database', () => ({
@@ -21,6 +23,7 @@ jest.mock('../src/modules/socialLoginConfig/socialLoginConfig.service', () => ({
 
 jest.mock('../src/modules/recaptcha/recaptcha.service', () => ({
   verify: jest.fn(),
+  shouldBypass: jest.fn().mockReturnValue(false),
 }));
 
 // Mock unrelated grouped routes
@@ -36,6 +39,7 @@ jest.mock('../src/modules/subscriptions/subscriptions.routes', () => require('ex
 
 const csrf = require('../src/middleware/csrf');
 const authService = require('../src/modules/auth/services/auth.service');
+const authController = require('../src/modules/auth/controllers/auth.controller');
 const routes = require('../src/routes/auth');
 const errorHandler = require('../src/middleware/errorHandler');
 
@@ -50,6 +54,10 @@ app.use(errorHandler);
 describe('POST /api/auth/refresh', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   const getCsrf = async () => {
@@ -67,12 +75,6 @@ describe('POST /api/auth/refresh', () => {
       refreshToken: 'newR',
     });
     authService.generateAccessToken.mockReturnValue('newA');
-    const tokenRes = await request(app).get('/api/auth/refresh');
-    const cookies = tokenRes.headers['set-cookie'];
-    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken=')).split(';')[0];
-    const sessionCookie = cookies.find((c) => c.startsWith('connect.sid=')).split(';')[0];
-    const csrfToken = csrfCookie.split('=')[1];
-
     const { sessionCookie, csrfCookie, csrfToken } = await getCsrf();
 
     const refreshRes = await request(app)
@@ -114,5 +116,35 @@ describe('POST /api/auth/refresh', () => {
     expect(res.status).toBe(403);
     expect(res.body.message).toMatch(/invalid csrf token/i);
     expect(authService.rotateRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('skips csrf cookie and logs warning when helper missing after verification', async () => {
+    const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+
+    authService.rotateRefreshToken.mockResolvedValue({
+      decoded: { id: 1, role: 'User' },
+      refreshToken: 'newR',
+    });
+    authService.generateAccessToken.mockReturnValue('newA');
+
+    const missingCsrfApp = express();
+    missingCsrfApp.use(cookieParser());
+    missingCsrfApp.use(express.json());
+    missingCsrfApp.post('/api/auth/refresh', (req, res, next) => {
+      req.csrfToken = undefined;
+      return authController.refreshToken(req, res, next);
+    });
+    missingCsrfApp.use(errorHandler);
+
+    const res = await request(missingCsrfApp)
+      .post('/api/auth/refresh')
+      .set('Cookie', ['refreshToken=r']);
+
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/CSRF token function unavailable during refresh response/)
+    );
   });
 });
