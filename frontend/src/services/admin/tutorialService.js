@@ -27,12 +27,13 @@ export const createTutorial = async (formData) => {
  * @returns {Promise<object>} tutorials array and pagination metadata
  */
 export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
-  const { data } = await api.get("/users/tutorials/admin", {
-    params: { page, limit, ...(config.params || {}) },
+  const requestConfig = {
     ...config,
-  });
-  const tutorials = data?.data ?? [];
-  return tutorials.map((t) => ({
+    params: { ...(config.params || {}), page, limit },
+  };
+
+  const { data } = await api.get("/users/tutorials/admin", requestConfig);
+  const tutorials = (data?.data ?? []).map((t) => ({
     id: t.id,
     title: t.title,
     instructorId: t.instructor_id,
@@ -53,6 +54,11 @@ export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
     rating: t.rating,
     views: t.views,
   }));
+
+  return {
+    tutorials,
+    meta: data?.meta ?? null,
+  };
 };
 
 /**

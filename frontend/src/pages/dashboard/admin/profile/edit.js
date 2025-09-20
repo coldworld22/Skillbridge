@@ -31,12 +31,18 @@ import {
   uploadAdminAvatar,
   deleteAdminAvatar,
 } from "@/services/admin/adminService";
+import { API_BASE_URL } from "@/config/config";
 const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+
+const buildAvatarUrl = (url) =>
+  url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
 
 export const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
@@ -80,7 +86,7 @@ function ProfileEditTemplate() {
     phone: "",
     gender: "male",
     date_of_birth: "",
-    avatar_url: null,
+    avatar_url: undefined,
     avatarPreview: null,
     job_title: "",
     department: "",
@@ -137,9 +143,7 @@ function ProfileEditTemplate() {
       gender: user.gender || "male",
       date_of_birth: user.date_of_birth?.split("T")[0] || "",
       avatar_url: user.avatar_url,
-      avatarPreview: user.avatar_url
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-        : null,
+      avatarPreview: buildAvatarUrl(user.avatar_url),
       job_title: user.job_title || "",
       department: user.department || "",
     }));
@@ -174,13 +178,12 @@ function ProfileEditTemplate() {
           ...prev,
           full_name,
           email: email || "",
-          phone,
+          phone: phone || "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           avatar_url,
-          avatarPreview: avatar_url
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
-            : null,
+          avatarPreview: buildAvatarUrl(avatar_url),
+
           job_title: job_title || "",
           department: department || "",
           socialLinks: socialMap,
@@ -277,12 +280,15 @@ function ProfileEditTemplate() {
         type: blob.type,
       });
       const res = await uploadAdminAvatar(user.id, file);
-      setUser({ ...user, avatar_url: res.avatar_url });
+      setUser({ ...user, avatar_url: res.avatar_url ?? undefined });
       const cacheBust = Date.now();
       setFormData((prev) => ({
         ...prev,
         avatar_url: res.avatar_url,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${cacheBust}`,
+        avatarPreview: buildAvatarUrl(
+          res.avatar_url ? `${res.avatar_url}?v=${cacheBust}` : null
+        ),
+
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
@@ -314,8 +320,8 @@ function ProfileEditTemplate() {
     setIsRemovingAvatar(true);
     try {
       await deleteAdminAvatar(user.id);
-      setUser({ ...user, avatar_url: null });
-      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
+      setUser({ ...user, avatar_url: undefined });
+      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: undefined }));
       toast.success(t("avatar_remove_success"));
     } catch (error) {
       console.error("Avatar delete error:", error.response);
@@ -358,17 +364,22 @@ function ProfileEditTemplate() {
       setIsSubmitting(true);
       const social_links = toSocialLinksArray(formData.socialLinks);
 
-      await updateAdminProfile({
+      const payload = {
         full_name: formData.full_name,
         email: formData.email,
         phone: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
-        avatar_url: formData.avatar_url,
         job_title: formData.job_title,
         department: formData.department,
         social_links,
-      });
+      };
+
+      if (typeof formData.avatar_url === "string" && formData.avatar_url.trim() !== "") {
+        payload.avatar_url = formData.avatar_url;
+      }
+
+      await updateAdminProfile(payload);
 
       const fresh = await getAdminProfile();
       setUser({
@@ -378,7 +389,7 @@ function ProfileEditTemplate() {
         phone: fresh.phone,
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
-        avatar_url: fresh.avatar_url,
+        avatar_url: fresh.avatar_url ?? undefined,
         profile_complete: fresh.profile_complete,
         job_title: fresh.job_title,
         department: fresh.department,
@@ -386,13 +397,11 @@ function ProfileEditTemplate() {
 
       setFormData((prev) => ({
         ...prev,
-        avatar_url: fresh.avatar_url,
+        avatar_url: fresh.avatar_url ?? undefined,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
-        avatarPreview: fresh.avatar_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fresh.avatar_url}`
-          : null,
+        avatarPreview: buildAvatarUrl(fresh.avatar_url),
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
           acc[cur.platform] = cur.url;
           return acc;
@@ -404,7 +413,32 @@ function ProfileEditTemplate() {
       await fetchMessages();
       router.push("/dashboard/admin/profile/steps/verification");
     } catch (err) {
-      toast.error(err.message || t('profile_update_failed'));
+      const responseData = err?.response?.data;
+      const backendErrors = Array.isArray(responseData?.errors)
+        ? responseData.errors
+        : [];
+
+      if (backendErrors.length) {
+        const formattedErrors = backendErrors.reduce((acc, current) => {
+          if (current?.field) {
+            acc[current.field] = current?.message || t('fix_errors');
+          }
+          return acc;
+        }, {});
+
+        setErrors((prev) => ({
+          ...prev,
+          ...formattedErrors,
+        }));
+      }
+
+      const fallbackMessage = t('profile_update_failed');
+      const errorMessage =
+        (typeof responseData === 'string'
+          ? responseData
+          : responseData?.message) || err?.message || fallbackMessage;
+
+      toast.error(errorMessage);
       console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
