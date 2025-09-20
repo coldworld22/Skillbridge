@@ -78,14 +78,10 @@ exports.login = catchAsync(async (req, res) => {
 
   if (typeof req.csrfToken === "function") {
     try {
-      response = response.cookie(
-        "csrfToken",
-        req.csrfToken(),
-        csrfCookieOptions
-      );
+      response = response.cookie("csrfToken", req.csrfToken(), csrfCookieOptions);
     } catch (err) {
       logger.warn(
-        `⚠️ Failed to generate CSRF token during login: ${err.message}`
+        `⚠️ Failed to issue CSRF cookie on login: ${err.message}`
       );
     }
   } else {
@@ -138,7 +134,7 @@ exports.refreshToken = catchAsync(async (req, res) => {
         );
       } catch (err) {
         logger.warn(
-          `⚠️ Failed to generate CSRF token during refresh: ${err.message}`
+          `⚠️ Failed to issue CSRF cookie on refresh: ${err.message}`
         );
       }
     } else {
