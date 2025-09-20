@@ -1,4 +1,5 @@
 import React from "react";
+import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
 
 function Stats({ tutorials }) {
   return (
@@ -10,19 +11,31 @@ function Stats({ tutorials }) {
       <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
         <p className="text-gray-600">Pending Approval</p>
         <p className="text-2xl font-bold">
-          {tutorials.filter((t) => t.approvalStatus === "Pending").length}
+          {
+            tutorials.filter(
+              (t) => t.approvalStatus?.toLowerCase() === "pending"
+            ).length
+          }
         </p>
       </div>
       <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
         <p className="text-gray-600">Published</p>
         <p className="text-2xl font-bold">
-          {tutorials.filter((t) => t.status === "Published").length}
+          {
+            tutorials.filter(
+              (t) => t.status?.toLowerCase() === TUTORIAL_STATUS.PUBLISHED
+            ).length
+          }
         </p>
       </div>
       <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
         <p className="text-gray-600">Drafts</p>
         <p className="text-2xl font-bold">
-          {tutorials.filter((t) => t.status === "Draft").length}
+          {
+            tutorials.filter(
+              (t) => t.status?.toLowerCase() === TUTORIAL_STATUS.DRAFT
+            ).length
+          }
         </p>
       </div>
     </div>

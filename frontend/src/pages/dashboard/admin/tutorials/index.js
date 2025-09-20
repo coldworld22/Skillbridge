@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import Filters from "@/components/dashboard/admin/tutorials/Filters";
@@ -20,6 +23,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkDeleteTutorials,
+  bulkApproveTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -68,6 +73,8 @@ function AdminTutorialsPage() {
     filterStatus,
     filterApproval,
   ]);
+
+  const totalResults = filteredTutorials.length;
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -398,7 +405,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={tutorials}
+            paginatedTutorials={paginatedTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
