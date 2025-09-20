@@ -154,8 +154,8 @@ app.use(csrf);
 
 // Apply rate limiting to all requests
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: config.RATE_LIMIT_WINDOW_MINUTES * 60 * 1000,
+  max: config.RATE_LIMIT_MAX_REQUESTS,
   skip: (req) => {
     const path = req.path || req.url;
     return path === '/api/health' || path === '/api/health/';

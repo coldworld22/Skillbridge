@@ -38,6 +38,16 @@ const EnvSchema = z.object({
   APP_DOMAIN: z.string().optional(),
   COOKIE_DOMAIN: z.string().optional(),
   ENABLE_INSTALL: z.coerce.boolean().default(false),
+  RATE_LIMIT_MAX_REQUESTS: z
+    .coerce.number()
+    .int()
+    .positive()
+    .default(1000),
+  RATE_LIMIT_WINDOW_MINUTES: z
+    .coerce.number()
+    .int()
+    .positive()
+    .default(15),
 });
 
 const OPTIONAL_URL_ENV_VARS = [
@@ -245,4 +255,6 @@ module.exports = {
   APP_DOMAIN: env.APP_DOMAIN,
   COOKIE_DOMAIN: env.COOKIE_DOMAIN,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
+  RATE_LIMIT_MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_WINDOW_MINUTES: env.RATE_LIMIT_WINDOW_MINUTES,
 };
