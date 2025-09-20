@@ -152,7 +152,8 @@ app.use(session(sessionOptions));
 
 app.use(csrf);
 
-// Apply rate limiting to all requests
+// Apply rate limiting to all requests. Allow the ceiling to be tuned via
+// GLOBAL_RATE_LIMIT_MAX so that heavy dashboard usage does not trigger 429s.
 const limiter = rateLimit({
   windowMs: config.RATE_LIMIT_WINDOW_MS,
   max: config.RATE_LIMIT_MAX,

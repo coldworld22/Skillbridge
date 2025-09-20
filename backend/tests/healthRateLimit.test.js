@@ -2,7 +2,7 @@ const request = require('supertest');
 
 jest.setTimeout(10000);
 
-function loadServer() {
+function loadServer({ rateLimitMax } = {}) {
   jest.resetModules();
   jest.doMock('../src/routes', () => {
     const express = require('express');
@@ -11,6 +11,9 @@ function loadServer() {
       res.status(200).json({ status: 'ok' });
     });
     router.get('/api/normal', (_req, res) => {
+      res.status(200).json({ ok: true });
+    });
+    router.get('/api/dashboard/overview', (_req, res) => {
       res.status(200).json({ ok: true });
     });
     return router;
@@ -37,11 +40,12 @@ function closeServer(serverInstance) {
   if (serverInstance && typeof serverInstance.close === 'function') {
     serverInstance.close();
   }
+  delete process.env.GLOBAL_RATE_LIMIT_MAX;
 }
 
 describe('global rate limiter', () => {
   it('limits repeated requests to non-health endpoints', async () => {
-    const { app, server } = loadServer();
+    const { app, server } = loadServer({ rateLimitMax: 100 });
     try {
       const agent = request(app);
 
@@ -66,6 +70,22 @@ describe('global rate limiter', () => {
         const res = await agent.get('/api/health');
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ status: 'ok' });
+      }
+    } finally {
+      closeServer(server);
+    }
+  });
+
+  it('allows bursty dashboard traffic under the higher default limit', async () => {
+    const { app, server } = loadServer();
+    try {
+      const agent = request(app);
+
+      for (let i = 0; i < 250; i += 1) {
+        const res = await agent.get('/api/dashboard/overview');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ ok: true });
+        expect(res.status).not.toBe(429);
       }
     } finally {
       closeServer(server);
