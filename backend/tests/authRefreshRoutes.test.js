@@ -149,7 +149,7 @@ describe('POST /api/auth/refresh', () => {
     const cookies = res.headers['set-cookie'] || [];
     expect(cookies.some((cookie) => cookie.startsWith('csrfToken='))).toBe(false);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/CSRF token function unavailable during refresh response/)
+      expect.stringMatching(/CSRF token helper missing on refresh request.*skipping csrfToken cookie/i)
     );
   });
 });
