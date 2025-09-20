@@ -1,26 +1,11 @@
   location / {
-    # Determine if the request Origin is allowed based on a comma-separated
-    # list supplied via the ALLOWED_ORIGINS environment variable.
-    # Example: "https://foo.com,https://bar.com"
-    set $cors_allowed_origin "";
-    if ($allowed_origins != "") {
-      set $allowed_origins_list ",$allowed_origins,";
-      if ($http_origin != "") {
-        if ($allowed_origins_list ~ ",$http_origin,") {
-          set $cors_allowed_origin $http_origin;
-        }
-      }
-    }
-
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # Ensure a single Access-Control-Allow-Origin header
-    proxy_hide_header Access-Control-Allow-Origin;
-    include /etc/nginx/snippets/cors_headers.inc;
+    include /etc/nginx/snippets/cors.inc;
   }
 
   # Serve Next.js static assets directly from the frontend service
@@ -41,9 +26,7 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # Ensure a single Access-Control-Allow-Origin header
-    proxy_hide_header Access-Control-Allow-Origin;
-    include /etc/nginx/snippets/cors_headers.inc;
+    include /etc/nginx/snippets/cors.inc;
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
@@ -69,9 +52,7 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # Ensure a single Access-Control-Allow-Origin header
-    proxy_hide_header Access-Control-Allow-Origin;
-    include /etc/nginx/snippets/cors_headers.inc;
+    include /etc/nginx/snippets/cors.inc;
   }
 
   location ^~ /api/ {
@@ -92,9 +73,7 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # Ensure a single Access-Control-Allow-Origin header
-    proxy_hide_header Access-Control-Allow-Origin;
-    include /etc/nginx/snippets/cors_headers.inc;
+    include /etc/nginx/snippets/cors.inc;
   }
   # Forward installer requests to the backend
   location ^~ /install/ {
