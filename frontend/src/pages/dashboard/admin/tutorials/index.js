@@ -20,6 +20,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkDeleteTutorials,
+  bulkApproveTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
