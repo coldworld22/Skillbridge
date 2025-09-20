@@ -10,16 +10,6 @@
 
   # Serve Next.js static assets directly from the frontend service
   location ^~ /_next/static/ {
-    set $cors_allowed_origin "";
-    if ($allowed_origins != "") {
-      set $allowed_origins_list ",$allowed_origins,";
-      if ($http_origin != "") {
-        if ($allowed_origins_list ~ ",$http_origin,") {
-          set $cors_allowed_origin $http_origin;
-        }
-      }
-    }
-
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -33,17 +23,6 @@
 
   # Forward Socket.IO traffic to backend and enable WebSocket upgrades
   location /socket.io/ {
-    set $cors_allowed_origin "";
-    if ($allowed_origins != "") {
-      set $allowed_origins_list ",$allowed_origins,";
-      if ($http_origin != "") {
-        if ($allowed_origins_list ~ ",$http_origin,") {
-          set $cors_allowed_origin $http_origin;
-        }
-      }
-    }
-
-
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -56,16 +35,6 @@
   }
 
   location ^~ /api/ {
-    set $cors_allowed_origin "";
-    if ($allowed_origins != "") {
-      set $allowed_origins_list ",$allowed_origins,";
-      if ($http_origin != "") {
-        if ($allowed_origins_list ~ ",$http_origin,") {
-          set $cors_allowed_origin $http_origin;
-        }
-      }
-    }
-
     # forward API requests without rewriting the path
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
