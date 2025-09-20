@@ -26,6 +26,20 @@ any are missing:
 
 Provide these variables via a `.env` file or the hosting environment.
 
+### Rate limiting
+
+Requests are throttled globally using `express-rate-limit`. The defaults allow
+1,000 requests per IP every 15 minutes, which comfortably covers typical page
+loads that trigger dozens of API calls. Operators can adjust the limits with
+environment variables when necessary:
+
+- `RATE_LIMIT_MAX` – maximum number of requests allowed per IP during a window
+- `RATE_LIMIT_WINDOW_MS` – window size in milliseconds
+
+Tune these values in `backend/.env` (and the production variant) to align with
+your deployment's traffic patterns. The health check endpoint remains exempt so
+load balancers and uptime monitors are unaffected.
+
 The `/api/system-errors` route reads the latest lines from `logs/error.log` and is used by the admin alerts page. Only authenticated admins can access it.
 
 ### Rate limiting
