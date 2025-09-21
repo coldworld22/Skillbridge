@@ -9,6 +9,7 @@ import DOMPurify from "isomorphic-dompurify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 // ReactQuill (lazy load to avoid SSR issues)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
@@ -21,7 +22,7 @@ const normalizeTitle = (title) =>
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
-export default function AdminPoliciesPage() {
+function AdminPoliciesPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "policiesPage" });
 
   const defaultPolicies = {
@@ -237,3 +238,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminPoliciesPage);

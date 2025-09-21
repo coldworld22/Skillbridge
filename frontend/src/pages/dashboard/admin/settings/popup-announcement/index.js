@@ -12,8 +12,9 @@ import {
   deletePopupAnnouncement,
 } from "@/services/admin/popupAnnouncementService";
 import PopupPreviewModal from "@/components/admin/settings/PopupPreviewModal";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function PopupAnnouncementsIndex() {
+function PopupAnnouncementsIndex() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
   const [announcements, setAnnouncements] = useState([]);
   const [previewAnn, setPreviewAnn] = useState(null);
@@ -137,3 +138,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(PopupAnnouncementsIndex);

@@ -18,6 +18,7 @@ import {
   FaUniversity,
 } from "react-icons/fa";
 import OverviewTab from './OverviewTab';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 import { fetchPayments } from '@/services/admin/paymentService';
 import {

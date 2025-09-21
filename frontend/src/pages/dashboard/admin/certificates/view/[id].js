@@ -9,8 +9,9 @@ import {
   rejectCertificate,
   downloadCertificate,
 } from "@/services/admin/certificateService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function ViewCertificatePage() {
+function ViewCertificatePage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -139,3 +140,5 @@ export default function ViewCertificatePage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(ViewCertificatePage);

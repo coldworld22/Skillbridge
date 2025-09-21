@@ -7,6 +7,7 @@ import { fetchContactConfig, updateContactConfig } from "@/services/admin/contac
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const initialConfig = {
   email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
@@ -18,7 +19,7 @@ const initialConfig = {
   mapEmbedUrl: "https://maps.google.com/embed?pb=...",
 };
 
-export default function AdminContactSettings() {
+function AdminContactSettings() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'contactPage' });
   const [config, setConfig] = useState(initialConfig);
   const [loading, setLoading] = useState(false);
@@ -149,3 +150,4 @@ export async function getStaticProps({ locale }) {
   };
 }
 
+export default withAdminGuard(AdminContactSettings);

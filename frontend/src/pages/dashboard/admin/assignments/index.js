@@ -4,8 +4,9 @@ import Link from 'next/link';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaSearch, FaSync, FaEye, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit } from 'react-icons/fa';
 import { fetchAllAssignments } from '@/services/admin/assignmentService';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminAssignmentsPage() {
+function AdminAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -141,3 +142,5 @@ export default function AdminAssignmentsPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(AdminAssignmentsPage);

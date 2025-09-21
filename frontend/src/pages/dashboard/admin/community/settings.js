@@ -10,8 +10,9 @@ import {
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminCommunitySettingsPage() {
+function AdminCommunitySettingsPage() {
   const { t } = useTranslation("dashboard", {
     keyPrefix: "communitySettingsPage",
   });
@@ -91,3 +92,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminCommunitySettingsPage);

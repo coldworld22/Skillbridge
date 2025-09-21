@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { getCertificate, updateCertificate } from "@/services/admin/certificateService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminEditCertificatePage() {
+function AdminEditCertificatePage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -132,3 +133,5 @@ export default function AdminEditCertificatePage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(AdminEditCertificatePage);

@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import PaymentProviderConfig from '@/components/payments/PaymentProviderConfig';
-import withAdminGuard from '@/hooks/withAdminGuard';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 function EditPaymentProviderDashboard() {
   const { id } = useRouter().query;

@@ -11,8 +11,9 @@ import {
 } from '@/services/admin/bookingService';
 import { API_BASE_URL } from '@/config/config';
 import { toast } from 'react-toastify';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminBookingsPage() {
+function AdminBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -152,3 +153,5 @@ export default function AdminBookingsPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(AdminBookingsPage);
