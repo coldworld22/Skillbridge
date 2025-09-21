@@ -189,7 +189,13 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        if (err?.name === "AbortError") return;
+        if (
+          err?.name === "AbortError" ||
+          err?.code === "ERR_CANCELED" ||
+          err?.name === "CanceledError"
+        ) {
+          return;
+        }
         toast.error(t("load_profile_failed"));
         console.error("Profile load error:", err);
       } finally {
