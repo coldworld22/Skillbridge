@@ -5,6 +5,8 @@
     "admin_dashboard": "لوحة تحكم المدير"
   },
   "welcome_admin": "مرحباً، أيها المشرف",
+  "welcome_banner_greeting": "مرحباً، {{name}} 👋",
+  "welcome_banner_today": "اليوم هو {{date}}",
   "users": "المستخدمون",
   "settings": "الإعدادات (JSON)",
   "language_manager": "مدير اللغة",

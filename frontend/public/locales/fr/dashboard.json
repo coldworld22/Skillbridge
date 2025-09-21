@@ -5,6 +5,8 @@
     "admin_dashboard": "Tableau Admin"
   },
   "welcome_admin": "Bienvenue, Administrateur",
+  "welcome_banner_greeting": "Bienvenue, {{name}} 👋",
+  "welcome_banner_today": "Nous sommes le {{date}}",
   "users": "Utilisateurs",
   "settings": "Paramètres (JSON)",
   "language_manager": "Gestionnaire de langue",

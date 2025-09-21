@@ -5,6 +5,8 @@
     "admin_dashboard": "Dashboard amministratore"
   },
   "welcome_admin": "Benvenuto, amministratore",
+  "welcome_banner_greeting": "Benvenuto/a, {{name}} 👋",
+  "welcome_banner_today": "Oggi è {{date}}",
   "users": "Utenti",
   "settings": "Impostazioni (JSON)",
   "language_manager": "Direttore linguistico",

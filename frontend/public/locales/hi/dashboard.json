@@ -5,6 +5,8 @@
     "admin_dashboard": "व्यवस्थापक डैशबोर्ड"
   },
   "welcome_admin": "स्वागत है, व्यवस्थापक",
+  "welcome_banner_greeting": "स्वागत है, {{name}} 👋",
+  "welcome_banner_today": "आज {{date}} है",
   "users": "उपयोगकर्ता",
   "settings": "सेटिंग्स (JSON)",
   "language_manager": "भाषा प्रबंधक",

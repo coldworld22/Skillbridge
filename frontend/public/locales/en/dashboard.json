@@ -5,6 +5,8 @@
     "admin_dashboard": "Admin Dashboard"
   },
   "welcome_admin": "Welcome, Admin",
+  "welcome_banner_greeting": "Welcome, {{name}} 👋",
+  "welcome_banner_today": "Today is {{date}}",
   "users": "Users",
   "settings": "Settings (JSON)",
   "language_manager": "Language Manager",
