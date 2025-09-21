@@ -97,6 +97,11 @@ function AdminDashboardHome() {
     return null;
   }
 
+  const hasLicenseData =
+    licenseStatus &&
+    (licenseStatus.last_check ||
+      Object.prototype.hasOwnProperty.call(licenseStatus, "unauthorized_count"));
+
   const statsArray = stats
     ? [
         { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
@@ -167,7 +172,7 @@ function AdminDashboardHome() {
           </h3>
           {licenseLoading ? (
             <p className="text-sm">Checking license...</p>
-          ) : licenseStatus ? (
+          ) : hasLicenseData ? (
             <>
               <p className="text-sm text-gray-800">
                 Last check: {licenseStatus.last_check || "N/A"}
