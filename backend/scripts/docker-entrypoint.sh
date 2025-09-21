@@ -138,16 +138,7 @@ main() {
     prepare_upload_dirs
   fi
 
-  if [ "$(id -u)" -eq 0 ]; then
-    ensure_upload_dirs
-    exec su-exec node "$@"
-  fi
-
-  if [ "$(id -u)" -eq 0 ]; then
-    exec su-exec node "$@"
-  fi
-
-  exec "$@"
+  run_as_node "$@"
 
 }
 
