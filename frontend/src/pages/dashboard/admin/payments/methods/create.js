@@ -12,6 +12,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
@@ -31,7 +32,7 @@ const useAdminNotice = () => {
   };
 };
 
-export default function CreatePaymentMethodPage() {
+function CreatePaymentMethodPage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard');
   const [form, setForm] = useState({
@@ -191,3 +192,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(CreatePaymentMethodPage);

@@ -8,8 +8,9 @@ import { fetchRecentActivity } from "@/services/supportService";
 import formatRelativeTime from "@/utils/relativeTime";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminSupportHome() {
+function AdminSupportHome() {
   const { t } = useTranslation('dashboard');
   const [activity, setActivity] = useState([]);
 
@@ -117,3 +118,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminSupportHome);

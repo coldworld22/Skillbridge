@@ -8,11 +8,12 @@ import { createLanguage, getLanguages } from "@/services/languageService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 // Include the common namespace since it's used across the site
 const predefinedNamespaces = ["common", "auth", "website", "dashboard"];
 
-export default function CreateLanguagePage() {
+function CreateLanguagePage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
   const [form, setForm] = useState({
@@ -276,3 +277,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(CreateLanguagePage);

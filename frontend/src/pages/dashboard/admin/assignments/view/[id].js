@@ -8,8 +8,9 @@ import {
   approveAssignment,
   rejectAssignment,
 } from '@/services/admin/assignmentService';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminAssignmentReviewPage() {
+function AdminAssignmentReviewPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -176,3 +177,5 @@ export default function AdminAssignmentReviewPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(AdminAssignmentReviewPage);

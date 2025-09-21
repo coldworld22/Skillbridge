@@ -18,8 +18,9 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { FiArrowLeft, FiRefreshCw, FiAlertTriangle, FiCheckCircle, FiMessageSquare, FiUser, FiCalendar, FiTag } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminTicketDetail() {
+function AdminTicketDetail() {
   const { t } = useTranslation("dashboard");
   const router = useRouter();
   const { id } = router.query;
@@ -282,3 +283,5 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminTicketDetail);

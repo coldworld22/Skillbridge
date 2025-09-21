@@ -12,8 +12,9 @@ import {
   updateClassRule,
   deleteClassRule,
 } from "@/services/admin/classRuleService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function ClassRulesPage() {
+function ClassRulesPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
@@ -92,3 +93,6 @@ export async function getServerSideProps({ locale }) {
   };
 }
 
+const ProtectedClassRulesPage = withAdminGuard(ClassRulesPage);
+ProtectedClassRulesPage.getLayout = ClassRulesPage.getLayout;
+export default ProtectedClassRulesPage;
