@@ -52,6 +52,7 @@ const Navbar = () => {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   // Separate refs for each dropdown to avoid conflicts
   const profileRef = useRef(null);
@@ -61,6 +62,7 @@ const Navbar = () => {
   const cartRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const authHydrated = useAuthStore((state) => state.hasHydrated);
   const appSettings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
@@ -69,20 +71,28 @@ const Navbar = () => {
   const userRole = user?.role?.toLowerCase();
 
   const { items: cartItems, fetchCart, clearCart } = useCartStore();
+  const cartHydrated = useCartStore.persist?.hasHydrated?.() ?? true;
 
-  const notifications = useNotificationStore((state) => state.items);
+  const notificationItems = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const startPolling = useNotificationStore((state) => state.startPolling);
 
   const markRead = useNotificationStore((state) => state.markRead);
+  const messageItems = useMessageStore((state) => state.items);
+  const notifications = authHydrated && cartHydrated && isClient ? notificationItems : [];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const messages = useMessageStore((state) => state.items);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const startMessagePolling = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
+  const messages = authHydrated && cartHydrated && isClient ? messageItems : [];
   const unreadMessages = messages.filter((m) => !m.read);
+
+  const storesHydrated = authHydrated && cartHydrated;
+  const hydratedUser = storesHydrated && isClient ? user : null;
+  const hydratedUserRole = hydratedUser?.role?.toLowerCase();
+  const hydratedCartItems = storesHydrated && isClient ? cartItems : [];
 
   const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
@@ -115,8 +125,12 @@ const Navbar = () => {
   }, [fetchAppConfig]);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
     if (user?.role === "SuperAdmin" && !profile) fetchProfile();
-  }, [user]);
+  }, [user, fetchProfile, profile]);
 
   useEffect(() => {
     if (user && user.profile_complete === false) {
@@ -187,7 +201,9 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const profileLink = profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
+  const profileLink = hydratedUserRole
+    ? profileRoutes[hydratedUserRole] || `/dashboard/${hydratedUserRole}/profile/edit`
+    : "/dashboard/profile/edit";
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "";
@@ -219,7 +235,7 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {user && (
+        {hydratedUser && (
           <>
             <div className="relative">
               <motion.button
@@ -343,10 +359,10 @@ const Navbar = () => {
                   <div className="mt-2 text-center">
                     <Link
                       href={
-                        userRole
-                          ? userRole === "superadmin"
+                        hydratedUserRole
+                          ? hydratedUserRole === "superadmin"
                             ? "/dashboard/admin/notifications"
-                            : `/dashboard/${userRole}/notifications`
+                            : `/dashboard/${hydratedUserRole}/notifications`
                           : "/notifications"
                       }
                       className="text-blue-600 hover:underline text-sm"
@@ -359,7 +375,7 @@ const Navbar = () => {
             </div>
 
             <span className="text-sm font-semibold hidden md:inline">
-              {t('welcome_user', { name: user.full_name?.split(' ')[0] })}
+              {t('welcome_user', { name: hydratedUser.full_name?.split(' ')[0] })}
             </span>
           </>
         )}
@@ -401,13 +417,13 @@ const Navbar = () => {
           </div>
         )}
 
-        {userRole && (
+        {hydratedUserRole && (
           <Link
             href={
-              userRole
-                ? userRole === "superadmin" || userRole === "admin"
+              hydratedUserRole
+                ? hydratedUserRole === "superadmin" || hydratedUserRole === "admin"
                   ? "/dashboard/admin"
-                  : `/dashboard/${userRole}`
+                  : `/dashboard/${hydratedUserRole}`
                 : "/dashboard"
             }
             className="flex items-center gap-2 font-semibold hover:underline"
@@ -415,7 +431,7 @@ const Navbar = () => {
             <FaTachometerAlt /> {t('dashboard')}
           </Link>
         )}
-        {user ? (
+        {hydratedUser ? (
           <>
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -429,9 +445,9 @@ const Navbar = () => {
           className="relative text-2xl"
         >
               <FaShoppingCart />
-              {cartItems.length > 0 && (
+              {hydratedCartItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
-                  {cartItems.length}
+                  {hydratedCartItems.length}
                 </span>
               )}
             </motion.button>
@@ -445,9 +461,9 @@ const Navbar = () => {
             }}
               className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg flex items-center justify-center bg-white"
             >
-              {user.avatar_url && (
+              {hydratedUser.avatar_url && (
                 <img
-                  src={getAvatarUrl(user.avatar_url)}
+                  src={getAvatarUrl(hydratedUser.avatar_url)}
                   alt="Avatar"
                   width={48}
                   height={48}
@@ -466,8 +482,8 @@ const Navbar = () => {
               >
                 <ul className="space-y-2 text-sm">
                   <li>
-                    <Link
-                      href={profileLink}
+                      <Link
+                        href={profileLink}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
                     >
                       <FaCog className="text-gray-500" />
@@ -483,7 +499,7 @@ const Navbar = () => {
                       <span>{t('change_password')}</span>
                     </Link>
                   </li>
-                  {userRole === 'student' && (
+                  {hydratedUserRole === 'student' && (
                     <li>
                       <Link
                         href="/dashboard/student/wishlist"
@@ -494,7 +510,7 @@ const Navbar = () => {
                       </Link>
                     </li>
                   )}
-                  {userRole === "superadmin" && profile?.job_title && (
+                  {hydratedUserRole === "superadmin" && profile?.job_title && (
                     <li className="px-3 pt-1 text-xs text-gray-400 font-medium italic">
                       {profile.job_title}
                     </li>
@@ -543,7 +559,7 @@ const Navbar = () => {
                   {t('your_cart')}
                 </h4>
                 <ul className="space-y-3 text-sm">
-                  {cartItems.map((item) => (
+                  {hydratedCartItems.map((item) => (
                     <li
                       key={item.id}
                       className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md"
