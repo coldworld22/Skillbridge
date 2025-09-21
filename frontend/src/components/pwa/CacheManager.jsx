@@ -88,7 +88,7 @@ export default function CacheManager({
         await caches.delete(WARM_CACHE);
         browserCacheCleared = true;
       }
-      if (strategy === "B") {
+      if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }

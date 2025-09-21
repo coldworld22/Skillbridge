@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
@@ -67,7 +68,7 @@ const createCouponSchema = (t) =>
       }
     );
 
-export default function NewCouponPage() {
+function NewCouponPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "couponsPage" });
   const router = useRouter();
   const [serverError, setServerError] = useState(null);
@@ -219,3 +220,4 @@ export async function getStaticProps({ locale }) {
   };
 }
 
+export default withAdminGuard(NewCouponPage);

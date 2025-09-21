@@ -4,8 +4,9 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AddUserModal from "@/components/admin/users/AddUserModal";
 import { createUser } from "@/services/admin/userService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function CreateUserPage() {
+function CreateUserPage() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
 
@@ -24,3 +25,5 @@ export default function CreateUserPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(CreateUserPage);

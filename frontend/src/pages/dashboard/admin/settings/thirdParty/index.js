@@ -16,6 +16,7 @@ import {
   FaAd,
 } from "react-icons/fa";
 import { SiHuggingface } from "react-icons/si";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 // Modal Components
 import ChatGPTModal from "@/components/admin/integrations/ChatGPTModal";
@@ -27,7 +28,7 @@ import GoogleCalendarModal from "@/components/admin/integrations/GoogleCalendarM
 import GoogleAnalyticsModal from "@/components/admin/integrations/GoogleAnalyticsModal";
 import GoogleAdSenseModal from "@/components/admin/integrations/GoogleAdSenseModal";
 
-export default function ThirdPartyIntegrationsPage() {
+function ThirdPartyIntegrationsPage() {
   const { t } = useTranslation('dashboard');
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
@@ -235,3 +236,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(ThirdPartyIntegrationsPage);

@@ -4,13 +4,14 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { FiSearch, FiFilter, FiRefreshCw, FiPlus, FiCalendar, FiUser } from "react-icons/fi";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import TicketCard from "@/components/support/TicketCard";
 import { fetchAllTickets } from "@/services/supportService";
 
-export default function AdminSupportTicketsPage() {
+function AdminSupportTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
@@ -311,3 +312,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminSupportTicketsPage);

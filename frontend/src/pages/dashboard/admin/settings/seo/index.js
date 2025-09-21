@@ -20,6 +20,7 @@ import RobotsEditor from "@/components/admin/settings/seo/RobotsEditor";
 import OpenGraphSettings from "@/components/admin/settings/seo/OpenGraphSettings";
 import TwitterCardSettings from "@/components/admin/settings/seo/TwitterCardSettings";
 import AdvancedSEOSettings from "@/components/admin/settings/seo/AdvancedSEOSettings";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const defaultConfig = {
   metaTags: {},
@@ -37,7 +38,7 @@ const defaultConfig = {
   jsonSchema: "",
 };
 
-export default function SEOSettingsPage() {
+function SEOSettingsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage" });
   const tabs = [
     { key: "overview", label: t("tabs.overview"), icon: <FaGlobe /> },
@@ -113,3 +114,5 @@ export default function SEOSettingsPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(SEOSettingsPage);

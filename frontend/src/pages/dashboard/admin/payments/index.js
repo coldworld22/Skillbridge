@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -17,6 +18,7 @@ import {
   FaUniversity,
 } from "react-icons/fa";
 import OverviewTab from './OverviewTab';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 import { fetchPayments } from '@/services/admin/paymentService';
 import {
@@ -57,7 +59,7 @@ const defaultConfig = {
 };
 
 
-export default function AdminPaymentsPage() {
+function AdminPaymentsPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard');
   const user = useAuthStore((s) => s.user);
@@ -337,7 +339,7 @@ export default function AdminPaymentsPage() {
             transactions={transactions}
             methods={methods}
             payouts={payouts}
-            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
+            onViewAll={() => setActiveTab("transactions")}
           />
         );
 
@@ -759,3 +761,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminPaymentsPage);

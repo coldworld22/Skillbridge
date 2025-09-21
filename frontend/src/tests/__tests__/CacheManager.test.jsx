@@ -15,7 +15,7 @@ const setupEnvironment = () => {
     configurable: true,
   });
   Object.defineProperty(window.navigator, 'serviceWorker', {
-    value: { ready: Promise.resolve({}) },
+    value: { ready: Promise.resolve({}), controller: {} },
     configurable: true,
   });
 };
@@ -24,6 +24,11 @@ describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
     mockClearCache.mockReset();
+  });
+
+  afterEach(() => {
+    delete window.caches;
+    delete window.navigator.serviceWorker;
   });
 
   it('shows message when cache cleared', async () => {

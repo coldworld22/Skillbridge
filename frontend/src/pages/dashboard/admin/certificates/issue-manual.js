@@ -4,8 +4,9 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { issueCertificate } from "@/services/admin/certificateService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function ManualCertificateIssuePage() {
+function ManualCertificateIssuePage() {
   const router = useRouter();
 
   const [studentName, setStudentName] = useState("");
@@ -113,3 +114,5 @@ export default function ManualCertificateIssuePage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(ManualCertificateIssuePage);
