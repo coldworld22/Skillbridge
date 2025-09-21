@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import socket from "@/services/socketService";
+import getSocket from "@/services/socketService";
 import { FaPaperPlane, FaSmile } from "react-icons/fa";
+
+const socket = getSocket();
 
 const ChatRoom = ({ username, room }) => {
   const [message, setMessage] = useState("");
