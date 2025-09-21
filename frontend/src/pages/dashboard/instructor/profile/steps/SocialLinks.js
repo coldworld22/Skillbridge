@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import { allowedPlatforms } from "@/utils/socialPlatforms";
+import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 
 const SocialLinks = ({
   formData = {},
@@ -36,29 +36,37 @@ const SocialLinks = ({
       <h2 className="text-2xl font-bold mb-4 text-yellow-500">Connect Your Social Profiles</h2>
       <p className="text-gray-400 mb-4 text-sm">Link your professional profiles to enhance credibility.</p>
 
-      {allowedPlatforms.map(({ name, Icon, className }) => (
-        <div key={name} className="mb-4">
-          <label className="block text-sm font-medium">
-            {`${name.charAt(0).toUpperCase() + name.slice(1)} Profile`}
-          </label>
-          <div className="flex items-center bg-gray-700 rounded-lg p-2">
-            <Icon className={className} />
-            <input
-              type="text"
-              name={name}
-              value={socialLinks[name] || ""}
-              onChange={handleChange}
-              className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
-              placeholder={
-                name === 'website'
-                  ? 'https://yourwebsite.com'
-                  : `https://${name}.com`
-              }
-            />
+      {allowedPlatforms.map(({ name, Icon, className }) => {
+        const IconComponent = Icon || defaultPlatformIcon.Icon;
+        if (!IconComponent) {
+          return null;
+        }
+        const iconClassName = className || defaultPlatformIcon.className;
+
+        return (
+          <div key={name} className="mb-4">
+            <label className="block text-sm font-medium">
+              {`${name.charAt(0).toUpperCase() + name.slice(1)} Profile`}
+            </label>
+            <div className="flex items-center bg-gray-700 rounded-lg p-2">
+              <IconComponent className={iconClassName} />
+              <input
+                type="text"
+                name={name}
+                value={socialLinks[name] || ""}
+                onChange={handleChange}
+                className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
+                placeholder={
+                  name === 'website'
+                    ? 'https://yourwebsite.com'
+                    : `https://${name}.com`
+                }
+              />
+            </div>
+            {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
           </div>
-          {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
-        </div>
-      ))}
+        );
+      })}
 
       {/* ✅ Navigation Buttons */}
       <div className="flex justify-between mt-6">

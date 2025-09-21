@@ -35,7 +35,7 @@ import { API_BASE_URL } from "@/config/config";
 const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
-import { allowedPlatforms } from "@/utils/socialPlatforms";
+import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -670,38 +670,46 @@ function ProfileEditTemplate() {
             </div>
             {expanded.social && (
               <div className="p-4 space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {allowedPlatforms.map(({ name, Icon, className }) => (
-                  <div key={name}>
-                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                      <Icon className={`${className} w-4 h-4`} />
-                      {name.charAt(0).toUpperCase() + name.slice(1)}
-                    </label>
-                    <input
-                      type="text"
-                      name={name}
-                      value={formData.socialLinks[name] || ""}
-                      onChange={(e) => {
-                        const { value } = e.target;
-                        setFormData((prev) => ({
-                          ...prev,
-                          socialLinks: { ...prev.socialLinks, [name]: value },
-                        }));
-                        setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
-                      }}
-                      placeholder={
-                        name === 'website'
-                          ? 'https://yourwebsite.com'
-                          : `https://${name}.com/yourprofile`
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                    {errors[`socialLinks.${name}`] && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors[`socialLinks.${name}`]}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                {allowedPlatforms.map(({ name, Icon, className }) => {
+                  const IconComponent = Icon || defaultPlatformIcon.Icon;
+                  if (!IconComponent) {
+                    return null;
+                  }
+                  const iconClassName = className || defaultPlatformIcon.className;
+
+                  return (
+                    <div key={name}>
+                      <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                        <IconComponent className={`${iconClassName} w-4 h-4`} />
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
+                      </label>
+                      <input
+                        type="text"
+                        name={name}
+                        value={formData.socialLinks[name] || ""}
+                        onChange={(e) => {
+                          const { value } = e.target;
+                          setFormData((prev) => ({
+                            ...prev,
+                            socialLinks: { ...prev.socialLinks, [name]: value },
+                          }));
+                          setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
+                        }}
+                        placeholder={
+                          name === 'website'
+                            ? 'https://yourwebsite.com'
+                            : `https://${name}.com/yourprofile`
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                      {errors[`socialLinks.${name}`] && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors[`socialLinks.${name}`]}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
