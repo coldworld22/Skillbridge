@@ -7,6 +7,7 @@ import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
 import InstructorDetailsModal from '@/components/admin/instructors/InstructorDetailsModal';
+import useAuthStore from '@/store/auth/authStore';
 import {
   fetchAllInstructors,
   updateInstructorStatus,
@@ -19,6 +20,7 @@ import withAdminGuard from '@/hooks/withAdminGuard';
 function AdminInstructorsPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const { t: tCommon } = useTranslation('common');
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [instructors, setInstructors] = useState([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('name');
