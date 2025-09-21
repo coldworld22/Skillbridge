@@ -27,7 +27,7 @@ const AIRecommendations = () => {
             <p className="text-gray-300">
               {t('dashboardPage.category')}: {course.category}
             </p>
-            <Link href={`/classes/${course.id}/details`}>
+            <Link href={`/dashboard/course/${course.id}`}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
