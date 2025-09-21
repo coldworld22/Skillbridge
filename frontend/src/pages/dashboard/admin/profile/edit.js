@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import nextI18NextConfig from "@/../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
