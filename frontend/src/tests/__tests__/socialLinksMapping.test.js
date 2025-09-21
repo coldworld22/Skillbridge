@@ -35,6 +35,19 @@ describe('toSocialLinksArray', () => {
     ]);
   });
 
+  test('ignores non-string social link values', () => {
+    const links = {
+      twitter: 'https://x.com/user',
+      facebook: { handle: 'user' },
+      instagram: 1234,
+    };
+
+    expect(() => toSocialLinksArray(links)).not.toThrow();
+    expect(toSocialLinksArray(links)).toEqual([
+      { platform: 'twitter', url: 'https://x.com/user' },
+    ]);
+  });
+
   test('admin payload mapping remains stable for valid values', () => {
     const sanitizedData = {
       full_name: 'Admin User',

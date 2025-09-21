@@ -4,18 +4,14 @@ export const toSocialLinksArray = (links = {}) =>
       return acc;
     }
 
-    let normalizedUrl = url;
-
-    if (typeof normalizedUrl !== "string") {
-      normalizedUrl = String(normalizedUrl);
+    if (typeof url !== "string") {
+      return acc;
     }
 
-    if (typeof normalizedUrl === "string") {
-      const trimmed = normalizedUrl.trim();
+    const trimmed = url.trim();
 
-      if (trimmed !== "") {
-        acc.push({ platform, url: trimmed });
-      }
+    if (trimmed !== "") {
+      acc.push({ platform, url: trimmed });
     }
 
     return acc;
