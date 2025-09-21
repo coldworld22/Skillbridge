@@ -14,6 +14,7 @@ jest.mock('../src/config/database', () => {
   return db;
 });
 
+const path = require('path');
 const controller = require('../src/modules/users/admin/admin.controller');
 const mockDb = require('../src/config/database');
 const fs = require('fs');
@@ -45,7 +46,11 @@ describe('admin controller updateAvatar', () => {
       avatar_url: '/uploads/admin/avatars/avatar.png',
       updated_at: expect.any(Date),
     });
-    expect(fs.unlink.mock.calls[0][0]).toContain('/uploads/admin/avatars/old.png');
+    const expectedOldPath = path.join(
+      __dirname,
+      '../uploads/admin/avatars/old.png'
+    );
+    expect(fs.unlink.mock.calls[0][0]).toBe(expectedOldPath);
     expect(res.json).toHaveBeenCalledWith({
       message: 'Avatar updated',
       avatar_url: '/uploads/admin/avatars/avatar.png',
