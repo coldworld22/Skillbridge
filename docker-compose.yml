@@ -101,6 +101,7 @@ services:
         NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-/api}
         NEXT_PUBLIC_PGADMIN_URL: ${NEXT_PUBLIC_PGADMIN_URL:-http://pgadmin:80}
         APP_DOMAIN: ${APP_DOMAIN:-eduskillbridge.net}
+        INTERNAL_API_BASE_URL: ${DOCKER_INTERNAL_API_BASE_URL:-http://backend:5002/api}
         STRICT_PUBLIC_API: ${DOCKER_STRICT_PUBLIC_API:-false}
     ports:
       - "3000:3000"
