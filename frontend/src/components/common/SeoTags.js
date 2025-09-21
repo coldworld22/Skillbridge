@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
@@ -12,17 +12,26 @@ export default function SeoTags() {
   const loaded = useSEOConfigStore((s) => s.loaded);
   const settings = useSEOConfigStore((s) => s.settings);
 
+  const [resolvedOrigin, setResolvedOrigin] = useState(
+    () => settings.baseUrl || process.env.NEXT_PUBLIC_SITE_URL || ''
+  );
+
   useEffect(() => {
     if (!loaded) fetchConfig();
   }, [loaded, fetchConfig]);
+
+  useEffect(() => {
+    if (!resolvedOrigin && typeof window !== 'undefined') {
+      setResolvedOrigin(window.location.origin);
+    }
+  }, [resolvedOrigin]);
 
   const meta = settings.metaTags?.[path] || {};
   const og = settings.openGraph?.[path] || {};
   const twitter = settings.twitter?.[path] || {};
   const twitterImage = twitter.image || og.image;
 
-  const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-  const baseUrl = settings.baseUrl || fallbackUrl;
+  const baseUrl = settings.baseUrl || resolvedOrigin;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
   const ogUrl = og.url || `${baseUrl}${path}`;
   const ogSiteName = og.site_name || settings.siteName;
