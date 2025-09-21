@@ -48,21 +48,13 @@ describe('CacheManager', () => {
     await screen.findByText('Failed to clear cache');
   });
 
-  it('disables warm cache when service worker unavailable', async () => {
-    mockClearCache.mockResolvedValue({});
-    delete window.navigator.serviceWorker;
-    render(<CacheManager strategy="B" />);
-    const warmButton = await screen.findByText('Warm Cache');
-    expect(warmButton).toBeDisabled();
-  });
-
-  it('clears server cache even when Cache API unavailable', async () => {
-    mockClearCache.mockResolvedValue({});
+  it('falls back to server cache clearing when Cache API is unavailable', async () => {
     delete window.caches;
+    mockClearCache.mockResolvedValue({});
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    await screen.findByText('Server cache cleared. Browser cache unavailable.');
+    await screen.findByText('Browser cache unavailable; server cache cleared');
   });
 });

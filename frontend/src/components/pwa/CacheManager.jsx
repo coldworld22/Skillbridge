@@ -32,25 +32,20 @@ export default function CacheManager({
   useEffect(() => {
     if (typeof window === "undefined") return () => {};
     let isMounted = true;
-    const swAvailable = "serviceWorker" in navigator;
-    if (isMounted) {
-      setHasServiceWorker(swAvailable);
-      setReady(true);
-    }
-    if (swAvailable) {
+    if ("serviceWorker" in navigator) {
+      setHasServiceWorker(true);
       navigator.serviceWorker.ready
         .then(() => {
           if (!isMounted) return;
           setServiceWorkerReady(true);
         })
-        .catch(() => {
-          if (!isMounted) return;
+        .catch((err) => {
+          console.error("Service worker readiness check failed", err);
         });
-    }
-    if (swAvailable && navigator.serviceWorker.controller) {
-      if (isMounted) {
-        setServiceWorkerReady(true);
-      }
+      if (isMounted) setReady(true);
+    } else {
+      setHasServiceWorker(false);
+      setReady(true);
     }
     return () => {
       isMounted = false;
@@ -65,7 +60,9 @@ export default function CacheManager({
         await Promise.all(warmList.map((url) => fetch(url)));
       } else {
         if (!serviceWorkerReady) {
-          throw new Error("Service worker not ready");
+          setStatus("error");
+          setMessage("Service worker not ready");
+          return;
         }
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({
@@ -86,9 +83,10 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      const cacheApiAvailable = typeof window !== "undefined" && "caches" in window;
-      if (cacheApiAvailable) {
+      let browserCacheCleared = false;
+      if ("caches" in window) {
         await caches.delete(WARM_CACHE);
+        browserCacheCleared = true;
       }
       if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
@@ -96,11 +94,11 @@ export default function CacheManager({
       }
       await clearCache();
       setStatus("idle");
-      if (!cacheApiAvailable) {
-        setMessage("Server cache cleared. Browser cache unavailable.");
-      } else {
-        setMessage("Cache cleared");
-      }
+      setMessage(
+        browserCacheCleared
+          ? "Cache cleared"
+          : "Browser cache unavailable; server cache cleared"
+      );
     } catch (err) {
       console.error(err);
       toast.error(i18n.t("dashboard.cache_clear_failed"));
@@ -113,18 +111,21 @@ export default function CacheManager({
 
   if (!ready) return null;
 
-  const warmDisabled =
-    status === "caching" || (strategy === "B" && (!hasServiceWorker || !serviceWorkerReady));
+  const showWarmCacheButton = strategy === "A" || hasServiceWorker;
+  const warmCacheDisabled =
+    status === "caching" || (strategy === "B" && !serviceWorkerReady);
 
   return (
     <div>
       <div className="space-x-2">
-        <Button onClick={warmCache} disabled={warmDisabled}>
-          {status === "caching" && "Caching…"}
-          {status === "idle" && "Warm Cache"}
-          {status === "success" && "Cached"}
-          {status === "error" && "Retry"}
-        </Button>
+        {showWarmCacheButton && (
+          <Button onClick={warmCache} disabled={warmCacheDisabled}>
+            {status === "caching" && "Caching…"}
+            {status === "idle" && "Warm Cache"}
+            {status === "success" && "Cached"}
+            {status === "error" && "Retry"}
+          </Button>
+        )}
         <Button
           className="bg-gray-200 text-gray-800"
           onClick={handleClearCache}
@@ -135,6 +136,18 @@ export default function CacheManager({
         </Button>
       </div>
       {message && <p className="text-sm text-gray-600 mt-2">{message}</p>}
+      {!serviceWorkerReady && strategy === "B" && hasServiceWorker && (
+        <p className="text-sm text-gray-600 mt-2">
+          Service worker is still starting up. The warm cache action will be
+          enabled once it is ready.
+        </p>
+      )}
+      {!hasServiceWorker && strategy === "B" && (
+        <p className="text-sm text-gray-600 mt-2">
+          No service worker detected. Warming the cache requires a service
+          worker, but you can still clear the server cache below.
+        </p>
+      )}
     </div>
   );
 }
