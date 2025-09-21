@@ -35,7 +35,9 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const isHydrated = mounted && hasHydrated;
   const hydratedUser = isHydrated ? user : null;
+  const userOnlineStatus = hydratedUser?.is_online ?? false;
   const userRole = hydratedUser?.role?.toLowerCase();
+  const hydratedOnlineStatus = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
 
