@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
 import { API_BASE_URL } from "@/config/config";
-import useAppConfigStore from "@/store/appConfigStore";
+import useAppConfigStore, { useAppConfigHydrated } from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
@@ -41,6 +41,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+  const appConfigHydrated = useAppConfigHydrated();
   const { executeRecaptcha } = useGoogleReCaptcha() || {};
 
   // ─────────────────────
@@ -172,17 +173,28 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
 
           <img
 
-            src={settings.logo_url
-              ? `${API_BASE_URL}${settings.logo_url}`
-              : "/images/logo.png"}
-            alt={(settings.appName || 'SkillBridge') + ' Logo'}
+            src={
+              appConfigHydrated && settings.logo_url
+                ? `${API_BASE_URL}${settings.logo_url}`
+                : "/images/logo.png"
+            }
+            alt={`${
+              appConfigHydrated && settings.appName
+                ? settings.appName
+                : 'SkillBridge'
+            } Logo`}
             width={80}
             height={80}
             className="rounded-full object-contain"
           />
         </div>
         <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          {t('welcome', { appName: settings.appName || 'SkillBridge' })}
+          {t('welcome', {
+            appName:
+              appConfigHydrated && settings.appName
+                ? settings.appName
+                : 'SkillBridge',
+          })}
         </h2>
 
         {/* Login Form */}

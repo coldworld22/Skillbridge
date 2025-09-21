@@ -10,7 +10,9 @@ import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
-import useAppConfigStore from "@/store/appConfigStore";
+import useAppConfigStore, {
+  useAppConfigHydrated,
+} from "@/store/appConfigStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
@@ -50,6 +52,7 @@ function MyApp({ Component, pageProps, router }) {
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const configLoaded = useAppConfigStore((state) => state.loaded);
   const settings = useAppConfigStore((state) => state.settings);
+  const appConfigHydrated = useAppConfigHydrated();
   const startNotifPolling = useNotificationStore((s) => s.startPolling);
   const fetchNotifs = useNotificationStore((s) => s.fetch);
   const startMsgPolling = useMessageStore((s) => s.startPolling);
@@ -157,7 +160,10 @@ function MyApp({ Component, pageProps, router }) {
     return slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  const appName = settings.appName || 'SkillBridge';
+  const appName =
+    appConfigHydrated && settings.appName
+      ? settings.appName
+      : 'SkillBridge';
   const defaultTitle = `${appName} | ${getPageTitle()}`;
 
     return (
@@ -207,10 +213,10 @@ function MyApp({ Component, pageProps, router }) {
             <Head>
               <title>{defaultTitle}</title>
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              {settings.metaDescription && (
+              {appConfigHydrated && settings.metaDescription && (
                 <meta name="description" content={settings.metaDescription} />
               )}
-              {settings.favicon_url && (
+              {appConfigHydrated && settings.favicon_url && (
                 <link
                   rel="icon"
                   href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
