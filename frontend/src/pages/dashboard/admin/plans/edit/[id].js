@@ -7,11 +7,13 @@ import { fetchPlanById, updatePlan } from "@/services/admin/planService";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import withAdminGuard from "@/hooks/withAdminGuard";
+import useAuthStore from "@/store/auth/authStore";
 
 function EditPlanPage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
   const { id } = router.query;
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
