@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -57,7 +58,7 @@ const defaultConfig = {
 };
 
 
-export default function AdminPaymentsPage() {
+function AdminPaymentsPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard');
   const user = useAuthStore((s) => s.user);
@@ -759,3 +760,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(AdminPaymentsPage);

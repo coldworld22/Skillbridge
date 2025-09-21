@@ -1,4 +1,5 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
@@ -31,7 +32,7 @@ const useAdminNotice = () => {
   };
 };
 
-export default function CreatePaymentMethodPage() {
+function CreatePaymentMethodPage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard');
   const [form, setForm] = useState({
@@ -191,3 +192,5 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+export default withAdminGuard(CreatePaymentMethodPage);
