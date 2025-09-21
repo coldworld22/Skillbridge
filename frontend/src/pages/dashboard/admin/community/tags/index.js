@@ -12,6 +12,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const slugify = (text) =>
   text
@@ -20,7 +21,7 @@ const slugify = (text) =>
     .replace(/[^\w ]+/g, "")
     .replace(/ +/g, "-");
 
-export default function AdminTagsPage() {
+function AdminTagsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "communityTagsPage" });
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
@@ -213,3 +214,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminTagsPage = withAdminGuard(AdminTagsPage);
+
+export default ProtectedAdminTagsPage;

@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/assignments/approve/[id].js
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -8,7 +9,7 @@ import {
   approveAssignment,
 } from '@/services/admin/assignmentService';
 
-export default function ApproveAssignmentPage() {
+function ApproveAssignmentPage() {
   const router = useRouter();
   const { id } = router.query;
   const [assignment, setAssignment] = useState(null);
@@ -76,3 +77,7 @@ export default function ApproveAssignmentPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedApproveAssignmentPage = withAdminGuard(ApproveAssignmentPage);
+
+export default ProtectedApproveAssignmentPage;

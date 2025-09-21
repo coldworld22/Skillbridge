@@ -5,8 +5,9 @@ import { fetchContributors } from "@/services/admin/communityService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminContributorsPage() {
+function AdminContributorsPage() {
   const { t } = useTranslation("dashboard", {
     keyPrefix: "communityContributorsPage",
   });
@@ -110,3 +111,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminContributorsPage = withAdminGuard(AdminContributorsPage);
+
+export default ProtectedAdminContributorsPage;

@@ -4,6 +4,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaTimesCircle, FaRedo, FaSync, FaSort, FaFilter, FaShoppingCart, FaEye } from "react-icons/fa";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState(null);
@@ -159,7 +160,7 @@ const OrderStatusIcon = ({ status }) => {
   return <FaTimesCircle className="text-red-500 text-lg" />;
 };
 
-export default OrdersPage;
+
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -171,3 +172,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedOrdersPage = withAdminGuard(OrdersPage);
+
+export default ProtectedOrdersPage;

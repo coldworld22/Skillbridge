@@ -38,6 +38,7 @@ import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import useAdminNotice from '@/hooks/useAdminNotice';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 
 const defaultConfig = {
@@ -57,7 +58,7 @@ const defaultConfig = {
 };
 
 
-export default function AdminPaymentsPage() {
+function AdminPaymentsPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard');
   const user = useAuthStore((s) => s.user);
@@ -759,3 +760,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminPaymentsPage = withAdminGuard(AdminPaymentsPage);
+
+export default ProtectedAdminPaymentsPage;

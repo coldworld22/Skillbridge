@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/users/edit/[id].js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -6,7 +7,7 @@ import EditUserForm from "@/components/admin/users/EditUserForm";
 import { fetchUserById } from "@/services/admin/userService";
 import { toast } from "react-toastify";
 
-export default function EditUserPage() {
+function EditUserPage() {
   const router = useRouter();
   const { id } = router.query;
   const [user, setUser] = useState(null);
@@ -32,3 +33,7 @@ export default function EditUserPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedEditUserPage = withAdminGuard(EditUserPage);
+
+export default ProtectedEditUserPage;

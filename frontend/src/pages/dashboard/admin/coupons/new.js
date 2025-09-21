@@ -13,6 +13,7 @@ import {
   validateCode,
 } from "@/services/admin/couponService";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const createCouponSchema = (t) =>
   z
@@ -67,7 +68,7 @@ const createCouponSchema = (t) =>
       }
     );
 
-export default function NewCouponPage() {
+function NewCouponPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "couponsPage" });
   const router = useRouter();
   const [serverError, setServerError] = useState(null);
@@ -219,3 +220,6 @@ export async function getStaticProps({ locale }) {
   };
 }
 
+const ProtectedNewCouponPage = withAdminGuard(NewCouponPage);
+
+export default ProtectedNewCouponPage;

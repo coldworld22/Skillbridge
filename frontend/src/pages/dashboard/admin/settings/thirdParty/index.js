@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/thirdParty.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
@@ -27,7 +28,7 @@ import GoogleCalendarModal from "@/components/admin/integrations/GoogleCalendarM
 import GoogleAnalyticsModal from "@/components/admin/integrations/GoogleAnalyticsModal";
 import GoogleAdSenseModal from "@/components/admin/integrations/GoogleAdSenseModal";
 
-export default function ThirdPartyIntegrationsPage() {
+function ThirdPartyIntegrationsPage() {
   const { t } = useTranslation('dashboard');
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
@@ -235,3 +236,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedThirdPartyIntegrationsPage = withAdminGuard(ThirdPartyIntegrationsPage);
+
+export default ProtectedThirdPartyIntegrationsPage;

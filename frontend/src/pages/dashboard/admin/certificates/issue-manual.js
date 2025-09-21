@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/certificates/issue-manual.js
 import { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -5,7 +6,7 @@ import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { issueCertificate } from "@/services/admin/certificateService";
 
-export default function ManualCertificateIssuePage() {
+function ManualCertificateIssuePage() {
   const router = useRouter();
 
   const [studentName, setStudentName] = useState("");
@@ -113,3 +114,7 @@ export default function ManualCertificateIssuePage() {
     </AdminLayout>
   );
 }
+
+const ProtectedManualCertificateIssuePage = withAdminGuard(ManualCertificateIssuePage);
+
+export default ProtectedManualCertificateIssuePage;

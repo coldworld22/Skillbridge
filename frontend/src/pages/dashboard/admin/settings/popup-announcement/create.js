@@ -15,6 +15,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { createPopupAnnouncement } from "@/services/admin/popupAnnouncementService";
 import { fetchPageList } from "@/services/admin/seoConfigService";
 import PopupPreviewModal from "@/components/admin/settings/PopupPreviewModal";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -34,7 +35,7 @@ const useAdminNotice = () => {
   };
 };
 
-export default function CreateAnnouncementForm() {
+function CreateAnnouncementForm() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
   const notify = useAdminNotice();
@@ -281,3 +282,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedCreateAnnouncementForm = withAdminGuard(CreateAnnouncementForm);
+
+export default ProtectedCreateAnnouncementForm;

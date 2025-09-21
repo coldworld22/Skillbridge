@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/languages/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
@@ -12,7 +13,7 @@ import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 // Include the common namespace since it's used across the site
 const predefinedNamespaces = ["common", "auth", "website", "dashboard"];
 
-export default function CreateLanguagePage() {
+function CreateLanguagePage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
   const [form, setForm] = useState({
@@ -276,3 +277,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedCreateLanguagePage = withAdminGuard(CreateLanguagePage);
+
+export default ProtectedCreateLanguagePage;

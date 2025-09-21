@@ -1,6 +1,7 @@
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { useState } from "react";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const SecuritySettings = () => {
   const [password, setPassword] = useState("");
@@ -44,7 +45,7 @@ const SecuritySettings = () => {
   );
 };
 
-export default SecuritySettings;
+
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -56,3 +57,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedSecuritySettings = withAdminGuard(SecuritySettings);
+
+export default ProtectedSecuritySettings;

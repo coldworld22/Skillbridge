@@ -4,8 +4,9 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import LinkText from '@/components/shared/LinkText';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminNotificationsPage() {
+function AdminNotificationsPage() {
   const [filter, setFilter] = useState('all');
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
@@ -112,3 +113,7 @@ export default function AdminNotificationsPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedAdminNotificationsPage = withAdminGuard(AdminNotificationsPage);
+
+export default ProtectedAdminNotificationsPage;

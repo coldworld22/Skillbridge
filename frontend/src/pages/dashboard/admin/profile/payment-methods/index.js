@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import PaymentMethodList from '@/components/payments/PaymentMethodList';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function SavedPaymentMethodsPage() {
+function SavedPaymentMethodsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -16,3 +17,7 @@ export default function SavedPaymentMethodsPage() {
     </div>
   );
 }
+
+const ProtectedSavedPaymentMethodsPage = withAdminGuard(SavedPaymentMethodsPage);
+
+export default ProtectedSavedPaymentMethodsPage;

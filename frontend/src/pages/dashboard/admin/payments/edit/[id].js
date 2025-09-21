@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
 import PaymentProviderConfig from '@/components/payments/PaymentProviderConfig';
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function EditPaymentProviderDashboard() {
+function EditPaymentProviderDashboard() {
   const { id } = useRouter().query;
 
   return (
@@ -11,3 +12,7 @@ export default function EditPaymentProviderDashboard() {
     </div>
   );
 }
+
+const ProtectedEditPaymentProviderDashboard = withAdminGuard(EditPaymentProviderDashboard);
+
+export default ProtectedEditPaymentProviderDashboard;

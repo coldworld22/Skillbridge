@@ -9,8 +9,9 @@ import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import TicketCard from "@/components/support/TicketCard";
 import { fetchAllTickets } from "@/services/supportService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminSupportTicketsPage() {
+function AdminSupportTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
@@ -311,3 +312,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminSupportTicketsPage = withAdminGuard(AdminSupportTicketsPage);
+
+export default ProtectedAdminSupportTicketsPage;

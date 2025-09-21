@@ -6,9 +6,9 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import UserList from "@/components/admin/users/UserList";
 import { fetchAllUsers } from "@/services/admin/userService";
-import withAdminGuard from "@/hooks/withAdminGuard";
 import { toast } from "react-toastify";
 import logger from "@/utils/logger";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 function UsersPage() {
   const { t } = useTranslation("dashboard");

@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { createOffer } from "@/services/admin/offerService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const NewOfferPage = () => {
   const router = useRouter();
@@ -155,4 +156,8 @@ const NewOfferPage = () => {
 
 NewOfferPage.getLayout = (page) => <AdminLayout>{page}</AdminLayout>;
 
-export default NewOfferPage;
+const ProtectedNewOfferPage = withAdminGuard(NewOfferPage);
+
+ProtectedNewOfferPage.getLayout = NewOfferPage.getLayout;
+
+export default ProtectedNewOfferPage;

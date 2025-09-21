@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/assignments/[id].js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -9,7 +10,7 @@ import {
   rejectAssignment,
 } from '@/services/admin/assignmentService';
 
-export default function AdminAssignmentReviewPage() {
+function AdminAssignmentReviewPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -176,3 +177,7 @@ export default function AdminAssignmentReviewPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedAdminAssignmentReviewPage = withAdminGuard(AdminAssignmentReviewPage);
+
+export default ProtectedAdminAssignmentReviewPage;

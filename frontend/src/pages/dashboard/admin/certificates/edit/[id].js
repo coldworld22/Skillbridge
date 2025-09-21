@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/certificates/edit/[id].js
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
@@ -5,7 +6,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { getCertificate, updateCertificate } from "@/services/admin/certificateService";
 
-export default function AdminEditCertificatePage() {
+function AdminEditCertificatePage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -132,3 +133,7 @@ export default function AdminEditCertificatePage() {
     </AdminLayout>
   );
 }
+
+const ProtectedAdminEditCertificatePage = withAdminGuard(AdminEditCertificatePage);
+
+export default ProtectedAdminEditCertificatePage;

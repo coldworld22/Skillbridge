@@ -3,8 +3,9 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { saveTemplate } from "@/services/admin/certificateTemplateService";
 import CertificateTemplateForm from "@/components/admin/certificates/CertificateTemplateForm";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function CreateCertificateTemplate() {
+function CreateCertificateTemplate() {
   const router = useRouter();
 
   const initialValues = {
@@ -44,3 +45,7 @@ export default function CreateCertificateTemplate() {
     </AdminLayout>
   );
 }
+
+const ProtectedCreateCertificateTemplate = withAdminGuard(CreateCertificateTemplate);
+
+export default ProtectedCreateCertificateTemplate;

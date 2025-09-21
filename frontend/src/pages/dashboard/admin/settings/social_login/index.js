@@ -11,6 +11,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const availableIcons = {
   google: <FaGoogle />,
@@ -89,7 +90,7 @@ const providerHasCredentials = (p) => {
   return p.clientId && p.clientSecret;
 };
 
-export default function SocialLoginSettingsPage() {
+function SocialLoginSettingsPage() {
   const [globalActive, setGlobalActive] = useState(true);
   const [providers, setProviders] = useState(initialProviders);
   const [recaptchaActive, setRecaptchaActive] = useState(true);
@@ -569,3 +570,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedSocialLoginSettingsPage = withAdminGuard(SocialLoginSettingsPage);
+
+export default ProtectedSocialLoginSettingsPage;

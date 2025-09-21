@@ -4,6 +4,7 @@ import { FaLock, FaEye, FaEyeSlash, FaCheckCircle, FaExclamationTriangle, FaArro
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer"; // ✅ Import Footer
 import logger from "@/utils/logger";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const ChangePasswordPage = ({ prevStep }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -166,7 +167,7 @@ const ChangePasswordPage = ({ prevStep }) => {
   );
 };
 
-export default ChangePasswordPage;
+
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -178,3 +179,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedChangePasswordPage = withAdminGuard(ChangePasswordPage);
+
+export default ProtectedChangePasswordPage;

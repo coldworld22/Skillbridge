@@ -1,10 +1,11 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/assignments/edit/[id].js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaSave, FaArrowLeft } from 'react-icons/fa';
 
-export default function EditAssignmentPage() {
+function EditAssignmentPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -156,3 +157,7 @@ export default function EditAssignmentPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedEditAssignmentPage = withAdminGuard(EditAssignmentPage);
+
+export default ProtectedEditAssignmentPage;

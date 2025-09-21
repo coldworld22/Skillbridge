@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // ─────────────────────────────────────
 // 📁 dashboard/admin/certificates/index.js
 // ─────────────────────────────────────
@@ -15,7 +16,7 @@ import {
   downloadCertificate,
 } from "@/services/admin/certificateService";
 
-export default function AdminCertificatesPage() {
+function AdminCertificatesPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminCertificatesPage' });
 
   const [certificates, setCertificates] = useState([]);
@@ -229,3 +230,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminCertificatesPage = withAdminGuard(AdminCertificatesPage);
+
+export default ProtectedAdminCertificatesPage;

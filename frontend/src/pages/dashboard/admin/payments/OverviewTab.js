@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 ChartJS.register(
   CategoryScale,
@@ -23,7 +24,7 @@ ChartJS.register(
   Legend,
 );
 
-export default function OverviewTab({ transactions = [], methods = [], payouts = [], onViewAll }) {
+function OverviewTab({ transactions = [], methods = [], payouts = [], onViewAll }) {
   const { t } = useTranslation('dashboard');
   // Treat "success" as equivalent to "paid" for older records
   const totalRevenue = transactions
@@ -211,3 +212,7 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
     </div>
   );
 }
+
+const ProtectedOverviewTab = withAdminGuard(OverviewTab);
+
+export default ProtectedOverviewTab;

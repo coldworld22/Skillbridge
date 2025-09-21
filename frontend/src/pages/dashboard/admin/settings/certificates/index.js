@@ -19,8 +19,9 @@ import {
   duplicateTemplate,
 } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function CertificateTemplatesPage() {
+function CertificateTemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
@@ -157,3 +158,7 @@ export default function CertificateTemplatesPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedCertificateTemplatesPage = withAdminGuard(CertificateTemplatesPage);
+
+export default ProtectedCertificateTemplatesPage;

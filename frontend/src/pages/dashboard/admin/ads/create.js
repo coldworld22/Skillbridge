@@ -6,8 +6,9 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AdForm from "@/components/ads/AdForm";
 import { createAd, checkAdTitle } from "@/services/admin/adService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function CreateAdPage() {
+function CreateAdPage() {
   const router = useRouter();
   const { t } = useTranslation("dashboard", { keyPrefix: "adsCreatePage" });
 
@@ -42,3 +43,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedCreateAdPage = withAdminGuard(CreateAdPage);
+
+export default ProtectedCreateAdPage;

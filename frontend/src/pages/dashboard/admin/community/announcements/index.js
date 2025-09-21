@@ -11,8 +11,9 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminAnnouncementsPage() {
+function AdminAnnouncementsPage() {
   const { t } = useTranslation("dashboard", {
     keyPrefix: "communityAnnouncementsPage",
   });
@@ -221,3 +222,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminAnnouncementsPage = withAdminGuard(AdminAnnouncementsPage);
+
+export default ProtectedAdminAnnouncementsPage;

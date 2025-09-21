@@ -11,6 +11,7 @@ import {
   confirmEmailOtp,
   confirmPhoneOtp,
 } from "@/services/verificationService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const Verification = ({ onBack = () => {} }) => {
   const router = useRouter();
@@ -187,4 +188,6 @@ const Verification = ({ onBack = () => {} }) => {
   );
 };
 
-export default Verification;
+const ProtectedVerification = withAdminGuard(Verification);
+
+export default ProtectedVerification;

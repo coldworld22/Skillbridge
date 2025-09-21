@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/languages/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import logger from "@/utils/logger";
 
-export default function CreateLanguagePage() {
+function CreateLanguagePage() {
   const router = useRouter();
   const [form, setForm] = useState({
     label: "",
@@ -118,3 +119,7 @@ export default function CreateLanguagePage() {
     </AdminLayout>
   );
 }
+
+const ProtectedCreateLanguagePage = withAdminGuard(CreateLanguagePage);
+
+export default ProtectedCreateLanguagePage;

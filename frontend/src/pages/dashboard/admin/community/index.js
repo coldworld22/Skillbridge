@@ -23,6 +23,7 @@ import {
 import { fetchDashboardStats } from "@/services/admin/communityService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 export async function getServerSideProps({ req, locale }) {
   const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};
@@ -57,7 +58,7 @@ const StatCard = ({ label, value, color }) => (
   </div>
 );
 
-export default function AdminCommunityDashboard({ initialStats }) {
+function AdminCommunityDashboard({ initialStats }) {
   const { t } = useTranslation("dashboard");
   const [stats, setStats] = useState(initialStats ? {
     totalDiscussions: initialStats.totalDiscussions,
@@ -189,3 +190,7 @@ export default function AdminCommunityDashboard({ initialStats }) {
     </AdminLayout>
   );
 }
+
+const ProtectedAdminCommunityDashboard = withAdminGuard(AdminCommunityDashboard);
+
+export default ProtectedAdminCommunityDashboard;

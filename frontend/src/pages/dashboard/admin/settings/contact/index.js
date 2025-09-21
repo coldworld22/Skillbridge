@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/contact.js
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -18,7 +19,7 @@ const initialConfig = {
   mapEmbedUrl: "https://maps.google.com/embed?pb=...",
 };
 
-export default function AdminContactSettings() {
+function AdminContactSettings() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'contactPage' });
   const [config, setConfig] = useState(initialConfig);
   const [loading, setLoading] = useState(false);
@@ -149,3 +150,6 @@ export async function getStaticProps({ locale }) {
   };
 }
 
+const ProtectedAdminContactSettings = withAdminGuard(AdminContactSettings);
+
+export default ProtectedAdminContactSettings;

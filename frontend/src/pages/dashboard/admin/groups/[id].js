@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // Enhanced Admin Group Details Page (Final Polished UI with All Tabs and Overview Enhancements)
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -26,7 +27,7 @@ import { toast } from 'react-toastify';
 
 // Continue from your existing AdminGroupDetailsPage component
 
-export default function AdminGroupDetailsPage() {
+function AdminGroupDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
   const [group, setGroup] = useState();
@@ -541,3 +542,6 @@ export default function AdminGroupDetailsPage() {
   );
 }
 
+const ProtectedAdminGroupDetailsPage = withAdminGuard(AdminGroupDetailsPage);
+
+export default ProtectedAdminGroupDetailsPage;

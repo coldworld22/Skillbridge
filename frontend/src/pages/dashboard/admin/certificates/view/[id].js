@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/certificates/view/[id].js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
@@ -10,7 +11,7 @@ import {
   downloadCertificate,
 } from "@/services/admin/certificateService";
 
-export default function ViewCertificatePage() {
+function ViewCertificatePage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -139,3 +140,7 @@ export default function ViewCertificatePage() {
     </AdminLayout>
   );
 }
+
+const ProtectedViewCertificatePage = withAdminGuard(ViewCertificatePage);
+
+export default ProtectedViewCertificatePage;

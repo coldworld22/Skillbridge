@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/languages/edit/[code].js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ const fetchTranslations = async (code) => {
 
 const namespaces = ["common", "website", "dashboard", "auth"];
 
-export default function EditLanguagePage() {
+function EditLanguagePage() {
   const router = useRouter();
   const { code } = router.query;
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
@@ -323,3 +324,7 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
+
+const ProtectedEditLanguagePage = withAdminGuard(EditLanguagePage);
+
+export default ProtectedEditLanguagePage;

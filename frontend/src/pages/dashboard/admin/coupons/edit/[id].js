@@ -3,8 +3,9 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchCouponById, updateCoupon } from "@/services/admin/couponService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function EditCouponPage() {
+function EditCouponPage() {
   const router = useRouter();
   const { id } = router.query;
   const [code, setCode] = useState("");
@@ -72,3 +73,7 @@ export default function EditCouponPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedEditCouponPage = withAdminGuard(EditCouponPage);
+
+export default ProtectedEditCouponPage;

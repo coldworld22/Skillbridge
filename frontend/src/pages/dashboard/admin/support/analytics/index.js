@@ -6,8 +6,9 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { fetchSupportAnalytics } from "@/services/supportService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function AdminSupportAnalytics() {
+function AdminSupportAnalytics() {
   const { t } = useTranslation('dashboard');
   const [stats, setStats] = useState({ open: 0, resolved: 0, closed: 0, avg: '0h' });
   const [chart, setChart] = useState([]);
@@ -71,3 +72,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminSupportAnalytics = withAdminGuard(AdminSupportAnalytics);
+
+export default ProtectedAdminSupportAnalytics;

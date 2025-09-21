@@ -8,8 +8,9 @@ import {
 } from "@/services/admin/certificateTemplateService";
 import { toSnakeCase } from "@/utils/case";
 import CertificateTemplateForm from "@/components/admin/certificates/CertificateTemplateForm";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
-export default function EditCertificateTemplate() {
+function EditCertificateTemplate() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -60,3 +61,7 @@ export default function EditCertificateTemplate() {
     </AdminLayout>
   );
 }
+
+const ProtectedEditCertificateTemplate = withAdminGuard(EditCertificateTemplate);
+
+export default ProtectedEditCertificateTemplate;

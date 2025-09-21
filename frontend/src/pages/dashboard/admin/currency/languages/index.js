@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/languages/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
@@ -42,7 +43,7 @@ const mockLanguages = [
   },
 ];
 
-export default function LanguageManagerPage() {
+function LanguageManagerPage() {
   const [languages, setLanguages] = useState(mockLanguages);
 
   const toggleActive = (id) => {
@@ -158,3 +159,7 @@ export default function LanguageManagerPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedLanguageManagerPage = withAdminGuard(LanguageManagerPage);
+
+export default ProtectedLanguageManagerPage;

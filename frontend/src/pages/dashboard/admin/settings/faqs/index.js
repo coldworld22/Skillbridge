@@ -7,10 +7,11 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 
-export default function AdminFaqsPage() {
+function AdminFaqsPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "faqsPage" });
   const { data: faqs = [], mutate } = useSWR("/faqs", fetcher);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
@@ -174,3 +175,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedAdminFaqsPage = withAdminGuard(AdminFaqsPage);
+
+export default ProtectedAdminFaqsPage;

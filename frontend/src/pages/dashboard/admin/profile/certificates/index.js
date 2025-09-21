@@ -1,5 +1,6 @@
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const dummyCertificates = [
   { id: 1, title: "React.js Mastery", date: "Jan 10, 2024", url: "/certificates/react.pdf" },
@@ -36,7 +37,7 @@ const Certificates = () => {
   );
 };
 
-export default Certificates;
+
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -48,3 +49,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedCertificates = withAdminGuard(Certificates);
+
+export default ProtectedCertificates;

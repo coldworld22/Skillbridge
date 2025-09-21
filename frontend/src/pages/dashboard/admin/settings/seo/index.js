@@ -1,3 +1,4 @@
+import withAdminGuard from "@/hooks/withAdminGuard";
 // pages/dashboard/admin/settings/seo/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
@@ -37,7 +38,7 @@ const defaultConfig = {
   jsonSchema: "",
 };
 
-export default function SEOSettingsPage() {
+function SEOSettingsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage" });
   const tabs = [
     { key: "overview", label: t("tabs.overview"), icon: <FaGlobe /> },
@@ -113,3 +114,7 @@ export default function SEOSettingsPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedSEOSettingsPage = withAdminGuard(SEOSettingsPage);
+
+export default ProtectedSEOSettingsPage;

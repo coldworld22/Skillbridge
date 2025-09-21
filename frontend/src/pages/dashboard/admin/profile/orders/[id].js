@@ -4,6 +4,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaTimesCircle, FaRedo, FaDownload, FaSync, FaArrowLeft } from "react-icons/fa";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const OrderDetailsPage = () => {
   const router = useRouter();
@@ -113,7 +114,7 @@ const OrderStatusIcon = ({ status }) => {
   return <span className="bg-red-500 text-white px-3 py-1 rounded-md">Failed</span>;
 };
 
-export default OrderDetailsPage;
+
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -125,3 +126,7 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
+
+const ProtectedOrderDetailsPage = withAdminGuard(OrderDetailsPage);
+
+export default ProtectedOrderDetailsPage;

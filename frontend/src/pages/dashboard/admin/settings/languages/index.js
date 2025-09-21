@@ -10,10 +10,11 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import handleApiError from "@/utils/apiError";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 const fetcher = url => api.get(url).then(res => res.data.data);
 
-export default function LanguagesPage() {
+function LanguagesPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
   const { data: languages, mutate } = useSWR("/languages", fetcher);
@@ -175,3 +176,7 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
+
+const ProtectedLanguagesPage = withAdminGuard(LanguagesPage);
+
+export default ProtectedLanguagesPage;

@@ -4,7 +4,6 @@ import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
-import withAdminGuard from "@/hooks/withAdminGuard";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
@@ -22,6 +21,7 @@ import InstructorActivityChart from "@/components/admin/charts/InstructorActivit
 import { fetchRecentAlerts } from "@/services/admin/alertService";
 import { fetchFlaggedMessages } from "@/services/admin/moderationService";
 import { fetchLicenseStatus } from "@/services/admin/licenseService";
+import withAdminGuard from "@/hooks/withAdminGuard";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
