@@ -36,6 +36,7 @@ export default function Header() {
   const isHydrated = mounted && hasHydrated;
   const hydratedUser = isHydrated ? user : null;
   const userRole = hydratedUser?.role?.toLowerCase();
+  const userIsOnline = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
 
@@ -142,8 +143,8 @@ export default function Header() {
       return;
     }
 
-    setAvailable(userOnlineStatus);
-  }, [hasHydrated, userOnlineStatus]);
+    setAvailable(userIsOnline);
+  }, [hasHydrated, userIsOnline]);
 
   // Stop polling when component unmounts
   useEffect(() => {
