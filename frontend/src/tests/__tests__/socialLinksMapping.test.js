@@ -35,6 +35,29 @@ describe('toSocialLinksArray', () => {
     ]);
   });
 
+  test('skips non-string social link values safely', () => {
+    const links = {
+      twitter: ' https://x.com/user ',
+      facebook: 12345,
+      instagram: { url: 'https://instagram.com/user' },
+      threads: ['https://threads.net/user'],
+      bluesky: true,
+    };
+
+    expect(() => toSocialLinksArray(links)).not.toThrow();
+    expect(toSocialLinksArray(links)).toEqual([
+      { platform: 'twitter', url: 'https://x.com/user' },
+    ]);
+  });
+
+  test('returns empty array when links object is nullish', () => {
+    expect(() => toSocialLinksArray(null)).not.toThrow();
+    expect(toSocialLinksArray(null)).toEqual([]);
+
+    expect(() => toSocialLinksArray(undefined)).not.toThrow();
+    expect(toSocialLinksArray(undefined)).toEqual([]);
+  });
+
   test('admin payload mapping remains stable for valid values', () => {
     const sanitizedData = {
       full_name: 'Admin User',
