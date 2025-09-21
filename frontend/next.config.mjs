@@ -224,6 +224,11 @@ const nextConfig = {
   experimental: {
     largePageDataBytes: 256 * 1024,
     externalDir: true,
+    turbo: {
+      resolveAlias: {
+        '@shared': path.resolve(__dirname, '../shared'),
+      },
+    },
   },
   webpack(config) {
     config.resolve.alias['@shared'] = path.resolve(__dirname, '../shared');
