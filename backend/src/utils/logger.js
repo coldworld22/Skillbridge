@@ -1,14 +1,44 @@
 // 📁 src/utils/logger.js
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
+const { Writable } = require("stream");
 
-const LOG_DIR = path.join(__dirname, "../../logs");
-const LOG_FILE = path.join(LOG_DIR, "error.log");
+const DEFAULT_LOG_DIR = process.env.LOG_DIR || path.join(__dirname, "../../logs");
+const FALLBACK_LOG_DIR = path.join(os.tmpdir(), "skillbridge-logs");
 
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+const createLogStream = (logDir) => {
+  const logFile = path.join(logDir, "error.log");
+
+  try {
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    return fs.createWriteStream(logFile, { flags: "a" });
+  } catch (err) {
+    if (err && (err.code === "EACCES" || err.code === "EPERM")) {
+      console.warn(
+        `Unable to access log directory "${logDir}" due to permissions. Falling back to console logging.`,
+      );
+      return null;
+    }
+    throw err;
+  }
+};
+
+let logStream = createLogStream(DEFAULT_LOG_DIR);
+
+if (!logStream && DEFAULT_LOG_DIR !== FALLBACK_LOG_DIR) {
+  logStream = createLogStream(FALLBACK_LOG_DIR);
 }
-const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+
+if (!logStream) {
+  logStream = new Writable({
+    write(_chunk, _encoding, callback) {
+      callback();
+    },
+  });
+}
 
 logStream.on("error", (err) => {
   console.error("Failed to write to log file:", err);
