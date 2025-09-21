@@ -74,7 +74,7 @@ export const profileSchema = z.object({
 
 function ProfileEditTemplate() {
   const router = useRouter();
-  const { t, i18n, ready } = useTranslation("dashboard", {
+  const { t, i18n } = useTranslation("dashboard", {
     keyPrefix: "adminProfilePage",
   });
   const { user, hasHydrated, setUser } = useAuthStore();
@@ -271,7 +271,8 @@ function ProfileEditTemplate() {
     setCroppedAreaPixels(area);
   }, []);
 
-  const isReady = mounted && hasHydrated && ready;
+  const isHydrated = mounted && hasHydrated;
+  const direction = typeof i18n?.dir === "function" ? i18n.dir() : "ltr";
 
   const handleAvatarSelect = (e) => {
     const file = e.target.files?.[0];
@@ -484,7 +485,7 @@ function ProfileEditTemplate() {
   };
 
 
-  if (!isReady || loadingProfile) {
+  if (!isHydrated || loadingProfile) {
     return (
       <div className="flex justify-center items-center h-64">
         <FaSpinner className="animate-spin text-4xl text-yellow-600" />
@@ -495,7 +496,7 @@ function ProfileEditTemplate() {
   return (
 
     <>
-      <div className="max-w-5xl mx-auto p-6" dir={i18n.dir()}>
+      <div className="max-w-5xl mx-auto p-6" dir={direction}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('title')}</h1>
         <div className="space-y-6">
           {/* Avatar Upload */}
@@ -680,9 +681,10 @@ function ProfileEditTemplate() {
                       name={name}
                       value={formData.socialLinks[name] || ""}
                       onChange={(e) => {
+                        const { value } = e.target;
                         setFormData((prev) => ({
                           ...prev,
-                          socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
+                          socialLinks: { ...prev.socialLinks, [name]: value },
                         }));
                         setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
                       }}
