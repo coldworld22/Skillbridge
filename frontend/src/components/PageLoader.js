@@ -10,9 +10,30 @@ NProgress.configure({ showSpinner: false });
 
 const PageLoader = () => {
   const [visible, setVisible] = useState(true);
-  const settings = useAppConfigStore((s) => s.settings);
+  const [hydrated, setHydrated] = useState(() =>
+    useAppConfigStore.persist?.hasHydrated?.() ?? false
+  );
+  const settings = useAppConfigStore((s) => (hydrated ? s.settings : {}));
   const loaded = useAppConfigStore((s) => s.loaded);
-  const logoSrc = buildUrl(settings.logoUrl || settings.logo_url);
+  const logoSrc =
+    hydrated && (settings.logoUrl || settings.logo_url)
+      ? buildUrl(settings.logoUrl || settings.logo_url)
+      : null;
+
+  useEffect(() => {
+    if (hydrated) {
+      return;
+    }
+
+    const onFinishHydration = () => setHydrated(true);
+    const unsub = useAppConfigStore.persist?.onFinishHydration?.(onFinishHydration);
+
+    if (useAppConfigStore.persist?.hasHydrated?.()) {
+      setHydrated(true);
+    }
+
+    return () => unsub?.();
+  }, [hydrated]);
 
   useEffect(() => {
     const handleStart = () => NProgress.start();
@@ -44,7 +65,7 @@ const PageLoader = () => {
     >
       <div className="relative flex items-center justify-center">
         <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-        {logoSrc && (
+        {hydrated && logoSrc && (
           <img
             src={logoSrc}
             alt="Logo"
