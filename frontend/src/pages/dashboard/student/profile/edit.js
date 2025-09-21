@@ -21,7 +21,7 @@ import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import { toSocialLinksArray } from "@/utils/socialLinks";
-import { allowedPlatforms } from "@/utils/socialPlatforms";
+import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaGlobe,
@@ -673,27 +673,35 @@ const handleAvatarSelect = (e) => {
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  {allowedPlatforms.map(({ name, Icon, className }) => (
-                    <div key={name}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                        <Icon className={`w-4 h-4 mr-2 ${className}`} />
-                        {t(`${name}_label`)}
-                      </label>
-                      <input
-                        type="text"
-                        name={name}
-                        value={formData.socialLinks[name] || ""}
-                        onChange={handleSocialChange}
-                        placeholder={t(`${name}_placeholder`)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                      />
-                      {errors[`socialLinks.${name}`] && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors[`socialLinks.${name}`]}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  {allowedPlatforms.map(({ name, Icon, className }) => {
+                    const IconComponent = Icon || defaultPlatformIcon.Icon;
+                    if (!IconComponent) {
+                      return null;
+                    }
+                    const iconClassName = className || defaultPlatformIcon.className;
+
+                    return (
+                      <div key={name}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                          <IconComponent className={`w-4 h-4 mr-2 ${iconClassName}`} />
+                          {t(`${name}_label`)}
+                        </label>
+                        <input
+                          type="text"
+                          name={name}
+                          value={formData.socialLinks[name] || ""}
+                          onChange={handleSocialChange}
+                          placeholder={t(`${name}_placeholder`)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                        />
+                        {errors[`socialLinks.${name}`] && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors[`socialLinks.${name}`]}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

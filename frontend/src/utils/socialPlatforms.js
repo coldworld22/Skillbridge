@@ -9,6 +9,11 @@ import {
   FaGlobe,
 } from "react-icons/fa";
 
+export const defaultPlatformIcon = {
+  Icon: FaGlobe,
+  className: "text-gray-500",
+};
+
 const iconMap = {
   linkedin: { Icon: FaLinkedin, className: "text-blue-600" },
   github: { Icon: FaGithub, className: "text-gray-800" },
@@ -21,7 +26,7 @@ const iconMap = {
 
 export const allowedPlatforms = platformNames.map((name) => ({
   name,
-  ...iconMap[name],
+  ...(iconMap[name] || defaultPlatformIcon),
 }));
 
 export const socialPlatforms = platformNames;
