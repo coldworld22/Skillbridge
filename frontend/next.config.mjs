@@ -245,7 +245,7 @@ const nextConfig = {
         destination: `${pgAdminBase}/:path*`,
       },
       {
-        source: '/api/:path((?!health$).*)',
+        source: '/api/:path((?!health(?:/|$)).*)',
         destination: `${internalApiBase}/:path`,
       },
       {
