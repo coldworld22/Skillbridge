@@ -39,8 +39,8 @@ describe('admin controller updateAvatar', () => {
 
     expect(res.status).not.toHaveBeenCalled();
     expect(mockDb).toHaveBeenCalledWith('users');
-    expect(mockDb.where).toHaveBeenCalledWith({ id: '1' });
     expect(mockDb.where).toHaveBeenCalledTimes(2);
+    expect(mockDb.where.mock.calls).toEqual([[{ id: '1' }], [{ id: '1' }]]);
     expect(mockDb.first).toHaveBeenCalledWith('avatar_url');
     expect(mockDb.update).toHaveBeenCalledWith({
       avatar_url: '/uploads/admin/avatars/avatar.png',
