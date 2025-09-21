@@ -99,11 +99,11 @@ function AdminDashboardHome() {
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers aria-hidden="true" />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook aria-hidden="true" />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo aria-hidden="true" />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: t("totalUsers"), value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: t("instructors"), value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: t("students"), value: stats.students, color: "text-green-500" },
+        { icon: <FaBook aria-hidden="true" />, label: t("tutorials"), value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo aria-hidden="true" />, label: t("classes"), value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
