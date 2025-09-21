@@ -3,7 +3,6 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { useAuthStore } from '@/store/auth/authStore';
 import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
@@ -16,13 +15,11 @@ import {
 } from '@/services/admin/instructorService';
 import { toast } from 'react-toastify';
 import withAdminGuard from '@/hooks/withAdminGuard';
-import useAuthStore from '@/store/auth/authStore';
 
 
 function AdminInstructorsPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const { t: tCommon } = useTranslation('common');
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [instructors, setInstructors] = useState([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('name');
