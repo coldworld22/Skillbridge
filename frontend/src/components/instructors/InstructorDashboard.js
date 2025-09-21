@@ -34,7 +34,7 @@ import {
 } from "@/services/instructor/classService";
 import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
 import { instructorDashboardMocks } from "@/mocks/data";
-import { useAuthStore } from "@/store/auth/authStore";
+import useAuthStore from "@/store/auth/authStore";
 
 const localizer = momentLocalizer(moment);
 
