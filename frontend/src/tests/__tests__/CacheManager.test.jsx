@@ -42,4 +42,14 @@ describe('CacheManager', () => {
     fireEvent.click(button);
     await screen.findByText('Failed to clear cache');
   });
+
+  it('falls back to server cache clearing when Cache API is unavailable', async () => {
+    delete window.caches;
+    mockClearCache.mockResolvedValue({});
+    render(<CacheManager />);
+    const button = await screen.findByText('Clear Cache');
+    fireEvent.click(button);
+    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
+    await screen.findByText('Browser cache unavailable; server cache cleared');
+  });
 });
