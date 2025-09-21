@@ -8,15 +8,81 @@
 import axios from "axios";
 import logger from "@/utils/logger";
 
-// If NEXT_PUBLIC_API_BASE_URL isn't provided, default to a relative path so
-// the frontend works regardless of the domain it's served from. This prevents
-// hard coded production URLs from causing CORS or redirect issues in other
-// environments.
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+const isBrowser = typeof window !== "undefined";
+const DEFAULT_SERVER_BASE_URL = "http://localhost:5002/api";
+const publicBaseCandidate = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+const internalBaseCandidate = process.env.INTERNAL_API_BASE_URL;
+
+const pickBaseCandidate = () => {
+  if (!isBrowser && internalBaseCandidate) {
+    return internalBaseCandidate;
+  }
+
+  return publicBaseCandidate;
+};
+
+const ensureAbsoluteUrl = (candidate) => {
+  if (!candidate) {
+    return candidate;
+  }
+
+  if (/^https?:\/\//i.test(candidate)) {
+    return candidate;
+  }
+
+  const tryResolveWithBase = (base) => {
+    try {
+      return new URL(candidate, base).toString();
+    } catch (error) {
+      logger.warn(
+        `Failed to resolve API base URL from "${candidate}" against "${base}": ${error.message}`
+      );
+      return null;
+    }
+  };
+
+  if (isBrowser) {
+    const origin = window?.location?.origin;
+    if (origin) {
+      const resolved = tryResolveWithBase(origin);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    logger.warn(
+      `API base "${candidate}" is not absolute. Falling back to the current browser origin.`
+    );
+    return origin ? tryResolveWithBase(origin) || origin : candidate;
+  }
+
+  const appDomain = process.env.APP_DOMAIN;
+  if (appDomain) {
+    const domainWithProtocol = /^https?:\/\//i.test(appDomain)
+      ? appDomain
+      : `https://${appDomain}`;
+    const resolved = tryResolveWithBase(domainWithProtocol);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  const fallback = internalBaseCandidate && /^https?:\/\//i.test(internalBaseCandidate)
+    ? internalBaseCandidate
+    : DEFAULT_SERVER_BASE_URL;
+
+  logger.warn(
+    `API base "${candidate}" is not absolute and could not be resolved. Falling back to "${fallback}".`
+  );
+
+  return fallback;
+};
+
+const baseURL = ensureAbsoluteUrl(pickBaseCandidate());
 
 // Warn developers if the default domain URL is used in production
 if (
-  typeof window !== "undefined" &&
+  isBrowser &&
   !process.env.NEXT_PUBLIC_API_BASE_URL &&
   window.location.hostname !== "localhost"
 ) {
