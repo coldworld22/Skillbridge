@@ -78,10 +78,10 @@ export default function AdminGroupsIndex() {
 
   useEffect(() => {
     groupService
-      .getAllGroups(search, statusFilter)
+      .getAllGroups(debouncedSearch, statusFilter)
       .then((data) => setGroups(sortGroups(data)))
       .catch(() => setGroups([]));
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter]);
 
   useEffect(() => {
     setGroups((prev) => sortGroups(prev));
