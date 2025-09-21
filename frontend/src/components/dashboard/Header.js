@@ -29,7 +29,10 @@ export default function Header() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const setUser = useAuthStore((state) => state.setUser);
-  const userRole = user?.role?.toLowerCase();
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const hydratedUser = hasHydrated ? user : null;
+  const userRole = hydratedUser?.role?.toLowerCase();
+  const userOnlineStatus = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
 
@@ -38,7 +41,7 @@ export default function Header() {
   const [msgOpen, setMsgOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [available, setAvailable] = useState(false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
@@ -60,7 +63,9 @@ export default function Header() {
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
 
-  const profileLink = profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
+  const profileLink = userRole
+    ? profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`
+    : "/dashboard/profile/edit";
 
   const handleLogout = async () => {
     try {
@@ -110,8 +115,6 @@ export default function Header() {
       document.documentElement.classList.add("dark");
     }
 
-    setAvailable(user?.is_online ?? false);
-
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -126,7 +129,15 @@ export default function Header() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    setAvailable(userOnlineStatus);
+  }, [hasHydrated, userOnlineStatus]);
 
   // Stop polling when component unmounts
   useEffect(() => {
@@ -134,17 +145,20 @@ export default function Header() {
       stopPolling();
       stopMessagePolling();
     };
-  }, []);
+  }, [stopPolling, stopMessagePolling]);
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      startPolling();
-      fetchMessages();
-      startMessagePolling();
+    if (!hasHydrated || !hydratedUser) {
+      return;
     }
+
+    fetchNotifications();
+    startPolling();
+    fetchMessages();
+    startMessagePolling();
   }, [
-    user,
+    hasHydrated,
+    hydratedUser,
     fetchNotifications,
     startPolling,
     fetchMessages,
@@ -187,7 +201,9 @@ export default function Header() {
                 const res = await toggleInstructorStatus(newStatus);
                 const updated = res?.is_online ?? newStatus;
                 setAvailable(updated);
-                setUser({ ...user, is_online: updated });
+                if (hydratedUser) {
+                  setUser({ ...hydratedUser, is_online: updated });
+                }
                 toast.success(
                   updated
                     ? t('available_now')
@@ -340,12 +356,13 @@ export default function Header() {
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
           >
-            {user?.avatar_url && (
+            {hydratedUser?.avatar_url && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={
-                  user.avatar_url.startsWith("blob:")
-                    ? user.avatar_url
-                    : buildUrl(user.avatar_url)
+                  hydratedUser.avatar_url.startsWith("blob:")
+                    ? hydratedUser.avatar_url
+                    : buildUrl(hydratedUser.avatar_url)
                 }
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
@@ -356,7 +373,7 @@ export default function Header() {
             )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">
-                {user?.full_name || t('guest')}
+                {hydratedUser?.full_name || t('guest')}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-300">
                 <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
