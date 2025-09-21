@@ -1,6 +1,7 @@
 // pages/admin/license-logs.js
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchLicenseLogs } from "@/services/admin/licenseService";
 
 function LicenseLogsPage() {
@@ -52,4 +53,11 @@ LicenseLogsPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default LicenseLogsPage;
+const ProtectedLicenseLogsPage = withAuthProtection(LicenseLogsPage, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedLicenseLogsPage.getLayout = LicenseLogsPage.getLayout;
+
+export default ProtectedLicenseLogsPage;
