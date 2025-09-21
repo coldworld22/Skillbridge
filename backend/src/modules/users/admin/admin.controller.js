@@ -53,17 +53,15 @@ exports.getProfile = async (req, res) => {
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
+    const adminProfileData = adminProfile || {};
+
     const socialLinks = await db("user_social_links")
       .where({ user_id: userId })
       .select("platform", "url");
 
     res.json({
       ...user,
-      job_title: adminProfile.job_title ?? null,
-      department: adminProfile.department ?? null,
-      identity_doc_url: adminProfile.identity_doc_url ?? null,
-      admin_profile_created_at: adminProfile.created_at ?? null,
-      admin_profile_updated_at: adminProfile.updated_at ?? null,
+      ...adminProfileData,
       social_links: socialLinks,
     });
   } catch (error) {
@@ -165,6 +163,8 @@ exports.updateProfile = async (req, res) => {
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
+    const adminProfileData = adminProfile || {};
+
     const socialLinks = await trx("user_social_links")
       .where({ user_id: userId })
       .select("platform", "url");
@@ -191,7 +191,7 @@ exports.updateProfile = async (req, res) => {
 
     return res.json({
       ...user,
-      ...adminProfile,
+      ...adminProfileData,
       social_links: socialLinks,
     });
   } catch (error) {
