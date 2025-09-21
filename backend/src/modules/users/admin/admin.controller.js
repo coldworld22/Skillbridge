@@ -258,7 +258,6 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
-    const userId = req.params.id;
     const { avatar_url: oldAvatar } = await db("users")
       .where({ id: userId })
       .first("avatar_url");

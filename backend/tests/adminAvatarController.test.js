@@ -35,7 +35,7 @@ describe('admin controller updateAvatar', () => {
       json: jest.fn(),
     };
 
-    await controller.updateAvatar(req, res);
+    await expect(controller.updateAvatar(req, res)).resolves.toBeUndefined();
 
     expect(res.status).not.toHaveBeenCalled();
     expect(mockDb).toHaveBeenCalledWith('users');
@@ -68,7 +68,7 @@ describe('admin controller updateAvatar', () => {
       json: jest.fn(),
     };
 
-    await controller.updateAvatar(req, res);
+    await expect(controller.updateAvatar(req, res)).resolves.toBeUndefined();
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: 'Forbidden' });
