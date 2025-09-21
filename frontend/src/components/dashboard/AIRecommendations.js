@@ -11,8 +11,8 @@ const defaultRecommendedCourses = [
 
 const AIRecommendations = ({ recommendedCourses }) => {
   const { t } = useTranslation('dashboard');
-  const coursesToRender =
-    Array.isArray(recommendedCourses) && recommendedCourses.length > 0
+  const coursesToDisplay =
+    recommendedCourses && recommendedCourses.length > 0
       ? recommendedCourses
       : defaultRecommendedCourses;
   return (
@@ -21,7 +21,7 @@ const AIRecommendations = ({ recommendedCourses }) => {
         {t('dashboardPage.ai_recommendations_title')}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {coursesToRender.map((course) => (
+        {coursesToDisplay.map((course) => (
           <motion.div
             key={course.id}
             className="bg-gray-800 p-4 rounded-lg shadow-lg"
