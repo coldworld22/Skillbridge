@@ -49,7 +49,7 @@ exports.getProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [adminProfile] = await db("admin_profiles")
+    const [adminProfile = {}] = await db("admin_profiles")
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
@@ -59,7 +59,11 @@ exports.getProfile = async (req, res) => {
 
     res.json({
       ...user,
-      ...adminProfile,
+      job_title: adminProfile.job_title ?? null,
+      department: adminProfile.department ?? null,
+      identity_doc_url: adminProfile.identity_doc_url ?? null,
+      admin_profile_created_at: adminProfile.created_at ?? null,
+      admin_profile_updated_at: adminProfile.updated_at ?? null,
       social_links: socialLinks,
     });
   } catch (error) {
