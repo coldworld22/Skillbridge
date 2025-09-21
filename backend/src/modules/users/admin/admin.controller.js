@@ -248,8 +248,9 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
+  const userId = req.params.id;
   try {
-    if (String(req.params.id) !== String(req.user.id)) {
+    if (String(userId) !== String(req.user.id)) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -258,7 +259,7 @@ exports.updateAvatar = async (req, res) => {
     }
 
     const { avatar_url: oldAvatar } = await db("users")
-      .where({ id: req.params.id })
+      .where({ id: userId })
       .first("avatar_url");
 
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
@@ -269,15 +270,19 @@ exports.updateAvatar = async (req, res) => {
 
     if (oldAvatar) {
       const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar", { userId, err })
+      );
     }
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
     if (req.file) {
-      fs.unlink(req.file.path, (err) => err && logger.error(err));
+      fs.unlink(req.file.path, (err) =>
+        err && logger.error("Failed to cleanup uploaded avatar", { userId, err })
+      );
     }
-    logger.error(error);
+    logger.error("Failed to upload avatar", { userId, error });
     res.status(500).json({ message: "Failed to upload avatar" });
   }
 };
