@@ -13,7 +13,7 @@ import { fetchPublicInstructorById, fetchInstructorStats } from "@/services/publ
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 
-export default function InstructorProfilePage({ initialInstructor, initialStats }) {
+export default function InstructorProfilePage({ initialInstructor, initialStats, joinDate: initialJoinDate }) {
   const { t } = useTranslation("website");
   const router = useRouter();
   const { id } = router.query;
@@ -42,10 +42,7 @@ export default function InstructorProfilePage({ initialInstructor, initialStats 
       <p className="text-gray-500 mt-2">The requested instructor profile does not exist</p>
     </div>
   );
-
-  const joinDate = instructor.created_at
-    ? new Date(instructor.created_at).toLocaleDateString()
-    : null;
+  const joinDateLabel = instructor?.joinDate ?? initialJoinDate ?? null;
 
   const role = user?.role?.toLowerCase();
   let Layout = StudentLayout;
@@ -115,10 +112,10 @@ export default function InstructorProfilePage({ initialInstructor, initialStats 
                     <span>{t('instructor_rating', { count: instructor.rating.toFixed(1) })}</span>
                   </div>
                 )}
-                {joinDate && (
+                {joinDateLabel && (
                   <div className="flex items-center text-gray-600">
                     <IoMdTime className="mr-2 text-yellow-500" />
-                    <span>Joined {joinDate}</span>
+                    <span>Joined {joinDateLabel}</span>
                   </div>
                 )}
               </div>
@@ -203,7 +200,7 @@ export default function InstructorProfilePage({ initialInstructor, initialStats 
   );
 }
 
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps({ params, locale }) {
   const { id } = params;
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
@@ -211,10 +208,19 @@ export async function getServerSideProps({ params }) {
     if (!data) {
       return { props: { initialInstructor: null, initialStats: { classes: 0, tutorials: 0 } } };
     }
+    const joinDate = data?.created_at
+      ? new Intl.DateTimeFormat(locale || "en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          timeZone: "UTC",
+        }).format(new Date(data.created_at))
+      : null;
     const formatted = {
       ...data,
       avatar_url: data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png",
       demo_video_url: data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null,
+      joinDate,
     };
     const stats = await fetchInstructorStats(id);
 
@@ -222,6 +228,7 @@ export async function getServerSideProps({ params }) {
       props: {
         initialInstructor: formatted,
         initialStats: stats || { classes: 0, tutorials: 0 },
+        joinDate,
       },
     };
   } catch (err) {
