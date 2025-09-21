@@ -99,11 +99,36 @@ function AdminDashboardHome() {
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers aria-hidden="true" />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook aria-hidden="true" />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo aria-hidden="true" />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        {
+          icon: <FaUsers aria-hidden="true" />,
+          label: t("adminDashboardHome.totalUsers"),
+          value: stats.totalUsers,
+          color: "text-blue-500",
+        },
+        {
+          icon: <FaChalkboardTeacher aria-hidden="true" />,
+          label: t("adminDashboardHome.instructors"),
+          value: stats.instructors,
+          color: "text-purple-500",
+        },
+        {
+          icon: <FaUsers aria-hidden="true" />,
+          label: t("adminDashboardHome.students"),
+          value: stats.students,
+          color: "text-green-500",
+        },
+        {
+          icon: <FaBook aria-hidden="true" />,
+          label: t("adminDashboardHome.tutorials"),
+          value: stats.tutorials,
+          color: "text-indigo-500",
+        },
+        {
+          icon: <FaVideo aria-hidden="true" />,
+          label: t("adminDashboardHome.classes"),
+          value: stats.classes,
+          color: "text-yellow-500",
+        },
       ]
     : [];
 
@@ -118,9 +143,9 @@ function AdminDashboardHome() {
             <span aria-hidden="true">🚨</span> {t("recentAlerts")}
           </h3>
           {alertsLoading ? (
-            <p className="text-sm">Loading alerts...</p>
+            <p className="text-sm">{t("adminDashboardHome.loadingAlerts")}</p>
           ) : alerts.length === 0 ? (
-            <p className="text-sm text-gray-600">No alerts</p>
+            <p className="text-sm text-gray-600">{t("adminDashboardHome.noAlerts")}</p>
           ) : (
             <ul className="text-sm text-red-600 space-y-1">
               {alerts.slice(0, 3).map((alert, idx) => (
@@ -132,7 +157,7 @@ function AdminDashboardHome() {
             href="/admin/alerts"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            View all alerts
+            {t("adminDashboardHome.viewAllAlerts")}
           </Link>
         </div>
 
@@ -141,9 +166,9 @@ function AdminDashboardHome() {
             <span aria-hidden="true">🛡️</span> {t("flaggedMessages")}
           </h3>
           {flagsLoading ? (
-            <p className="text-sm">Loading messages...</p>
+            <p className="text-sm">{t("adminDashboardHome.loadingMessages")}</p>
           ) : flaggedMessages.length === 0 ? (
-            <p className="text-sm text-gray-600">No flagged messages</p>
+            <p className="text-sm text-gray-600">{t("adminDashboardHome.noFlaggedMessages")}</p>
           ) : (
             <ul className="text-sm text-red-500 space-y-1">
               {flaggedMessages.slice(0, 2).map((msg) => (
@@ -157,7 +182,7 @@ function AdminDashboardHome() {
             href="/admin/moderation"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            Review messages
+            {t("adminDashboardHome.reviewMessages")}
           </Link>
         </div>
 
@@ -166,11 +191,13 @@ function AdminDashboardHome() {
             <span aria-hidden="true">🔒</span> {t("licenseCheck")}
           </h3>
           {licenseLoading ? (
-            <p className="text-sm">Checking license...</p>
+            <p className="text-sm">{t("adminDashboardHome.checkingLicense")}</p>
           ) : licenseStatus ? (
             <>
               <p className="text-sm text-gray-800">
-                Last check: {licenseStatus.last_check || "N/A"}
+                {t("adminDashboardHome.lastCheck", {
+                  date: licenseStatus.last_check || t("adminDashboardHome.notAvailable"),
+                })}
               </p>
               <p
                 className={`text-sm mt-1 ${
@@ -178,20 +205,20 @@ function AdminDashboardHome() {
                 }`}
               >
                   {licenseStatus.unauthorized_count
-                    ? `❌ ${licenseStatus.unauthorized_count} unauthorized instance${
-                        licenseStatus.unauthorized_count > 1 ? "s" : ""
-                      } detected`
-                    : "✅ No unauthorized instances"}
+                    ? t("adminDashboardHome.unauthorizedInstances", {
+                        count: licenseStatus.unauthorized_count,
+                      })
+                    : t("adminDashboardHome.noUnauthorizedInstances")}
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-600">No license data</p>
+            <p className="text-sm text-gray-600">{t("adminDashboardHome.noLicenseData")}</p>
           )}
           <Link
             href="/admin/license-logs"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            See details
+            {t("adminDashboardHome.seeDetails")}
           </Link>
         </div>
       </section>
