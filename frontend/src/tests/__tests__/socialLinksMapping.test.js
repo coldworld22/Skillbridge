@@ -21,4 +21,60 @@ describe('toSocialLinksArray', () => {
       { platform: 'linkedin', url: 'https://linkedin.com/in/test' },
     ]);
   });
+
+  test('ignores nullish social link values', () => {
+    const links = {
+      twitter: 'https://x.com/user',
+      facebook: null,
+      instagram: undefined,
+    };
+
+    expect(() => toSocialLinksArray(links)).not.toThrow();
+    expect(toSocialLinksArray(links)).toEqual([
+      { platform: 'twitter', url: 'https://x.com/user' },
+    ]);
+  });
+
+  test('admin payload mapping remains stable for valid values', () => {
+    const sanitizedData = {
+      full_name: 'Admin User',
+      email: 'admin@example.com',
+      phone: '+14155552671',
+      gender: 'female',
+      date_of_birth: '1990-01-01',
+      job_title: 'Director',
+      department: 'Operations',
+      socialLinks: {
+        linkedin: 'https://linkedin.com/in/admin',
+        website: 'https://example.com',
+      },
+    };
+
+    const social_links = toSocialLinksArray(sanitizedData.socialLinks);
+
+    const payload = {
+      full_name: sanitizedData.full_name,
+      email: sanitizedData.email,
+      phone: sanitizedData.phone,
+      gender: sanitizedData.gender,
+      date_of_birth: sanitizedData.date_of_birth,
+      job_title: sanitizedData.job_title,
+      department: sanitizedData.department,
+      social_links,
+    };
+
+    expect(payload).toEqual({
+      full_name: 'Admin User',
+      email: 'admin@example.com',
+      phone: '+14155552671',
+      gender: 'female',
+      date_of_birth: '1990-01-01',
+      job_title: 'Director',
+      department: 'Operations',
+      social_links: [
+        { platform: 'linkedin', url: 'https://linkedin.com/in/admin' },
+        { platform: 'website', url: 'https://example.com' },
+      ],
+    });
+  });
 });
