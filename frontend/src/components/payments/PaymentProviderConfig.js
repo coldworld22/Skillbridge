@@ -23,6 +23,19 @@ export default function PaymentProviderConfig({ providerId }) {
 
   useEffect(() => {
     if (!providerId) return;
+
+    setLoading(true);
+    setSettings('{}');
+    setForm({});
+
+    if (providerId === 'paypal') {
+      setForm({ client_id: '', client_secret: '', mode: 'sandbox' });
+    } else if (providerId === 'stripe') {
+      setForm({ publishable_key: '', secret_key: '' });
+    } else if (providerId === 'coinbase') {
+      setForm({ api_key: '', api_secret: '' });
+    }
+
     const load = async () => {
       try {
         if (providerId === 'paypal') {
