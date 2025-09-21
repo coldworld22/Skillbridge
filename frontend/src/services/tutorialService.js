@@ -3,8 +3,40 @@ import { extractData } from "@/services/api/helpers";
 import { API_BASE_URL } from "@/config/config";
 import { joinUrl } from "@/utils/url";
 
+const ABSOLUTE_URL_REGEX = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//;
+
+function resolveAssetBase() {
+  const explicitBase = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+
+  if (ABSOLUTE_URL_REGEX.test(explicitBase || "")) {
+    return explicitBase;
+  }
+
+  if (typeof window === "undefined") {
+    const internalBase = process.env.INTERNAL_API_BASE_URL;
+    if (ABSOLUTE_URL_REGEX.test(internalBase || "")) {
+      return internalBase;
+    }
+
+    const appDomain = process.env.APP_DOMAIN;
+    if (appDomain) {
+      const isLocalhost = /^localhost(:\d+)?$/i.test(appDomain);
+      const protocol = isLocalhost ? "http" : "https";
+      const normalizedDomain = appDomain.replace(/\/+$/, "");
+      const relative = explicitBase
+        ? explicitBase.startsWith("/")
+          ? explicitBase
+          : `/${explicitBase}`
+        : "";
+      return `${protocol}://${normalizedDomain}${relative}`;
+    }
+  }
+
+  return explicitBase;
+}
+
 export const formatTutorial = (tut) => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  const baseUrl = resolveAssetBase();
   const thumbnailPath = tut.thumbnail_url || tut.cover_image;
   const previewPath = tut.preview_video;
 
