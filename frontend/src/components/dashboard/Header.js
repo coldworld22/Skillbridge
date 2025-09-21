@@ -35,6 +35,7 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const isHydrated = mounted && hasHydrated;
   const hydratedUser = isHydrated ? user : null;
+  const userOnlineStatus = hydratedUser?.is_online ?? false;
   const userRole = hydratedUser?.role?.toLowerCase();
   const userIsOnline = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
@@ -138,8 +139,10 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const hydratedUserOnlineStatus = hydratedUser?.is_online ?? false;
+
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!isHydrated) {
       return;
     }
 
