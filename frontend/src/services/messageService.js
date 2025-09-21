@@ -4,7 +4,9 @@ import { getCsrfToken } from "@/services/api/csrf";
 import useCallStore from "@/store/call/callStore";
 import useAuthStore from "@/store/auth/authStore";
 import useMessageStore from "@/store/messages/messageStore";
-import socket from "@/services/socketService";
+import getSocket from "@/services/socketService";
+
+const socket = getSocket();
 
 
 export const getUsers = async () => {

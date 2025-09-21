@@ -15,7 +15,9 @@ import {
   togglePinMessage as apiTogglePinMessage,
   startVideoCall,
 } from "@/services/messageService";
-import socket from "@/services/socketService";
+import getSocket from "@/services/socketService";
+
+const socket = getSocket();
 
 const ChatWindow = ({ selectedChat, refreshUsers }) => {
   const router = useRouter();

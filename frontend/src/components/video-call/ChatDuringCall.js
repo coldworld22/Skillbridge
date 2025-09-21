@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { FaPaperPlane } from "react-icons/fa";
 import { fetchCallMessages, sendCallMessage } from "@/services/videoCallService";
-import socket from "@/services/socketService";
+import getSocket from "@/services/socketService";
+
+const socket = getSocket();
 
 const ChatDuringCall = ({ chatId }) => {
   const [messages, setMessages] = useState([]);

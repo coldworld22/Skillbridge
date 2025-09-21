@@ -4,8 +4,10 @@ import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import CallOverlay from "@/components/video-call/CallOverlay";
-import socket from "@/services/socketService";
+import getSocket from "@/services/socketService";
 import { getUsers, getGroups } from "@/services/messageService";
+
+const socket = getSocket();
 
 const ChatPage = () => {
   const [users, setUsers] = useState([]);
