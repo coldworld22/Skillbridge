@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -338,7 +339,7 @@ function AdminPaymentsPage() {
             transactions={transactions}
             methods={methods}
             payouts={payouts}
-            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
+            onViewAll={() => setActiveTab("transactions")}
           />
         );
 

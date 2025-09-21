@@ -24,16 +24,33 @@ export default function CacheManager({
 } = {}) {
   const [status, setStatus] = useState("idle");
   const [ready, setReady] = useState(false);
+  const [hasServiceWorker, setHasServiceWorker] = useState(false);
+  const [serviceWorkerReady, setServiceWorkerReady] = useState(false);
   const [message, setMessage] = useState(null);
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return () => {};
     let isMounted = true;
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.ready.then(() => {
-        if (isMounted) setReady(true);
-      });
+    const swAvailable = "serviceWorker" in navigator;
+    if (isMounted) {
+      setHasServiceWorker(swAvailable);
+      setReady(true);
+    }
+    if (swAvailable) {
+      navigator.serviceWorker.ready
+        .then(() => {
+          if (!isMounted) return;
+          setServiceWorkerReady(true);
+        })
+        .catch(() => {
+          if (!isMounted) return;
+        });
+    }
+    if (swAvailable && navigator.serviceWorker.controller) {
+      if (isMounted) {
+        setServiceWorkerReady(true);
+      }
     }
     return () => {
       isMounted = false;
@@ -47,6 +64,9 @@ export default function CacheManager({
       if (strategy === "A") {
         await Promise.all(warmList.map((url) => fetch(url)));
       } else {
+        if (!serviceWorkerReady) {
+          throw new Error("Service worker not ready");
+        }
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({
           type: "WARM_UP_CACHE",
@@ -66,19 +86,21 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      if ("caches" in window) {
+      const cacheApiAvailable = typeof window !== "undefined" && "caches" in window;
+      if (cacheApiAvailable) {
         await caches.delete(WARM_CACHE);
-      } else {
-        setStatus("error");
-        return;
       }
-      if (strategy === "B") {
+      if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
       await clearCache();
       setStatus("idle");
-      setMessage("Cache cleared");
+      if (!cacheApiAvailable) {
+        setMessage("Server cache cleared. Browser cache unavailable.");
+      } else {
+        setMessage("Cache cleared");
+      }
     } catch (err) {
       console.error(err);
       toast.error(i18n.t("dashboard.cache_clear_failed"));
@@ -91,10 +113,13 @@ export default function CacheManager({
 
   if (!ready) return null;
 
+  const warmDisabled =
+    status === "caching" || (strategy === "B" && (!hasServiceWorker || !serviceWorkerReady));
+
   return (
     <div>
       <div className="space-x-2">
-        <Button onClick={warmCache} disabled={status === "caching"}>
+        <Button onClick={warmCache} disabled={warmDisabled}>
           {status === "caching" && "Caching…"}
           {status === "idle" && "Warm Cache"}
           {status === "success" && "Cached"}

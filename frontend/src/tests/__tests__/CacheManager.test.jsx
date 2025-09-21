@@ -15,7 +15,7 @@ const setupEnvironment = () => {
     configurable: true,
   });
   Object.defineProperty(window.navigator, 'serviceWorker', {
-    value: { ready: Promise.resolve({}) },
+    value: { ready: Promise.resolve({}), controller: {} },
     configurable: true,
   });
 };
@@ -24,6 +24,11 @@ describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
     mockClearCache.mockReset();
+  });
+
+  afterEach(() => {
+    delete window.caches;
+    delete window.navigator.serviceWorker;
   });
 
   it('shows message when cache cleared', async () => {
@@ -41,5 +46,23 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await screen.findByText('Failed to clear cache');
+  });
+
+  it('disables warm cache when service worker unavailable', async () => {
+    mockClearCache.mockResolvedValue({});
+    delete window.navigator.serviceWorker;
+    render(<CacheManager strategy="B" />);
+    const warmButton = await screen.findByText('Warm Cache');
+    expect(warmButton).toBeDisabled();
+  });
+
+  it('clears server cache even when Cache API unavailable', async () => {
+    mockClearCache.mockResolvedValue({});
+    delete window.caches;
+    render(<CacheManager />);
+    const button = await screen.findByText('Clear Cache');
+    fireEvent.click(button);
+    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
+    await screen.findByText('Server cache cleared. Browser cache unavailable.');
   });
 });
