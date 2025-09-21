@@ -34,6 +34,7 @@ import {
 } from "@/services/instructor/classService";
 import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
 import { instructorDashboardMocks } from "@/mocks/data";
+import { useAuthStore } from "@/store/auth/authStore";
 
 const localizer = momentLocalizer(moment);
 
@@ -44,6 +45,7 @@ const localizer = momentLocalizer(moment);
 
 function InstructorDashboard() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorDashboardPage' });
+  const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState("tutorials");
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
@@ -75,8 +77,8 @@ function InstructorDashboard() {
     }
     loadStats();
     async function loadEvents() {
+      if (!user?.id) return;
       try {
-        if (!user?.id) return;
         const data = await fetchInstructorScheduleEvents(user.id);
         const parsed = data.map((e) => ({
           ...e,
@@ -120,7 +122,7 @@ function InstructorDashboard() {
       // their respective services once available.
     }
     loadLists();
-  }, []);
+  }, [user?.id]);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
   const tabButtonStyle = (tab) =>
