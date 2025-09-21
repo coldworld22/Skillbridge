@@ -49,7 +49,7 @@ exports.getProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [adminProfile] = await db("admin_profiles")
+    const [adminProfile = {}] = await db("admin_profiles")
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
