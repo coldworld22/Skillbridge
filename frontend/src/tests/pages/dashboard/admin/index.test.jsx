@@ -86,7 +86,7 @@ import useAuthStore from "@/store/auth/authStore";
 
 const mockUseAuthStore = useAuthStore;
 
-import AdminDashboardHome from "./index";
+import AdminDashboardHome from "@/pages/dashboard/admin";
 
 describe("AdminDashboardHome", () => {
   beforeEach(() => {
@@ -108,8 +108,8 @@ describe("AdminDashboardHome", () => {
     );
   });
 
-  it("falls back to 'Admin' when the user is null", async () => {
-    mockUseAuthStore.mockReturnValue({ user: null });
+  it("falls back to 'Admin' when the user's name is missing", async () => {
+    mockUseAuthStore.mockReturnValue({ user: { full_name: null } });
 
     render(<AdminDashboardHome />);
 
