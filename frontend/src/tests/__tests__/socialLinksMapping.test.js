@@ -22,6 +22,17 @@ describe('toSocialLinksArray', () => {
     ]);
   });
 
+  test('ignores nullish or non-string social link values without throwing', () => {
+    const links = {
+      linkedin: null,
+      website: undefined,
+      github: 0,
+    };
+
+    expect(() => toSocialLinksArray(links)).not.toThrow();
+    expect(toSocialLinksArray(links)).toEqual([]);
+  });
+
   test('ignores nullish social link values', () => {
     const links = {
       twitter: 'https://x.com/user',
