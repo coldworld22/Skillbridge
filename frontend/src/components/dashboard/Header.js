@@ -26,10 +26,16 @@ import { buildUrl } from "@/utils/url";
 import profileRoutes from "@/constants/profileRoutes";
 
 export default function Header() {
-  const user = useAuthStore((state) => state.user);
+  const { user, hasHydrated } = useAuthStore((state) => ({
+    user: state.user,
+    hasHydrated: state.hasHydrated,
+  }));
   const logout = useAuthStore((state) => state.logout);
   const setUser = useAuthStore((state) => state.setUser);
-  const userRole = user?.role?.toLowerCase();
+  const [mounted, setMounted] = useState(false);
+  const isHydrated = mounted && hasHydrated;
+  const hydratedUser = isHydrated ? user : null;
+  const userRole = hydratedUser?.role?.toLowerCase();
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
 
@@ -60,7 +66,12 @@ export default function Header() {
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
 
-  const profileLink = profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
+  const profileLink =
+    profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -137,18 +148,21 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      startPolling();
-      fetchMessages();
-      startMessagePolling();
+    if (!isHydrated || !user) {
+      return;
     }
+
+    fetchNotifications();
+    startPolling();
+    fetchMessages();
+    startMessagePolling();
   }, [
     user,
     fetchNotifications,
     startPolling,
     fetchMessages,
     startMessagePolling,
+    isHydrated,
   ]);
 
   return (
@@ -340,12 +354,12 @@ export default function Header() {
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
           >
-            {user?.avatar_url && (
+            {hydratedUser?.avatar_url && (
               <img
                 src={
-                  user.avatar_url.startsWith("blob:")
-                    ? user.avatar_url
-                    : buildUrl(user.avatar_url)
+                  hydratedUser.avatar_url.startsWith("blob:")
+                    ? hydratedUser.avatar_url
+                    : buildUrl(hydratedUser.avatar_url)
                 }
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
@@ -356,7 +370,7 @@ export default function Header() {
             )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">
-                {user?.full_name || t('guest')}
+                {hydratedUser?.full_name || t("guest")}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-300">
                 <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
