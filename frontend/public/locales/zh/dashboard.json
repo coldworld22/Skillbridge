@@ -5,6 +5,8 @@
     "admin_dashboard": "管理仪表板"
   },
   "welcome_admin": "管理员欢迎您",
+  "welcome_banner_greeting": "欢迎，{{name}} 👋",
+  "welcome_banner_today": "今天是{{date}}",
   "users": "用户",
   "settings": "设置（JSON）",
   "language_manager": "语言管理",
