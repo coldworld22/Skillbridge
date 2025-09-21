@@ -1440,6 +1440,21 @@
     "flag_failed": "No se pudo marcar el usuario del usuario.",
     "loading": "Oferta de carga ..."
   },
+  "adminOfferEditPage": {
+    "heading": "✏️ Editar oferta",
+    "loading": "Cargando oferta...",
+    "load_failed": "No se pudieron cargar los detalles de la oferta.",
+    "update_success": "Oferta actualizada con éxito.",
+    "update_failed": "No se pudo actualizar la oferta.",
+    "save": "Guardar cambios",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "title_label": "Título",
+    "price_label": "Precio",
+    "duration_label": "Duración",
+    "tags_label": "Etiquetas (separadas por comas)",
+    "description_label": "Descripción"
+  },
   "booksCreate": {
     "title": "Agregar nuevo libro",
     "success": "¡Gracias! ",

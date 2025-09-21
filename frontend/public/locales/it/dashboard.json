@@ -1454,6 +1454,21 @@
     "flag_failed": "Impossibile segnalare l'utente.",
     "loading": "Offerta di caricamento ..."
   },
+  "adminOfferEditPage": {
+    "heading": "✏️ Modifica offerta",
+    "loading": "Caricamento dell'offerta...",
+    "load_failed": "Impossibile caricare i dettagli dell'offerta.",
+    "update_success": "Offerta aggiornata con successo.",
+    "update_failed": "Impossibile aggiornare l'offerta.",
+    "save": "Salva modifiche",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "title_label": "Titolo",
+    "price_label": "Prezzo",
+    "duration_label": "Durata",
+    "tags_label": "Tag (separati da virgole)",
+    "description_label": "Descrizione"
+  },
   "booksCreate": {
     "title": "Aggiungi nuovo libro",
     "success": "Grazie! Il tuo libro è stato aggiunto con successo ed è in fase di revisione. Dopo che è stato approvato, lo vedrai pubblicato nella libreria",

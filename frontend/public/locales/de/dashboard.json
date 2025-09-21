@@ -1454,6 +1454,21 @@
     "flag_failed": "Failed to flag user.",
     "loading": "Loading offer..."
   },
+  "adminOfferEditPage": {
+    "heading": "✏️ Angebot bearbeiten",
+    "loading": "Angebot wird geladen...",
+    "load_failed": "Angebotsdetails konnten nicht geladen werden.",
+    "update_success": "Angebot erfolgreich aktualisiert.",
+    "update_failed": "Angebot konnte nicht aktualisiert werden.",
+    "save": "Änderungen speichern",
+    "saving": "Speichern...",
+    "cancel": "Abbrechen",
+    "title_label": "Titel",
+    "price_label": "Preis",
+    "duration_label": "Dauer",
+    "tags_label": "Tags (durch Komma getrennt)",
+    "description_label": "Beschreibung"
+  },
   "booksCreate": {
     "title": "Add New Book",
     "success": "Thank you! Your book was added successfully and is under review. After it is approved, you will see it published in the bookstore",
