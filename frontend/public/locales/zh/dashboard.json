@@ -1744,7 +1744,21 @@
     "instructors": "讲师",
     "students": "学生",
     "tutorials": "教程",
-    "classes": "课程"
+    "classes": "课程",
+    "loadingAlerts": "正在加载警报...",
+    "noAlerts": "没有警报",
+    "loadingMessages": "正在加载消息...",
+    "noFlaggedMessages": "没有标记的消息",
+    "checkingLicense": "正在检查许可证...",
+    "notAvailable": "不可用",
+    "unauthorizedInstances": "❌ 检测到 {{count}} 个未经授权的实例",
+    "unauthorizedInstances_plural": "❌ 检测到 {{count}} 个未经授权的实例",
+    "noUnauthorizedInstances": "✅ 没有未经授权的实例",
+    "noLicenseData": "没有许可证数据",
+    "monthlyRevenue": "每月收入",
+    "monthlySignups": "每月注册",
+    "tutorialsByCategory": "按类别划分的教程",
+    "instructorTutorialCount": "讲师教程数量"
   },
   "tutorialViewPage": {
     "loading": "加载教程...",

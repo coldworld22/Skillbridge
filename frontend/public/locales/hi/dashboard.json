@@ -1745,7 +1745,21 @@
     "instructors": "प्रशिक्षक",
     "students": "छात्र",
     "tutorials": "ट्यूटोरियल",
-    "classes": "कक्षाओं"
+    "classes": "कक्षाओं",
+    "loadingAlerts": "अलर्ट लोड हो रहे हैं...",
+    "noAlerts": "कोई अलर्ट नहीं",
+    "loadingMessages": "संदेश लोड हो रहे हैं...",
+    "noFlaggedMessages": "कोई ध्वजांकित संदेश नहीं",
+    "checkingLicense": "लाइसेंस की जाँच हो रही है...",
+    "notAvailable": "उपलब्ध नहीं",
+    "unauthorizedInstances": "❌ {{count}} अनधिकृत इंस्टेंस मिला",
+    "unauthorizedInstances_plural": "❌ {{count}} अनधिकृत इंस्टेंस मिले",
+    "noUnauthorizedInstances": "✅ कोई अनधिकृत इंस्टेंस नहीं",
+    "noLicenseData": "लाइसेंस डेटा उपलब्ध नहीं",
+    "monthlyRevenue": "मासिक राजस्व",
+    "monthlySignups": "मासिक साइनअप",
+    "tutorialsByCategory": "श्रेणी के अनुसार ट्यूटोरियल",
+    "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या"
   },
   "tutorialViewPage": {
     "loading": "लोडिंग ट्यूटोरियल ...",

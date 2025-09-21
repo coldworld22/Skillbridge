@@ -1749,7 +1749,21 @@
     "instructors": "المدربون",
     "students": "طلاب",
     "tutorials": "دروس",
-    "classes": "فصول"
+    "classes": "فصول",
+    "loadingAlerts": "جاري تحميل التنبيهات...",
+    "noAlerts": "لا توجد تنبيهات",
+    "loadingMessages": "جاري تحميل الرسائل...",
+    "noFlaggedMessages": "لا توجد رسائل محددة",
+    "checkingLicense": "جاري فحص الترخيص...",
+    "notAvailable": "غير متاح",
+    "unauthorizedInstances": "❌ تم اكتشاف {{count}} مثيل غير مصرح به",
+    "unauthorizedInstances_plural": "❌ تم اكتشاف {{count}} مثيلات غير مصرح بها",
+    "noUnauthorizedInstances": "✅ لا توجد مثيلات غير مصرح بها",
+    "noLicenseData": "لا توجد بيانات ترخيص",
+    "monthlyRevenue": "الإيرادات الشهرية",
+    "monthlySignups": "التسجيلات الشهرية",
+    "tutorialsByCategory": "الدروس حسب الفئة",
+    "instructorTutorialCount": "عدد الدروس لكل مدرب"
   },
   "tutorialViewPage": {
     "loading": "تحميل البرنامج التعليمي ...",

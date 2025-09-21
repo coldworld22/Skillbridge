@@ -97,6 +97,11 @@ function AdminDashboardHome() {
     return null;
   }
 
+  const hasLicenseData =
+    licenseStatus &&
+    (licenseStatus.last_check ||
+      Object.prototype.hasOwnProperty.call(licenseStatus, "unauthorized_count"));
+
   const statsArray = stats
     ? [
         {

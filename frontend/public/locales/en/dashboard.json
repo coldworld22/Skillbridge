@@ -1762,7 +1762,21 @@
     "instructors": "Instructors",
     "students": "Students",
     "tutorials": "Tutorials",
-    "classes": "Classes"
+    "classes": "Classes",
+    "loadingAlerts": "Loading alerts...",
+    "noAlerts": "No alerts",
+    "loadingMessages": "Loading messages...",
+    "noFlaggedMessages": "No flagged messages",
+    "checkingLicense": "Checking license...",
+    "notAvailable": "N/A",
+    "unauthorizedInstances": "❌ {{count}} unauthorized instance detected",
+    "unauthorizedInstances_plural": "❌ {{count}} unauthorized instances detected",
+    "noUnauthorizedInstances": "✅ No unauthorized instances",
+    "noLicenseData": "No license data",
+    "monthlyRevenue": "Monthly Revenue",
+    "monthlySignups": "Monthly Signups",
+    "tutorialsByCategory": "Tutorials by Category",
+    "instructorTutorialCount": "Instructor Tutorial Count"
   },
   "tutorialViewPage": {
     "loading": "Loading tutorial...",

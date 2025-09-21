@@ -1759,7 +1759,21 @@
     "instructors": "Istruttori",
     "students": "Studenti",
     "tutorials": "Tutorial",
-    "classes": "Lezioni"
+    "classes": "Lezioni",
+    "loadingAlerts": "Caricamento avvisi...",
+    "noAlerts": "Nessun avviso",
+    "loadingMessages": "Caricamento messaggi...",
+    "noFlaggedMessages": "Nessun messaggio contrassegnato",
+    "checkingLicense": "Verifica della licenza...",
+    "notAvailable": "N/D",
+    "unauthorizedInstances": "❌ {{count}} istanza non autorizzata rilevata",
+    "unauthorizedInstances_plural": "❌ {{count}} istanze non autorizzate rilevate",
+    "noUnauthorizedInstances": "✅ Nessuna istanza non autorizzata",
+    "noLicenseData": "Nessun dato di licenza",
+    "monthlyRevenue": "Entrate mensili",
+    "monthlySignups": "Iscrizioni mensili",
+    "tutorialsByCategory": "Tutorial per categoria",
+    "instructorTutorialCount": "Numero di tutorial per istruttore"
   },
   "tutorialViewPage": {
     "loading": "Tutorial di caricamento ...",
