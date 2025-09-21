@@ -10,7 +10,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
     phone: "",
     password: "",
     role: "student",
-    status: "active",
+    status: "pending",
     avatar: null,
     gender: "male",
   });
@@ -26,7 +26,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
         phone: "",
         password: "",
         role: "student",
-        status: "active",
+        status: "pending",
         avatar: null,
         gender: "male",
       });
@@ -149,9 +149,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded"
         >
-          <option value="Admin">Admin</option>
-          <option value="Instructor">Instructor</option>
-          <option value="Student">Student</option>
+          <option value="admin">Admin</option>
+          <option value="instructor">Instructor</option>
+          <option value="student">Student</option>
         </select>
 
 
@@ -164,8 +164,8 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
         >
           <option value="pending">Pending</option>
           <option value="active">Active</option>
-          <option value="banned">Banned</option>
-
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
         </select>
 
         <div className="mb-4">
