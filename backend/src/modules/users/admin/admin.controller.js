@@ -352,6 +352,11 @@ exports.uploadIdentityDoc = async (req, res) => {
  * @access Admin
  */
 exports.getDashboardStats = async (_req, res) => {
-  const data = await require("./admin.service").getDashboardStats();
-  res.status(200).json({ data });
+  try {
+    const data = await require("./admin.service").getDashboardStats();
+    res.status(200).json({ data });
+  } catch (error) {
+    logger.error("Failed to fetch dashboard stats:", error);
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
+  }
 };
