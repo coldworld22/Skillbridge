@@ -1440,6 +1440,21 @@
     "flag_failed": "उपयोगकर्ता को ध्वजांकित करने में विफल।",
     "loading": "लोडिंग ऑफ़र ..."
   },
+  "adminOfferEditPage": {
+    "heading": "✏️ ऑफ़र संपादित करें",
+    "loading": "ऑफ़र लोड हो रहा है...",
+    "load_failed": "ऑफ़र विवरण लोड नहीं हो सका।",
+    "update_success": "ऑफ़र सफलतापूर्वक अपडेट हुआ।",
+    "update_failed": "ऑफ़र अपडेट करने में विफल।",
+    "save": "परिवर्तन सहेजें",
+    "saving": "सहेजा जा रहा है...",
+    "cancel": "रद्द करें",
+    "title_label": "शीर्षक",
+    "price_label": "मूल्य",
+    "duration_label": "अवधि",
+    "tags_label": "टैग (अल्पविराम से अलग)",
+    "description_label": "विवरण"
+  },
   "booksCreate": {
     "title": "नई पुस्तक जोड़ें",
     "success": "धन्यवाद! ",

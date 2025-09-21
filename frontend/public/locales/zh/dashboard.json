@@ -1440,6 +1440,21 @@
     "flag_failed": "无法标记用户。",
     "loading": "加载优惠..."
   },
+  "adminOfferEditPage": {
+    "heading": "✏️ 编辑优惠",
+    "loading": "正在加载优惠...",
+    "load_failed": "无法加载优惠详情。",
+    "update_success": "优惠更新成功。",
+    "update_failed": "更新优惠失败。",
+    "save": "保存更改",
+    "saving": "正在保存...",
+    "cancel": "取消",
+    "title_label": "标题",
+    "price_label": "价格",
+    "duration_label": "持续时间",
+    "tags_label": "标签（用逗号分隔）",
+    "description_label": "描述"
+  },
   "booksCreate": {
     "title": "添加新书",
     "success": "谢谢你！您的书已成功添加，并正在审查中。批准后，您将看到它在书店中出版",
