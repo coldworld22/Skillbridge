@@ -337,7 +337,7 @@ export default function AdminPaymentsPage() {
             transactions={transactions}
             methods={methods}
             payouts={payouts}
-            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
+            onViewAll={() => setActiveTab("transactions")}
           />
         );
 
