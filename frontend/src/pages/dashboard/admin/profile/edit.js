@@ -214,7 +214,35 @@ function ProfileEditTemplate() {
   }, [hasHydrated, t, user]);
 
 
-  const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
+  const sanitizeString = (val) => (typeof val === "string" ? val.trim() : val);
+
+  const sanitizeFormData = (data) => {
+    const sanitized = {
+      ...data,
+      full_name: sanitizeString(data.full_name),
+      email: sanitizeString(data.email),
+      phone: sanitizeString(data.phone),
+      gender: data.gender,
+      date_of_birth: sanitizeString(data.date_of_birth),
+      job_title: sanitizeString(data.job_title),
+      department: sanitizeString(data.department),
+      avatar_url: sanitizeString(data.avatar_url),
+    };
+
+    if (data.socialLinks && typeof data.socialLinks === "object") {
+      sanitized.socialLinks = Object.entries(data.socialLinks).reduce(
+        (acc, [key, value]) => {
+          acc[key] = sanitizeString(value);
+          return acc;
+        },
+        {}
+      );
+    } else {
+      sanitized.socialLinks = undefined;
+    }
+
+    return sanitized;
+  };
 
   useEffect(() => {
     return () => {
@@ -227,7 +255,7 @@ function ProfileEditTemplate() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: trimValue(value) }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
@@ -235,7 +263,7 @@ function ProfileEditTemplate() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      socialLinks: { ...prev.socialLinks, [name]: trimValue(value) },
+      socialLinks: { ...prev.socialLinks, [name]: value },
     }));
   };
 
@@ -339,9 +367,9 @@ function ProfileEditTemplate() {
   };
 
 
-  const validateForm = () => {
+  const validateForm = (data) => {
     try {
-      profileSchema.parse(formData);
+      profileSchema.parse(data);
       setErrors({});
       return true;
     } catch (err) {
@@ -365,24 +393,28 @@ function ProfileEditTemplate() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    const sanitizedData = sanitizeFormData(formData);
+    if (!validateForm(sanitizedData)) return;
     try {
       setIsSubmitting(true);
-      const social_links = toSocialLinksArray(formData.socialLinks);
+      const social_links = toSocialLinksArray(sanitizedData.socialLinks);
 
       const payload = {
-        full_name: formData.full_name,
-        email: formData.email,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
-        job_title: formData.job_title,
-        department: formData.department,
+        full_name: sanitizedData.full_name,
+        email: sanitizedData.email,
+        phone: sanitizedData.phone,
+        gender: sanitizedData.gender,
+        date_of_birth: sanitizedData.date_of_birth,
+        job_title: sanitizedData.job_title,
+        department: sanitizedData.department,
         social_links,
       };
 
-      if (typeof formData.avatar_url === "string" && formData.avatar_url.trim() !== "") {
-        payload.avatar_url = formData.avatar_url;
+      if (
+        typeof sanitizedData.avatar_url === "string" &&
+        sanitizedData.avatar_url.trim() !== ""
+      ) {
+        payload.avatar_url = sanitizedData.avatar_url;
       }
 
       await updateAdminProfile(payload);
