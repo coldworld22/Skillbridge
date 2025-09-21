@@ -239,20 +239,28 @@ const nextConfig = {
         : false,
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/pgadmin/:path*',
-        destination: `${pgAdminBase}/:path*`,
-      },
-      {
-        source: '/api/:path((?!health(?:/|$)).*)',
-        destination: `${internalApiBase}/:path`,
-      },
-      {
-        source: '/uploads/:path*',
-        destination: `${internalApiBase}/uploads/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: '/api/health',
+          destination: '/api/health',
+        },
+      ],
+      afterFiles: [
+        {
+          source: '/api/pgadmin/:path*',
+          destination: `${pgAdminBase}/:path*`,
+        },
+        {
+          source: '/api/:path((?!health(?:/|$)).*)',
+          destination: `${internalApiBase}/:path`,
+        },
+        {
+          source: '/uploads/:path*',
+          destination: `${internalApiBase}/uploads/:path*`,
+        },
+      ],
+    };
   },
 };
 
