@@ -14,6 +14,7 @@ import {
 } from '@/services/admin/instructorService';
 import { toast } from 'react-toastify';
 import withAdminGuard from '@/hooks/withAdminGuard';
+import useAuthStore from '@/store/auth/authStore';
 
 
 function AdminInstructorsPage() {
@@ -29,6 +30,7 @@ function AdminInstructorsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     const loadData = async () => {
