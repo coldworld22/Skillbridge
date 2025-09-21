@@ -137,13 +137,15 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const hydratedUserOnlineStatus = hydratedUser?.is_online ?? false;
+
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!isHydrated) {
       return;
     }
 
-    setAvailable(userOnlineStatus);
-  }, [hasHydrated, userOnlineStatus]);
+    setAvailable(hydratedUserOnlineStatus);
+  }, [isHydrated, hydratedUserOnlineStatus]);
 
   // Stop polling when component unmounts
   useEffect(() => {
