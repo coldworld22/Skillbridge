@@ -257,6 +257,7 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
+    const userId = req.params.id;
     const { avatar_url: oldAvatar } = await db("users")
       .where({ id: req.params.id })
       .first("avatar_url");
@@ -268,7 +269,12 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: filePath, updated_at: new Date() });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(
+        __dirname,
+        "../../../../",
+        sanitizedOldAvatar
+      );
       fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
     }
 
