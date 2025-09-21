@@ -1,5 +1,4 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
-import withAdminGuard from "@/hooks/withAdminGuard";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
