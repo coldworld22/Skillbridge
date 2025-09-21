@@ -44,7 +44,7 @@ export default function Header() {
   const [msgOpen, setMsgOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [available, setAvailable] = useState(false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
@@ -121,8 +121,6 @@ export default function Header() {
       document.documentElement.classList.add("dark");
     }
 
-    setAvailable(user?.is_online ?? false);
-
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -137,7 +135,15 @@ export default function Header() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    setAvailable(userOnlineStatus);
+  }, [hasHydrated, userOnlineStatus]);
 
   // Stop polling when component unmounts
   useEffect(() => {
@@ -145,7 +151,7 @@ export default function Header() {
       stopPolling();
       stopMessagePolling();
     };
-  }, []);
+  }, [stopPolling, stopMessagePolling]);
 
   useEffect(() => {
     if (!isHydrated || !user) {
@@ -157,7 +163,8 @@ export default function Header() {
     fetchMessages();
     startMessagePolling();
   }, [
-    user,
+    hasHydrated,
+    hydratedUser,
     fetchNotifications,
     startPolling,
     fetchMessages,
@@ -201,7 +208,9 @@ export default function Header() {
                 const res = await toggleInstructorStatus(newStatus);
                 const updated = res?.is_online ?? newStatus;
                 setAvailable(updated);
-                setUser({ ...user, is_online: updated });
+                if (hydratedUser) {
+                  setUser({ ...hydratedUser, is_online: updated });
+                }
                 toast.success(
                   updated
                     ? t('available_now')

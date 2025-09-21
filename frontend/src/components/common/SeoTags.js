@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
@@ -12,13 +12,38 @@ export default function SeoTags() {
   const loaded = useSEOConfigStore((s) => s.loaded);
   const settings = useSEOConfigStore((s) => s.settings);
 
+  const persist = useMemo(() => useSEOConfigStore.persist, []);
+  const [hydrated, setHydrated] = useState(() => persist?.hasHydrated?.() ?? !persist);
+
+  useEffect(() => {
+    if (!persist) {
+      return;
+    }
+
+    if (hydrated) return;
+
+    if (persist?.hasHydrated?.()) {
+      setHydrated(true);
+      return;
+    }
+
+    const unsub = persist?.onFinishHydration?.(() => {
+      setHydrated(true);
+    });
+
+    return () => {
+      unsub?.();
+    };
+  }, [hydrated, persist]);
+
   const [resolvedOrigin, setResolvedOrigin] = useState(
     () => settings.baseUrl || process.env.NEXT_PUBLIC_SITE_URL || ''
   );
 
   useEffect(() => {
-    if (!loaded) fetchConfig();
-  }, [loaded, fetchConfig]);
+    if (!hydrated || loaded) return;
+    fetchConfig();
+  }, [hydrated, loaded, fetchConfig]);
 
   useEffect(() => {
     if (!resolvedOrigin && typeof window !== 'undefined') {
@@ -26,15 +51,17 @@ export default function SeoTags() {
     }
   }, [resolvedOrigin]);
 
-  const meta = settings.metaTags?.[path] || {};
-  const og = settings.openGraph?.[path] || {};
-  const twitter = settings.twitter?.[path] || {};
+  const effectiveSettings = hydrated ? settings : {};
+
+  const meta = effectiveSettings.metaTags?.[path] || {};
+  const og = effectiveSettings.openGraph?.[path] || {};
+  const twitter = effectiveSettings.twitter?.[path] || {};
   const twitterImage = twitter.image || og.image;
 
-  const baseUrl = settings.baseUrl || resolvedOrigin;
-  const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
+  const baseUrl = effectiveSettings.baseUrl || resolvedOrigin;
+  const canonical = meta.canonical || (effectiveSettings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
   const ogUrl = og.url || `${baseUrl}${path}`;
-  const ogSiteName = og.site_name || settings.siteName;
+  const ogSiteName = og.site_name || effectiveSettings.siteName;
 
   // Compute alternate language URLs using next-i18next and current path
   const pathWithoutLocale = path.replace(new RegExp(`^/${router.locale}`), '') || '/';
@@ -45,15 +72,17 @@ export default function SeoTags() {
   });
   const defaultAlternate = alternates.find((a) => a.hrefLang === router.defaultLocale);
 
-  const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
-    ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
+  const robotsBase = effectiveSettings.globalSEO?.noindexSitewide || meta.noindex;
+  const robotsFollow = meta.nofollow;
+  const robots = robotsBase || robotsFollow
+    ? `${robotsBase ? 'noindex' : 'index'},${robotsFollow ? 'nofollow' : 'follow'}`
     : null;
 
   const allowedSchemaFields = ['@context', '@type', 'name', 'url', 'logo', 'sameAs'];
   let sanitizedJsonSchema;
-  if (settings.jsonSchema) {
+  if (effectiveSettings.jsonSchema) {
     try {
-      const parsed = JSON.parse(settings.jsonSchema);
+      const parsed = JSON.parse(effectiveSettings.jsonSchema);
       if (
         typeof parsed === 'object' &&
         parsed !== null &&
