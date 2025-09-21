@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useAuthStore } from '@/store/auth/authStore';
 import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
