@@ -831,11 +831,13 @@ ClientOnlyProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 export default ClientOnlyProtectedProfileEdit;
 
 export async function getStaticProps({ locale }) {
+  const layoutNamespaces = ["common", "dashboard"];
+
   return {
     props: {
       ...(await serverSideTranslations(
         locale,
-        ['common', 'dashboard'],
+        layoutNamespaces,
         nextI18NextConfig
       )),
     },
