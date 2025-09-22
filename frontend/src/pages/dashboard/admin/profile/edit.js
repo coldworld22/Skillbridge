@@ -523,6 +523,10 @@ function ProfileEditTemplate() {
   };
 
 
+  if (!mounted) {
+    return null;
+  }
+
   if (!isHydrated || loadingProfile) {
     return (
       <div className="flex justify-center items-center h-64">
