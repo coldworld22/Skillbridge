@@ -47,7 +47,9 @@ async function isTokenBlacklisted(token) {
   const tokenHash = hashToken(token);
   const record = await db('blacklisted_tokens')
     .where({ token_hash: tokenHash })
-    .andWhere('expires_at', '>', db.fn.now())
+    .andWhere(function () {
+      this.whereNull('expires_at').orWhere('expires_at', '>', db.fn.now());
+    })
     .first();
   return !!record;
 }
