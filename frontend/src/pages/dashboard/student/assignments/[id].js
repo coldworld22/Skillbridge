@@ -26,6 +26,22 @@ export default function AssignmentSolvePage() {
     }
   }, [id]);
 
+  const handleBlur = useCallback(() => {
+    setBlurCount((prev) => {
+      const nextCount = prev + 1;
+
+      if (nextCount === 1) {
+        alert('⚠️ Warning: Please stay focused! Switching tabs or minimizing is not allowed.');
+      } else if (nextCount === 2) {
+        alert('⚠️ Final Warning: One more distraction and the assignment will be flagged!');
+      } else {
+        alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
+      }
+
+      return nextCount;
+    });
+  }, []);
+
   useEffect(() => {
     if (started) {
       window.addEventListener('blur', handleBlur);
@@ -49,6 +65,7 @@ export default function AssignmentSolvePage() {
       alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
     }
   };
+
 
   const enterFullscreen = () => {
     const elem = document.documentElement;
