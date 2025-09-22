@@ -4,7 +4,15 @@ const mockOnConflict = jest.fn(() => ({ ignore: mockIgnore }));
 const mockInsert = jest.fn(() => ({ onConflict: mockOnConflict }));
 const mockFirst = jest.fn();
 const mockDel = jest.fn();
-const mockAndWhere = jest.fn(() => ({ first: mockFirst, del: mockDel }));
+const mockQueryBuilder = {};
+mockQueryBuilder.whereNull = jest.fn(() => mockQueryBuilder);
+mockQueryBuilder.orWhere = jest.fn(() => mockQueryBuilder);
+const mockAndWhere = jest.fn((callback) => {
+  if (typeof callback === 'function') {
+    callback.call(mockQueryBuilder, mockQueryBuilder);
+  }
+  return { first: mockFirst, del: mockDel };
+});
 const mockWhere = jest.fn(() => ({ andWhere: mockAndWhere, first: mockFirst, del: mockDel }));
 const mockDb = jest.fn(() => ({ insert: mockInsert, where: mockWhere }));
 
@@ -59,6 +67,13 @@ describe('tokenBlacklistService', () => {
     await isTokenBlacklisted('tok');
     const hash = crypto.createHash('sha256').update('tok').digest('hex');
     expect(mockWhere).toHaveBeenCalledWith({ token_hash: hash });
+  });
+
+  test('isTokenBlacklisted treats null expiration as blacklisted', async () => {
+    mockFirst.mockResolvedValueOnce({ token_hash: 'hash' });
+    const result = await isTokenBlacklisted('tok');
+    expect(result).toBe(true);
+    expect(mockQueryBuilder.whereNull).toHaveBeenCalledWith('expires_at');
   });
 
   test('removeExpiredTokens purges old entries', async () => {
