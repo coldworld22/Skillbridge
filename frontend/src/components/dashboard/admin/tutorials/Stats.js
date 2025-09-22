@@ -1,5 +1,5 @@
 import React from "react";
-import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 
 function Stats({ tutorials }) {
   return (

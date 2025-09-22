@@ -1,4 +1,4 @@
-import platformNames from "@shared/socialPlatforms.json";
+import SOCIAL_PLATFORMS from "@/constants/socialPlatforms";
 import {
   FaLinkedin,
   FaGithub,
@@ -24,9 +24,9 @@ const iconMap = {
   website: { Icon: FaGlobe, className: "text-green-600" },
 };
 
-export const allowedPlatforms = platformNames.map((name) => ({
+export const allowedPlatforms = SOCIAL_PLATFORMS.map((name) => ({
   name,
   ...(iconMap[name] || defaultPlatformIcon),
 }));
 
-export const socialPlatforms = platformNames;
+export const socialPlatforms = SOCIAL_PLATFORMS;
