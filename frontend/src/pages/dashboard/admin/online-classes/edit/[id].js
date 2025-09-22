@@ -22,6 +22,7 @@ import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classSer
 import { fetchPlanIdentifiers } from '@/services/admin/planService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
+import { toDateInput } from '@/utils/date';
 
 function EditClassPage() {
   const router = useRouter();
@@ -54,8 +55,12 @@ function EditClassPage() {
           setFormData({
             title: data.title || '',
             instructor: data.instructor || '',
-            start_date: data.start_date || '',
-            end_date: data.end_date || '',
+            start_date:
+              data.startDateInput ||
+              (data.start_date ? toDateInput(data.start_date) : ''),
+            end_date:
+              data.endDateInput ||
+              (data.end_date ? toDateInput(data.end_date) : ''),
             category: data.category_id || '',
             price: data.price || '',
             status: data.status || '',
