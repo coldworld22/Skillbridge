@@ -34,6 +34,7 @@ import {
 } from "@/services/instructor/classService";
 import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
 import { instructorDashboardMocks } from "@/mocks/data";
+import { formatDateTime } from "@/utils/date";
 import useAuthStore from "@/store/auth/authStore";
 
 const localizer = momentLocalizer(moment);
@@ -158,6 +159,33 @@ function InstructorDashboard() {
     },
   });
 
+  const formatClassSchedule = (cls) => {
+    const startValue = cls.start_date ?? cls.startDate;
+    const endValue = cls.end_date ?? cls.endDate;
+
+    const formattedStart = startValue ? formatDateTime(startValue) : "";
+    const formattedEnd = endValue ? formatDateTime(endValue) : "";
+
+    if (formattedStart && formattedEnd) {
+      return `${formattedStart} - ${formattedEnd}`;
+    }
+
+    if (formattedStart) return formattedStart;
+    if (formattedEnd) return formattedEnd;
+
+    const legacyDate = cls.date ?? "";
+    const legacyTime = cls.time ?? "";
+
+    if (legacyDate && legacyTime) {
+      return `${legacyDate} @ ${legacyTime}`;
+    }
+
+    if (legacyDate) return legacyDate;
+    if (legacyTime) return legacyTime;
+
+    return t("schedule_pending", { defaultValue: "Schedule TBD" });
+  };
+
   return (
     <InstructorLayout>
       <div className="bg-gray-50 min-h-screen rounded-xl p-6 space-y-6 text-gray-800">
@@ -263,7 +291,7 @@ function InstructorDashboard() {
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
-            <p className="text-sm text-gray-500">{cls.date} @ {cls.time}</p>
+            <p className="text-sm text-gray-500">{formatClassSchedule(cls)}</p>
           </div>
           <div className="space-x-2">
             <button className="text-sky-600 hover:underline">{t('edit')}</button>
