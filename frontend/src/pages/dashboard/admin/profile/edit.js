@@ -1,7 +1,7 @@
 // Reusable Admin Profile Edit Template (Tailwind + API + Zod + Crop + Upload + Modal)
 // This is based on the polished UI you implemented — to be used for other roles/forms
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -78,6 +78,7 @@ function ProfileEditTemplate() {
     keyPrefix: "adminProfilePage",
   });
   const { user, hasHydrated, setUser } = useAuthStore();
+  const tRef = useRef(t);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
@@ -109,6 +110,10 @@ function ProfileEditTemplate() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -196,7 +201,7 @@ function ProfileEditTemplate() {
         ) {
           return;
         }
-        toast.error(t("load_profile_failed"));
+        toast.error(tRef.current("load_profile_failed"));
         console.error("Profile load error:", err);
       } finally {
         if (isMounted) {
