@@ -21,8 +21,11 @@ const formatClass = (cls) => {
       : null,
     trending: Boolean(cls.trending),
 
-    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
+    start_date: cls.start_date ?? null,
+    end_date: cls.end_date ?? null,
+
+    startDateInput: cls.start_date ? toDateInput(cls.start_date) : "",
+    endDateInput: cls.end_date ? toDateInput(cls.end_date) : "",
 
     approvalStatus: cls.moderation_status || "Pending",
     scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),

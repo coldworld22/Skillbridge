@@ -41,12 +41,11 @@ const formatClass = (cls) => {
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.instructor_image}`
       : null,
     trending: Boolean(cls.trending),
+    start_date: cls.start_date ?? null,
+    end_date: cls.end_date ?? null,
 
-    startDateTime,
-    endDateTime,
-
-    start_date: startDateTime ? toDateInput(startDateTime) : "",
-    end_date: endDateTime ? toDateInput(endDateTime) : "",
+    startDateInput: cls.start_date ? toDateInput(cls.start_date) : "",
+    endDateInput: cls.end_date ? toDateInput(cls.end_date) : "",
 
     approvalStatus: cls.moderation_status || "Pending",
     scheduleStatus: computeScheduleStatus(startDateTime, endDateTime),
