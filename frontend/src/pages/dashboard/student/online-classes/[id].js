@@ -35,6 +35,12 @@ export default function StudentClassRoom() {
     if (!id) return;
     const controller = new AbortController();
     const { signal } = controller;
+    // Reset per-class state so progress and chat start fresh for each class navigation
+    setCompletedLessons([]);
+    setMessages([]);
+    setChatInput("");
+    setAssignments([]);
+    setScheduleStatus(null);
     const load = async () => {
       try {
         const details = await fetchClassDetails(id, signal);

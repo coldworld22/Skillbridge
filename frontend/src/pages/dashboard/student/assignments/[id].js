@@ -1,5 +1,5 @@
 // pages/dashboard/student/assignments/[id].js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { FaExclamationTriangle, FaPlay, FaUpload } from 'react-icons/fa';
@@ -12,6 +12,7 @@ export default function AssignmentSolvePage() {
   const [blurCount, setBlurCount] = useState(0);
   const [file, setFile] = useState(null);
   const [answer, setAnswer] = useState('');
+  const blurCountRef = useRef(0);
 
   useEffect(() => {
     if (id) {
@@ -25,6 +26,22 @@ export default function AssignmentSolvePage() {
     }
   }, [id]);
 
+  const handleBlur = useCallback(() => {
+    setBlurCount((prev) => {
+      const nextCount = prev + 1;
+
+      if (nextCount === 1) {
+        alert('⚠️ Warning: Please stay focused! Switching tabs or minimizing is not allowed.');
+      } else if (nextCount === 2) {
+        alert('⚠️ Final Warning: One more distraction and the assignment will be flagged!');
+      } else {
+        alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
+      }
+
+      return nextCount;
+    });
+  }, []);
+
   useEffect(() => {
     if (started) {
       window.addEventListener('blur', handleBlur);
@@ -36,15 +53,19 @@ export default function AssignmentSolvePage() {
   }, [started]);
 
   const handleBlur = () => {
-    setBlurCount(prev => prev + 1);
-    if (blurCount < 2) {
+    const nextCount = blurCountRef.current + 1;
+    blurCountRef.current = nextCount;
+    setBlurCount(nextCount);
+
+    if (nextCount === 1) {
       alert('⚠️ Warning: Please stay focused! Switching tabs or minimizing is not allowed.');
-    } else if (blurCount === 2) {
+    } else if (nextCount === 2) {
       alert('⚠️ Final Warning: One more distraction and the assignment will be flagged!');
     } else {
       alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
     }
   };
+
 
   const enterFullscreen = () => {
     const elem = document.documentElement;

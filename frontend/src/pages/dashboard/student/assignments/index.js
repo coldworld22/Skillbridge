@@ -64,7 +64,10 @@ export default function AssignmentDashboard() {
                           : 'bg-yellow-100 text-yellow-800'
                       }`}
                     >
-                      {assignment.status} {assignment.grade && `| Grade: ${assignment.grade}`}
+                      {assignment.status}{' '}
+                      {assignment.grade !== undefined &&
+                        assignment.grade !== null &&
+                        `| Grade: ${assignment.grade}`}
                     </span>
                   )}
                 </div>
