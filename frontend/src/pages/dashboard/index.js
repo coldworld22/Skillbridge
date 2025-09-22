@@ -11,6 +11,8 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../next-i18next.config.js";
 
+const MotionLink = motion(Link);
+
 const allCourses = [
   { id: 1, title: "Mastering React.js", category: "JavaScript", progress: 80 },
   {
@@ -80,14 +82,13 @@ const DashboardPage = () => {
                   style={{ width: `${course.progress}%` }}
                 />
               </div>
-              <Link href={`/dashboard/course/${course.id}`}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                >
-                  {t('dashboardPage.continue_learning')}
-                </motion.button>
-              </Link>
+              <MotionLink
+                href={`/dashboard/course/${course.id}`}
+                whileHover={{ scale: 1.05 }}
+                className="mt-4 inline-flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+              >
+                {t('dashboardPage.continue_learning')}
+              </MotionLink>
             </motion.div>
           ))}
         </div>
