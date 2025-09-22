@@ -1,5 +1,5 @@
 // pages/dashboard/student/assignments/[id].js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { FaExclamationTriangle, FaPlay, FaUpload } from 'react-icons/fa';
@@ -27,32 +27,6 @@ export default function AssignmentSolvePage() {
   }, [id]);
 
   const handleBlur = useCallback(() => {
-    setBlurCount((prev) => {
-      const nextCount = prev + 1;
-
-      if (nextCount === 1) {
-        alert('⚠️ Warning: Please stay focused! Switching tabs or minimizing is not allowed.');
-      } else if (nextCount === 2) {
-        alert('⚠️ Final Warning: One more distraction and the assignment will be flagged!');
-      } else {
-        alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
-      }
-
-      return nextCount;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (started) {
-      window.addEventListener('blur', handleBlur);
-      enterFullscreen();
-    }
-    return () => {
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [started]);
-
-  const handleBlur = () => {
     const nextCount = blurCountRef.current + 1;
     blurCountRef.current = nextCount;
     setBlurCount(nextCount);
@@ -64,7 +38,17 @@ export default function AssignmentSolvePage() {
     } else {
       alert('🚫 You have exceeded the allowed distractions. Admins will be notified.');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (started) {
+      window.addEventListener('blur', handleBlur);
+      enterFullscreen();
+    }
+    return () => {
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [started, handleBlur]);
 
 
   const enterFullscreen = () => {
