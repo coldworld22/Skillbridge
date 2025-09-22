@@ -22,25 +22,14 @@ const formatBaseClass = (cls) => ({
 
 const formatEnrolledClass = (cls) => {
   const base = formatBaseClass(cls);
-  const { start_date, end_date, status, ...rest } = base;
-  const hasProgress = rest.progress !== undefined && rest.progress !== null;
-  let progress = hasProgress ? Number(rest.progress) : undefined;
-
-  if (!Number.isFinite(progress)) {
-    progress = undefined;
-  }
-
-  if (progress === undefined) {
-    progress = status === "completed" ? 100 : 0;
-  }
-
+  const { start_date, end_date, status, progress = 0, ...rest } = base;
   return {
     ...rest,
     startDate: start_date,
     endDate: end_date,
     enrollmentStatus: status,
     scheduleStatus: computeScheduleStatus(start_date, end_date),
-    progress,
+    progress: status === "completed" ? 100 : Number(progress) || 0,
   };
 };
 
