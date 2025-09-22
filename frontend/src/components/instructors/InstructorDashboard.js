@@ -52,6 +52,7 @@ function InstructorDashboard() {
   const [events, setEvents] = useState([]);
   const [tutorials, setTutorials] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [classesLoaded, setClassesLoaded] = useState(false);
   const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [certificates, setCertificates] = useState([]);
@@ -76,23 +77,8 @@ function InstructorDashboard() {
       }
     }
     loadStats();
-    async function loadEvents() {
-      if (!user?.id) return;
-      try {
-        const data = await fetchInstructorScheduleEvents(user.id);
-        const parsed = data.map((e) => ({
-          ...e,
-          start: new Date(e.start),
-          ...(e.end ? { end: new Date(e.end) } : {}),
-        }));
-        setEvents(parsed);
-      } catch (err) {
-        console.error('Failed to load schedule events', err);
-      }
-    }
-    loadEvents();
-
     async function loadLists() {
+      setClassesLoaded(false);
       if (process.env.NODE_ENV === 'development') {
         const { tutorials, classes, students, assignments, certificates } =
           instructorDashboardMocks;
@@ -101,6 +87,7 @@ function InstructorDashboard() {
         setStudents(students);
         setAssignments(assignments);
         setCertificates(certificates);
+        setClassesLoaded(true);
         return;
       }
 
@@ -118,6 +105,8 @@ function InstructorDashboard() {
         setClasses(cls);
       } catch (err) {
         console.error('Failed to load classes', err);
+      } finally {
+        setClassesLoaded(true);
       }
 
       // Students, assignments and certificates would be fetched through
@@ -125,6 +114,30 @@ function InstructorDashboard() {
     }
     loadLists();
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || !classesLoaded) return;
+
+    let isMounted = true;
+    async function loadEvents() {
+      try {
+        const data = await fetchInstructorScheduleEvents(user.id, classes);
+        const parsed = data.map((e) => ({
+          ...e,
+          start: new Date(e.start),
+          ...(e.end ? { end: new Date(e.end) } : {}),
+        }));
+        if (isMounted) setEvents(parsed);
+      } catch (err) {
+        console.error('Failed to load schedule events', err);
+      }
+    }
+
+    loadEvents();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, classesLoaded, classes]);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
   const tabButtonStyle = (tab) =>

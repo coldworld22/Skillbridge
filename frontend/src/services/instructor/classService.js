@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
@@ -9,15 +10,15 @@ const formatClass = (cls) => {
     ...rest,
     publishStatus: status,
     cover_image: cls.cover_image
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
       : null,
     demo_video_url: cls.demo_video_url
       ? safeEncodeURI(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.demo_video_url}`,
         )
       : null,
     instructor_image: cls.instructor_image
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.instructor_image}`
       : null,
     trending: Boolean(cls.trending),
 
@@ -32,9 +33,11 @@ const formatClass = (cls) => {
 
 export const fetchInstructorClasses = async (instructorId) => {
   // Fetch only classes belonging to the specified instructor
-  const { data } = await api.get("/users/classes/instructor/my", {
-    params: { instructorId },
-  });
+  const requestConfig = instructorId ? { params: { instructorId } } : {};
+  const { data } = await api.get(
+    "/users/classes/instructor/my",
+    requestConfig,
+  );
   const list = data?.data ?? [];
   return list.map(formatClass);
 };
@@ -109,8 +112,13 @@ export const deleteClassAssignment = async (assignmentId) => {
 
 // Fetch upcoming schedule events for the current instructor
 // Combines class start dates and lesson times
-export const fetchInstructorScheduleEvents = async (instructorId) => {
-  const classes = await fetchInstructorClasses(instructorId);
+export const fetchInstructorScheduleEvents = async (
+  instructorId,
+  providedClasses,
+) => {
+  const classes = Array.isArray(providedClasses)
+    ? providedClasses
+    : await fetchInstructorClasses(instructorId);
   const now = new Date();
   const events = [];
 
