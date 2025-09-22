@@ -2130,6 +2130,8 @@
     "starts_soon": "Commence bientôt",
     "completed": "Terminé",
     "class_ended": "Cours terminé",
-    "load_more": "Charger plus"
+    "load_more": "Charger plus",
+    "notify_success": "Vous serez averti avant le début de ce cours.",
+    "notify_error": "Impossible de configurer le rappel. Veuillez réessayer."
   }
 }

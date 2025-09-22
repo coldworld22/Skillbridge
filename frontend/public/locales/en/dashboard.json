@@ -2147,6 +2147,8 @@
     "starts_soon": "Starts Soon",
     "completed": "Completed",
     "class_ended": "Class Ended",
-    "load_more": "Load More"
+    "load_more": "Load More",
+    "notify_success": "You will be notified before this class starts.",
+    "notify_error": "Unable to set a reminder. Please try again."
   }
 }

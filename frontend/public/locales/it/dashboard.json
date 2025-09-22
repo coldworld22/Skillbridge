@@ -2136,6 +2136,8 @@
     "starts_soon": "Inizia presto",
     "completed": "Completato",
     "class_ended": "Classe terminata",
-    "load_more": "Carica altro"
+    "load_more": "Carica altro",
+    "notify_success": "Riceverai una notifica prima che inizi questa lezione.",
+    "notify_error": "Impossibile impostare il promemoria. Riprova."
   }
 }
