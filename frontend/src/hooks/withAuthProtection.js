@@ -11,7 +11,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       : rolesOrOptions || {};
 
   return function ProtectedPage(props) {
-    const { user, accessToken, logout } = useAuthStore();
+    const { user, accessToken, logout, hasHydrated } = useAuthStore();
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
 
@@ -20,27 +20,37 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     }, []);
 
     useEffect(() => {
-      if (hydrated) {
-        const role = user?.role?.toLowerCase();
-        if (!user) {
-          router.replace("/auth/login");
-        } else if (!accessToken || isTokenExpired(accessToken)) {
-          logout();
-          router.replace("/auth/login");
-        } else if (
-          (allowedRoles.length && !allowedRoles.includes(role)) ||
-          (allowedPerms.length &&
-            role !== "superadmin" &&
-            !allowedPerms.some((p) => user.permissions?.includes(p)))
-        ) {
-          router.replace("/error/403");
-        }
+      if (!hydrated || !hasHydrated) {
+        return;
       }
-    }, [hydrated, user, accessToken]);
+
+      const role = user?.role?.toLowerCase();
+      if (!user) {
+        router.replace("/auth/login");
+      } else if (!accessToken || isTokenExpired(accessToken)) {
+        logout();
+        router.replace("/auth/login");
+      } else if (
+        (allowedRoles.length && !allowedRoles.includes(role)) ||
+        (allowedPerms.length &&
+          role !== "superadmin" &&
+          !allowedPerms.some((p) => user.permissions?.includes(p)))
+      ) {
+        router.replace("/error/403");
+      }
+    }, [
+      hydrated,
+      hasHydrated,
+      user,
+      accessToken,
+      logout,
+      router,
+    ]);
 
     const role = user?.role?.toLowerCase();
     if (
       !hydrated ||
+      !hasHydrated ||
       !user ||
       (allowedRoles.length && !allowedRoles.includes(role)) ||
       (allowedPerms.length &&
