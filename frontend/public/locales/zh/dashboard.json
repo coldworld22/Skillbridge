@@ -2093,6 +2093,8 @@
     "class_ended": "课程已结束",
     "load_more": "加载更多",
     "notify_success": "课程开始前会通知你。",
-    "notify_error": "无法设置提醒。请重试。"
+    "notify_error": "无法设置提醒。请重试。",
+    "preview": "预览",
+    "category_general": "通用"
   }
 }

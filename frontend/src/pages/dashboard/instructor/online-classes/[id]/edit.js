@@ -17,6 +17,7 @@ import {
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { fetchClassTags } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
+import { toDateInput } from '@/utils/date';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -96,8 +97,12 @@ function EditInstructorClass() {
             level: data.level || '',
             language: data.language || '',
             description: data.description || '',
-            startDate: data.start_date || '',
-            endDate: data.end_date || '',
+            startDate:
+              data.startDateInput ||
+              (data.start_date ? toDateInput(data.start_date) : ''),
+            endDate:
+              data.endDateInput ||
+              (data.end_date ? toDateInput(data.end_date) : ''),
             price: data.price ?? '',
             maxStudents: data.max_students ?? '',
             isFree: data.price === 0,

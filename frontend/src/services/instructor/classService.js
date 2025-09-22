@@ -4,8 +4,28 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
+const normalizeDateValue = (value) => (value ? toDateInput(value) : "");
+
+const buildScheduleDisplay = (start, end, fallbackDate, fallbackTime, startTime) => {
+  if (start && end) {
+    return start === end ? start : `${start} - ${end}`;
+  }
+
+  if (start) {
+    const timePortion = startTime || fallbackTime;
+    return timePortion ? `${start} @ ${timePortion}` : start;
+  }
+
+  if (end) return end;
+
+  const fallbackParts = [fallbackDate, startTime || fallbackTime].filter(Boolean);
+  return fallbackParts.join(" @ ");
+};
+
 const formatClass = (cls) => {
   const { status, ...rest } = cls;
+  const startDateTime = cls.start_date || null;
+  const endDateTime = cls.end_date || null;
   return {
     ...rest,
     publishStatus: status,
@@ -21,12 +41,14 @@ const formatClass = (cls) => {
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.instructor_image}`
       : null,
     trending: Boolean(cls.trending),
+    start_date: cls.start_date ?? null,
+    end_date: cls.end_date ?? null,
 
-    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
+    startDateInput: cls.start_date ? toDateInput(cls.start_date) : "",
+    endDateInput: cls.end_date ? toDateInput(cls.end_date) : "",
 
     approvalStatus: cls.moderation_status || "Pending",
-    scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+    scheduleStatus: computeScheduleStatus(startDateTime, endDateTime),
     views: cls.views || 0,
   };
 };
@@ -123,7 +145,11 @@ export const fetchInstructorScheduleEvents = async (
   const events = [];
 
   for (const cls of classes) {
-    if (!cls.start_date) continue;
+    const startDateSource = cls.startDateTime || cls.start_date;
+    if (!startDateSource) continue;
+
+    const classStart = new Date(startDateSource);
+    if (Number.isNaN(classStart.getTime())) continue;
 
     // Skip completed classes
     if (cls.scheduleStatus === "Completed") continue;
@@ -132,8 +158,14 @@ export const fetchInstructorScheduleEvents = async (
     events.push({
       id: `class-${cls.id}`,
       title: `Class: ${cls.title}`,
-      start: cls.start_date,
-      ...(cls.end_date ? { end: cls.end_date } : {}),
+      start: classStart,
+      ...(cls.endDateTime || cls.end_date
+        ? (() => {
+            const endDateSource = cls.endDateTime || cls.end_date;
+            const classEnd = new Date(endDateSource);
+            return Number.isNaN(classEnd.getTime()) ? {} : { end: classEnd };
+          })()
+        : {}),
     });
 
     try {
@@ -145,8 +177,15 @@ export const fetchInstructorScheduleEvents = async (
           events.push({
             id: `lesson-${lesson.id}`,
             title: `Lesson: ${lesson.title}`,
-            start: lesson.start_time,
-            ...(lesson.end_time ? { end: lesson.end_time } : {}),
+            start: lessonStart,
+            ...(lesson.end_time
+              ? (() => {
+                  const lessonEnd = new Date(lesson.end_time);
+                  return Number.isNaN(lessonEnd.getTime())
+                    ? {}
+                    : { end: lessonEnd };
+                })()
+              : {}),
           });
         }
       });

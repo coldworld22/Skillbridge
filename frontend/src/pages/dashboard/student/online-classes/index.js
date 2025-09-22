@@ -152,7 +152,10 @@ export default function MyEnrolledClassesPage() {
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-gray-800">
                     <FaChalkboardTeacher className="text-yellow-500" /> {cls.title}
                   </h2>
-                  <FaEye className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1" title={t('preview')} />
+                  <FaEye
+                    className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1"
+                    title={t('studentOnlineClassesPage.preview')}
+                  />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">{t('studentOnlineClassesPage.instructor')} {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
@@ -166,7 +169,8 @@ export default function MyEnrolledClassesPage() {
                   ).toLocaleString()}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
-                  <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || t('category_general')}
+                  <FaTags className="mr-1 text-gray-400" />
+                  {cls.tags?.join(', ') || t('studentOnlineClassesPage.category_general')}
                 </p>
                 <div className="h-2 bg-gray-300 rounded-full mb-2">
                   <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${cls.progress || 0}%` }}></div>
