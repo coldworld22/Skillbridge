@@ -2,6 +2,7 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./notifications.service");
+const { isAdminRole } = require("../../utils/role");
 
 exports.getMyNotifications = catchAsync(async (req, res) => {
   const data = await service.getUserNotifications(req.user.id);
@@ -18,6 +19,10 @@ exports.create = catchAsync(async (req, res) => {
   const { user_id, type, message } = req.body || {};
   if (!user_id || !type || !message) {
     throw new AppError("Missing fields", 400);
+  }
+  const roles = req.user?.roles || [req.user?.role];
+  if (user_id !== req.user?.id && !isAdminRole(roles)) {
+    throw new AppError("Access denied", 403);
   }
   const note = await service.createNotification({ user_id, type, message });
   sendSuccess(res, note, "Notification created");
