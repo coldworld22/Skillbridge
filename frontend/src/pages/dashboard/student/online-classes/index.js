@@ -30,12 +30,12 @@ export default function MyEnrolledClassesPage() {
 
   const statusLabels = {
     all: t('studentOnlineClassesPage.status_all'),
-    live: t('studentOnlineClassesPage.status_live'),
+    ongoing: t('studentOnlineClassesPage.status_live'),
     upcoming: t('studentOnlineClassesPage.status_upcoming'),
     completed: t('studentOnlineClassesPage.status_completed')
   };
   const scheduleStatusLabels = {
-    Live: t('studentOnlineClassesPage.status_live'),
+    Ongoing: t('studentOnlineClassesPage.status_live'),
     Upcoming: t('studentOnlineClassesPage.status_upcoming'),
     Completed: t('studentOnlineClassesPage.status_completed')
   };
@@ -174,7 +174,7 @@ export default function MyEnrolledClassesPage() {
                 <p className="text-xs text-gray-500 mb-2">{t('studentOnlineClassesPage.progress_completed', { progress: cls.progress || 0 })}</p>
 
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                  cls.scheduleStatus === 'Live'
+                  cls.scheduleStatus === 'Ongoing'
                     ? 'bg-green-100 text-green-800'
                     : cls.scheduleStatus === 'Upcoming'
                     ? 'bg-yellow-100 text-yellow-800'
