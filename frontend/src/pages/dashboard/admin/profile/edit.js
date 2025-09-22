@@ -40,6 +40,7 @@ import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+const LAYOUT_NAMESPACES = ["common", "dashboard"];
 
 const buildAvatarUrl = (url) =>
   url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
