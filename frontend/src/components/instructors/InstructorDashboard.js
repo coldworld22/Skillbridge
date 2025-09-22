@@ -82,8 +82,17 @@ function InstructorDashboard() {
       if (process.env.NODE_ENV === 'development') {
         const { tutorials, classes, students, assignments, certificates } =
           instructorDashboardMocks;
+        const classesWithSchedule = classes.map((cls) => {
+          const scheduleDisplay = [cls.date, cls.time].filter(Boolean).join(" @ ");
+          return {
+            ...cls,
+            start_date: cls.start_date ?? cls.date ?? "",
+            end_date: cls.end_date ?? "",
+            scheduleDisplay,
+          };
+        });
         setTutorials(tutorials);
-        setClasses(classes);
+        setClasses(classesWithSchedule);
         setStudents(students);
         setAssignments(assignments);
         setCertificates(certificates);

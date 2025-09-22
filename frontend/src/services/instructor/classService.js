@@ -4,6 +4,24 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
+const normalizeDateValue = (value) => (value ? toDateInput(value) : "");
+
+const buildScheduleDisplay = (start, end, fallbackDate, fallbackTime, startTime) => {
+  if (start && end) {
+    return start === end ? start : `${start} - ${end}`;
+  }
+
+  if (start) {
+    const timePortion = startTime || fallbackTime;
+    return timePortion ? `${start} @ ${timePortion}` : start;
+  }
+
+  if (end) return end;
+
+  const fallbackParts = [fallbackDate, startTime || fallbackTime].filter(Boolean);
+  return fallbackParts.join(" @ ");
+};
+
 const formatClass = (cls) => {
   const { status, ...rest } = cls;
   const startDateTime = cls.start_date || null;
