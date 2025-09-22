@@ -20,11 +20,10 @@ exports.create = catchAsync(async (req, res) => {
   if (!user_id || !type || !message) {
     throw new AppError("Missing fields", 400);
   }
-  const isAdmin = isAdminRole(req.user?.roles || req.user?.role);
-  if (!isAdmin && String(req.user.id) !== String(user_id)) {
-    throw new AppError("Unauthorized to create notifications for other users", 403);
+  const roles = req.user?.roles || [req.user?.role];
+  if (user_id !== req.user?.id && !isAdminRole(roles)) {
+    throw new AppError("Access denied", 403);
   }
-
   const note = await service.createNotification({ user_id, type, message });
   sendSuccess(res, note, "Notification created");
 });
