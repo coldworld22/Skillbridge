@@ -82,8 +82,17 @@ function InstructorDashboard() {
       if (process.env.NODE_ENV === 'development') {
         const { tutorials, classes, students, assignments, certificates } =
           instructorDashboardMocks;
+        const classesWithSchedule = classes.map((cls) => {
+          const scheduleDisplay = [cls.date, cls.time].filter(Boolean).join(" @ ");
+          return {
+            ...cls,
+            start_date: cls.start_date ?? cls.date ?? "",
+            end_date: cls.end_date ?? "",
+            scheduleDisplay,
+          };
+        });
         setTutorials(tutorials);
-        setClasses(classes);
+        setClasses(classesWithSchedule);
         setStudents(students);
         setAssignments(assignments);
         setCertificates(certificates);
@@ -157,6 +166,22 @@ function InstructorDashboard() {
       fontSize: "0.85rem",
     },
   });
+
+  const getClassScheduleLabel = (cls) => {
+    if (cls.scheduleDisplay) return cls.scheduleDisplay;
+
+    const start = cls.start_date ?? cls.startDate ?? "";
+    const end = cls.end_date ?? cls.endDate ?? "";
+
+    if (start && end) {
+      return start === end ? start : `${start} - ${end}`;
+    }
+
+    if (start) return start;
+    if (end) return end;
+
+    return "--";
+  };
 
   return (
     <InstructorLayout>
@@ -263,7 +288,7 @@ function InstructorDashboard() {
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
-            <p className="text-sm text-gray-500">{cls.date} @ {cls.time}</p>
+            <p className="text-sm text-gray-500">{getClassScheduleLabel(cls)}</p>
           </div>
           <div className="space-x-2">
             <button className="text-sky-600 hover:underline">{t('edit')}</button>

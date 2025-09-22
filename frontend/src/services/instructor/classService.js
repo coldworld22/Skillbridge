@@ -4,8 +4,30 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
+const normalizeDateValue = (value) => (value ? toDateInput(value) : "");
+
+const buildScheduleDisplay = (start, end, fallbackDate, fallbackTime, startTime) => {
+  if (start && end) {
+    return start === end ? start : `${start} - ${end}`;
+  }
+
+  if (start) {
+    const timePortion = startTime || fallbackTime;
+    return timePortion ? `${start} @ ${timePortion}` : start;
+  }
+
+  if (end) return end;
+
+  const fallbackParts = [fallbackDate, startTime || fallbackTime].filter(Boolean);
+  return fallbackParts.join(" @ ");
+};
+
 const formatClass = (cls) => {
   const { status, ...rest } = cls;
+  const rawStart = cls.start_date ?? cls.startDate ?? "";
+  const rawEnd = cls.end_date ?? cls.endDate ?? "";
+  const startDate = normalizeDateValue(rawStart);
+  const endDate = normalizeDateValue(rawEnd);
   return {
     ...rest,
     publishStatus: status,
@@ -22,8 +44,16 @@ const formatClass = (cls) => {
       : null,
     trending: Boolean(cls.trending),
 
-    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
+    start_date: startDate,
+    end_date: endDate,
+
+    scheduleDisplay: buildScheduleDisplay(
+      startDate,
+      endDate,
+      cls.date ?? cls.startDate ?? "",
+      cls.time ?? "",
+      cls.start_time ?? cls.startTime ?? "",
+    ),
 
     approvalStatus: cls.moderation_status || "Pending",
     scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
