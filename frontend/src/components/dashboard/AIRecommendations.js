@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
 
+const MotionLink = motion(Link);
+
 const defaultRecommendedCourses = [
   { id: 4, title: "Advanced JavaScript", category: "JavaScript" },
   { id: 5, title: "Python for Data Science", category: "Data Science" },
@@ -31,14 +33,13 @@ const AIRecommendations = ({ recommendedCourses }) => {
             <p className="text-gray-300">
               {t('dashboardPage.category')}: {course.category}
             </p>
-            <Link href={`/dashboard/course/${course.id}`}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-              >
-                {t('dashboardPage.view_course')}
-              </motion.button>
-            </Link>
+            <MotionLink
+              href={`/dashboard/course/${course.id}`}
+              whileHover={{ scale: 1.05 }}
+              className="mt-4 inline-flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+            >
+              {t('dashboardPage.view_course')}
+            </MotionLink>
           </motion.div>
         ))}
       </div>
