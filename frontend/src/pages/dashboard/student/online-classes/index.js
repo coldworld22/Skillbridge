@@ -65,18 +65,44 @@ export default function MyEnrolledClassesPage() {
     }
   };
 
-  const filteredClasses = classes
+  const getScheduleDate = (cls) => {
+    const timestamp =
+      cls.start_date || cls.startDate || cls.end_date || cls.endDate || null;
+
+    if (!timestamp) {
+      return null;
+    }
+
+    const date = new Date(timestamp);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const classesWithSchedule = classes.map((cls) => ({
+    ...cls,
+    scheduleDate: getScheduleDate(cls),
+  }));
+
+  const filteredClasses = classesWithSchedule
     .filter(
       (cls) => filter === 'all' || cls.scheduleStatus?.toLowerCase() === filter,
     )
     .filter((cls) => (cls.title || '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      const dateA = new Date(
-        a.start_date || a.startDate || a.end_date || a.endDate || 0,
-      );
-      const dateB = new Date(
-        b.start_date || b.startDate || b.end_date || b.endDate || 0,
-      );
+      const dateA = a.scheduleDate;
+      const dateB = b.scheduleDate;
+
+      if (!dateA && !dateB) {
+        return 0;
+      }
+
+      if (!dateA) {
+        return 1;
+      }
+
+      if (!dateB) {
+        return -1;
+      }
+
       return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
@@ -160,13 +186,11 @@ export default function MyEnrolledClassesPage() {
                 <p className="text-sm text-gray-600 mb-1">{t('studentOnlineClassesPage.instructor')} {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
                   <FaCalendarAlt />
-                  {new Date(
-                    cls.start_date ||
-                      cls.startDate ||
-                      cls.end_date ||
-                      cls.endDate ||
-                      0,
-                  ).toLocaleString()}
+                  {cls.scheduleDate
+                    ? cls.scheduleDate.toLocaleString()
+                    : t('studentOnlineClassesPage.schedule_pending', {
+                        defaultValue: t('studentOnlineClassesPage.class_ended'),
+                      })}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
                   <FaTags className="mr-1 text-gray-400" />
