@@ -158,7 +158,7 @@ cd ..
 Start all services with Docker Compose:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 The containers expose the following URLs:
@@ -232,14 +232,14 @@ To deploy SkillBridge for real users on a remote host:
 4. **Run database migrations and seeds** before starting the containers:
 
    ```bash
-   docker-compose run --rm backend npm run migrate
-   docker-compose run --rm backend npm run seed
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed
    ```
 
 5. **Build and start the containers** in detached mode:
 
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
 
 6. **Verify the deployment** by visiting `https://<your-domain>` in a browser. The API will be available at `https://<your-domain>/api`.
@@ -248,5 +248,5 @@ For updates, pull the latest changes and rebuild:
 
 ```bash
 git pull
-docker-compose up -d --build
+docker compose up -d --build
 ```

@@ -4,11 +4,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-# Determine docker compose command
-if command -v docker-compose >/dev/null 2>&1; then
+# Determine docker compose command, preferring the v2 plugin
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
   DOCKER_COMPOSE="docker-compose"
 else
-  DOCKER_COMPOSE="docker compose"
+  echo "Docker Compose is required but not installed. Install the Docker Compose plugin (v2)." >&2
+  exit 1
 fi
 
 if [ -n "$($DOCKER_COMPOSE ps -q backend 2>/dev/null)" ]; then

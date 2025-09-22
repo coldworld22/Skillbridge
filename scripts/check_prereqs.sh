@@ -59,24 +59,40 @@ else
   add_requirement "docker" "Docker" "fail" "Docker CLI not found."
 fi
 
-docker_compose_status=false
-if command -v docker-compose >/dev/null 2>&1; then
+compose_message="Docker Compose not found. Install Docker Compose V2 (the \"docker compose\" plugin)."
+compose_status="fail"
+
+extract_major_version() {
+  echo "$1" | sed -E 's/^v?([0-9]+).*/\1/'
+}
+
+if [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
+  COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version 2>/dev/null | head -n 1)
+  COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
+  if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
+    compose_status="pass"
+    if [ -n "$COMPOSE_VERSION" ]; then
+      compose_message="Docker Compose plugin ${COMPOSE_VERSION}"
+    else
+      compose_message="Docker Compose plugin detected."
+    fi
+  else
+    compose_status="fail"
+    compose_message="Docker Compose plugin ${COMPOSE_VERSION:-unknown} detected. Version 2 or newer is required."
+  fi
+elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
-  if [ -n "$COMPOSE_VERSION" ]; then
-    add_requirement "docker_compose" "Docker Compose" "pass" "$COMPOSE_VERSION"
+  COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
+  if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
+    compose_status="pass"
+    compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
   else
-    add_requirement "docker_compose" "Docker Compose" "pass" "docker-compose command available."
+    compose_status="fail"
+    compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'."
   fi
-elif [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
-  COMPOSE_VERSION=$(docker compose version 2>/dev/null | head -n 1)
-  if [ -n "$COMPOSE_VERSION" ]; then
-    add_requirement "docker_compose" "Docker Compose" "pass" "$COMPOSE_VERSION"
-  else
-    add_requirement "docker_compose" "Docker Compose" "pass" "Docker Compose plugin available."
-  fi
-else
-  add_requirement "docker_compose" "Docker Compose" "fail" "Docker Compose not found."
 fi
+
+add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_message"
 
 # Verify Git
 if command -v git >/dev/null 2>&1; then
