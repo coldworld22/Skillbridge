@@ -2091,6 +2091,8 @@
     "starts_soon": "即将开始",
     "completed": "已完成",
     "class_ended": "课程已结束",
-    "load_more": "加载更多"
+    "load_more": "加载更多",
+    "notify_success": "课程开始前会通知你。",
+    "notify_error": "无法设置提醒。请重试。"
   }
 }

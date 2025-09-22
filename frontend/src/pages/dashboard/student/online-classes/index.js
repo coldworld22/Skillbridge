@@ -58,10 +58,10 @@ export default function MyEnrolledClassesPage() {
   const handleNotify = async (classId) => {
     try {
       await subscribeToClassReminder(classId);
-      toast.success('Subscribed to class reminder');
+      toast.success(t('studentOnlineClassesPage.notify_success'));
     } catch (err) {
       console.error('Failed to subscribe to class reminder', err);
-      toast.error('Failed to subscribe to reminder');
+      toast.error(t('studentOnlineClassesPage.notify_error'));
     }
   };
 
@@ -184,7 +184,10 @@ export default function MyEnrolledClassesPage() {
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                    onClick={() => handleNotify(cls.id)}
+                  >
                     <FaBell /> {t('studentOnlineClassesPage.notify_me')}
                   </button>
                 )}

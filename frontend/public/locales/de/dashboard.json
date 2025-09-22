@@ -2136,6 +2136,8 @@
     "starts_soon": "Beginnt bald",
     "completed": "Abgeschlossen",
     "class_ended": "Kurs beendet",
-    "load_more": "Mehr laden"
+    "load_more": "Mehr laden",
+    "notify_success": "Du wirst benachrichtigt, bevor dieser Kurs beginnt.",
+    "notify_error": "Erinnerung konnte nicht eingerichtet werden. Bitte versuche es erneut."
   }
 }
