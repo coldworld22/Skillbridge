@@ -104,6 +104,8 @@ function InstructorDashboard() {
         return;
       }
 
+      if (!user?.id) return;
+
       try {
         const tuts = await fetchInstructorTutorials();
         setTutorials(tuts);
@@ -112,7 +114,7 @@ function InstructorDashboard() {
       }
 
       try {
-        const cls = await fetchInstructorClasses();
+        const cls = await fetchInstructorClasses(user.id);
         setClasses(cls);
       } catch (err) {
         console.error('Failed to load classes', err);
