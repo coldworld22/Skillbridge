@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "next-i18next";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import {
@@ -131,12 +131,7 @@ function InstructorDashboard() {
     async function loadEvents() {
       try {
         const data = await fetchInstructorScheduleEvents(user.id, classes);
-        const parsed = data.map((e) => ({
-          ...e,
-          start: new Date(e.start),
-          ...(e.end ? { end: new Date(e.end) } : {}),
-        }));
-        if (isMounted) setEvents(parsed);
+        if (isMounted) setEvents(data);
       } catch (err) {
         console.error('Failed to load schedule events', err);
       }
@@ -167,21 +162,22 @@ function InstructorDashboard() {
     },
   });
 
-  const getClassScheduleLabel = (cls) => {
-    if (cls.scheduleDisplay) return cls.scheduleDisplay;
+  const formatClassSchedule = useMemo(
+    () =>
+      (cls) => {
+        const startSource = cls?.startDateTime || cls?.start_date || null;
+        if (!startSource) return t("schedule_tbd", "Schedule TBD");
 
-    const start = cls.start_date ?? cls.startDate ?? "";
-    const end = cls.end_date ?? cls.endDate ?? "";
+        const start = new Date(startSource);
+        if (Number.isNaN(start.getTime())) return t("schedule_tbd", "Schedule TBD");
 
-    if (start && end) {
-      return start === end ? start : `${start} - ${end}`;
-    }
-
-    if (start) return start;
-    if (end) return end;
-
-    return "--";
-  };
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(start);
+      },
+    [t],
+  );
 
   return (
     <InstructorLayout>
@@ -288,7 +284,7 @@ function InstructorDashboard() {
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
-            <p className="text-sm text-gray-500">{getClassScheduleLabel(cls)}</p>
+            <p className="text-sm text-gray-500">{formatClassSchedule(cls)}</p>
           </div>
           <div className="space-x-2">
             <button className="text-sky-600 hover:underline">{t('edit')}</button>
