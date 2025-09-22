@@ -2149,6 +2149,8 @@
     "class_ended": "Class Ended",
     "load_more": "Load More",
     "notify_success": "You will be notified before this class starts.",
-    "notify_error": "Unable to set a reminder. Please try again."
+    "notify_error": "Unable to set a reminder. Please try again.",
+    "preview": "Preview",
+    "category_general": "General"
   }
 }
