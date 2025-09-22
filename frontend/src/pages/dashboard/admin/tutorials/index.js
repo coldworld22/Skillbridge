@@ -30,7 +30,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });

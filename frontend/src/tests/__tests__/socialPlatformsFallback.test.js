@@ -9,7 +9,11 @@ describe('social platform icon fallbacks', () => {
 
   test('renders fallback icon when an unknown platform is provided', () => {
     jest.isolateModules(() => {
-      jest.doMock('@shared/socialPlatforms.json', () => ['linkedin', 'mystery'], { virtual: true });
+      jest.doMock(
+        '@/constants/socialPlatforms',
+        () => ['linkedin', 'mystery'],
+        { virtual: true },
+      );
 
       const { allowedPlatforms, defaultPlatformIcon } = require('@/utils/socialPlatforms');
       const SocialLinksSection = require('@/components/instructor/profile/SocialLinksSection').default;
