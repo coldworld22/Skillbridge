@@ -22,14 +22,14 @@ const formatBaseClass = (cls) => ({
 
 const formatEnrolledClass = (cls) => {
   const base = formatBaseClass(cls);
-  const { start_date, end_date, status, ...rest } = base;
+  const { start_date, end_date, status, progress = 0, ...rest } = base;
   return {
     ...rest,
     startDate: start_date,
     endDate: end_date,
     enrollmentStatus: status,
     scheduleStatus: computeScheduleStatus(start_date, end_date),
-    progress: status === "completed" ? 100 : 0,
+    progress: status === "completed" ? 100 : Number(progress) || 0,
   };
 };
 
