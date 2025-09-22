@@ -83,9 +83,16 @@ export const fetchClassLessons = async (classId, signal) => {
   return extractData(res);
 };
 
+const formatAssignment = (assignment) => ({
+  ...assignment,
+  createdAt: assignment.createdAt ?? assignment.created_at ?? null,
+  dueDate: assignment.dueDate ?? assignment.due_date ?? null,
+});
+
 export const fetchClassAssignments = async (classId, signal) => {
   const res = await api.get(`/users/classes/assignments/class/${classId}`, { signal });
-  return extractData(res);
+  const list = extractData(res);
+  return Array.isArray(list) ? list.map(formatAssignment) : [];
 };
 
 export const fetchMyClassAssignments = async () => {
