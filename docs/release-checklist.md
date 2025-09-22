@@ -11,5 +11,6 @@ Use this checklist to verify the repository is clean before creating a release p
 - [ ] Run frontend tests with `npm test` from the `frontend` directory.
 - [ ] Review documentation for accuracy and completeness.
 - [ ] Verify the application builds successfully.
+- [ ] Verify the light/dark mode toggle in the dashboard header switches themes without visual regressions.
 
 Following this checklist helps keep release packages lean and reliable.
