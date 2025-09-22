@@ -4,6 +4,8 @@ import Footer from "@/components/website/sections/Footer";
 import CourseProgress from "@/components/classes/CourseProgress";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 import { Star, Play, Pause, Volume2, VolumeX, Expand, Minimize, FastForward, Gauge, Lock, Send, CheckCircle } from "lucide-react";
 
@@ -272,9 +274,6 @@ const CourseDashboard = () => {
 };
 
 export default CourseDashboard;
-
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../../next-i18next.config.js';
 
 export async function getServerSideProps({ locale }) {
   return {
