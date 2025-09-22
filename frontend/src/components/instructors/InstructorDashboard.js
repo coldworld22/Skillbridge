@@ -34,6 +34,7 @@ import {
 } from "@/services/instructor/classService";
 import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
 import { instructorDashboardMocks } from "@/mocks/data";
+import { formatDateTime } from "@/utils/date";
 import useAuthStore from "@/store/auth/authStore";
 
 const localizer = momentLocalizer(moment);
@@ -162,22 +163,32 @@ function InstructorDashboard() {
     },
   });
 
-  const formatClassSchedule = useMemo(
-    () =>
-      (cls) => {
-        const startSource = cls?.startDateTime || cls?.start_date || null;
-        if (!startSource) return t("schedule_tbd", "Schedule TBD");
+  const formatClassSchedule = (cls) => {
+    const startValue = cls.start_date ?? cls.startDate;
+    const endValue = cls.end_date ?? cls.endDate;
 
-        const start = new Date(startSource);
-        if (Number.isNaN(start.getTime())) return t("schedule_tbd", "Schedule TBD");
+    const formattedStart = startValue ? formatDateTime(startValue) : "";
+    const formattedEnd = endValue ? formatDateTime(endValue) : "";
 
-        return new Intl.DateTimeFormat(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        }).format(start);
-      },
-    [t],
-  );
+    if (formattedStart && formattedEnd) {
+      return `${formattedStart} - ${formattedEnd}`;
+    }
+
+    if (formattedStart) return formattedStart;
+    if (formattedEnd) return formattedEnd;
+
+    const legacyDate = cls.date ?? "";
+    const legacyTime = cls.time ?? "";
+
+    if (legacyDate && legacyTime) {
+      return `${legacyDate} @ ${legacyTime}`;
+    }
+
+    if (legacyDate) return legacyDate;
+    if (legacyTime) return legacyTime;
+
+    return t("schedule_pending", { defaultValue: "Schedule TBD" });
+  };
 
   return (
     <InstructorLayout>
