@@ -44,6 +44,19 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 const buildAvatarUrl = (url) =>
   url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
 
+const areSocialLinksEqual = (a = {}, b = {}) => {
+  const keysA = Object.keys(a || {});
+  const keysB = Object.keys(b || {});
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  return keysA.every(
+    (key) => Object.prototype.hasOwnProperty.call(b || {}, key) && Object.is(a[key], b[key])
+  );
+};
+
 export const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
@@ -107,6 +120,28 @@ function ProfileEditTemplate() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
+  const updateFormData = useCallback((updates) => {
+    setFormData((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      Object.entries(updates || {}).forEach(([key, value]) => {
+        if (key === "socialLinks") {
+          const nextLinks = value || {};
+          if (!areSocialLinksEqual(prev.socialLinks || {}, nextLinks)) {
+            next.socialLinks = nextLinks;
+            changed = true;
+          }
+        } else if (!Object.is(prev[key], value)) {
+          next[key] = value;
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [setFormData]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -140,8 +175,7 @@ function ProfileEditTemplate() {
       };
     }
 
-    setFormData((prev) => ({
-      ...prev,
+    updateFormData({
       full_name: user.full_name || "",
       email: user.email || "",
       phone: user.phone || "",
@@ -151,7 +185,7 @@ function ProfileEditTemplate() {
       avatarPreview: buildAvatarUrl(user.avatar_url),
       job_title: user.job_title || "",
       department: user.department || "",
-    }));
+    });
 
     const loadProfile = async () => {
       setLoadingProfile(true);
@@ -179,8 +213,7 @@ function ProfileEditTemplate() {
           }
         });
 
-        setFormData((prev) => ({
-          ...prev,
+        updateFormData({
           full_name,
           email: email || "",
           phone: phone || "",
@@ -188,11 +221,10 @@ function ProfileEditTemplate() {
           date_of_birth: date_of_birth?.split("T")[0] || "",
           avatar_url,
           avatarPreview: buildAvatarUrl(avatar_url),
-
           job_title: job_title || "",
           department: department || "",
           socialLinks: socialMap,
-        }));
+        });
       } catch (err) {
         if (
           err?.name === "AbortError" ||
@@ -216,7 +248,7 @@ function ProfileEditTemplate() {
       isMounted = false;
       controller.abort();
     };
-  }, [hasHydrated, t, user]);
+  }, [hasHydrated, t, updateFormData, user]);
 
 
   const sanitizeString = (val) => (typeof val === "string" ? val.trim() : val);
@@ -439,18 +471,19 @@ function ProfileEditTemplate() {
         department: fresh.department,
       });
 
-      setFormData((prev) => ({
-        ...prev,
+      const updatedSocialLinks = (fresh.social_links || []).reduce((acc, cur) => {
+        acc[cur.platform] = cur.url;
+        return acc;
+      }, {});
+
+      updateFormData({
         avatar_url: fresh.avatar_url ?? undefined,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
         avatarPreview: buildAvatarUrl(fresh.avatar_url),
-        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
-          acc[cur.platform] = cur.url;
-          return acc;
-        }, {}),
-      }));
+        socialLinks: updatedSocialLinks,
+      });
 
       toast.success(t('profile_update_success'));
       await fetchNotifications();
