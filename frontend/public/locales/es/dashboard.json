@@ -2124,6 +2124,8 @@
     "class_ended": "Clase finalizada",
     "load_more": "Cargar más",
     "notify_success": "Recibirás una notificación antes de que comience esta clase.",
-    "notify_error": "No se pudo configurar el recordatorio. Inténtalo de nuevo."
+    "notify_error": "No se pudo configurar el recordatorio. Inténtalo de nuevo.",
+    "preview": "Vista previa",
+    "category_general": "General"
   }
 }
