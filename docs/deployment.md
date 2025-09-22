@@ -44,7 +44,7 @@ referenced in `nginx/conf.d/ssl.conf`.
   APP_DOMAIN=yourdomain.com
   FRONTEND_URL=https://${APP_DOMAIN},http://147.93.121.45
   # Do not prefix with "FRONTEND_URL=" when using
-  # docker-compose environment variables.
+  # Docker Compose environment variables.
     ```
 
    For production deployments, Docker Compose also loads variables from

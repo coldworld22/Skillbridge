@@ -103,7 +103,7 @@ npm --prefix frontend install
      # e.g. http://localhost:3000,https://example.com. Defaults to http://localhost:3000
      # REDIS_URL should point to your Redis instance for session persistence
      # set it to your frontend's domain if different and omit any trailing slash
-     # When using docker-compose make sure the value does
+     # When using Docker Compose make sure the value does
      # not include an extra "FRONTEND_URL=" prefix.
      # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
      # to control the seeded admin credentials
@@ -136,14 +136,15 @@ npm --prefix frontend install
 3. Build and launch the entire stack:
 
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
-   If `docker-compose` exits with `KeyError: 'ContainerConfig'`, set
-   `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0` in your `.env`
-   file (both are included in `.env.example`). This disables BuildKit for
-   compose v1 so images retain the legacy metadata structure expected by
-   older docker-compose releases.
+   If the legacy `docker-compose` v1 CLI exits with `KeyError: 'ContainerConfig'`,
+   upgrade to Docker Compose V2 and use the `docker compose` command. If
+   upgrading immediately is not possible, set `DOCKER_BUILDKIT=0` and
+   `COMPOSE_DOCKER_CLI_BUILD=0` in your `.env` file (both are included in
+   `.env.example`) to disable BuildKit so legacy docker-compose releases
+   can run the stack.
 
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
