@@ -33,9 +33,11 @@ const formatClass = (cls) => {
 
 export const fetchInstructorClasses = async (instructorId) => {
   // Fetch only classes belonging to the specified instructor
-  const { data } = await api.get("/users/classes/instructor/my", {
-    params: { instructorId },
-  });
+  const requestConfig = instructorId ? { params: { instructorId } } : {};
+  const { data } = await api.get(
+    "/users/classes/instructor/my",
+    requestConfig,
+  );
   const list = data?.data ?? [];
   return list.map(formatClass);
 };
@@ -110,8 +112,13 @@ export const deleteClassAssignment = async (assignmentId) => {
 
 // Fetch upcoming schedule events for the current instructor
 // Combines class start dates and lesson times
-export const fetchInstructorScheduleEvents = async (instructorId) => {
-  const classes = await fetchInstructorClasses(instructorId);
+export const fetchInstructorScheduleEvents = async (
+  instructorId,
+  providedClasses,
+) => {
+  const classes = Array.isArray(providedClasses)
+    ? providedClasses
+    : await fetchInstructorClasses(instructorId);
   const now = new Date();
   const events = [];
 
