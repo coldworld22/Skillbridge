@@ -16,15 +16,19 @@ exports.markRead = catchAsync(async (req, res) => {
 });
 
 exports.create = catchAsync(async (req, res) => {
-  const { user_id, type, message } = req.body || {};
-  if (!user_id || !type || !message) {
+  const { user_id: bodyUserId, type, message } = req.body || {};
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
+  const targetUserId = isAdmin ? bodyUserId : req.user.id;
+
+  if (!targetUserId || !type || !message) {
     throw new AppError("Missing fields", 400);
   }
-  const roles = req.user?.roles || [req.user?.role];
-  if (user_id !== req.user?.id && !isAdminRole(roles)) {
-    throw new AppError("Access denied", 403);
-  }
-  const note = await service.createNotification({ user_id, type, message });
+
+  const note = await service.createNotification({
+    user_id: targetUserId,
+    type,
+    message,
+  });
   sendSuccess(res, note, "Notification created");
 });
 
