@@ -32,7 +32,26 @@ const CourseDashboard = () => {
     const [lessons, setLessons] = useState(dummyLessons);
     const [enrolled, setEnrolled] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState(dummyLessons[0]);
-    const [darkMode, setDarkMode] = useState(true);
+    const getInitialDarkMode = () => {
+        if (typeof window === "undefined" || typeof document === "undefined") {
+            return false;
+        }
+
+        const root = document.documentElement;
+        if (root.classList.contains("dark")) {
+            return true;
+        }
+
+        const storedTheme = window.localStorage.getItem("theme");
+        if (storedTheme) {
+            return storedTheme === "dark";
+        }
+
+        return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+    };
+
+    const [darkMode, setDarkMode] = useState(getInitialDarkMode);
+    const initialThemeRef = useRef(false);
     const videoRef = useRef(null);
     const [playing, setPlaying] = useState(false);
     const [volume, setVolume] = useState(1);
@@ -48,8 +67,53 @@ const CourseDashboard = () => {
 
 
     useEffect(() => {
-        document.body.classList.toggle("dark", darkMode);
+        if (typeof document === "undefined") {
+            return;
+        }
+
+        document.documentElement.classList.toggle("dark", darkMode);
     }, [darkMode]);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || typeof document === "undefined") {
+            return undefined;
+        }
+
+        const root = document.documentElement;
+
+        initialThemeRef.current = root.classList.contains("dark");
+
+        const syncDarkModeWithDocument = () => {
+            const isDark = root.classList.contains("dark");
+            setDarkMode((prev) => (prev === isDark ? prev : isDark));
+        };
+
+        const observer = new MutationObserver(syncDarkModeWithDocument);
+        observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+
+        syncDarkModeWithDocument();
+
+        const handleStorage = (event) => {
+            if (event.key === "theme") {
+                const shouldBeDark = event.newValue === "dark";
+                setDarkMode((prev) => (prev === shouldBeDark ? prev : shouldBeDark));
+            }
+        };
+
+        window.addEventListener("storage", handleStorage);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("storage", handleStorage);
+
+            const storedTheme = window.localStorage.getItem("theme");
+            const shouldBeDark = storedTheme
+                ? storedTheme === "dark"
+                : initialThemeRef.current;
+
+            root.classList.toggle("dark", shouldBeDark);
+        };
+    }, []);
 
     // Play/Pause Video
     const togglePlay = () => {
