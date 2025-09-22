@@ -18,8 +18,8 @@ export default function Sidebar({ role = 'admin' }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
-  const [settings, setSettings] = useState({ appName: 'SkillBridge', logo_url: null });
 
   useEffect(() => {
     setIsHydrated(true);
@@ -31,21 +31,7 @@ export default function Sidebar({ role = 'admin' }) {
   }, []);
 
   useEffect(() => {
-    setSettings((prev) => ({ ...prev, ...useAppConfigStore.getState().settings }));
-    const unsubscribe = useAppConfigStore.subscribe(
-      (state) => state.settings,
-      (newSettings) => {
-        setSettings((prev) => ({ ...prev, ...newSettings }));
-      }
-    );
-
     fetchAppConfig();
-
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
   }, [fetchAppConfig]);
 
   const handleClearCache = async () => {
@@ -74,12 +60,12 @@ export default function Sidebar({ role = 'admin' }) {
       <div>
         <div className="flex items-center gap-3 mb-8">
           <img
-            src={settings.logo_url ? buildUrl(settings.logo_url) : logo.src || logo}
-            alt={`${settings.appName || 'SkillBridge'} Logo`}
+            src={settings?.logo_url ? buildUrl(settings.logo_url) : logo.src || logo}
+            alt={`${settings?.appName || 'SkillBridge'} Logo`}
             className="w-12 h-12 rounded-full object-contain shadow"
           />
           <h2 className="text-2xl font-extrabold text-yellow-500">
-            {settings.appName || 'SkillBridge'}
+            {settings?.appName || 'SkillBridge'}
           </h2>
         </div>
 
@@ -162,7 +148,7 @@ export default function Sidebar({ role = 'admin' }) {
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {currentYear} {settings.appName || 'SkillBridge'}
+        &copy; {currentYear} {settings?.appName || 'SkillBridge'}
       </div>
     </aside>
   );
