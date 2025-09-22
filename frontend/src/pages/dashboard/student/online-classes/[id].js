@@ -67,8 +67,13 @@ export default function StudentClassRoom() {
     }
   };
 
+  const totalLessons = classData?.lessons?.length || 0;
+  const progressPercentage = totalLessons > 0
+    ? (completedLessons.length / totalLessons) * 100
+    : 0;
+
   const showCertificate =
-    classData && classData.lessons && completedLessons.length === classData.lessons.length;
+    classData && totalLessons > 0 && completedLessons.length === totalLessons;
 
   if (!id) return <div className="text-white p-10">Loading class...</div>;
   if (!classData) return <div className="text-red-400 p-10">❌ Class not found</div>;
@@ -85,7 +90,7 @@ export default function StudentClassRoom() {
       <div className="w-full bg-gray-700 rounded-full h-4 mb-6">
         <div
           className="bg-yellow-500 h-4 rounded-full"
-          style={{ width: `${classData.lessons ? (completedLessons.length / classData.lessons.length) * 100 : 0}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
