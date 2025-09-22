@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "next-i18next";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import {
@@ -82,8 +82,17 @@ function InstructorDashboard() {
       if (process.env.NODE_ENV === 'development') {
         const { tutorials, classes, students, assignments, certificates } =
           instructorDashboardMocks;
+        const classesWithSchedule = classes.map((cls) => {
+          const scheduleDisplay = [cls.date, cls.time].filter(Boolean).join(" @ ");
+          return {
+            ...cls,
+            start_date: cls.start_date ?? cls.date ?? "",
+            end_date: cls.end_date ?? "",
+            scheduleDisplay,
+          };
+        });
         setTutorials(tutorials);
-        setClasses(classes);
+        setClasses(classesWithSchedule);
         setStudents(students);
         setAssignments(assignments);
         setCertificates(certificates);
@@ -122,12 +131,7 @@ function InstructorDashboard() {
     async function loadEvents() {
       try {
         const data = await fetchInstructorScheduleEvents(user.id, classes);
-        const parsed = data.map((e) => ({
-          ...e,
-          start: new Date(e.start),
-          ...(e.end ? { end: new Date(e.end) } : {}),
-        }));
-        if (isMounted) setEvents(parsed);
+        if (isMounted) setEvents(data);
       } catch (err) {
         console.error('Failed to load schedule events', err);
       }
@@ -157,6 +161,23 @@ function InstructorDashboard() {
       fontSize: "0.85rem",
     },
   });
+
+  const formatClassSchedule = useMemo(
+    () =>
+      (cls) => {
+        const startSource = cls?.startDateTime || cls?.start_date || null;
+        if (!startSource) return t("schedule_tbd", "Schedule TBD");
+
+        const start = new Date(startSource);
+        if (Number.isNaN(start.getTime())) return t("schedule_tbd", "Schedule TBD");
+
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(start);
+      },
+    [t],
+  );
 
   return (
     <InstructorLayout>
@@ -263,7 +284,7 @@ function InstructorDashboard() {
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
-            <p className="text-sm text-gray-500">{cls.date} @ {cls.time}</p>
+            <p className="text-sm text-gray-500">{formatClassSchedule(cls)}</p>
           </div>
           <div className="space-x-2">
             <button className="text-sky-600 hover:underline">{t('edit')}</button>

@@ -67,8 +67,13 @@ export default function StudentClassRoom() {
     }
   };
 
+  const totalLessons = classData?.lessons?.length || 0;
+  const progressPercentage = totalLessons > 0
+    ? (completedLessons.length / totalLessons) * 100
+    : 0;
+
   const showCertificate =
-    classData && classData.lessons && completedLessons.length === classData.lessons.length;
+    classData && totalLessons > 0 && completedLessons.length === totalLessons;
 
   if (!id) return <div className="text-white p-10">Loading class...</div>;
   if (!classData) return <div className="text-red-400 p-10">❌ Class not found</div>;
@@ -85,7 +90,7 @@ export default function StudentClassRoom() {
       <div className="w-full bg-gray-700 rounded-full h-4 mb-6">
         <div
           className="bg-yellow-500 h-4 rounded-full"
-          style={{ width: `${classData.lessons ? (completedLessons.length / classData.lessons.length) * 100 : 0}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
@@ -135,31 +140,49 @@ export default function StudentClassRoom() {
           <p className="text-gray-400">No assignments available for this class.</p>
         ) : (
           <ul className="space-y-4">
-            {assignments.map((assignment) => (
-              <li key={assignment.id} className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <p className="font-semibold">{assignment.title}</p>
-                    {assignment.createdAt && Date.now() - new Date(assignment.createdAt).getTime() < 3 * 24 * 60 * 60 * 1000 && (
-                      <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
+            {assignments.map((assignment) => {
+              const createdAtDate = assignment.createdAt
+                ? new Date(assignment.createdAt)
+                : null;
+              const isNew =
+                createdAtDate &&
+                !Number.isNaN(createdAtDate.getTime()) &&
+                Date.now() - createdAtDate.getTime() < 3 * 24 * 60 * 60 * 1000;
+              const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
+              const dueDateLabel =
+                dueDate && !Number.isNaN(dueDate.getTime())
+                  ? dueDate.toLocaleDateString()
+                  : "No due date";
+
+              return (
+                <li
+                  key={assignment.id}
+                  className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600"
+                >
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <p className="font-semibold">{assignment.title}</p>
+                      {isNew && (
+                        <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
+                      )}
+                    </div>
+                    <small className="text-gray-400">Due: {dueDateLabel}</small>
+                  </div>
+                  <div>
+                    {assignment.status === 'Pending' ? (
+                      <button
+                        onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
+                        className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
+                      >
+                        Start
+                      </button>
+                    ) : (
+                      <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
                     )}
                   </div>
-                  <small className="text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</small>
-                </div>
-                <div>
-                  {assignment.status === 'Pending' ? (
-                    <button
-                      onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
-                      className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
-                    >
-                      Start
-                    </button>
-                  ) : (
-                    <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
-                  )}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
