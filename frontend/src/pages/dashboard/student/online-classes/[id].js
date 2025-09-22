@@ -140,31 +140,49 @@ export default function StudentClassRoom() {
           <p className="text-gray-400">No assignments available for this class.</p>
         ) : (
           <ul className="space-y-4">
-            {assignments.map((assignment) => (
-              <li key={assignment.id} className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <p className="font-semibold">{assignment.title}</p>
-                    {assignment.createdAt && Date.now() - new Date(assignment.createdAt).getTime() < 3 * 24 * 60 * 60 * 1000 && (
-                      <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
+            {assignments.map((assignment) => {
+              const createdAtDate = assignment.createdAt
+                ? new Date(assignment.createdAt)
+                : null;
+              const isNew =
+                createdAtDate &&
+                !Number.isNaN(createdAtDate.getTime()) &&
+                Date.now() - createdAtDate.getTime() < 3 * 24 * 60 * 60 * 1000;
+              const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
+              const dueDateLabel =
+                dueDate && !Number.isNaN(dueDate.getTime())
+                  ? dueDate.toLocaleDateString()
+                  : "No due date";
+
+              return (
+                <li
+                  key={assignment.id}
+                  className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600"
+                >
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <p className="font-semibold">{assignment.title}</p>
+                      {isNew && (
+                        <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
+                      )}
+                    </div>
+                    <small className="text-gray-400">Due: {dueDateLabel}</small>
+                  </div>
+                  <div>
+                    {assignment.status === 'Pending' ? (
+                      <button
+                        onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
+                        className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
+                      >
+                        Start
+                      </button>
+                    ) : (
+                      <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
                     )}
                   </div>
-                  <small className="text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</small>
-                </div>
-                <div>
-                  {assignment.status === 'Pending' ? (
-                    <button
-                      onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
-                      className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
-                    >
-                      Start
-                    </button>
-                  ) : (
-                    <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
-                  )}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
