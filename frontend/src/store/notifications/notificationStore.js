@@ -22,7 +22,8 @@ const useNotificationStore = create((set, get) => ({
     set({ loading: true });
     try {
       const data = await getNotifications();
-      const filtered = data.filter(
+      const notifications = Array.isArray(data) ? data : [];
+      const filtered = notifications.filter(
         (n) => !(n.read && n.read_at && new Date() - new Date(n.read_at) > HOUR_MS)
       );
       const prevUnread = get().items.filter((n) => !n.read).length;
