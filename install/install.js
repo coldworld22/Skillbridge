@@ -385,11 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
       const bodyText = await res.text();
       let data;
-      if (responseText) {
+      if (bodyText) {
         try {
-          data = JSON.parse(responseText);
+          data = JSON.parse(bodyText);
         } catch {
-          data = { output: responseText };
+          data = { output: bodyText };
         }
       } else {
         data = {};

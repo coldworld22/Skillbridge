@@ -26,10 +26,8 @@ import { buildUrl } from "@/utils/url";
 import profileRoutes from "@/constants/profileRoutes";
 
 export default function Header() {
-  const { user, hasHydrated } = useAuthStore((state) => ({
-    user: state.user,
-    hasHydrated: state.hasHydrated,
-  }));
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const logout = useAuthStore((state) => state.logout);
   const setUser = useAuthStore((state) => state.setUser);
   const [mounted, setMounted] = useState(false);
@@ -67,6 +65,10 @@ export default function Header() {
   const appSettings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
+
+  const notificationFallbackMessage = t("notification_missing_message", {
+    defaultValue: t("notification", { defaultValue: "Notification" }),
+  });
 
   const profileLink =
     profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;

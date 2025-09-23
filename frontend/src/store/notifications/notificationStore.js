@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
-import LinkText from "@/components/shared/LinkText";
+import LinkText, {
+  DEFAULT_LINK_TEXT,
+} from "@/components/shared/LinkText";
 import i18next from "i18next";
 import {
   getNotifications,
