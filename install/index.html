@@ -188,26 +188,81 @@
 
     <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
       <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
-      <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
-      <form id="configForm" class="mt-4 space-y-4">
-        <label class="block">
-          <span class="block font-medium">Admin Email</span>
-          <input
-            type="email"
-            name="adminEmail"
-            required
-            class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-          />
-        </label>
-        <label class="block">
-          <span class="block font-medium">Admin Password</span>
-          <input
-            type="password"
-            name="adminPassword"
-            required
-            class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-          />
-        </label>
+      <p class="text-sm text-gray-600">Provide the admin credentials and initial organization details for the new installation.</p>
+      <form id="configForm" class="mt-4 space-y-6" enctype="multipart/form-data">
+        <fieldset class="space-y-4">
+          <legend class="text-base font-semibold text-gray-800">Admin access</legend>
+          <label class="block">
+            <span class="block font-medium">Admin Email</span>
+            <input
+              type="email"
+              name="adminEmail"
+              autocomplete="email"
+              required
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </label>
+          <label class="block">
+            <span class="block font-medium">Admin Password</span>
+            <input
+              type="password"
+              name="adminPassword"
+              autocomplete="new-password"
+              required
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </label>
+        </fieldset>
+
+        <fieldset class="space-y-4">
+          <legend class="text-base font-semibold text-gray-800">Organization defaults</legend>
+          <label class="block">
+            <span class="block font-medium">Application Name</span>
+            <input
+              type="text"
+              name="appName"
+              required
+              autocomplete="organization"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </label>
+          <label class="block">
+            <span class="block font-medium">Support Email</span>
+            <input
+              type="email"
+              name="supportEmail"
+              autocomplete="email"
+              required
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <span class="mt-1 block text-xs text-gray-500">Used for contact links and as the default sender for email notifications.</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="space-y-4">
+          <legend class="text-base font-semibold text-gray-800">Branding (optional)</legend>
+          <p class="text-sm text-gray-600">Provide a logo to personalize dashboards and outbound emails. You can link to an existing image or upload one now.</p>
+          <label class="block">
+            <span class="block font-medium">Logo URL</span>
+            <input
+              type="url"
+              name="logoUrl"
+              placeholder="https://example.com/logo.png"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </label>
+          <label class="block">
+            <span class="block font-medium">Upload Logo</span>
+            <input
+              type="file"
+              name="logoFile"
+              accept="image/*"
+              class="mt-1 w-full rounded border border-gray-300 p-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-yellow-50 file:px-3 file:py-2 file:text-yellow-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <span class="mt-1 block text-xs text-gray-500">PNG, JPG, or SVG files up to 2&nbsp;MB. Uploaded logos take precedence over the URL.</span>
+          </label>
+        </fieldset>
+
         <button
           type="submit"
           id="installBtn"

@@ -370,22 +370,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (completionMessage) {
       completionMessage.className = 'mt-1 text-green-700';
-      completionMessage.textContent =
-        messageFromApi || 'SkillBridge is installed and ready to go.';
+      const brandingMessage = credentials?.appName
+        ? `${credentials.appName} is installed with your branding and contact defaults.`
+        : 'SkillBridge is installed with your branding and contact defaults.';
+      completionMessage.textContent = messageFromApi || brandingMessage;
     }
 
     if (completionNextSteps) {
       completionNextSteps.innerHTML = '';
+      const supportEmailStep = credentials?.supportEmail
+        ? `System emails will default to ${credentials.supportEmail}. Update it anytime from Settings → Email.`
+        : null;
+      const defaultSteps = [
+        credentials?.adminEmail
+          ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
+          : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
+        'Review your branding and contact information under Settings → App.',
+        'Visit the documentation for deployment and integration guidance.',
+      ];
+      if (supportEmailStep) {
+        defaultSteps.splice(1, 0, supportEmailStep);
+      }
+
       const steps =
-        instructionsFromApi.length > 0
-          ? instructionsFromApi
-          : [
-              credentials?.adminEmail
-                ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
-                : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
-              'Complete the organization setup and invite your teammates.',
-              'Visit the documentation for deployment and integration guidance.',
-            ];
+        instructionsFromApi.length > 0 ? instructionsFromApi : defaultSteps;
       steps
         .filter((step) => typeof step === 'string' && step.trim().length > 0)
         .forEach((step) => {
@@ -487,11 +495,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!configForm) return;
 
-    const formData = new FormData(configForm);
+    const rawFormData = new FormData(configForm);
+    const sanitize = (value) => String(value ?? '').replace(/\0/g, '').trim();
     const credentials = {
-      adminEmail: String(formData.get('adminEmail') || '').trim(),
-      adminPassword: String(formData.get('adminPassword') || ''),
+      adminEmail: sanitize(rawFormData.get('adminEmail')),
+      adminPassword: String(rawFormData.get('adminPassword') ?? ''),
+      appName: sanitize(rawFormData.get('appName')),
+      supportEmail: sanitize(rawFormData.get('supportEmail')),
+      logoUrl: sanitize(rawFormData.get('logoUrl')),
     };
+
+    const submissionData = new FormData();
+    submissionData.set('adminEmail', credentials.adminEmail);
+    submissionData.set('adminPassword', credentials.adminPassword);
+    submissionData.set('appName', credentials.appName);
+    submissionData.set('supportEmail', credentials.supportEmail);
+    if (credentials.logoUrl) {
+      submissionData.set('logoUrl', credentials.logoUrl);
+    }
+
+    const logoFile = rawFormData.get('logoFile');
+    if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
+      submissionData.set('logoFile', logoFile, logoFile.name);
+    }
 
     updateStep('install');
     setProgress(90);
@@ -524,10 +550,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/install/run', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
-        body: JSON.stringify(credentials),
+        body: submissionData,
       });
 
       const responseText = await res.text();

@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('../../utils/logger');
 const { refreshAdminPresence, markAdminExists } = require('./install.helpers');
+const appConfigService = require('../appConfig/appConfig.service');
+const emailConfigService = require('../emailConfig/emailConfig.service');
 
 // Whitelisted scripts that can be executed via the install API. Paths are
 // resolved absolutely and must exist on disk to be executed.
@@ -26,6 +28,8 @@ const executeScript = (res, scriptKey, options = {}) => {
     typeof options.determineStatusCode === 'function'
       ? options.determineStatusCode
       : null;
+  const afterSuccess =
+    typeof options.afterSuccess === 'function' ? options.afterSuccess : null;
 
   const resolveStatusCode = ({ ok, parsedOutput, rawOutput, error }) => {
     if (determineStatusCode) {
@@ -48,6 +52,14 @@ const executeScript = (res, scriptKey, options = {}) => {
     }
 
     return 200;
+  };
+
+  const runFinalizeHook = async ({ parsedOutput, rawOutput, statusCode }) => {
+    if (!afterSuccess || statusCode >= 400) {
+      return;
+    }
+
+    await afterSuccess({ parsedOutput, rawOutput, statusCode, scriptKey });
   };
 
   return execFile(
@@ -115,6 +127,20 @@ const executeScript = (res, scriptKey, options = {}) => {
           rawOutput,
           error: null,
         });
+
+        if (afterSuccess) {
+          try {
+            await runFinalizeHook({ parsedOutput, rawOutput, statusCode });
+          } catch (hookError) {
+            logger.error('Failed to finalize installation', hookError);
+            return res.status(500).json({
+              ok: false,
+              message:
+                'Installation completed but failed to finalize configuration. Check the server logs and try again.',
+            });
+          }
+        }
+
         return res.status(statusCode).json(parsedOutput);
       }
 
@@ -124,6 +150,20 @@ const executeScript = (res, scriptKey, options = {}) => {
         rawOutput,
         error: null,
       });
+
+      if (afterSuccess) {
+        try {
+          await runFinalizeHook({ parsedOutput: undefined, rawOutput, statusCode });
+        } catch (hookError) {
+          logger.error('Failed to finalize installation', hookError);
+          return res.status(500).json({
+            ok: false,
+            message:
+              'Installation completed but failed to finalize configuration. Check the server logs and try again.',
+          });
+        }
+      }
+
       return res.status(statusCode).json({ ok: true, output: rawOutput });
     }
   );
@@ -144,8 +184,24 @@ exports.runInstall = (req, res) => {
     return value.replace(/\0/g, '').replace(/[\r\n]/g, '').trim();
   };
 
+  const sanitizeText = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\0/g, '').replace(/[\r\n]+/g, ' ').trim();
+  };
+
   const adminEmail = sanitizeCredential(req.body?.adminEmail);
   const adminPassword = sanitizeCredential(req.body?.adminPassword);
+  const appName = sanitizeText(req.body?.appName);
+  const supportEmail = sanitizeCredential(req.body?.supportEmail);
+  const logoUrlRaw = typeof req.body?.logoUrl === 'string' ? req.body.logoUrl.trim() : '';
+  const logoUrl = logoUrlRaw.length > 0 ? logoUrlRaw : undefined;
+
+  const uploadedLogoRelative = req.file?.filename
+    ? `/uploads/app/${req.file.filename}`
+    : undefined;
+  const uploadedLogoAbsolute = req.file?.filename
+    ? path.join(__dirname, '../../../uploads/app', req.file.filename)
+    : undefined;
 
   if (!adminEmail || !adminPassword) {
     return res.status(400).json({
@@ -154,10 +210,100 @@ exports.runInstall = (req, res) => {
     });
   }
 
+  const removeFileIfExists = async (filePath) => {
+    if (!filePath) return;
+    try {
+      await fs.promises.unlink(filePath);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        logger.warn('Failed to remove uploaded logo during install cleanup', error);
+      }
+    }
+  };
+
   return executeScript(res, 'install', {
     env: {
       ADMIN_EMAIL: adminEmail,
       ADMIN_PASSWORD: adminPassword,
+    },
+    afterSuccess: async () => {
+      const existingAppSettings = (await appConfigService.getSettings()) || {};
+      const nextAppSettings = { ...existingAppSettings };
+
+      if (appName) {
+        nextAppSettings.appName = appName;
+        if (!nextAppSettings.siteTitle) {
+          nextAppSettings.siteTitle = appName;
+        }
+      }
+
+      if (supportEmail) {
+        nextAppSettings.contactEmail = supportEmail;
+        nextAppSettings.supportEmail = supportEmail;
+      }
+
+      let oldLogoToRemove;
+
+      if (uploadedLogoRelative) {
+        if (
+          existingAppSettings.logo_url &&
+          existingAppSettings.logo_url !== uploadedLogoRelative &&
+          existingAppSettings.logo_url.startsWith('/uploads/app/')
+        ) {
+          oldLogoToRemove = path.join(
+            __dirname,
+            '../../../',
+            existingAppSettings.logo_url.replace(/^\/+/, '')
+          );
+        }
+        nextAppSettings.logo_url = uploadedLogoRelative;
+      } else if (logoUrl) {
+        if (
+          existingAppSettings.logo_url &&
+          existingAppSettings.logo_url.startsWith('/uploads/app/') &&
+          !logoUrl.startsWith('/uploads/app/')
+        ) {
+          oldLogoToRemove = path.join(
+            __dirname,
+            '../../../',
+            existingAppSettings.logo_url.replace(/^\/+/, '')
+          );
+        }
+        nextAppSettings.logo_url = logoUrl;
+      }
+
+      try {
+        await appConfigService.updateSettings(nextAppSettings);
+        if (oldLogoToRemove && oldLogoToRemove !== uploadedLogoAbsolute) {
+          await removeFileIfExists(oldLogoToRemove);
+        }
+      } catch (error) {
+        if (uploadedLogoAbsolute) {
+          await removeFileIfExists(uploadedLogoAbsolute);
+        }
+        throw error;
+      }
+
+      const existingEmailSettings = (await emailConfigService.getSettings()) || {};
+      const updatedEmailSettings = { ...existingEmailSettings };
+
+      if (appName) {
+        updatedEmailSettings.fromName = appName;
+      }
+
+      if (supportEmail) {
+        updatedEmailSettings.fromEmail = supportEmail;
+        updatedEmailSettings.replyTo = supportEmail;
+      }
+
+      try {
+        await emailConfigService.updateSettings(updatedEmailSettings);
+      } catch (error) {
+        if (uploadedLogoAbsolute && uploadedLogoRelative) {
+          await removeFileIfExists(uploadedLogoAbsolute);
+        }
+        throw error;
+      }
     },
   });
 };

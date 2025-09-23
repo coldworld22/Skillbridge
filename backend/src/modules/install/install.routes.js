@@ -4,6 +4,9 @@ const controller = require('./install.controller');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { z } = require('zod');
+const logoUpload = require('../appConfig/appLogoUploadMiddleware');
+const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -68,22 +71,26 @@ const enforceInstallerGuard = async (req, res, next) => {
         : '';
     const adminExists = await determineAdminPresence();
 
+    let secretValid = false;
     if (setupSecret.length > 0) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
+      const secretsMatch =
+        providedSecret.length > 0 && constantTimeEquals(providedSecret, setupSecret);
 
-      if (providedSecret !== setupSecret) {
+      if (!secretsMatch) {
         return res.status(403).json({
           code: 'INSTALL_LOCKED',
           message: 'Installer locked. Provide a valid setup secret.',
         });
       }
+      secretValid = true;
     }
 
     const requireAuth = adminExists;
 
-    if (secretValid) {
+    if (!requireAuth || secretValid) {
       return next();
     }
 
@@ -110,14 +117,37 @@ router.use(enforceInstallerGuard);
 // No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();
 
+const optionalLogoUrlSchema = z
+  .string()
+  .transform((value) => (typeof value === 'string' ? value.trim() : ''))
+  .transform((value) => (value.length > 0 ? value : undefined))
+  .refine(
+    (value) =>
+      value === undefined ||
+      /^https?:\/\//i.test(value) ||
+      value.startsWith('/'),
+    {
+      message: 'Logo URL must be absolute or start with /',
+    }
+  )
+  .optional();
+
 const installSchema = z
   .object({
     adminEmail: z.string().trim().email(),
     adminPassword: z.string().min(8),
+    appName: z.string().trim().min(1),
+    supportEmail: z.string().trim().email(),
+    logoUrl: optionalLogoUrlSchema,
   })
   .strict();
 
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
-router.post('/run', validate({ body: installSchema }), controller.runInstall);
+router.post(
+  '/run',
+  logoUpload.single('logoFile'),
+  validate({ body: installSchema }),
+  controller.runInstall
+);
 
 module.exports = { requireInstallApiEnabled, router };
