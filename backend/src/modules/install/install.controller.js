@@ -1,8 +1,11 @@
 const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const logger = require('../../utils/logger');
 const { refreshAdminPresence, markAdminExists } = require('./install.helpers');
+
+const fsPromises = fs.promises;
 
 // Whitelisted scripts that can be executed via the install API. Paths are
 // resolved absolutely and must exist on disk to be executed.
@@ -26,6 +29,20 @@ const executeScript = (res, scriptKey, options = {}) => {
     typeof options.determineStatusCode === 'function'
       ? options.determineStatusCode
       : null;
+  const cleanup = typeof options.cleanup === 'function' ? options.cleanup : null;
+  let cleanupInvoked = false;
+
+  const finalize = async () => {
+    if (!cleanup || cleanupInvoked) {
+      return;
+    }
+    cleanupInvoked = true;
+    try {
+      await cleanup();
+    } catch (cleanupError) {
+      logger.warn('Failed to clean installer resources', cleanupError);
+    }
+  };
 
   const resolveStatusCode = ({ ok, parsedOutput, rawOutput, error }) => {
     if (determineStatusCode) {
@@ -74,6 +91,7 @@ const executeScript = (res, scriptKey, options = {}) => {
             rawOutput,
             error,
           });
+          await finalize();
           return res.status(statusCode).json(parsedOutput);
         }
 
@@ -83,6 +101,7 @@ const executeScript = (res, scriptKey, options = {}) => {
           rawOutput,
           error,
         });
+        await finalize();
         return res.status(statusCode).json({ ok: false, output: rawOutput });
       }
 
@@ -115,6 +134,7 @@ const executeScript = (res, scriptKey, options = {}) => {
           rawOutput,
           error: null,
         });
+        await finalize();
         return res.status(statusCode).json(parsedOutput);
       }
 
@@ -124,6 +144,7 @@ const executeScript = (res, scriptKey, options = {}) => {
         rawOutput,
         error: null,
       });
+      await finalize();
       return res.status(statusCode).json({ ok: true, output: rawOutput });
     }
   );
@@ -180,7 +201,6 @@ exports.runInstall = (req, res) => {
       message: 'Admin email and password are required.',
     });
   }
-
   const config = {
     databaseUrl: sanitizeText(req.body?.databaseUrl),
     databaseUser: sanitizeText(req.body?.databaseUser),

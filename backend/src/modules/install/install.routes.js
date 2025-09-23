@@ -1,8 +1,11 @@
 const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
+const { hasExistingAdmin } = require('./install.helpers');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
+const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 const { z } = require('zod');
 const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
@@ -70,6 +73,11 @@ const enforceInstallerGuard = async (req, res, next) => {
       typeof process.env.INSTALL_SETUP_SECRET === 'string'
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
+    const secretRequired = setupSecret.length > 0;
+    const providedSecretHeader = req.get('X-Install-Setup-Secret');
+    const providedSecret =
+      typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
+    const secretValid = secretRequired && constantTimeEquals(providedSecret, setupSecret);
     const adminExists = await determineAdminPresence();
 
     let secretProvided = false;
@@ -92,6 +100,7 @@ const enforceInstallerGuard = async (req, res, next) => {
           message: 'Installer locked. Provide a valid setup secret.',
         });
       }
+      return next();
     }
 
     if (setupSecret.length > 0 && !secretProvided) {
@@ -112,7 +121,12 @@ const enforceInstallerGuard = async (req, res, next) => {
     const adminTokenPresent = hasAdminToken(req);
 
     if (!adminTokenPresent) {
-      await determineAdminPresence();
+      if (secretRequired) {
+        return res.status(403).json({
+          code: 'INSTALL_LOCKED',
+          message: 'Installer locked. Provide a valid setup secret.',
+        });
+      }
       return respondInstallerLocked(res);
     }
 

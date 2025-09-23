@@ -18,6 +18,25 @@ cd Skillbridge
 
 ## 2. Configure environment variables
 
+### Automated install script
+
+The root `install.sh` script streamlines both local and production setups. When
+you run it, the script automatically copies `.env.example` files to `.env` if
+they are missing, then sources the resulting files so migrations and other
+commands inherit the required environment variables. Supply
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+non-interactive use (for example in CI pipelines). Optional flags include:
+
+- `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
+- `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
+  development mode if you prefer to start services yourself.
+
+In production mode, the script ensures Docker services are running before it
+executes database migrations. In development mode it starts the compose stack in
+detached mode unless you opt out with `START_DEV_SERVICES=false`. Any migration
+or seeding errors halt the script before the admin user creation step so you can
+address the problem immediately.
+
 ### Backend
 
 Copy the example file and adjust values as needed:
@@ -29,6 +48,32 @@ cp backend/.env.example backend/.env
 For deployments, Docker Compose additionally reads `backend/.env.production`.
 Copy `backend/.env.production.example` to `backend/.env.production` and fill in
 production database credentials and JWT secrets.
+
+Set the display name that should appear in installer prompts and outbound
+emails so the branding check passes:
+
+```
+APP_NAME=SkillBridge
+```
+
+If you plan to disable transactional email during setup, set
+`DISABLE_EMAILS=true`. Otherwise, provide SMTP credentials so the installer can
+verify connectivity up front:
+
+```
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+```
+
+Create the uploads directory that stores logos and favicons and ensure it is
+writable by the backend service user:
+
+```bash
+mkdir -p backend/uploads/app
+```
 
 Edit `backend/.env` and provide your secrets. `FRONTEND_URL` must match the
 exact origin (scheme, host, and port) where the frontend will run to avoid
@@ -222,6 +267,12 @@ location ^~ /install/ {
    - Either a logo image upload (PNG/JPG/SVG up to 5&nbsp;MB) or an HTTPS URL to an existing logo.
    - The admin email and password for the first administrator.
 7. Run the installer to apply the configuration. The script updates `backend/.env`, writes the selected logo to `backend/uploads/app/`, seeds the branding/email settings in the database, and finally provisions the administrator account.
+
+   The prerequisite card now verifies that PostgreSQL is reachable using the
+   credentials in `.env`, confirms SMTP settings (or acknowledges that
+   `DISABLE_EMAILS=true` is set), checks that `APP_NAME` is defined, and ensures
+   `backend/uploads/app` is writable for logo uploads. Address any failures the
+   installer reports before continuing.
 
 Whether you run SkillBridge directly from the monorepo or from the packaged
 container image, the backend automatically serves the installer assets. During
