@@ -2,9 +2,7 @@ const router = require('express').Router();
 const controller = require('./install.controller');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
-const userModel = require('../users/user.model');
 const { z } = require('zod');
-const { hasExistingAdmin } = require('./install.helpers');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -16,35 +14,18 @@ const requireInstallApiEnabled = (req, res, next) => {
 };
 
 router.use(requireInstallApiEnabled);
-const determineAdminPresence = async () => {
-  try {
-    const bypassCache = process.env.NODE_ENV === 'test';
-    return await hasExistingAdmin({ bypassCache });
-  } catch (error) {
-    if (process.env.NODE_ENV === 'test') {
-      try {
-        const admins = await userModel.findAdmins();
-        return Array.isArray(admins) && admins.length > 0;
-      } catch (fallbackError) {
-        throw fallbackError;
-      }
-    }
-
-    throw error;
-  }
-};
-
 const enforceInstallerGuard = async (req, res, next) => {
   try {
     const setupSecret =
       typeof process.env.INSTALL_SETUP_SECRET === 'string'
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
-    const adminExists = await determineAdminPresence();
-    const requireAuth = adminExists || (setupSecret.length > 0 && req.method === 'GET');
 
-    if (!requireAuth) {
-      return next();
+    if (setupSecret.length > 0) {
+      const providedSecret = req.get('x-install-setup-secret');
+      if (typeof providedSecret === 'string' && providedSecret === setupSecret) {
+        return next();
+      }
     }
 
     return verifyToken(req, res, (err) => {
