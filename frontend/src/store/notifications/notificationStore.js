@@ -29,7 +29,15 @@ const useNotificationStore = create((set, get) => ({
         const diff = unread - prevUnread;
         if (diff === 1) {
           const note = filtered.find((n) => !n.read);
-          toast.info(<LinkText text={note.message} />);
+          const message =
+            typeof note?.message === "string" && note.message.trim().length > 0
+              ? note.message
+              : null;
+          if (message) {
+            toast.info(<LinkText text={message} />);
+          } else {
+            toast.info(i18next.t("you_have_new_notifications", { count: diff }));
+          }
         } else {
           toast.info(i18next.t("you_have_new_notifications", { count: diff }));
         }
