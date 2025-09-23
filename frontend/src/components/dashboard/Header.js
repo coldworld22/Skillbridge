@@ -315,26 +315,35 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
-                  {notifications.slice(0, 10).map((n) => (
-                    <li
-                      key={n.id}
-                      className={`flex justify-between items-center px-4 py-2 transition ${
-                        n.read
-                          ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
-                          : "bg-yellow-50 dark:bg-gray-600"
-                      }`}
-                    >
-                      <LinkText text={n.message} />
+                  {notifications.slice(0, 10).map((n) => {
+                    const message =
+                      typeof n?.message === "string" && n.message.trim().length > 0
+                        ? n.message
+                        : t("notification_message_unavailable", {
+                            defaultValue: "Notification message unavailable",
+                          });
+
+                    return (
+                      <li
+                        key={n.id}
+                        className={`flex justify-between items-center px-4 py-2 transition ${
+                          n.read
+                            ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
+                            : "bg-yellow-50 dark:bg-gray-600"
+                        }`}
+                      >
+                        <LinkText text={message} />
                         {!n.read && (
                           <button
                             onClick={() => markRead(n.id)}
                             className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                           >
-                            {t('mark_as_read')}
+                            {t("mark_as_read")}
                           </button>
                         )}
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                   {notifications.length === 0 && (
                     <li className="px-4 py-2 text-center text-sm text-gray-500">
                       {t('no_notifications')}

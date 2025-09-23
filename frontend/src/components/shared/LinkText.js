@@ -3,7 +3,14 @@ import React from 'react';
 const urlRegex = /(https?:\/\/[^\s]+)/;
 
 export default function LinkText({ text }) {
-  const parts = text.split(urlRegex);
+  const safeText =
+    typeof text === 'string'
+      ? text
+      : text != null && typeof text.toString === 'function'
+        ? text.toString()
+        : '';
+
+  const parts = safeText.split(urlRegex);
   return (
     <>
       {parts.map((part, index) =>
