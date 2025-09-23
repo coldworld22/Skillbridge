@@ -16,6 +16,238 @@ const FRIENDLY_LABELS = {
   python: 'Python',
 };
 
+const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/svg+xml']);
+
+const EMAIL_REGEX =
+  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+const NON_EMPTY_VALUE = /\S/;
+
+function sanitizeInput(value) {
+  return typeof value === 'string' ? value.replace(/\0/g, '').trim() : '';
+}
+
+function isValidEmail(value) {
+  return EMAIL_REGEX.test(value);
+}
+
+function normalizePort(value) {
+  const numeric = Number.parseInt(String(value).trim(), 10);
+  if (!Number.isFinite(numeric)) return NaN;
+  return numeric;
+}
+
+async function fileToBase64(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  if (!bytes.length) {
+    return '';
+  }
+
+  let binary = '';
+  const CHUNK_SIZE = 0x8000;
+  for (let index = 0; index < bytes.length; index += CHUNK_SIZE) {
+    const chunk = bytes.subarray(index, index + CHUNK_SIZE);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+function determineLogoExtension(name, type) {
+  if (typeof name === 'string') {
+    const existing = name.trim().toLowerCase();
+    const ext = existing.includes('.') ? existing.slice(existing.lastIndexOf('.')) : '';
+    if (ext && ext.length <= 8) {
+      return ext;
+    }
+  }
+
+  if (typeof type === 'string') {
+    if (type === 'image/png') return '.png';
+    if (type === 'image/jpeg') return '.jpg';
+    if (type === 'image/svg+xml') return '.svg';
+  }
+
+  return '.png';
+}
+
+function sanitizeFileName(name, fallbackExtension) {
+  const base = typeof name === 'string' ? name : '';
+  const normalized = base
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  const extension = fallbackExtension || '.png';
+  if (!normalized) {
+    return `logo-${Date.now()}${extension}`;
+  }
+  if (normalized.includes('.')) {
+    return normalized;
+  }
+  return `${normalized}${extension}`;
+}
+
+async function buildInstallationPayload(formData) {
+  const adminEmail = sanitizeInput(formData.get('adminEmail'));
+  const adminPassword = String(formData.get('adminPassword') || '');
+  const databaseUrl = sanitizeInput(formData.get('databaseUrl'));
+  const databaseUser = sanitizeInput(formData.get('databaseUser'));
+  const databasePassword = String(formData.get('databasePassword') || '');
+  const smtpHost = sanitizeInput(formData.get('smtpHost'));
+  const smtpPortRaw = formData.get('smtpPort');
+  const smtpUser = sanitizeInput(formData.get('smtpUser'));
+  const smtpPassword = String(formData.get('smtpPassword') || '');
+  const defaultFromEmail = sanitizeInput(formData.get('defaultFromEmail'));
+  const appDisplayName = sanitizeInput(formData.get('appDisplayName'));
+  const logoUrl = sanitizeInput(formData.get('logoUrl'));
+
+  if (!isValidEmail(adminEmail)) {
+    return { ok: false, message: 'Enter a valid admin email address.', field: 'adminEmail' };
+  }
+
+  if (adminPassword.length < 8) {
+    return {
+      ok: false,
+      message: 'Admin password must be at least 8 characters long.',
+      field: 'adminPassword',
+    };
+  }
+
+  if (!NON_EMPTY_VALUE.test(databaseUrl)) {
+    return {
+      ok: false,
+      message: 'Provide a PostgreSQL connection URL.',
+      field: 'databaseUrl',
+    };
+  }
+
+  try {
+    // eslint-disable-next-line no-new
+    new URL(databaseUrl);
+  } catch (_err) {
+    return { ok: false, message: 'Database URL must be a valid connection string.', field: 'databaseUrl' };
+  }
+
+  if (!NON_EMPTY_VALUE.test(databaseUser)) {
+    return { ok: false, message: 'Database user is required.', field: 'databaseUser' };
+  }
+
+  if (!NON_EMPTY_VALUE.test(databasePassword)) {
+    return { ok: false, message: 'Database password is required.', field: 'databasePassword' };
+  }
+
+  if (!NON_EMPTY_VALUE.test(smtpHost)) {
+    return { ok: false, message: 'SMTP host is required.', field: 'smtpHost' };
+  }
+
+  const smtpPort = normalizePort(smtpPortRaw);
+  if (!Number.isInteger(smtpPort) || smtpPort <= 0 || smtpPort > 65535) {
+    return { ok: false, message: 'SMTP port must be between 1 and 65535.', field: 'smtpPort' };
+  }
+
+  if (!NON_EMPTY_VALUE.test(smtpUser)) {
+    return { ok: false, message: 'SMTP username is required.', field: 'smtpUser' };
+  }
+
+  if (!NON_EMPTY_VALUE.test(smtpPassword)) {
+    return { ok: false, message: 'SMTP password is required.', field: 'smtpPassword' };
+  }
+
+  if (!isValidEmail(defaultFromEmail)) {
+    return {
+      ok: false,
+      message: 'Enter a valid default “from” email address.',
+      field: 'defaultFromEmail',
+    };
+  }
+
+  if (!NON_EMPTY_VALUE.test(appDisplayName)) {
+    return { ok: false, message: 'Application display name is required.', field: 'appDisplayName' };
+  }
+
+  let normalizedLogoUrl = '';
+  if (logoUrl) {
+    try {
+      const parsed = new URL(logoUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('invalid protocol');
+      }
+      normalizedLogoUrl = parsed.toString();
+    } catch (_err) {
+      return {
+        ok: false,
+        message: 'Logo URL must be an absolute HTTP or HTTPS address.',
+        field: 'logoUrl',
+      };
+    }
+  }
+
+  const file = formData.get('logoFile');
+  let logoFilePayload;
+  if (file && typeof file === 'object' && typeof file.name === 'string' && file.size > 0) {
+    if (file.size > MAX_LOGO_SIZE_BYTES) {
+      return {
+        ok: false,
+        message: 'Logo uploads must be 5 MB or smaller.',
+        field: 'logoFile',
+      };
+    }
+
+    if (file.type && !ACCEPTED_LOGO_TYPES.has(file.type) && !file.type.startsWith('image/')) {
+      return { ok: false, message: 'Logo must be an image file.', field: 'logoFile' };
+    }
+
+    const base64 = await fileToBase64(file);
+    if (!base64) {
+      return { ok: false, message: 'Unable to read the selected logo.', field: 'logoFile' };
+    }
+    const extension = determineLogoExtension(file.name, file.type);
+    const safeName = sanitizeFileName(file.name, extension);
+    logoFilePayload = {
+      name: safeName,
+      type: file.type || '',
+      size: file.size,
+      data: base64,
+      encoding: 'base64',
+    };
+  }
+
+  if (!logoFilePayload && !normalizedLogoUrl) {
+    return {
+      ok: false,
+      message: 'Upload a logo file or provide a logo URL.',
+      field: 'logoFile',
+    };
+  }
+
+  const payload = {
+    adminEmail,
+    adminPassword,
+    databaseUrl,
+    databaseUser,
+    databasePassword,
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPassword,
+    defaultFromEmail,
+    appDisplayName,
+  };
+
+  if (normalizedLogoUrl) {
+    payload.logoUrl = normalizedLogoUrl;
+  }
+
+  if (logoFilePayload) {
+    payload.logoFile = logoFilePayload;
+  }
+
+  return { ok: true, payload };
+}
+
 function getCookie(name) {
   if (typeof document === 'undefined' || !name) return '';
   const cookies = document.cookie ? document.cookie.split('; ') : [];
@@ -488,15 +720,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!configForm) return;
 
     const formData = new FormData(configForm);
-    const credentials = {
-      adminEmail: String(formData.get('adminEmail') || '').trim(),
-      adminPassword: String(formData.get('adminPassword') || ''),
-    };
+    if (installBtn) installBtn.disabled = true;
+
+    let buildResult;
+    try {
+      buildResult = await buildInstallationPayload(formData);
+    } catch (err) {
+      buildResult = {
+        ok: false,
+        message: err instanceof Error ? err.message : 'Failed to process configuration values.',
+      };
+    }
+
+    if (!buildResult?.ok) {
+      const { message, field } = buildResult || {};
+      if (message) {
+        showError(message);
+      } else {
+        showError('Please review the configuration values.');
+      }
+      setProgress(STEP_PROGRESS.config);
+      if (field) {
+        const target = configForm.querySelector(`[name="${field}"]`);
+        if (target && typeof target.focus === 'function') {
+          target.focus();
+        }
+      }
+      if (installBtn) installBtn.disabled = false;
+      return;
+    }
+
+    const payload = buildResult.payload;
+    const credentials = { adminEmail: payload.adminEmail };
 
     updateStep('install');
     setProgress(90);
-
-    if (installBtn) installBtn.disabled = true;
 
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
@@ -527,7 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       const responseText = await res.text();
