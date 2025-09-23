@@ -162,6 +162,7 @@ exports.runInstall = async (req, res) => {
     });
 
     const existingAppSettings = (await appConfigService.getSettings()) || {};
+    const existingLogoUrl = existingAppSettings.logo_url;
     const nextAppSettings = { ...existingAppSettings };
     if (appName) {
       nextAppSettings.appName = appName;
@@ -179,6 +180,15 @@ exports.runInstall = async (req, res) => {
       nextAppSettings.logo_url = logoUrl;
     }
     await appConfigService.updateSettings(nextAppSettings);
+
+    const nextLogoUrl = nextAppSettings.logo_url;
+    const isDifferentLogo = existingLogoUrl && existingLogoUrl !== nextLogoUrl;
+    const wasLocalUpload = typeof existingLogoUrl === 'string' && existingLogoUrl.startsWith('/uploads/app/');
+    if (isDifferentLogo && wasLocalUpload) {
+      const relativePath = existingLogoUrl.replace(/^\/+/, '');
+      const absolutePath = path.join(path.resolve(__dirname, '../../..'), relativePath);
+      await removeFileIfExists(absolutePath);
+    }
 
     const existingEmailSettings = (await emailConfigService.getSettings()) || {};
     const nextEmailSettings = {
