@@ -17,6 +17,19 @@ ensure_env_file() {
   fi
 }
 
+require_env_var() {
+  local var_name=$1
+  if [[ -z "${var_name}" ]]; then
+    return 0
+  fi
+
+  local value="${!var_name-}"
+  if [[ -z "$value" ]]; then
+    echo "Environment variable $var_name must be set before running the installer." >&2
+    exit 1
+  fi
+}
+
 load_env_file() {
   local env_file=$1
   if [[ -f "$env_file" ]]; then
@@ -29,7 +42,9 @@ load_env_file() {
 
 run_compose() {
   if command -v docker-compose >/dev/null 2>&1; then
-    docker-compose "$@"
+    DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-0} \
+      COMPOSE_DOCKER_CLI_BUILD=${COMPOSE_DOCKER_CLI_BUILD:-0} \
+      docker-compose "$@"
   elif command -v docker >/dev/null 2>&1; then
     docker compose "$@"
   else
