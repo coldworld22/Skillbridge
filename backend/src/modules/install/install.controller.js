@@ -1,451 +1,221 @@
 const { execFile } = require('child_process');
+const util = require('util');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const logger = require('../../utils/logger');
-const { refreshAdminPresence, markAdminExists } = require('./install.helpers');
+const { markAdminExists, refreshAdminPresence } = require('./install.helpers');
 const appConfigService = require('../appConfig/appConfig.service');
 const emailConfigService = require('../emailConfig/emailConfig.service');
 
+const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
 
-// Whitelisted scripts that can be executed via the install API. Paths are
-// resolved absolutely and must exist on disk to be executed.
-const SAFE_SCRIPTS = {
+const SCRIPTS = {
   prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
   install: path.resolve(__dirname, '../../../../install.sh'),
 };
 
-const executeScript = (res, scriptKey, options = {}) => {
-  const script = SAFE_SCRIPTS[scriptKey];
-  if (!script || !fs.existsSync(script)) {
-    return res.status(400).json({ ok: false, output: 'Invalid script' });
+const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
+  const scriptPath = SCRIPTS[scriptKey];
+  if (!scriptPath) {
+    throw new Error(`Unknown installer script: ${scriptKey}`);
   }
-
-  const envOverrides = options.env || {};
-  const mergedEnv = { ...process.env, ...envOverrides };
-  const execOptions = { shell: false, env: mergedEnv };
-  const evaluateOk =
-    typeof options.evaluateOk === 'function' ? options.evaluateOk : null;
-  const determineStatusCode =
-    typeof options.determineStatusCode === 'function'
-      ? options.determineStatusCode
-      : null;
-  const afterSuccess =
-    typeof options.afterSuccess === 'function' ? options.afterSuccess : null;
-
-  const resolveStatusCode = ({ ok, parsedOutput, rawOutput, error }) => {
-    if (determineStatusCode) {
-      try {
-        const status = determineStatusCode({ ok, parsedOutput, rawOutput, error });
-        if (Number.isInteger(status)) {
-          return status;
-        }
-      } catch (statusError) {
-        logger.warn('Failed to determine status code from installer output', statusError);
-      }
-    }
-
-    if (error) {
-      return 500;
-    }
-
-    if (ok === false) {
-      return 500;
-    }
-
-    return 200;
-  };
-
-  const runFinalizeHook = async ({ parsedOutput, rawOutput, statusCode }) => {
-    if (!afterSuccess || statusCode >= 400) {
-      return;
-    }
-
-    await afterSuccess({ parsedOutput, rawOutput, statusCode, scriptKey });
-  };
-
-  return execFile(
-    script,
-    execOptions,
-    async (error, stdout = '', stderr = '') => {
-      const rawOutput = `${stdout}${stderr}`;
-      const trimmedStdout = stdout.trim();
-      let parsedOutput;
-
-      if (trimmedStdout) {
-        try {
-          parsedOutput = JSON.parse(trimmedStdout);
-        } catch (_err) {
-          parsedOutput = undefined;
-        }
-      }
-
-      const runCompletion = async (details = {}) => {
-        if (!onComplete) return;
-        try {
-          await onComplete({ rawOutput, ...details });
-        } catch (completionError) {
-          logger.warn(
-            'Failed to run installer completion handler',
-            completionError
-          );
-        }
-      };
-
-      if (error) {
-        if (parsedOutput && typeof parsedOutput === 'object') {
-          const statusCode = resolveStatusCode({
-            ok: false,
-            parsedOutput,
-            rawOutput,
-            error,
-          });
-          await runCompletion({ error, parsedOutput });
-          return res.status(statusCode).json(parsedOutput);
-        }
-
-        const statusCode = resolveStatusCode({
-          ok: false,
-          parsedOutput: undefined,
-          rawOutput,
-          error,
-        });
-        await runCompletion({ error });
-        return res
-          .status(statusCode)
-          .json({ ok: false, output: rawOutput });
-      }
-
-      if (scriptKey === 'install') {
-        try {
-          markAdminExists();
-          await refreshAdminPresence();
-        } catch (refreshError) {
-          logger.warn(
-            'Failed to refresh install guard after successful run',
-            refreshError
-          );
-        }
-      }
-
-      if (parsedOutput && typeof parsedOutput === 'object') {
-        let ok;
-        if (evaluateOk) {
-          try {
-            ok = Boolean(evaluateOk(parsedOutput));
-          } catch (evaluateError) {
-            logger.warn('Failed to evaluate installer output', evaluateError);
-            ok = undefined;
-          }
-        }
-
-        const statusCode = resolveStatusCode({
-          ok,
-          parsedOutput,
-          rawOutput,
-          error: null,
-        });
-
-        if (afterSuccess) {
-          try {
-            await runFinalizeHook({ parsedOutput, rawOutput, statusCode });
-          } catch (hookError) {
-            logger.error('Failed to finalize installation', hookError);
-            return res.status(500).json({
-              ok: false,
-              message:
-                'Installation completed but failed to finalize configuration. Check the server logs and try again.',
-            });
-          }
-        }
-
-        return res.status(statusCode).json(parsedOutput);
-      }
-
-      const statusCode = resolveStatusCode({
-        ok: true,
-        parsedOutput: undefined,
-        rawOutput,
-        error: null,
-      });
-
-      if (afterSuccess) {
-        try {
-          await runFinalizeHook({ parsedOutput: undefined, rawOutput, statusCode });
-        } catch (hookError) {
-          logger.error('Failed to finalize installation', hookError);
-          return res.status(500).json({
-            ok: false,
-            message:
-              'Installation completed but failed to finalize configuration. Check the server logs and try again.',
-          });
-        }
-      }
-
-      return res.status(statusCode).json({ ok: true, output: rawOutput });
-    }
-  );
+  const mergedEnv = { ...process.env, ...env };
+  return execFileAsync(scriptPath, args, { env: mergedEnv, shell: false });
 };
 
-exports.checkPrereqs = (req, res) =>
-  executeScript(res, 'prereqs', {
-    expectJson: true,
-    evaluateOk: (parsed) => Boolean(parsed && parsed.allPassed),
-    determineStatusCode: () => 200,
-  });
-const sanitizeValue = (value) => {
-  if (typeof value !== 'string') {
-    return value;
+const parseInstallerOutput = (stdout, stderr) => {
+  const trimmed = (stdout || '').trim();
+  if (trimmed) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (_err) {
+      // fall through to raw output
+    }
   }
-  return value.replace(/\0/g, '').replace(/[\r\n]/g, '').trim();
+  const combined = `${stdout || ''}${stderr || ''}`.trim();
+  return { ok: false, output: combined };
 };
 
-const buildLogoFilePayload = (logoFile = {}) => {
-  if (!logoFile || typeof logoFile !== 'object') {
-    return undefined;
+exports.checkPrereqs = async (req, res, next) => {
+  try {
+    const { stdout, stderr } = await runScript('prereqs');
+    const parsed = parseInstallerOutput(stdout, stderr);
+    const ok = typeof parsed.ok === 'boolean' ? parsed.ok : Boolean(parsed.allPassed);
+    return res.status(200).json({ ...parsed, ok });
+  } catch (error) {
+    const stdout = error.stdout || '';
+    const stderr = error.stderr || '';
+    logger.error('Prerequisite check failed', error);
+    const payload = parseInstallerOutput(stdout, stderr);
+    return res.status(500).json(payload);
+  }
+};
+
+const buildInstallerConfig = (body) => {
+  const config = {
+    adminEmail: body.adminEmail,
+    adminPassword: body.adminPassword,
+    appName: body.appName,
+    supportEmail: body.supportEmail,
+    smtp: {
+      host: body.smtpHost,
+      port: body.smtpPort,
+      username: body.smtpUsername,
+      password: body.smtpPassword,
+      secure: Boolean(body.smtpSecure),
+      fromEmail: body.smtpFromEmail || body.supportEmail,
+      fromName: body.smtpFromName || body.appName,
+    },
+  };
+
+  if (body.logoUrl) {
+    config.logoUrl = body.logoUrl;
   }
 
-  const { data, filename, mimeType } = logoFile;
-  if (typeof data !== 'string' || data.trim().length === 0) {
-    return undefined;
-  }
+  return config;
+};
 
-  const payload = { data: sanitizeValue(data) };
-  const safeFilename = sanitizeValue(filename);
-  if (safeFilename) {
-    payload.filename = safeFilename;
+const removeFileIfExists = async (filePath) => {
+  if (!filePath) return;
+  try {
+    await fsPromises.unlink(filePath);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      logger.warn('Failed to remove file during installer cleanup', error);
+    }
   }
-  const safeMimeType = sanitizeValue(mimeType);
-  if (safeMimeType) {
-    payload.mimeType = safeMimeType;
-  }
-  return payload;
 };
 
 exports.runInstall = async (req, res) => {
-  const sanitizeCredential = (value) => {
-    if (typeof value !== 'string') {
-      return '';
-    }
-    return value.replace(/\0/g, '').replace(/[\r\n]/g, '').trim();
-  };
-
-  const sanitizeText = (value) => {
-    if (typeof value !== 'string') return '';
-    return value.replace(/\0/g, '').replace(/[\r\n]+/g, ' ').trim();
-  };
-
-  const adminEmail = sanitizeCredential(req.body?.adminEmail);
-  const adminPassword = sanitizeCredential(req.body?.adminPassword);
-  const appName = sanitizeText(req.body?.appName);
-  const supportEmail = sanitizeCredential(req.body?.supportEmail);
-  const logoUrlRaw = typeof req.body?.logoUrl === 'string' ? req.body.logoUrl.trim() : '';
-  const logoUrl = logoUrlRaw.length > 0 ? logoUrlRaw : undefined;
-
-  const uploadedLogoRelative = req.file?.filename
-    ? `/uploads/app/${req.file.filename}`
-    : undefined;
-  const uploadedLogoAbsolute = req.file?.filename
-    ? path.join(__dirname, '../../../uploads/app', req.file.filename)
-    : undefined;
-
-  if (!adminEmail || !adminPassword) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Admin email and password are required.',
-    });
-  }
-  const installerConfig = {
+  const {
     adminEmail,
     adminPassword,
-  };
+    appName,
+    supportEmail,
+    smtpHost,
+    smtpPort,
+    smtpUsername,
+    smtpPassword,
+    smtpSecure,
+    smtpFromEmail,
+    smtpFromName,
+    logoUrl,
+  } = req.body;
 
-  const assignIfPresent = (target, key, value, transform) => {
-    const sanitized = sanitizeValue(value);
-    const transformed = typeof transform === 'function' ? transform(sanitized) : sanitized;
-    if (transformed !== undefined && transformed !== null && transformed !== '') {
-      target[key] = transformed;
-    }
-  };
-
-  assignIfPresent(installerConfig, 'supportEmail', req.body?.supportEmail);
-  assignIfPresent(installerConfig, 'appName', req.body?.appName);
-
-  const logoFilePayload = buildLogoFilePayload(req.body?.logoFile);
-  if (logoFilePayload) {
-    installerConfig.logoFile = logoFilePayload;
-  }
-  const logoUrl = sanitizeValue(req.body?.logoUrl);
-  if (logoUrl) {
-    installerConfig.logoUrl = logoUrl;
+  if (!adminEmail || !adminPassword) {
+    return res.status(400).json({ ok: false, message: 'Admin email and password are required.' });
   }
 
-  const smtpConfig = {};
-  assignIfPresent(smtpConfig, 'host', req.body?.smtpHost);
-  const smtpPortValue = req.body?.smtpPort;
-  if (smtpPortValue !== undefined && smtpPortValue !== null && smtpPortValue !== '') {
-    const numericPort = Number(smtpPortValue);
-    if (Number.isFinite(numericPort)) {
-      smtpConfig.port = numericPort;
-    }
-  }
-  assignIfPresent(smtpConfig, 'username', req.body?.smtpUsername);
-  assignIfPresent(smtpConfig, 'password', req.body?.smtpPassword);
-  assignIfPresent(smtpConfig, 'fromEmail', req.body?.smtpFromEmail);
-  assignIfPresent(smtpConfig, 'fromName', req.body?.smtpFromName);
-  assignIfPresent(smtpConfig, 'encryption', req.body?.smtpEncryption);
-  const smtpSecureValue = req.body?.smtpSecure;
-  if (typeof smtpSecureValue === 'boolean') {
-    smtpConfig.secure = smtpSecureValue;
-  }
-
-  if (Object.keys(smtpConfig).length > 0) {
-    installerConfig.smtp = smtpConfig;
-  }
+  const uploadedLogoRelative = req.file ? `/uploads/app/${req.file.filename}` : undefined;
+  const uploadedLogoAbsolute = req.file ? req.file.path : undefined;
 
   let tempDir;
   let configPath;
   try {
-    tempDir = await fsPromises.mkdtemp(
-      path.join(os.tmpdir(), 'skillbridge-install-')
-    );
+    tempDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'skillbridge-install-'));
     configPath = path.join(tempDir, 'installer-config.json');
-    await fsPromises.writeFile(
-      configPath,
-      JSON.stringify(installerConfig),
-      'utf8'
-    );
+    const configPayload = buildInstallerConfig(req.body);
+    await fsPromises.writeFile(configPath, JSON.stringify(configPayload), 'utf8');
   } catch (error) {
     logger.error('Failed to prepare installer configuration', error);
     if (tempDir) {
       try {
         await fsPromises.rm(tempDir, { recursive: true, force: true });
       } catch (cleanupError) {
-        logger.warn('Failed to clean up installer config directory', cleanupError);
+        logger.warn('Failed to remove temporary installer directory', cleanupError);
       }
     }
-    return res.status(500).json({
-      ok: false,
-      message: 'Failed to prepare installer configuration.',
-    });
+    return res.status(500).json({ ok: false, message: 'Failed to prepare installer configuration.' });
   }
 
-  const cleanup = async () => {
-    if (!configPath) return;
-    try {
-      await fsPromises.unlink(configPath);
-    } catch (unlinkError) {
-      if (unlinkError?.code !== 'ENOENT') {
-        logger.warn('Failed to remove installer config file', unlinkError);
-      }
+  const cleanupTempConfig = async () => {
+    if (configPath) {
+      await removeFileIfExists(configPath);
     }
     if (tempDir) {
       try {
         await fsPromises.rm(tempDir, { recursive: true, force: true });
-      } catch (dirError) {
-        if (dirError?.code !== 'ENOENT') {
-          logger.warn('Failed to remove installer config directory', dirError);
+      } catch (error) {
+        if (error?.code !== 'ENOENT') {
+          logger.warn('Failed to remove installer temp directory', error);
         }
       }
     }
   };
 
-  const removeFileIfExists = async (filePath) => {
-    if (!filePath) return;
-    try {
-      await fs.promises.unlink(filePath);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        logger.warn('Failed to remove uploaded logo during install cleanup', error);
-      }
-    }
-  };
-
-  return executeScript(res, 'install', {
-    env: {
+  try {
+    const env = {
       ADMIN_EMAIL: adminEmail,
       ADMIN_PASSWORD: adminPassword,
       INSTALL_CONFIG_PATH: configPath,
-    },
-    afterSuccess: async () => {
-      const existingAppSettings = (await appConfigService.getSettings()) || {};
-      const nextAppSettings = { ...existingAppSettings };
+    };
 
-      if (appName) {
-        nextAppSettings.appName = appName;
-        if (!nextAppSettings.siteTitle) {
-          nextAppSettings.siteTitle = appName;
-        }
+    const { stdout, stderr } = await runScript('install', { env });
+    markAdminExists();
+    await refreshAdminPresence().catch((error) => {
+      logger.warn('Failed to refresh admin presence cache after install', error);
+    });
+
+    const existingAppSettings = (await appConfigService.getSettings()) || {};
+    const nextAppSettings = { ...existingAppSettings };
+    if (appName) {
+      nextAppSettings.appName = appName;
+      if (!nextAppSettings.siteTitle) {
+        nextAppSettings.siteTitle = appName;
       }
+    }
+    if (supportEmail) {
+      nextAppSettings.contactEmail = supportEmail;
+      nextAppSettings.supportEmail = supportEmail;
+    }
+    if (uploadedLogoRelative) {
+      nextAppSettings.logo_url = uploadedLogoRelative;
+    } else if (logoUrl) {
+      nextAppSettings.logo_url = logoUrl;
+    }
+    await appConfigService.updateSettings(nextAppSettings);
 
-      if (supportEmail) {
-        nextAppSettings.contactEmail = supportEmail;
-        nextAppSettings.supportEmail = supportEmail;
-      }
+    const existingEmailSettings = (await emailConfigService.getSettings()) || {};
+    const nextEmailSettings = {
+      ...existingEmailSettings,
+      method: 'smtp',
+      smtpHost,
+      smtpPort,
+      username: smtpUsername,
+      password: smtpPassword,
+      secure: Boolean(smtpSecure),
+      fromEmail: smtpFromEmail || supportEmail || existingEmailSettings.fromEmail,
+      fromName: smtpFromName || appName || existingEmailSettings.fromName,
+    };
+    if (supportEmail) {
+      nextEmailSettings.replyTo = supportEmail;
+    }
+    if (Boolean(smtpSecure)) {
+      nextEmailSettings.encryption = 'SSL';
+    } else {
+      nextEmailSettings.encryption = 'TLS';
+    }
+    await emailConfigService.updateSettings(nextEmailSettings);
 
-      let oldLogoToRemove;
-
-      if (uploadedLogoRelative) {
-        if (
-          existingAppSettings.logo_url &&
-          existingAppSettings.logo_url !== uploadedLogoRelative &&
-          existingAppSettings.logo_url.startsWith('/uploads/app/')
-        ) {
-          oldLogoToRemove = path.join(
-            __dirname,
-            '../../../',
-            existingAppSettings.logo_url.replace(/^\/+/, '')
-          );
-        }
-        nextAppSettings.logo_url = uploadedLogoRelative;
-      } else if (logoUrl) {
-        if (
-          existingAppSettings.logo_url &&
-          existingAppSettings.logo_url.startsWith('/uploads/app/') &&
-          !logoUrl.startsWith('/uploads/app/')
-        ) {
-          oldLogoToRemove = path.join(
-            __dirname,
-            '../../../',
-            existingAppSettings.logo_url.replace(/^\/+/, '')
-          );
-        }
-        nextAppSettings.logo_url = logoUrl;
-      }
-
-      try {
-        await appConfigService.updateSettings(nextAppSettings);
-        if (oldLogoToRemove && oldLogoToRemove !== uploadedLogoAbsolute) {
-          await removeFileIfExists(oldLogoToRemove);
-        }
-      } catch (error) {
-        if (uploadedLogoAbsolute) {
-          await removeFileIfExists(uploadedLogoAbsolute);
-        }
-        throw error;
-      }
-
-      const existingEmailSettings = (await emailConfigService.getSettings()) || {};
-      const updatedEmailSettings = { ...existingEmailSettings };
-
-      if (appName) {
-        updatedEmailSettings.fromName = appName;
-      }
-
-      if (supportEmail) {
-        updatedEmailSettings.fromEmail = supportEmail;
-        updatedEmailSettings.replyTo = supportEmail;
-      }
-
-      try {
-        await emailConfigService.updateSettings(updatedEmailSettings);
-      } catch (error) {
-        if (uploadedLogoAbsolute && uploadedLogoRelative) {
-          await removeFileIfExists(uploadedLogoAbsolute);
-        }
-        throw error;
-      }
-    },
-  });
+    const parsed = parseInstallerOutput(stdout, stderr);
+    const ok = typeof parsed.ok === 'boolean' ? parsed.ok : true;
+    await cleanupTempConfig();
+    return res.status(ok ? 200 : 500).json({ ...parsed, ok });
+  } catch (error) {
+    logger.error('Installation failed', error);
+    const stdout = error.stdout || '';
+    const stderr = error.stderr || '';
+    await cleanupTempConfig();
+    if (uploadedLogoAbsolute) {
+      await removeFileIfExists(uploadedLogoAbsolute);
+    }
+    const payload = parseInstallerOutput(stdout, stderr);
+    payload.ok = false;
+    return res.status(500).json(payload);
+  }
 };
