@@ -180,7 +180,6 @@ exports.runInstall = async (req, res) => {
       nextAppSettings.logo_url = logoUrl;
     }
     await appConfigService.updateSettings(nextAppSettings);
-
     const newLogoUrl = nextAppSettings.logo_url;
     const storedLogoChanged =
       typeof previousLogoUrl === 'string' &&
