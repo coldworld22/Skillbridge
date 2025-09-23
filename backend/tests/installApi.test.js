@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const request = require('supertest');
 
 jest.mock('child_process', () => {
@@ -62,6 +64,10 @@ jest.mock('../src/modules/emailConfig/emailConfig.service', () => ({
 const { execFile } = require('child_process');
 const { router } = require('../src/modules/install/install.routes');
 
+const unlinkMock = jest.spyOn(fs.promises, 'unlink').mockResolvedValue();
+
+const controllerDir = path.join(__dirname, '../src/modules/install');
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -94,12 +100,17 @@ beforeEach(() => {
   mockGetEmailSettings.mockResolvedValue({});
   mockUpdateEmailSettings.mockResolvedValue({});
   execFile.mockClear();
+  unlinkMock.mockClear();
 });
 
 afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
   delete process.env.ENABLE_INSTALL;
   delete process.env.INSTALL_SETUP_SECRET;
+});
+
+afterAll(() => {
+  unlinkMock.mockRestore();
 });
 
 describe('GET /api/install/prereqs', () => {
@@ -228,5 +239,59 @@ describe('POST /api/install/run', () => {
     const res = await postInstall(buildPayload());
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ ok: false, message: 'Install failed' });
+  });
+
+  it('removes a stored uploaded logo when replaced by a remote logo URL', async () => {
+    const existingLogo = '/uploads/app/existing-logo.png';
+    mockGetAppSettings.mockResolvedValue({ logo_url: existingLogo });
+    const payload = buildPayload();
+
+    const res = await postInstall(payload);
+
+    expect(res.status).toBe(200);
+    const expectedRemovalPath = path.join(
+      controllerDir,
+      '../../../',
+      existingLogo.replace(/^\/+/, '')
+    );
+    const removalCalls = unlinkMock.mock.calls.map(([arg]) => arg);
+    expect(removalCalls).toContain(expectedRemovalPath);
+  });
+
+  it('removes a stored uploaded logo when replaced by a new upload', async () => {
+    const existingLogo = '/uploads/app/old-upload.png';
+    mockGetAppSettings.mockResolvedValue({ logo_url: existingLogo });
+    const payload = { ...buildPayload() };
+    delete payload.logoUrl;
+
+    const req = postInstall(payload);
+    const res = await req.attach('logoFile', Buffer.from('logo-bytes'), 'logo.png');
+
+    expect(res.status).toBe(200);
+    const expectedRemovalPath = path.join(
+      controllerDir,
+      '../../../',
+      existingLogo.replace(/^\/+/, '')
+    );
+    const removalCalls = unlinkMock.mock.calls.map(([arg]) => arg);
+    expect(removalCalls).toContain(expectedRemovalPath);
+  });
+
+  it('skips stored logo cleanup when the logo path is unchanged', async () => {
+    const existingLogo = '/uploads/app/keep-me.png';
+    mockGetAppSettings.mockResolvedValue({ logo_url: existingLogo });
+    const payload = { ...buildPayload() };
+    delete payload.logoUrl;
+
+    const res = await postInstall(payload);
+
+    expect(res.status).toBe(200);
+    const expectedRemovalPath = path.join(
+      controllerDir,
+      '../../../',
+      existingLogo.replace(/^\/+/, '')
+    );
+    const removalCalls = unlinkMock.mock.calls.map(([arg]) => arg);
+    expect(removalCalls).not.toContain(expectedRemovalPath);
   });
 });
