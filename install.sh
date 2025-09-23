@@ -67,16 +67,34 @@ derive_postgres_url() {
 }
 
 run_compose() {
-  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-    docker compose "$@"
-    return $?
+  local server_version=""
+  local engine_major=""
+
+  if command -v docker >/dev/null 2>&1; then
+    if docker compose version >/dev/null 2>&1; then
+      docker compose "$@"
+      return $?
+    fi
+
+    server_version=$(docker version --format '{{.Server.Version}}' 2>/dev/null || true)
+    if [[ -n "$server_version" ]]; then
+      engine_major=${server_version%%.*}
+      if [[ "$engine_major" =~ ^[0-9]+$ ]] && (( engine_major >= 27 )); then
+        echo "Docker Engine $server_version detected but the docker compose plugin is unavailable." >&2
+        echo "Install the Docker Compose plugin (the 'docker compose' command) or downgrade Docker Engine below version 27." >&2
+        return 1
+      fi
+    fi
+
+    echo "Docker is installed but the docker compose plugin is not available." >&2
+    echo "Install the Docker Compose plugin (the 'docker compose' command) to continue." >&2
+    return 1
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
-    DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-0} \
-      COMPOSE_DOCKER_CLI_BUILD=${COMPOSE_DOCKER_CLI_BUILD:-0} \
-      docker-compose "$@"
-    return $?
+    echo "Only the legacy docker-compose v1 binary was found." >&2
+    echo "Install the Docker Compose plugin (the 'docker compose' command) or downgrade Docker Engine below version 27 to avoid errors such as KeyError: 'ContainerConfig'." >&2
+    return 1
   fi
 
   return 127
