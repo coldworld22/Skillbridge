@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 requirements=()
 all_ok=true
+ENV_FILES=("$REPO_ROOT/.env" "$REPO_ROOT/backend/.env" "$REPO_ROOT/backend/.env.local" "$REPO_ROOT/backend/.env.production")
+PYTHON_BIN="$(command -v python3 || command -v python || true)"
 
 escape_json() {
   local s="${1-}"
@@ -16,22 +21,37 @@ escape_json() {
 
 add_requirement() {
   local id="$1"
-  local name="$2"
+  local label="$2"
   local status="$3"
   local message="$4"
 
-  local escaped_name
-  escaped_name=$(escape_json "$name")
+  local escaped_label
+  escaped_label=$(escape_json "$label")
   local escaped_message
   escaped_message=$(escape_json "$message")
 
-  requirements+=("{\"id\":\"$id\",\"name\":\"$escaped_name\",\"status\":\"$status\",\"message\":\"$escaped_message\"}")
+  local passed="false"
+  case "$status" in
+    pass|PASS|ok|OK|ready|READY)
+      passed="true"
+      status="pass"
+      ;;
+    warn|WARN|warning|WARNING)
+      status="warn"
+      ;;
+    *)
+      status="fail"
+      ;;
+  esac
 
-  if [ "$status" != "pass" ]; then
+  requirements+=(
+    "{\"id\":\"$id\",\"label\":\"$escaped_label\",\"status\":\"$status\",\"passed\":$passed,\"message\":\"$escaped_message\"}"
+  )
+
+  if [ "$passed" != "true" ]; then
     all_ok=false
   fi
 }
-
 # Common helper for CLI tools where only presence/version check is required
 check_cli_tool() {
   local id="$1"
@@ -205,6 +225,11 @@ else
   add_requirement "git" "Git" "fail" "Git executable not found."
 fi
 
+check_database_connection
+check_smtp_configuration
+check_single_env "app_name" "Application name" "APP_NAME"
+check_logo_path
+
 if [ "$all_ok" = true ]; then
   SUMMARY="All prerequisites met."
 else
@@ -223,6 +248,7 @@ OVERALL=$([ "$all_ok" = true ] && echo "true" || echo "false")
 
 printf '{'
 printf '"ok": %s,' "$OVERALL"
+printf '"allPassed": %s,' "$OVERALL"
 printf '"summary": "%s",' "$SUMMARY_ESCAPED"
 printf '"requirements": [%s]' "$joined"
 printf '}'
