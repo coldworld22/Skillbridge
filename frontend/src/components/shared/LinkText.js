@@ -6,15 +6,15 @@ export default function LinkText({ text }) {
   const safeText =
     typeof text === 'string'
       ? text
-      : text != null && typeof text.toString === 'function'
-        ? text.toString()
-        : '';
+      : text == null
+        ? ''
+        : String(text);
 
-  const parts = safeText.split(urlRegex);
+  const parts = safeText ? safeText.split(urlRegex) : [''];
   return (
     <>
       {parts.map((part, index) => {
-        const isUrl = new RegExp(urlRegex).test(part);
+        const isUrl = urlRegex.test(part);
         return isUrl ? (
           <a
             key={`link-${index}`}
