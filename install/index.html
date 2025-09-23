@@ -88,23 +88,24 @@
     }
 
     .stepper-item.stepper-active .stepper-index {
-      border-color: #2563eb;
-      background-color: #2563eb;
+      border-color: #f59e0b;
+      background-color: #f59e0b;
       color: #ffffff;
+      box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2);
     }
 
     .stepper-item.stepper-complete .stepper-index {
-      border-color: #16a34a;
-      background-color: #16a34a;
-      color: #ffffff;
+      border-color: #fbbf24;
+      background-color: #fbbf24;
+      color: #854d0e;
     }
 
     .stepper-item.stepper-complete::after {
-      background-color: #16a34a;
+      background-color: #facc15;
     }
 
     .stepper-item.stepper-active::after {
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
     }
 
     .stepper-item.stepper-upcoming .stepper-index {
@@ -124,106 +125,158 @@
     }
   </style>
 </head>
-<body class="p-4 font-sans">
-  <nav class="mb-4 space-x-4">
-    <a href="/" class="text-blue-600 underline">Main Site</a>
-    <a href="/docs" class="text-blue-600 underline">Documentation</a>
-  </nav>
-  <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
-  <div class="mb-6 space-y-4">
-    <ol id="stepper" class="stepper" aria-label="Installation steps" role="list">
-      <li class="stepper-item stepper-active" data-stepper-item="prereq">
-        <span class="stepper-index">1</span>
-        <div>
-          <p class="stepper-title">Prerequisites</p>
-          <p class="stepper-caption">Verify environment</p>
-        </div>
-      </li>
-      <li class="stepper-item stepper-upcoming" data-stepper-item="config">
-        <span class="stepper-index">2</span>
-        <div>
-          <p class="stepper-title">Configuration</p>
-          <p class="stepper-caption">Define admin access</p>
-        </div>
-      </li>
-      <li class="stepper-item stepper-upcoming" data-stepper-item="install">
-        <span class="stepper-index">3</span>
-        <div>
-          <p class="stepper-title">Run Install</p>
-          <p class="stepper-caption">Finalize setup</p>
-        </div>
-      </li>
-    </ol>
-    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
-      <div
-        id="progressBar"
-        class="h-2 bg-blue-500 transition-all duration-300"
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-        style="width: 0%;"
-      ></div>
-    </div>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 font-sans">
+  <div class="flex min-h-screen items-center justify-center p-6">
     <div
-      id="errorBox"
-      class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
-      role="alert"
-    ></div>
-  </div>
-  <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
-    <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
-    <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
-    <button id="checkBtn" class="mt-4 rounded bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600">Recheck</button>
-    <div
-      id="prereqStatus"
-      class="mt-4 space-y-3"
-      aria-live="polite"
-    ></div>
-    <p id="prereqSummary" class="mt-2 text-sm text-gray-600" role="status" aria-live="polite"></p>
-  </section>
-  <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
-
-    <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
-    <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
-    <form id="configForm" class="mt-4 space-y-4">
-      <label class="block">
-        <span class="block font-medium">Admin Email</span>
-        <input type="email" name="adminEmail" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-      </label>
-      <label class="block">
-        <span class="block font-medium">Admin Password</span>
-        <input type="password" name="adminPassword" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-      </label>
-      <button type="submit" id="installBtn" class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700">Run Install</button>
-    </form>
-  </section>
-  <section id="step-install" class="mb-8 step-container step-hidden-right" aria-hidden="true">
-    <h2 class="text-xl font-semibold mb-2">Step 3: Run Installation</h2>
-    <p class="text-sm text-gray-600">We’ll execute the installer and share the results along with recommended next steps.</p>
-    <div class="mt-4 space-y-4">
-      <pre
-        id="installOutput"
-        class="hidden whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700"
-        aria-live="polite"
-      ></pre>
-      <div
-        id="completionCard"
-        class="hidden rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-      >
-        <h3 class="text-base font-semibold text-green-700">Installation complete</h3>
-        <p id="completionMessage" class="mt-1 text-green-700"></p>
-        <ul id="completionNextSteps" class="mt-3 list-disc space-y-1 pl-5"></ul>
+      class="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-gray-100"
+    >
+      <div class="absolute inset-0 bg-gradient-to-br from-yellow-50 via-transparent to-transparent"></div>
+      <div class="relative space-y-8 p-6 sm:p-10">
+        <nav class="flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500">
+          <span class="font-semibold uppercase tracking-wide text-gray-400">SkillBridge Installer</span>
+          <div class="space-x-4">
+            <a
+              href="/"
+              class="font-medium text-yellow-600 underline decoration-2 underline-offset-4 hover:text-yellow-700"
+            >
+              Main Site
+            </a>
+            <a
+              href="/docs"
+              class="font-medium text-yellow-600 underline decoration-2 underline-offset-4 hover:text-yellow-700"
+            >
+              Documentation
+            </a>
+          </div>
+        </nav>
+        <header class="space-y-2">
+          <h1 class="text-3xl font-bold text-gray-900">Guided Installation</h1>
+          <p class="text-sm text-gray-600">
+            Follow the guided steps below to verify prerequisites, configure your admin account, and run the SkillBridge
+            installer with confidence.
+          </p>
+        </header>
+        <div class="space-y-4">
+          <ol id="stepper" class="stepper" aria-label="Installation steps" role="list">
+            <li class="stepper-item stepper-active" data-stepper-item="prereq">
+              <span class="stepper-index">1</span>
+              <div>
+                <p class="stepper-title">Prerequisites</p>
+                <p class="stepper-caption">Verify environment</p>
+              </div>
+            </li>
+            <li class="stepper-item stepper-upcoming" data-stepper-item="config">
+              <span class="stepper-index">2</span>
+              <div>
+                <p class="stepper-title">Configuration</p>
+                <p class="stepper-caption">Define admin access</p>
+              </div>
+            </li>
+            <li class="stepper-item stepper-upcoming" data-stepper-item="install">
+              <span class="stepper-index">3</span>
+              <div>
+                <p class="stepper-title">Run Install</p>
+                <p class="stepper-caption">Finalize setup</p>
+              </div>
+            </li>
+          </ol>
+          <div class="w-full overflow-hidden rounded-full bg-gray-200" aria-hidden="true">
+            <div
+              id="progressBar"
+              class="h-2 bg-yellow-500 transition-all duration-300"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+              style="width: 0%;"
+            ></div>
+          </div>
+          <div
+            id="errorBox"
+            class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
+            role="alert"
+          ></div>
+        </div>
+        <section id="step-prereq" class="step-container step-visible space-y-4" aria-hidden="false">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Step 1: Prerequisite Check</h2>
+            <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
+          </div>
+          <button
+            id="checkBtn"
+            class="inline-flex items-center justify-center rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-yellow-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+          >
+            Recheck
+          </button>
+          <div id="prereqStatus" class="space-y-3" aria-live="polite"></div>
+          <p id="prereqSummary" class="text-sm text-gray-600" role="status" aria-live="polite"></p>
+        </section>
+        <section id="step-config" class="step-container step-hidden-right space-y-4" aria-hidden="true">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Step 2: Configuration</h2>
+            <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
+          </div>
+          <form id="configForm" class="space-y-4">
+            <label class="block">
+              <span class="block font-medium text-gray-800">Admin Email</span>
+              <input
+                type="email"
+                name="adminEmail"
+                required
+                class="mt-1 w-full rounded-lg border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+            </label>
+            <label class="block">
+              <span class="block font-medium text-gray-800">Admin Password</span>
+              <input
+                type="password"
+                name="adminPassword"
+                required
+                class="mt-1 w-full rounded-lg border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+            </label>
+            <button
+              type="submit"
+              id="installBtn"
+              class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300"
+            >
+              Run Install
+            </button>
+          </form>
+        </section>
+        <section id="step-install" class="step-container step-hidden-right space-y-4" aria-hidden="true">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Step 3: Run Installation</h2>
+            <p class="text-sm text-gray-600">
+              We’ll execute the installer and share the results along with recommended next steps.
+            </p>
+          </div>
+          <div class="space-y-4">
+            <pre
+              id="installOutput"
+              class="hidden whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700"
+              aria-live="polite"
+            ></pre>
+            <div
+              id="completionCard"
+              class="hidden rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+            >
+              <h3 class="text-base font-semibold text-green-700">Installation complete</h3>
+              <p id="completionMessage" class="mt-1 text-green-700"></p>
+              <ul id="completionNextSteps" class="mt-3 list-disc space-y-1 pl-5"></ul>
+            </div>
+            <button
+              type="button"
+              id="backToConfigBtn"
+              class="hidden text-sm font-medium text-yellow-600 transition hover:text-yellow-700"
+            >
+              ← Back to configuration
+            </button>
+          </div>
+        </section>
       </div>
-      <button
-        type="button"
-        id="backToConfigBtn"
-        class="hidden text-sm font-medium text-blue-600 transition hover:text-blue-800"
-      >
-        ← Back to configuration
-      </button>
     </div>
-  </section>
+  </div>
   <script src="install.js" defer></script>
 </body>
 </html>
