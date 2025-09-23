@@ -1,6 +1,13 @@
 const request = require('supertest');
 const express = require('express');
 
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
+process.env.REFRESH_TOKEN_SECRET =
+  process.env.REFRESH_TOKEN_SECRET || 'test-refresh-secret';
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'test-session-secret';
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
+
 jest.mock('child_process', () => ({
   execFile: jest.fn((_script, _opts, cb) =>
     cb(null, '{"node":true,"docker":true,"dockerCompose":true,"git":true}\n', '')
@@ -31,6 +38,7 @@ app.use('/api/install', router);
 
 afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
+  delete process.env.INSTALL_SETUP_SECRET;
   jest.clearAllMocks();
 });
 
@@ -97,19 +105,20 @@ describe('/api/install/prereqs', () => {
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 
-  it('requires authentication when a setup secret is configured', async () => {
+  it('returns 403 when a setup secret is configured but missing', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
     mockFindAdmins.mockResolvedValue([]);
-    mockVerifyToken.mockImplementation((req, res) =>
-      res.status(401).json({ message: 'Missing or malformed token' })
-    );
 
     const res = await request(app).get('/api/install/prereqs');
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      code: 'INSTALL_LOCKED',
+      message: 'Installer locked. Provide a valid setup secret.',
+    });
     expect(execFile).not.toHaveBeenCalled();
-    expect(mockVerifyToken).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 });
@@ -154,6 +163,55 @@ describe('/api/install/run', () => {
         process.env[envKey] = originalEnvValue;
       }
     }
+  });
+
+  it('rejects installation when setup secret is missing', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 'top-secret';
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      code: 'INSTALL_LOCKED',
+      message: 'Installer locked. Provide a valid setup secret.',
+    });
+    expect(execFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects installation when setup secret is incorrect', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 'top-secret';
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('X-Install-Setup-Secret', 'wrong-secret')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      code: 'INSTALL_LOCKED',
+      message: 'Installer locked. Provide a valid setup secret.',
+    });
+    expect(execFile).not.toHaveBeenCalled();
+  });
+
+  it('allows installation when setup secret is correct', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 'top-secret';
+
+    execFile.mockImplementationOnce((_script, _options, cb) => cb(null, '', ''));
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('X-Install-Setup-Secret', 'top-secret')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, output: '' });
+    expect(execFile).toHaveBeenCalledTimes(1);
   });
 });
 
