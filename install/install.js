@@ -16,6 +16,56 @@ const FRIENDLY_LABELS = {
   python: 'Python',
 };
 
+const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
+
+function normalizeString(value) {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
+}
+
+function isValidEmail(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const parsed = new URL(trimmed);
+    return Boolean(parsed.protocol) && Boolean(parsed.host);
+  } catch {
+    return false;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const { result } = reader;
+      if (typeof result !== 'string') {
+        reject(new Error('Unable to read file contents.'));
+        return;
+      }
+      const commaIndex = result.indexOf(',');
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+    };
+    reader.onerror = () => {
+      reject(new Error('Unable to read file.'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function getCookie(name) {
   if (typeof document === 'undefined' || !name) return '';
   const cookies = document.cookie ? document.cookie.split('; ') : [];
@@ -358,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showCompletion(data, credentials) {
+  function showCompletion(data, configuration) {
     if (!completionCard) return;
     const messageFromApi =
       data?.message || data?.summary || data?.success || data?.statusMessage || '';
@@ -380,8 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
         instructionsFromApi.length > 0
           ? instructionsFromApi
           : [
-              credentials?.adminEmail
-                ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
+              configuration?.adminEmail
+                ? `Sign in to the SkillBridge admin dashboard with ${configuration.adminEmail}.`
                 : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
               'Complete the organization setup and invite your teammates.',
               'Visit the documentation for deployment and integration guidance.',
@@ -479,6 +529,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function parsePort(value) {
+    const normalized = normalizeString(value);
+    if (!normalized) return NaN;
+    const parsed = Number.parseInt(normalized, 10);
+    if (!Number.isFinite(parsed)) return NaN;
+    return parsed;
+  }
+
+  function validateConfiguration(configuration) {
+    const issues = [];
+    if (!configuration.adminEmail) {
+      issues.push({ field: 'adminEmail', message: 'Enter an admin email address.' });
+    } else if (!isValidEmail(configuration.adminEmail)) {
+      issues.push({ field: 'adminEmail', message: 'Enter a valid admin email address.' });
+    }
+
+    if (!configuration.adminPassword || configuration.adminPassword.length < 8) {
+      issues.push({ field: 'adminPassword', message: 'Admin password must be at least 8 characters.' });
+    }
+
+    if (!configuration.supportEmail) {
+      issues.push({ field: 'supportEmail', message: 'Enter a support email address.' });
+    } else if (!isValidEmail(configuration.supportEmail)) {
+      issues.push({ field: 'supportEmail', message: 'Enter a valid support email address.' });
+    }
+
+    if (!configuration.publicAppName) {
+      issues.push({ field: 'publicAppName', message: 'Enter a public app name.' });
+    }
+
+    if (!configuration.smtp.host) {
+      issues.push({ field: 'smtpHost', message: 'Enter the SMTP host.' });
+    }
+
+    if (!Number.isInteger(configuration.smtp.port) || configuration.smtp.port <= 0) {
+      issues.push({ field: 'smtpPort', message: 'Enter a valid SMTP port between 1 and 65535.' });
+    } else if (configuration.smtp.port > 65535) {
+      issues.push({ field: 'smtpPort', message: 'SMTP port must be 65535 or lower.' });
+    }
+
+    if (configuration.branding.logoUrl && !isValidUrl(configuration.branding.logoUrl)) {
+      issues.push({ field: 'logoUrl', message: 'Logo URL must be a valid URL.' });
+    }
+
+    if (
+      configuration.branding.logoFile &&
+      (typeof configuration.branding.logoFile.size !== 'number' ||
+        configuration.branding.logoFile.size > MAX_LOGO_FILE_BYTES)
+    ) {
+      issues.push({ field: 'logoFile', message: 'Uploaded logo must be 2 MB or smaller.' });
+    }
+
+    return issues;
+  }
+
   async function handleInstallSubmit(event) {
     event.preventDefault();
     clearError();
@@ -488,10 +593,99 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!configForm) return;
 
     const formData = new FormData(configForm);
-    const credentials = {
-      adminEmail: String(formData.get('adminEmail') || '').trim(),
+    const logoFileFromForm = formData.get('logoFile');
+    const configuration = {
+      adminEmail: normalizeString(formData.get('adminEmail')),
       adminPassword: String(formData.get('adminPassword') || ''),
+      supportEmail: normalizeString(formData.get('supportEmail')),
+      publicAppName: normalizeString(formData.get('publicAppName')),
+      smtp: {
+        host: normalizeString(formData.get('smtpHost')),
+        port: parsePort(formData.get('smtpPort')),
+        username: normalizeString(formData.get('smtpUsername')),
+        password: String(formData.get('smtpPassword') || ''),
+        secure: formData.get('smtpSecure') === 'on' || formData.get('smtpSecure') === 'true',
+      },
+      branding: {
+        logoUrl: normalizeString(formData.get('logoUrl')),
+        logoFile:
+          logoFileFromForm instanceof File && logoFileFromForm.size > 0
+            ? logoFileFromForm
+            : null,
+      },
     };
+
+    const validationIssues = validateConfiguration(configuration);
+    if (validationIssues.length > 0) {
+      updateStep('config', { preserveProgress: true });
+      setProgress(STEP_PROGRESS.config || 55);
+      showError(
+        validationIssues
+          .map((issue) => issue.message)
+          .filter(Boolean)
+          .join(' '),
+      );
+      const firstIssue = validationIssues[0];
+      if (firstIssue?.field) {
+        const target = configForm.querySelector(`[name="${firstIssue.field}"]`);
+        if (target && typeof target.focus === 'function') {
+          target.focus();
+        }
+      }
+      return;
+    }
+
+    let logoFilePayload = null;
+    if (configuration.branding.logoFile) {
+      try {
+        const base64 = await fileToBase64(configuration.branding.logoFile);
+        logoFilePayload = {
+          name: configuration.branding.logoFile.name,
+          type: configuration.branding.logoFile.type,
+          size: configuration.branding.logoFile.size,
+          data: base64,
+        };
+      } catch (err) {
+        updateStep('config', { preserveProgress: true });
+        setProgress(STEP_PROGRESS.config || 55);
+        showError(`Could not read the uploaded logo file: ${err.message}`);
+        const fileInput = configForm.querySelector('[name="logoFile"]');
+        if (fileInput && typeof fileInput.focus === 'function') {
+          fileInput.focus();
+        }
+        return;
+      }
+    }
+
+    const payload = {
+      adminEmail: configuration.adminEmail,
+      adminPassword: configuration.adminPassword,
+      supportEmail: configuration.supportEmail,
+      publicAppName: configuration.publicAppName,
+      smtp: {
+        host: configuration.smtp.host,
+        port: configuration.smtp.port,
+        secure: Boolean(configuration.smtp.secure),
+      },
+    };
+
+    if (configuration.smtp.username) {
+      payload.smtp.username = configuration.smtp.username;
+    }
+    if (configuration.smtp.password) {
+      payload.smtp.password = configuration.smtp.password;
+    }
+
+    const brandingPayload = {};
+    if (configuration.branding.logoUrl) {
+      brandingPayload.logoUrl = configuration.branding.logoUrl;
+    }
+    if (logoFilePayload) {
+      brandingPayload.logoFile = logoFilePayload;
+    }
+    if (Object.keys(brandingPayload).length > 0) {
+      payload.branding = brandingPayload;
+    }
 
     updateStep('install');
     setProgress(90);
@@ -501,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
       installOutput.classList.add('text-gray-700');
-      installOutput.textContent = 'Running install...';
+      installOutput.textContent = 'Running installation with your configuration...';
     }
 
     try {
@@ -527,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       const responseText = await res.text();
@@ -610,9 +804,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (success) {
         setProgress(100);
         clearError();
-        showCompletion(data, credentials);
+        showCompletion(data, configuration);
       } else {
-        showError('Installation failed. Review the log below and try again.');
+        showError('Installation failed. Review the log below, adjust your configuration, and try again.');
         backToConfigBtn?.classList.remove('hidden');
         setProgress(STEP_PROGRESS.install);
       }
