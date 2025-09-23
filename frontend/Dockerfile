@@ -58,6 +58,7 @@ COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs f
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /shared /shared
 RUN addgroup -S app && adduser -S -G app app && chown -R app:app /app
 EXPOSE 3000

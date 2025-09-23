@@ -116,15 +116,13 @@ services:
       no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
     healthcheck:
       test:
-        - CMD-SHELL
-        - >-
-          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
-          --connect-timeout 5 --max-time 10
-          http://127.0.0.1:${PORT:-3000}/api/health
+        - CMD
+        - node
+        - /app/scripts/healthcheck.js
       interval: 30s
       timeout: 30s
       retries: 3
-      start_period: 30s
+      start_period: 45s
     depends_on:
       backend:
         condition: service_healthy
