@@ -24,6 +24,7 @@ import LinkText from "@/components/shared/LinkText";
 import { buildUrl } from "@/utils/url";
 
 import profileRoutes from "@/constants/profileRoutes";
+import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -34,7 +35,7 @@ export default function Header() {
   const isHydrated = mounted && hasHydrated;
   const hydratedUser = isHydrated ? user : null;
   const userOnlineStatus = hydratedUser?.is_online ?? false;
-  const userRole = hydratedUser?.role?.toLowerCase();
+  const userRole = getPrimaryRole(hydratedUser);
   const userIsOnline = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
@@ -73,7 +74,8 @@ export default function Header() {
   });
 
   const profileLink =
-    profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
+    (userRole && profileRoutes[userRole]) ||
+    (userRole ? `/dashboard/${userRole}/profile/edit` : "/dashboard/profile/edit");
 
   useEffect(() => {
     setMounted(true);
