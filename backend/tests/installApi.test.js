@@ -71,7 +71,6 @@ describe('/api/install/prereqs', () => {
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
-
   it('allows access with a valid setup secret', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
@@ -200,6 +199,40 @@ describe('runInstall controller', () => {
 });
 
 describe('/api/install/run', () => {
+  it('rejects POST attempts without the setup secret when configured', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 's3cret';
+    mockFindAdmins.mockResolvedValue([]);
+    mockVerifyToken.mockImplementation((req, res) =>
+      res.status(401).json({ message: 'Missing or malformed token' })
+    );
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(401);
+    expect(execFile).not.toHaveBeenCalled();
+    expect(mockVerifyToken).toHaveBeenCalledTimes(1);
+    expect(mockIsAdmin).not.toHaveBeenCalled();
+  });
+
+  it('allows POST attempts when the correct setup secret is provided', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 's3cret';
+    mockFindAdmins.mockResolvedValue([]);
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('x-install-setup-secret', 's3cret')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(200);
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+    expect(mockIsAdmin).not.toHaveBeenCalled();
+  });
+
   it('passes sanitized credentials to the install script via environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';

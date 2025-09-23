@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useAuthStore from "@/store/auth/authStore";
 import { useRouter } from "next/router";
 import profileRoutes from "@/constants/profileRoutes";
+import { getNormalizedRoles, getPrimaryRole } from "@/utils/auth/roleUtils";
 
 export default function IncompleteAlertModal() {
   const { user } = useAuthStore();
@@ -12,7 +13,9 @@ export default function IncompleteAlertModal() {
     if (!user) return;
 
     // 🎯 Only show for Student or Instructor roles
-    const isRelevantRole = user.role === "Student" || user.role === "Instructor";
+    const normalizedRoles = getNormalizedRoles(user);
+    const isRelevantRole =
+      normalizedRoles.includes("student") || normalizedRoles.includes("instructor");
 
     const needsProfile = !user.profile_complete || !user.is_email_verified || !user.is_phone_verified;
 
@@ -32,7 +35,7 @@ export default function IncompleteAlertModal() {
         </p>
         <button
           onClick={() => {
-            const path = profileRoutes[user.role?.toLowerCase()] || "/auth/login";
+            const path = profileRoutes[getPrimaryRole(user)] || "/auth/login";
             router.push(path);
           }}
           className="bg-yellow-500 px-4 py-2 rounded text-gray-900 font-semibold"

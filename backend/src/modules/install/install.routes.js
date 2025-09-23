@@ -3,9 +3,7 @@ const router = require('express').Router();
 const controller = require('./install.controller');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
-const userModel = require('../users/user.model');
 const { z } = require('zod');
-const { hasExistingAdmin } = require('./install.helpers');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -62,7 +60,6 @@ const respondInstallerLocked = (res) =>
 
 const hasAdminToken = (req) =>
   typeof req.headers.authorization === 'string' || Boolean(req.cookies?.token);
-
 const enforceInstallerGuard = async (req, res, next) => {
   try {
     const setupSecret =

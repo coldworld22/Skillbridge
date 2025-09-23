@@ -12,6 +12,7 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import { getUserCountry } from "@/utils/getUserCountry";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 import dynamic from "next/dynamic";
 import {
   FaSpinner,
@@ -167,8 +168,8 @@ function ProfileEditTemplate() {
       };
     }
 
-    const role = user.role?.toLowerCase();
-    if (role !== "admin" && role !== "superadmin") {
+    const normalizedRoles = getNormalizedRoles(user);
+    if (!normalizedRoles.includes("admin") && !normalizedRoles.includes("superadmin")) {
       setLoadingProfile(false);
       return () => {
         isMounted = false;
