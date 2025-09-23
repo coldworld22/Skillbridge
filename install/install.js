@@ -487,22 +487,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (completionMessage) {
       completionMessage.className = 'mt-1 text-green-700';
-      completionMessage.textContent =
-        messageFromApi || `${displayName} is installed and ready to go.`;
+      const brandingMessage = credentials?.appName
+        ? `${credentials.appName} is installed with your branding and contact defaults.`
+        : 'SkillBridge is installed with your branding and contact defaults.';
+      completionMessage.textContent = messageFromApi || brandingMessage;
     }
 
     if (completionNextSteps) {
       completionNextSteps.innerHTML = '';
+      const supportEmailStep = credentials?.supportEmail
+        ? `System emails will default to ${credentials.supportEmail}. Update it anytime from Settings → Email.`
+        : null;
+      const defaultSteps = [
+        credentials?.adminEmail
+          ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
+          : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
+        'Review your branding and contact information under Settings → App.',
+        'Visit the documentation for deployment and integration guidance.',
+      ];
+      if (supportEmailStep) {
+        defaultSteps.splice(1, 0, supportEmailStep);
+      }
+
       const steps =
-        instructionsFromApi.length > 0
-          ? instructionsFromApi
-          : [
-              configuration?.adminEmail
-                ? `Sign in to the SkillBridge admin dashboard with ${configuration.adminEmail}.`
-                : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
-              'Complete the organization setup and invite your teammates.',
-              'Visit the documentation for deployment and integration guidance.',
-            ];
+        instructionsFromApi.length > 0 ? instructionsFromApi : defaultSteps;
       steps
         .filter((step) => typeof step === 'string' && step.trim().length > 0)
         .forEach((step) => {
@@ -658,99 +666,28 @@ document.addEventListener('DOMContentLoaded', () => {
     backToConfigBtn?.classList.add('hidden');
 
     if (!configForm) return;
-
-    const formData = new FormData(configForm);
-    const logoFileFromForm = formData.get('logoFile');
-    const configuration = {
-      adminEmail: normalizeString(formData.get('adminEmail')),
-      adminPassword: String(formData.get('adminPassword') || ''),
-      supportEmail: normalizeString(formData.get('supportEmail')),
-      publicAppName: normalizeString(formData.get('publicAppName')),
-      smtp: {
-        host: normalizeString(formData.get('smtpHost')),
-        port: parsePort(formData.get('smtpPort')),
-        username: normalizeString(formData.get('smtpUsername')),
-        password: String(formData.get('smtpPassword') || ''),
-        secure: formData.get('smtpSecure') === 'on' || formData.get('smtpSecure') === 'true',
-      },
-      branding: {
-        logoUrl: normalizeString(formData.get('logoUrl')),
-        logoFile:
-          logoFileFromForm instanceof File && logoFileFromForm.size > 0
-            ? logoFileFromForm
-            : null,
-      },
+    const rawFormData = new FormData(configForm);
+    const sanitize = (value) => String(value ?? '').replace(/\0/g, '').trim();
+    const credentials = {
+      adminEmail: sanitize(rawFormData.get('adminEmail')),
+      adminPassword: String(rawFormData.get('adminPassword') ?? ''),
+      appName: sanitize(rawFormData.get('appName')),
+      supportEmail: sanitize(rawFormData.get('supportEmail')),
+      logoUrl: sanitize(rawFormData.get('logoUrl')),
     };
 
-    const validationIssues = validateConfiguration(configuration);
-    if (validationIssues.length > 0) {
-      updateStep('config', { preserveProgress: true });
-      setProgress(STEP_PROGRESS.config || 55);
-      showError(
-        validationIssues
-          .map((issue) => issue.message)
-          .filter(Boolean)
-          .join(' '),
-      );
-      const firstIssue = validationIssues[0];
-      if (firstIssue?.field) {
-        const target = configForm.querySelector(`[name="${firstIssue.field}"]`);
-        if (target && typeof target.focus === 'function') {
-          target.focus();
-        }
-      }
-      return;
+    const submissionData = new FormData();
+    submissionData.set('adminEmail', credentials.adminEmail);
+    submissionData.set('adminPassword', credentials.adminPassword);
+    submissionData.set('appName', credentials.appName);
+    submissionData.set('supportEmail', credentials.supportEmail);
+    if (credentials.logoUrl) {
+      submissionData.set('logoUrl', credentials.logoUrl);
     }
 
-    let logoFilePayload = null;
-    if (configuration.branding.logoFile) {
-      try {
-        const base64 = await fileToBase64(configuration.branding.logoFile);
-        logoFilePayload = {
-          name: configuration.branding.logoFile.name,
-          type: configuration.branding.logoFile.type,
-          size: configuration.branding.logoFile.size,
-          data: base64,
-        };
-      } catch (err) {
-        updateStep('config', { preserveProgress: true });
-        setProgress(STEP_PROGRESS.config || 55);
-        showError(`Could not read the uploaded logo file: ${err.message}`);
-        const fileInput = configForm.querySelector('[name="logoFile"]');
-        if (fileInput && typeof fileInput.focus === 'function') {
-          fileInput.focus();
-        }
-        return;
-      }
-    }
-    const payload = {
-      adminEmail: configuration.adminEmail,
-      adminPassword: configuration.adminPassword,
-      supportEmail: configuration.supportEmail,
-      publicAppName: configuration.publicAppName,
-      smtp: {
-        host: configuration.smtp.host,
-        port: configuration.smtp.port,
-        secure: Boolean(configuration.smtp.secure),
-      },
-    };
-
-    if (configuration.smtp.username) {
-      payload.smtp.username = configuration.smtp.username;
-    }
-    if (configuration.smtp.password) {
-      payload.smtp.password = configuration.smtp.password;
-    }
-
-    const brandingPayload = {};
-    if (configuration.branding.logoUrl) {
-      brandingPayload.logoUrl = configuration.branding.logoUrl;
-    }
-    if (logoFilePayload) {
-      brandingPayload.logoFile = logoFilePayload;
-    }
-    if (Object.keys(brandingPayload).length > 0) {
-      payload.branding = brandingPayload;
+    const logoFile = rawFormData.get('logoFile');
+    if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
+      submissionData.set('logoFile', logoFile, logoFile.name);
     }
 
     updateStep('install');
@@ -781,10 +718,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/install/run', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
-        body: JSON.stringify(payload),
+        body: submissionData,
       });
 
       const responseText = await res.text();

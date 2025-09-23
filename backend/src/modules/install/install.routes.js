@@ -8,6 +8,8 @@ const validate = require('../../middleware/validate');
 const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
 const { z } = require('zod');
+const logoUpload = require('../appConfig/appLogoUploadMiddleware');
+const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
@@ -72,18 +74,21 @@ const enforceInstallerGuard = async (req, res, next) => {
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
 
-    let secretProvided = false;
+    let secretValid = false;
     if (setupSecret.length > 0) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
-      secretProvided = constantTimeEquals(providedSecret, setupSecret);
-      if (!secretProvided) {
+      const secretsMatch =
+        providedSecret.length > 0 && constantTimeEquals(providedSecret, setupSecret);
+
+      if (!secretsMatch) {
         return res.status(403).json({
           code: 'INSTALL_LOCKED',
           message: 'Installer locked. Provide a valid setup secret.',
         });
       }
+      secretValid = true;
     }
 
     const adminExists = await determineAdminPresence();
@@ -92,7 +97,7 @@ const enforceInstallerGuard = async (req, res, next) => {
       return next();
     }
 
-    if (secretProvided) {
+    if (!requireAuth || secretValid) {
       return next();
     }
 
@@ -121,87 +126,28 @@ router.use(enforceInstallerGuard);
 
 // No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();
-
-const preprocessOptional = (value) => {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-  if (value === null || value === undefined) {
-    return undefined;
-  }
-  return value;
-};
-
-const optionalString = z.preprocess(preprocessOptional, z.string().min(1)).optional();
-const optionalEmail = z.preprocess(preprocessOptional, z.string().email()).optional();
-const optionalUrl = z.preprocess(preprocessOptional, z.string().url()).optional();
-const optionalPort = z
-  .preprocess((value) => {
-    const processed = preprocessOptional(value);
-    if (processed === undefined) {
-      return undefined;
+const optionalLogoUrlSchema = z
+  .string()
+  .transform((value) => (typeof value === 'string' ? value.trim() : ''))
+  .transform((value) => (value.length > 0 ? value : undefined))
+  .refine(
+    (value) =>
+      value === undefined ||
+      /^https?:\/\//i.test(value) ||
+      value.startsWith('/'),
+    {
+      message: 'Logo URL must be absolute or start with /',
     }
-    if (typeof processed === 'number') {
-      return processed;
-    }
-    if (typeof processed === 'string') {
-      if (!/^\d+$/.test(processed)) {
-        return processed;
-      }
-      return Number(processed);
-    }
-    return processed;
-  }, z.number().int().min(1).max(65535))
+  )
   .optional();
-
-const optionalBoolean = z
-  .preprocess((value) => {
-    const processed = preprocessOptional(value);
-    if (processed === undefined) {
-      return undefined;
-    }
-    if (typeof processed === 'boolean') {
-      return processed;
-    }
-    if (typeof processed === 'string') {
-      const normalized = processed.toLowerCase();
-      if (['true', '1', 'yes', 'on'].includes(normalized)) {
-        return true;
-      }
-      if (['false', '0', 'no', 'off'].includes(normalized)) {
-        return false;
-      }
-      return processed;
-    }
-    return processed;
-  }, z.boolean())
-  .optional();
-
-const logoFileSchema = z
-  .object({
-    filename: optionalString,
-    mimeType: optionalString,
-    data: z.preprocess(preprocessOptional, z.string().min(1)),
-  })
-  .strict();
 
 const installSchema = z
   .object({
     adminEmail: z.string().trim().email(),
     adminPassword: z.string().min(8),
-    supportEmail: optionalEmail,
-    appName: optionalString,
-    logoUrl: optionalUrl,
-    logoFile: logoFileSchema.optional(),
-    smtpHost: optionalString,
-    smtpPort: optionalPort,
-    smtpUsername: optionalString,
-    smtpPassword: optionalString,
-    smtpFromEmail: optionalEmail,
-    smtpFromName: optionalString,
-    smtpEncryption: optionalString,
-    smtpSecure: optionalBoolean,
+    appName: z.string().trim().min(1),
+    supportEmail: z.string().trim().email(),
+    logoUrl: optionalLogoUrlSchema,
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -263,6 +209,11 @@ const installSchema = z
   });
 
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
-router.post('/run', validate({ body: installSchema }), controller.runInstall);
+router.post(
+  '/run',
+  logoUpload.single('logoFile'),
+  validate({ body: installSchema }),
+  controller.runInstall
+);
 
 module.exports = { requireInstallApiEnabled, router };
