@@ -18,6 +18,7 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const csrf = require("./middleware/csrf");
 const path = require("path");
+const fs = require("fs");
 const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
@@ -208,11 +209,22 @@ app.use("/install", (req, res, next) => {
 });
 
 if (config.ENABLE_INSTALL) {
-  const installerPath = path.join(__dirname, "../../install");
-  app.use(
-    "/install",
-    express.static(installerPath, { maxAge: "1h" })
+  const monorepoInstallerPath = path.join(__dirname, "../../install");
+  const packagedInstallerPath = path.join(__dirname, "../install");
+  const installerPath = [monorepoInstallerPath, packagedInstallerPath].find(
+    (candidate) => fs.existsSync(candidate)
   );
+
+  if (installerPath) {
+    app.use(
+      "/install",
+      express.static(installerPath, { maxAge: "1h" })
+    );
+  } else {
+    logger.warn(
+      "⚠️ ENABLE_INSTALL is true but no installer assets were found in either the monorepo or packaged directories."
+    );
+  }
 }
 
 // ─── Routes ───
