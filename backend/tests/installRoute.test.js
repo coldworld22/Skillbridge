@@ -32,7 +32,7 @@ describe('/install route', () => {
     const { app, server, io } = getServer('true');
     const res = await request(app).get('/install/');
     io?.close();
-    server.close();
+    server?.close();
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
     expect(res.text).toContain('id="configForm"');
@@ -46,7 +46,6 @@ describe('/install route', () => {
     expect(res.text).toContain('Configuration');
     expect(res.text).toContain('Run Install');
   });
-
   it('serves installer assets from the packaged layout when present', async () => {
     const packagedInstallerDir = path.join(__dirname, '../install');
     const packagedIndexFile = path.join(packagedInstallerDir, 'index.html');
