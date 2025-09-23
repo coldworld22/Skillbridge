@@ -1,5 +1,8 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const request = require('supertest');
+const fs = require('fs');
 
 jest.mock('child_process', () => {
   const util = require('util');
@@ -62,6 +65,10 @@ jest.mock('../src/modules/emailConfig/emailConfig.service', () => ({
 const { execFile } = require('child_process');
 const { router } = require('../src/modules/install/install.routes');
 
+const unlinkMock = jest.spyOn(fs.promises, 'unlink').mockResolvedValue();
+
+const controllerDir = path.join(__dirname, '../src/modules/install');
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -94,12 +101,17 @@ beforeEach(() => {
   mockGetEmailSettings.mockResolvedValue({});
   mockUpdateEmailSettings.mockResolvedValue({});
   execFile.mockClear();
+  unlinkMock.mockClear();
 });
 
 afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
   delete process.env.ENABLE_INSTALL;
   delete process.env.INSTALL_SETUP_SECRET;
+});
+
+afterAll(() => {
+  unlinkMock.mockRestore();
 });
 
 describe('GET /api/install/prereqs', () => {
@@ -215,6 +227,33 @@ describe('POST /api/install/run', () => {
         fromName: payload.smtpFromName,
       })
     );
+  });
+
+  it('removes the previous uploaded logo when a new logo is provided', async () => {
+    const payload = buildPayload();
+    const previousLogo = '/uploads/app/old-logo.png';
+    mockGetAppSettings.mockResolvedValueOnce({ logo_url: previousLogo });
+
+    const res = await postInstall(payload);
+
+    expect(res.status).toBe(200);
+    expect(
+      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
+    ).toBe(true);
+  });
+
+  it('skips logo cleanup when the stored logo path is unchanged', async () => {
+    const payload = buildPayload();
+    delete payload.logoUrl;
+    const existingLogo = '/uploads/app/current-logo.png';
+    mockGetAppSettings.mockResolvedValueOnce({ logo_url: existingLogo });
+
+    const res = await postInstall(payload);
+
+    expect(res.status).toBe(200);
+    expect(
+      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/current-logo.png'))
+    ).toBe(false);
   });
 
   it('propagates installer failures', async () => {

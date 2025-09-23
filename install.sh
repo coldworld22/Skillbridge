@@ -69,14 +69,29 @@ derive_postgres_url() {
 run_compose() {
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     docker compose "$@"
-  elif command -v docker-compose >/dev/null 2>&1; then
+    return $?
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
     DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-0} \
       COMPOSE_DOCKER_CLI_BUILD=${COMPOSE_DOCKER_CLI_BUILD:-0} \
       docker-compose "$@"
-  else
-    echo "Docker is required but not installed." >&2
-    return 1
+    return $?
   fi
+
+  return 127
+}
+
+docker_available() {
+  if command -v docker >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
 }
 
 MODE=${1:-}
@@ -124,16 +139,24 @@ COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 START_DEV_SERVICES=${START_DEV_SERVICES:-true}
 
 if [[ "$MODE" == "production" ]]; then
-  echo "Ensuring Docker services are running before migrations..."
-  if ! run_compose -f "$COMPOSE_FILE" up -d; then
-    echo "Failed to start Docker services required for production." >&2
-    exit 1
+  if docker_available; then
+    echo "Ensuring Docker services are running before migrations..."
+    if ! run_compose -f "$COMPOSE_FILE" up -d; then
+      echo "Failed to start Docker services required for production." >&2
+      exit 1
+    fi
+  else
+    echo "Docker CLI not available; skipping compose startup for production mode." >&2
   fi
 elif [[ "$START_DEV_SERVICES" == "true" ]]; then
-  echo "Starting development services with docker compose (detached)..."
-  if ! run_compose -f "$COMPOSE_FILE" up --build -d; then
-    echo "Failed to start development Docker services." >&2
-    exit 1
+  if docker_available; then
+    echo "Starting development services with docker compose (detached)..."
+    if ! run_compose -f "$COMPOSE_FILE" up --build -d; then
+      echo "Failed to start development Docker services." >&2
+      exit 1
+    fi
+  else
+    echo "Docker CLI not available; skipping development compose startup."
   fi
 else
   echo "Skipping automatic startup of development services."
