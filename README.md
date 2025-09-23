@@ -15,7 +15,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 
 ## Automated Installation
 
-Ensure `bash`, `curl`, `docker` and `docker compose` are installed on your system.
+Ensure `bash`, `curl`, `docker`, and the Docker Compose V2 plugin (the `docker compose` command) are installed on your system. The installer exits early if only the legacy `docker-compose` binary is present so you can install the plugin or downgrade Docker Engine below version 27 before proceeding.
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/install.sh | bash
