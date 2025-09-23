@@ -100,6 +100,8 @@ INSTALL_API_ENABLED=true
 
 Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes.
 
+If you configure `INSTALL_SETUP_SECRET` in `backend/.env`, clients must also send the same value in the `X-Install-Setup-Secret` header on **every** installer request. The backend trims the configured secret before comparison, so avoid trailing spaces when setting the environment variable. Requests that omit the header or provide the wrong secret receive a `403` response with an `INSTALL_LOCKED` error code before the installer runs.
+
 After you finish the installation or automation tasks, immediately disable the API again by removing the setting or switching it back to `false` and redeploying/restarting the backend. Leaving the installer enabled in production is not recommended.
 
 ### Initial admin passwords

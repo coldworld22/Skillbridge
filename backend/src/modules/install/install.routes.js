@@ -66,10 +66,22 @@ const enforceInstallerGuard = async (req, res, next) => {
       typeof process.env.INSTALL_SETUP_SECRET === 'string'
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
-    const secretEnabled = setupSecret.length > 0;
-    const providedSecret = req.get('x-install-setup-secret');
-    const secretValid =
-      secretEnabled && constantTimeEquals(providedSecret ?? '', setupSecret);
+    const adminExists = await determineAdminPresence();
+
+    if (setupSecret.length > 0) {
+      const providedSecretHeader = req.get('X-Install-Setup-Secret');
+      const providedSecret =
+        typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
+
+      if (providedSecret !== setupSecret) {
+        return res.status(403).json({
+          code: 'INSTALL_LOCKED',
+          message: 'Installer locked. Provide a valid setup secret.',
+        });
+      }
+    }
+
+    const requireAuth = adminExists;
 
     if (secretValid) {
       return next();
