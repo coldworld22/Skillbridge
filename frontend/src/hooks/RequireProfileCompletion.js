@@ -4,11 +4,12 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import profileRoutes from "@/constants/profileRoutes";
+import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 export default function RequireProfileCompletion({ children }) {
   const { user } = useAuthStore();
   const router = useRouter();
-  const userRole = user?.role?.toLowerCase();
+  const userRole = getPrimaryRole(user);
 
   useEffect(() => {
     if (user && user.profile_complete === false) {

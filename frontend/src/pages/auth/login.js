@@ -29,6 +29,7 @@ import { handleError } from "@/utils/error";
 import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
 import profileRoutes from "@/constants/profileRoutes";
+import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
@@ -70,12 +71,12 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     }
 
     if (user.profile_complete === false) {
-      const rolePath = profileRoutes[user.role?.toLowerCase()] || "/website";
+      const rolePath = profileRoutes[getPrimaryRole(user)] || "/website";
       router.replace(rolePath);
     } else {
       router.replace("/website");
     }
-  }, [hasHydrated, user, accessToken, logout]);
+  }, [hasHydrated, user, accessToken, logout, router]);
 
   useEffect(() => {
     fetchAppConfig();
@@ -133,9 +134,10 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       toast.success(t("login_successful"));
       fetchNotifications();
 
+      const primaryRole = getPrimaryRole(loggedInUser);
       const targetPath =
         loggedInUser.profile_complete === false
-          ? profileRoutes[loggedInUser.role?.toLowerCase()] || "/website"
+          ? profileRoutes[primaryRole] || "/website"
           : "/website";
 
       // 🚀 Redirect after a short delay so the toast is visible

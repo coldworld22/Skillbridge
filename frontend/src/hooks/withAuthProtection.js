@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
+import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 
 export default function withAuthProtection(Component, rolesOrOptions = []) {
   const { roles: allowedRoles = [], permissions: allowedPerms = [] } =
@@ -24,16 +25,19 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         return;
       }
 
-      const role = user?.role?.toLowerCase();
+      const normalizedRoles = getNormalizedRoles(user);
       if (!user) {
         router.replace("/auth/login");
       } else if (!accessToken || isTokenExpired(accessToken)) {
         logout();
         router.replace("/auth/login");
       } else if (
-        (allowedRoles.length && !allowedRoles.includes(role)) ||
+        (allowedRoles.length &&
+          !allowedRoles.some((allowedRole) =>
+            normalizedRoles.includes(allowedRole)
+          )) ||
         (allowedPerms.length &&
-          role !== "superadmin" &&
+          !normalizedRoles.includes("superadmin") &&
           !allowedPerms.some((p) => user.permissions?.includes(p)))
       ) {
         router.replace("/error/403");
@@ -47,15 +51,20 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       router,
     ]);
 
-    const role = user?.role?.toLowerCase();
+    const normalizedRoles = getNormalizedRoles(user);
+    const hasAllowedRole =
+      !allowedRoles.length ||
+      allowedRoles.some((allowedRole) => normalizedRoles.includes(allowedRole));
+    const hasRequiredPerms =
+      !allowedPerms.length ||
+      normalizedRoles.includes("superadmin") ||
+      allowedPerms.some((p) => user?.permissions?.includes(p));
     if (
       !hydrated ||
       !hasHydrated ||
       !user ||
-      (allowedRoles.length && !allowedRoles.includes(role)) ||
-      (allowedPerms.length &&
-        role !== "superadmin" &&
-        !allowedPerms.some((p) => user.permissions?.includes(p)))
+      !hasAllowedRole ||
+      !hasRequiredPerms
     ) {
       return null;
     }

@@ -16,6 +16,23 @@ const FRIENDLY_LABELS = {
   python: 'Python',
 };
 
+function getCookie(name) {
+  if (typeof document === 'undefined' || !name) return '';
+  const cookies = document.cookie ? document.cookie.split('; ') : [];
+  for (const cookie of cookies) {
+    const [rawName, ...rawValue] = cookie.split('=');
+    if (!rawName) continue;
+    if (decodeURIComponent(rawName) === name) {
+      return decodeURIComponent(rawValue.join('=') || '');
+    }
+  }
+  return '';
+}
+
+function getCsrfToken() {
+  return getCookie('csrfToken');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progressBar');
   const errorBox = document.getElementById('errorBox');
@@ -529,6 +546,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const message =
           data?.message ||
           'Installation locked. An administrator already exists. Sign in to manage this instance.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
+        }
+        updateStep('config');
+        return;
+      }
+
+      if (
+        res.status === 403 &&
+        (data?.code === 'EBADCSRFTOKEN' || /csrf/i.test(String(data?.message || '')))
+      ) {
+        const message =
+          'Security validation failed. Refresh the page to get a new CSRF token, then try again.';
         showError(message);
         if (installOutput) {
           installOutput.classList.remove('text-gray-700', 'text-green-700');
