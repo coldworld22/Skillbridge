@@ -335,7 +335,12 @@ exports.loginUser = async ({ email, password, ip }) => {
     logger.error("Failed to create login notification", err);
   }
   const safeUser = sanitizeUserUtil(user);
-  return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
+  const canonicalRole = roles[0] || user.role;
+  return {
+    accessToken,
+    refreshToken,
+    user: { ...safeUser, role: canonicalRole, roles, permissions },
+  };
 };
 
 /**
