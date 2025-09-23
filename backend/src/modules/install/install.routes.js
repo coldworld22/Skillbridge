@@ -3,7 +3,7 @@ const { Router } = require('express');
 const { z } = require('zod');
 const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
-const { hasExistingAdmin } = require('./install.helpers');
+const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');
 const controller = require('./install.controller');
 
 const router = Router();
@@ -34,7 +34,7 @@ const respondInstallerLocked = (res, message = 'Installer locked. Provide a vali
 const enforceInstallerGuard = async (req, res, next) => {
   try {
     const bypassCache = process.env.NODE_ENV === 'test';
-    const adminExists = await hasExistingAdmin({ bypassCache });
+    const adminExists = await resolveHasExistingAdminStatus({ bypassCache });
     const setupSecret = typeof process.env.INSTALL_SETUP_SECRET === 'string'
       ? process.env.INSTALL_SETUP_SECRET.trim()
       : '';
