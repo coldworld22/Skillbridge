@@ -17,236 +17,54 @@ const FRIENDLY_LABELS = {
   python: 'Python',
 };
 
-const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
-const ACCEPTED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/svg+xml']);
+const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
 
-const EMAIL_REGEX =
-  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-
-const NON_EMPTY_VALUE = /\S/;
-
-function sanitizeInput(value) {
-  return typeof value === 'string' ? value.replace(/\0/g, '').trim() : '';
+function normalizeString(value) {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
 }
 
 function isValidEmail(value) {
-  return EMAIL_REGEX.test(value);
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
 }
 
-function normalizePort(value) {
-  const numeric = Number.parseInt(String(value).trim(), 10);
-  if (!Number.isFinite(numeric)) return NaN;
-  return numeric;
-}
-
-async function fileToBase64(file) {
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  if (!bytes.length) {
-    return '';
-  }
-
-  let binary = '';
-  const CHUNK_SIZE = 0x8000;
-  for (let index = 0; index < bytes.length; index += CHUNK_SIZE) {
-    const chunk = bytes.subarray(index, index + CHUNK_SIZE);
-    binary += String.fromCharCode(...chunk);
-  }
-
-  return btoa(binary);
-}
-
-function determineLogoExtension(name, type) {
-  if (typeof name === 'string') {
-    const existing = name.trim().toLowerCase();
-    const ext = existing.includes('.') ? existing.slice(existing.lastIndexOf('.')) : '';
-    if (ext && ext.length <= 8) {
-      return ext;
-    }
-  }
-
-  if (typeof type === 'string') {
-    if (type === 'image/png') return '.png';
-    if (type === 'image/jpeg') return '.jpg';
-    if (type === 'image/svg+xml') return '.svg';
-  }
-
-  return '.png';
-}
-
-function sanitizeFileName(name, fallbackExtension) {
-  const base = typeof name === 'string' ? name : '';
-  const normalized = base
-    .replace(/[^A-Za-z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64);
-  const extension = fallbackExtension || '.png';
-  if (!normalized) {
-    return `logo-${Date.now()}${extension}`;
-  }
-  if (normalized.includes('.')) {
-    return normalized;
-  }
-  return `${normalized}${extension}`;
-}
-
-async function buildInstallationPayload(formData) {
-  const adminEmail = sanitizeInput(formData.get('adminEmail'));
-  const adminPassword = String(formData.get('adminPassword') || '');
-  const databaseUrl = sanitizeInput(formData.get('databaseUrl'));
-  const databaseUser = sanitizeInput(formData.get('databaseUser'));
-  const databasePassword = String(formData.get('databasePassword') || '');
-  const smtpHost = sanitizeInput(formData.get('smtpHost'));
-  const smtpPortRaw = formData.get('smtpPort');
-  const smtpUser = sanitizeInput(formData.get('smtpUser'));
-  const smtpPassword = String(formData.get('smtpPassword') || '');
-  const defaultFromEmail = sanitizeInput(formData.get('defaultFromEmail'));
-  const appDisplayName = sanitizeInput(formData.get('appDisplayName'));
-  const logoUrl = sanitizeInput(formData.get('logoUrl'));
-
-  if (!isValidEmail(adminEmail)) {
-    return { ok: false, message: 'Enter a valid admin email address.', field: 'adminEmail' };
-  }
-
-  if (adminPassword.length < 8) {
-    return {
-      ok: false,
-      message: 'Admin password must be at least 8 characters long.',
-      field: 'adminPassword',
-    };
-  }
-
-  if (!NON_EMPTY_VALUE.test(databaseUrl)) {
-    return {
-      ok: false,
-      message: 'Provide a PostgreSQL connection URL.',
-      field: 'databaseUrl',
-    };
-  }
-
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
   try {
-    // eslint-disable-next-line no-new
-    new URL(databaseUrl);
-  } catch (_err) {
-    return { ok: false, message: 'Database URL must be a valid connection string.', field: 'databaseUrl' };
+    const parsed = new URL(trimmed);
+    return Boolean(parsed.protocol) && Boolean(parsed.host);
+  } catch {
+    return false;
   }
+}
 
-  if (!NON_EMPTY_VALUE.test(databaseUser)) {
-    return { ok: false, message: 'Database user is required.', field: 'databaseUser' };
-  }
-
-  if (!NON_EMPTY_VALUE.test(databasePassword)) {
-    return { ok: false, message: 'Database password is required.', field: 'databasePassword' };
-  }
-
-  if (!NON_EMPTY_VALUE.test(smtpHost)) {
-    return { ok: false, message: 'SMTP host is required.', field: 'smtpHost' };
-  }
-
-  const smtpPort = normalizePort(smtpPortRaw);
-  if (!Number.isInteger(smtpPort) || smtpPort <= 0 || smtpPort > 65535) {
-    return { ok: false, message: 'SMTP port must be between 1 and 65535.', field: 'smtpPort' };
-  }
-
-  if (!NON_EMPTY_VALUE.test(smtpUser)) {
-    return { ok: false, message: 'SMTP username is required.', field: 'smtpUser' };
-  }
-
-  if (!NON_EMPTY_VALUE.test(smtpPassword)) {
-    return { ok: false, message: 'SMTP password is required.', field: 'smtpPassword' };
-  }
-
-  if (!isValidEmail(defaultFromEmail)) {
-    return {
-      ok: false,
-      message: 'Enter a valid default “from” email address.',
-      field: 'defaultFromEmail',
-    };
-  }
-
-  if (!NON_EMPTY_VALUE.test(appDisplayName)) {
-    return { ok: false, message: 'Application display name is required.', field: 'appDisplayName' };
-  }
-
-  let normalizedLogoUrl = '';
-  if (logoUrl) {
-    try {
-      const parsed = new URL(logoUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) {
-        throw new Error('invalid protocol');
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const { result } = reader;
+      if (typeof result !== 'string') {
+        reject(new Error('Unable to read file contents.'));
+        return;
       }
-      normalizedLogoUrl = parsed.toString();
-    } catch (_err) {
-      return {
-        ok: false,
-        message: 'Logo URL must be an absolute HTTP or HTTPS address.',
-        field: 'logoUrl',
-      };
-    }
-  }
-
-  const file = formData.get('logoFile');
-  let logoFilePayload;
-  if (file && typeof file === 'object' && typeof file.name === 'string' && file.size > 0) {
-    if (file.size > MAX_LOGO_SIZE_BYTES) {
-      return {
-        ok: false,
-        message: 'Logo uploads must be 5 MB or smaller.',
-        field: 'logoFile',
-      };
-    }
-
-    if (file.type && !ACCEPTED_LOGO_TYPES.has(file.type) && !file.type.startsWith('image/')) {
-      return { ok: false, message: 'Logo must be an image file.', field: 'logoFile' };
-    }
-
-    const base64 = await fileToBase64(file);
-    if (!base64) {
-      return { ok: false, message: 'Unable to read the selected logo.', field: 'logoFile' };
-    }
-    const extension = determineLogoExtension(file.name, file.type);
-    const safeName = sanitizeFileName(file.name, extension);
-    logoFilePayload = {
-      name: safeName,
-      type: file.type || '',
-      size: file.size,
-      data: base64,
-      encoding: 'base64',
+      const commaIndex = result.indexOf(',');
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
     };
-  }
-
-  if (!logoFilePayload && !normalizedLogoUrl) {
-    return {
-      ok: false,
-      message: 'Upload a logo file or provide a logo URL.',
-      field: 'logoFile',
+    reader.onerror = () => {
+      reject(new Error('Unable to read file.'));
     };
-  }
-
-  const payload = {
-    adminEmail,
-    adminPassword,
-    databaseUrl,
-    databaseUser,
-    databasePassword,
-    smtpHost,
-    smtpPort,
-    smtpUser,
-    smtpPassword,
-    defaultFromEmail,
-    appDisplayName,
-  };
-
-  if (normalizedLogoUrl) {
-    payload.logoUrl = normalizedLogoUrl;
-  }
-
-  if (logoFilePayload) {
-    payload.logoFile = logoFilePayload;
-  }
-
-  return { ok: true, payload };
+    reader.readAsDataURL(file);
+  });
 }
 
 function getCookie(name) {
@@ -654,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showCompletion(data, submittedConfig) {
+  function showCompletion(data, configuration) {
     if (!completionCard) return;
     const messageFromApi =
       data?.message || data?.summary || data?.success || data?.statusMessage || '';
@@ -679,11 +497,10 @@ document.addEventListener('DOMContentLoaded', () => {
         instructionsFromApi.length > 0
           ? instructionsFromApi
           : [
-              submittedConfig?.adminEmail
-                ? `Sign in to the ${displayName} admin dashboard with ${submittedConfig.adminEmail}.`
-                : `Sign in to the ${displayName} admin dashboard with the credentials you configured.`,
-              'Complete the organization profile and invite your teammates.',
-              'Send a test email from Settings to confirm your SMTP connection.',
+              configuration?.adminEmail
+                ? `Sign in to the SkillBridge admin dashboard with ${configuration.adminEmail}.`
+                : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
+              'Complete the organization setup and invite your teammates.',
               'Visit the documentation for deployment and integration guidance.',
             ];
       steps
@@ -779,6 +596,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function parsePort(value) {
+    const normalized = normalizeString(value);
+    if (!normalized) return NaN;
+    const parsed = Number.parseInt(normalized, 10);
+    if (!Number.isFinite(parsed)) return NaN;
+    return parsed;
+  }
+
+  function validateConfiguration(configuration) {
+    const issues = [];
+    if (!configuration.adminEmail) {
+      issues.push({ field: 'adminEmail', message: 'Enter an admin email address.' });
+    } else if (!isValidEmail(configuration.adminEmail)) {
+      issues.push({ field: 'adminEmail', message: 'Enter a valid admin email address.' });
+    }
+
+    if (!configuration.adminPassword || configuration.adminPassword.length < 8) {
+      issues.push({ field: 'adminPassword', message: 'Admin password must be at least 8 characters.' });
+    }
+
+    if (!configuration.supportEmail) {
+      issues.push({ field: 'supportEmail', message: 'Enter a support email address.' });
+    } else if (!isValidEmail(configuration.supportEmail)) {
+      issues.push({ field: 'supportEmail', message: 'Enter a valid support email address.' });
+    }
+
+    if (!configuration.publicAppName) {
+      issues.push({ field: 'publicAppName', message: 'Enter a public app name.' });
+    }
+
+    if (!configuration.smtp.host) {
+      issues.push({ field: 'smtpHost', message: 'Enter the SMTP host.' });
+    }
+
+    if (!Number.isInteger(configuration.smtp.port) || configuration.smtp.port <= 0) {
+      issues.push({ field: 'smtpPort', message: 'Enter a valid SMTP port between 1 and 65535.' });
+    } else if (configuration.smtp.port > 65535) {
+      issues.push({ field: 'smtpPort', message: 'SMTP port must be 65535 or lower.' });
+    }
+
+    if (configuration.branding.logoUrl && !isValidUrl(configuration.branding.logoUrl)) {
+      issues.push({ field: 'logoUrl', message: 'Logo URL must be a valid URL.' });
+    }
+
+    if (
+      configuration.branding.logoFile &&
+      (typeof configuration.branding.logoFile.size !== 'number' ||
+        configuration.branding.logoFile.size > MAX_LOGO_FILE_BYTES)
+    ) {
+      issues.push({ field: 'logoFile', message: 'Uploaded logo must be 2 MB or smaller.' });
+    }
+
+    return issues;
+  }
+
   async function handleInstallSubmit(event) {
     event.preventDefault();
     clearError();
@@ -788,161 +660,97 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!configForm) return;
 
     const formData = new FormData(configForm);
-    if (installBtn) installBtn.disabled = true;
+    const logoFileFromForm = formData.get('logoFile');
+    const configuration = {
+      adminEmail: normalizeString(formData.get('adminEmail')),
+      adminPassword: String(formData.get('adminPassword') || ''),
+      supportEmail: normalizeString(formData.get('supportEmail')),
+      publicAppName: normalizeString(formData.get('publicAppName')),
+      smtp: {
+        host: normalizeString(formData.get('smtpHost')),
+        port: parsePort(formData.get('smtpPort')),
+        username: normalizeString(formData.get('smtpUsername')),
+        password: String(formData.get('smtpPassword') || ''),
+        secure: formData.get('smtpSecure') === 'on' || formData.get('smtpSecure') === 'true',
+      },
+      branding: {
+        logoUrl: normalizeString(formData.get('logoUrl')),
+        logoFile:
+          logoFileFromForm instanceof File && logoFileFromForm.size > 0
+            ? logoFileFromForm
+            : null,
+      },
+    };
 
-    let buildResult;
-    try {
-      buildResult = await buildInstallationPayload(formData);
-    } catch (err) {
-      buildResult = {
-        ok: false,
-        message: err instanceof Error ? err.message : 'Failed to process configuration values.',
-      };
-    }
-
-    if (!buildResult?.ok) {
-      const { message, field } = buildResult || {};
-      if (message) {
-        showError(message);
-      } else {
-        showError('Please review the configuration values.');
-      }
-      setProgress(STEP_PROGRESS.config);
-      if (field) {
-        const target = configForm.querySelector(`[name="${field}"]`);
+    const validationIssues = validateConfiguration(configuration);
+    if (validationIssues.length > 0) {
+      updateStep('config', { preserveProgress: true });
+      setProgress(STEP_PROGRESS.config || 55);
+      showError(
+        validationIssues
+          .map((issue) => issue.message)
+          .filter(Boolean)
+          .join(' '),
+      );
+      const firstIssue = validationIssues[0];
+      if (firstIssue?.field) {
+        const target = configForm.querySelector(`[name="${firstIssue.field}"]`);
         if (target && typeof target.focus === 'function') {
           target.focus();
         }
       }
-      if (installBtn) installBtn.disabled = false;
       return;
     }
 
-    const payload = buildResult.payload;
-    const credentials = { adminEmail: payload.adminEmail };
-
-    Object.values(inputRefs).forEach((input) => {
-      if (input && typeof input.setCustomValidity === 'function') {
-        input.setCustomValidity('');
-      }
-    });
-
-    const errors = [];
-    let focusTarget = null;
-
-    const requiredFieldMessages = [
-      ['adminEmail', 'Admin email is required.'],
-      ['adminPassword', 'Admin password is required.'],
-      ['appName', 'Public app name is required.'],
-      ['supportEmail', 'Support email is required.'],
-      ['smtpHost', 'SMTP host is required.'],
-      ['smtpUsername', 'SMTP username is required.'],
-      ['smtpPassword', 'SMTP password is required.'],
-    ];
-
-    requiredFieldMessages.forEach(([key, message]) => {
-      const value = installerConfig[key];
-      const missing = typeof value === 'string' ? value.trim().length === 0 : !value;
-      if (missing) {
-        errors.push(message);
-        const input = inputRefs[key];
-        if (input && typeof input.setCustomValidity === 'function') {
-          input.setCustomValidity(message);
-        }
-        if (!focusTarget && input && typeof input.focus === 'function') {
-          focusTarget = input;
-        }
-      }
-    });
-
-    const parsedPort = Number.parseInt(smtpPortRaw, 10);
-    if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
-      errors.push('Enter a valid SMTP port between 1 and 65535.');
-      if (inputRefs.smtpPort && typeof inputRefs.smtpPort.setCustomValidity === 'function') {
-        inputRefs.smtpPort.setCustomValidity('Enter a valid SMTP port between 1 and 65535.');
-        inputRefs.smtpPort.reportValidity();
-      }
-      focusTarget = focusTarget || inputRefs.smtpPort;
-    }
-
-    if (installerConfig.logoUrl) {
+    let logoFilePayload = null;
+    if (configuration.branding.logoFile) {
       try {
-        const parsedUrl = new URL(installerConfig.logoUrl);
-        if (!/^https?:/i.test(parsedUrl.protocol)) {
-          throw new Error('Invalid protocol');
+        const base64 = await fileToBase64(configuration.branding.logoFile);
+        logoFilePayload = {
+          name: configuration.branding.logoFile.name,
+          type: configuration.branding.logoFile.type,
+          size: configuration.branding.logoFile.size,
+          data: base64,
+        };
+      } catch (err) {
+        updateStep('config', { preserveProgress: true });
+        setProgress(STEP_PROGRESS.config || 55);
+        showError(`Could not read the uploaded logo file: ${err.message}`);
+        const fileInput = configForm.querySelector('[name="logoFile"]');
+        if (fileInput && typeof fileInput.focus === 'function') {
+          fileInput.focus();
         }
-      } catch (_err) {
-        errors.push('Logo URL must be a valid http or https link.');
-        if (inputRefs.logoUrl && typeof inputRefs.logoUrl.setCustomValidity === 'function') {
-          inputRefs.logoUrl.setCustomValidity('Enter a valid logo URL (http or https).');
-          inputRefs.logoUrl.reportValidity();
-        }
-        focusTarget = focusTarget || inputRefs.logoUrl;
-      }
-    }
-
-    let baseValidityOk = true;
-    if (typeof configForm.checkValidity === 'function') {
-      baseValidityOk = configForm.checkValidity();
-      if (!baseValidityOk) {
-        configForm.reportValidity();
-      }
-    }
-
-    if (errors.length || !baseValidityOk) {
-      if (!errors.length) {
-        errors.push('Please correct the highlighted fields and try again.');
-      }
-      showError(errors.join(' '));
-      if (focusTarget && typeof focusTarget.focus === 'function') {
-        focusTarget.focus({ preventScroll: false });
-      }
-      return;
-    }
-
-    let logoUpload;
-    const logoFile = formData.get('logoFile');
-    if (logoFile instanceof File && logoFile.size > 0) {
-      if (logoFile.size > MAX_LOGO_SIZE_BYTES) {
-        showError('Logo uploads must be 2 MB or smaller.');
-        if (logoFileInput) {
-          logoFileInput.value = '';
-        }
-        if (logoFileLabel) {
-          const defaultText = logoFileInput?.dataset?.defaultLabel || 'Choose an image to upload';
-          logoFileLabel.textContent = defaultText;
-        }
-        logoFileInput?.focus({ preventScroll: false });
-        return;
-      }
-
-      try {
-        const dataUrl = await readFileAsDataUrl(logoFile);
-        if (dataUrl) {
-          logoUpload = {
-            name: logoFile.name,
-            type: logoFile.type,
-            size: logoFile.size,
-            dataUrl,
-          };
-        }
-      } catch (readError) {
-        showError(`Unable to read the uploaded logo: ${readError.message}`);
-        if (logoFileInput) {
-          logoFileInput.value = '';
-        }
-        if (logoFileLabel) {
-          const defaultText = logoFileInput?.dataset?.defaultLabel || 'Choose an image to upload';
-          logoFileLabel.textContent = defaultText;
-        }
-        logoFileInput?.focus({ preventScroll: false });
         return;
       }
     }
+    const payload = {
+      adminEmail: configuration.adminEmail,
+      adminPassword: configuration.adminPassword,
+      supportEmail: configuration.supportEmail,
+      publicAppName: configuration.publicAppName,
+      smtp: {
+        host: configuration.smtp.host,
+        port: configuration.smtp.port,
+        secure: Boolean(configuration.smtp.secure),
+      },
+    };
 
-    installerConfig.smtpPort = Number.isInteger(parsedPort) ? parsedPort : undefined;
-    if (logoUpload) {
-      installerConfig.logoUpload = logoUpload;
+    if (configuration.smtp.username) {
+      payload.smtp.username = configuration.smtp.username;
+    }
+    if (configuration.smtp.password) {
+      payload.smtp.password = configuration.smtp.password;
+    }
+
+    const brandingPayload = {};
+    if (configuration.branding.logoUrl) {
+      brandingPayload.logoUrl = configuration.branding.logoUrl;
+    }
+    if (logoFilePayload) {
+      brandingPayload.logoFile = logoFilePayload;
+    }
+    if (Object.keys(brandingPayload).length > 0) {
+      payload.branding = brandingPayload;
     }
 
     updateStep('install');
@@ -951,8 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
       installOutput.classList.add('text-gray-700');
-      installOutput.textContent = 'Running install with your configuration...';
-    }
+      installOutput.textContent = 'Running installation with your configuration...';
 
     try {
       const csrfToken = getCookie('csrfToken');
@@ -1060,9 +867,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (success) {
         setProgress(100);
         clearError();
-        showCompletion(data, installerConfig);
+        showCompletion(data, configuration);
       } else {
-        showError('Installation failed. Review the log below and try again.');
+        showError('Installation failed. Review the log below, adjust your configuration, and try again.');
         backToConfigBtn?.classList.remove('hidden');
         setProgress(STEP_PROGRESS.install);
       }

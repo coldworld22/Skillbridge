@@ -144,7 +144,7 @@
           <span class="stepper-index">2</span>
           <div>
             <p class="stepper-title">Configuration</p>
-            <p class="stepper-caption">Define site basics</p>
+            <p class="stepper-caption">Define instance settings</p>
           </div>
         </li>
         <li class="stepper-item stepper-upcoming" data-stepper-item="install">
@@ -189,193 +189,178 @@
     <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
       <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
       <p class="text-sm text-gray-600">
-        Provide the admin credentials and environment settings that the installer should
-        persist on your server.
+        Provide the administrator credentials, outbound email configuration, and the public details shown to
+        your users.
       </p>
-      <form id="configForm" class="mt-4 space-y-6">
-        <div class="grid gap-6 lg:grid-cols-2">
-          <fieldset class="space-y-4">
-            <legend class="text-base font-semibold text-gray-800">Database</legend>
-            <p class="text-sm text-gray-500">
-              The installer saves these values to the backend <code>.env</code> file so the API
-              can connect to PostgreSQL.
-            </p>
-            <label class="block" for="databaseUrl">
-              <span class="block font-medium">Database connection URL</span>
-              <input
-                id="databaseUrl"
-                name="databaseUrl"
-                type="text"
-                required
-                autocomplete="off"
-                placeholder="postgres://user:password@host:5432/database"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="databaseUser">
-              <span class="block font-medium">Database user</span>
-              <input
-                id="databaseUser"
-                name="databaseUser"
-                type="text"
-                required
-                autocomplete="off"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="databasePassword">
-              <span class="block font-medium">Database password</span>
-              <input
-                id="databasePassword"
-                name="databasePassword"
-                type="password"
-                required
-                autocomplete="new-password"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-          </fieldset>
+      <form id="configForm" class="mt-4 space-y-6" novalidate>
+        <fieldset class="space-y-4 rounded-lg border border-gray-200 p-4" aria-labelledby="admin-settings-title">
+          <legend id="admin-settings-title" class="text-sm font-semibold uppercase tracking-wide text-gray-700">
+            Admin account
+          </legend>
+          <div class="space-y-1">
+            <label for="adminEmail" class="block text-sm font-medium text-slate-700">Admin Email</label>
+            <input
+              id="adminEmail"
+              type="email"
+              name="adminEmail"
+              autocomplete="email"
+              required
+              aria-describedby="adminEmailHelp"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <p id="adminEmailHelp" class="text-xs text-gray-500">Used for the first administrator account.</p>
+          </div>
+          <div class="space-y-1">
+            <label for="adminPassword" class="block text-sm font-medium text-slate-700">Admin Password</label>
+            <input
+              id="adminPassword"
+              type="password"
+              name="adminPassword"
+              autocomplete="new-password"
+              required
+              aria-describedby="adminPasswordHelp"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <p id="adminPasswordHelp" class="text-xs text-gray-500">Choose a strong password (8 characters or more).</p>
+          </div>
+        </fieldset>
 
-          <fieldset class="space-y-4">
-            <legend class="text-base font-semibold text-gray-800">Email (SMTP)</legend>
-            <p class="text-sm text-gray-500">
-              These settings configure transactional email delivery.
-            </p>
-            <label class="block" for="smtpHost">
-              <span class="block font-medium">SMTP host</span>
+        <fieldset class="space-y-4 rounded-lg border border-gray-200 p-4" aria-labelledby="smtp-settings-title">
+          <legend id="smtp-settings-title" class="text-sm font-semibold uppercase tracking-wide text-gray-700">
+            SMTP email
+          </legend>
+          <p class="text-xs text-gray-500" id="smtpHelp">
+            SkillBridge uses these settings to deliver notifications and password resets.
+          </p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-1">
+              <label for="smtpHost" class="block text-sm font-medium text-slate-700">SMTP Host</label>
               <input
                 id="smtpHost"
-                name="smtpHost"
                 type="text"
+                name="smtpHost"
                 required
                 autocomplete="off"
                 class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
               />
-            </label>
-            <label class="block" for="smtpPort">
-              <span class="block font-medium">SMTP port</span>
+            </div>
+            <div class="space-y-1">
+              <label for="smtpPort" class="block text-sm font-medium text-slate-700">SMTP Port</label>
               <input
                 id="smtpPort"
-                name="smtpPort"
                 type="number"
-                required
+                name="smtpPort"
+                inputmode="numeric"
                 min="1"
                 max="65535"
-                inputmode="numeric"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="smtpUser">
-              <span class="block font-medium">SMTP username</span>
-              <input
-                id="smtpUser"
-                name="smtpUser"
-                type="text"
                 required
-                autocomplete="off"
                 class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
               />
-            </label>
-            <label class="block" for="smtpPassword">
-              <span class="block font-medium">SMTP password</span>
+            </div>
+            <div class="space-y-1">
+              <label for="smtpUsername" class="block text-sm font-medium text-slate-700">SMTP Username</label>
+              <input
+                id="smtpUsername"
+                type="text"
+                name="smtpUsername"
+                autocomplete="username"
+                aria-describedby="smtpUsernameHelp"
+                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+              <p id="smtpUsernameHelp" class="text-xs text-gray-500">Leave blank if your provider does not require authentication.</p>
+            </div>
+            <div class="space-y-1">
+              <label for="smtpPassword" class="block text-sm font-medium text-slate-700">SMTP Password</label>
               <input
                 id="smtpPassword"
-                name="smtpPassword"
                 type="password"
-                required
+                name="smtpPassword"
                 autocomplete="new-password"
                 class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
               />
-            </label>
-          </fieldset>
-        </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              id="smtpSecure"
+              type="checkbox"
+              name="smtpSecure"
+              class="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+              checked
+              aria-describedby="smtpSecureHelp"
+            />
+            <label for="smtpSecure" class="text-sm font-medium text-slate-700">Use a secure connection (TLS/SSL)</label>
+          </div>
+          <p id="smtpSecureHelp" class="text-xs text-gray-500">
+            Disable only if your email provider requires an unsecured connection.
+          </p>
+        </fieldset>
 
-        <div class="grid gap-6 lg:grid-cols-2">
-          <fieldset class="space-y-4">
-            <legend class="text-base font-semibold text-gray-800">Branding</legend>
-            <label class="block" for="appDisplayName">
-              <span class="block font-medium">Application display name</span>
-              <input
-                id="appDisplayName"
-                name="appDisplayName"
-                type="text"
-                required
-                autocomplete="organization"
-                placeholder="SkillBridge"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="logoUrl">
-              <span class="block font-medium">Logo URL (optional)</span>
+        <fieldset class="space-y-4 rounded-lg border border-gray-200 p-4" aria-labelledby="branding-settings-title">
+          <legend id="branding-settings-title" class="text-sm font-semibold uppercase tracking-wide text-gray-700">
+            Support &amp; branding
+          </legend>
+          <div class="space-y-1">
+            <label for="supportEmail" class="block text-sm font-medium text-slate-700">Support Email</label>
+            <input
+              id="supportEmail"
+              type="email"
+              name="supportEmail"
+              autocomplete="email"
+              required
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="publicAppName" class="block text-sm font-medium text-slate-700">Public App Name</label>
+            <input
+              id="publicAppName"
+              type="text"
+              name="publicAppName"
+              autocomplete="organization"
+              required
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-1">
+              <label for="logoUrl" class="block text-sm font-medium text-slate-700">Logo URL (optional)</label>
               <input
                 id="logoUrl"
-                name="logoUrl"
                 type="url"
-                placeholder="https://cdn.example.com/logo.png"
+                name="logoUrl"
+                placeholder="https://example.com/logo.png"
+                aria-describedby="logoUrlHelp"
                 class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
               />
-              <span class="mt-1 block text-xs text-gray-500">Provide a publicly accessible image URL if you are not uploading a file.</span>
-            </label>
-            <label class="block" for="logoFile">
-              <span class="block font-medium">Upload logo (PNG, JPG, SVG)</span>
+              <p id="logoUrlHelp" class="text-xs text-gray-500">Used when a hosted image is already available.</p>
+            </div>
+            <div class="space-y-1">
+              <label for="logoFile" class="block text-sm font-medium text-slate-700">Upload Logo (optional)</label>
               <input
                 id="logoFile"
-                name="logoFile"
                 type="file"
-                accept="image/png,image/jpeg,image/svg+xml"
-                class="mt-1 w-full text-sm text-gray-700"
+                name="logoFile"
+                accept="image/png,image/jpeg,image/svg+xml,image/gif"
+                class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-yellow-500 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-yellow-600"
+                aria-describedby="logoHelp"
               />
-              <span class="mt-1 block text-xs text-gray-500">Maximum size 5&nbsp;MB. The installer stores the file in <code>backend/uploads/app/</code>.</span>
-            </label>
-          </fieldset>
+              <p id="logoHelp" class="text-xs text-gray-500">
+                PNG, JPG, GIF, or SVG up to 2&nbsp;MB. If both a URL and upload are provided, the upload takes priority.
+              </p>
+            </div>
+          </div>
+        </fieldset>
 
-          <fieldset class="space-y-4">
-            <legend class="text-base font-semibold text-gray-800">Administrator</legend>
-            <label class="block" for="adminEmail">
-              <span class="block font-medium">Admin email</span>
-              <input
-                id="adminEmail"
-                name="adminEmail"
-                type="email"
-                required
-                autocomplete="email"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="adminPassword">
-              <span class="block font-medium">Admin password</span>
-              <input
-                id="adminPassword"
-                name="adminPassword"
-                type="password"
-                required
-                autocomplete="new-password"
-                minlength="8"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-            <label class="block" for="defaultFromEmail">
-              <span class="block font-medium">Default “from” email</span>
-              <input
-                id="defaultFromEmail"
-                name="defaultFromEmail"
-                type="email"
-                required
-                autocomplete="email"
-                placeholder="notifications@example.com"
-                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
-              />
-            </label>
-          </fieldset>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="submit"
+            id="installBtn"
+            class="w-full rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700 sm:w-auto"
+          >
+            Run Install
+          </button>
         </div>
-
-        <button
-          type="submit"
-          id="installBtn"
-          class="w-full rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700 sm:w-auto"
-        >
-          Run Install
-        </button>
       </form>
     </section>
 
