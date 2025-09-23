@@ -42,24 +42,7 @@ MODE=${1:-}
 DOMAIN=${2:-}
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-DATABASE_URL="${DATABASE_URL:-}"
-DATABASE_USER="${DATABASE_USER:-}"
-DATABASE_PASSWORD="${DATABASE_PASSWORD:-}"
-SMTP_HOST="${SMTP_HOST:-}"
-SMTP_PORT="${SMTP_PORT:-}"
-SMTP_USER="${SMTP_USER:-}"
-SMTP_PASS="${SMTP_PASS:-}"
-DEFAULT_FROM_EMAIL="${DEFAULT_FROM_EMAIL:-}"
-APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-}"
-
-require_env_var() {
-  local var_name="$1"
-  local value="${!var_name:-}"
-  if [[ -z "$value" ]]; then
-    echo "Environment variable $var_name must be provided when running non-interactively." >&2
-    exit 1
-  fi
-}
+INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -175,3 +158,22 @@ fi
 
 echo "Provisioning initial admin account..."
 node "$SCRIPT_DIR/backend/scripts/create-admin.js"
+
+APPLY_CONFIG_SCRIPT="$SCRIPT_DIR/backend/scripts/apply-installer-config.js"
+
+if [[ -n "$INSTALL_CONFIG_PATH" ]]; then
+  if [[ ! -f "$INSTALL_CONFIG_PATH" ]]; then
+    echo "Installer configuration file not found: $INSTALL_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  if [[ -f "$APPLY_CONFIG_SCRIPT" ]]; then
+    echo "Applying installer configuration..."
+    if ! node "$APPLY_CONFIG_SCRIPT" "$INSTALL_CONFIG_PATH"; then
+      echo "Failed to apply installer configuration" >&2
+      exit 1
+    fi
+  else
+    echo "Warning: apply-installer-config script missing at $APPLY_CONFIG_SCRIPT" >&2
+  fi
+fi

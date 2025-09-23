@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
 const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { hasExistingAdmin } = require('./install.helpers');
@@ -70,22 +71,14 @@ const enforceInstallerGuard = async (req, res, next) => {
       typeof process.env.INSTALL_SETUP_SECRET === 'string'
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
-    const secretRequired = setupSecret.length > 0;
-    const providedSecretHeader = req.get('X-Install-Setup-Secret');
-    const providedSecret =
-      typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
-    const secretValid = secretRequired && constantTimeEquals(providedSecret, setupSecret);
-    const adminExists = await determineAdminPresence();
-    let secretValid = setupSecret.length === 0;
 
-    if (secretConfigured) {
+    let secretProvided = false;
+    if (setupSecret.length > 0) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
-
-      secretValid = constantTimeEquals(providedSecret, setupSecret);
-
-      if (!secretValid) {
+      secretProvided = constantTimeEquals(providedSecret, setupSecret);
+      if (!secretProvided) {
         return res.status(403).json({
           code: 'INSTALL_LOCKED',
           message: 'Installer locked. Provide a valid setup secret.',
@@ -93,7 +86,13 @@ const enforceInstallerGuard = async (req, res, next) => {
       }
     }
 
+    const adminExists = await determineAdminPresence();
+
     if (!adminExists) {
+      return next();
+    }
+
+    if (secretProvided) {
       return next();
     }
 
@@ -104,11 +103,7 @@ const enforceInstallerGuard = async (req, res, next) => {
     const adminTokenPresent = hasAdminToken(req);
 
     if (!adminTokenPresent) {
-      await determineAdminPresence();
-      const message = secretConfigured
-        ? 'Installer locked. Provide a valid setup secret.'
-        : 'Installer locked';
-      return respondInstallerLocked(res, message);
+      return respondInstallerLocked(res);
     }
 
     return verifyToken(req, res, (err) => {
@@ -127,54 +122,86 @@ router.use(enforceInstallerGuard);
 // No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();
 
-const normalizePort = (value) => {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? Math.trunc(value) : Number.NaN;
-  }
+const preprocessOptional = (value) => {
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (!trimmed) return Number.NaN;
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) ? Math.trunc(parsed) : Number.NaN;
+    return trimmed.length > 0 ? trimmed : undefined;
   }
-  return Number.NaN;
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+  return value;
 };
+
+const optionalString = z.preprocess(preprocessOptional, z.string().min(1)).optional();
+const optionalEmail = z.preprocess(preprocessOptional, z.string().email()).optional();
+const optionalUrl = z.preprocess(preprocessOptional, z.string().url()).optional();
+const optionalPort = z
+  .preprocess((value) => {
+    const processed = preprocessOptional(value);
+    if (processed === undefined) {
+      return undefined;
+    }
+    if (typeof processed === 'number') {
+      return processed;
+    }
+    if (typeof processed === 'string') {
+      if (!/^\d+$/.test(processed)) {
+        return processed;
+      }
+      return Number(processed);
+    }
+    return processed;
+  }, z.number().int().min(1).max(65535))
+  .optional();
+
+const optionalBoolean = z
+  .preprocess((value) => {
+    const processed = preprocessOptional(value);
+    if (processed === undefined) {
+      return undefined;
+    }
+    if (typeof processed === 'boolean') {
+      return processed;
+    }
+    if (typeof processed === 'string') {
+      const normalized = processed.toLowerCase();
+      if (['true', '1', 'yes', 'on'].includes(normalized)) {
+        return true;
+      }
+      if (['false', '0', 'no', 'off'].includes(normalized)) {
+        return false;
+      }
+      return processed;
+    }
+    return processed;
+  }, z.boolean())
+  .optional();
+
+const logoFileSchema = z
+  .object({
+    filename: optionalString,
+    mimeType: optionalString,
+    data: z.preprocess(preprocessOptional, z.string().min(1)),
+  })
+  .strict();
 
 const installSchema = z
   .object({
     adminEmail: z.string().trim().email(),
     adminPassword: z.string().min(8),
-    databaseUrl: z.string().trim().min(1),
-    databaseUser: z.string().trim().min(1),
-    databasePassword: z.string().min(1),
-    smtpHost: z.string().trim().min(1),
-    smtpPort: z
-      .union([z.string(), z.number()])
-      .transform((value) => normalizePort(value))
-      .refine((value) => Number.isInteger(value) && value > 0 && value <= 65535, {
-        message: 'SMTP port must be between 1 and 65535.',
-      }),
-    smtpUser: z.string().trim().min(1),
-    smtpPassword: z.string().min(1),
-    defaultFromEmail: z.string().trim().email(),
-    appDisplayName: z.string().trim().min(1),
-    logoUrl: z
-      .string()
-      .trim()
-      .url()
-      .refine((value) => /^https?:/i.test(value), {
-        message: 'Logo URL must use http or https.',
-      })
-      .optional(),
-    logoFile: z
-      .object({
-        name: z.string().trim().min(1),
-        type: z.string().trim().optional(),
-        size: z.number().int().nonnegative(),
-        data: z.string().min(1),
-        encoding: z.string().trim().optional(),
-      })
-      .optional(),
+    supportEmail: optionalEmail,
+    appName: optionalString,
+    logoUrl: optionalUrl,
+    logoFile: logoFileSchema.optional(),
+    smtpHost: optionalString,
+    smtpPort: optionalPort,
+    smtpUsername: optionalString,
+    smtpPassword: optionalString,
+    smtpFromEmail: optionalEmail,
+    smtpFromName: optionalString,
+    smtpEncryption: optionalString,
+    smtpSecure: optionalBoolean,
   })
   .strict()
   .superRefine((value, ctx) => {
