@@ -130,169 +130,115 @@
     <a href="/docs" class="text-yellow-600 underline hover:text-yellow-700">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
-  <div class="mb-6 space-y-4">
-    <ol id="stepper" class="stepper" aria-label="Installation steps" role="list">
-      <li class="stepper-item stepper-active" data-stepper-item="prereq">
-        <span class="stepper-index">1</span>
-        <div>
-          <p class="stepper-title">Prerequisites</p>
-          <p class="stepper-caption">Verify environment</p>
-        </div>
-      </li>
-      <li class="stepper-item stepper-upcoming" data-stepper-item="config">
-        <span class="stepper-index">2</span>
-        <div>
-          <p class="stepper-title">Configuration</p>
-          <p class="stepper-caption">Define admin access</p>
-        </div>
-      </li>
-      <li class="stepper-item stepper-upcoming" data-stepper-item="install">
-        <span class="stepper-index">3</span>
-        <div>
-          <p class="stepper-title">Run Install</p>
-          <p class="stepper-caption">Finalize setup</p>
-        </div>
-      </li>
-    </ol>
-    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
+  <main class="space-y-8" role="main">
+    <div class="space-y-4">
+      <ol id="stepper" class="stepper" aria-label="Installation steps" role="list">
+        <li class="stepper-item stepper-active" data-stepper-item="prereq">
+          <span class="stepper-index">1</span>
+          <div>
+            <p class="stepper-title">Prerequisites</p>
+            <p class="stepper-caption">Verify environment</p>
+          </div>
+        </li>
+        <li class="stepper-item stepper-upcoming" data-stepper-item="config">
+          <span class="stepper-index">2</span>
+          <div>
+            <p class="stepper-title">Configuration</p>
+            <p class="stepper-caption">Define admin access</p>
+          </div>
+        </li>
+        <li class="stepper-item stepper-upcoming" data-stepper-item="install">
+          <span class="stepper-index">3</span>
+          <div>
+            <p class="stepper-title">Run Install</p>
+            <p class="stepper-caption">Finalize setup</p>
+          </div>
+        </li>
+      </ol>
+      <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
+        <div
+          id="progressBar"
+          class="h-2 bg-yellow-500 transition-all duration-300"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          style="width: 0%;"
+        ></div>
+      </div>
       <div
-        id="progressBar"
-        class="h-2 bg-yellow-500 transition-all duration-300"
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-        style="width: 0%;"
+        id="errorBox"
+        class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
+        role="alert"
       ></div>
     </div>
-    <div
-      id="errorBox"
-      class="hidden rounded border border-red-300 bg-red-50 p-3 text-red-700"
-      role="alert"
-    ></div>
-  </div>
-  <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
-    <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
-    <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
-    <button id="checkBtn" class="mt-4 rounded bg-yellow-500 px-4 py-2 text-white transition hover:bg-yellow-600">Recheck</button>
-    <div
-      id="prereqStatus"
-      class="mt-4 space-y-3"
-      aria-live="polite"
-    ></div>
-    <p id="prereqSummary" class="mt-2 text-sm text-gray-600" role="status" aria-live="polite"></p>
-  </section>
-  <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
 
-    <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
-    <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
-    <form id="configForm" class="mt-4 space-y-4">
-      <label class="block">
-        <span class="block font-medium">Admin Email</span>
-        <input type="email" name="adminEmail" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200" />
-      </label>
-      <label class="block">
-        <span class="block font-medium">Admin Password</span>
-        <input type="password" name="adminPassword" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200" />
-      </label>
-      <button type="submit" id="installBtn" class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700">Run Install</button>
-    </form>
-  </section>
-  <section id="step-install" class="mb-8 step-container step-hidden-right" aria-hidden="true">
-    <h2 class="text-xl font-semibold mb-2">Step 3: Run Installation</h2>
-    <p class="text-sm text-gray-600">We’ll execute the installer and share the results along with recommended next steps.</p>
-    <div class="mt-4 space-y-4">
-      <pre
-        id="installOutput"
-        class="hidden whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700"
-        aria-live="polite"
-      ></pre>
-      <div
-        id="completionCard"
-        class="hidden rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-      >
-        <h3 class="text-base font-semibold text-green-700">Installation complete</h3>
-        <p id="completionMessage" class="mt-1 text-green-700"></p>
-        <ul id="completionNextSteps" class="mt-3 list-disc space-y-1 pl-5"></ul>
-      </div>
+    <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
+      <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
+      <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
       <button
-        type="button"
-        id="backToConfigBtn"
-        class="hidden text-sm font-medium text-yellow-600 transition hover:text-yellow-700"
+        id="checkBtn"
+        class="mt-4 rounded bg-yellow-500 px-4 py-2 text-white transition hover:bg-yellow-600"
       >
         Recheck
       </button>
-      <div id="prereqStatus" class="space-y-3" aria-live="polite"></div>
-      <p id="prereqSummary" class="text-sm text-slate-600" role="status" aria-live="polite"></p>
+      <div id="prereqStatus" class="mt-4 space-y-3" aria-live="polite"></div>
+      <p id="prereqSummary" class="mt-2 text-sm text-gray-600" role="status" aria-live="polite"></p>
     </section>
-    <section
-      id="step-config"
-      class="step-panel step-container step-hidden-right space-y-4"
-      aria-hidden="true"
-    >
-      <div class="space-y-2">
-        <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">Step 2</p>
-        <h2 class="section-heading">Configuration</h2>
-        <p class="text-sm text-slate-600">Provide the admin credentials for the new installation.</p>
-      </div>
-      <form id="configForm" class="space-y-4">
-        <label class="block space-y-1">
-          <span class="block text-sm font-medium text-slate-700">Admin Email</span>
+
+    <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
+      <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
+      <p class="text-sm text-gray-600">Provide the admin credentials for the new installation.</p>
+      <form id="configForm" class="mt-4 space-y-4">
+        <label class="block">
+          <span class="block font-medium">Admin Email</span>
           <input
             type="email"
             name="adminEmail"
             required
-            class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
           />
         </label>
-        <label class="block space-y-1">
-          <span class="block text-sm font-medium text-slate-700">Admin Password</span>
+        <label class="block">
+          <span class="block font-medium">Admin Password</span>
           <input
             type="password"
             name="adminPassword"
             required
-            class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
           />
         </label>
         <button
           type="submit"
           id="installBtn"
-          class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+          class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700"
         >
           Run Install
         </button>
       </form>
     </section>
-    <section
-      id="step-install"
-      class="step-panel step-container step-hidden-right space-y-4"
-      aria-hidden="true"
-    >
-      <div class="space-y-2">
-        <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">Step 3</p>
-        <h2 class="section-heading">Run Installation</h2>
-        <p class="text-sm text-slate-600">
-          We’ll execute the installer and share the results along with recommended next steps.
-        </p>
-      </div>
-      <div class="space-y-4">
+
+    <section id="step-install" class="mb-8 step-container step-hidden-right" aria-hidden="true">
+      <h2 class="text-xl font-semibold mb-2">Step 3: Run Installation</h2>
+      <p class="text-sm text-gray-600">We’ll execute the installer and share the results along with recommended next steps.</p>
+      <div class="mt-4 space-y-4">
         <pre
           id="installOutput"
-          class="hidden whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700"
+          class="hidden whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700"
           aria-live="polite"
         ></pre>
         <div
           id="completionCard"
-          class="hidden rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800"
+          class="hidden rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800"
         >
-          <h3 class="text-base font-semibold text-emerald-700">Installation complete</h3>
-          <p id="completionMessage" class="mt-1 text-emerald-700"></p>
+          <h3 class="text-base font-semibold text-green-700">Installation complete</h3>
+          <p id="completionMessage" class="mt-1 text-green-700"></p>
           <ul id="completionNextSteps" class="mt-3 list-disc space-y-1 pl-5"></ul>
         </div>
         <button
           type="button"
           id="backToConfigBtn"
-          class="hidden text-sm font-medium text-blue-700 transition hover:text-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          class="hidden text-sm font-medium text-yellow-600 transition hover:text-yellow-700"
         >
           ← Back to configuration
         </button>
