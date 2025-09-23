@@ -1,13 +1,15 @@
 const STEP_ORDER = ['prereq', 'config', 'install'];
 const STEP_PROGRESS = {
+  prereq: 10,
   config: 55,
-  install: 80,
+  install: 90,
 };
-const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+
 const FRIENDLY_LABELS = {
   node: 'Node.js',
   npm: 'npm',
   docker: 'Docker',
+  docker_compose: 'Docker Compose',
   dockerCompose: 'Docker Compose',
   git: 'Git',
   postgres: 'PostgreSQL',
@@ -19,14 +21,22 @@ const FRIENDLY_LABELS = {
 
 const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
 
-function normalizeString(value) {
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-  if (value == null) {
+const INSTALLER_DISABLED_GUIDANCE =
+  'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
+
+function sanitize(value) {
+  if (typeof value !== 'string') {
     return '';
   }
-  return String(value).trim();
+  return value.replace(/\0/g, '').trim();
+}
+
+function parsePort(value) {
+  const normalized = sanitize(value);
+  if (!normalized) return NaN;
+  const parsed = Number.parseInt(normalized, 10);
+  if (!Number.isFinite(parsed)) return NaN;
+  return parsed;
 }
 
 function isValidEmail(value) {
@@ -43,28 +53,9 @@ function isValidUrl(value) {
   try {
     const parsed = new URL(trimmed);
     return Boolean(parsed.protocol) && Boolean(parsed.host);
-  } catch {
+  } catch (_err) {
     return false;
   }
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const { result } = reader;
-      if (typeof result !== 'string') {
-        reject(new Error('Unable to read file contents.'));
-        return;
-      }
-      const commaIndex = result.indexOf(',');
-      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
-    };
-    reader.onerror = () => {
-      reject(new Error('Unable to read file.'));
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
 function getCookie(name) {
@@ -80,22 +71,147 @@ function getCookie(name) {
   return '';
 }
 
-function getCsrfToken() {
-  return getCookie('csrfToken');
+function formatKey(key) {
+  if (!key) return 'Requirement';
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
 }
 
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    if (!(file instanceof File)) {
-      resolve('');
-      return;
-    }
+function normalizeRequirementList(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return [];
+  }
 
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
-    reader.readAsDataURL(file);
-  });
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item, index) => {
+        if (!item) return null;
+        const id = item.id || item.key || `requirement-${index}`;
+        const label = item.label || item.name || FRIENDLY_LABELS[id] || formatKey(id);
+        const normalizedStatus = typeof item.status === 'string' ? item.status.toLowerCase() : '';
+        const passed =
+          typeof item.passed === 'boolean'
+            ? item.passed
+            : typeof item.ok === 'boolean'
+              ? item.ok
+              : typeof item.status === 'string'
+                ? ['pass', 'ok', 'ready', 'success', 'true'].includes(item.status.toLowerCase())
+                : Boolean(item.value);
+        const status = normalizedStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+        const details = item.message || item.details || item.hint || '';
+        return { id, label, passed, status, details };
+      })
+      .filter(Boolean);
+  }
+
+  const ignoreKeys = new Set(['ok', 'summary', 'message', 'output', 'requirements', 'allPassed']);
+  return Object.entries(raw)
+    .filter(([key, value]) => !ignoreKeys.has(key) && value !== undefined && value !== null)
+    .map(([key, value]) => {
+      const label = FRIENDLY_LABELS[key] || formatKey(key);
+      let passed = false;
+      let status = 'fail';
+      let details = '';
+
+      if (typeof value === 'boolean') {
+        passed = value;
+        status = value ? 'pass' : 'fail';
+      } else if (typeof value === 'string') {
+        const lowered = value.toLowerCase();
+        passed = ['ok', 'pass', 'passed', 'ready', 'true', 'success'].includes(lowered);
+        status = lowered === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+        if (!passed && lowered.length && lowered !== 'fail') {
+          details = value;
+        }
+      } else if (typeof value === 'object') {
+        if (typeof value.ok === 'boolean') {
+          passed = value.ok;
+        } else if (typeof value.passed === 'boolean') {
+          passed = value.passed;
+        } else if (typeof value.status === 'string') {
+          const lowered = value.status.toLowerCase();
+          if (lowered === 'warn') {
+            status = 'warn';
+          }
+          passed = ['ok', 'pass', 'passed', 'ready', 'true', 'success'].includes(lowered);
+        }
+        details = value.message || value.details || value.hint || '';
+      }
+
+      if (status !== 'warn') {
+        status = passed ? 'pass' : 'fail';
+      }
+
+      return { id: key, label, passed, status, details };
+    });
+}
+
+function normalizePrereqResponse(raw) {
+  const normalized = {
+    requirements: [],
+    summary: '',
+    allPassing: false,
+    rawText: '',
+  };
+
+  if (raw == null) {
+    normalized.summary = 'No prerequisite information was returned.';
+    return normalized;
+  }
+
+  let payload = raw;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      normalized.summary = 'No prerequisite information was returned.';
+      return normalized;
+    }
+    try {
+      payload = JSON.parse(trimmed);
+    } catch (_err) {
+      normalized.summary = trimmed;
+      normalized.rawText = trimmed;
+      return normalized;
+    }
+  }
+
+  if (typeof payload.output === 'string') {
+    const nested = payload.output.trim();
+    if (nested) {
+      try {
+        payload = { ...payload, ...JSON.parse(nested) };
+      } catch (_err) {
+        normalized.rawText = nested;
+      }
+    }
+  }
+
+  normalized.requirements = normalizeRequirementList(payload.requirements || payload);
+
+  if (typeof payload.ok === 'boolean') {
+    normalized.allPassing = payload.ok;
+  } else if (typeof payload.allPassed === 'boolean') {
+    normalized.allPassing = payload.allPassed;
+  } else if (normalized.requirements.length) {
+    normalized.allPassing = normalized.requirements.every((item) => item.passed || item.status === 'warn');
+  }
+
+  normalized.summary =
+    typeof payload.summary === 'string' && payload.summary.trim()
+      ? payload.summary.trim()
+      : typeof payload.message === 'string' && payload.message.trim()
+        ? payload.message.trim()
+        : normalized.allPassing
+          ? 'All prerequisites satisfied.'
+          : normalized.requirements.length
+            ? 'Some prerequisites need attention.'
+            : normalized.rawText || 'No prerequisite information was returned.';
+
+  return normalized;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -117,22 +233,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const completionMessage = document.getElementById('completionMessage');
   const completionNextSteps = document.getElementById('completionNextSteps');
   const backToConfigBtn = document.getElementById('backToConfigBtn');
-  const logoFileInput = document.getElementById('logoFile');
-  const logoFileLabel = document.getElementById('logoFileLabel');
 
-  if (logoFileInput && logoFileLabel) {
-    const defaultLabel = logoFileLabel.textContent || 'Choose an image to upload';
-    logoFileInput.dataset.defaultLabel = defaultLabel;
-    const updateLogoLabel = () => {
-      const file = logoFileInput.files && logoFileInput.files[0];
-      if (file && file.name) {
-        logoFileLabel.textContent = file.name;
-      } else {
-        logoFileLabel.textContent = defaultLabel;
-      }
-    };
-    logoFileInput.addEventListener('change', updateLogoLabel);
-    updateLogoLabel();
+  const fieldErrors = new Map();
+  let submittedConfig = null;
+
+  function getFieldErrorElement(name) {
+    if (fieldErrors.has(name)) {
+      return fieldErrors.get(name);
+    }
+    const el = configForm ? configForm.querySelector(`[data-field-error="${name}"]`) : null;
+    fieldErrors.set(name, el || null);
+    return el || null;
   }
 
   function setProgress(percent) {
@@ -154,63 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     errorBox.classList.add('hidden');
   }
 
-  function getCookie(name) {
-    if (typeof document === 'undefined' || !name) return '';
-    const cookieString = document.cookie || '';
-    if (!cookieString) return '';
-
-    const parts = cookieString.split(';');
-    for (const part of parts) {
-      const [rawKey, ...rawValue] = part.trim().split('=');
-      if (!rawKey) continue;
-      if (rawKey === name) {
-        const value = rawValue.join('=').trim();
-        return value ? decodeURIComponent(value) : '';
-      }
-    }
-
-    return '';
-  }
-
-  const INSTALLER_DISABLED_GUIDANCE =
-    'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
-
-  function extractResponseMessage(data, bodyText) {
-    if (data && typeof data === 'object') {
-      const candidates = [
-        data.message,
-        data.error,
-        data.error?.message,
-        data.summary,
-        data.statusMessage,
-        data.details,
-      ];
-      for (const value of candidates) {
-        if (typeof value === 'string' && value.trim().length > 0) {
-          return value.trim();
-        }
-      }
-    }
-
-    if (typeof bodyText === 'string') {
-      const trimmed = bodyText.trim();
-      if (trimmed.length > 0 && trimmed.length <= 500) {
-        return trimmed;
-      }
-    }
-
-    return '';
-  }
-
-  function isInstallerApiDisabledMessage(message) {
-    if (typeof message !== 'string' || !message.trim()) return false;
-    const normalized = message.toLowerCase();
-    return normalized.includes('installer api') && normalized.includes('disabled');
-  }
-
-  function updateStep(step, options = {}) {
+  function updateStep(step, { preserveProgress = false } = {}) {
     if (!STEP_ORDER.includes(step)) return;
-    const { preserveProgress = false } = options;
     const targetIndex = STEP_ORDER.indexOf(step);
 
     STEP_ORDER.forEach((key, index) => {
@@ -246,170 +302,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    if (!preserveProgress) {
-      const base = STEP_PROGRESS[step];
-      if (typeof base === 'number') {
-        setProgress(base);
-      }
+    if (!preserveProgress && Object.prototype.hasOwnProperty.call(STEP_PROGRESS, step)) {
+      setProgress(STEP_PROGRESS[step]);
     }
-  }
-
-  function formatKey(key) {
-    if (!key) return 'Requirement';
-    return key
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/^./, (char) => char.toUpperCase());
-  }
-
-  function normalizePrereqResponse(raw) {
-    const normalized = { requirements: [], summary: '', allPassing: false, rawText: '' };
-    if (raw == null) {
-      normalized.summary = 'No prerequisite information was returned.';
-      return normalized;
-    }
-
-    let payload;
-    if (typeof raw === 'string') {
-      const trimmed = raw.trim();
-      if (!trimmed) {
-        normalized.summary = 'No prerequisite information was returned.';
-        return normalized;
-      }
-      try {
-        payload = JSON.parse(trimmed);
-      } catch {
-        normalized.rawText = trimmed;
-        normalized.summary = trimmed;
-        return normalized;
-      }
-    } else {
-      payload = { ...raw };
-    }
-
-    if (typeof payload.output === 'string') {
-      const trimmedOutput = payload.output.trim();
-      if (trimmedOutput) {
-        try {
-          const parsed = JSON.parse(trimmedOutput);
-          if (parsed && typeof parsed === 'object') {
-            payload = { ...parsed, ...payload };
-          }
-        } catch {
-          normalized.rawText = trimmedOutput;
-        }
-      }
-    }
-
-    let requirements = [];
-    if (Array.isArray(payload.requirements)) {
-      requirements = payload.requirements.map((req, index) => {
-        const id = req?.id || req?.key || req?.name || `requirement-${index}`;
-        const label = req?.label || req?.name || FRIENDLY_LABELS[id] || formatKey(id);
-        const rawStatus = typeof req?.status === 'string' ? req.status.toLowerCase() : '';
-        const value = req?.ok ?? req?.passed ?? req?.status ?? req?.value ?? req?.isMet ?? false;
-        const passed =
-          typeof value === 'boolean'
-            ? value
-            : typeof value === 'string'
-              ? ['ok', 'pass', 'passed', 'true', 'ready'].includes(value.toLowerCase())
-              : Boolean(value);
-        const details = req?.details || req?.message || req?.hint || '';
-        const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
-        return { id, label, passed, details, status };
-      });
-    } else {
-      const ignoreKeys = new Set(['ok', 'summary', 'message', 'output', 'requirements']);
-      requirements = Object.entries(payload)
-        .filter(([key, value]) => !ignoreKeys.has(key) && value !== undefined && value !== null)
-        .map(([key, value]) => {
-          const label = FRIENDLY_LABELS[key] || formatKey(key);
-          let passed = false;
-          let details = '';
-          let rawStatus = typeof value?.status === 'string' ? value.status.toLowerCase() : '';
-          if (typeof value === 'boolean') {
-            passed = value;
-            rawStatus = value ? 'pass' : 'fail';
-          } else if (typeof value === 'string') {
-            const lowered = value.toLowerCase();
-            passed = ['ok', 'pass', 'passed', 'true', 'ready', 'success'].includes(lowered);
-            if (!passed && lowered.length) {
-              details = value;
-            }
-            rawStatus = lowered;
-          } else if (typeof value === 'number') {
-            passed = value > 0;
-            rawStatus = passed ? 'pass' : 'fail';
-          } else if (typeof value === 'object') {
-            if (typeof value.ok === 'boolean') {
-              passed = value.ok;
-              rawStatus = value.ok ? 'pass' : rawStatus;
-            } else if (typeof value.passed === 'boolean') {
-              passed = value.passed;
-              rawStatus = value.passed ? 'pass' : rawStatus;
-            } else if (typeof value.status === 'string') {
-              passed = ['ok', 'pass', 'passed', 'ready', 'success'].includes(value.status.toLowerCase());
-              rawStatus = value.status.toLowerCase();
-            } else if (typeof value.value === 'boolean') {
-              passed = value.value;
-              rawStatus = value.value ? 'pass' : rawStatus;
-            } else if (typeof value.isMet === 'boolean') {
-              passed = value.isMet;
-              rawStatus = value.isMet ? 'pass' : rawStatus;
-            }
-            details = value.message || value.details || value.hint || '';
-          }
-          const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
-          return { id: key, label, passed, details, status };
-        });
-    }
-
-    normalized.requirements = requirements;
-    const requirementsPassing = requirements.length ? requirements.every((req) => req.passed) : false;
-
-    if (typeof payload.ok === 'boolean') {
-      normalized.allPassing = payload.ok && (requirements.length ? requirementsPassing : true);
-    } else if (requirements.length) {
-      normalized.allPassing = requirementsPassing;
-    } else if (normalized.rawText) {
-      normalized.allPassing = false;
-    }
-
-    normalized.summary =
-      payload.summary ||
-      payload.message ||
-      (normalized.allPassing
-        ? 'All prerequisites satisfied.'
-        : requirements.length
-          ? 'Some prerequisites need attention.'
-          : normalized.rawText || 'No prerequisite information was returned.');
-
-    return normalized;
   }
 
   function renderRequirements(requirements, rawText = '') {
     if (!prereqStatus) return;
     prereqStatus.innerHTML = '';
+
     if (!requirements.length) {
       if (rawText) {
         const pre = document.createElement('pre');
-        pre.className =
-          'whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700';
+        pre.className = 'whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700';
         pre.textContent = rawText;
         prereqStatus.appendChild(pre);
-      } else {
-        const empty = document.createElement('p');
-        empty.className = 'text-sm text-gray-600';
-        empty.textContent = 'No prerequisite details were returned.';
-        prereqStatus.appendChild(empty);
       }
       return;
     }
 
     requirements.forEach((req) => {
-      const normalizedStatus = req.status || (req.passed ? 'pass' : 'fail');
+      const status = req.status || (req.passed ? 'pass' : 'fail');
       const statusStyles = {
         pass: {
           wrapper: 'border-green-200 bg-green-50 text-green-800',
@@ -427,13 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
           symbol: '!',
         },
       };
-      const style = statusStyles[normalizedStatus] || statusStyles[req.passed ? 'pass' : 'fail'];
+      const style = statusStyles[status] || statusStyles[req.passed ? 'pass' : 'fail'];
 
       const wrapper = document.createElement('div');
-      wrapper.className = [
-        'flex items-start gap-3 rounded border p-3 text-sm transition-colors duration-300',
-        style.wrapper,
-      ].join(' ');
+      wrapper.className = `flex items-start gap-3 rounded border p-3 text-sm ${style.wrapper}`;
 
       const icon = document.createElement('span');
       icon.className = `mt-0.5 text-base ${style.icon}`;
@@ -472,148 +382,120 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showCompletion(data, configuration) {
-    if (!completionCard) return;
-    const messageFromApi =
-      data?.message || data?.summary || data?.success || data?.statusMessage || '';
-    const instructionsFromApi = Array.isArray(data?.nextSteps)
-      ? data.nextSteps
-      : typeof data?.nextSteps === 'string'
-        ? [data.nextSteps]
-        : [];
-    const displayName = submittedConfig?.appName?.trim()
-      ? submittedConfig.appName.trim()
-      : 'SkillBridge';
-
-    if (completionMessage) {
-      completionMessage.className = 'mt-1 text-green-700';
-      const brandingMessage = credentials?.appName
-        ? `${credentials.appName} is installed with your branding and contact defaults.`
-        : 'SkillBridge is installed with your branding and contact defaults.';
-      completionMessage.textContent = messageFromApi || brandingMessage;
-    }
-
-    if (completionNextSteps) {
-      completionNextSteps.innerHTML = '';
-      const supportEmailStep = credentials?.supportEmail
-        ? `System emails will default to ${credentials.supportEmail}. Update it anytime from Settings → Email.`
-        : null;
-      const defaultSteps = [
-        credentials?.adminEmail
-          ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
-          : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
-        'Review your branding and contact information under Settings → App.',
-        'Visit the documentation for deployment and integration guidance.',
-      ];
-      if (supportEmailStep) {
-        defaultSteps.splice(1, 0, supportEmailStep);
-      }
-
-      const steps =
-        instructionsFromApi.length > 0 ? instructionsFromApi : defaultSteps;
-      steps
-        .filter((step) => typeof step === 'string' && step.trim().length > 0)
-        .forEach((step) => {
-          const li = document.createElement('li');
-          li.textContent = step.trim();
-          completionNextSteps.appendChild(li);
-        });
-    }
-
-    completionCard.classList.remove('hidden');
-    backToConfigBtn?.classList.add('hidden');
-  }
-
   async function checkPrereqs() {
-    updateStep('prereq', { preserveProgress: true });
+    if (!checkBtn) return;
+    checkBtn.disabled = true;
     clearError();
-    completionCard?.classList.add('hidden');
-    backToConfigBtn?.classList.add('hidden');
-
-    if (prereqStatus) {
-      prereqStatus.innerHTML = '';
-      const loading = document.createElement('p');
-      loading.className = 'text-sm text-gray-600';
-      loading.textContent = 'Checking prerequisites...';
-      prereqStatus.appendChild(loading);
-    }
+    setProgress(STEP_PROGRESS.prereq);
     setSummary('Checking prerequisites...', 'info');
-    setProgress(12);
-    if (checkBtn) checkBtn.disabled = true;
+    renderRequirements([], '');
 
     try {
-      const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
+      const res = await fetch('/api/install/prereqs');
       const bodyText = await res.text();
-      let data;
+      let data = {};
       if (bodyText) {
         try {
           data = JSON.parse(bodyText);
-        } catch {
+        } catch (_err) {
           data = { output: bodyText };
         }
-      } else {
-        data = {};
       }
 
       if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
-        const message =
-          data?.message ||
-          'Installation locked. An administrator has already completed the setup. Please sign in.';
-        setSummary(message, 'error');
-        showError(
-          'SkillBridge is already installed. Sign in with an administrator account to manage your site.'
-        );
-        setProgress(0);
+        showError(data?.message || 'Installation locked. An administrator already exists.');
+        setSummary(data?.message || 'Installation locked.', 'error');
         return;
       }
 
-      if (res.status === 401 || res.status === 403) {
-        const message = data?.message || 'Authentication required. Please log in and try again.';
-        setSummary(message, 'error');
+      if (!res.ok) {
+        const message =
+          data?.message || data?.error || INSTALLER_DISABLED_GUIDANCE;
         showError(message);
-        setProgress(0);
+        setSummary('Unable to verify prerequisites.', 'error');
         return;
       }
 
       const normalized = normalizePrereqResponse(data);
       renderRequirements(normalized.requirements, normalized.rawText);
-      const summaryStatus = normalized.allPassing
-        ? 'success'
-        : normalized.requirements.length
-          ? 'error'
-          : 'info';
-      setSummary(normalized.summary, summaryStatus);
+      setSummary(normalized.summary, normalized.allPassing ? 'success' : 'error');
 
-      if (normalized.allPassing && res.ok) {
-        clearError();
-        updateStep('config');
-      } else {
-        showError(
-          res.ok
-            ? 'Prerequisite check failed. Review the requirements below.'
-            : `Prerequisite check failed${res.status ? ` (HTTP ${res.status})` : ''}.`,
-        );
-        setProgress(20);
-      }
-    } catch (err) {
-      showError(`Error checking prerequisites: ${err.message}`);
+      updateStep('config');
+      setProgress(STEP_PROGRESS.config);
+    } catch (error) {
+      showError(`Failed to verify prerequisites: ${error.message}`);
       setSummary('Unable to verify prerequisites. Please try again.', 'error');
-      setProgress(10);
     } finally {
-      if (checkBtn) checkBtn.disabled = false;
+      checkBtn.disabled = false;
     }
   }
 
-  function parsePort(value) {
-    const normalized = normalizeString(value);
-    if (!normalized) return NaN;
-    const parsed = Number.parseInt(normalized, 10);
-    if (!Number.isFinite(parsed)) return NaN;
-    return parsed;
+  function clearFieldErrors() {
+    if (!configForm) return;
+    configForm.querySelectorAll('[name]').forEach((input) => {
+      input.removeAttribute('aria-invalid');
+      input.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    });
+    configForm.querySelectorAll('[data-field-error]').forEach((el) => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
+  }
+
+  function setFieldError(name, message) {
+    if (!configForm) return;
+    const field = configForm.querySelector(`[name="${name}"]`);
+    if (field) {
+      field.setAttribute('aria-invalid', 'true');
+      field.classList.add('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    }
+    const errorEl = getFieldErrorElement(name);
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
+    }
+  }
+
+  function collectConfiguration(formData) {
+    const config = {
+      adminEmail: sanitize(formData.get('adminEmail')),
+      adminPassword: String(formData.get('adminPassword') ?? ''),
+      appName: sanitize(formData.get('appName')),
+      supportEmail: sanitize(formData.get('supportEmail')),
+      branding: {
+        logoUrl: sanitize(formData.get('logoUrl')),
+        logoFile: null,
+      },
+      smtp: {
+        host: sanitize(formData.get('smtpHost')),
+        port: parsePort(formData.get('smtpPort')),
+        username: sanitize(formData.get('smtpUsername')),
+        password: String(formData.get('smtpPassword') ?? ''),
+        secure: false,
+        fromEmail: sanitize(formData.get('smtpFromEmail')),
+        fromName: sanitize(formData.get('smtpFromName')),
+      },
+    };
+
+    const secureValue = formData.get('smtpSecure');
+    if (typeof secureValue === 'string') {
+      const lowered = secureValue.toLowerCase();
+      config.smtp.secure = ['on', 'true', '1', 'yes'].includes(lowered);
+    } else if (typeof secureValue === 'boolean') {
+      config.smtp.secure = secureValue;
+    }
+
+    const logoFile = formData.get('logoFile');
+    if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
+      config.branding.logoFile = logoFile;
+    }
+
+    return config;
   }
 
   function validateConfiguration(configuration) {
     const issues = [];
+
     if (!configuration.adminEmail) {
       issues.push({ field: 'adminEmail', message: 'Enter an admin email address.' });
     } else if (!isValidEmail(configuration.adminEmail)) {
@@ -624,24 +506,36 @@ document.addEventListener('DOMContentLoaded', () => {
       issues.push({ field: 'adminPassword', message: 'Admin password must be at least 8 characters.' });
     }
 
+    if (!configuration.appName) {
+      issues.push({ field: 'appName', message: 'Enter a public app name.' });
+    }
+
     if (!configuration.supportEmail) {
       issues.push({ field: 'supportEmail', message: 'Enter a support email address.' });
     } else if (!isValidEmail(configuration.supportEmail)) {
       issues.push({ field: 'supportEmail', message: 'Enter a valid support email address.' });
     }
 
-    if (!configuration.publicAppName) {
-      issues.push({ field: 'publicAppName', message: 'Enter a public app name.' });
-    }
-
     if (!configuration.smtp.host) {
       issues.push({ field: 'smtpHost', message: 'Enter the SMTP host.' });
     }
 
-    if (!Number.isInteger(configuration.smtp.port) || configuration.smtp.port <= 0) {
-      issues.push({ field: 'smtpPort', message: 'Enter a valid SMTP port between 1 and 65535.' });
-    } else if (configuration.smtp.port > 65535) {
-      issues.push({ field: 'smtpPort', message: 'SMTP port must be 65535 or lower.' });
+    if (!Number.isInteger(configuration.smtp.port)) {
+      issues.push({ field: 'smtpPort', message: 'Enter a valid SMTP port.' });
+    } else if (configuration.smtp.port <= 0 || configuration.smtp.port > 65535) {
+      issues.push({ field: 'smtpPort', message: 'SMTP port must be between 1 and 65535.' });
+    }
+
+    if (!configuration.smtp.username) {
+      issues.push({ field: 'smtpUsername', message: 'Enter the SMTP username.' });
+    }
+
+    if (!configuration.smtp.password) {
+      issues.push({ field: 'smtpPassword', message: 'Enter the SMTP password.' });
+    }
+
+    if (configuration.smtp.fromEmail && !isValidEmail(configuration.smtp.fromEmail)) {
+      issues.push({ field: 'smtpFromEmail', message: 'From email must be a valid email address.' });
     }
 
     if (configuration.branding.logoUrl && !isValidUrl(configuration.branding.logoUrl)) {
@@ -650,8 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (
       configuration.branding.logoFile &&
-      (typeof configuration.branding.logoFile.size !== 'number' ||
-        configuration.branding.logoFile.size > MAX_LOGO_FILE_BYTES)
+      typeof configuration.branding.logoFile.size === 'number' &&
+      configuration.branding.logoFile.size > MAX_LOGO_FILE_BYTES
     ) {
       issues.push({ field: 'logoFile', message: 'Uploaded logo must be 2 MB or smaller.' });
     }
@@ -659,44 +553,118 @@ document.addEventListener('DOMContentLoaded', () => {
     return issues;
   }
 
+  function buildSubmissionPayload(configuration, rawFormData) {
+    const payload = new FormData();
+    payload.set('adminEmail', configuration.adminEmail);
+    payload.set('adminPassword', configuration.adminPassword);
+    payload.set('appName', configuration.appName);
+    payload.set('supportEmail', configuration.supportEmail);
+
+    payload.set('smtpHost', configuration.smtp.host);
+    payload.set('smtpPort', String(configuration.smtp.port));
+    payload.set('smtpUsername', configuration.smtp.username);
+    payload.set('smtpPassword', configuration.smtp.password);
+    payload.set('smtpSecure', configuration.smtp.secure ? 'true' : 'false');
+    if (configuration.smtp.fromEmail) {
+      payload.set('smtpFromEmail', configuration.smtp.fromEmail);
+    }
+    if (configuration.smtp.fromName) {
+      payload.set('smtpFromName', configuration.smtp.fromName);
+    }
+
+    if (configuration.branding.logoUrl) {
+      payload.set('logoUrl', configuration.branding.logoUrl);
+    }
+
+    if (configuration.branding.logoFile) {
+      payload.set('logoFile', configuration.branding.logoFile, configuration.branding.logoFile.name);
+    } else {
+      const logoFile = rawFormData.get('logoFile');
+      if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
+        payload.set('logoFile', logoFile, logoFile.name);
+      }
+    }
+
+    return payload;
+  }
+
+  function showCompletion(result) {
+    if (!completionCard) return;
+    const messageFromApi =
+      typeof result?.message === 'string' && result.message.trim()
+        ? result.message.trim()
+        : typeof result?.summary === 'string' && result.summary.trim()
+          ? result.summary.trim()
+          : 'Installation complete. SkillBridge is ready to use!';
+
+    if (completionMessage) {
+      completionMessage.textContent = messageFromApi;
+    }
+
+    if (completionNextSteps) {
+      completionNextSteps.innerHTML = '';
+      const steps = Array.isArray(result?.nextSteps)
+        ? result.nextSteps.filter((step) => typeof step === 'string' && step.trim())
+        : [];
+
+      if (!steps.length && submittedConfig) {
+        steps.push(
+          submittedConfig.adminEmail
+            ? `Sign in to the SkillBridge admin dashboard with ${submittedConfig.adminEmail}.`
+            : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.'
+        );
+        if (submittedConfig.supportEmail) {
+          steps.push(`System emails will send from ${submittedConfig.supportEmail}. You can adjust this in Settings → Email.`);
+        }
+        steps.push('Review branding details under Settings → App to confirm your logo and application name.');
+        steps.push('Visit the documentation for deployment and integration guidance.');
+      }
+
+      steps.forEach((step) => {
+        const li = document.createElement('li');
+        li.textContent = step;
+        completionNextSteps.appendChild(li);
+      });
+    }
+
+    completionCard.classList.remove('hidden');
+  }
+
   async function handleInstallSubmit(event) {
     event.preventDefault();
+    if (!configForm) return;
+
     clearError();
     completionCard?.classList.add('hidden');
     backToConfigBtn?.classList.add('hidden');
+    clearFieldErrors();
 
-    if (!configForm) return;
     const rawFormData = new FormData(configForm);
-    const sanitize = (value) => String(value ?? '').replace(/\0/g, '').trim();
-    const credentials = {
-      adminEmail: sanitize(rawFormData.get('adminEmail')),
-      adminPassword: String(rawFormData.get('adminPassword') ?? ''),
-      appName: sanitize(rawFormData.get('appName')),
-      supportEmail: sanitize(rawFormData.get('supportEmail')),
-      logoUrl: sanitize(rawFormData.get('logoUrl')),
-    };
+    const configuration = collectConfiguration(rawFormData);
+    const issues = validateConfiguration(configuration);
 
-    const submissionData = new FormData();
-    submissionData.set('adminEmail', credentials.adminEmail);
-    submissionData.set('adminPassword', credentials.adminPassword);
-    submissionData.set('appName', credentials.appName);
-    submissionData.set('supportEmail', credentials.supportEmail);
-    if (credentials.logoUrl) {
-      submissionData.set('logoUrl', credentials.logoUrl);
+    if (issues.length > 0) {
+      const first = issues[0];
+      issues.forEach((issue) => setFieldError(issue.field, issue.message));
+      showError(first.message);
+      const firstField = configForm.querySelector(`[name="${first.field}"]`);
+      if (firstField && typeof firstField.focus === 'function') {
+        firstField.focus();
+      }
+      return;
     }
 
-    const logoFile = rawFormData.get('logoFile');
-    if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
-      submissionData.set('logoFile', logoFile, logoFile.name);
-    }
+    submittedConfig = configuration;
 
+    if (installBtn) installBtn.disabled = true;
     updateStep('install');
-    setProgress(90);
+    setProgress(STEP_PROGRESS.install);
 
     if (installOutput) {
-      installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
+      installOutput.classList.remove('hidden', 'text-red-700', 'text-green-700');
       installOutput.classList.add('text-gray-700');
       installOutput.textContent = 'Running installation with your configuration...';
+    }
 
     try {
       const csrfToken = getCookie('csrfToken');
@@ -705,16 +673,17 @@ document.addEventListener('DOMContentLoaded', () => {
           'Unable to run install because a CSRF token was not found. Refresh the page and try again.';
         showError(message);
         if (installOutput) {
-          installOutput.classList.remove('hidden', 'text-green-700', 'text-gray-700');
+          installOutput.classList.remove('text-gray-700');
           installOutput.classList.add('text-red-700');
           installOutput.textContent = message;
         }
         backToConfigBtn?.classList.remove('hidden');
-        setProgress(STEP_PROGRESS.install);
         if (installBtn) installBtn.disabled = false;
+        updateStep('config', { preserveProgress: true });
         return;
       }
 
+      const submissionData = buildSubmissionPayload(configuration, rawFormData);
       const res = await fetch('/api/install/run', {
         method: 'POST',
         headers: {
@@ -724,44 +693,26 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const responseText = await res.text();
-      let data;
+      let data = {};
       if (responseText) {
         try {
           data = JSON.parse(responseText);
-        } catch {
+        } catch (_err) {
           data = { output: responseText };
         }
-      } else {
-        data = {};
       }
 
       if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
         const message =
-          data?.message ||
-          'Installation locked. An administrator already exists. Sign in to manage this instance.';
+          data?.message || 'Installation locked. An administrator already exists.';
         showError(message);
         if (installOutput) {
-          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.remove('text-gray-700');
           installOutput.classList.add('text-red-700');
           installOutput.textContent = message;
         }
-        updateStep('config');
-        return;
-      }
-
-      if (
-        res.status === 403 &&
-        (data?.code === 'EBADCSRFTOKEN' || /csrf/i.test(String(data?.message || '')))
-      ) {
-        const message =
-          'Security validation failed. Refresh the page to get a new CSRF token, then try again.';
-        showError(message);
-        if (installOutput) {
-          installOutput.classList.remove('text-gray-700', 'text-green-700');
-          installOutput.classList.add('text-red-700');
-          installOutput.textContent = message;
-        }
-        updateStep('config');
+        updateStep('config', { preserveProgress: true });
+        backToConfigBtn?.classList.remove('hidden');
         return;
       }
 
@@ -769,11 +720,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = data?.message || 'Please log in to continue.';
         showError(message);
         if (installOutput) {
-          installOutput.classList.remove('text-gray-700', 'text-green-700');
+          installOutput.classList.remove('text-gray-700');
           installOutput.classList.add('text-red-700');
           installOutput.textContent = message;
         }
-        updateStep('config');
+        updateStep('config', { preserveProgress: true });
+        backToConfigBtn?.classList.remove('hidden');
         return;
       }
 
@@ -786,38 +738,36 @@ document.addEventListener('DOMContentLoaded', () => {
             : responseText;
 
       if (installOutput) {
-        installOutput.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
+        installOutput.classList.remove('text-gray-700');
         installOutput.classList.add(success ? 'text-green-700' : 'text-red-700');
         if (outputText && outputText.trim().length > 0) {
           installOutput.classList.remove('hidden');
           installOutput.textContent = outputText.trim();
-        } else if (!success) {
-          installOutput.classList.remove('hidden');
-          installOutput.textContent = 'Installation failed with no additional output.';
-        } else {
+        } else if (success) {
           installOutput.classList.add('hidden');
           installOutput.textContent = '';
+        } else {
+          installOutput.classList.remove('hidden');
+          installOutput.textContent = 'Installation failed with no additional output.';
         }
       }
 
       if (success) {
         setProgress(100);
         clearError();
-        showCompletion(data, configuration);
+        showCompletion(data);
       } else {
         showError('Installation failed. Review the log below, adjust your configuration, and try again.');
         backToConfigBtn?.classList.remove('hidden');
-        setProgress(STEP_PROGRESS.install);
       }
-    } catch (err) {
-      showError(`Error running install: ${err.message}`);
+    } catch (error) {
+      showError(`Error running install: ${error.message}`);
       if (installOutput) {
         installOutput.classList.remove('hidden', 'text-green-700');
         installOutput.classList.add('text-red-700');
-        installOutput.textContent = `Error: ${err.message}`;
+        installOutput.textContent = `Error: ${error.message}`;
       }
       backToConfigBtn?.classList.remove('hidden');
-      setProgress(STEP_PROGRESS.install);
     } finally {
       if (installBtn) installBtn.disabled = false;
     }
@@ -826,15 +776,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (checkBtn) {
     checkBtn.addEventListener('click', checkPrereqs);
   }
+
   if (configForm) {
     configForm.addEventListener('submit', handleInstallSubmit);
   }
+
   if (backToConfigBtn) {
     backToConfigBtn.addEventListener('click', () => {
       clearError();
-      updateStep('config');
-      setProgress(STEP_PROGRESS.config);
       completionCard?.classList.add('hidden');
+      updateStep('config', { preserveProgress: true });
+      setProgress(STEP_PROGRESS.config);
       if (installOutput) {
         installOutput.classList.add('hidden');
         installOutput.classList.remove('text-green-700', 'text-red-700');
@@ -843,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (configForm) {
         const firstInput = configForm.querySelector('input');
-        if (firstInput) {
+        if (firstInput && typeof firstInput.focus === 'function') {
           firstInput.focus();
         }
       }
