@@ -10,6 +10,7 @@ MODE=${1:-}
 DOMAIN=${2:-}
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+INSTALLER_CONFIG_PATH="${INSTALLER_CONFIG_PATH:-}"
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -61,6 +62,19 @@ if [[ -z "$ADMIN_PASSWORD" ]]; then
     echo
   else
     echo "ADMIN_PASSWORD must be provided when running non-interactively." >&2
+    exit 1
+  fi
+fi
+
+if [[ -n "$INSTALLER_CONFIG_PATH" ]]; then
+  if [[ ! -f "$INSTALLER_CONFIG_PATH" ]]; then
+    echo "Installer configuration file not found at $INSTALLER_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  echo "Applying installer configuration..."
+  if ! node "$SCRIPT_DIR/backend/scripts/apply-install-config.js" "$INSTALLER_CONFIG_PATH" "$SCRIPT_DIR/backend"; then
+    echo "Failed to apply installer configuration" >&2
     exit 1
   fi
 fi
