@@ -2,16 +2,12 @@ const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
 const { hasExistingAdmin } = require('./install.helpers');
-const userModel = require('../users/user.model');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
 const { z } = require('zod');
-const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
-
-const LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -80,8 +76,7 @@ const enforceInstallerGuard = async (req, res, next) => {
       typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
     const secretValid = secretRequired && constantTimeEquals(providedSecret, setupSecret);
     const adminExists = await determineAdminPresence();
-    const secretConfigured = setupSecret.length > 0;
-    let secretValid = false;
+    let secretValid = setupSecret.length === 0;
 
     if (secretConfigured) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
@@ -89,12 +84,21 @@ const enforceInstallerGuard = async (req, res, next) => {
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
 
       secretValid = constantTimeEquals(providedSecret, setupSecret);
+
+      if (!secretValid) {
+        return res.status(403).json({
+          code: 'INSTALL_LOCKED',
+          message: 'Installer locked. Provide a valid setup secret.',
+        });
+      }
     }
 
-    const requireAuth = adminExists && !secretValid;
-
-    if (!requireAuth) {
+    if (!adminExists) {
       return next();
+    }
+
+    if (!secretValid) {
+      return respondInstallerLocked(res);
     }
 
     const adminTokenPresent = hasAdminToken(req);
