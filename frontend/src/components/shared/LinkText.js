@@ -1,21 +1,21 @@
 import React from 'react';
 
 const urlRegex = /(https?:\/\/[^\s]+)/;
+export const DEFAULT_LINK_TEXT = 'New notification';
 
-export default function LinkText({ text }) {
-  const safeText =
-    typeof text === "string"
+export default function LinkText({ text = '' }) {
+  const resolvedText =
+    typeof text === 'string' && text.trim().length > 0
       ? text
-      : text != null && typeof text.toString === "function"
-        ? text.toString()
-        : "";
-  const parts = safeText.split(urlRegex);
+      : DEFAULT_LINK_TEXT;
+  const parts = resolvedText.split(urlRegex);
   return (
     <>
-      {parts.map((part, index) =>
-        new RegExp(urlRegex).test(part) ? (
+      {parts.map((part, index) => {
+        const isUrl = new RegExp(urlRegex).test(part);
+        return isUrl ? (
           <a
-            key={index}
+            key={`link-${index}`}
             href={part}
             target="_blank"
             rel="noopener noreferrer"
@@ -24,9 +24,9 @@ export default function LinkText({ text }) {
             {part}
           </a>
         ) : (
-          part
-        )
-      )}
+          <React.Fragment key={`text-${index}`}>{part}</React.Fragment>
+        );
+      })}
     </>
   );
 }

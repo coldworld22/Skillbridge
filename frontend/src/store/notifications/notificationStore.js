@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
-import LinkText from "@/components/shared/LinkText";
+import LinkText, {
+  DEFAULT_LINK_TEXT,
+} from "@/components/shared/LinkText";
 import i18next from "i18next";
 import {
   getNotifications,
@@ -29,14 +31,10 @@ const useNotificationStore = create((set, get) => ({
         const diff = unread - prevUnread;
         if (diff === 1) {
           const note = filtered.find((n) => !n.read);
-          const message =
-            typeof note?.message === "string" && note.message.trim().length > 0
-              ? note.message
-              : null;
-          if (message) {
-            toast.info(<LinkText text={message} />);
+          if (note?.message) {
+            toast.info(<LinkText text={note.message} />);
           } else {
-            toast.info(i18next.t("you_have_new_notifications", { count: diff }));
+            toast.info(DEFAULT_LINK_TEXT);
           }
         } else {
           toast.info(i18next.t("you_have_new_notifications", { count: diff }));
