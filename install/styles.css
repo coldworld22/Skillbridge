@@ -55,7 +55,7 @@ h2.section-heading {
 #progressBar {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #facc15 0%, #f59e0b 100%);
+  background: linear-gradient(90deg, #facc15 0%, #eab308 100%);
   background-size: 200% 200%;
   transition: width 0.4s ease-in-out;
   animation: progress-stripes 1.25s linear infinite;
