@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import Cropper from "react-easy-crop";
+import dynamic from "next/dynamic";
 import getCroppedImg from "@/utils/cropImage";
 import { FaUpload, FaTimesCircle, FaCrop, FaCheck } from "react-icons/fa";
+
+const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 
 const PersonalDetails = ({
   formData = {},
