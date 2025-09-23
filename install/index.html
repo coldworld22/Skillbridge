@@ -88,23 +88,31 @@
     }
 
     .stepper-item.stepper-active .stepper-index {
-      border-color: #2563eb;
-      background-color: #2563eb;
+      border-color: var(--sb-accent-start);
+      background: linear-gradient(
+        135deg,
+        var(--sb-accent-start),
+        var(--sb-accent-end)
+      );
       color: #ffffff;
     }
 
     .stepper-item.stepper-complete .stepper-index {
-      border-color: #16a34a;
-      background-color: #16a34a;
+      border-color: var(--sb-accent-end);
+      background-color: var(--sb-accent-end);
       color: #ffffff;
     }
 
     .stepper-item.stepper-complete::after {
-      background-color: #16a34a;
+      background-color: var(--sb-accent-end);
     }
 
     .stepper-item.stepper-active::after {
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      background: linear-gradient(
+        90deg,
+        var(--sb-accent-start),
+        var(--sb-accent-end)
+      );
     }
 
     .stepper-item.stepper-upcoming .stepper-index {
@@ -126,8 +134,8 @@
 </head>
 <body class="p-4 font-sans">
   <nav class="mb-4 space-x-4">
-    <a href="/" class="text-blue-600 underline">Main Site</a>
-    <a href="/docs" class="text-blue-600 underline">Documentation</a>
+    <a href="/" class="text-yellow-600 underline hover:text-yellow-700">Main Site</a>
+    <a href="/docs" class="text-yellow-600 underline hover:text-yellow-700">Documentation</a>
   </nav>
   <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
   <div class="mb-6 space-y-4">
@@ -157,7 +165,7 @@
     <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden" aria-hidden="true">
       <div
         id="progressBar"
-        class="h-2 bg-blue-500 transition-all duration-300"
+        class="h-2 bg-yellow-500 transition-all duration-300"
         role="progressbar"
         aria-valuemin="0"
         aria-valuemax="100"
@@ -174,7 +182,7 @@
   <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
     <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
     <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
-    <button id="checkBtn" class="mt-4 rounded bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600">Recheck</button>
+    <button id="checkBtn" class="mt-4 rounded bg-yellow-500 px-4 py-2 text-white transition hover:bg-yellow-600">Recheck</button>
     <div
       id="prereqStatus"
       class="mt-4 space-y-3"
@@ -189,11 +197,11 @@
     <form id="configForm" class="mt-4 space-y-4">
       <label class="block">
         <span class="block font-medium">Admin Email</span>
-        <input type="email" name="adminEmail" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+        <input type="email" name="adminEmail" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200" />
       </label>
       <label class="block">
         <span class="block font-medium">Admin Password</span>
-        <input type="password" name="adminPassword" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+        <input type="password" name="adminPassword" required class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200" />
       </label>
       <button type="submit" id="installBtn" class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700">Run Install</button>
     </form>
@@ -218,7 +226,7 @@
       <button
         type="button"
         id="backToConfigBtn"
-        class="hidden text-sm font-medium text-blue-600 transition hover:text-blue-800"
+        class="hidden text-sm font-medium text-yellow-600 transition hover:text-yellow-700"
       >
         ← Back to configuration
       </button>
