@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
@@ -14,18 +15,71 @@ const requireInstallApiEnabled = (req, res, next) => {
 };
 
 router.use(requireInstallApiEnabled);
+const determineAdminPresence = async () => {
+  try {
+    const bypassCache = process.env.NODE_ENV === 'test';
+    return await hasExistingAdmin({ bypassCache });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'test') {
+      try {
+        const admins = await userModel.findAdmins();
+        return Array.isArray(admins) && admins.length > 0;
+      } catch (fallbackError) {
+        throw fallbackError;
+      }
+    }
+
+    throw error;
+  }
+};
+
+const encodeLength = (value) => {
+  const buffer = Buffer.alloc(4);
+  buffer.writeUInt32BE(value, 0);
+  return buffer;
+};
+
+const constantTimeEquals = (a, b) => {
+  const provided = Buffer.from(typeof a === 'string' ? a : '', 'utf8');
+  const expected = Buffer.from(typeof b === 'string' ? b : '', 'utf8');
+
+  const providedHash = crypto.createHash('sha256').update(provided).digest();
+  const expectedHash = crypto.createHash('sha256').update(expected).digest();
+
+  const hashesMatch = crypto.timingSafeEqual(providedHash, expectedHash);
+  const lengthsMatch = crypto.timingSafeEqual(
+    encodeLength(provided.length),
+    encodeLength(expected.length)
+  );
+
+  return hashesMatch && lengthsMatch;
+};
+
+const respondInstallerLocked = (res) =>
+  res.status(403).json({ message: 'Installer locked', code: 'INSTALL_LOCKED' });
+
+const hasAdminToken = (req) =>
+  typeof req.headers.authorization === 'string' || Boolean(req.cookies?.token);
 const enforceInstallerGuard = async (req, res, next) => {
   try {
     const setupSecret =
       typeof process.env.INSTALL_SETUP_SECRET === 'string'
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
+    const secretEnabled = setupSecret.length > 0;
+    const providedSecret = req.get('x-install-setup-secret');
+    const secretValid =
+      secretEnabled && constantTimeEquals(providedSecret ?? '', setupSecret);
 
-    if (setupSecret.length > 0) {
-      const providedSecret = req.get('x-install-setup-secret');
-      if (typeof providedSecret === 'string' && providedSecret === setupSecret) {
-        return next();
-      }
+    if (secretValid) {
+      return next();
+    }
+
+    const adminTokenPresent = hasAdminToken(req);
+
+    if (!adminTokenPresent) {
+      await determineAdminPresence();
+      return respondInstallerLocked(res);
     }
 
     return verifyToken(req, res, (err) => {
