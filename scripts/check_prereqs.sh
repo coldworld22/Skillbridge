@@ -6,9 +6,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 requirements=()
 all_ok=true
-ENV_FILES=("$REPO_ROOT/.env" "$REPO_ROOT/backend/.env" "$REPO_ROOT/backend/.env.local" "$REPO_ROOT/backend/.env.production")
-PYTHON_BIN="$(command -v python3 || command -v python || true)"
-
 escape_json() {
   local s="${1-}"
   s=${s//\\/\\\\}
@@ -151,7 +148,7 @@ elif command -v docker-compose >/dev/null 2>&1; then
     compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
   else
     compose_status="fail"
-    compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'."
+    compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If upgrading immediately is not possible, set DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 in your environment so the legacy CLI can build images without triggering that error."
   fi
 fi
 
@@ -160,58 +157,64 @@ add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_me
 # Verify PostgreSQL service
 check_postgres() {
   if command -v pg_isready >/dev/null 2>&1; then
-    local output
-    local status_code=0
+    local output status_code
+    status_code=0
     output=$(pg_isready 2>&1) || status_code=$?
     if [ "$status_code" -eq 0 ]; then
       add_requirement "postgres" "PostgreSQL" "pass" "pg_isready: ${output}"
+      return
+    fi
+
+    if [ -n "$output" ]; then
+      add_requirement "postgres" "PostgreSQL" "fail" "$output"
     else
-      local message="pg_isready indicates PostgreSQL is unavailable."
-      if [ -n "$output" ]; then
-        message="$output"
-      fi
-      add_requirement "postgres" "PostgreSQL" "fail" "$message"
+      add_requirement "postgres" "PostgreSQL" "fail" "pg_isready reported PostgreSQL as unavailable."
     fi
     return
   fi
 
   if command -v psql >/dev/null 2>&1; then
-    local output
-    local status_code=0
+    local output status_code
+    status_code=0
     output=$(PGCONNECT_TIMEOUT=2 psql -Atqc 'SELECT 1' 2>&1) || status_code=$?
     if [ "$status_code" -eq 0 ]; then
       add_requirement "postgres" "PostgreSQL" "pass" "psql connected successfully."
     else
-      local message="psql could not connect to PostgreSQL."
       if [ -n "$output" ]; then
-        message="$output"
+        add_requirement "postgres" "PostgreSQL" "fail" "$output"
+      else
+        add_requirement "postgres" "PostgreSQL" "fail" "psql could not connect to PostgreSQL."
       fi
-      add_requirement "postgres" "PostgreSQL" "fail" "$message"
     fi
     return
   fi
 
-  add_requirement "postgres" "PostgreSQL" "fail" "Neither pg_isready nor psql found. Install PostgreSQL client tools."
+  add_requirement "postgres" "PostgreSQL" "fail" "Neither pg_isready nor psql were found. Install the PostgreSQL client tools."
 }
 
-check_postgres
+check_redis() {
+  if ! command -v redis-cli >/dev/null 2>&1; then
+    add_requirement "redis" "Redis" "fail" "redis-cli executable not found."
+    return
+  fi
 
-# Verify Redis service
-if command -v redis-cli >/dev/null 2>&1; then
+  local redis_output redis_status
+  redis_status=0
   redis_output=$(redis-cli ping 2>&1) || redis_status=$?
-  redis_status=${redis_status:-0}
+
   if [ "$redis_status" -eq 0 ] && echo "$redis_output" | grep -qi 'PONG'; then
     add_requirement "redis" "Redis" "pass" "redis-cli ping: ${redis_output}"
   else
-    redis_message="redis-cli could not reach Redis."
     if [ -n "$redis_output" ]; then
-      redis_message="$redis_output"
+      add_requirement "redis" "Redis" "fail" "$redis_output"
+    else
+      add_requirement "redis" "Redis" "fail" "redis-cli could not reach a Redis instance."
     fi
-    add_requirement "redis" "Redis" "fail" "$redis_message"
   fi
-else
-  add_requirement "redis" "Redis" "fail" "redis-cli executable not found."
-fi
+}
+
+check_postgres
+check_redis
 
 # Verify Git
 if command -v git >/dev/null 2>&1; then
@@ -224,11 +227,6 @@ if command -v git >/dev/null 2>&1; then
 else
   add_requirement "git" "Git" "fail" "Git executable not found."
 fi
-
-check_database_connection
-check_smtp_configuration
-check_single_env "app_name" "Application name" "APP_NAME"
-check_logo_path
 
 if [ "$all_ok" = true ]; then
   SUMMARY="All prerequisites met."
