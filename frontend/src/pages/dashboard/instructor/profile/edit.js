@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { getUserCountry } from "@/utils/getUserCountry";
-import dynamic from "next/dynamic";
 import { API_BASE_URL } from "@/config/config";
 import { getCurrencies } from "@/services/currencyService";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
