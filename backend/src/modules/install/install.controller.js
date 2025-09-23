@@ -192,12 +192,39 @@ exports.runInstall = async (req, res) => {
     if (typeof value !== 'string') {
       return '';
     }
-
     return value.replace(/\0/g, '').replace(/[\r\n]/g, '').trim();
   };
 
-  const adminEmail = sanitizeCredential(req.body?.adminEmail);
-  const adminPassword = sanitizeCredential(req.body?.adminPassword);
+  const sanitizeOptional = (value) => {
+    const sanitized = sanitizeText(value);
+    return sanitized.length ? sanitized : '';
+  };
+
+  const sanitizeFilePayload = (file) => {
+    if (!file || typeof file !== 'object') {
+      return null;
+    }
+    const name = sanitizeText(file.name);
+    const type = sanitizeOptional(file.type);
+    const size = Number.isFinite(file.size) ? Math.max(0, Math.trunc(file.size)) : 0;
+    const data = sanitizeText(file.data);
+    const encoding = sanitizeOptional(file.encoding);
+
+    if (!name || !data) {
+      return null;
+    }
+
+    return {
+      name,
+      type,
+      size,
+      data,
+      encoding: encoding || 'base64',
+    };
+  };
+
+  const adminEmail = sanitizeText(req.body?.adminEmail);
+  const adminPassword = sanitizeText(req.body?.adminPassword);
 
   if (!adminEmail || !adminPassword) {
     return res.status(400).json({

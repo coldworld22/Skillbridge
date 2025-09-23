@@ -5,7 +5,10 @@ const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
+const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 const { z } = require('zod');
+const userModel = require('../users/user.model');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -57,8 +60,8 @@ const constantTimeEquals = (a, b) => {
   return hashesMatch && lengthsMatch;
 };
 
-const respondInstallerLocked = (res) =>
-  res.status(403).json({ message: 'Installer locked', code: 'INSTALL_LOCKED' });
+const respondInstallerLocked = (res, message = 'Installer locked') =>
+  res.status(403).json({ message, code: 'INSTALL_LOCKED' });
 
 const hasAdminToken = (req) =>
   typeof req.headers.authorization === 'string' || Boolean(req.cookies?.token);
@@ -91,6 +94,10 @@ const enforceInstallerGuard = async (req, res, next) => {
 
     if (secretProvided) {
       return next();
+    }
+
+    if (!secretValid) {
+      return respondInstallerLocked(res);
     }
 
     const adminTokenPresent = hasAdminToken(req);
@@ -196,7 +203,64 @@ const installSchema = z
     smtpEncryption: optionalString,
     smtpSecure: optionalBoolean,
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    const hasUrl = typeof value.logoUrl === 'string' && value.logoUrl.length > 0;
+    const hasFile = value.logoFile && typeof value.logoFile === 'object';
+
+    if (!hasUrl && !hasFile) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['logoFile'],
+        message: 'Provide a logo URL or upload a file.',
+      });
+    }
+
+    if (hasFile) {
+      const file = value.logoFile;
+      if (file.size <= 0 || file.size > LOGO_MAX_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'size'],
+          message: 'Logo uploads must be 5 MB or smaller.',
+        });
+      }
+
+      if (file.encoding && file.encoding.toLowerCase() !== 'base64') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'encoding'],
+          message: 'Unsupported logo encoding. Expected base64.',
+        });
+      }
+
+      if (typeof file.data !== 'string' || file.data.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'data'],
+          message: 'Logo file data is required.',
+        });
+      } else {
+        const normalized = file.data.replace(/\s+/g, '');
+        try {
+          const buffer = Buffer.from(normalized, 'base64');
+          if (!buffer || buffer.length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['logoFile', 'data'],
+              message: 'Logo file data is not valid base64.',
+            });
+          }
+        } catch (err) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['logoFile', 'data'],
+            message: `Logo file data is invalid: ${err.message || 'unable to decode'}.`,
+          });
+        }
+      }
+    }
+  });
 
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
 router.post('/run', validate({ body: installSchema }), controller.runInstall);
