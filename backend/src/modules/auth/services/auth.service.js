@@ -21,6 +21,7 @@ const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const { addToken } = require("../../../services/tokenBlacklistService");
 const verificationService = require("../../verify/verify.service");
+const { resolvePrimaryRole } = require("../../../utils/role");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
@@ -318,9 +319,10 @@ exports.loginUser = async ({ email, password, ip }) => {
   const roles = await userModel.getUserRoles(user.id);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
+  const primaryRole = resolvePrimaryRole(tokenRoles, user.role);
   const accessToken = generateAccessToken({
     id: user.id,
-    role: tokenRoles[0],
+    role: primaryRole,
     roles: tokenRoles,
   });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles);
@@ -335,7 +337,11 @@ exports.loginUser = async ({ email, password, ip }) => {
     logger.error("Failed to create login notification", err);
   }
   const safeUser = sanitizeUserUtil(user);
-  return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
+  return {
+    accessToken,
+    refreshToken,
+    user: { ...safeUser, role: primaryRole, roles, permissions },
+  };
 };
 
 /**
@@ -361,9 +367,10 @@ function generateRefreshToken(payload, jti) {
 
 async function issueRefreshToken(userId, roles = []) {
   const roleArr = Array.isArray(roles) ? roles : [roles];
+  const primaryRole = resolvePrimaryRole(roleArr);
   const jti = uuidv4();
   const token = generateRefreshToken(
-    { id: userId, role: roleArr[0], roles: roleArr },
+    { id: userId, role: primaryRole, roles: roleArr },
     jti
   );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
@@ -394,7 +401,8 @@ exports.verifyRefreshToken = async (token) => {
   const match = await bcrypt.compare(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
   const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
-  return { ...decoded, roles, role: roles[0] };
+  const primaryRole = resolvePrimaryRole(roles, decoded.role);
+  return { ...decoded, roles, role: primaryRole };
 };
 
 exports.rotateRefreshToken = async (token) => {
