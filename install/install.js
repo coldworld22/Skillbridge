@@ -72,6 +72,24 @@ document.addEventListener('DOMContentLoaded', () => {
     errorBox.classList.add('hidden');
   }
 
+  function getCookie(name) {
+    if (typeof document === 'undefined' || !name) return '';
+    const cookieString = document.cookie || '';
+    if (!cookieString) return '';
+
+    const parts = cookieString.split(';');
+    for (const part of parts) {
+      const [rawKey, ...rawValue] = part.trim().split('=');
+      if (!rawKey) continue;
+      if (rawKey === name) {
+        const value = rawValue.join('=').trim();
+        return value ? decodeURIComponent(value) : '';
+      }
+    }
+
+    return '';
+  }
+
   const INSTALLER_DISABLED_GUIDANCE =
     'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
 
@@ -487,20 +505,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const csrfToken = getCsrfToken();
-      const payload = { ...credentials };
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      if (csrfToken) {
-        headers['x-csrf-token'] = csrfToken;
-        payload._csrf = csrfToken;
+      const csrfToken = getCookie('csrfToken');
+      if (!csrfToken) {
+        const message =
+          'Unable to run install because a CSRF token was not found. Refresh the page and try again.';
+        showError(message);
+        if (installOutput) {
+          installOutput.classList.remove('hidden', 'text-green-700', 'text-gray-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = message;
+        }
+        backToConfigBtn?.classList.remove('hidden');
+        setProgress(STEP_PROGRESS.install);
+        if (installBtn) installBtn.disabled = false;
+        return;
       }
 
       const res = await fetch('/api/install/run', {
         method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
+        body: JSON.stringify(credentials),
       });
 
       const responseText = await res.text();
