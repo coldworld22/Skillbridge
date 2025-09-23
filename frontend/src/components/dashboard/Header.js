@@ -26,10 +26,8 @@ import { buildUrl } from "@/utils/url";
 import profileRoutes from "@/constants/profileRoutes";
 
 export default function Header() {
-  const { user, hasHydrated } = useAuthStore((state) => ({
-    user: state.user,
-    hasHydrated: state.hasHydrated,
-  }));
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const logout = useAuthStore((state) => state.logout);
   const setUser = useAuthStore((state) => state.setUser);
   const [mounted, setMounted] = useState(false);
