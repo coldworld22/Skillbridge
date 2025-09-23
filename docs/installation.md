@@ -18,6 +18,25 @@ cd Skillbridge
 
 ## 2. Configure environment variables
 
+### Automated install script
+
+The root `install.sh` script streamlines both local and production setups. When
+you run it, the script automatically copies `.env.example` files to `.env` if
+they are missing, then sources the resulting files so migrations and other
+commands inherit the required environment variables. Supply
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+non-interactive use (for example in CI pipelines). Optional flags include:
+
+- `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
+- `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
+  development mode if you prefer to start services yourself.
+
+In production mode, the script ensures Docker services are running before it
+executes database migrations. In development mode it starts the compose stack in
+detached mode unless you opt out with `START_DEV_SERVICES=false`. Any migration
+or seeding errors halt the script before the admin user creation step so you can
+address the problem immediately.
+
 ### Backend
 
 Copy the example file and adjust values as needed:

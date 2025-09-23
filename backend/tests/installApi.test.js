@@ -1,3 +1,4 @@
+const fs = require('fs');
 const request = require('supertest');
 const express = require('express');
 
@@ -268,14 +269,14 @@ describe('/api/install/run', () => {
 });
 
 describe('runInstall controller', () => {
-  it('returns a clear error when credentials are missing', () => {
+  it('returns a clear error when credentials are missing', async () => {
     const req = { body: {} };
     const res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
 
-    controller.runInstall(req, res);
+    await controller.runInstall(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
@@ -366,6 +367,7 @@ describe('/api/install/run', () => {
         ADMIN_PASSWORD: 'password',
       })
     );
+    expect(execOptions.env.INSTALLER_CONFIG_PATH).toBeUndefined();
 
     if (process.env.PATH) {
       expect(execOptions.env.PATH).toBe(process.env.PATH);
@@ -377,5 +379,83 @@ describe('/api/install/run', () => {
       dockerCompose: true,
       git: true,
     });
+  });
+
+  it('rejects malformed SMTP configuration', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('x-install-setup-secret', 'setup-secret')
+      .send({
+        adminEmail: 'admin@example.com',
+        adminPassword: 'password123',
+        smtpPort: 'invalid',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('message', 'Validation error');
+    expect(execFile).not.toHaveBeenCalled();
+  });
+
+  it('forwards extended installer configuration via a temporary file', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+
+    let capturedConfigPath;
+    execFile.mockImplementationOnce((_script, options, cb) => {
+      capturedConfigPath = options.env.INSTALLER_CONFIG_PATH;
+      expect(capturedConfigPath).toBeTruthy();
+      expect(fs.existsSync(capturedConfigPath)).toBe(true);
+      const data = JSON.parse(fs.readFileSync(capturedConfigPath, 'utf8'));
+      expect(data).toMatchObject({
+        app: { name: 'SkillBridge' },
+        support: { email: 'help@example.com' },
+        smtp: {
+          host: 'smtp.example.com',
+          port: 2525,
+          secure: true,
+          username: 'mailer',
+          password: 'super-secret',
+          fromEmail: 'noreply@example.com',
+          fromName: 'SkillBridge Notifications',
+        },
+        branding: {
+          logoUrl: 'https://example.com/logo.png',
+        },
+      });
+      cb(null, '', '');
+    });
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('x-install-setup-secret', 'setup-secret')
+      .send({
+        adminEmail: 'admin@example.com',
+        adminPassword: 'password123',
+        appName: 'SkillBridge',
+        supportEmail: 'help@example.com',
+        smtpHost: 'smtp.example.com',
+        smtpPort: 2525,
+        smtpSecure: true,
+        smtpUser: 'mailer',
+        smtpPass: 'super-secret',
+        smtpFromEmail: 'noreply@example.com',
+        smtpFromName: 'SkillBridge Notifications',
+        logoUrl: 'https://example.com/logo.png',
+      });
+
+    expect(res.status).toBe(200);
+    expect(execFile).toHaveBeenCalledTimes(1);
+    const [, options] = execFile.mock.calls[0];
+    expect(options.env).toEqual(
+      expect.objectContaining({
+        ADMIN_EMAIL: 'admin@example.com',
+        ADMIN_PASSWORD: 'password123',
+        INSTALLER_CONFIG_PATH: capturedConfigPath,
+      })
+    );
+    expect(fs.existsSync(capturedConfigPath)).toBe(false);
   });
 });
