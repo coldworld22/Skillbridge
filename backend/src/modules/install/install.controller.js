@@ -153,6 +153,8 @@ exports.runInstall = async (req, res) => {
       ADMIN_EMAIL: adminEmail,
       ADMIN_PASSWORD: adminPassword,
       INSTALL_CONFIG_PATH: configPath,
+      START_DEV_SERVICES: 'false',
+      MODE: process.env.MODE || 'development',
     };
 
     const { stdout, stderr } = await runScript('install', { env });
