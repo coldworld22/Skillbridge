@@ -1,20 +1,22 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import React from "react";
+import { render } from "@testing-library/react";
 
-import LinkText, {
-  DEFAULT_LINK_TEXT,
-} from '@/components/shared/LinkText';
+import LinkText from "../LinkText";
 
-describe('LinkText', () => {
-  it('renders fallback text when no text is provided', () => {
-    expect(() => render(<LinkText />)).not.toThrow();
-    expect(screen.getByText(DEFAULT_LINK_TEXT)).toBeInTheDocument();
+describe("LinkText", () => {
+  it("renders safely when provided an undefined message", () => {
+    expect(() => render(<LinkText text={undefined} />)).not.toThrow();
   });
 
-  it('renders provided text when available', () => {
-    const message = 'Check this out!';
-    render(<LinkText text={message} />);
+  it("falls back to an empty string for nullish values", () => {
+    const { container } = render(<LinkText text={null} />);
 
-    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(container.textContent).toBe("");
+  });
+
+  it("coerces non-string values into text", () => {
+    const { container } = render(<LinkText text={123} />);
+
+    expect(container.textContent).toBe("123");
   });
 });

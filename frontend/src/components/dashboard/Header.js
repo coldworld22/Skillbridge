@@ -318,33 +318,32 @@ export default function Header() {
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
                   {notifications.slice(0, 10).map((n) => {
-                    const hasMessage =
-                      typeof n.message === "string" && n.message.trim().length > 0;
+                    const message =
+                      typeof n?.message === "string" && n.message.trim().length > 0
+                        ? n.message
+                        : t("notification_message_unavailable", {
+                            defaultValue: "Notification message unavailable",
+                          });
+
                     return (
-                    <li
-                      key={n.id}
-                      className={`flex justify-between items-center px-4 py-2 transition ${
-                        n.read
-                          ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
-                          : "bg-yellow-50 dark:bg-gray-600"
-                      }`}
-                    >
-                      {hasMessage ? (
-                        <LinkText text={n.message} />
-                      ) : (
-                        <span className="italic text-gray-500">
-                          {notificationFallbackMessage}
-                        </span>
-                      )}
+                      <li
+                        key={n.id}
+                        className={`flex justify-between items-center px-4 py-2 transition ${
+                          n.read
+                            ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
+                            : "bg-yellow-50 dark:bg-gray-600"
+                        }`}
+                      >
+                        <LinkText text={message} />
                         {!n.read && (
                           <button
                             onClick={() => markRead(n.id)}
                             className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                           >
-                            {t('mark_as_read')}
+                            {t("mark_as_read")}
                           </button>
                         )}
-                    </li>
+                      </li>
                     );
                   })}
                   {notifications.length === 0 && (
