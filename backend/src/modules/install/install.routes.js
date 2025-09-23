@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
+const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { z } = require('zod');
@@ -55,8 +57,8 @@ const constantTimeEquals = (a, b) => {
   return hashesMatch && lengthsMatch;
 };
 
-const respondInstallerLocked = (res) =>
-  res.status(403).json({ message: 'Installer locked', code: 'INSTALL_LOCKED' });
+const respondInstallerLocked = (res, message = 'Installer locked') =>
+  res.status(403).json({ message, code: 'INSTALL_LOCKED' });
 
 const hasAdminToken = (req) =>
   typeof req.headers.authorization === 'string' || Boolean(req.cookies?.token);
@@ -67,23 +69,20 @@ const enforceInstallerGuard = async (req, res, next) => {
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
     const adminExists = await determineAdminPresence();
+    const secretConfigured = setupSecret.length > 0;
+    let secretValid = false;
 
-    if (setupSecret.length > 0) {
+    if (secretConfigured) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
 
-      if (providedSecret !== setupSecret) {
-        return res.status(403).json({
-          code: 'INSTALL_LOCKED',
-          message: 'Installer locked. Provide a valid setup secret.',
-        });
-      }
+      secretValid = constantTimeEquals(providedSecret, setupSecret);
     }
 
-    const requireAuth = adminExists;
+    const requireAuth = adminExists && !secretValid;
 
-    if (secretValid) {
+    if (!requireAuth) {
       return next();
     }
 
@@ -91,7 +90,10 @@ const enforceInstallerGuard = async (req, res, next) => {
 
     if (!adminTokenPresent) {
       await determineAdminPresence();
-      return respondInstallerLocked(res);
+      const message = secretConfigured
+        ? 'Installer locked. Provide a valid setup secret.'
+        : 'Installer locked';
+      return respondInstallerLocked(res, message);
     }
 
     return verifyToken(req, res, (err) => {
