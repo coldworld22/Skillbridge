@@ -35,6 +35,7 @@ import { getCurrencies } from "@/services/currencyService";
 import { buildUrl } from "@/utils/url";
 
 import profileRoutes from "@/constants/profileRoutes";
+import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 const currencyFetcher = () => getCurrencies();
@@ -68,7 +69,7 @@ const Navbar = () => {
 
   const { profile, fetchProfile, clearAdmin } = useAdminStore();
   const router = useRouter();
-  const userRole = user?.role?.toLowerCase();
+  const userRole = getPrimaryRole(user);
 
   const { items: cartItems, fetchCart, clearCart } = useCartStore();
   const cartHydrated = useCartStore.persist?.hasHydrated?.() ?? true;
@@ -91,7 +92,7 @@ const Navbar = () => {
 
   const storesHydrated = authHydrated && cartHydrated;
   const hydratedUser = storesHydrated && isClient ? user : null;
-  const hydratedUserRole = hydratedUser?.role?.toLowerCase();
+  const hydratedUserRole = getPrimaryRole(hydratedUser);
   const hydratedCartItems = storesHydrated && isClient ? cartItems : [];
 
   const { i18n, t } = useTranslation("common");
