@@ -2,6 +2,7 @@
 // File: pages/dashboard/instructor/profile/edit.js
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -25,7 +26,7 @@ import {
   deleteInstructorDemo,
   toggleInstructorStatus,
 } from "@/services/instructor/instructorService";
-import Cropper from "react-easy-crop";
+const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 import {
