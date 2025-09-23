@@ -201,6 +201,7 @@
               required
               class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="adminEmail"></p>
           </label>
           <label class="block">
             <span class="block font-medium">Admin Password</span>
@@ -211,6 +212,7 @@
               required
               class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="adminPassword"></p>
           </label>
         </fieldset>
 
@@ -225,6 +227,7 @@
               autocomplete="organization"
               class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="appName"></p>
           </label>
           <label class="block">
             <span class="block font-medium">Support Email</span>
@@ -236,7 +239,89 @@
               class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
             <span class="mt-1 block text-xs text-gray-500">Used for contact links and as the default sender for email notifications.</span>
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="supportEmail"></p>
           </label>
+        </fieldset>
+
+        <fieldset class="space-y-4">
+          <legend class="text-base font-semibold text-gray-800">Email delivery</legend>
+          <p class="text-sm text-gray-600">SkillBridge sends onboarding and notification emails immediately. Configure your SMTP credentials now so that messages deliver successfully.</p>
+          <label class="block">
+            <span class="block font-medium">SMTP Host</span>
+            <input
+              type="text"
+              name="smtpHost"
+              required
+              autocomplete="off"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpHost"></p>
+          </label>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="block font-medium">SMTP Port</span>
+              <input
+                type="number"
+                name="smtpPort"
+                inputmode="numeric"
+                min="1"
+                max="65535"
+                required
+                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+              <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpPort"></p>
+            </label>
+            <label class="flex items-center gap-2 pt-6">
+              <input type="checkbox" name="smtpSecure" class="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500" />
+              <span class="text-sm text-gray-700">Use secure connection (TLS/SSL)</span>
+            </label>
+          </div>
+          <label class="block">
+            <span class="block font-medium">SMTP Username</span>
+            <input
+              type="text"
+              name="smtpUsername"
+              required
+              autocomplete="username"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpUsername"></p>
+          </label>
+          <label class="block">
+            <span class="block font-medium">SMTP Password</span>
+            <input
+              type="password"
+              name="smtpPassword"
+              required
+              autocomplete="current-password"
+              class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpPassword"></p>
+          </label>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="block font-medium">From Email (optional)</span>
+              <input
+                type="email"
+                name="smtpFromEmail"
+                autocomplete="email"
+                placeholder="notifications@example.com"
+                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+              <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpFromEmail"></p>
+            </label>
+            <label class="block">
+              <span class="block font-medium">From Name (optional)</span>
+              <input
+                type="text"
+                name="smtpFromName"
+                autocomplete="organization"
+                placeholder="SkillBridge"
+                class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+              <p class="mt-1 hidden text-sm text-red-600" data-field-error="smtpFromName"></p>
+            </label>
+          </div>
         </fieldset>
 
         <fieldset class="space-y-4">
@@ -250,6 +335,7 @@
               placeholder="https://example.com/logo.png"
               class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="logoUrl"></p>
           </label>
           <label class="block">
             <span class="block font-medium">Upload Logo</span>
@@ -260,6 +346,7 @@
               class="mt-1 w-full rounded border border-gray-300 p-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-yellow-50 file:px-3 file:py-2 file:text-yellow-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
             />
             <span class="mt-1 block text-xs text-gray-500">PNG, JPG, or SVG files up to 2&nbsp;MB. Uploaded logos take precedence over the URL.</span>
+            <p class="mt-1 hidden text-sm text-red-600" data-field-error="logoFile"></p>
           </label>
         </fieldset>
 
