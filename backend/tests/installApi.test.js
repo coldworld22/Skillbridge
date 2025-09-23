@@ -229,4 +229,34 @@ describe('POST /api/install/run', () => {
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ ok: false, message: 'Install failed' });
   });
+
+  it('allows running the installer when only POSTGRES_* variables are provided', async () => {
+    delete process.env.DATABASE_URL;
+    delete process.env.PRODUCTION_DATABASE_URL;
+    delete process.env.DATABASE_USER;
+    delete process.env.DATABASE_PASSWORD;
+
+    process.env.POSTGRES_HOST = 'localhost';
+    process.env.POSTGRES_PORT = '5432';
+    process.env.POSTGRES_USER = 'postgres-user';
+    process.env.POSTGRES_PASSWORD = 'postgres-password';
+    process.env.POSTGRES_DB = 'skillbridge';
+
+    const res = await postInstall(buildPayload());
+
+    expect(res.status).toBe(200);
+    expect(execFile).toHaveBeenCalledTimes(1);
+
+    const installCall = execFile.mock.calls[0];
+    const env = installCall[2]?.env ?? {};
+    expect(env.POSTGRES_USER).toBe('postgres-user');
+    expect(env.POSTGRES_PASSWORD).toBe('postgres-password');
+    expect(env.POSTGRES_DB).toBe('skillbridge');
+
+    delete process.env.POSTGRES_HOST;
+    delete process.env.POSTGRES_PORT;
+    delete process.env.POSTGRES_USER;
+    delete process.env.POSTGRES_PASSWORD;
+    delete process.env.POSTGRES_DB;
+  });
 });

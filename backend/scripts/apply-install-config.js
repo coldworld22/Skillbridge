@@ -176,11 +176,54 @@ const loadLogo = async (config, uploadDir) => {
   return '';
 };
 
-const requireValue = (value, message) => {
-  if (!value || !value.trim()) {
-    throw new Error(message);
+const readEnvValue = (key) => {
+  const raw = process.env[key];
+  if (typeof raw !== 'string') return '';
+  return raw.trim();
+};
+
+const buildPostgresUrlFromEnv = () => {
+  const user = readEnvValue('DATABASE_USER') || readEnvValue('POSTGRES_USER');
+  const password = readEnvValue('DATABASE_PASSWORD') || readEnvValue('POSTGRES_PASSWORD');
+  const host = readEnvValue('DATABASE_HOST') || readEnvValue('POSTGRES_HOST') || 'localhost';
+  const port = readEnvValue('DATABASE_PORT') || readEnvValue('POSTGRES_PORT') || '5432';
+  const database = readEnvValue('DATABASE_NAME') || readEnvValue('POSTGRES_DB');
+
+  if (!user || !database) {
+    return '';
   }
-  return value.trim();
+
+  if (!password) {
+    return '';
+  }
+
+  const encodedUser = encodeURIComponent(user);
+  const encodedPassword = encodeURIComponent(password);
+  const encodedDatabase = encodeURIComponent(database);
+
+  return `postgres://${encodedUser}:${encodedPassword}@${host}:${port}/${encodedDatabase}`;
+};
+
+const requireValue = (value, message, fallbacks = []) => {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  if (normalized) {
+    return normalized;
+  }
+
+  for (const fallback of fallbacks) {
+    let candidate = '';
+    if (typeof fallback === 'string') {
+      candidate = readEnvValue(fallback);
+    } else if (typeof fallback === 'function') {
+      candidate = String(fallback() || '').trim();
+    }
+
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  throw new Error(message);
 };
 
 const parsePort = (value) => {
@@ -197,9 +240,17 @@ const applyConfiguration = async () => {
   const uploadDir = path.join(backendRoot, 'uploads', 'app');
 
   const config = {
-    databaseUrl: requireValue(process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL, 'DATABASE_URL is required.'),
-    databaseUser: requireValue(process.env.DATABASE_USER || '', 'DATABASE_USER is required.'),
-    databasePassword: requireValue(process.env.DATABASE_PASSWORD || '', 'DATABASE_PASSWORD is required.'),
+    databaseUrl: requireValue(
+      process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL || '',
+      'DATABASE_URL is required.',
+      ['POSTGRES_URL', buildPostgresUrlFromEnv]
+    ),
+    databaseUser: requireValue(process.env.DATABASE_USER || '', 'DATABASE_USER is required.', ['POSTGRES_USER']),
+    databasePassword: requireValue(
+      process.env.DATABASE_PASSWORD || '',
+      'DATABASE_PASSWORD is required.',
+      ['POSTGRES_PASSWORD']
+    ),
     smtpHost: requireValue(process.env.SMTP_HOST || '', 'SMTP_HOST is required.'),
     smtpPort: parsePort(process.env.SMTP_PORT || ''),
     smtpUser: requireValue(process.env.SMTP_USER || '', 'SMTP_USER is required.'),
