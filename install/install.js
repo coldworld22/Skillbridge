@@ -3,6 +3,7 @@ const STEP_PROGRESS = {
   config: 55,
   install: 80,
 };
+const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 const FRIENDLY_LABELS = {
   node: 'Node.js',
   npm: 'npm',
@@ -33,6 +34,20 @@ function getCsrfToken() {
   return getCookie('csrfToken');
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!(file instanceof File)) {
+      resolve('');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progressBar');
   const errorBox = document.getElementById('errorBox');
@@ -52,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const completionMessage = document.getElementById('completionMessage');
   const completionNextSteps = document.getElementById('completionNextSteps');
   const backToConfigBtn = document.getElementById('backToConfigBtn');
+  const logoFileInput = document.getElementById('logoFile');
+  const logoFileLabel = document.getElementById('logoFileLabel');
+
+  if (logoFileInput && logoFileLabel) {
+    const defaultLabel = logoFileLabel.textContent || 'Choose an image to upload';
+    logoFileInput.dataset.defaultLabel = defaultLabel;
+    const updateLogoLabel = () => {
+      const file = logoFileInput.files && logoFileInput.files[0];
+      if (file && file.name) {
+        logoFileLabel.textContent = file.name;
+      } else {
+        logoFileLabel.textContent = defaultLabel;
+      }
+    };
+    logoFileInput.addEventListener('change', updateLogoLabel);
+    updateLogoLabel();
+  }
 
   function setProgress(percent) {
     if (!progressBar) return;
@@ -358,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showCompletion(data, credentials) {
+  function showCompletion(data, submittedConfig) {
     if (!completionCard) return;
     const messageFromApi =
       data?.message || data?.summary || data?.success || data?.statusMessage || '';
@@ -367,11 +399,14 @@ document.addEventListener('DOMContentLoaded', () => {
       : typeof data?.nextSteps === 'string'
         ? [data.nextSteps]
         : [];
+    const displayName = submittedConfig?.appName?.trim()
+      ? submittedConfig.appName.trim()
+      : 'SkillBridge';
 
     if (completionMessage) {
       completionMessage.className = 'mt-1 text-green-700';
       completionMessage.textContent =
-        messageFromApi || 'SkillBridge is installed and ready to go.';
+        messageFromApi || `${displayName} is installed and ready to go.`;
     }
 
     if (completionNextSteps) {
@@ -380,10 +415,11 @@ document.addEventListener('DOMContentLoaded', () => {
         instructionsFromApi.length > 0
           ? instructionsFromApi
           : [
-              credentials?.adminEmail
-                ? `Sign in to the SkillBridge admin dashboard with ${credentials.adminEmail}.`
-                : 'Sign in to the SkillBridge admin dashboard with the credentials you configured.',
-              'Complete the organization setup and invite your teammates.',
+              submittedConfig?.adminEmail
+                ? `Sign in to the ${displayName} admin dashboard with ${submittedConfig.adminEmail}.`
+                : `Sign in to the ${displayName} admin dashboard with the credentials you configured.`,
+              'Complete the organization profile and invite your teammates.',
+              'Send a test email from Settings to confirm your SMTP connection.',
               'Visit the documentation for deployment and integration guidance.',
             ];
       steps
@@ -488,10 +524,154 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!configForm) return;
 
     const formData = new FormData(configForm);
-    const credentials = {
-      adminEmail: String(formData.get('adminEmail') || '').trim(),
+    const stringValue = (value) => (typeof value === 'string' ? value.trim() : '');
+    const installerConfig = {
+      adminEmail: stringValue(formData.get('adminEmail')),
       adminPassword: String(formData.get('adminPassword') || ''),
+      appName: stringValue(formData.get('appName')),
+      supportEmail: stringValue(formData.get('supportEmail')),
+      logoUrl: stringValue(formData.get('logoUrl')),
+      smtpHost: stringValue(formData.get('smtpHost')),
+      smtpUsername: stringValue(formData.get('smtpUsername')),
+      smtpPassword: String(formData.get('smtpPassword') || ''),
+      smtpSecure: formData.get('smtpSecure') === 'on' || formData.get('smtpSecure') === 'true',
     };
+    const smtpPortRaw = stringValue(formData.get('smtpPort'));
+    const inputRefs = {
+      adminEmail: configForm.querySelector('#adminEmail'),
+      adminPassword: configForm.querySelector('#adminPassword'),
+      appName: configForm.querySelector('#appName'),
+      supportEmail: configForm.querySelector('#supportEmail'),
+      logoUrl: configForm.querySelector('#logoUrl'),
+      smtpHost: configForm.querySelector('#smtpHost'),
+      smtpPort: configForm.querySelector('#smtpPort'),
+      smtpUsername: configForm.querySelector('#smtpUsername'),
+      smtpPassword: configForm.querySelector('#smtpPassword'),
+    };
+
+    Object.values(inputRefs).forEach((input) => {
+      if (input && typeof input.setCustomValidity === 'function') {
+        input.setCustomValidity('');
+      }
+    });
+
+    const errors = [];
+    let focusTarget = null;
+
+    const requiredFieldMessages = [
+      ['adminEmail', 'Admin email is required.'],
+      ['adminPassword', 'Admin password is required.'],
+      ['appName', 'Public app name is required.'],
+      ['supportEmail', 'Support email is required.'],
+      ['smtpHost', 'SMTP host is required.'],
+      ['smtpUsername', 'SMTP username is required.'],
+      ['smtpPassword', 'SMTP password is required.'],
+    ];
+
+    requiredFieldMessages.forEach(([key, message]) => {
+      const value = installerConfig[key];
+      const missing = typeof value === 'string' ? value.trim().length === 0 : !value;
+      if (missing) {
+        errors.push(message);
+        const input = inputRefs[key];
+        if (input && typeof input.setCustomValidity === 'function') {
+          input.setCustomValidity(message);
+        }
+        if (!focusTarget && input && typeof input.focus === 'function') {
+          focusTarget = input;
+        }
+      }
+    });
+
+    const parsedPort = Number.parseInt(smtpPortRaw, 10);
+    if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      errors.push('Enter a valid SMTP port between 1 and 65535.');
+      if (inputRefs.smtpPort && typeof inputRefs.smtpPort.setCustomValidity === 'function') {
+        inputRefs.smtpPort.setCustomValidity('Enter a valid SMTP port between 1 and 65535.');
+        inputRefs.smtpPort.reportValidity();
+      }
+      focusTarget = focusTarget || inputRefs.smtpPort;
+    }
+
+    if (installerConfig.logoUrl) {
+      try {
+        const parsedUrl = new URL(installerConfig.logoUrl);
+        if (!/^https?:/i.test(parsedUrl.protocol)) {
+          throw new Error('Invalid protocol');
+        }
+      } catch (_err) {
+        errors.push('Logo URL must be a valid http or https link.');
+        if (inputRefs.logoUrl && typeof inputRefs.logoUrl.setCustomValidity === 'function') {
+          inputRefs.logoUrl.setCustomValidity('Enter a valid logo URL (http or https).');
+          inputRefs.logoUrl.reportValidity();
+        }
+        focusTarget = focusTarget || inputRefs.logoUrl;
+      }
+    }
+
+    let baseValidityOk = true;
+    if (typeof configForm.checkValidity === 'function') {
+      baseValidityOk = configForm.checkValidity();
+      if (!baseValidityOk) {
+        configForm.reportValidity();
+      }
+    }
+
+    if (errors.length || !baseValidityOk) {
+      if (!errors.length) {
+        errors.push('Please correct the highlighted fields and try again.');
+      }
+      showError(errors.join(' '));
+      if (focusTarget && typeof focusTarget.focus === 'function') {
+        focusTarget.focus({ preventScroll: false });
+      }
+      return;
+    }
+
+    let logoUpload;
+    const logoFile = formData.get('logoFile');
+    if (logoFile instanceof File && logoFile.size > 0) {
+      if (logoFile.size > MAX_LOGO_SIZE_BYTES) {
+        showError('Logo uploads must be 2 MB or smaller.');
+        if (logoFileInput) {
+          logoFileInput.value = '';
+        }
+        if (logoFileLabel) {
+          const defaultText = logoFileInput?.dataset?.defaultLabel || 'Choose an image to upload';
+          logoFileLabel.textContent = defaultText;
+        }
+        logoFileInput?.focus({ preventScroll: false });
+        return;
+      }
+
+      try {
+        const dataUrl = await readFileAsDataUrl(logoFile);
+        if (dataUrl) {
+          logoUpload = {
+            name: logoFile.name,
+            type: logoFile.type,
+            size: logoFile.size,
+            dataUrl,
+          };
+        }
+      } catch (readError) {
+        showError(`Unable to read the uploaded logo: ${readError.message}`);
+        if (logoFileInput) {
+          logoFileInput.value = '';
+        }
+        if (logoFileLabel) {
+          const defaultText = logoFileInput?.dataset?.defaultLabel || 'Choose an image to upload';
+          logoFileLabel.textContent = defaultText;
+        }
+        logoFileInput?.focus({ preventScroll: false });
+        return;
+      }
+    }
+
+    installerConfig.smtpPort = Number.isInteger(parsedPort) ? parsedPort : undefined;
+    if (logoUpload) {
+      installerConfig.logoUpload = logoUpload;
+    }
 
     updateStep('install');
     setProgress(90);
@@ -501,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
       installOutput.classList.add('text-gray-700');
-      installOutput.textContent = 'Running install...';
+      installOutput.textContent = 'Running install with your configuration...';
     }
 
     try {
@@ -527,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(installerConfig),
       });
 
       const responseText = await res.text();
@@ -610,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (success) {
         setProgress(100);
         clearError();
-        showCompletion(data, credentials);
+        showCompletion(data, installerConfig);
       } else {
         showError('Installation failed. Review the log below and try again.');
         backToConfigBtn?.classList.remove('hidden');
