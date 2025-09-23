@@ -2,9 +2,16 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache curl netcat-openbsd postgresql-client
-COPY package*.json ./
+
+# Copy the backend package manifests first to leverage Docker layer caching.
+COPY backend/package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
-COPY ./ ./
+
+# Copy the backend source along with the installer assets so the
+# production image can serve /install even when the container is built
+# independently of the repository root.
+COPY backend/ ./
+COPY install ./install
 
 # Production stage
 FROM node:20-alpine
