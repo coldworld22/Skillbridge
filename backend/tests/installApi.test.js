@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const request = require('supertest');
-const fs = require('fs');
 
 jest.mock('child_process', () => {
   const util = require('util');
