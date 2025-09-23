@@ -10,6 +10,7 @@ MODE=${1:-}
 DOMAIN=${2:-}
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -69,3 +70,22 @@ export ADMIN_EMAIL ADMIN_PASSWORD
 
 echo "Provisioning initial admin account..."
 node "$SCRIPT_DIR/backend/scripts/create-admin.js"
+
+APPLY_CONFIG_SCRIPT="$SCRIPT_DIR/backend/scripts/apply-installer-config.js"
+
+if [[ -n "$INSTALL_CONFIG_PATH" ]]; then
+  if [[ ! -f "$INSTALL_CONFIG_PATH" ]]; then
+    echo "Installer configuration file not found: $INSTALL_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  if [[ -f "$APPLY_CONFIG_SCRIPT" ]]; then
+    echo "Applying installer configuration..."
+    if ! node "$APPLY_CONFIG_SCRIPT" "$INSTALL_CONFIG_PATH"; then
+      echo "Failed to apply installer configuration" >&2
+      exit 1
+    fi
+  else
+    echo "Warning: apply-installer-config script missing at $APPLY_CONFIG_SCRIPT" >&2
+  fi
+fi
