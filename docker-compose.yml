@@ -117,10 +117,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - >-
-          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
-          --connect-timeout 5 --max-time 10
-          http://127.0.0.1:${PORT:-3000}/health.txt
+        - node /app/scripts/docker-healthcheck.mjs
       interval: 30s
       timeout: 30s
       retries: 3
