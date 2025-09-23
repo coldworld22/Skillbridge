@@ -385,11 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/install/prereqs', { cache: 'no-store' });
       const bodyText = await res.text();
       let data;
-      if (bodyText) {
+      if (responseText) {
         try {
-          data = JSON.parse(bodyText);
+          data = JSON.parse(responseText);
         } catch {
-          data = { output: bodyText };
+          data = { output: responseText };
         }
       } else {
         data = {};
@@ -480,11 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const responseText = await res.text();
       let data;
-      if (bodyText) {
+      if (responseText) {
         try {
-          data = JSON.parse(bodyText);
+          data = JSON.parse(responseText);
         } catch {
-          data = { output: bodyText };
+          data = { output: responseText };
         }
       } else {
         data = {};
@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? data.output
           : typeof data.log === 'string'
             ? data.log
-            : bodyText;
+            : responseText;
 
       if (installOutput) {
         installOutput.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
