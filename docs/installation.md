@@ -18,6 +18,25 @@ cd Skillbridge
 
 ## 2. Configure environment variables
 
+### Automated install script
+
+The root `install.sh` script streamlines both local and production setups. When
+you run it, the script automatically copies `.env.example` files to `.env` if
+they are missing, then sources the resulting files so migrations and other
+commands inherit the required environment variables. Supply
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+non-interactive use (for example in CI pipelines). Optional flags include:
+
+- `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
+- `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
+  development mode if you prefer to start services yourself.
+
+In production mode, the script ensures Docker services are running before it
+executes database migrations. In development mode it starts the compose stack in
+detached mode unless you opt out with `START_DEV_SERVICES=false`. Any migration
+or seeding errors halt the script before the admin user creation step so you can
+address the problem immediately.
+
 ### Backend
 
 Copy the example file and adjust values as needed:
@@ -29,6 +48,32 @@ cp backend/.env.example backend/.env
 For deployments, Docker Compose additionally reads `backend/.env.production`.
 Copy `backend/.env.production.example` to `backend/.env.production` and fill in
 production database credentials and JWT secrets.
+
+Set the display name that should appear in installer prompts and outbound
+emails so the branding check passes:
+
+```
+APP_NAME=SkillBridge
+```
+
+If you plan to disable transactional email during setup, set
+`DISABLE_EMAILS=true`. Otherwise, provide SMTP credentials so the installer can
+verify connectivity up front:
+
+```
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+```
+
+Create the uploads directory that stores logos and favicons and ensure it is
+writable by the backend service user:
+
+```bash
+mkdir -p backend/uploads/app
+```
 
 Edit `backend/.env` and provide your secrets. `FRONTEND_URL` must match the
 exact origin (scheme, host, and port) where the frontend will run to avoid
@@ -98,7 +143,26 @@ The backend exposes protected setup endpoints at `/api/install` for automated de
 INSTALL_API_ENABLED=true
 ```
 
-Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes.
+Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes. When invoking `POST /api/install/run`, include the following JSON body so the installer can persist your configuration before provisioning the admin account:
+
+```json
+{
+  "adminEmail": "admin@example.com",
+  "adminPassword": "super-secret",
+  "databaseUrl": "postgres://user:password@db-host:5432/skillbridge",
+  "databaseUser": "user",
+  "databasePassword": "password",
+  "smtpHost": "smtp.example.com",
+  "smtpPort": 587,
+  "smtpUser": "mailer",
+  "smtpPassword": "smtp-password",
+  "defaultFromEmail": "notifications@example.com",
+  "appDisplayName": "SkillBridge",
+  "logoUrl": "https://assets.example.com/logo.png"
+}
+```
+
+You may provide a base64-encoded logo instead of `logoUrl` by supplying a `logoFile` object with `name`, `size`, `type`, `encoding` (`base64`) and `data` fields. The API refuses requests that omit both a logo URL and a file. The backend writes these values into `backend/.env`, uploads the logo to `backend/uploads/app/`, and seeds the `settings` table with the default email and branding metadata before creating the admin user.
 
 If you configure `INSTALL_SETUP_SECRET` in `backend/.env`, clients must also send the same value in the `X-Install-Setup-Secret` header on **every** installer request. The backend trims the configured secret before comparison, so avoid trailing spaces when setting the environment variable. Requests that omit the header or provide the wrong secret receive a `403` response with an `INSTALL_LOCKED` error code before the installer runs.
 
@@ -195,6 +259,20 @@ location ^~ /install/ {
 3. Rebuild and start the containers if they are running.
 4. Log in with an administrator account.
 5. Visit `http://localhost:5002/install` (or your domain's `/install`) and verify the page lists the prerequisite checks.
+6. Complete the **Configuration** step by supplying:
+   - A PostgreSQL connection string, database user, and database password.
+   - SMTP host, port, username, and password so SkillBridge can deliver transactional email.
+   - The default “from” email address used for outbound messages.
+   - The public application display name.
+   - Either a logo image upload (PNG/JPG/SVG up to 5&nbsp;MB) or an HTTPS URL to an existing logo.
+   - The admin email and password for the first administrator.
+7. Run the installer to apply the configuration. The script updates `backend/.env`, writes the selected logo to `backend/uploads/app/`, seeds the branding/email settings in the database, and finally provisions the administrator account.
+
+   The prerequisite card now verifies that PostgreSQL is reachable using the
+   credentials in `.env`, confirms SMTP settings (or acknowledges that
+   `DISABLE_EMAILS=true` is set), checks that `APP_NAME` is defined, and ensures
+   `backend/uploads/app` is writable for logo uploads. Address any failures the
+   installer reports before continuing.
 
 Whether you run SkillBridge directly from the monorepo or from the packaged
 container image, the backend automatically serves the installer assets. During

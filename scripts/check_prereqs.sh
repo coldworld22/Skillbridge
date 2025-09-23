@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 requirements=()
 all_ok=true
+ENV_FILES=("$REPO_ROOT/.env" "$REPO_ROOT/backend/.env" "$REPO_ROOT/backend/.env.local" "$REPO_ROOT/backend/.env.production")
+PYTHON_BIN="$(command -v python3 || command -v python || true)"
 
 escape_json() {
   local s="${1-}"
@@ -16,19 +21,54 @@ escape_json() {
 
 add_requirement() {
   local id="$1"
-  local name="$2"
+  local label="$2"
   local status="$3"
   local message="$4"
 
-  local escaped_name
-  escaped_name=$(escape_json "$name")
+  local escaped_label
+  escaped_label=$(escape_json "$label")
   local escaped_message
   escaped_message=$(escape_json "$message")
 
-  requirements+=("{\"id\":\"$id\",\"name\":\"$escaped_name\",\"status\":\"$status\",\"message\":\"$escaped_message\"}")
+  local passed="false"
+  case "$status" in
+    pass|PASS|ok|OK|ready|READY)
+      passed="true"
+      status="pass"
+      ;;
+    warn|WARN|warning|WARNING)
+      status="warn"
+      ;;
+    *)
+      status="fail"
+      ;;
+  esac
 
-  if [ "$status" != "pass" ]; then
+  requirements+=(
+    "{\"id\":\"$id\",\"label\":\"$escaped_label\",\"status\":\"$status\",\"passed\":$passed,\"message\":\"$escaped_message\"}"
+  )
+
+  if [ "$passed" != "true" ]; then
     all_ok=false
+  fi
+}
+# Common helper for CLI tools where only presence/version check is required
+check_cli_tool() {
+  local id="$1"
+  local name="$2"
+  local command="$3"
+  local version_flag="${4---version}"
+
+  if command -v "$command" >/dev/null 2>&1; then
+    local version
+    version=$("$command" "$version_flag" 2>/dev/null || true)
+    if [ -n "$version" ]; then
+      add_requirement "$id" "$name" "pass" "Detected ${version}"
+    else
+      add_requirement "$id" "$name" "pass" "${name} executable detected."
+    fi
+  else
+    add_requirement "$id" "$name" "fail" "${name} executable not found."
   fi
 }
 
@@ -43,6 +83,29 @@ if command -v node >/dev/null 2>&1; then
   fi
 else
   add_requirement "node" "Node.js >= 18" "fail" "Node.js executable not found."
+fi
+
+# Verify npm, Yarn, pnpm, and Python
+check_cli_tool "npm" "npm" "npm" "--version"
+check_cli_tool "yarn" "Yarn" "yarn" "--version"
+check_cli_tool "pnpm" "pnpm" "pnpm" "--version"
+
+python_cmd=""
+if command -v python3 >/dev/null 2>&1; then
+  python_cmd="python3"
+elif command -v python >/dev/null 2>&1; then
+  python_cmd="python"
+fi
+
+if [ -n "$python_cmd" ]; then
+  PYTHON_VERSION=$($python_cmd --version 2>&1 || true)
+  if [ -n "$PYTHON_VERSION" ]; then
+    add_requirement "python" "Python" "pass" "Detected ${PYTHON_VERSION}"
+  else
+    add_requirement "python" "Python" "pass" "${python_cmd} executable detected."
+  fi
+else
+  add_requirement "python" "Python" "fail" "Python executable not found."
 fi
 
 # Verify Docker
@@ -94,6 +157,62 @@ fi
 
 add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_message"
 
+# Verify PostgreSQL service
+check_postgres() {
+  if command -v pg_isready >/dev/null 2>&1; then
+    local output
+    local status_code=0
+    output=$(pg_isready 2>&1) || status_code=$?
+    if [ "$status_code" -eq 0 ]; then
+      add_requirement "postgres" "PostgreSQL" "pass" "pg_isready: ${output}"
+    else
+      local message="pg_isready indicates PostgreSQL is unavailable."
+      if [ -n "$output" ]; then
+        message="$output"
+      fi
+      add_requirement "postgres" "PostgreSQL" "fail" "$message"
+    fi
+    return
+  fi
+
+  if command -v psql >/dev/null 2>&1; then
+    local output
+    local status_code=0
+    output=$(PGCONNECT_TIMEOUT=2 psql -Atqc 'SELECT 1' 2>&1) || status_code=$?
+    if [ "$status_code" -eq 0 ]; then
+      add_requirement "postgres" "PostgreSQL" "pass" "psql connected successfully."
+    else
+      local message="psql could not connect to PostgreSQL."
+      if [ -n "$output" ]; then
+        message="$output"
+      fi
+      add_requirement "postgres" "PostgreSQL" "fail" "$message"
+    fi
+    return
+  fi
+
+  add_requirement "postgres" "PostgreSQL" "fail" "Neither pg_isready nor psql found. Install PostgreSQL client tools."
+}
+
+check_postgres
+
+# Verify Redis service
+if command -v redis-cli >/dev/null 2>&1; then
+  redis_output=$(redis-cli ping 2>&1) || redis_status=$?
+  redis_status=${redis_status:-0}
+  if [ "$redis_status" -eq 0 ] && echo "$redis_output" | grep -qi 'PONG'; then
+    add_requirement "redis" "Redis" "pass" "redis-cli ping: ${redis_output}"
+  else
+    redis_message="redis-cli could not reach Redis."
+    if [ -n "$redis_output" ]; then
+      redis_message="$redis_output"
+    fi
+    add_requirement "redis" "Redis" "fail" "$redis_message"
+  fi
+else
+  add_requirement "redis" "Redis" "fail" "redis-cli executable not found."
+fi
+
 # Verify Git
 if command -v git >/dev/null 2>&1; then
   GIT_VERSION=$(git --version 2>/dev/null || true)
@@ -105,6 +224,11 @@ if command -v git >/dev/null 2>&1; then
 else
   add_requirement "git" "Git" "fail" "Git executable not found."
 fi
+
+check_database_connection
+check_smtp_configuration
+check_single_env "app_name" "Application name" "APP_NAME"
+check_logo_path
 
 if [ "$all_ok" = true ]; then
   SUMMARY="All prerequisites met."
@@ -124,6 +248,7 @@ OVERALL=$([ "$all_ok" = true ] && echo "true" || echo "false")
 
 printf '{'
 printf '"ok": %s,' "$OVERALL"
+printf '"allPassed": %s,' "$OVERALL"
 printf '"summary": "%s",' "$SUMMARY_ESCAPED"
 printf '"requirements": [%s]' "$joined"
 printf '}'

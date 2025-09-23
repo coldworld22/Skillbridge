@@ -3,6 +3,7 @@ const STEP_PROGRESS = {
   config: 55,
   install: 80,
 };
+const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 const FRIENDLY_LABELS = {
   node: 'Node.js',
   npm: 'npm',
@@ -15,6 +16,56 @@ const FRIENDLY_LABELS = {
   pnpm: 'pnpm',
   python: 'Python',
 };
+
+const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
+
+function normalizeString(value) {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
+}
+
+function isValidEmail(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const parsed = new URL(trimmed);
+    return Boolean(parsed.protocol) && Boolean(parsed.host);
+  } catch {
+    return false;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const { result } = reader;
+      if (typeof result !== 'string') {
+        reject(new Error('Unable to read file contents.'));
+        return;
+      }
+      const commaIndex = result.indexOf(',');
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+    };
+    reader.onerror = () => {
+      reject(new Error('Unable to read file.'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 function getCookie(name) {
   if (typeof document === 'undefined' || !name) return '';
@@ -31,6 +82,20 @@ function getCookie(name) {
 
 function getCsrfToken() {
   return getCookie('csrfToken');
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!(file instanceof File)) {
+      resolve('');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -52,6 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const completionMessage = document.getElementById('completionMessage');
   const completionNextSteps = document.getElementById('completionNextSteps');
   const backToConfigBtn = document.getElementById('backToConfigBtn');
+  const logoFileInput = document.getElementById('logoFile');
+  const logoFileLabel = document.getElementById('logoFileLabel');
+
+  if (logoFileInput && logoFileLabel) {
+    const defaultLabel = logoFileLabel.textContent || 'Choose an image to upload';
+    logoFileInput.dataset.defaultLabel = defaultLabel;
+    const updateLogoLabel = () => {
+      const file = logoFileInput.files && logoFileInput.files[0];
+      if (file && file.name) {
+        logoFileLabel.textContent = file.name;
+      } else {
+        logoFileLabel.textContent = defaultLabel;
+      }
+    };
+    logoFileInput.addEventListener('change', updateLogoLabel);
+    updateLogoLabel();
+  }
 
   function setProgress(percent) {
     if (!progressBar) return;
@@ -226,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
       requirements = payload.requirements.map((req, index) => {
         const id = req?.id || req?.key || req?.name || `requirement-${index}`;
         const label = req?.label || req?.name || FRIENDLY_LABELS[id] || formatKey(id);
+        const rawStatus = typeof req?.status === 'string' ? req.status.toLowerCase() : '';
         const value = req?.ok ?? req?.passed ?? req?.status ?? req?.value ?? req?.isMet ?? false;
         const passed =
           typeof value === 'boolean'
@@ -234,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
               ? ['ok', 'pass', 'passed', 'true', 'ready'].includes(value.toLowerCase())
               : Boolean(value);
         const details = req?.details || req?.message || req?.hint || '';
-        return { id, label, passed, details };
+        const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+        return { id, label, passed, details, status };
       });
     } else {
       const ignoreKeys = new Set(['ok', 'summary', 'message', 'output', 'requirements']);
@@ -244,31 +328,41 @@ document.addEventListener('DOMContentLoaded', () => {
           const label = FRIENDLY_LABELS[key] || formatKey(key);
           let passed = false;
           let details = '';
+          let rawStatus = typeof value?.status === 'string' ? value.status.toLowerCase() : '';
           if (typeof value === 'boolean') {
             passed = value;
+            rawStatus = value ? 'pass' : 'fail';
           } else if (typeof value === 'string') {
             const lowered = value.toLowerCase();
             passed = ['ok', 'pass', 'passed', 'true', 'ready', 'success'].includes(lowered);
             if (!passed && lowered.length) {
               details = value;
             }
+            rawStatus = lowered;
           } else if (typeof value === 'number') {
             passed = value > 0;
+            rawStatus = passed ? 'pass' : 'fail';
           } else if (typeof value === 'object') {
             if (typeof value.ok === 'boolean') {
               passed = value.ok;
+              rawStatus = value.ok ? 'pass' : rawStatus;
             } else if (typeof value.passed === 'boolean') {
               passed = value.passed;
+              rawStatus = value.passed ? 'pass' : rawStatus;
             } else if (typeof value.status === 'string') {
               passed = ['ok', 'pass', 'passed', 'ready', 'success'].includes(value.status.toLowerCase());
+              rawStatus = value.status.toLowerCase();
             } else if (typeof value.value === 'boolean') {
               passed = value.value;
+              rawStatus = value.value ? 'pass' : rawStatus;
             } else if (typeof value.isMet === 'boolean') {
               passed = value.isMet;
+              rawStatus = value.isMet ? 'pass' : rawStatus;
             }
             details = value.message || value.details || value.hint || '';
           }
-          return { id: key, label, passed, details };
+          const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+          return { id: key, label, passed, details, status };
         });
     }
 
@@ -315,15 +409,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     requirements.forEach((req) => {
+      const normalizedStatus = req.status || (req.passed ? 'pass' : 'fail');
+      const statusStyles = {
+        pass: {
+          wrapper: 'border-green-200 bg-green-50 text-green-800',
+          icon: 'text-green-600',
+          symbol: '✓',
+        },
+        warn: {
+          wrapper: 'border-amber-200 bg-amber-50 text-amber-800',
+          icon: 'text-amber-500',
+          symbol: '⚠',
+        },
+        fail: {
+          wrapper: 'border-red-200 bg-red-50 text-red-700',
+          icon: 'text-red-600',
+          symbol: '!',
+        },
+      };
+      const style = statusStyles[normalizedStatus] || statusStyles[req.passed ? 'pass' : 'fail'];
+
       const wrapper = document.createElement('div');
       wrapper.className = [
         'flex items-start gap-3 rounded border p-3 text-sm transition-colors duration-300',
-        req.passed ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-700',
+        style.wrapper,
       ].join(' ');
 
       const icon = document.createElement('span');
-      icon.className = `mt-0.5 text-base ${req.passed ? 'text-green-600' : 'text-red-600'}`;
-      icon.textContent = req.passed ? '✓' : '!';
+      icon.className = `mt-0.5 text-base ${style.icon}`;
+      icon.textContent = style.symbol;
       icon.setAttribute('aria-hidden', 'true');
 
       const content = document.createElement('div');
@@ -358,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showCompletion(data, credentials) {
+  function showCompletion(data, configuration) {
     if (!completionCard) return;
     const messageFromApi =
       data?.message || data?.summary || data?.success || data?.statusMessage || '';
@@ -367,6 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
       : typeof data?.nextSteps === 'string'
         ? [data.nextSteps]
         : [];
+    const displayName = submittedConfig?.appName?.trim()
+      ? submittedConfig.appName.trim()
+      : 'SkillBridge';
 
     if (completionMessage) {
       completionMessage.className = 'mt-1 text-green-700';
@@ -487,6 +604,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function parsePort(value) {
+    const normalized = normalizeString(value);
+    if (!normalized) return NaN;
+    const parsed = Number.parseInt(normalized, 10);
+    if (!Number.isFinite(parsed)) return NaN;
+    return parsed;
+  }
+
+  function validateConfiguration(configuration) {
+    const issues = [];
+    if (!configuration.adminEmail) {
+      issues.push({ field: 'adminEmail', message: 'Enter an admin email address.' });
+    } else if (!isValidEmail(configuration.adminEmail)) {
+      issues.push({ field: 'adminEmail', message: 'Enter a valid admin email address.' });
+    }
+
+    if (!configuration.adminPassword || configuration.adminPassword.length < 8) {
+      issues.push({ field: 'adminPassword', message: 'Admin password must be at least 8 characters.' });
+    }
+
+    if (!configuration.supportEmail) {
+      issues.push({ field: 'supportEmail', message: 'Enter a support email address.' });
+    } else if (!isValidEmail(configuration.supportEmail)) {
+      issues.push({ field: 'supportEmail', message: 'Enter a valid support email address.' });
+    }
+
+    if (!configuration.publicAppName) {
+      issues.push({ field: 'publicAppName', message: 'Enter a public app name.' });
+    }
+
+    if (!configuration.smtp.host) {
+      issues.push({ field: 'smtpHost', message: 'Enter the SMTP host.' });
+    }
+
+    if (!Number.isInteger(configuration.smtp.port) || configuration.smtp.port <= 0) {
+      issues.push({ field: 'smtpPort', message: 'Enter a valid SMTP port between 1 and 65535.' });
+    } else if (configuration.smtp.port > 65535) {
+      issues.push({ field: 'smtpPort', message: 'SMTP port must be 65535 or lower.' });
+    }
+
+    if (configuration.branding.logoUrl && !isValidUrl(configuration.branding.logoUrl)) {
+      issues.push({ field: 'logoUrl', message: 'Logo URL must be a valid URL.' });
+    }
+
+    if (
+      configuration.branding.logoFile &&
+      (typeof configuration.branding.logoFile.size !== 'number' ||
+        configuration.branding.logoFile.size > MAX_LOGO_FILE_BYTES)
+    ) {
+      issues.push({ field: 'logoFile', message: 'Uploaded logo must be 2 MB or smaller.' });
+    }
+
+    return issues;
+  }
+
   async function handleInstallSubmit(event) {
     event.preventDefault();
     clearError();
@@ -494,7 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
     backToConfigBtn?.classList.add('hidden');
 
     if (!configForm) return;
-
     const rawFormData = new FormData(configForm);
     const sanitize = (value) => String(value ?? '').replace(/\0/g, '').trim();
     const credentials = {
@@ -522,13 +693,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStep('install');
     setProgress(90);
 
-    if (installBtn) installBtn.disabled = true;
-
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
       installOutput.classList.add('text-gray-700');
-      installOutput.textContent = 'Running install...';
-    }
+      installOutput.textContent = 'Running installation with your configuration...';
 
     try {
       const csrfToken = getCookie('csrfToken');
@@ -635,9 +803,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (success) {
         setProgress(100);
         clearError();
-        showCompletion(data, credentials);
+        showCompletion(data, configuration);
       } else {
-        showError('Installation failed. Review the log below and try again.');
+        showError('Installation failed. Review the log below, adjust your configuration, and try again.');
         backToConfigBtn?.classList.remove('hidden');
         setProgress(STEP_PROGRESS.install);
       }

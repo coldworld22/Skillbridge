@@ -1,3 +1,4 @@
+const fs = require('fs');
 const request = require('supertest');
 const express = require('express');
 const fs = require('fs');
@@ -25,6 +26,9 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const mockFindAdmins = jest.fn();
+const mockHasExistingAdmin = jest.fn();
+const mockRefreshAdminPresence = jest.fn(() => Promise.resolve(false));
+const mockMarkAdminExists = jest.fn();
 
 jest.mock('../src/modules/users/user.model', () => ({
   findAdmins: (...args) => mockFindAdmins(...args),
@@ -33,7 +37,6 @@ jest.mock('../src/modules/users/user.model', () => ({
 const mockHasExistingAdmin = jest.fn();
 const mockRefreshAdminPresence = jest.fn();
 const mockMarkAdminExists = jest.fn();
-
 jest.mock('../src/modules/install/install.helpers', () => ({
   hasExistingAdmin: (...args) => mockHasExistingAdmin(...args),
   refreshAdminPresence: (...args) => mockRefreshAdminPresence(...args),
@@ -71,6 +74,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/install', router);
 
+const basePayload = {
+  adminEmail: 'admin@example.com',
+  adminPassword: 'super-secret',
+  databaseUrl: 'postgres://user:pass@localhost:5432/skillbridge',
+  databaseUser: 'user',
+  databasePassword: 'db-password',
+  smtpHost: 'smtp.example.com',
+  smtpPort: 587,
+  smtpUser: 'mailer',
+  smtpPassword: 'smtp-secret',
+  defaultFromEmail: 'notifications@example.com',
+  appDisplayName: 'SkillBridge',
+  logoUrl: 'https://cdn.example.com/logo.png',
+};
+
+const buildPayload = (overrides = {}) => ({ ...basePayload, ...overrides });
+
 afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
   delete process.env.INSTALL_SETUP_SECRET;
@@ -95,6 +115,7 @@ beforeEach(() => {
 describe('/api/install/prereqs', () => {
   it('returns 403 when INSTALL_API_ENABLED is false', async () => {
     process.env.INSTALL_API_ENABLED = 'false';
+    mockHasExistingAdmin.mockResolvedValue(false);
     mockFindAdmins.mockResolvedValue([]);
 
     const res = await request(app).get('/api/install/prereqs');
@@ -105,10 +126,30 @@ describe('/api/install/prereqs', () => {
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 
+  it('allows access when no admin exists and no setup secret is configured', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    mockHasExistingAdmin.mockResolvedValue(false);
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+    expect(mockIsAdmin).not.toHaveBeenCalled();
+  });
+
   it('returns INSTALL_LOCKED when no credentials are provided', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+    mockHasExistingAdmin.mockResolvedValue(true);
     mockFindAdmins.mockResolvedValue([{ id: 1 }]);
+    mockHasExistingAdmin.mockResolvedValue(true);
 
     const res = await request(app).get('/api/install/prereqs');
 
@@ -121,10 +162,28 @@ describe('/api/install/prereqs', () => {
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
+  it('allows access when no setup secret is configured and no admin exists', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    mockFindAdmins.mockResolvedValue([]);
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
+    expect(execFile).toHaveBeenCalled();
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+    expect(mockIsAdmin).not.toHaveBeenCalled();
+  });
   it('allows access with a valid setup secret', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
     mockFindAdmins.mockResolvedValue([]);
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .get('/api/install/prereqs')
@@ -144,6 +203,7 @@ describe('/api/install/prereqs', () => {
 
   it('returns 200 for admin when flag is true', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
+    mockHasExistingAdmin.mockResolvedValue(true);
     mockFindAdmins.mockResolvedValue([{ id: 1 }]);
     mockHasExistingAdmin.mockResolvedValue(true);
     mockVerifyToken.mockImplementation((req, _res, next) => {
@@ -168,19 +228,22 @@ describe('/api/install/prereqs', () => {
     expect(mockIsAdmin).toHaveBeenCalledTimes(1);
   });
 
-  it('returns 403 when a setup secret is configured but missing', async () => {
+  it('allows unauthenticated access when no admin exists (first-run)', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
+    mockHasExistingAdmin.mockResolvedValue(false);
     mockFindAdmins.mockResolvedValue([]);
 
     const res = await request(app).get('/api/install/prereqs');
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      code: 'INSTALL_LOCKED',
-      message: 'Installer locked. Provide a valid setup secret.',
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
     });
-    expect(execFile).not.toHaveBeenCalled();
+    expect(execFile).toHaveBeenCalled();
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
@@ -190,6 +253,7 @@ describe('/api/install/run', () => {
   it('passes credentials to the installer environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+    mockHasExistingAdmin.mockResolvedValue(false);
     const adminEmail = 'admin@example.com';
     const adminPassword = 'super-secret';
     const envKey = 'INSTALLER_EXISTING_ENV';
@@ -206,6 +270,7 @@ describe('/api/install/run', () => {
         expect.objectContaining({
           ADMIN_EMAIL: adminEmail,
           ADMIN_PASSWORD: adminPassword,
+          INSTALL_CONFIG_PATH: expect.any(String),
           [envKey]: 'keep-me',
         })
       );
@@ -238,6 +303,7 @@ describe('/api/install/run', () => {
   it('rejects installation when setup secret is missing', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -259,6 +325,7 @@ describe('/api/install/run', () => {
   it('rejects installation when setup secret is incorrect', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -281,6 +348,7 @@ describe('/api/install/run', () => {
   it('allows installation when setup secret is correct', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     execFile.mockImplementationOnce((_script, _options, cb) => cb(null, '', ''));
 
@@ -319,14 +387,14 @@ describe('/api/install/run', () => {
 });
 
 describe('runInstall controller', () => {
-  it('returns a clear error when credentials are missing', () => {
+  it('returns a clear error when credentials are missing', async () => {
     const req = { body: {} };
     const res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
 
-    controller.runInstall(req, res);
+    await controller.runInstall(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
@@ -342,9 +410,7 @@ describe('/api/install/run', () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
     mockFindAdmins.mockResolvedValue([]);
-    mockVerifyToken.mockImplementation((req, res) =>
-      res.status(401).json({ message: 'Missing or malformed token' })
-    );
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -361,10 +427,31 @@ describe('/api/install/run', () => {
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 
+  it('requires admin authentication when installer is locked without a secret', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    mockHasExistingAdmin.mockResolvedValue(true);
+    mockVerifyToken.mockImplementation((req, _res, next) => {
+      req.user = { id: 99, role: 'admin', roles: ['admin'] };
+      next();
+    });
+    mockIsAdmin.mockImplementation((_req, _res, next) => next());
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .set('Authorization', 'Bearer token')
+      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+
+    expect(res.status).toBe(200);
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).toHaveBeenCalledTimes(1);
+    expect(mockIsAdmin).toHaveBeenCalledTimes(1);
+  });
+
   it('allows POST attempts when the correct setup secret is provided', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
     mockFindAdmins.mockResolvedValue([]);
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -385,6 +472,7 @@ describe('/api/install/run', () => {
   it('passes sanitized credentials to the install script via environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+    mockHasExistingAdmin.mockResolvedValue(false);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -406,8 +494,10 @@ describe('/api/install/run', () => {
       expect.objectContaining({
         ADMIN_EMAIL: 'admin@example.com',
         ADMIN_PASSWORD: 'password',
+        INSTALL_CONFIG_PATH: expect.any(String),
       })
     );
+    expect(execOptions.env.INSTALLER_CONFIG_PATH).toBeUndefined();
 
     if (process.env.PATH) {
       expect(execOptions.env.PATH).toBe(process.env.PATH);
