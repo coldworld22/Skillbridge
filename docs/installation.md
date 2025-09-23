@@ -194,6 +194,12 @@ location ^~ /install/ {
 4. Log in with an administrator account.
 5. Visit `http://localhost:5002/install` (or your domain's `/install`) and verify the page lists the prerequisite checks.
 
+Whether you run SkillBridge directly from the monorepo or from the packaged
+container image, the backend automatically serves the installer assets. During
+development it reads from the top-level `install/` directory, and in production
+it falls back to `backend/install/` inside the container image when the
+repository layout is different.
+
 Common problems:
 
 - **404 Not Found** – the Nginx block is missing or `ENABLE_INSTALL` is false.

@@ -209,13 +209,10 @@ app.use("/install", (req, res, next) => {
 });
 
 if (config.ENABLE_INSTALL) {
-  const installerPathCandidates = [
-    path.join(__dirname, "../../install"),
-    path.join(__dirname, "../install"),
-  ];
-
-  const installerPath = installerPathCandidates.find((candidate) =>
-    fs.existsSync(candidate)
+  const monorepoInstallerPath = path.join(__dirname, "../../install");
+  const packagedInstallerPath = path.join(__dirname, "../install");
+  const installerPath = [monorepoInstallerPath, packagedInstallerPath].find(
+    (candidate) => fs.existsSync(candidate)
   );
 
   if (installerPath) {
@@ -224,7 +221,9 @@ if (config.ENABLE_INSTALL) {
       express.static(installerPath, { maxAge: "1h" })
     );
   } else {
-    logger.warn("⚠️ ENABLE_INSTALL is true but no installer assets were found");
+    logger.warn(
+      "⚠️ ENABLE_INSTALL is true but no installer assets were found in either the monorepo or packaged directories."
+    );
   }
 }
 

@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const request = require('supertest');
 
 jest.setTimeout(10000);
@@ -22,7 +24,7 @@ describe('/install route', () => {
     const { app, server, io } = getServer();
     const res = await request(app).get('/install');
     io?.close();
-    server?.close();
+    server.close();
     expect(res.status).toBe(410);
   });
 
@@ -44,62 +46,39 @@ describe('/install route', () => {
     expect(res.text).toContain('Configuration');
     expect(res.text).toContain('Run Install');
   });
+  it('serves installer assets from the packaged layout when present', async () => {
+    const packagedInstallerDir = path.join(__dirname, '../install');
+    const packagedIndexFile = path.join(packagedInstallerDir, 'index.html');
+    const monorepoInstallerDir = path.join(__dirname, '../../install');
+    const monorepoBackupDir = `${monorepoInstallerDir}.test-backup`;
 
-  it('serves installer when only Docker layout assets exist', async () => {
-    const path = require('path');
-    const fs = require('fs');
-
-    const serverDir = path.join(__dirname, '../src');
-    const monorepoInstallerPath = path.resolve(serverDir, '../../install');
-    const dockerInstallerPath = path.resolve(serverDir, '../install');
-
-    const dockerInstallerPreviouslyExists = fs.existsSync(dockerInstallerPath);
-    const dockerIndexPath = path.join(dockerInstallerPath, 'index.html');
-    const dockerIndexPreviouslyExists = fs.existsSync(dockerIndexPath);
-    const previousDockerIndexContent = dockerIndexPreviouslyExists
-      ? fs.readFileSync(dockerIndexPath, 'utf8')
-      : null;
-
-    if (!dockerInstallerPreviouslyExists) {
-      fs.mkdirSync(dockerInstallerPath, { recursive: true });
+    // Hide the monorepo assets so the packaged path is preferred
+    let monorepoRenamed = false;
+    if (fs.existsSync(monorepoInstallerDir)) {
+      fs.rmSync(monorepoBackupDir, { recursive: true, force: true });
+      fs.renameSync(monorepoInstallerDir, monorepoBackupDir);
+      monorepoRenamed = true;
     }
+
+    fs.mkdirSync(packagedInstallerDir, { recursive: true });
     fs.writeFileSync(
-      dockerIndexPath,
-      '<!DOCTYPE html><html><body>Docker Installer</body></html>'
+      packagedIndexFile,
+      '<!DOCTYPE html><html><body><h1>Packaged Installer</h1></body></html>'
     );
 
-    const realExistsSync = fs.existsSync;
-    const existsSpy = jest
-      .spyOn(fs, 'existsSync')
-      .mockImplementation((candidatePath) => {
-        if (candidatePath === monorepoInstallerPath) {
-          return false;
-        }
-        if (candidatePath === dockerInstallerPath) {
-          return true;
-        }
-        return realExistsSync(candidatePath);
-      });
+    try {
+      const { app, server, io } = getServer('true');
+      const res = await request(app).get('/install/');
+      io?.close();
+      server.close();
 
-    const { app, server, io } = getServer('true');
-    existsSpy.mockRestore();
-
-    const res = await request(app).get('/install/');
-
-    io?.close();
-    server?.close();
-
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Docker Installer');
-
-    if (dockerIndexPreviouslyExists) {
-      fs.writeFileSync(dockerIndexPath, previousDockerIndexContent);
-    } else {
-      fs.unlinkSync(dockerIndexPath);
-    }
-
-    if (!dockerInstallerPreviouslyExists) {
-      fs.rmSync(dockerInstallerPath, { recursive: true, force: true });
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('Packaged Installer');
+    } finally {
+      fs.rmSync(packagedInstallerDir, { recursive: true, force: true });
+      if (monorepoRenamed) {
+        fs.renameSync(monorepoBackupDir, monorepoInstallerDir);
+      }
     }
   });
 });
