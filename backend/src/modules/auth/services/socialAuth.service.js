@@ -3,6 +3,7 @@ const userModel = require("../../users/user.model");
 const { generateAccessToken, issueRefreshToken } = require("./auth.service");
 const AppError = require("../../../utils/AppError");
 const sanitizeUser = require("../utils/sanitizeUser");
+const { resolvePrimaryRole } = require("../../../utils/role");
 
 const SALT_ROUNDS = 12;
 
@@ -56,13 +57,14 @@ exports.loginOrRegister = async ({
 
   const roles = await userModel.getUserRoles(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
+  const primaryRole = resolvePrimaryRole(tokenRoles, user.role);
   const accessToken = generateAccessToken({
     id: user.id,
-    role: tokenRoles[0],
+    role: primaryRole,
     roles: tokenRoles,
   });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
-  const safeUser = sanitizeUser({ ...user, roles });
+  const safeUser = sanitizeUser({ ...user, role: primaryRole, roles });
   return { accessToken, refreshToken, user: safeUser };
 };
