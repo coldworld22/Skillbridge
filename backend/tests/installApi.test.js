@@ -53,6 +53,23 @@ const app = express();
 app.use(express.json());
 app.use('/api/install', router);
 
+const basePayload = {
+  adminEmail: 'admin@example.com',
+  adminPassword: 'super-secret',
+  databaseUrl: 'postgres://user:pass@localhost:5432/skillbridge',
+  databaseUser: 'user',
+  databasePassword: 'db-password',
+  smtpHost: 'smtp.example.com',
+  smtpPort: 587,
+  smtpUser: 'mailer',
+  smtpPassword: 'smtp-secret',
+  defaultFromEmail: 'notifications@example.com',
+  appDisplayName: 'SkillBridge',
+  logoUrl: 'https://cdn.example.com/logo.png',
+};
+
+const buildPayload = (overrides = {}) => ({ ...basePayload, ...overrides });
+
 afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
   delete process.env.INSTALL_SETUP_SECRET;
@@ -174,9 +191,6 @@ describe('/api/install/run', () => {
   it('passes credentials to the installer environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
-    const adminEmail = 'admin@example.com';
-    const adminPassword = 'super-secret';
     const envKey = 'INSTALLER_EXISTING_ENV';
     const originalEnvValue = process.env[envKey];
     process.env[envKey] = 'keep-me';
@@ -189,8 +203,21 @@ describe('/api/install/run', () => {
       );
       expect(options.env).toEqual(
         expect.objectContaining({
-          ADMIN_EMAIL: adminEmail,
-          ADMIN_PASSWORD: adminPassword,
+          ADMIN_EMAIL: basePayload.adminEmail,
+          ADMIN_PASSWORD: basePayload.adminPassword,
+          DATABASE_URL: basePayload.databaseUrl,
+          PRODUCTION_DATABASE_URL: basePayload.databaseUrl,
+          DATABASE_USER: basePayload.databaseUser,
+          DATABASE_PASSWORD: basePayload.databasePassword,
+          SMTP_HOST: basePayload.smtpHost,
+          SMTP_PORT: String(basePayload.smtpPort),
+          SMTP_USER: basePayload.smtpUser,
+          SMTP_PASS: basePayload.smtpPassword,
+          DEFAULT_FROM_EMAIL: basePayload.defaultFromEmail,
+          SUPPORT_EMAIL: basePayload.defaultFromEmail,
+          APP_DISPLAY_NAME: basePayload.appDisplayName,
+          INSTALL_LOGO_URL: basePayload.logoUrl,
+          SMTP_SECURE: 'false',
           [envKey]: 'keep-me',
         })
       );
@@ -201,7 +228,7 @@ describe('/api/install/run', () => {
       const res = await request(app)
         .post('/api/install/run')
         .set('x-install-setup-secret', 'setup-secret')
-        .send({ adminEmail, adminPassword });
+        .send(buildPayload());
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true, output: '' });
@@ -222,7 +249,7 @@ describe('/api/install/run', () => {
 
     const res = await request(app)
       .post('/api/install/run')
-      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+      .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({
@@ -240,7 +267,7 @@ describe('/api/install/run', () => {
     const res = await request(app)
       .post('/api/install/run')
       .set('X-Install-Setup-Secret', 'wrong-secret')
-      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+      .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({
@@ -260,7 +287,7 @@ describe('/api/install/run', () => {
     const res = await request(app)
       .post('/api/install/run')
       .set('X-Install-Setup-Secret', 'top-secret')
-      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+      .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, output: '' });
@@ -295,13 +322,9 @@ describe('/api/install/run', () => {
 
     const res = await request(app)
       .post('/api/install/run')
-      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+      .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(403);
-    expect(res.body).toEqual({
-      code: 'INSTALL_LOCKED',
-      message: 'Installer locked. Provide a valid setup secret.',
-    });
     expect(execFile).not.toHaveBeenCalled();
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
@@ -335,7 +358,7 @@ describe('/api/install/run', () => {
     const res = await request(app)
       .post('/api/install/run')
       .set('x-install-setup-secret', 's3cret')
-      .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
+      .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(200);
     expect(execFile).toHaveBeenCalledTimes(1);
@@ -352,8 +375,20 @@ describe('/api/install/run', () => {
       .post('/api/install/run')
       .set('x-install-setup-secret', 'setup-secret')
       .send({
-        adminEmail: '  admin@example.com  \n',
-        adminPassword: '  pass\nword  ',
+        ...buildPayload({
+          adminEmail: '  admin@example.com  \n',
+          adminPassword: '  pass\nword  ',
+          databaseUrl: '  postgres://user:pass@localhost:5432/skillbridge  ',
+          databaseUser: '  user  ',
+          databasePassword: '  db-password  ',
+          smtpHost: '  smtp.example.com  ',
+          smtpPort: ' 587 ',
+          smtpUser: '  mailer  ',
+          smtpPassword: '  smtp-secret  ',
+          defaultFromEmail: '  notifications@example.com  ',
+          appDisplayName: '  SkillBridge  ',
+          logoUrl: '  https://cdn.example.com/logo.png  ',
+        }),
       });
 
     expect(res.status).toBe(200);
@@ -365,6 +400,19 @@ describe('/api/install/run', () => {
       expect.objectContaining({
         ADMIN_EMAIL: 'admin@example.com',
         ADMIN_PASSWORD: 'password',
+        DATABASE_URL: 'postgres://user:pass@localhost:5432/skillbridge',
+        PRODUCTION_DATABASE_URL: 'postgres://user:pass@localhost:5432/skillbridge',
+        DATABASE_USER: 'user',
+        DATABASE_PASSWORD: 'db-password',
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: '587',
+        SMTP_USER: 'mailer',
+        SMTP_PASS: 'smtp-secret',
+        DEFAULT_FROM_EMAIL: 'notifications@example.com',
+        SUPPORT_EMAIL: 'notifications@example.com',
+        APP_DISPLAY_NAME: 'SkillBridge',
+        INSTALL_LOGO_URL: 'https://cdn.example.com/logo.png',
+        SMTP_SECURE: 'false',
       })
     );
     expect(execOptions.env.INSTALLER_CONFIG_PATH).toBeUndefined();

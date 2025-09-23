@@ -42,13 +42,24 @@ MODE=${1:-}
 DOMAIN=${2:-}
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-INSTALLER_CONFIG_PATH="${INSTALLER_CONFIG_PATH:-}"
+DATABASE_URL="${DATABASE_URL:-}"
+DATABASE_USER="${DATABASE_USER:-}"
+DATABASE_PASSWORD="${DATABASE_PASSWORD:-}"
+SMTP_HOST="${SMTP_HOST:-}"
+SMTP_PORT="${SMTP_PORT:-}"
+SMTP_USER="${SMTP_USER:-}"
+SMTP_PASS="${SMTP_PASS:-}"
+DEFAULT_FROM_EMAIL="${DEFAULT_FROM_EMAIL:-}"
+APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-}"
 
-ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
-ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
-
-load_env_file "$REPO_ROOT/.env"
-load_env_file "$REPO_ROOT/backend/.env"
+require_env_var() {
+  local var_name="$1"
+  local value="${!var_name:-}"
+  if [[ -z "$value" ]]; then
+    echo "Environment variable $var_name must be provided when running non-interactively." >&2
+    exit 1
+  fi
+}
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -123,20 +134,30 @@ if [[ -z "$ADMIN_PASSWORD" ]]; then
   fi
 fi
 
-if [[ -n "$INSTALLER_CONFIG_PATH" ]]; then
-  if [[ ! -f "$INSTALLER_CONFIG_PATH" ]]; then
-    echo "Installer configuration file not found at $INSTALLER_CONFIG_PATH" >&2
-    exit 1
-  fi
+for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS DEFAULT_FROM_EMAIL APP_DISPLAY_NAME; do
+  require_env_var "$required"
+done
 
-  echo "Applying installer configuration..."
-  if ! node "$SCRIPT_DIR/backend/scripts/apply-install-config.js" "$INSTALLER_CONFIG_PATH" "$SCRIPT_DIR/backend"; then
-    echo "Failed to apply installer configuration" >&2
-    exit 1
-  fi
+export \
+  ADMIN_EMAIL \
+  ADMIN_PASSWORD \
+  DATABASE_URL \
+  DATABASE_USER \
+  DATABASE_PASSWORD \
+  SMTP_HOST \
+  SMTP_PORT \
+  SMTP_USER \
+  SMTP_PASS \
+  DEFAULT_FROM_EMAIL \
+  APP_DISPLAY_NAME
+
+echo "Applying configuration values..."
+CONFIG_SCRIPT="$SCRIPT_DIR/backend/scripts/apply-install-config.js"
+if ! node "$CONFIG_SCRIPT"; then
+  echo "Failed to apply installation configuration." >&2
+  exit 1
 fi
 
-export ADMIN_EMAIL ADMIN_PASSWORD
 
 echo "Running database migrations..."
 if ! npm --prefix "$REPO_ROOT/backend" run migrate; then

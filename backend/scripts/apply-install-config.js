@@ -1,344 +1,282 @@
 #!/usr/bin/env node
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
-const { z } = require('zod');
+const http = require('http');
+const https = require('https');
 const sanitizeFilename = require('sanitize-filename');
-const mime = require('mime-types');
+const db = require('../src/config/database');
+const emailConfigService = require('../src/modules/emailConfig/emailConfig.service');
+const appConfigService = require('../src/modules/appConfig/appConfig.service');
 
-const base64Pattern = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 
-const LogoFileSchema = z.object({
-  filename: z.string().trim().min(1),
-  data: z
-    .string()
-    .trim()
-    .min(1)
-    .refine((value) => base64Pattern.test(value.replace(/\s+/g, '')), {
-      message: 'Logo file data must be base64 encoded.',
-    }),
-  contentType: z.string().trim().min(1).optional(),
-});
+const ensureDir = async (dir) => {
+  await fs.promises.mkdir(dir, { recursive: true });
+};
 
-const InstallerConfigSchema = z
-  .object({
-    app: z
-      .object({
-        name: z.string().trim().min(1).max(120).optional(),
-      })
-      .optional(),
-    support: z
-      .object({
-        email: z.string().trim().email().optional(),
-        url: z.string().trim().url().optional(),
-      })
-      .optional(),
-    smtp: z
-      .object({
-        host: z.string().trim().min(1).max(255).optional(),
-        port: z.number().int().min(1).max(65535).optional(),
-        secure: z.boolean().optional(),
-        username: z.string().trim().min(1).max(255).optional(),
-        password: z.string().min(1).optional(),
-        fromEmail: z.string().trim().email().optional(),
-        fromName: z.string().trim().min(1).max(255).optional(),
-      })
-      .optional(),
-    branding: z
-      .object({
-        logoUrl: z.string().trim().url().optional(),
-        logoFile: LogoFileSchema.optional(),
-      })
-      .optional(),
-  })
-  .default({});
+const escapeEnvValue = (value) => {
+  if (value == null) return '';
+  const str = String(value);
+  if (!str) return '';
+  if (/^[A-Za-z0-9_@./:\-]+$/.test(str)) {
+    return str;
+  }
+  return JSON.stringify(str);
+};
 
-const writeFile = fs.promises.writeFile;
-const readFile = fs.promises.readFile;
-const mkdir = fs.promises.mkdir;
+const upsertEnvValues = async (filePath, updates) => {
+  const entries = Object.entries(updates).filter(([, value]) => value != null);
+  if (!entries.length) return;
 
-const applyEnvUpdates = (existing, updates) => {
-  const keys = Object.keys(updates).filter((key) => updates[key] !== undefined);
-  if (keys.length === 0) {
-    return existing;
+  let existing = '';
+  try {
+    existing = await fs.promises.readFile(filePath, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
   }
 
-  if (!existing || existing.trim().length === 0) {
-    return `${keys.map((key) => `${key}=${updates[key]}`).join('\n')}\n`;
-  }
-
-  const seen = new Set();
-  const lines = existing.split(/\r?\n/);
-  const updated = lines.map((line) => {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/);
-    if (!match) {
-      return line;
-    }
-    const key = match[1];
-    if (Object.prototype.hasOwnProperty.call(updates, key)) {
-      seen.add(key);
-      return `${key}=${updates[key]}`;
-    }
-    return line;
+  const lines = existing ? existing.split(/\r?\n/) : [];
+  const keys = new Set(entries.map(([key]) => key));
+  const filtered = lines.filter((line) => {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)=/);
+    if (!match) return true;
+    return !keys.has(match[1]);
   });
 
-  keys.forEach((key) => {
-    if (!seen.has(key)) {
-      updated.push(`${key}=${updates[key]}`);
-    }
-  });
-
-  const filtered = updated.filter((line, index) => line.length > 0 || index !== updated.length - 1).join('\n');
-  return filtered.endsWith('\n') ? filtered : `${filtered}\n`;
-};
-
-const writeEnvFile = async (envPath, updates) => {
-  if (!updates || Object.keys(updates).length === 0) {
-    return;
+  if (filtered.length && filtered[filtered.length - 1].trim() !== '') {
+    filtered.push('');
   }
 
-  await mkdir(path.dirname(envPath), { recursive: true });
-  const existing = await readFile(envPath, 'utf8').catch(() => '');
-  const content = applyEnvUpdates(existing, updates);
-  await writeFile(envPath, content, { encoding: 'utf8', mode: 0o600 });
-};
-
-const determineExtension = (filename, contentType) => {
-  const sanitized = sanitizeFilename(filename || '') || 'logo';
-  const inferredFromName = path.extname(sanitized);
-  if (inferredFromName) {
-    return { base: sanitized.slice(0, -inferredFromName.length) || 'logo', ext: inferredFromName };
+  for (const [key, value] of entries) {
+    filtered.push(`${key}=${escapeEnvValue(value)}`);
   }
 
-  const normalizedType = contentType ? mime.extension(contentType) : null;
-  if (normalizedType) {
-    return { base: sanitized, ext: `.${normalizedType}` };
+  await fs.promises.writeFile(filePath, filtered.join('\n'), 'utf8');
+};
+
+const determineExtension = (type, name) => {
+  if (typeof name === 'string') {
+    const ext = path.extname(name);
+    if (ext) return ext;
   }
 
-  return { base: sanitized, ext: '.png' };
+  switch ((type || '').toLowerCase()) {
+    case 'image/png':
+      return '.png';
+    case 'image/jpeg':
+    case 'image/jpg':
+      return '.jpg';
+    case 'image/svg+xml':
+      return '.svg';
+    default:
+      return '.png';
+  }
 };
 
-const ensureUniqueFilename = (base, ext) => {
-  const timestamp = Date.now();
-  const safeBase = sanitizeFilename(base || 'logo') || 'logo';
-  const safeExt = ext && ext.startsWith('.') ? ext : `.${ext || 'png'}`;
-  return sanitizeFilename(`${safeBase}-${timestamp}${safeExt}`) || `${safeBase}-${timestamp}${safeExt}`;
-};
+const writeLogoFromBase64 = async (dir, file) => {
+  if (!file || typeof file !== 'object') {
+    return '';
+  }
 
-const saveLogoFromFile = async (logoFile, uploadsDir) => {
-  const { base, ext } = determineExtension(logoFile.filename, logoFile.contentType);
-  const filename = ensureUniqueFilename(base || 'logo', ext);
-  const buffer = Buffer.from(logoFile.data.replace(/\s+/g, ''), 'base64');
-  if (buffer.length === 0) {
+  const encoding = (file.encoding || 'base64').toLowerCase();
+  if (encoding !== 'base64') {
+    throw new Error(`Unsupported logo encoding: ${encoding}`);
+  }
+
+  const normalizedData = (file.data || '').replace(/\s+/g, '');
+  if (!normalizedData) {
     throw new Error('Logo file data is empty.');
   }
-  await writeFile(path.join(uploadsDir, filename), buffer, { mode: 0o600 });
-  return path.posix.join('/uploads/app', filename);
+
+  const buffer = Buffer.from(normalizedData, 'base64');
+  if (!buffer.length) {
+    throw new Error('Decoded logo is empty.');
+  }
+  if (buffer.length > MAX_LOGO_BYTES) {
+    throw new Error('Logo file exceeds 5 MB limit.');
+  }
+
+  await ensureDir(dir);
+
+  const extension = determineExtension(file.type, file.name);
+  const safeBaseName = sanitizeFilename(file.name || '') || `logo-${Date.now()}`;
+  const fileName = safeBaseName.toLowerCase().endsWith(extension.toLowerCase())
+    ? safeBaseName
+    : `${safeBaseName}${extension}`;
+  const targetPath = path.join(dir, fileName);
+  await fs.promises.writeFile(targetPath, buffer);
+  return `/uploads/app/${fileName}`;
 };
 
-const downloadLogo = async (url, uploadsDir) => {
-  const fetchModule = await import('node-fetch');
-  const fetch = fetchModule.default || fetchModule;
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok) {
-    throw new Error(`Failed to download logo (HTTP ${response.status})`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  if (buffer.length === 0) {
-    throw new Error('Downloaded logo file was empty.');
-  }
-  const contentType = response.headers.get('content-type') || '';
-  let filenameFromUrl = '';
-  try {
-    const parsedUrl = new URL(url);
-    filenameFromUrl = sanitizeFilename(path.basename(parsedUrl.pathname));
-  } catch (error) {
-    filenameFromUrl = 'logo';
-  }
-  const { base, ext } = determineExtension(filenameFromUrl || 'logo', contentType);
-  const filename = ensureUniqueFilename(base || 'logo', ext);
-  await writeFile(path.join(uploadsDir, filename), buffer, { mode: 0o600 });
-  return path.posix.join('/uploads/app', filename);
-};
+const downloadLogoFromUrl = async (sourceUrl, dir) => {
+  const client = sourceUrl.startsWith('https:') ? https : http;
 
-const buildEnvUpdates = (config) => {
-  const updates = {};
-  if (config.smtp?.host) {
-    updates.SMTP_HOST = config.smtp.host;
-  }
-  if (config.smtp?.port) {
-    updates.SMTP_PORT = String(config.smtp.port);
-  }
-  if (config.smtp?.secure !== undefined) {
-    updates.SMTP_SECURE = config.smtp.secure ? 'true' : 'false';
-  }
-  if (config.smtp?.username) {
-    updates.SMTP_USER = config.smtp.username;
-  }
-  if (config.smtp?.password) {
-    updates.SMTP_PASS = config.smtp.password;
-  }
-  if (config.support?.email) {
-    updates.SUPPORT_EMAIL = config.support.email;
-  }
-  return updates;
-};
-
-const upsertSetting = async (db, key, value) => {
-  const now = new Date();
-  const existing = await db('settings').where({ key }).first();
-  const payload = { value: JSON.stringify(value), updated_at: now };
-  if (existing) {
-    await db('settings').where({ key }).update(payload);
-  } else {
-    await db('settings').insert({ key, value: payload.value, created_at: now, updated_at: now });
-  }
-};
-
-const applyInstallerConfig = async ({ configPath, backendRoot, db: providedDb } = {}) => {
-  if (!configPath) {
-    return { skipped: true };
-  }
-
-  const resolvedConfigPath = path.resolve(configPath);
-  let rawConfig;
-  try {
-    rawConfig = await readFile(resolvedConfigPath, 'utf8');
-  } catch (error) {
-    throw new Error(`Installer configuration file not found at ${resolvedConfigPath}`);
-  }
-
-  let parsed;
-  try {
-    parsed = rawConfig ? JSON.parse(rawConfig) : {};
-  } catch (error) {
-    throw new Error('Installer configuration file contains invalid JSON.');
-  }
-
-  const config = InstallerConfigSchema.parse(parsed);
-  if (!config || Object.keys(config).length === 0) {
-    return { skipped: true };
-  }
-
-  const root = backendRoot ? path.resolve(backendRoot) : path.resolve(__dirname, '..');
-  const envPath = path.join(root, '.env');
-  const uploadsDir = path.join(root, 'uploads', 'app');
-  await mkdir(uploadsDir, { recursive: true });
-
-  const envUpdates = buildEnvUpdates(config);
-  await writeEnvFile(envPath, envUpdates);
-
-  let logoPath;
-  if (config.branding?.logoFile) {
-    logoPath = await saveLogoFromFile(config.branding.logoFile, uploadsDir);
-  } else if (config.branding?.logoUrl) {
-    logoPath = await downloadLogo(config.branding.logoUrl, uploadsDir);
-  }
-
-  let dbInstance = providedDb;
-  let destroyDb = false;
-  if (!dbInstance) {
-    // Lazy require to avoid loading database configuration when running tests with a custom connection.
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    dbInstance = require(path.join(root, 'src', 'config', 'database'));
-    destroyDb = true;
-  }
-
-  const hasSettingsTable = await dbInstance.schema.hasTable('settings');
-  let appSettings;
-  let emailSettings;
-
-  if (hasSettingsTable) {
-    const existingApp = await dbInstance('settings').where({ key: 'app_settings' }).first();
-    const existingEmail = await dbInstance('settings').where({ key: 'email_settings' }).first();
-
-    const parseSettings = (row) => {
-      if (!row || typeof row.value !== 'string') {
-        return {};
+  const response = await new Promise((resolve, reject) => {
+    const request = client.get(sourceUrl, (res) => {
+      if (res.statusCode && res.statusCode >= 400) {
+        reject(new Error(`Failed to download logo (HTTP ${res.statusCode})`));
+        return;
       }
-      try {
-        return JSON.parse(row.value) || {};
-      } catch (error) {
-        return {};
+      resolve(res);
+    });
+    request.on('error', reject);
+  });
+
+  const chunks = [];
+  let total = 0;
+  await new Promise((resolve, reject) => {
+    response.on('data', (chunk) => {
+      total += chunk.length;
+      if (total > MAX_LOGO_BYTES) {
+        response.destroy();
+        reject(new Error('Logo download exceeds 5 MB limit.'));
+        return;
       }
-    };
+      chunks.push(chunk);
+    });
+    response.on('end', resolve);
+    response.on('error', reject);
+  });
 
-    appSettings = parseSettings(existingApp);
-    emailSettings = parseSettings(existingEmail);
-
-    if (config.app?.name) {
-      appSettings.appName = config.app.name;
-    }
-    if (config.support?.email) {
-      appSettings.contactEmail = config.support.email;
-    }
-    if (logoPath) {
-      appSettings.logo_url = logoPath;
-    }
-
-    const smtpConfig = config.smtp || {};
-    if (smtpConfig.host) {
-      emailSettings.smtpHost = smtpConfig.host;
-    }
-    if (smtpConfig.port) {
-      emailSettings.smtpPort = smtpConfig.port;
-    }
-    if (smtpConfig.username) {
-      emailSettings.username = smtpConfig.username;
-    }
-    if (smtpConfig.password) {
-      emailSettings.password = smtpConfig.password;
-    }
-    if (smtpConfig.fromEmail) {
-      emailSettings.fromEmail = smtpConfig.fromEmail;
-    } else if (config.support?.email) {
-      emailSettings.fromEmail = config.support.email;
-    }
-    if (smtpConfig.fromName) {
-      emailSettings.fromName = smtpConfig.fromName;
-    } else if (config.app?.name) {
-      emailSettings.fromName = config.app.name;
-    }
-    if (config.support?.email) {
-      emailSettings.replyTo = config.support.email;
-    }
-    emailSettings.method = 'smtp';
-    if (smtpConfig.secure === true) {
-      emailSettings.encryption = 'SSL';
-    } else if (smtpConfig.secure === false) {
-      emailSettings.encryption = 'STARTTLS';
-    }
-
-    await upsertSetting(dbInstance, 'app_settings', appSettings);
-    await upsertSetting(dbInstance, 'email_settings', emailSettings);
+  const buffer = Buffer.concat(chunks);
+  if (!buffer.length) {
+    throw new Error('Downloaded logo is empty.');
   }
 
-  if (destroyDb && dbInstance && typeof dbInstance.destroy === 'function') {
-    await dbInstance.destroy();
-  }
+  await ensureDir(dir);
 
-  return { envPath, envUpdates, logoPath, appSettings, emailSettings };
-};
-
-const main = async () => {
+  const extension = determineExtension(response.headers['content-type'], sourceUrl);
+  let baseName = 'logo';
   try {
-    const configPath = process.argv[2] || process.env.INSTALLER_CONFIG_PATH;
-    const backendRoot = process.argv[3];
-    const result = await applyInstallerConfig({ configPath, backendRoot });
-    if (result.skipped) {
-      console.log('No installer configuration provided; skipping app/email setup.');
-    } else {
-      console.log('Installer configuration applied successfully.');
-    }
-  } catch (error) {
-    console.error(error.message || error);
-    process.exit(1);
+    const parsedUrl = new URL(sourceUrl);
+    baseName = sanitizeFilename(path.basename(parsedUrl.pathname)) || 'logo';
+  } catch (_err) {
+    // ignore URL parsing failures, fall back to default
   }
+  if (!baseName) baseName = 'logo';
+  const fileName = baseName.toLowerCase().endsWith(extension.toLowerCase())
+    ? baseName
+    : `${baseName}${extension}`;
+  const targetPath = path.join(dir, fileName);
+  await fs.promises.writeFile(targetPath, buffer);
+  return `/uploads/app/${fileName}`;
 };
 
-if (require.main === module) {
-  main();
-}
+const loadLogo = async (config, uploadDir) => {
+  if (config.logoFile) {
+    return writeLogoFromBase64(uploadDir, config.logoFile);
+  }
+  if (config.logoUrl) {
+    return downloadLogoFromUrl(config.logoUrl, uploadDir);
+  }
+  return '';
+};
 
-module.exports = { applyInstallerConfig };
+const requireValue = (value, message) => {
+  if (!value || !value.trim()) {
+    throw new Error(message);
+  }
+  return value.trim();
+};
+
+const parsePort = (value) => {
+  const parsed = Number.parseInt(String(value || '').trim(), 10);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+    throw new Error('SMTP_PORT must be an integer between 1 and 65535.');
+  }
+  return parsed;
+};
+
+const applyConfiguration = async () => {
+  const backendRoot = path.resolve(__dirname, '..');
+  const envPath = path.join(backendRoot, '.env');
+  const uploadDir = path.join(backendRoot, 'uploads', 'app');
+
+  const config = {
+    databaseUrl: requireValue(process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL, 'DATABASE_URL is required.'),
+    databaseUser: requireValue(process.env.DATABASE_USER || '', 'DATABASE_USER is required.'),
+    databasePassword: requireValue(process.env.DATABASE_PASSWORD || '', 'DATABASE_PASSWORD is required.'),
+    smtpHost: requireValue(process.env.SMTP_HOST || '', 'SMTP_HOST is required.'),
+    smtpPort: parsePort(process.env.SMTP_PORT || ''),
+    smtpUser: requireValue(process.env.SMTP_USER || '', 'SMTP_USER is required.'),
+    smtpPassword: requireValue(process.env.SMTP_PASS || '', 'SMTP_PASS is required.'),
+    defaultFromEmail: requireValue(process.env.DEFAULT_FROM_EMAIL || process.env.SUPPORT_EMAIL || '', 'DEFAULT_FROM_EMAIL is required.'),
+    appDisplayName: requireValue(process.env.APP_DISPLAY_NAME || process.env.SMTP_NAME || 'SkillBridge', 'APP_DISPLAY_NAME is required.'),
+    logoUrl: (process.env.INSTALL_LOGO_URL || '').trim(),
+    logoFile: (() => {
+      const data = (process.env.INSTALL_LOGO_FILE_DATA || '').trim();
+      if (!data) return null;
+      return {
+        name: process.env.INSTALL_LOGO_FILE_NAME || '',
+        type: process.env.INSTALL_LOGO_FILE_TYPE || '',
+        size: Number.parseInt(process.env.INSTALL_LOGO_FILE_SIZE || '0', 10) || 0,
+        data,
+        encoding: (process.env.INSTALL_LOGO_FILE_ENCODING || 'base64').toLowerCase(),
+      };
+    })(),
+  };
+
+  const envUpdates = {
+    DATABASE_URL: config.databaseUrl,
+    PRODUCTION_DATABASE_URL: config.databaseUrl,
+    DATABASE_USER: config.databaseUser,
+    DATABASE_PASSWORD: config.databasePassword,
+    SMTP_HOST: config.smtpHost,
+    SMTP_PORT: String(config.smtpPort),
+    SMTP_USER: config.smtpUser,
+    SMTP_PASS: config.smtpPassword,
+    SMTP_NAME: config.appDisplayName,
+    DEFAULT_FROM_EMAIL: config.defaultFromEmail,
+    SUPPORT_EMAIL: config.defaultFromEmail,
+    SMTP_SECURE: config.smtpPort === 465 ? 'true' : process.env.SMTP_SECURE || 'false',
+    ENABLE_INSTALL: 'false',
+    INSTALL_API_ENABLED: 'false',
+  };
+
+  await upsertEnvValues(envPath, envUpdates);
+
+  const storedLogoUrl = await loadLogo(config, uploadDir);
+
+  const emailSettings = {
+    method: 'smtp',
+    fromName: config.appDisplayName,
+    fromEmail: config.defaultFromEmail,
+    replyTo: config.defaultFromEmail,
+    smtpHost: config.smtpHost,
+    smtpPort: config.smtpPort,
+    encryption: config.smtpPort === 465 ? 'SSL' : 'STARTTLS',
+    username: config.smtpUser,
+    password: config.smtpPassword,
+  };
+  await emailConfigService.updateSettings(emailSettings);
+
+  const existingAppSettings = await appConfigService.getSettings();
+  const appSettings = {
+    ...existingAppSettings,
+    appName: config.appDisplayName,
+    siteTitle: config.appDisplayName,
+    contactEmail: config.defaultFromEmail,
+  };
+  if (storedLogoUrl) {
+    appSettings.logo_url = storedLogoUrl;
+  }
+
+  await appConfigService.updateSettings(appSettings);
+
+  console.log('✅ Installation configuration applied.');
+};
+
+(async () => {
+  try {
+    await applyConfiguration();
+  } catch (error) {
+    console.error('Failed to apply installation configuration:', error.message || error);
+    process.exitCode = 1;
+  } finally {
+    await db.destroy();
+  }
+})();

@@ -7,7 +7,10 @@ const validate = require('../../middleware/validate');
 const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
 const { z } = require('zod');
+const { hasExistingAdmin } = require('./install.helpers');
 const userModel = require('../users/user.model');
+
+const LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -77,8 +80,21 @@ const enforceInstallerGuard = async (req, res, next) => {
     const secretValid = secretRequired && constantTimeEquals(providedSecret, setupSecret);
     const adminExists = await determineAdminPresence();
 
-    if (!adminExists) {
-      if (secretRequired && !secretValid) {
+    let secretProvided = false;
+    let secretValid = false;
+
+    if (setupSecret.length > 0) {
+      const providedSecretHeader = req.get('X-Install-Setup-Secret');
+      const providedSecret =
+        typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
+
+      secretProvided = providedSecret.length > 0;
+
+      if (secretProvided) {
+        secretValid = constantTimeEquals(providedSecret, setupSecret);
+      }
+
+      if (secretProvided && !secretValid) {
         return res.status(403).json({
           code: 'INSTALL_LOCKED',
           message: 'Installer locked. Provide a valid setup secret.',
@@ -86,6 +102,18 @@ const enforceInstallerGuard = async (req, res, next) => {
       }
       return next();
     }
+
+    if (setupSecret.length > 0 && !secretProvided) {
+      return res.status(403).json({
+        code: 'INSTALL_LOCKED',
+        message: 'Installer locked. Provide a valid setup secret.',
+      });
+    }
+
+    if (!adminExists) {
+      return next();
+    }
+
     if (secretValid) {
       return next();
     }
@@ -118,105 +146,113 @@ router.use(enforceInstallerGuard);
 // No input is accepted for the prereqs endpoint; validate empty payloads strictly.
 const emptySchema = z.object({}).strict();
 
-const optionalTrimmed = (schema) =>
-  z
-    .preprocess((value) => {
-      if (value === undefined || value === null) {
-        return undefined;
-      }
-      const trimmed = String(value).trim();
-      return trimmed.length === 0 ? undefined : trimmed;
-    }, schema)
-    .optional();
-
-const optionalBoolean = z
-  .preprocess((value) => {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    if (typeof value === 'boolean') {
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return value !== 0;
-    }
-
-    if (typeof value === 'string') {
-      const normalized = value.trim().toLowerCase();
-      if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) {
-        return true;
-      }
-      if (['false', '0', 'no', 'n', 'off'].includes(normalized)) {
-        return false;
-      }
-    }
-
-    return value;
-  }, z.boolean())
-  .optional();
-
-const optionalPort = z
-  .preprocess((value) => {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
-    }
-
-    if (typeof value === 'number') {
-      return value;
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!/^\d+$/.test(trimmed)) {
-        return trimmed;
-      }
-      return Number.parseInt(trimmed, 10);
-    }
-
-    return value;
-  }, z.number().int().min(1).max(65535))
-  .optional();
-
-const base64Data = z
-  .string()
-  .trim()
-  .min(1)
-  .refine(
-    (value) => {
-      const normalized = value.replace(/\s+/g, '');
-      return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized);
-    },
-    { message: 'Logo file data must be valid base64.' }
-  );
-
-const logoFileSchema = z
-  .object({
-    filename: z.string().trim().min(1),
-    data: base64Data,
-    contentType: optionalTrimmed(z.string().min(1)),
-  })
-  .strict();
+const normalizePort = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.trunc(value) : Number.NaN;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return Number.NaN;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? Math.trunc(parsed) : Number.NaN;
+  }
+  return Number.NaN;
+};
 
 const installSchema = z
   .object({
     adminEmail: z.string().trim().email(),
     adminPassword: z.string().min(8),
-    appName: optionalTrimmed(z.string().min(1).max(120)),
-    supportEmail: optionalTrimmed(z.string().email()),
-    supportUrl: optionalTrimmed(z.string().url()),
-    smtpHost: optionalTrimmed(z.string().min(1).max(255)),
-    smtpPort: optionalPort,
-    smtpSecure: optionalBoolean,
-    smtpUser: optionalTrimmed(z.string().min(1).max(255)),
-    smtpPass: optionalTrimmed(z.string().min(1)),
-    smtpFromEmail: optionalTrimmed(z.string().email()),
-    smtpFromName: optionalTrimmed(z.string().min(1).max(255)),
-    logoUrl: optionalTrimmed(z.string().url()),
-    logoFile: logoFileSchema.optional(),
+    databaseUrl: z.string().trim().min(1),
+    databaseUser: z.string().trim().min(1),
+    databasePassword: z.string().min(1),
+    smtpHost: z.string().trim().min(1),
+    smtpPort: z
+      .union([z.string(), z.number()])
+      .transform((value) => normalizePort(value))
+      .refine((value) => Number.isInteger(value) && value > 0 && value <= 65535, {
+        message: 'SMTP port must be between 1 and 65535.',
+      }),
+    smtpUser: z.string().trim().min(1),
+    smtpPassword: z.string().min(1),
+    defaultFromEmail: z.string().trim().email(),
+    appDisplayName: z.string().trim().min(1),
+    logoUrl: z
+      .string()
+      .trim()
+      .url()
+      .refine((value) => /^https?:/i.test(value), {
+        message: 'Logo URL must use http or https.',
+      })
+      .optional(),
+    logoFile: z
+      .object({
+        name: z.string().trim().min(1),
+        type: z.string().trim().optional(),
+        size: z.number().int().nonnegative(),
+        data: z.string().min(1),
+        encoding: z.string().trim().optional(),
+      })
+      .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    const hasUrl = typeof value.logoUrl === 'string' && value.logoUrl.length > 0;
+    const hasFile = value.logoFile && typeof value.logoFile === 'object';
+
+    if (!hasUrl && !hasFile) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['logoFile'],
+        message: 'Provide a logo URL or upload a file.',
+      });
+    }
+
+    if (hasFile) {
+      const file = value.logoFile;
+      if (file.size <= 0 || file.size > LOGO_MAX_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'size'],
+          message: 'Logo uploads must be 5 MB or smaller.',
+        });
+      }
+
+      if (file.encoding && file.encoding.toLowerCase() !== 'base64') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'encoding'],
+          message: 'Unsupported logo encoding. Expected base64.',
+        });
+      }
+
+      if (typeof file.data !== 'string' || file.data.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logoFile', 'data'],
+          message: 'Logo file data is required.',
+        });
+      } else {
+        const normalized = file.data.replace(/\s+/g, '');
+        try {
+          const buffer = Buffer.from(normalized, 'base64');
+          if (!buffer || buffer.length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['logoFile', 'data'],
+              message: 'Logo file data is not valid base64.',
+            });
+          }
+        } catch (err) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['logoFile', 'data'],
+            message: `Logo file data is invalid: ${err.message || 'unable to decode'}.`,
+          });
+        }
+      }
+    }
+  });
 
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
 router.post('/run', validate({ body: installSchema }), controller.runInstall);
