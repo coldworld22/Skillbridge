@@ -41,12 +41,12 @@ load_env_file() {
 }
 
 run_compose() {
-  if command -v docker-compose >/dev/null 2>&1; then
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    docker compose "$@"
+  elif command -v docker-compose >/dev/null 2>&1; then
     DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-0} \
       COMPOSE_DOCKER_CLI_BUILD=${COMPOSE_DOCKER_CLI_BUILD:-0} \
       docker-compose "$@"
-  elif command -v docker >/dev/null 2>&1; then
-    docker compose "$@"
   else
     echo "Docker is required but not installed." >&2
     return 1
