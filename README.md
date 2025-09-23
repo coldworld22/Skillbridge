@@ -44,6 +44,16 @@ Because the API requires authentication, an administrator must be logged in befo
 - **Installation via API is disabled** – ensure `INSTALL_API_ENABLED=true`.
 - **Unauthorized** – log in with an admin account before accessing `/install`.
 
+When Step&nbsp;2 (“Configuration”) becomes available, gather the following values before running the installer:
+
+- PostgreSQL connection URL, database user, and password.
+- SMTP host, port, username, and password for transactional email.
+- The default “from” email address and public-facing application name.
+- A logo to brand the UI (upload a PNG/JPG/SVG up to 5&nbsp;MB or provide an HTTPS logo URL).
+- The email and password for the first administrator.
+
+The installer writes these values to `backend/.env`, stores the logo under `backend/uploads/app/`, seeds branding/email settings in the database, and then provisions the admin account.
+
 ## Quick start
 
 Install the project dependencies:
@@ -158,6 +168,23 @@ For automated production setup run the installation wizard from the project root
 ```
 
 The script prompts for the environment and, in production mode, your domain name before configuring Nginx and requesting Let's Encrypt certificates. To supply values non-interactively use `./install.sh production yourdomain.com`.
+
+When running the script non-interactively, export the configuration values that power the installer beforehand:
+
+```bash
+export DATABASE_URL=postgres://user:password@db-host:5432/skillbridge
+export DATABASE_USER=user
+export DATABASE_PASSWORD=password
+export SMTP_HOST=smtp.example.com
+export SMTP_PORT=587
+export SMTP_USER=mailer
+export SMTP_PASS=mailer-password
+export DEFAULT_FROM_EMAIL=notifications@example.com
+export APP_DISPLAY_NAME="SkillBridge"
+./install.sh production yourdomain.com
+```
+
+Optional logo variables include `INSTALL_LOGO_URL` for remote assets or `INSTALL_LOGO_FILE_NAME`, `INSTALL_LOGO_FILE_TYPE`, `INSTALL_LOGO_FILE_SIZE`, and `INSTALL_LOGO_FILE_DATA` (base64) for inline uploads. The script applies all settings before it provisions the administrator account.
 
 New users can follow the [Student Registration Guide](docs/student-registration-guide.md) to learn how to sign up and enroll in classes.
 If Google sign-in fails with `redirect_uri_mismatch`, see [docs/social-login-setup.md](docs/social-login-setup.md) for the required OAuth callback URL.
