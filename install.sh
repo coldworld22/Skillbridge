@@ -40,6 +40,32 @@ load_env_file() {
   fi
 }
 
+url_encode() {
+  node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
+}
+
+derive_postgres_url() {
+  local user="${POSTGRES_USER:-${DATABASE_USER:-}}"
+  local password="${POSTGRES_PASSWORD:-${DATABASE_PASSWORD:-}}"
+  local database="${POSTGRES_DB:-${DATABASE_NAME:-}}"
+  local host="${DATABASE_HOST:-${POSTGRES_HOST:-localhost}}"
+  local port="${DATABASE_PORT:-${POSTGRES_PORT:-5432}}"
+
+  if [[ -z "$user" || -z "$password" || -z "$database" ]]; then
+    return 1
+  fi
+
+  local encoded_user
+  local encoded_password
+  local encoded_db
+  encoded_user=$(url_encode "$user")
+  encoded_password=$(url_encode "$password")
+  encoded_db=$(url_encode "$database")
+
+  printf 'postgres://%s:%s@%s:%s/%s' "$encoded_user" "$encoded_password" "$host" "$port" "$encoded_db"
+  return 0
+}
+
 run_compose() {
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     docker compose "$@"
@@ -156,6 +182,36 @@ if [[ -z "$ADMIN_PASSWORD" ]]; then
 fi
 
 for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS DEFAULT_FROM_EMAIL APP_DISPLAY_NAME; do
+  if [[ -z "${!required-}" ]]; then
+    case "$required" in
+      DATABASE_URL)
+        if [[ -n "${POSTGRES_URL:-}" ]]; then
+          export DATABASE_URL="$POSTGRES_URL"
+          if [[ -z "${PRODUCTION_DATABASE_URL:-}" ]]; then
+            export PRODUCTION_DATABASE_URL="$DATABASE_URL"
+          fi
+        else
+          if derived_url=$(derive_postgres_url); then
+            export DATABASE_URL="$derived_url"
+            if [[ -z "${PRODUCTION_DATABASE_URL:-}" ]]; then
+              export PRODUCTION_DATABASE_URL="$derived_url"
+            fi
+          fi
+        fi
+        ;;
+      DATABASE_USER)
+        if [[ -n "${POSTGRES_USER:-}" ]]; then
+          export DATABASE_USER="$POSTGRES_USER"
+        fi
+        ;;
+      DATABASE_PASSWORD)
+        if [[ -n "${POSTGRES_PASSWORD:-}" ]]; then
+          export DATABASE_PASSWORD="$POSTGRES_PASSWORD"
+        fi
+        ;;
+    esac
+  fi
+
   require_env_var "$required"
 done
 
