@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z, ZodError } from "zod";
@@ -28,7 +29,7 @@ import {
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
   FaCheck
 } from "react-icons/fa";
-import Cropper from "react-easy-crop";
+const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 
 export const studentProfileSchema = z.object({
