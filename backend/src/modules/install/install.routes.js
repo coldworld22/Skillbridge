@@ -1,9 +1,11 @@
 const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
+const { hasExistingAdmin } = require('./install.helpers');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { z } = require('zod');
+const userModel = require('../users/user.model');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
@@ -67,13 +69,16 @@ const enforceInstallerGuard = async (req, res, next) => {
         ? process.env.INSTALL_SETUP_SECRET.trim()
         : '';
     const adminExists = await determineAdminPresence();
+    let secretValid = setupSecret.length === 0;
 
     if (setupSecret.length > 0) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
 
-      if (providedSecret !== setupSecret) {
+      secretValid = constantTimeEquals(providedSecret, setupSecret);
+
+      if (!secretValid) {
         return res.status(403).json({
           code: 'INSTALL_LOCKED',
           message: 'Installer locked. Provide a valid setup secret.',
@@ -81,10 +86,12 @@ const enforceInstallerGuard = async (req, res, next) => {
       }
     }
 
-    const requireAuth = adminExists;
-
-    if (secretValid) {
+    if (!adminExists) {
       return next();
+    }
+
+    if (!secretValid) {
+      return respondInstallerLocked(res);
     }
 
     const adminTokenPresent = hasAdminToken(req);

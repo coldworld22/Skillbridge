@@ -71,10 +71,27 @@ describe('/api/install/prereqs', () => {
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({
-      message: 'Installer locked',
+      message: 'Installer locked. Provide a valid setup secret.',
       code: 'INSTALL_LOCKED',
     });
     expect(execFile).not.toHaveBeenCalled();
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+    expect(mockIsAdmin).not.toHaveBeenCalled();
+  });
+  it('allows access when no setup secret is configured and no admin exists', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    mockFindAdmins.mockResolvedValue([]);
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
+    });
+    expect(execFile).toHaveBeenCalled();
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
@@ -268,9 +285,9 @@ describe('/api/install/run', () => {
       .post('/api/install/run')
       .send({ adminEmail: 'admin@example.com', adminPassword: 'password123' });
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
     expect(execFile).not.toHaveBeenCalled();
-    expect(mockVerifyToken).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 
@@ -324,5 +341,24 @@ describe('/api/install/run', () => {
       dockerCompose: true,
       git: true,
     });
+  });
+
+  it('allows installation when no setup secret is configured and no admin exists', async () => {
+    process.env.INSTALL_API_ENABLED = 'true';
+    mockFindAdmins.mockResolvedValue([]);
+    execFile.mockImplementationOnce((_script, _options, cb) => cb(null, '', ''));
+
+    const res = await request(app)
+      .post('/api/install/run')
+      .send({
+        adminEmail: 'admin@example.com',
+        adminPassword: 'password123',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, output: '' });
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+    expect(mockIsAdmin).not.toHaveBeenCalled();
   });
 });
