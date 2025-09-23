@@ -162,7 +162,7 @@ exports.runInstall = async (req, res) => {
     });
 
     const existingAppSettings = (await appConfigService.getSettings()) || {};
-    const existingLogoUrl = existingAppSettings.logo_url;
+    const previousLogoUrl = existingAppSettings.logo_url;
     const nextAppSettings = { ...existingAppSettings };
     if (appName) {
       nextAppSettings.appName = appName;
@@ -180,14 +180,19 @@ exports.runInstall = async (req, res) => {
       nextAppSettings.logo_url = logoUrl;
     }
     await appConfigService.updateSettings(nextAppSettings);
-
-    const nextLogoUrl = nextAppSettings.logo_url;
-    const isDifferentLogo = existingLogoUrl && existingLogoUrl !== nextLogoUrl;
-    const wasLocalUpload = typeof existingLogoUrl === 'string' && existingLogoUrl.startsWith('/uploads/app/');
-    if (isDifferentLogo && wasLocalUpload) {
-      const relativePath = existingLogoUrl.replace(/^\/+/, '');
-      const absolutePath = path.join(path.resolve(__dirname, '../../..'), relativePath);
-      await removeFileIfExists(absolutePath);
+    const newLogoUrl = nextAppSettings.logo_url;
+    const storedLogoChanged =
+      typeof previousLogoUrl === 'string' &&
+      previousLogoUrl.length > 0 &&
+      previousLogoUrl !== newLogoUrl;
+    if (storedLogoChanged && previousLogoUrl.startsWith('/uploads/app/')) {
+      const sanitizedPreviousLogoPath = previousLogoUrl.replace(/^\/+/, '');
+      const previousLogoAbsolute = path.join(
+        __dirname,
+        '../../../',
+        sanitizedPreviousLogoPath
+      );
+      await removeFileIfExists(previousLogoAbsolute);
     }
 
     const existingEmailSettings = (await emailConfigService.getSettings()) || {};
