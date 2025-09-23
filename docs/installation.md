@@ -30,6 +30,32 @@ For deployments, Docker Compose additionally reads `backend/.env.production`.
 Copy `backend/.env.production.example` to `backend/.env.production` and fill in
 production database credentials and JWT secrets.
 
+Set the display name that should appear in installer prompts and outbound
+emails so the branding check passes:
+
+```
+APP_NAME=SkillBridge
+```
+
+If you plan to disable transactional email during setup, set
+`DISABLE_EMAILS=true`. Otherwise, provide SMTP credentials so the installer can
+verify connectivity up front:
+
+```
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+```
+
+Create the uploads directory that stores logos and favicons and ensure it is
+writable by the backend service user:
+
+```bash
+mkdir -p backend/uploads/app
+```
+
 Edit `backend/.env` and provide your secrets. `FRONTEND_URL` must match the
 exact origin (scheme, host, and port) where the frontend will run to avoid
 CORS errors. Separate multiple origins with commas, for example:
@@ -195,6 +221,12 @@ location ^~ /install/ {
 3. Rebuild and start the containers if they are running.
 4. Log in with an administrator account.
 5. Visit `http://localhost:5002/install` (or your domain's `/install`) and verify the page lists the prerequisite checks.
+
+   The prerequisite card now verifies that PostgreSQL is reachable using the
+   credentials in `.env`, confirms SMTP settings (or acknowledges that
+   `DISABLE_EMAILS=true` is set), checks that `APP_NAME` is defined, and ensures
+   `backend/uploads/app` is writable for logo uploads. Address any failures the
+   installer reports before continuing.
 
 Whether you run SkillBridge directly from the monorepo or from the packaged
 container image, the backend automatically serves the installer assets. During
