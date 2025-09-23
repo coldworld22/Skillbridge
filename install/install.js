@@ -3,6 +3,7 @@ const STEP_PROGRESS = {
   config: 55,
   install: 80,
 };
+const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 const FRIENDLY_LABELS = {
   node: 'Node.js',
   npm: 'npm',
@@ -83,6 +84,20 @@ function getCsrfToken() {
   return getCookie('csrfToken');
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!(file instanceof File)) {
+      resolve('');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progressBar');
   const errorBox = document.getElementById('errorBox');
@@ -102,6 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const completionMessage = document.getElementById('completionMessage');
   const completionNextSteps = document.getElementById('completionNextSteps');
   const backToConfigBtn = document.getElementById('backToConfigBtn');
+  const logoFileInput = document.getElementById('logoFile');
+  const logoFileLabel = document.getElementById('logoFileLabel');
+
+  if (logoFileInput && logoFileLabel) {
+    const defaultLabel = logoFileLabel.textContent || 'Choose an image to upload';
+    logoFileInput.dataset.defaultLabel = defaultLabel;
+    const updateLogoLabel = () => {
+      const file = logoFileInput.files && logoFileInput.files[0];
+      if (file && file.name) {
+        logoFileLabel.textContent = file.name;
+      } else {
+        logoFileLabel.textContent = defaultLabel;
+      }
+    };
+    logoFileInput.addEventListener('change', updateLogoLabel);
+    updateLogoLabel();
+  }
 
   function setProgress(percent) {
     if (!progressBar) return;
@@ -276,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
       requirements = payload.requirements.map((req, index) => {
         const id = req?.id || req?.key || req?.name || `requirement-${index}`;
         const label = req?.label || req?.name || FRIENDLY_LABELS[id] || formatKey(id);
+        const rawStatus = typeof req?.status === 'string' ? req.status.toLowerCase() : '';
         const value = req?.ok ?? req?.passed ?? req?.status ?? req?.value ?? req?.isMet ?? false;
         const passed =
           typeof value === 'boolean'
@@ -284,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
               ? ['ok', 'pass', 'passed', 'true', 'ready'].includes(value.toLowerCase())
               : Boolean(value);
         const details = req?.details || req?.message || req?.hint || '';
-        return { id, label, passed, details };
+        const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+        return { id, label, passed, details, status };
       });
     } else {
       const ignoreKeys = new Set(['ok', 'summary', 'message', 'output', 'requirements']);
@@ -294,31 +328,41 @@ document.addEventListener('DOMContentLoaded', () => {
           const label = FRIENDLY_LABELS[key] || formatKey(key);
           let passed = false;
           let details = '';
+          let rawStatus = typeof value?.status === 'string' ? value.status.toLowerCase() : '';
           if (typeof value === 'boolean') {
             passed = value;
+            rawStatus = value ? 'pass' : 'fail';
           } else if (typeof value === 'string') {
             const lowered = value.toLowerCase();
             passed = ['ok', 'pass', 'passed', 'true', 'ready', 'success'].includes(lowered);
             if (!passed && lowered.length) {
               details = value;
             }
+            rawStatus = lowered;
           } else if (typeof value === 'number') {
             passed = value > 0;
+            rawStatus = passed ? 'pass' : 'fail';
           } else if (typeof value === 'object') {
             if (typeof value.ok === 'boolean') {
               passed = value.ok;
+              rawStatus = value.ok ? 'pass' : rawStatus;
             } else if (typeof value.passed === 'boolean') {
               passed = value.passed;
+              rawStatus = value.passed ? 'pass' : rawStatus;
             } else if (typeof value.status === 'string') {
               passed = ['ok', 'pass', 'passed', 'ready', 'success'].includes(value.status.toLowerCase());
+              rawStatus = value.status.toLowerCase();
             } else if (typeof value.value === 'boolean') {
               passed = value.value;
+              rawStatus = value.value ? 'pass' : rawStatus;
             } else if (typeof value.isMet === 'boolean') {
               passed = value.isMet;
+              rawStatus = value.isMet ? 'pass' : rawStatus;
             }
             details = value.message || value.details || value.hint || '';
           }
-          return { id: key, label, passed, details };
+          const status = rawStatus === 'warn' ? 'warn' : passed ? 'pass' : 'fail';
+          return { id: key, label, passed, details, status };
         });
     }
 
@@ -365,15 +409,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     requirements.forEach((req) => {
+      const normalizedStatus = req.status || (req.passed ? 'pass' : 'fail');
+      const statusStyles = {
+        pass: {
+          wrapper: 'border-green-200 bg-green-50 text-green-800',
+          icon: 'text-green-600',
+          symbol: '✓',
+        },
+        warn: {
+          wrapper: 'border-amber-200 bg-amber-50 text-amber-800',
+          icon: 'text-amber-500',
+          symbol: '⚠',
+        },
+        fail: {
+          wrapper: 'border-red-200 bg-red-50 text-red-700',
+          icon: 'text-red-600',
+          symbol: '!',
+        },
+      };
+      const style = statusStyles[normalizedStatus] || statusStyles[req.passed ? 'pass' : 'fail'];
+
       const wrapper = document.createElement('div');
       wrapper.className = [
         'flex items-start gap-3 rounded border p-3 text-sm transition-colors duration-300',
-        req.passed ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-700',
+        style.wrapper,
       ].join(' ');
 
       const icon = document.createElement('span');
-      icon.className = `mt-0.5 text-base ${req.passed ? 'text-green-600' : 'text-red-600'}`;
-      icon.textContent = req.passed ? '✓' : '!';
+      icon.className = `mt-0.5 text-base ${style.icon}`;
+      icon.textContent = style.symbol;
       icon.setAttribute('aria-hidden', 'true');
 
       const content = document.createElement('div');
@@ -417,11 +481,14 @@ document.addEventListener('DOMContentLoaded', () => {
       : typeof data?.nextSteps === 'string'
         ? [data.nextSteps]
         : [];
+    const displayName = submittedConfig?.appName?.trim()
+      ? submittedConfig.appName.trim()
+      : 'SkillBridge';
 
     if (completionMessage) {
       completionMessage.className = 'mt-1 text-green-700';
       completionMessage.textContent =
-        messageFromApi || 'SkillBridge is installed and ready to go.';
+        messageFromApi || `${displayName} is installed and ready to go.`;
     }
 
     if (completionNextSteps) {
@@ -656,7 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     }
-
     const payload = {
       adminEmail: configuration.adminEmail,
       adminPassword: configuration.adminPassword,
@@ -690,13 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStep('install');
     setProgress(90);
 
-    if (installBtn) installBtn.disabled = true;
-
     if (installOutput) {
       installOutput.classList.remove('hidden', 'text-green-700', 'text-red-700');
       installOutput.classList.add('text-gray-700');
       installOutput.textContent = 'Running installation with your configuration...';
-    }
 
     try {
       const csrfToken = getCookie('csrfToken');
