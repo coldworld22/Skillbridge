@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const router = require('express').Router();
 const controller = require('./install.controller');
 const { hasExistingAdmin } = require('./install.helpers');
+const userModel = require('../users/user.model');
 const { verifyToken, isAdmin } = require('../../middleware/auth/authMiddleware');
 const validate = require('../../middleware/validate');
 const { hasExistingAdmin } = require('./install.helpers');
@@ -62,8 +63,8 @@ const constantTimeEquals = (a, b) => {
   return hashesMatch && lengthsMatch;
 };
 
-const respondInstallerLocked = (res) =>
-  res.status(403).json({ message: 'Installer locked', code: 'INSTALL_LOCKED' });
+const respondInstallerLocked = (res, message = 'Installer locked') =>
+  res.status(403).json({ message, code: 'INSTALL_LOCKED' });
 
 const hasAdminToken = (req) =>
   typeof req.headers.authorization === 'string' || Boolean(req.cookies?.token);
@@ -79,55 +80,31 @@ const enforceInstallerGuard = async (req, res, next) => {
       typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
     const secretValid = secretRequired && constantTimeEquals(providedSecret, setupSecret);
     const adminExists = await determineAdminPresence();
-
-    let secretProvided = false;
+    const secretConfigured = setupSecret.length > 0;
     let secretValid = false;
 
-    if (setupSecret.length > 0) {
+    if (secretConfigured) {
       const providedSecretHeader = req.get('X-Install-Setup-Secret');
       const providedSecret =
         typeof providedSecretHeader === 'string' ? providedSecretHeader.trim() : '';
 
-      secretProvided = providedSecret.length > 0;
-
-      if (secretProvided) {
-        secretValid = constantTimeEquals(providedSecret, setupSecret);
-      }
-
-      if (secretProvided && !secretValid) {
-        return res.status(403).json({
-          code: 'INSTALL_LOCKED',
-          message: 'Installer locked. Provide a valid setup secret.',
-        });
-      }
-      return next();
+      secretValid = constantTimeEquals(providedSecret, setupSecret);
     }
 
-    if (setupSecret.length > 0 && !secretProvided) {
-      return res.status(403).json({
-        code: 'INSTALL_LOCKED',
-        message: 'Installer locked. Provide a valid setup secret.',
-      });
-    }
+    const requireAuth = adminExists && !secretValid;
 
-    if (!adminExists) {
-      return next();
-    }
-
-    if (secretValid) {
+    if (!requireAuth) {
       return next();
     }
 
     const adminTokenPresent = hasAdminToken(req);
 
     if (!adminTokenPresent) {
-      if (secretRequired) {
-        return res.status(403).json({
-          code: 'INSTALL_LOCKED',
-          message: 'Installer locked. Provide a valid setup secret.',
-        });
-      }
-      return respondInstallerLocked(res);
+      await determineAdminPresence();
+      const message = secretConfigured
+        ? 'Installer locked. Provide a valid setup secret.'
+        : 'Installer locked';
+      return respondInstallerLocked(res, message);
     }
 
     return verifyToken(req, res, (err) => {

@@ -74,12 +74,16 @@ afterEach(() => {
   delete process.env.INSTALL_API_ENABLED;
   delete process.env.INSTALL_SETUP_SECRET;
   jest.clearAllMocks();
+  mockHasExistingAdmin.mockReset();
+  mockMarkAdminExists.mockReset();
+  mockRefreshAdminPresence.mockReset();
 });
 
 describe('/api/install/prereqs', () => {
   it('returns 403 when INSTALL_API_ENABLED is false', async () => {
     process.env.INSTALL_API_ENABLED = 'false';
     mockHasExistingAdmin.mockResolvedValue(false);
+    mockFindAdmins.mockResolvedValue([]);
 
     const res = await request(app).get('/api/install/prereqs');
 
@@ -111,6 +115,7 @@ describe('/api/install/prereqs', () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
     mockHasExistingAdmin.mockResolvedValue(true);
+    mockFindAdmins.mockResolvedValue([{ id: 1 }]);
 
     const res = await request(app).get('/api/install/prereqs');
 
@@ -126,7 +131,8 @@ describe('/api/install/prereqs', () => {
   it('allows access with a valid setup secret', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
+    mockHasExistingAdmin.mockResolvedValue(true);
+    mockFindAdmins.mockResolvedValue([{ id: 1 }]);
 
     const res = await request(app)
       .get('/api/install/prereqs')
@@ -147,6 +153,7 @@ describe('/api/install/prereqs', () => {
   it('returns 200 for admin when flag is true', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     mockHasExistingAdmin.mockResolvedValue(true);
+    mockFindAdmins.mockResolvedValue([{ id: 1 }]);
     mockVerifyToken.mockImplementation((req, _res, next) => {
       req.user = { id: 1, roles: ['admin'], role: 'admin' };
       next();
@@ -169,19 +176,22 @@ describe('/api/install/prereqs', () => {
     expect(mockIsAdmin).toHaveBeenCalledTimes(1);
   });
 
-  it('returns 403 when a setup secret is configured but missing', async () => {
+  it('allows unauthenticated access when no admin exists (first-run)', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
     mockHasExistingAdmin.mockResolvedValue(false);
+    mockFindAdmins.mockResolvedValue([]);
 
     const res = await request(app).get('/api/install/prereqs');
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      code: 'INSTALL_LOCKED',
-      message: 'Installer locked. Provide a valid setup secret.',
+      node: true,
+      docker: true,
+      dockerCompose: true,
+      git: true,
     });
-    expect(execFile).not.toHaveBeenCalled();
+    expect(execFile).toHaveBeenCalled();
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
   });
@@ -191,6 +201,9 @@ describe('/api/install/run', () => {
   it('passes credentials to the installer environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
+    mockHasExistingAdmin.mockResolvedValue(true);
+    const adminEmail = 'admin@example.com';
+    const adminPassword = 'super-secret';
     const envKey = 'INSTALLER_EXISTING_ENV';
     const originalEnvValue = process.env[envKey];
     process.env[envKey] = 'keep-me';
@@ -245,7 +258,7 @@ describe('/api/install/run', () => {
   it('rejects installation when setup secret is missing', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
+    mockHasExistingAdmin.mockResolvedValue(true);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -262,8 +275,7 @@ describe('/api/install/run', () => {
   it('rejects installation when setup secret is incorrect', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
-
+    mockHasExistingAdmin.mockResolvedValue(true);
     const res = await request(app)
       .post('/api/install/run')
       .set('X-Install-Setup-Secret', 'wrong-secret')
@@ -280,7 +292,7 @@ describe('/api/install/run', () => {
   it('allows installation when setup secret is correct', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'top-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
+    mockHasExistingAdmin.mockResolvedValue(true);
 
     execFile.mockImplementationOnce((_script, _options, cb) => cb(null, '', ''));
 
@@ -319,12 +331,17 @@ describe('/api/install/run', () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
     mockHasExistingAdmin.mockResolvedValue(true);
+    mockFindAdmins.mockResolvedValue([{ id: 1 }]);
 
     const res = await request(app)
       .post('/api/install/run')
       .send(buildPayload({ adminPassword: 'password123' }));
 
     expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      code: 'INSTALL_LOCKED',
+      message: 'Installer locked. Provide a valid setup secret.',
+    });
     expect(execFile).not.toHaveBeenCalled();
     expect(mockVerifyToken).not.toHaveBeenCalled();
     expect(mockIsAdmin).not.toHaveBeenCalled();
@@ -353,7 +370,8 @@ describe('/api/install/run', () => {
   it('allows POST attempts when the correct setup secret is provided', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 's3cret';
-    mockHasExistingAdmin.mockResolvedValue(false);
+    mockHasExistingAdmin.mockResolvedValue(true);
+    mockFindAdmins.mockResolvedValue([{ id: 1 }]);
 
     const res = await request(app)
       .post('/api/install/run')
@@ -369,7 +387,7 @@ describe('/api/install/run', () => {
   it('passes sanitized credentials to the install script via environment', async () => {
     process.env.INSTALL_API_ENABLED = 'true';
     process.env.INSTALL_SETUP_SECRET = 'setup-secret';
-    mockHasExistingAdmin.mockResolvedValue(false);
+    mockHasExistingAdmin.mockResolvedValue(true);
 
     const res = await request(app)
       .post('/api/install/run')
