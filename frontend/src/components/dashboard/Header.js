@@ -67,7 +67,9 @@ export default function Header() {
   const router = useRouter();
 
   const notificationFallbackMessage = t("notification_missing_message", {
-    defaultValue: t("notification", { defaultValue: "Notification" }),
+    defaultValue: t("notification_message_unavailable", {
+      defaultValue: "Notification message unavailable",
+    }),
   });
 
   const profileLink =
@@ -321,9 +323,7 @@ export default function Header() {
                     const message =
                       typeof n?.message === "string" && n.message.trim().length > 0
                         ? n.message
-                        : t("notification_message_unavailable", {
-                            defaultValue: "Notification message unavailable",
-                          });
+                        : notificationFallbackMessage;
 
                     return (
                       <li

@@ -31,20 +31,15 @@ const useNotificationStore = create((set, get) => ({
         const diff = unread - prevUnread;
         if (diff === 1) {
           const note = filtered.find((n) => !n.read);
+          const fallbackMessage = i18next.t("new_notification_available", {
+            defaultValue: DEFAULT_LINK_TEXT,
+          });
           const message =
             typeof note?.message === "string" && note.message.trim().length > 0
               ? note.message
-              : null;
+              : fallbackMessage;
 
-          if (message) {
-            toast.info(<LinkText text={message} />);
-          } else {
-            toast.info(
-              i18next.t("new_notification_available", {
-                defaultValue: "You have a new notification",
-              }),
-            );
-          }
+          toast.info(<LinkText text={message} />);
         } else {
           toast.info(i18next.t("you_have_new_notifications", { count: diff }));
         }
