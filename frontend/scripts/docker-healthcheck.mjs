@@ -12,6 +12,8 @@ if (!Number.isFinite(port) || port <= 0) {
   process.exit(1);
 }
 
+const hostHeader = port === 80 || port === 443 ? host : `${host}:${port}`;
+
 const requestOptions = {
   host,
   port,
@@ -20,6 +22,7 @@ const requestOptions = {
   headers: {
     Accept: 'application/json',
     'User-Agent': 'skillbridge-frontend-healthcheck',
+    Host: hostHeader,
   },
   timeout: timeoutMs,
 };

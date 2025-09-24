@@ -14,6 +14,7 @@ function parsePositiveInt(value, fallback) {
 
 const host = process.env.HEALTHCHECK_HOST || DEFAULT_HOST;
 const port = parsePositiveInt(process.env.PORT, 3000);
+const hostHeader = port === 80 || port === 443 ? host : `${host}:${port}`;
 const protocol = (process.env.HEALTHCHECK_PROTOCOL || DEFAULT_PROTOCOL).toLowerCase();
 const path = process.env.HEALTHCHECK_PATH || DEFAULT_PATH;
 const timeout = parsePositiveInt(process.env.HEALTHCHECK_TIMEOUT_MS, DEFAULT_TIMEOUT_MS);
@@ -40,7 +41,7 @@ const request = client.get(
     headers: {
       'User-Agent': 'skillbridge-frontend-healthcheck',
       Accept: 'application/json',
-      Host: host,
+      Host: hostHeader,
     },
   },
   (response) => {
