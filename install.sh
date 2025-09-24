@@ -210,78 +210,43 @@ docker_available() {
   return 1
 }
 
-require_command node "Node.js"
-require_command npm "npm"
-ensure_node_version
+install_backend_dependencies() {
+  local skip="${SKIP_BACKEND_NPM_INSTALL:-false}"
+  case "$skip" in
+    1|true|TRUE|yes|YES|on|ON)
+      echo "Skipping backend dependency installation (SKIP_BACKEND_NPM_INSTALL=$skip)."
+      return 0
+      ;;
+  esac
 
-ROOT_ENV_EXAMPLE="$REPO_ROOT/.env.example"
-ROOT_ENV_FILE="$REPO_ROOT/.env"
-BACKEND_ENV_EXAMPLE="$REPO_ROOT/backend/.env.example"
-BACKEND_ENV_FILE="$REPO_ROOT/backend/.env"
-BACKEND_PROD_ENV_EXAMPLE="$REPO_ROOT/backend/.env.production.example"
-BACKEND_PROD_ENV_FILE="$REPO_ROOT/backend/.env.production"
-FRONTEND_ENV_LOCAL_EXAMPLE="$REPO_ROOT/frontend/.env.local.example"
-FRONTEND_ENV_LOCAL_FILE="$REPO_ROOT/frontend/.env.local"
-PREREQ_SCRIPT="$REPO_ROOT/scripts/check_prereqs.sh"
-UPLOAD_DIR="$REPO_ROOT/backend/uploads/app"
-
-echo "Ensuring environment templates are in place..."
-ensure_env_file "$ROOT_ENV_EXAMPLE" "$ROOT_ENV_FILE"
-ensure_env_file "$BACKEND_ENV_EXAMPLE" "$BACKEND_ENV_FILE"
-ensure_env_file "$BACKEND_PROD_ENV_EXAMPLE" "$BACKEND_PROD_ENV_FILE"
-ensure_env_file "$FRONTEND_ENV_LOCAL_EXAMPLE" "$FRONTEND_ENV_LOCAL_FILE"
-
-echo "Loading environment configuration..."
-load_env_file "$ROOT_ENV_FILE"
-load_env_file "$BACKEND_ENV_FILE"
-
-if [[ -f "$BACKEND_PROD_ENV_FILE" ]]; then
-  load_env_file "$BACKEND_PROD_ENV_FILE"
-fi
-
-MODE=${MODE_ARG:-${MODE:-}}
-DOMAIN=${DOMAIN_ARG:-${DOMAIN:-}}
-ADMIN_EMAIL="${ADMIN_EMAIL:-}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
-ALLOW_PREREQ_FAILURES="${ALLOW_PREREQ_FAILURES:-false}"
-ALLOW_PREREQ_FAILURES=$(echo "$ALLOW_PREREQ_FAILURES" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-
-if [[ ! -d "$UPLOAD_DIR" ]]; then
-  echo "Creating uploads directory at $UPLOAD_DIR"
-  mkdir -p "$UPLOAD_DIR"
-fi
-
-if [[ -x "$PREREQ_SCRIPT" ]]; then
-  echo "Running prerequisite checks..."
-  if prereq_output="$("$PREREQ_SCRIPT")"; then
-    print_prereq_report "$prereq_output"
-  else
-    status=$?
-    print_prereq_report "$prereq_output"
-    if [[ "$ALLOW_PREREQ_FAILURES" =~ ^(true|1|yes|on)$ ]]; then
-      echo "Continuing despite prerequisite failures because ALLOW_PREREQ_FAILURES=$ALLOW_PREREQ_FAILURES."
-    elif [[ -t 0 ]]; then
-      read -rp "One or more prerequisites failed. Continue anyway? [y/N]: " response
-      case "$response" in
-        y|Y|yes|YES)
-          echo "Continuing despite prerequisite failures."
-          ;;
-        *)
-          echo "Aborting installation due to failed prerequisite checks." >&2
-          exit "$status"
-          ;;
-      esac
-    else
-      echo "Prerequisite checks failed and no interactive prompt available. Aborting." >&2
-      exit "$status"
-    fi
+  echo "Installing backend dependencies (npm install)..."
+  if ! npm --prefix "$REPO_ROOT/backend" install; then
+    echo "Failed to install backend dependencies." >&2
+    exit 1
   fi
-else
-  echo "Prerequisite script not found at $PREREQ_SCRIPT; skipping automated checks."
+}
+
+CLI_MODE=${1:-}
+CLI_DOMAIN=${2:-}
+
+ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend/.env.production"
+ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
+
+load_env_file "$REPO_ROOT/.env"
+
+UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
+if [[ ! -d "$UPLOADS_DIR" ]]; then
+  echo "Creating backend uploads directory at $UPLOADS_DIR"
+  mkdir -p "$UPLOADS_DIR"
 fi
 
-check_prerequisites
+MODE=${CLI_MODE:-${MODE:-}}
+
+load_env_file "$REPO_ROOT/backend/.env"
+
+DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -304,6 +269,11 @@ if [[ "$MODE" == "production" && -z "$DOMAIN" ]]; then
     echo "Domain is required for production" >&2
     exit 1
   fi
+fi
+
+if [[ "$MODE" == "production" ]]; then
+  load_env_file "$REPO_ROOT/backend/.env.production"
+  DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
 fi
 
 if [[ "$MODE" == "production" ]]; then
@@ -361,6 +331,10 @@ else
   echo "Skipping automatic startup of development services."
 fi
 
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
+
 if [[ -z "$ADMIN_EMAIL" ]]; then
   if [[ -t 0 ]]; then
     read -rp "Enter admin email: " ADMIN_EMAIL
@@ -413,6 +387,8 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
 
   require_env_var "$required"
 done
+
+install_backend_dependencies
 
 export \
   ADMIN_EMAIL \

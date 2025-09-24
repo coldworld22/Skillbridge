@@ -43,14 +43,20 @@ non-interactive use (for example in CI pipelines). Optional flags include:
 - `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
 - `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
   development mode if you prefer to start services yourself.
-- `ALLOW_PREREQ_FAILURES=true` &mdash; skip the interactive confirmation when
-  prerequisite checks fail and continue automatically.
+- `SKIP_BACKEND_NPM_INSTALL=true` &mdash; skip the automatic `npm --prefix backend install`
+  step when you manage dependencies separately.
 
 In production mode, the script ensures Docker services are running before it
 executes database migrations. In development mode it starts the compose stack in
 detached mode unless you opt out with `START_DEV_SERVICES=false`. Any migration
 or seeding errors halt the script before the admin user creation step so you can
 address the problem immediately.
+
+Before running migrations the script installs backend dependencies with
+`npm --prefix backend install` so the Node.js helper scripts are available and
+creates `backend/uploads/app/` if it is missing. Use
+`SKIP_BACKEND_NPM_INSTALL=true` if dependencies are already installed and you
+prefer to reuse them.
 
 ### Backend
 
@@ -280,7 +286,7 @@ location ^~ /install/ {
    - The default “from” email address used for outbound messages.
    - (Optional) Your Codecanyon purchase or subscription key so future updates can validate the license.
    - The public application display name.
-   - Either a logo image upload (PNG/JPG/SVG up to 5&nbsp;MB) or an HTTPS URL to an existing logo.
+   - Either a logo image upload (PNG/JPG/SVG up to 2&nbsp;MB) or an HTTPS URL to an existing logo.
    - The admin email and password for the first administrator.
 7. Run the installer to apply the configuration. The script updates `backend/.env`, writes the selected logo to `backend/uploads/app/`, seeds the branding/email settings in the database, and finally provisions the administrator account.
 

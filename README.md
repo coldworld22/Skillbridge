@@ -21,18 +21,7 @@ Ensure `bash`, `curl`, `docker`, and the Docker Compose V2 plugin (the `docker c
 curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/install.sh | bash
 ```
 
-The script now performs the following tasks:
-
-- Runs `scripts/check_prereqs.sh` and prints a human-readable summary of the results. If any requirement fails you can re-run with
-  `ALLOW_PREREQ_FAILURES=true` (or interactively confirm) to proceed anyway.
-- Copies `.env.example` files for the repository root, backend, backend production configuration, and `frontend/.env.local` when the
-  corresponding target file does not exist.
-- Loads the environment files so migrations, seeding, and helper scripts inherit the configuration you provide.
-- Ensures the backend uploads directory exists before branding assets are written to disk.
-- Builds and starts the Docker containers (unless `START_DEV_SERVICES=false`) and can seed the database for development setups when
-  `SEED_DB=true`.
-
-After it completes, the app is available at `http://localhost:3000`.
+The script validates prerequisites, copies example env files, installs backend npm dependencies, ensures the uploads directory exists, builds and starts the Docker containers, and can seed the database for development setups when `SEED_DB=true`. After it completes, the app is available at `http://localhost:3000`. Set `SKIP_BACKEND_NPM_INSTALL=true` to reuse preinstalled backend dependencies.
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
 ## Installer
@@ -61,7 +50,7 @@ When Step&nbsp;2 (“Configuration”) becomes available, gather the following v
 - SMTP host, port, username, and password for transactional email.
 - The default “from” email address and public-facing application name.
 - (Optional) Your Codecanyon purchase/subscription key for license verification.
-- A logo to brand the UI (upload a PNG/JPG/SVG up to 5&nbsp;MB or provide an HTTPS logo URL).
+- A logo to brand the UI (upload a PNG/JPG/SVG up to 2&nbsp;MB or provide an HTTPS logo URL).
 - The email and password for the first administrator.
 
 The installer writes these values to `backend/.env`, stores the logo under `backend/uploads/app/`, seeds branding/email settings in the database, and then provisions the admin account.
