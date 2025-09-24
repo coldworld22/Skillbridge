@@ -112,11 +112,43 @@ docker_available() {
   return 1
 }
 
-MODE=${1:-}
-DOMAIN=${2:-}
-ADMIN_EMAIL="${ADMIN_EMAIL:-}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
+install_backend_dependencies() {
+  local skip="${SKIP_BACKEND_NPM_INSTALL:-false}"
+  case "$skip" in
+    1|true|TRUE|yes|YES|on|ON)
+      echo "Skipping backend dependency installation (SKIP_BACKEND_NPM_INSTALL=$skip)."
+      return 0
+      ;;
+  esac
+
+  echo "Installing backend dependencies (npm install)..."
+  if ! npm --prefix "$REPO_ROOT/backend" install; then
+    echo "Failed to install backend dependencies." >&2
+    exit 1
+  fi
+}
+
+CLI_MODE=${1:-}
+CLI_DOMAIN=${2:-}
+
+ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend/.env.production"
+ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
+
+load_env_file "$REPO_ROOT/.env"
+
+UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
+if [[ ! -d "$UPLOADS_DIR" ]]; then
+  echo "Creating backend uploads directory at $UPLOADS_DIR"
+  mkdir -p "$UPLOADS_DIR"
+fi
+
+MODE=${CLI_MODE:-${MODE:-}}
+
+load_env_file "$REPO_ROOT/backend/.env"
+
+DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -139,6 +171,11 @@ if [[ "$MODE" == "production" && -z "$DOMAIN" ]]; then
     echo "Domain is required for production" >&2
     exit 1
   fi
+fi
+
+if [[ "$MODE" == "production" ]]; then
+  load_env_file "$REPO_ROOT/backend/.env.production"
+  DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
 fi
 
 if [[ "$MODE" == "production" ]]; then
@@ -179,6 +216,10 @@ elif [[ "$START_DEV_SERVICES" == "true" ]]; then
 else
   echo "Skipping automatic startup of development services."
 fi
+
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
 
 if [[ -z "$ADMIN_EMAIL" ]]; then
   if [[ -t 0 ]]; then
@@ -232,6 +273,8 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
 
   require_env_var "$required"
 done
+
+install_backend_dependencies
 
 export \
   ADMIN_EMAIL \
