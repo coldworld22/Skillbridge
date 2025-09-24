@@ -12,15 +12,58 @@ const emailConfigService = require('../emailConfig/emailConfig.service');
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
 
-const SCRIPTS = {
-  prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
-  install: path.resolve(__dirname, '../../../../install.sh'),
+const SCRIPT_CANDIDATES = {
+  prereqs: [
+    '../../../../scripts/check_prereqs.sh',
+    '../../../scripts/check_prereqs.sh',
+    path.join(process.cwd(), 'scripts/check_prereqs.sh'),
+  ],
+  install: [
+    '../../../../install.sh',
+    '../../../install.sh',
+    path.join(process.cwd(), 'install.sh'),
+  ],
+};
+
+const resolvedScriptCache = new Map();
+
+const resolveScriptPath = (scriptKey) => {
+  if (resolvedScriptCache.has(scriptKey)) {
+    return resolvedScriptCache.get(scriptKey);
+  }
+
+  const candidates = SCRIPT_CANDIDATES[scriptKey];
+  if (!Array.isArray(candidates) || !candidates.length) {
+    const error = new Error(`Unknown installer script: ${scriptKey}`);
+    error.code = 'SCRIPT_UNDEFINED';
+    throw error;
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const absolute = path.isAbsolute(candidate)
+      ? candidate
+      : path.resolve(__dirname, candidate);
+    try {
+      fs.accessSync(absolute, fs.constants.X_OK);
+      resolvedScriptCache.set(scriptKey, absolute);
+      return absolute;
+    } catch (_err) {
+      // try next candidate
+    }
+  }
+
+  resolvedScriptCache.set(scriptKey, null);
+  return null;
 };
 
 const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
-  const scriptPath = SCRIPTS[scriptKey];
+  const scriptPath = resolveScriptPath(scriptKey);
   if (!scriptPath) {
-    throw new Error(`Unknown installer script: ${scriptKey}`);
+    const error = new Error(`Installer script not found for key "${scriptKey}".`);
+    error.code = 'SCRIPT_NOT_FOUND';
+    error.scriptKey = scriptKey;
+    throw error;
   }
   const mergedEnv = { ...process.env, ...env };
   return execFileAsync(scriptPath, args, { env: mergedEnv, shell: false });
@@ -49,6 +92,13 @@ exports.checkPrereqs = async (req, res, next) => {
     const ok = typeof parsed.ok === 'boolean' ? parsed.ok : Boolean(parsed.allPassed);
     return res.status(200).json({ ...parsed, ok });
   } catch (error) {
+    if (error?.code === 'SCRIPT_NOT_FOUND') {
+      logger.error('Prerequisite script is missing', error);
+      return res.status(500).json({
+        ok: false,
+        message: 'Prerequisite checker is unavailable. Contact the system administrator.',
+      });
+    }
     const stdout = error.stdout || '';
     const stderr = error.stderr || '';
     logger.error('Prerequisite check failed', error);
@@ -294,6 +344,17 @@ exports.runInstall = async (req, res) => {
     await cleanupTempConfig();
     return res.status(ok ? 200 : 500).json({ ...parsed, ok });
   } catch (error) {
+    if (error?.code === 'SCRIPT_NOT_FOUND') {
+      logger.error('Installation script is missing', error);
+      await cleanupTempConfig();
+      if (uploadedLogoAbsolute) {
+        await removeFileIfExists(uploadedLogoAbsolute);
+      }
+      return res.status(500).json({
+        ok: false,
+        message: 'Installation script is unavailable. Contact the system administrator.',
+      });
+    }
     logger.error('Installation failed', error);
     const stdout = error.stdout || '';
     const stderr = error.stderr || '';

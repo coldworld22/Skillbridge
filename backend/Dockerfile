@@ -12,6 +12,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 # independently of the repository root.
 COPY backend/ ./
 COPY install ./install
+COPY install.sh ./install.sh
+COPY scripts/check_prereqs.sh ./scripts/check_prereqs.sh
 
 # Production stage
 FROM node:20-alpine
@@ -19,7 +21,7 @@ WORKDIR /app
 RUN apk add --no-cache curl netcat-openbsd postgresql-client su-exec && \
     (id -u node 2>/dev/null || adduser -S node)
 COPY --from=builder /app ./
-RUN chmod +x scripts/wait-for-db.sh scripts/docker-entrypoint.sh
+RUN chmod +x scripts/wait-for-db.sh scripts/docker-entrypoint.sh scripts/check_prereqs.sh install.sh
 EXPOSE 5002
 ENTRYPOINT ["./scripts/docker-entrypoint.sh"]
 CMD ["node", "src/server.js"]
