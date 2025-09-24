@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Router } = require('express');
 const { z } = require('zod');
+const config = require('../../config/env');
 const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
 const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');
@@ -48,7 +49,12 @@ const toBool = (value) => {
 };
 
 const requireInstallApiEnabled = (req, res, next) => {
-  if (toBool(process.env.INSTALL_API_ENABLED) || toBool(process.env.ENABLE_INSTALL)) {
+  if (
+    (typeof config.INSTALL_API_ENABLED === 'boolean' && config.INSTALL_API_ENABLED) ||
+    (typeof config.ENABLE_INSTALL === 'boolean' && config.ENABLE_INSTALL) ||
+    toBool(process.env.INSTALL_API_ENABLED) ||
+    toBool(process.env.ENABLE_INSTALL)
+  ) {
     return next();
   }
   return res.status(403).json({ message: 'Installer API disabled' });
