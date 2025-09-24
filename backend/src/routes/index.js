@@ -19,6 +19,7 @@ router.use('/api/admin/cache', require('./cache.routes'));
 router.use('/api/messages/config', require('../modules/messagesConfig/messagesConfig.routes'));
 router.use('/api/social-login/config', require('../modules/socialLoginConfig/socialLoginConfig.routes'));
 router.use('/api/app-config', require('../modules/appConfig/appConfig.routes'));
+router.use('/api/license', require('../modules/license/license.routes'));
 router.use('/api/third-party-config', require('../modules/thirdPartyConfig/thirdPartyConfig.routes'));
 router.use('/api/google-analytics', require('../modules/googleAnalytics/googleAnalytics.routes'));
 router.use('/api/adsense', require('../modules/adsense/adsense.routes'));
