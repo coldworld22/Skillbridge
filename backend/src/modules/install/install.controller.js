@@ -12,18 +12,48 @@ const emailConfigService = require('../emailConfig/emailConfig.service');
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
 
+const candidateScriptRoots = [
+  path.resolve(__dirname, '../../../../'),
+  path.resolve(__dirname, '../../../'),
+  process.cwd(),
+];
+
+const resolveInstallerAsset = (relativePath) => {
+  for (const rootDir of candidateScriptRoots) {
+    const candidate = path.resolve(rootDir, relativePath);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.resolve(__dirname, '../../../../', relativePath);
+};
+
 const SCRIPTS = {
-  prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
-  install: path.resolve(__dirname, '../../../../install.sh'),
+  prereqs: () => resolveInstallerAsset('scripts/check_prereqs.sh'),
+  install: () => resolveInstallerAsset('install.sh'),
 };
 
 const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
-  const scriptPath = SCRIPTS[scriptKey];
+  const scriptResolver = SCRIPTS[scriptKey];
+  const scriptPath = typeof scriptResolver === 'function' ? scriptResolver() : scriptResolver;
   if (!scriptPath) {
     throw new Error(`Unknown installer script: ${scriptKey}`);
   }
+  if (!fs.existsSync(scriptPath)) {
+    const error = new Error(`Installer script not found: ${scriptPath}`);
+    error.code = 'ENOENT';
+    error.installScriptKey = scriptKey;
+    error.installScriptPath = scriptPath;
+    throw error;
+  }
   const mergedEnv = { ...process.env, ...env };
-  return execFileAsync(scriptPath, args, { env: mergedEnv, shell: false });
+  try {
+    return await execFileAsync(scriptPath, args, { env: mergedEnv, shell: false });
+  } catch (error) {
+    error.installScriptKey = scriptKey;
+    error.installScriptPath = scriptPath;
+    throw error;
+  }
 };
 
 const parseInstallerOutput = (stdout, stderr) => {
@@ -52,6 +82,17 @@ exports.checkPrereqs = async (req, res, next) => {
     const stdout = error.stdout || '';
     const stderr = error.stderr || '';
     logger.error('Prerequisite check failed', error);
+    if (error?.code === 'ENOENT') {
+      const scriptPath = error.installScriptPath || error.path || 'installer script';
+      return res.status(500).json({
+        ok: false,
+        code: 'INSTALLER_SCRIPT_MISSING',
+        message: [
+          'Unable to execute prerequisite checker.',
+          `Ensure ${scriptPath} exists and that Bash is available in the environment.`,
+        ].join(' '),
+      });
+    }
     const payload = parseInstallerOutput(stdout, stderr);
     return res.status(500).json(payload);
   }
@@ -300,6 +341,17 @@ exports.runInstall = async (req, res) => {
     await cleanupTempConfig();
     if (uploadedLogoAbsolute) {
       await removeFileIfExists(uploadedLogoAbsolute);
+    }
+    if (error?.code === 'ENOENT') {
+      const scriptPath = error.installScriptPath || error.path || 'installer script';
+      return res.status(500).json({
+        ok: false,
+        code: 'INSTALLER_SCRIPT_MISSING',
+        message: [
+          'Unable to execute installer script.',
+          `Ensure ${scriptPath} exists and that Bash is available in the environment.`,
+        ].join(' '),
+      });
     }
     const payload = parseInstallerOutput(stdout, stderr);
     payload.ok = false;

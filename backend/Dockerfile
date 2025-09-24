@@ -1,7 +1,7 @@
 # Build stage
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache curl netcat-openbsd postgresql-client
+RUN apk add --no-cache bash curl netcat-openbsd postgresql-client
 
 # Copy the backend package manifests first to leverage Docker layer caching.
 COPY backend/package*.json ./
@@ -16,10 +16,13 @@ COPY install ./install
 # Production stage
 FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache curl netcat-openbsd postgresql-client su-exec && \
+RUN apk add --no-cache bash curl netcat-openbsd postgresql-client su-exec && \
     (id -u node 2>/dev/null || adduser -S node)
 COPY --from=builder /app ./
-RUN chmod +x scripts/wait-for-db.sh scripts/docker-entrypoint.sh
+COPY scripts /scripts
+COPY install.sh /install.sh
+RUN chmod +x scripts/wait-for-db.sh scripts/docker-entrypoint.sh \
+    && chmod +x /scripts/check_prereqs.sh /install.sh
 EXPOSE 5002
 ENTRYPOINT ["./scripts/docker-entrypoint.sh"]
 CMD ["node", "src/server.js"]
