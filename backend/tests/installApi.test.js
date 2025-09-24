@@ -65,6 +65,7 @@ const { execFile } = require('child_process');
 const { router } = require('../src/modules/install/install.routes');
 
 const unlinkMock = jest.spyOn(fs.promises, 'unlink').mockResolvedValue();
+const unlinkSpy = unlinkMock;
 
 const controllerDir = path.join(__dirname, '../src/modules/install');
 
@@ -128,6 +129,16 @@ describe('GET /api/install/prereqs', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, allPassed: true });
     expect(execFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats truthy environment flags with surrounding whitespace as enabled', async () => {
+    process.env.INSTALL_API_ENABLED = ' true ';
+    mockHasExistingAdmin.mockResolvedValue(false);
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, allPassed: true });
   });
 
   it('requires a setup secret when an admin already exists', async () => {
