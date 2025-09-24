@@ -8,7 +8,16 @@ const controller = require('./install.controller');
 
 const router = Router();
 
-const toBool = (value) => typeof value === 'string' && value.toLowerCase() === 'true';
+const toBool = (value) => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  return ['true', '1', 'yes', 'on'].includes(normalized);
+};
 
 const requireInstallApiEnabled = (req, res, next) => {
   if (toBool(process.env.INSTALL_API_ENABLED) || toBool(process.env.ENABLE_INSTALL)) {
