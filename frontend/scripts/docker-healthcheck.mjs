@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = Number.parseInt(process.env.PORT || '3000', 10);
@@ -12,17 +13,35 @@ if (!Number.isFinite(port) || port <= 0) {
   process.exit(1);
 }
 
-const hostHeader = port === 80 || port === 443 ? host : `${host}:${port}`;
+const defaultPorts = new Map([
+  ['http:', 80],
+  ['https:', 443],
+]);
+
+const protocol = process.env.HEALTHCHECK_PROTOCOL
+  ? `${process.env.HEALTHCHECK_PROTOCOL.toLowerCase()}:`
+  : 'http:';
+
+if (!defaultPorts.has(protocol)) {
+  console.error(
+    `Unsupported HEALTHCHECK_PROTOCOL "${process.env.HEALTHCHECK_PROTOCOL}". Expected http or https.`,
+  );
+  process.exit(1);
+}
+
+const defaultPortForProtocol = defaultPorts.get(protocol);
+const hostHeader = port === defaultPortForProtocol ? host : `${host}:${port}`;
 
 const requestOptions = {
-  host,
+  protocol,
+  hostname: host,
   port,
   path,
   method: 'GET',
   headers: {
     Accept: 'application/json',
     'User-Agent': 'skillbridge-frontend-healthcheck',
-    Host: hostHeader,
+    host: hostHeader,
   },
   timeout: timeoutMs,
 };
@@ -35,7 +54,9 @@ const finish = (code, message) => {
   process.exit(code);
 };
 
-const req = http.request(requestOptions, (res) => {
+const client = protocol === 'https:' ? https : http;
+
+const req = client.request(requestOptions, (res) => {
   const chunks = [];
 
   res.on('data', (chunk) => {
@@ -44,7 +65,8 @@ const req = http.request(requestOptions, (res) => {
 
   res.on('end', () => {
     if (res.statusCode !== 200) {
-      finish(1, `Healthcheck received unexpected status code ${res.statusCode}`);
+      const requestUrl = `${protocol}//${hostHeader}${path}`;
+      finish(1, `Healthcheck received unexpected status code ${res.statusCode} from ${requestUrl}`);
       return;
     }
 
@@ -62,7 +84,10 @@ const req = http.request(requestOptions, (res) => {
     }
 
     if (payload?.status !== expectStatus) {
-      finish(1, `Healthcheck response payload missing expected status "${expectStatus}".`);
+      finish(
+        1,
+        `Healthcheck response payload missing expected status "${expectStatus}". Body: ${JSON.stringify(payload)}`,
+      );
       return;
     }
 
@@ -71,11 +96,13 @@ const req = http.request(requestOptions, (res) => {
 });
 
 req.on('timeout', () => {
-  req.destroy(new Error(`Timed out after ${timeoutMs}ms`));
+  const requestUrl = `${protocol}//${hostHeader}${path}`;
+  req.destroy(new Error(`Timed out after ${timeoutMs}ms requesting ${requestUrl}`));
 });
 
 req.on('error', (error) => {
-  finish(1, `Healthcheck request failed: ${error.message}`);
+  const requestUrl = `${protocol}//${hostHeader}${path}`;
+  finish(1, `Healthcheck request to ${requestUrl} failed: ${error.message}`);
 });
 
 req.end();
