@@ -19,6 +19,10 @@ function getServer(enableInstall) {
   return require('../src/server');
 }
 
+function countOccurrences(haystack, needle) {
+  return haystack.split(needle).length - 1;
+}
+
 describe('/install route', () => {
   it('returns 410 when ENABLE_INSTALL is not set to true', async () => {
     const { app, server, io } = getServer();
@@ -30,25 +34,44 @@ describe('/install route', () => {
 
   it('serves installer when ENABLE_INSTALL is true', async () => {
     const { app, server, io } = getServer('true');
-    const res = await request(app).get('/install/');
-    io?.close();
-    server?.close();
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('<!DOCTYPE html>');
-    expect(res.text).toContain('id="installerConfigForm"');
-    expect(res.text).toContain('Admin Email');
-    expect(res.text).toContain('Admin Password');
-    expect(res.text).toContain('Application Name');
-    expect(res.text).toContain('Support Email');
-    expect(res.text).toContain('SMTP Host');
-    expect(res.text).toContain('From Email (optional)');
-    expect(res.text).toContain('id="progressBar"');
-    expect(res.text).toContain('data-stepper-item="prereq"');
-    expect(res.text).toContain('data-stepper-item="config"');
-    expect(res.text).toContain('data-stepper-item="install"');
-    expect(res.text).toContain('Prerequisites');
-    expect(res.text).toContain('Configuration');
-    expect(res.text).toContain('Run Install');
+
+    try {
+      const res = await request(app).get('/install/');
+      expect(res.status).toBe(200);
+      const html = res.text;
+
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('id="configForm"');
+      expect(html).toContain('id="progressBar"');
+      expect(html).toContain('data-stepper-item="prereq"');
+      expect(html).toContain('data-stepper-item="config"');
+      expect(html).toContain('data-stepper-item="install"');
+      expect(html).toContain('Prerequisites');
+      expect(html).toContain('Configuration');
+      expect(html).toContain('Run Install');
+      expect(html).toContain('Admin Email');
+      expect(html).toContain('Admin Password');
+      expect(html).toContain('Application Name');
+      expect(html).toContain('Support Email');
+      expect(html).toContain('SMTP Host');
+      expect(html).toContain('SMTP Username');
+      expect(html).toContain('From Email (optional)');
+
+      expect(countOccurrences(html, 'id="configForm"')).toBe(1);
+      expect(countOccurrences(html, 'id="checkBtn"')).toBe(1);
+      expect(countOccurrences(html, 'id="installBtn"')).toBe(1);
+      expect(countOccurrences(html, 'id="backToConfigBtn"')).toBe(1);
+      expect(countOccurrences(html, 'id="step-prereq"')).toBe(1);
+      expect(countOccurrences(html, 'id="step-config"')).toBe(1);
+      expect(countOccurrences(html, 'id="step-install"')).toBe(1);
+
+      const scriptRes = await request(app).get('/install/install.js');
+      expect(scriptRes.status).toBe(200);
+      expect(scriptRes.text).toContain('document.addEventListener');
+    } finally {
+      io?.close();
+      server?.close();
+    }
   });
   it('serves installer assets from the packaged layout when present', async () => {
     const packagedInstallerDir = path.join(__dirname, '../install');
@@ -72,12 +95,14 @@ describe('/install route', () => {
 
     try {
       const { app, server, io } = getServer('true');
-      const res = await request(app).get('/install/');
-      io?.close();
-      server.close();
-
-      expect(res.status).toBe(200);
-      expect(res.text).toContain('Packaged Installer');
+      try {
+        const res = await request(app).get('/install/');
+        expect(res.status).toBe(200);
+        expect(res.text).toContain('Packaged Installer');
+      } finally {
+        io?.close();
+        server?.close();
+      }
     } finally {
       fs.rmSync(packagedInstallerDir, { recursive: true, force: true });
       if (monorepoRenamed) {
