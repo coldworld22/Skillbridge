@@ -565,15 +565,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const normalized = normalizePrereqResponse(data);
+
       if (!res.ok) {
+        if (normalized.requirements.length || normalized.rawText) {
+          renderRequirements(normalized.requirements, normalized.rawText);
+        }
+
         const message =
-          data?.message || data?.error || INSTALLER_DISABLED_GUIDANCE;
+          data?.message ||
+          data?.error ||
+          normalized.summary ||
+          INSTALLER_DISABLED_GUIDANCE;
+
         showError(message);
-        setSummary('Unable to verify prerequisites.', 'error');
+        setSummary(
+          normalized.summary || 'Unable to verify prerequisites.',
+          normalized.allPassing ? 'success' : 'error'
+        );
         return;
       }
 
-      const normalized = normalizePrereqResponse(data);
       renderRequirements(normalized.requirements, normalized.rawText);
       setSummary(normalized.summary, normalized.allPassing ? 'success' : 'error');
 

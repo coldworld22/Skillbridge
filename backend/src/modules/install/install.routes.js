@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Router } = require('express');
 const { z } = require('zod');
+const config = require('../../config/env');
 const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
 const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');
@@ -8,6 +9,22 @@ const controller = require('./install.controller');
 require('../../config/env');
 
 const router = Router();
+
+let cachedConfig;
+const getConfig = () => {
+  if (cachedConfig !== undefined) {
+    return cachedConfig;
+  }
+
+  try {
+    // eslint-disable-next-line global-require
+    cachedConfig = require('../../config/env');
+  } catch (error) {
+    cachedConfig = null;
+  }
+
+  return cachedConfig;
+};
 
 const normalizeBooleanCandidate = (value) => {
   if (typeof value !== 'string') {
