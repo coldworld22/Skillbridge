@@ -141,8 +141,8 @@ describe('GET /api/install/prereqs', () => {
     expect(res.body).toEqual({ ok: true, allPassed: true });
   });
 
-  it('allows enabling via truthy values that include inline comments', async () => {
-    process.env.INSTALL_API_ENABLED = 'true # enable installer';
+  it('accepts quoted truthy values', async () => {
+    process.env.INSTALL_API_ENABLED = '"true"';
 
     const res = await request(app).get('/api/install/prereqs');
 
@@ -150,6 +150,14 @@ describe('GET /api/install/prereqs', () => {
     expect(res.body).toEqual({ ok: true, allPassed: true });
   });
 
+  it('treats quoted false-like values as disabled', async () => {
+    process.env.INSTALL_API_ENABLED = '"false"';
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ message: 'Installer API disabled' });
+  });
 
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);

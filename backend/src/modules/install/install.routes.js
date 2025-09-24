@@ -8,34 +8,43 @@ const controller = require('./install.controller');
 
 const router = Router();
 
-const BOOLEAN_TRUTHY_VALUES = new Set(['true', '1', 'yes', 'on']);
-
-const normalizeBooleanEnvValue = (raw) => {
-  if (typeof raw === 'boolean') {
-    return raw;
-  }
-  if (typeof value === 'string') {
-    const normalized = value
-      .trim()
-      .replace(/^['"]+|['"]+$/g, '')
-      .toLowerCase();
-    if (!normalized) {
-      return false;
-    }
-    return ['true', '1', 'yes', 'on'].includes(normalized);
+const normalizeBooleanCandidate = (value) => {
+  if (typeof value !== 'string') {
+    return '';
   }
 
-  const firstToken = withoutComments.split(/\s+/)[0].toLowerCase();
-  if (!firstToken) {
-    return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
   }
 
-  return BOOLEAN_TRUTHY_VALUES.has(firstToken);
+  const unquoted = trimmed.replace(/^['"]+|['"]+$/g, '');
+  return unquoted.trim().toLowerCase();
 };
 
 const toBool = (value) => {
-  const normalized = normalizeBooleanEnvValue(value);
-  return typeof normalized === 'boolean' ? normalized : false;
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+
+  const normalized = normalizeBooleanCandidate(value);
+  if (!normalized) {
+    return false;
+  }
+
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+
+  return false;
 };
 
 const requireInstallApiEnabled = (req, res, next) => {
