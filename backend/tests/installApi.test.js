@@ -89,7 +89,7 @@ const buildPayload = () => ({
 });
 
 beforeEach(() => {
-  process.env.INSTALL_API_ENABLED = 'true';
+  process.env.INSTALL_API_ENABLED = ' true ';
   delete process.env.ENABLE_INSTALL;
   delete process.env.INSTALL_SETUP_SECRET;
   mockHasExistingAdmin.mockResolvedValue(false);
@@ -140,6 +140,7 @@ describe('GET /api/install/prereqs', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, allPassed: true });
   });
+
 
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);

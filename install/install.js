@@ -22,7 +22,7 @@ const FRIENDLY_LABELS = {
 const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
 
 const INSTALLER_DISABLED_GUIDANCE =
-  'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
+  'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED (and/or ENABLE_INSTALL) to a truthy value such as "true", "1", "yes", or "on", then try again.';
 
 function sanitize(value) {
   if (typeof value !== 'string') {
