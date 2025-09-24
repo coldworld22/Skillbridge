@@ -8,17 +8,42 @@ const controller = require('./install.controller');
 
 const router = Router();
 
+const normalizeBooleanCandidate = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const unquoted = trimmed.replace(/^['"]+|['"]+$/g, '');
+  return unquoted.trim().toLowerCase();
+};
+
 const toBool = (value) => {
   if (typeof value === 'boolean') {
     return value;
   }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) {
-      return false;
-    }
-    return ['true', '1', 'yes', 'on'].includes(normalized);
+
+  if (typeof value === 'number') {
+    return value !== 0;
   }
+
+  const normalized = normalizeBooleanCandidate(value);
+  if (!normalized) {
+    return false;
+  }
+
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+
   return false;
 };
 

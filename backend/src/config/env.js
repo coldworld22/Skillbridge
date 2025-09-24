@@ -5,6 +5,44 @@ const dotenvExpand = require('dotenv-expand');
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
+const parseBooleanFromEnv = (value, defaultValue = false) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isNaN(value)) {
+      return defaultValue;
+    }
+    return value !== 0;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return defaultValue;
+    }
+
+    const unquoted = trimmed.replace(/^['"]+|['"]+$/g, '');
+    const normalized = unquoted.trim().toLowerCase();
+    if (!normalized) {
+      return defaultValue;
+    }
+
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return defaultValue;
+};
+
+const booleanLike = z.union([z.boolean(), z.string(), z.number()]).optional();
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BACKEND_PORT: z.coerce.number().default(5002),
@@ -43,7 +81,8 @@ const EnvSchema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   APP_DOMAIN: z.string().optional(),
   COOKIE_DOMAIN: z.string().optional(),
-  ENABLE_INSTALL: z.coerce.boolean().default(false),
+  ENABLE_INSTALL: booleanLike,
+  INSTALL_API_ENABLED: booleanLike,
   RATE_LIMIT_MAX_REQUESTS: z
     .coerce.number()
     .int()
@@ -83,9 +122,19 @@ const createValidatedEnv = () => {
 
   const sanitizedEnv = EnvSchema.parse(modifiedEnv);
 
-  // Re-run validation after sanitizing optional URLs to ensure the final
-  // environment object still satisfies the schema.
-  return EnvSchema.parse(sanitizedEnv);
+  const booleanDefaults = [
+    ['ENABLE_INSTALL', false],
+    ['INSTALL_API_ENABLED', false],
+  ];
+
+  booleanDefaults.forEach(([key, defaultValue]) => {
+    const rawValue = Object.prototype.hasOwnProperty.call(modifiedEnv, key)
+      ? modifiedEnv[key]
+      : sanitizedEnv[key];
+    sanitizedEnv[key] = parseBooleanFromEnv(rawValue, defaultValue);
+  });
+
+  return sanitizedEnv;
 };
 
 const env = createValidatedEnv();
@@ -263,6 +312,7 @@ module.exports = {
   APP_DOMAIN: env.APP_DOMAIN,
   COOKIE_DOMAIN: env.COOKIE_DOMAIN,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
+  INSTALL_API_ENABLED: env.INSTALL_API_ENABLED,
   RATE_LIMIT_MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MINUTES: env.RATE_LIMIT_WINDOW_MINUTES,
 };
