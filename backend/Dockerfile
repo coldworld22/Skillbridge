@@ -12,6 +12,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 # independently of the repository root.
 COPY backend/ ./
 COPY install ./install
+COPY install.sh ./install.sh
+COPY scripts/check_prereqs.sh ./scripts/check_prereqs.sh
 
 # Production stage
 FROM node:20-alpine

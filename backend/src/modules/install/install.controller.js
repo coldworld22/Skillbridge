@@ -11,7 +11,6 @@ const emailConfigService = require('../emailConfig/emailConfig.service');
 
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
-
 const candidateScriptRoots = [
   path.resolve(__dirname, '../../../../'),
   path.resolve(__dirname, '../../../'),
@@ -37,7 +36,10 @@ const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
   const scriptResolver = SCRIPTS[scriptKey];
   const scriptPath = typeof scriptResolver === 'function' ? scriptResolver() : scriptResolver;
   if (!scriptPath) {
-    throw new Error(`Unknown installer script: ${scriptKey}`);
+    const error = new Error(`Installer script not found for key "${scriptKey}".`);
+    error.code = 'SCRIPT_NOT_FOUND';
+    error.scriptKey = scriptKey;
+    throw error;
   }
   if (!fs.existsSync(scriptPath)) {
     const error = new Error(`Installer script not found: ${scriptPath}`);
@@ -79,6 +81,13 @@ exports.checkPrereqs = async (req, res, next) => {
     const ok = typeof parsed.ok === 'boolean' ? parsed.ok : Boolean(parsed.allPassed);
     return res.status(200).json({ ...parsed, ok });
   } catch (error) {
+    if (error?.code === 'SCRIPT_NOT_FOUND') {
+      logger.error('Prerequisite script is missing', error);
+      return res.status(500).json({
+        ok: false,
+        message: 'Prerequisite checker is unavailable. Contact the system administrator.',
+      });
+    }
     const stdout = error.stdout || '';
     const stderr = error.stderr || '';
     logger.error('Prerequisite check failed', error);
@@ -335,6 +344,17 @@ exports.runInstall = async (req, res) => {
     await cleanupTempConfig();
     return res.status(ok ? 200 : 500).json({ ...parsed, ok });
   } catch (error) {
+    if (error?.code === 'SCRIPT_NOT_FOUND') {
+      logger.error('Installation script is missing', error);
+      await cleanupTempConfig();
+      if (uploadedLogoAbsolute) {
+        await removeFileIfExists(uploadedLogoAbsolute);
+      }
+      return res.status(500).json({
+        ok: false,
+        message: 'Installation script is unavailable. Contact the system administrator.',
+      });
+    }
     logger.error('Installation failed', error);
     const stdout = error.stdout || '';
     const stderr = error.stderr || '';
