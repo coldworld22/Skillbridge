@@ -14,3 +14,4 @@ export const verifyLicense = async (purchaseCode, domain) => {
   const { data } = await api.post("/license/verify", payload);
   return data;
 };
+
