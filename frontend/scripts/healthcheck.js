@@ -25,8 +25,7 @@ const defaultPorts = new Map([
 ]);
 
 const defaultPortForProtocol = defaultPorts.get(protocol);
-const hostHeader =
-  defaultPortForProtocol && port === defaultPortForProtocol ? host : `${host}:${port}`;
+hostHeader = defaultPortForProtocol && port === defaultPortForProtocol ? host : `${host}:${port}`;
 
 const allowedProtocols = new Set(['http', 'https']);
 if (!allowedProtocols.has(protocol)) {
