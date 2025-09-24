@@ -79,7 +79,6 @@ export async function getStaticProps({ params }) {
     };
   }
 }
-
 export default function DocPage({ title, content, lastUpdated }) {
   const formattedUpdated = lastUpdated
     ? new Intl.DateTimeFormat('en', {

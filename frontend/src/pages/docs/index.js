@@ -1,7 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
-
 const DOCS_DIR = path.resolve(process.cwd(), '../docs');
 
 const titleFromContent = (content, fallback) => {
