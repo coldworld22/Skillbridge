@@ -22,7 +22,7 @@ const FRIENDLY_LABELS = {
 const MAX_LOGO_FILE_BYTES = 2 * 1024 * 1024;
 
 const INSTALLER_DISABLED_GUIDANCE =
-  'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED=true (and/or ENABLE_INSTALL=true) and try again.';
+  'The SkillBridge installer API is disabled. Enable it by setting INSTALL_API_ENABLED (and/or ENABLE_INSTALL) to a truthy value such as "true", "1", "yes", or "on", then try again.';
 
 function sanitize(value) {
   if (typeof value !== 'string') {
@@ -233,6 +233,113 @@ document.addEventListener('DOMContentLoaded', () => {
   const completionMessage = document.getElementById('completionMessage');
   const completionNextSteps = document.getElementById('completionNextSteps');
   const backToConfigBtn = document.getElementById('backToConfigBtn');
+  const setupSecretInput = document.getElementById('setupSecretInput');
+  const setupSecretError = document.getElementById('setupSecretError');
+
+  const SECRET_STORAGE_KEY = 'skillbridge-install-setup-secret';
+  const secretState = { value: '' };
+  const supportsSessionStorage = (() => {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) {
+        return false;
+      }
+      const testKey = '__skillbridge_install_secret__';
+      window.sessionStorage.setItem(testKey, '1');
+      window.sessionStorage.removeItem(testKey);
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  })();
+
+  function persistSetupSecret(value) {
+    if (!supportsSessionStorage) return;
+    if (value) {
+      window.sessionStorage.setItem(SECRET_STORAGE_KEY, value);
+    } else {
+      window.sessionStorage.removeItem(SECRET_STORAGE_KEY);
+    }
+  }
+
+  function clearSetupSecretError() {
+    if (!setupSecretInput || !setupSecretError) return;
+    setupSecretInput.removeAttribute('aria-invalid');
+    setupSecretInput.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    setupSecretError.textContent = '';
+    setupSecretError.classList.add('hidden');
+  }
+
+  function showSetupSecretError(message) {
+    if (!setupSecretInput || !setupSecretError) return;
+    setupSecretInput.setAttribute('aria-invalid', 'true');
+    setupSecretInput.classList.add('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    setupSecretError.textContent = message;
+    setupSecretError.classList.remove('hidden');
+  }
+
+  function applySetupSecret(value, { updateInput = true, persist = true } = {}) {
+    const sanitized = sanitize(value);
+    secretState.value = sanitized;
+    if (updateInput && setupSecretInput) {
+      setupSecretInput.value = sanitized;
+    }
+    if (persist) {
+      persistSetupSecret(sanitized);
+    }
+    if (!sanitized) {
+      clearSetupSecretError();
+    }
+    return sanitized;
+  }
+
+  function getSetupSecret() {
+    return secretState.value || '';
+  }
+
+  function extractSetupSecretFromUrl() {
+    if (typeof window === 'undefined') return '';
+    try {
+      const url = new URL(window.location.href);
+      let extracted = '';
+      let modified = false;
+      ['setupSecret', 'setup_secret'].forEach((param) => {
+        if (!url.searchParams.has(param)) return;
+        if (!extracted) {
+          extracted = sanitize(url.searchParams.get(param));
+        }
+        url.searchParams.delete(param);
+        modified = true;
+      });
+      if (modified) {
+        const newSearch = url.searchParams.toString();
+        const newUrl = `${url.pathname}${newSearch ? `?${newSearch}` : ''}${url.hash}`;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+      return extracted;
+    } catch (_err) {
+      return '';
+    }
+  }
+
+  const storedSecret = supportsSessionStorage
+    ? sanitize(window.sessionStorage.getItem(SECRET_STORAGE_KEY) || '')
+    : '';
+  const urlSecret = extractSetupSecretFromUrl();
+  applySetupSecret(urlSecret || storedSecret, { updateInput: true, persist: true });
+
+  if (setupSecretInput) {
+    setupSecretInput.addEventListener('input', (event) => {
+      const sanitized = sanitize(event.target.value);
+      secretState.value = sanitized;
+      persistSetupSecret(sanitized);
+      if (!sanitized) {
+        clearSetupSecretError();
+      }
+    });
+    setupSecretInput.addEventListener('blur', () => {
+      applySetupSecret(setupSecretInput.value, { updateInput: true, persist: true });
+    });
+  }
 
   const fieldErrors = new Map();
   let submittedConfig = null;
@@ -386,12 +493,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!checkBtn) return;
     checkBtn.disabled = true;
     clearError();
+    clearSetupSecretError();
     setProgress(STEP_PROGRESS.prereq);
     setSummary('Checking prerequisites...', 'info');
     renderRequirements([], '');
 
     try {
-      const res = await fetch('/api/install/prereqs');
+      const headers = {};
+      const secret = getSetupSecret();
+      if (secret) {
+        headers['x-install-setup-secret'] = secret;
+      }
+      const res = await fetch('/api/install/prereqs', { headers });
       const bodyText = await res.text();
       let data = {};
       if (bodyText) {
@@ -403,8 +516,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (res.status === 403 && data?.code === 'INSTALL_LOCKED') {
-        showError(data?.message || 'Installation locked. An administrator already exists.');
-        setSummary(data?.message || 'Installation locked.', 'error');
+        const message = data?.message || 'Installation locked. An administrator already exists.';
+        showError(message);
+        setSummary(message || 'Installation locked.', 'error');
+        if (/secret/i.test(message)) {
+          showSetupSecretError(message);
+          setupSecretInput?.focus();
+        }
         return;
       }
 
@@ -684,11 +802,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const submissionData = buildSubmissionPayload(configuration, rawFormData);
+      clearSetupSecretError();
+      const requestHeaders = {
+        'x-csrf-token': csrfToken,
+      };
+      const secret = getSetupSecret();
+      if (secret) {
+        requestHeaders['x-install-setup-secret'] = secret;
+      }
       const res = await fetch('/api/install/run', {
         method: 'POST',
-        headers: {
-          'x-csrf-token': csrfToken,
-        },
+        headers: requestHeaders,
         body: submissionData,
       });
 
@@ -711,6 +835,10 @@ document.addEventListener('DOMContentLoaded', () => {
           installOutput.classList.add('text-red-700');
           installOutput.textContent = message;
         }
+        if (/secret/i.test(message)) {
+          showSetupSecretError(message);
+          setupSecretInput?.focus();
+        }
         updateStep('config', { preserveProgress: true });
         backToConfigBtn?.classList.remove('hidden');
         return;
@@ -719,6 +847,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.status === 401 || res.status === 403) {
         const message = data?.message || 'Please log in to continue.';
         showError(message);
+        if (/secret/i.test(message)) {
+          showSetupSecretError(message);
+          setupSecretInput?.focus();
+        }
         if (installOutput) {
           installOutput.classList.remove('text-gray-700');
           installOutput.classList.add('text-red-700');

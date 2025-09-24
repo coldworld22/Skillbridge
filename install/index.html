@@ -176,6 +176,24 @@
     <section id="step-prereq" class="mb-8 step-container step-visible" aria-hidden="false">
       <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
       <p class="text-sm text-gray-600">We’ll verify that your environment meets the requirements before continuing.</p>
+      <div id="setupSecretWrapper" class="mt-4 max-w-md">
+        <label class="block">
+          <span class="block font-medium">Setup Secret (if required)</span>
+          <input
+            type="password"
+            id="setupSecretInput"
+            name="setupSecret"
+            autocomplete="off"
+            aria-describedby="setupSecretHelp setupSecretError"
+            class="mt-1 w-full rounded border border-gray-300 p-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
+            placeholder="Enter setup secret"
+          />
+        </label>
+        <p id="setupSecretHelp" class="mt-1 text-xs text-gray-500">
+          Required only when the backend sets INSTALL_SETUP_SECRET. The value is stored for this session and sent with installer requests.
+        </p>
+        <p id="setupSecretError" class="mt-1 hidden text-sm text-red-600"></p>
+      </div>
       <button
         id="checkBtn"
         class="mt-4 rounded bg-yellow-500 px-4 py-2 text-white transition hover:bg-yellow-600"
