@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 requirements=()
 all_ok=true
+any_warn=false
 escape_json() {
   local s="${1-}"
   s=${s//\\/\\\\}
@@ -45,8 +46,10 @@ add_requirement() {
     "{\"id\":\"$id\",\"label\":\"$escaped_label\",\"status\":\"$status\",\"passed\":$passed,\"message\":\"$escaped_message\"}"
   )
 
-  if [ "$passed" != "true" ]; then
+  if [ "$status" = "fail" ]; then
     all_ok=false
+  elif [ "$status" = "warn" ]; then
+    any_warn=true
   fi
 }
 # Common helper for CLI tools where only presence/version check is required
@@ -85,7 +88,11 @@ fi
 # Verify npm, Yarn, pnpm, and Python
 check_cli_tool "npm" "npm" "npm" "--version"
 check_cli_tool "yarn" "Yarn" "yarn" "--version"
-check_cli_tool "pnpm" "pnpm" "pnpm" "--version"
+if command -v pnpm >/dev/null 2>&1; then
+  check_cli_tool "pnpm" "pnpm" "pnpm" "--version"
+else
+  add_requirement "pnpm" "pnpm" "warn" "pnpm executable not found. Install pnpm if you prefer it over npm or Yarn."
+fi
 
 python_cmd=""
 if command -v python3 >/dev/null 2>&1; then
@@ -102,7 +109,7 @@ if [ -n "$python_cmd" ]; then
     add_requirement "python" "Python" "pass" "${python_cmd} executable detected."
   fi
 else
-  add_requirement "python" "Python" "fail" "Python executable not found."
+  add_requirement "python" "Python" "warn" "Python executable not found. Install Python if required for auxiliary scripts."
 fi
 
 # Verify Docker
@@ -166,9 +173,9 @@ check_postgres() {
     fi
 
     if [ -n "$output" ]; then
-      add_requirement "postgres" "PostgreSQL" "fail" "$output"
+      add_requirement "postgres" "PostgreSQL" "warn" "$output"
     else
-      add_requirement "postgres" "PostgreSQL" "fail" "pg_isready reported PostgreSQL as unavailable."
+      add_requirement "postgres" "PostgreSQL" "warn" "pg_isready reported PostgreSQL as unavailable. Configure connectivity in Step 2 if using a remote database."
     fi
     return
   fi
@@ -181,20 +188,20 @@ check_postgres() {
       add_requirement "postgres" "PostgreSQL" "pass" "psql connected successfully."
     else
       if [ -n "$output" ]; then
-        add_requirement "postgres" "PostgreSQL" "fail" "$output"
+        add_requirement "postgres" "PostgreSQL" "warn" "$output"
       else
-        add_requirement "postgres" "PostgreSQL" "fail" "psql could not connect to PostgreSQL."
+        add_requirement "postgres" "PostgreSQL" "warn" "psql could not connect to PostgreSQL. Provide the remote connection details during configuration."
       fi
     fi
     return
   fi
 
-  add_requirement "postgres" "PostgreSQL" "fail" "Neither pg_isready nor psql were found. Install the PostgreSQL client tools."
+  add_requirement "postgres" "PostgreSQL" "warn" "Neither pg_isready nor psql were found. Install the PostgreSQL client tools if you plan to run local diagnostics."
 }
 
 check_redis() {
   if ! command -v redis-cli >/dev/null 2>&1; then
-    add_requirement "redis" "Redis" "fail" "redis-cli executable not found."
+    add_requirement "redis" "Redis" "warn" "redis-cli executable not found. Install it if you need to run local diagnostics."
     return
   fi
 
@@ -206,9 +213,9 @@ check_redis() {
     add_requirement "redis" "Redis" "pass" "redis-cli ping: ${redis_output}"
   else
     if [ -n "$redis_output" ]; then
-      add_requirement "redis" "Redis" "fail" "$redis_output"
+      add_requirement "redis" "Redis" "warn" "$redis_output"
     else
-      add_requirement "redis" "Redis" "fail" "redis-cli could not reach a Redis instance."
+      add_requirement "redis" "Redis" "warn" "redis-cli could not reach a Redis instance. Ensure the service is accessible using the credentials entered later."
     fi
   fi
 }
@@ -229,7 +236,11 @@ else
 fi
 
 if [ "$all_ok" = true ]; then
-  SUMMARY="All prerequisites met."
+  if [ "$any_warn" = true ]; then
+    SUMMARY="All critical prerequisites met. Review the warnings before continuing."
+  else
+    SUMMARY="All prerequisites met."
+  fi
 else
   SUMMARY="One or more prerequisites are missing. Please review the list above."
 fi
