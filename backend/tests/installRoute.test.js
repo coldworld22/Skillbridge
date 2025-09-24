@@ -35,7 +35,7 @@ describe('/install route', () => {
     server?.close();
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
-    expect(res.text).toContain('id="configForm"');
+    expect(res.text).toContain('id="installerConfigForm"');
     expect(res.text).toContain('Database connection URL');
     expect(res.text).toContain('SMTP host');
     expect(res.text).toContain('Application display name');
