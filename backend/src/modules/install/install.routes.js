@@ -8,9 +8,11 @@ const controller = require('./install.controller');
 
 const router = Router();
 
-const toBool = (value) => {
-  if (typeof value === 'boolean') {
-    return value;
+const BOOLEAN_TRUTHY_VALUES = new Set(['true', '1', 'yes', 'on']);
+
+const normalizeBooleanEnvValue = (raw) => {
+  if (typeof raw === 'boolean') {
+    return raw;
   }
   if (typeof value === 'string') {
     const normalized = value
@@ -22,7 +24,18 @@ const toBool = (value) => {
     }
     return ['true', '1', 'yes', 'on'].includes(normalized);
   }
-  return false;
+
+  const firstToken = withoutComments.split(/\s+/)[0].toLowerCase();
+  if (!firstToken) {
+    return undefined;
+  }
+
+  return BOOLEAN_TRUTHY_VALUES.has(firstToken);
+};
+
+const toBool = (value) => {
+  const normalized = normalizeBooleanEnvValue(value);
+  return typeof normalized === 'boolean' ? normalized : false;
 };
 
 const requireInstallApiEnabled = (req, res, next) => {
