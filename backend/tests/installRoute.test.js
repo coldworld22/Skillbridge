@@ -12,7 +12,7 @@ function getServer(enableInstall) {
   process.env.SESSION_SECRET = 'test';
   process.env.TEST_DATABASE_URL = 'postgresql://localhost/testdb';
   if (enableInstall === undefined) {
-    delete process.env.ENABLE_INSTALL;
+    process.env.ENABLE_INSTALL = 'false';
   } else {
     process.env.ENABLE_INSTALL = enableInstall;
   }
@@ -32,6 +32,14 @@ describe('/install route', () => {
     expect(res.status).toBe(410);
   });
 
+  it('returns 410 when ENABLE_INSTALL is false', async () => {
+    const { app, server, io } = getServer('false');
+    const res = await request(app).get('/install');
+    io?.close();
+    server.close();
+    expect(res.status).toBe(410);
+  });
+
   it('serves installer when ENABLE_INSTALL is true', async () => {
     const { app, server, io } = getServer('true');
 
@@ -41,7 +49,7 @@ describe('/install route', () => {
       const html = res.text;
 
       expect(html).toContain('<!DOCTYPE html>');
-      expect(html).toContain('id="configForm"');
+      expect(html).toContain('id="installerConfigForm"');
       expect(html).toContain('id="progressBar"');
       expect(html).toContain('data-stepper-item="prereq"');
       expect(html).toContain('data-stepper-item="config"');
@@ -57,9 +65,9 @@ describe('/install route', () => {
       expect(html).toContain('SMTP Username');
       expect(html).toContain('From Email (optional)');
 
-      expect(countOccurrences(html, 'id="configForm"')).toBe(1);
+      expect(countOccurrences(html, 'id="installerConfigForm"')).toBe(1);
       expect(countOccurrences(html, 'id="checkBtn"')).toBe(1);
-      expect(countOccurrences(html, 'id="installBtn"')).toBe(1);
+      expect(countOccurrences(html, 'id="installerInstallBtn"')).toBe(1);
       expect(countOccurrences(html, 'id="backToConfigBtn"')).toBe(1);
       expect(countOccurrences(html, 'id="step-prereq"')).toBe(1);
       expect(countOccurrences(html, 'id="step-config"')).toBe(1);

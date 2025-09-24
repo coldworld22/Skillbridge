@@ -5,6 +5,47 @@ const dotenvExpand = require('dotenv-expand');
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
+const TRUTHY_ENV_VALUES = new Set(['true', '1', 'yes', 'on']);
+const FALSY_ENV_VALUES = new Set(['false', '0', 'no', 'off']);
+
+const parseBooleanFlag = (value, { varName, defaultValue = false } = {}) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isNaN(value)) {
+      return defaultValue;
+    }
+    return value !== 0;
+  }
+
+  if (value == null) {
+    return defaultValue;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return defaultValue;
+    }
+    if (TRUTHY_ENV_VALUES.has(normalized)) {
+      return true;
+    }
+    if (
+      FALSY_ENV_VALUES.has(normalized) ||
+      normalized === 'undefined' ||
+      normalized === 'null' ||
+      normalized === 'none'
+    ) {
+      return false;
+    }
+  }
+
+  const label = varName || 'value';
+  throw new Error(`${label} must be one of: true, false, 1, 0, yes, no, on, off.`);
+};
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BACKEND_PORT: z.coerce.number().default(5002),
@@ -43,7 +84,8 @@ const EnvSchema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   APP_DOMAIN: z.string().optional(),
   COOKIE_DOMAIN: z.string().optional(),
-  ENABLE_INSTALL: z.coerce.boolean().default(false),
+  ENABLE_INSTALL: z.boolean().default(false),
+  INSTALL_API_ENABLED: z.boolean().default(false),
   RATE_LIMIT_MAX_REQUESTS: z
     .coerce.number()
     .int()
@@ -74,6 +116,15 @@ const normalizeOptionalUrl = (value) => {
 
 const createValidatedEnv = () => {
   const modifiedEnv = { ...process.env };
+
+  modifiedEnv.ENABLE_INSTALL = parseBooleanFlag(modifiedEnv.ENABLE_INSTALL, {
+    varName: 'ENABLE_INSTALL',
+    defaultValue: false,
+  });
+  modifiedEnv.INSTALL_API_ENABLED = parseBooleanFlag(modifiedEnv.INSTALL_API_ENABLED, {
+    varName: 'INSTALL_API_ENABLED',
+    defaultValue: false,
+  });
 
   OPTIONAL_URL_ENV_VARS.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(modifiedEnv, key)) {
@@ -263,6 +314,7 @@ module.exports = {
   APP_DOMAIN: env.APP_DOMAIN,
   COOKIE_DOMAIN: env.COOKIE_DOMAIN,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
+  INSTALL_API_ENABLED: env.INSTALL_API_ENABLED,
   RATE_LIMIT_MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MINUTES: env.RATE_LIMIT_WINDOW_MINUTES,
 };

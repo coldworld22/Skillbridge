@@ -61,6 +61,13 @@ jest.mock('../src/modules/emailConfig/emailConfig.service', () => ({
   updateSettings: (...args) => mockUpdateEmailSettings(...args),
 }));
 
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt';
+process.env.REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'test-refresh';
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'test-session';
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgresql://user:pass@localhost:5432/testdb';
+
 const { execFile } = require('child_process');
 const { router } = require('../src/modules/install/install.routes');
 
