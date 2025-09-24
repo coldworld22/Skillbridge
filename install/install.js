@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToConfigBtn = document.getElementById('backToConfigBtn');
   const setupSecretInput = document.getElementById('setupSecretInput');
   const setupSecretError = document.getElementById('setupSecretError');
+  const codecanyonInput = configForm ? configForm.querySelector('[name="codecanyonKey"]') : null;
 
   const SECRET_STORAGE_KEY = 'skillbridge-install-setup-secret';
   const secretState = { value: '' };
@@ -342,7 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const fieldSuccesses = new Map();
   let submittedConfig = null;
+  const licenseVerificationCache = { code: '', result: null };
 
   function getFieldErrorElement(name) {
     if (fieldErrors.has(name)) {
@@ -350,6 +353,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const el = configForm ? configForm.querySelector(`[data-field-error="${name}"]`) : null;
     fieldErrors.set(name, el || null);
+    return el || null;
+  }
+
+  function getFieldSuccessElement(name) {
+    if (fieldSuccesses.has(name)) {
+      return fieldSuccesses.get(name);
+    }
+    const el = configForm ? configForm.querySelector(`[data-field-success="${name}"]`) : null;
+    fieldSuccesses.set(name, el || null);
     return el || null;
   }
 
@@ -558,6 +570,10 @@ document.addEventListener('DOMContentLoaded', () => {
       el.textContent = '';
       el.classList.add('hidden');
     });
+    configForm.querySelectorAll('[data-field-success]').forEach((el) => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
   }
 
   function setFieldError(name, message) {
@@ -567,11 +583,41 @@ document.addEventListener('DOMContentLoaded', () => {
       field.setAttribute('aria-invalid', 'true');
       field.classList.add('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
     }
+    clearFieldSuccess(name);
     const errorEl = getFieldErrorElement(name);
     if (errorEl) {
       errorEl.textContent = message;
       errorEl.classList.remove('hidden');
     }
+  }
+
+  function setFieldSuccess(name, message) {
+    const field = configForm ? configForm.querySelector(`[name="${name}"]`) : null;
+    if (field) {
+      field.removeAttribute('aria-invalid');
+      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    }
+    const successEl = getFieldSuccessElement(name);
+    if (!successEl) return;
+    const errorEl = getFieldErrorElement(name);
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+    }
+    if (message) {
+      successEl.textContent = message;
+      successEl.classList.remove('hidden');
+    } else {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+    }
+  }
+
+  function clearFieldSuccess(name) {
+    const successEl = getFieldSuccessElement(name);
+    if (!successEl) return;
+    successEl.textContent = '';
+    successEl.classList.add('hidden');
   }
 
   function collectConfiguration(formData) {
@@ -715,6 +761,80 @@ document.addEventListener('DOMContentLoaded', () => {
     return payload;
   }
 
+  async function verifyCodecanyonLicense(code) {
+    const payload = { purchase_code: code };
+    if (typeof window !== 'undefined') {
+      const domain = window.location?.hostname || window.location?.host;
+      if (domain) {
+        payload.domain = domain;
+      }
+    }
+
+    try {
+      const res = await fetch('/api/license/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      let data = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (_err) {
+          data = {};
+        }
+      }
+      const success = res.ok && (data.success !== false);
+      if (success) {
+        return {
+          ok: true,
+          message: typeof data.message === 'string' && data.message.trim()
+            ? data.message.trim()
+            : 'License verified successfully.',
+        };
+      }
+      const message = typeof data.message === 'string' && data.message.trim()
+        ? data.message.trim()
+        : typeof data.error === 'string' && data.error.trim()
+          ? data.error.trim()
+          : 'Unable to verify the Codecanyon license key.';
+      return { ok: false, message };
+    } catch (error) {
+      return {
+        ok: false,
+        message: `Unable to verify the Codecanyon license key. ${error.message}`,
+      };
+    }
+  }
+
+  async function ensureLicenseVerified(codecanyonKey) {
+    const sanitized = sanitize(codecanyonKey);
+    if (!sanitized) {
+      licenseVerificationCache.code = '';
+      licenseVerificationCache.result = null;
+      return { ok: true, message: '' };
+    }
+
+    if (
+      licenseVerificationCache.code === sanitized &&
+      licenseVerificationCache.result &&
+      licenseVerificationCache.result.ok
+    ) {
+      return licenseVerificationCache.result;
+    }
+
+    const result = await verifyCodecanyonLicense(sanitized);
+    if (result.ok) {
+      licenseVerificationCache.code = sanitized;
+      licenseVerificationCache.result = result;
+    } else {
+      licenseVerificationCache.code = '';
+      licenseVerificationCache.result = null;
+    }
+    return result;
+  }
+
   function showCompletion(result) {
     if (!completionCard) return;
     const messageFromApi =
@@ -779,6 +899,24 @@ document.addEventListener('DOMContentLoaded', () => {
         firstField.focus();
       }
       return;
+    }
+
+    if (configuration.codecanyonKey) {
+      const licenseResult = await ensureLicenseVerified(configuration.codecanyonKey);
+      if (!licenseResult.ok) {
+        setFieldError('codecanyonKey', licenseResult.message);
+        showError(licenseResult.message);
+        const field = configForm.querySelector('[name="codecanyonKey"]');
+        if (field && typeof field.focus === 'function') {
+          field.focus();
+        }
+        return;
+      }
+      setFieldSuccess('codecanyonKey', licenseResult.message || 'License verified successfully.');
+    } else {
+      clearFieldSuccess('codecanyonKey');
+      licenseVerificationCache.code = '';
+      licenseVerificationCache.result = null;
     }
 
     submittedConfig = configuration;
@@ -920,6 +1058,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (configForm) {
     configForm.addEventListener('submit', handleInstallSubmit);
+  }
+
+  if (codecanyonInput) {
+    codecanyonInput.addEventListener('input', () => {
+      licenseVerificationCache.code = '';
+      licenseVerificationCache.result = null;
+      clearFieldSuccess('codecanyonKey');
+      const field = codecanyonInput;
+      field.removeAttribute('aria-invalid');
+      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+      const errorEl = getFieldErrorElement('codecanyonKey');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      }
+    });
   }
 
   if (backToConfigBtn) {
