@@ -265,6 +265,7 @@ location ^~ /install/ {
    - A PostgreSQL connection string, database user, and database password.
    - SMTP host, port, username, and password so SkillBridge can deliver transactional email.
    - The default “from” email address used for outbound messages.
+   - (Optional) Your Codecanyon purchase or subscription key so future updates can validate the license.
    - The public application display name.
    - Either a logo image upload (PNG/JPG/SVG up to 5&nbsp;MB) or an HTTPS URL to an existing logo.
    - The admin email and password for the first administrator.

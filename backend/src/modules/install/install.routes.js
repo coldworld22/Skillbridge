@@ -111,6 +111,9 @@ const installSchema = z
     adminPassword: z.string().min(8),
     appName: z.string().trim().min(1),
     supportEmail: z.string().trim().email(),
+    codecanyonKey: optionalTrimmed.refine((value) => !value || value.length >= 6, {
+      message: 'Codecanyon key must be at least 6 characters.',
+    }),
     logoUrl: optionalUrl,
     smtpHost: z.string().trim().min(1),
     smtpPort: z

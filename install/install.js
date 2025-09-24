@@ -580,6 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
       adminPassword: String(formData.get('adminPassword') ?? ''),
       appName: sanitize(formData.get('appName')),
       supportEmail: sanitize(formData.get('supportEmail')),
+      codecanyonKey: sanitize(formData.get('codecanyonKey')),
       branding: {
         logoUrl: sanitize(formData.get('logoUrl')),
         logoFile: null,
@@ -668,6 +669,10 @@ document.addEventListener('DOMContentLoaded', () => {
       issues.push({ field: 'logoFile', message: 'Uploaded logo must be 2 MB or smaller.' });
     }
 
+    if (configuration.codecanyonKey && configuration.codecanyonKey.length < 6) {
+      issues.push({ field: 'codecanyonKey', message: 'Codecanyon key should be at least 6 characters.' });
+    }
+
     return issues;
   }
 
@@ -701,6 +706,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof File !== 'undefined' && logoFile instanceof File && logoFile.size > 0) {
         payload.set('logoFile', logoFile, logoFile.name);
       }
+    }
+
+    if (configuration.codecanyonKey) {
+      payload.set('codecanyonKey', configuration.codecanyonKey);
     }
 
     return payload;

@@ -49,6 +49,7 @@ When Step&nbsp;2 (“Configuration”) becomes available, gather the following v
 - PostgreSQL connection URL, database user, and password.
 - SMTP host, port, username, and password for transactional email.
 - The default “from” email address and public-facing application name.
+- (Optional) Your Codecanyon purchase/subscription key for license verification.
 - A logo to brand the UI (upload a PNG/JPG/SVG up to 5&nbsp;MB or provide an HTTPS logo URL).
 - The email and password for the first administrator.
 

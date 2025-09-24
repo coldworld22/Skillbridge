@@ -222,6 +222,7 @@ function buildEnvUpdates(config) {
   const updates = {};
   if (config.appName) updates.APP_NAME = config.appName;
   if (config.supportEmail) updates.SUPPORT_EMAIL = config.supportEmail;
+  if (config.codecanyonKey) updates.CODECANYON_SUBSCRIPTION_KEY = config.codecanyonKey;
   if (config.smtp) {
     if (config.smtp.host) updates.SMTP_HOST = config.smtp.host;
     if (config.smtp.port) updates.SMTP_PORT = config.smtp.port;
