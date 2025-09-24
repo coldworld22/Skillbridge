@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const logger = require('../../utils/logger');
 const { markAdminExists, refreshAdminPresence } = require('./install.helpers');
+const { validatePurchaseCode } = require('../../services/licenseService');
 const appConfigService = require('../appConfig/appConfig.service');
 const emailConfigService = require('../emailConfig/emailConfig.service');
 const { validatePurchaseCode } = require('../../services/licenseService');
@@ -96,6 +97,18 @@ const removeFileIfExists = async (filePath) => {
   }
 };
 
+const extractDomainFromRequest = (req) => {
+  const forwardedHost = (req.get('x-forwarded-host') || '').split(',')[0].trim();
+  if (forwardedHost) {
+    return forwardedHost.split(':')[0];
+  }
+  const hostHeader = (req.get('host') || '').trim();
+  if (hostHeader) {
+    return hostHeader.split(':')[0];
+  }
+  return req.hostname;
+};
+
 exports.runInstall = async (req, res) => {
   const {
     adminEmail,
@@ -139,6 +152,34 @@ exports.runInstall = async (req, res) => {
 
   const uploadedLogoRelative = req.file ? `/uploads/app/${req.file.filename}` : undefined;
   const uploadedLogoAbsolute = req.file ? req.file.path : undefined;
+
+  if (codecanyonKey) {
+    try {
+      const domain = extractDomainFromRequest(req);
+      const { valid, message } = await validatePurchaseCode(codecanyonKey, domain);
+      if (!valid) {
+        if (uploadedLogoAbsolute) {
+          await removeFileIfExists(uploadedLogoAbsolute);
+        }
+        return res.status(400).json({
+          ok: false,
+          message: message || 'Codecanyon purchase code could not be verified.',
+          fieldErrors: {
+            codecanyonKey: message || 'Codecanyon purchase code could not be verified.',
+          },
+        });
+      }
+    } catch (error) {
+      logger.error('Codecanyon license validation failed during install', error);
+      if (uploadedLogoAbsolute) {
+        await removeFileIfExists(uploadedLogoAbsolute);
+      }
+      return res.status(500).json({
+        ok: false,
+        message: 'Unexpected error while validating the Codecanyon purchase code. Please try again.',
+      });
+    }
+  }
 
   let tempDir;
   let configPath;
