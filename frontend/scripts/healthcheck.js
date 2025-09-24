@@ -14,7 +14,7 @@ function parsePositiveInt(value, fallback) {
 
 const host = process.env.HEALTHCHECK_HOST || DEFAULT_HOST;
 const port = parsePositiveInt(process.env.PORT, 3000);
-const hostHeader = port === 80 || port === 443 ? host : `${host}:${port}`;
+let hostHeader = port === 80 || port === 443 ? host : `${host}:${port}`;
 const protocol = (process.env.HEALTHCHECK_PROTOCOL || DEFAULT_PROTOCOL).toLowerCase();
 const path = process.env.HEALTHCHECK_PATH || DEFAULT_PATH;
 const timeout = parsePositiveInt(process.env.HEALTHCHECK_TIMEOUT_MS, DEFAULT_TIMEOUT_MS);
@@ -26,8 +26,7 @@ const defaultPorts = new Map([
 ]);
 
 const defaultPortForProtocol = defaultPorts.get(protocol);
-const hostHeader =
-  defaultPortForProtocol && port === defaultPortForProtocol ? host : `${host}:${port}`;
+hostHeader = defaultPortForProtocol && port === defaultPortForProtocol ? host : `${host}:${port}`;
 
 const allowedProtocols = new Set(['http', 'https']);
 if (!allowedProtocols.has(protocol)) {
