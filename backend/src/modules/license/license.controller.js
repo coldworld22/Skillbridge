@@ -1,5 +1,28 @@
 const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const service = require('./license.service');
+const { validatePurchaseCode } = require('../../services/licenseService');
+
+/**
+ * POST /api/license/verify
+ * Validate a purchase code during installation.
+ */
+exports.verifyPurchaseCode = async (req, res, next) => {
+  const { purchase_code, domain } = req.body;
+  try {
+    if (!purchase_code) {
+      return res.status(400).json({ error: 'Purchase code required' });
+    }
+
+    const result = await validatePurchaseCode(purchase_code, domain);
+    if (result.valid) {
+      return res.json({ success: true, message: result.message });
+    }
+
+    return res.status(400).json({ success: false, message: result.message });
+  } catch (err) {
+    return next(err);
+  }
+};
 
 /**
  * POST /api/license/activate
