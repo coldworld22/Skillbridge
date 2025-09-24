@@ -8,7 +8,6 @@ const { markAdminExists, refreshAdminPresence } = require('./install.helpers');
 const { validatePurchaseCode } = require('../../services/licenseService');
 const appConfigService = require('../appConfig/appConfig.service');
 const emailConfigService = require('../emailConfig/emailConfig.service');
-const { validatePurchaseCode } = require('../../services/licenseService');
 
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
