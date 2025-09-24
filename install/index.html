@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/install/styles.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .step-container {
@@ -189,7 +189,7 @@
     <section id="step-config" class="mb-8 step-container step-hidden-right" aria-hidden="true">
       <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
       <p class="text-sm text-gray-600">Provide the admin credentials and initial organization details for the new installation.</p>
-      <form id="configForm" class="mt-4 space-y-6" enctype="multipart/form-data">
+      <form id="installerConfigForm" class="mt-4 space-y-6" enctype="multipart/form-data">
         <fieldset class="space-y-4">
           <legend class="text-base font-semibold text-gray-800">Admin access</legend>
           <label class="block">
@@ -352,7 +352,7 @@
 
         <button
           type="submit"
-          id="installBtn"
+          id="installerInstallBtn"
           class="rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700"
         >
           Run Install
@@ -387,6 +387,6 @@
       </div>
     </section>
   </main>
-  <script src="install.js" defer></script>
+  <script src="/install/install.js" defer></script>
 </body>
 </html>
