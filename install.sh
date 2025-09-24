@@ -7,6 +7,40 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 
+check_prerequisites() {
+  local missing=()
+
+  for tool in node npm; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      missing+=("$tool")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    echo "Missing required command(s): ${missing[*]}" >&2
+    echo "Install the missing tools and re-run the installer." >&2
+    exit 1
+  fi
+
+  local node_version
+  node_version=$(node -v 2>/dev/null | sed 's/^v//')
+  if [[ -z "$node_version" ]]; then
+    echo "Unable to determine Node.js version." >&2
+    exit 1
+  fi
+
+  local node_major=${node_version%%.*}
+  if [[ ! "$node_major" =~ ^[0-9]+$ ]]; then
+    echo "Unrecognized Node.js version string: $node_version" >&2
+    exit 1
+  fi
+
+  if (( node_major < 18 )); then
+    echo "SkillBridge requires Node.js 18 or later (found $node_version)." >&2
+    exit 1
+  fi
+}
+
 ensure_env_file() {
   local example_file=$1
   local target_file=$2
@@ -42,6 +76,25 @@ load_env_file() {
 
 url_encode() {
   node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
+}
+
+ensure_backend_upload_dir() {
+  local upload_dir="$REPO_ROOT/backend/uploads/app"
+  if [[ ! -d "$upload_dir" ]]; then
+    mkdir -p "$upload_dir"
+  fi
+}
+
+install_node_dependencies() {
+  local package_dir=$1
+  if [[ -z "$package_dir" ]]; then
+    return 0
+  fi
+
+  if [[ ! -d "$package_dir/node_modules" ]]; then
+    echo "Installing Node.js dependencies in $package_dir..."
+    npm --prefix "$package_dir" install
+  fi
 }
 
 derive_postgres_url() {
@@ -118,6 +171,8 @@ ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
 
+check_prerequisites
+
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
     echo "Welcome to the SkillBridge installation wizard."
@@ -155,6 +210,22 @@ fi
 
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 START_DEV_SERVICES=${START_DEV_SERVICES:-true}
+
+ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
+ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
+if [[ "$MODE" == "production" ]]; then
+  ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend/.env.production"
+fi
+
+load_env_file "$REPO_ROOT/.env"
+load_env_file "$REPO_ROOT/backend/.env"
+if [[ "$MODE" == "production" ]]; then
+  load_env_file "$REPO_ROOT/backend/.env.production"
+fi
+
+ensure_backend_upload_dir
+install_node_dependencies "$REPO_ROOT/backend"
 
 if [[ "$MODE" == "production" ]]; then
   if docker_available; then
