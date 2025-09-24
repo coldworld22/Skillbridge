@@ -122,6 +122,25 @@ describe('GET /api/install/prereqs', () => {
     expect(execFile).not.toHaveBeenCalled();
   });
 
+  it('treats whitespace padded truthy values as enabled', async () => {
+    process.env.INSTALL_API_ENABLED = '  true  ';
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, allPassed: true });
+  });
+
+  it('accepts alternate truthy values on ENABLE_INSTALL', async () => {
+    process.env.INSTALL_API_ENABLED = ' false ';
+    process.env.ENABLE_INSTALL = 'on';
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, allPassed: true });
+  });
+
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);
     const res = await request(app).get('/api/install/prereqs');
@@ -237,7 +256,7 @@ describe('POST /api/install/run', () => {
 
     expect(res.status).toBe(200);
     expect(
-      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
+      unlinkMock.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
     ).toBe(true);
   });
 
@@ -251,7 +270,7 @@ describe('POST /api/install/run', () => {
 
     expect(res.status).toBe(200);
     expect(
-      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/current-logo.png'))
+      unlinkMock.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/current-logo.png'))
     ).toBe(false);
   });
 
