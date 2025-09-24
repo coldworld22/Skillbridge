@@ -12,15 +12,37 @@ const emailConfigService = require('../emailConfig/emailConfig.service');
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
 
+const candidateScriptRoots = [
+  path.resolve(__dirname, '../../../../'),
+  path.resolve(__dirname, '../../../'),
+  process.cwd(),
+];
+
+const resolveInstallerAsset = (relativePath) => {
+  for (const rootDir of candidateScriptRoots) {
+    const candidate = path.resolve(rootDir, relativePath);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.resolve(__dirname, '../../../../', relativePath);
+};
+
 const SCRIPTS = {
-  prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
-  install: path.resolve(__dirname, '../../../../install.sh'),
+  prereqs: () => resolveInstallerAsset('scripts/check_prereqs.sh'),
+  install: () => resolveInstallerAsset('install.sh'),
 };
 
 const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
-  const scriptPath = SCRIPTS[scriptKey];
+  const scriptResolver = SCRIPTS[scriptKey];
+  const scriptPath = typeof scriptResolver === 'function' ? scriptResolver() : scriptResolver;
   if (!scriptPath) {
     throw new Error(`Unknown installer script: ${scriptKey}`);
+  }
+  if (!fs.existsSync(scriptPath)) {
+    const error = new Error(`Installer script not found: ${scriptPath}`);
+    error.code = 'ENOENT';
+    throw error;
   }
   const mergedEnv = { ...process.env, ...env };
   return execFileAsync(scriptPath, args, { env: mergedEnv, shell: false });
