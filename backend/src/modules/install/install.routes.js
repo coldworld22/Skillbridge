@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Router } = require('express');
 const { z } = require('zod');
+const config = require('../../config/env');
 const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
 const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');

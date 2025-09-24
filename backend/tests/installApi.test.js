@@ -3,6 +3,15 @@ const path = require('path');
 const fs = require('fs');
 const request = require('supertest');
 
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
+process.env.REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'test-refresh-secret';
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'test-session-secret';
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/test-db';
+process.env.ENABLE_INSTALL = process.env.ENABLE_INSTALL || 'false';
+process.env.INSTALL_API_ENABLED = process.env.INSTALL_API_ENABLED || 'false';
+
 jest.mock('child_process', () => {
   const util = require('util');
 
