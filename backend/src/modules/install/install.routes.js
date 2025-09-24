@@ -13,7 +13,10 @@ const toBool = (value) => {
     return value;
   }
   if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
+    const normalized = value
+      .trim()
+      .replace(/^['"]+|['"]+$/g, '')
+      .toLowerCase();
     if (!normalized) {
       return false;
     }
