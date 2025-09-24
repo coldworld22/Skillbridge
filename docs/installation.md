@@ -23,15 +23,26 @@ cd Skillbridge
 ### Automated install script
 
 The root `install.sh` script streamlines both local and production setups. When
-you run it, the script automatically copies `.env.example` files to `.env` if
-they are missing, then sources the resulting files so migrations and other
-commands inherit the required environment variables. Supply
-`ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+you run it the script:
+
+1. Runs `scripts/check_prereqs.sh` to verify host requirements (Node.js, Docker,
+   Redis, PostgreSQL, etc.). When the check fails you can either fix the
+   problem, acknowledge the warning at the interactive prompt, or set
+   `ALLOW_PREREQ_FAILURES=true` to continue automatically.
+2. Copies `.env.example` files to `.env` when the target file is missing (root,
+   backend, backend production, and `frontend/.env.local`).
+3. Sources the resulting files so migrations, seeds, and helper scripts inherit
+   the configuration.
+4. Ensures `backend/uploads/app` exists before branding assets are written.
+
+Supply `ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
 non-interactive use (for example in CI pipelines). Optional flags include:
 
 - `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
 - `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
   development mode if you prefer to start services yourself.
+- `ALLOW_PREREQ_FAILURES=true` &mdash; skip the interactive confirmation when
+  prerequisite checks fail and continue automatically.
 
 In production mode, the script ensures Docker services are running before it
 executes database migrations. In development mode it starts the compose stack in

@@ -21,7 +21,18 @@ Ensure `bash`, `curl`, `docker`, and the Docker Compose V2 plugin (the `docker c
 curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/install.sh | bash
 ```
 
-The script validates prerequisites, copies example env files, builds and starts the Docker containers, and can seed the database for development setups when `SEED_DB=true`. After it completes, the app is available at `http://localhost:3000`.
+The script now performs the following tasks:
+
+- Runs `scripts/check_prereqs.sh` and prints a human-readable summary of the results. If any requirement fails you can re-run with
+  `ALLOW_PREREQ_FAILURES=true` (or interactively confirm) to proceed anyway.
+- Copies `.env.example` files for the repository root, backend, backend production configuration, and `frontend/.env.local` when the
+  corresponding target file does not exist.
+- Loads the environment files so migrations, seeding, and helper scripts inherit the configuration you provide.
+- Ensures the backend uploads directory exists before branding assets are written to disk.
+- Builds and starts the Docker containers (unless `START_DEV_SERVICES=false`) and can seed the database for development setups when
+  `SEED_DB=true`.
+
+After it completes, the app is available at `http://localhost:3000`.
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
 ## Installer
