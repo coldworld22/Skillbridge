@@ -57,7 +57,7 @@ router.use('/api/library', require('../modules/library/library.routes'));
 router.use('/api/search', require('../modules/search/search.routes'));
 // Installation routes are disabled by default for security reasons.
 // They can be enabled explicitly via the INSTALL_API_ENABLED environment variable
-// set to the string "true" (case-insensitive).
+// set to a truthy string such as "true", "1", "yes", or "on" (case-insensitive).
 router.use('/api/install', requireInstallApiEnabled, installRouter);
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
