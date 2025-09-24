@@ -9,14 +9,17 @@ const controller = require('./install.controller');
 const router = Router();
 
 const toBool = (value) => {
-  if (typeof value !== 'string') {
-    return false;
+  if (typeof value === 'boolean') {
+    return value;
   }
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return false;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+    return ['true', '1', 'yes', 'on'].includes(normalized);
   }
-  return ['true', '1', 'yes', 'on'].includes(normalized);
+  return false;
 };
 
 const requireInstallApiEnabled = (req, res, next) => {
