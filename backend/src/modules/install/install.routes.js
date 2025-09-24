@@ -9,6 +9,22 @@ const controller = require('./install.controller');
 
 const router = Router();
 
+let cachedConfig;
+const getConfig = () => {
+  if (cachedConfig !== undefined) {
+    return cachedConfig;
+  }
+
+  try {
+    // eslint-disable-next-line global-require
+    cachedConfig = require('../../config/env');
+  } catch (error) {
+    cachedConfig = null;
+  }
+
+  return cachedConfig;
+};
+
 const normalizeBooleanCandidate = (value) => {
   if (typeof value !== 'string') {
     return '';
@@ -48,13 +64,40 @@ const toBool = (value) => {
   return false;
 };
 
+const readExplicitBoolean = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    return null;
+  }
+
+  return toBool(value);
+};
+
+const resolveEnvOverride = () => {
+  const installFlag = readExplicitBoolean(process.env.INSTALL_API_ENABLED);
+  const enableFlag = readExplicitBoolean(process.env.ENABLE_INSTALL);
+
+  if (installFlag === null && enableFlag === null) {
+    return null;
+  }
+
+  return Boolean(installFlag || enableFlag);
+};
+
 const requireInstallApiEnabled = (req, res, next) => {
-  if (
-    (typeof config.INSTALL_API_ENABLED === 'boolean' && config.INSTALL_API_ENABLED) ||
-    (typeof config.ENABLE_INSTALL === 'boolean' && config.ENABLE_INSTALL) ||
-    toBool(process.env.INSTALL_API_ENABLED) ||
-    toBool(process.env.ENABLE_INSTALL)
-  ) {
+  const envOverride = resolveEnvOverride();
+  if (envOverride !== null) {
+    if (envOverride) {
+      return next();
+    }
+    return res.status(403).json({ message: 'Installer API disabled' });
+  }
+
+  const config = getConfig();
+  if (config?.INSTALL_API_ENABLED || config?.ENABLE_INSTALL) {
     return next();
   }
   return res.status(403).json({ message: 'Installer API disabled' });
