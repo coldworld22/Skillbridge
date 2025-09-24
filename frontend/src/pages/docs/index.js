@@ -220,14 +220,15 @@ export default function DocumentationLandingPage() {
     [activeSectionId],
   );
 
+
   return (
     <>
-      <PageHead title="Documentation" description="SkillBridge product documentation" />
+      <PageHead title="Installation Guide" description="Install the SkillBridge platform with the bundled setup scripts." />
       <Navbar />
 
       <section className="bg-gradient-to-r from-indigo-900 via-purple-900 to-black text-white py-24 px-6 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">SkillBridge Documentation</h1>
+        <div className="mx-auto max-w-3xl space-y-6">
+          <h1 className="text-4xl font-bold md:text-5xl">Install SkillBridge</h1>
           <p className="text-lg text-indigo-100">
             Follow this guided installation to bootstrap SkillBridge with the unified setup script. Choose a section to learn how
             to prepare your environment, run the installer, and validate the deployment.
@@ -274,16 +275,17 @@ export default function DocumentationLandingPage() {
               </div>
             </article>
           </div>
+
         </div>
       </section>
 
       <section className="bg-indigo-700 text-white py-16 text-center px-6">
-        <div className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-3xl">
           <h2 className="text-3xl font-semibold mb-4">Need more help?</h2>
           <p className="text-indigo-100 mb-6">
             Browse the full documentation in the repository, join the community discussions, or open an issue if you run into trouble during installation.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
               href="https://github.com/eduskillbridge/SkillBridge/tree/main/docs"
               className="bg-white text-indigo-700 px-6 py-2 rounded shadow hover:bg-gray-100"
