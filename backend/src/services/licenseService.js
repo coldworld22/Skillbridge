@@ -2,38 +2,42 @@ const axios = require('axios');
 const db = require('../config/database');
 
 async function validatePurchaseCode(code, domain) {
-  const trimmedCode = code ? code.trim() : '';
-  const normalizedDomain = domain ? domain.trim() || null : null;
-
-  if (!trimmedCode) {
-    return { valid: false, message: 'Purchase code required' };
+  if (!code) {
+    throw new Error('Purchase code is required');
   }
 
-  if (trimmedCode === 'DEMO-CODE-1234') {
-    const now = new Date();
-    const existing = await db('licenses').where({ purchase_code: trimmedCode }).first();
+  if (code === 'DEMO-CODE-1234') {
+    const verifiedAt = new Date();
+    const normalizedDomain = typeof domain === 'string' && domain.trim() !== ''
+      ? domain.trim()
+      : null;
 
-    const licenseData = {
-      domain: normalizedDomain,
-      verified_at: now,
+    const existing = await db('licenses').where({ purchase_code: code }).first();
+
+    const updatePayload = {
+      verified_at: verifiedAt,
       status: 'active',
-      last_check: now,
     };
 
+    if (typeof domain !== 'undefined') {
+      updatePayload.domain = normalizedDomain;
+    }
+
     if (existing) {
-      await db('licenses').where({ id: existing.id }).update(licenseData);
+      await db('licenses').where({ id: existing.id }).update(updatePayload);
     } else {
-      await db('licenses').insert({ purchase_code: trimmedCode, ...licenseData });
+      await db('licenses').insert({
+        purchase_code: code,
+        domain: normalizedDomain,
+        email: null,
+        ip: null,
+        status: 'active',
+        verified_at: verifiedAt,
+      });
     }
 
     return { valid: true, message: 'Demo license accepted' };
   }
-
-  // FUTURE: replace with Envato API call
-  // const response = await axios.get(
-  //   `https://api.envato.com/v3/market/author/sale?code=${trimmedCode}`,
-  //   { headers: { Authorization: `Bearer ${process.env.ENVATO_TOKEN}` } }
-  // );
 
   return { valid: false, message: 'Invalid purchase code' };
 }

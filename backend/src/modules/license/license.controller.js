@@ -4,23 +4,20 @@ const { validatePurchaseCode } = require('../../services/licenseService');
 
 /**
  * POST /api/license/verify
- * Validate a purchase code during installation.
+ * Lightweight installer endpoint that accepts demo purchase codes.
  */
 exports.verifyPurchaseCode = async (req, res, next) => {
-  const { purchase_code, domain } = req.body;
   try {
-    if (!purchase_code) {
-      return res.status(400).json({ error: 'Purchase code required' });
-    }
-
+    const { purchase_code, domain } = req.body;
     const result = await validatePurchaseCode(purchase_code, domain);
+
     if (result.valid) {
       return res.json({ success: true, message: result.message });
     }
 
     return res.status(400).json({ success: false, message: result.message });
   } catch (err) {
-    return next(err);
+    next(err);
   }
 };
 
