@@ -5,6 +5,7 @@ This document explains how to set up SkillBridge for local development and for h
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18 or later
+- [npm](https://www.npmjs.com/) 9 or later (bundled with Node.js 18+)
 - [Docker](https://www.docker.com/) and the Docker Compose **V2** plugin (`docker compose` command)
 - Git
 - Redis or another session store for production deployments
@@ -37,6 +38,7 @@ you run it the script:
 
 Supply `ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
 non-interactive use (for example in CI pipelines). Optional flags include:
+
 
 - `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
 - `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
