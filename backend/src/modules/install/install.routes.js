@@ -5,6 +5,7 @@ const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
 const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');
 const controller = require('./install.controller');
+require('../../config/env');
 
 const router = Router();
 
@@ -47,8 +48,11 @@ const toBool = (value) => {
   return false;
 };
 
+const isInstallerEnabled = () =>
+  toBool(process.env.INSTALL_API_ENABLED) || toBool(process.env.ENABLE_INSTALL);
+
 const requireInstallApiEnabled = (req, res, next) => {
-  if (toBool(process.env.INSTALL_API_ENABLED) || toBool(process.env.ENABLE_INSTALL)) {
+  if (isInstallerEnabled()) {
     return next();
   }
   return res.status(403).json({ message: 'Installer API disabled' });
