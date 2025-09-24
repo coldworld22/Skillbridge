@@ -1,10 +1,10 @@
 import api from "@/services/api/api";
 
 export async function verifyLicense(purchaseCode, domain) {
-  const { data } = await api.post("/license/verify", {
+  const payload = {
     purchase_code: purchaseCode,
-    domain,
-  });
+    ...(domain ? { domain } : {}),
+  };
+  const { data } = await api.post("/license/verify", payload);
   return data;
 }
-

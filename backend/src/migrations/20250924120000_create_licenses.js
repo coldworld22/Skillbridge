@@ -1,25 +1,18 @@
-exports.up = async function (knex) {
-  const hasTable = await knex.schema.hasTable('licenses');
+exports.up = async function up(knex) {
+  const hasLicensesTable = await knex.schema.hasTable('licenses');
 
-  if (!hasTable) {
+  if (!hasLicensesTable) {
     await knex.schema.createTable('licenses', (table) => {
       table.increments('id').primary();
       table.string('purchase_code').unique().notNullable();
       table.string('domain').nullable();
-      table.string('email').nullable();
-      table.string('ip').nullable();
       table.timestamp('verified_at').nullable();
       table.string('status').defaultTo('active');
       table.timestamp('created_at').defaultTo(knex.fn.now());
-      table.timestamp('last_check').nullable();
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
     });
     return;
   }
-
-  await knex.schema.alterTable('licenses', (table) => {
-    table.string('domain').nullable().alter();
-    table.string('email').nullable().alter();
-  });
 
   const hasVerifiedAt = await knex.schema.hasColumn('licenses', 'verified_at');
   if (!hasVerifiedAt) {
@@ -27,11 +20,22 @@ exports.up = async function (knex) {
       table.timestamp('verified_at').nullable();
     });
   }
+  await knex.schema.alterTable('licenses', (table) => {
+    table.string('domain').nullable().alter();
+  });
 };
 
-exports.down = async function (knex) {
-  const hasTable = await knex.schema.hasTable('licenses');
-  if (!hasTable) return;
+exports.down = async function down(knex) {
+  const hasLicensesTable = await knex.schema.hasTable('licenses');
+  if (!hasLicensesTable) {
+    return;
+  }
+
+  const hasEmailColumn = await knex.schema.hasColumn('licenses', 'email');
+  if (!hasEmailColumn) {
+    await knex.schema.dropTable('licenses');
+    return;
+  }
 
   const hasVerifiedAt = await knex.schema.hasColumn('licenses', 'verified_at');
   if (hasVerifiedAt) {
@@ -40,11 +44,7 @@ exports.down = async function (knex) {
     });
   }
 
-  await knex('licenses').whereNull('domain').update({ domain: '' });
-  await knex('licenses').whereNull('email').update({ email: '' });
-
   await knex.schema.alterTable('licenses', (table) => {
     table.string('domain').notNullable().alter();
-    table.string('email').notNullable().alter();
   });
 };
