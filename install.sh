@@ -4,6 +4,9 @@ set -euo pipefail
 # Basic installation script.
 # Usage: ./install.sh [development|production] [domain]
 
+MODE_ARG=${1:-}
+DOMAIN_ARG=${2:-}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 
@@ -78,23 +81,65 @@ url_encode() {
   node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
 }
 
-ensure_backend_upload_dir() {
-  local upload_dir="$REPO_ROOT/backend/uploads/app"
-  if [[ ! -d "$upload_dir" ]]; then
-    mkdir -p "$upload_dir"
+require_command() {
+  local command_name=$1
+  local friendly_name=${2:-$1}
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "$friendly_name ($command_name) is required but was not found on PATH." >&2
+    exit 1
   fi
 }
 
-install_node_dependencies() {
-  local package_dir=$1
-  if [[ -z "$package_dir" ]]; then
-    return 0
+ensure_node_version() {
+  local version major
+  version=$(node -v 2>/dev/null || true)
+  major=${version#v}
+  major=${major%%.*}
+
+  if [[ -z "$major" || ! "$major" =~ ^[0-9]+$ || "$major" -lt 18 ]]; then
+    echo "Node.js 18 or newer is required. Detected ${version:-unknown}." >&2
+    exit 1
+  fi
+}
+
+print_prereq_report() {
+  local payload=$1
+  if [[ -z "$payload" ]]; then
+    return
   fi
 
-  if [[ ! -d "$package_dir/node_modules" ]]; then
-    echo "Installing Node.js dependencies in $package_dir..."
-    npm --prefix "$package_dir" install
-  fi
+  node - "$payload" <<'NODE'
+const raw = process.argv[2] || '';
+if (!raw.trim()) {
+  process.exit(0);
+}
+
+try {
+  const data = JSON.parse(raw);
+  const ok = Boolean(data.ok ?? data.allPassed);
+  const summary = typeof data.summary === 'string' && data.summary.trim()
+    ? data.summary.trim()
+    : ok
+      ? 'All prerequisites satisfied.'
+      : 'Some prerequisites require attention.';
+
+  console.log(summary);
+
+  if (Array.isArray(data.requirements)) {
+    for (const req of data.requirements) {
+      const statusRaw = (req && (req.status || (req.passed ? 'pass' : 'fail'))) || '';
+      const status = statusRaw.toString().toLowerCase();
+      const icon = status === 'pass' ? '✔' : status === 'warn' ? '⚠' : '✖';
+      const label = (req && (req.label || req.name || req.id)) || 'Requirement';
+      const message = req && (req.message || req.details || req.hint) ? ` - ${req.message || req.details || req.hint}` : '';
+      console.log(`  ${icon} ${label}${message}`);
+    }
+  }
+} catch (err) {
+  console.log(raw.trim());
+}
+NODE
 }
 
 derive_postgres_url() {
@@ -165,11 +210,76 @@ docker_available() {
   return 1
 }
 
-MODE=${1:-}
-DOMAIN=${2:-}
+require_command node "Node.js"
+require_command npm "npm"
+ensure_node_version
+
+ROOT_ENV_EXAMPLE="$REPO_ROOT/.env.example"
+ROOT_ENV_FILE="$REPO_ROOT/.env"
+BACKEND_ENV_EXAMPLE="$REPO_ROOT/backend/.env.example"
+BACKEND_ENV_FILE="$REPO_ROOT/backend/.env"
+BACKEND_PROD_ENV_EXAMPLE="$REPO_ROOT/backend/.env.production.example"
+BACKEND_PROD_ENV_FILE="$REPO_ROOT/backend/.env.production"
+FRONTEND_ENV_LOCAL_EXAMPLE="$REPO_ROOT/frontend/.env.local.example"
+FRONTEND_ENV_LOCAL_FILE="$REPO_ROOT/frontend/.env.local"
+PREREQ_SCRIPT="$REPO_ROOT/scripts/check_prereqs.sh"
+UPLOAD_DIR="$REPO_ROOT/backend/uploads/app"
+
+echo "Ensuring environment templates are in place..."
+ensure_env_file "$ROOT_ENV_EXAMPLE" "$ROOT_ENV_FILE"
+ensure_env_file "$BACKEND_ENV_EXAMPLE" "$BACKEND_ENV_FILE"
+ensure_env_file "$BACKEND_PROD_ENV_EXAMPLE" "$BACKEND_PROD_ENV_FILE"
+ensure_env_file "$FRONTEND_ENV_LOCAL_EXAMPLE" "$FRONTEND_ENV_LOCAL_FILE"
+
+echo "Loading environment configuration..."
+load_env_file "$ROOT_ENV_FILE"
+load_env_file "$BACKEND_ENV_FILE"
+
+if [[ -f "$BACKEND_PROD_ENV_FILE" ]]; then
+  load_env_file "$BACKEND_PROD_ENV_FILE"
+fi
+
+MODE=${MODE_ARG:-${MODE:-}}
+DOMAIN=${DOMAIN_ARG:-${DOMAIN:-}}
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
+ALLOW_PREREQ_FAILURES="${ALLOW_PREREQ_FAILURES:-false}"
+ALLOW_PREREQ_FAILURES=$(echo "$ALLOW_PREREQ_FAILURES" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+
+if [[ ! -d "$UPLOAD_DIR" ]]; then
+  echo "Creating uploads directory at $UPLOAD_DIR"
+  mkdir -p "$UPLOAD_DIR"
+fi
+
+if [[ -x "$PREREQ_SCRIPT" ]]; then
+  echo "Running prerequisite checks..."
+  if prereq_output="$("$PREREQ_SCRIPT")"; then
+    print_prereq_report "$prereq_output"
+  else
+    status=$?
+    print_prereq_report "$prereq_output"
+    if [[ "$ALLOW_PREREQ_FAILURES" =~ ^(true|1|yes|on)$ ]]; then
+      echo "Continuing despite prerequisite failures because ALLOW_PREREQ_FAILURES=$ALLOW_PREREQ_FAILURES."
+    elif [[ -t 0 ]]; then
+      read -rp "One or more prerequisites failed. Continue anyway? [y/N]: " response
+      case "$response" in
+        y|Y|yes|YES)
+          echo "Continuing despite prerequisite failures."
+          ;;
+        *)
+          echo "Aborting installation due to failed prerequisite checks." >&2
+          exit "$status"
+          ;;
+      esac
+    else
+      echo "Prerequisite checks failed and no interactive prompt available. Aborting." >&2
+      exit "$status"
+    fi
+  fi
+else
+  echo "Prerequisite script not found at $PREREQ_SCRIPT; skipping automated checks."
+fi
 
 check_prerequisites
 
