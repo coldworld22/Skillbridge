@@ -36,12 +36,12 @@ describe('/install route', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
     expect(res.text).toContain('id="installerConfigForm"');
-    expect(res.text).toContain('Database connection URL');
-    expect(res.text).toContain('SMTP host');
-    expect(res.text).toContain('Application display name');
-    expect(res.text).toContain('Admin email');
-    expect(res.text).toContain('Admin password');
-    expect(res.text).toContain('Default “from” email');
+    expect(res.text).toContain('Admin Email');
+    expect(res.text).toContain('Admin Password');
+    expect(res.text).toContain('Application Name');
+    expect(res.text).toContain('Support Email');
+    expect(res.text).toContain('SMTP Host');
+    expect(res.text).toContain('From Email (optional)');
     expect(res.text).toContain('id="progressBar"');
     expect(res.text).toContain('data-stepper-item="prereq"');
     expect(res.text).toContain('data-stepper-item="config"');
