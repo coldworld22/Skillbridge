@@ -51,6 +51,7 @@ router.use('/api/faqs', require('../modules/faqs/faqs.routes'));
 router.use('/api/support', require('../modules/support/support.routes'));
 router.use('/api/tickets', require('../modules/tickets/tickets.routes'));
 router.use('/api/media', require('../modules/media/media.routes'));
+router.use('/api/license', require('./license.routes'));
 router.use('/api/book-categories', require('../modules/bookCategories/bookCategories.routes'));
 router.use('/api/books', require('../modules/books/book.routes'));
 router.use('/api/instructor/books', require('../modules/books/instructorBook.routes'));

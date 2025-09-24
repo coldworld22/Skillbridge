@@ -1,44 +1,46 @@
 const axios = require('axios');
 const db = require('../config/database');
+let hasEmailColumnCache;
+async function hasEmailColumn() {
+  if (typeof hasEmailColumnCache === 'boolean') {
+    return hasEmailColumnCache;
+  }
+  try {
+    hasEmailColumnCache = await db.schema.hasColumn('licenses', 'email');
+  } catch (error) {
+    hasEmailColumnCache = false;
+  }
+  return hasEmailColumnCache;
+}
 
 async function validatePurchaseCode(code, domain) {
-  if (!code) {
-    throw new Error('Purchase code is required');
-  }
-
   if (code === 'DEMO-CODE-1234') {
-    const verifiedAt = new Date();
-    const normalizedDomain = typeof domain === 'string' && domain.trim() !== ''
-      ? domain.trim()
-      : null;
-
+    const now = new Date();
     const existing = await db('licenses').where({ purchase_code: code }).first();
-
-    const updatePayload = {
-      verified_at: verifiedAt,
+    const payload = {
+      purchase_code: code,
+      domain: domain || null,
+      verified_at: now,
       status: 'active',
     };
 
-    if (typeof domain !== 'undefined') {
-      updatePayload.domain = normalizedDomain;
+    if (await hasEmailColumn()) {
+      payload.email = 'demo@example.com';
     }
 
     if (existing) {
-      await db('licenses').where({ id: existing.id }).update(updatePayload);
+      await db('licenses').where({ id: existing.id }).update(payload);
     } else {
-      await db('licenses').insert({
-        purchase_code: code,
-        domain: normalizedDomain,
-        email: null,
-        ip: null,
-        status: 'active',
-        verified_at: verifiedAt,
-      });
+      await db('licenses').insert(payload);
     }
 
     return { valid: true, message: 'Demo license accepted' };
   }
 
+  // const response = await axios.get(
+  //   `https://api.envato.com/v3/market/author/sale?code=${code}`,
+  //   { headers: { Authorization: `Bearer ${process.env.ENVATO_TOKEN}` } }
+  // );
   return { valid: false, message: 'Invalid purchase code' };
 }
 
