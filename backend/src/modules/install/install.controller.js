@@ -5,8 +5,10 @@ const fs = require('fs');
 const os = require('os');
 const logger = require('../../utils/logger');
 const { markAdminExists, refreshAdminPresence } = require('./install.helpers');
+const { validatePurchaseCode } = require('../../services/licenseService');
 const appConfigService = require('../appConfig/appConfig.service');
 const emailConfigService = require('../emailConfig/emailConfig.service');
+const { validatePurchaseCode } = require('../../services/licenseService');
 
 const execFileAsync = util.promisify(execFile);
 const fsPromises = fs.promises;
@@ -95,6 +97,18 @@ const removeFileIfExists = async (filePath) => {
   }
 };
 
+const extractDomainFromRequest = (req) => {
+  const forwardedHost = (req.get('x-forwarded-host') || '').split(',')[0].trim();
+  if (forwardedHost) {
+    return forwardedHost.split(':')[0];
+  }
+  const hostHeader = (req.get('host') || '').trim();
+  if (hostHeader) {
+    return hostHeader.split(':')[0];
+  }
+  return req.hostname;
+};
+
 exports.runInstall = async (req, res) => {
   const {
     adminEmail,
@@ -116,8 +130,56 @@ exports.runInstall = async (req, res) => {
     return res.status(400).json({ ok: false, message: 'Admin email and password are required.' });
   }
 
+  if (codecanyonKey) {
+    try {
+      const forwardedHost = (req.get('x-forwarded-host') || '').split(',')[0]?.trim();
+      const hostHeader = (req.get('host') || '').trim();
+      const domain = forwardedHost || hostHeader || req.hostname;
+      const licenseResult = await validatePurchaseCode(codecanyonKey, domain);
+      if (!licenseResult?.valid) {
+        const message = licenseResult?.message || 'Codecanyon license verification failed.';
+        const statusCode = /unable to verify/i.test(message) ? 502 : 400;
+        logger.warn('Codecanyon license verification rejected during install', { message });
+        return res.status(statusCode).json({ ok: false, message });
+      }
+    } catch (error) {
+      logger.error('Codecanyon license verification error during install', error);
+      return res
+        .status(502)
+        .json({ ok: false, message: 'Unable to verify Codecanyon license key. Please try again later.' });
+    }
+  }
+
   const uploadedLogoRelative = req.file ? `/uploads/app/${req.file.filename}` : undefined;
   const uploadedLogoAbsolute = req.file ? req.file.path : undefined;
+
+  if (codecanyonKey) {
+    try {
+      const domain = extractDomainFromRequest(req);
+      const { valid, message } = await validatePurchaseCode(codecanyonKey, domain);
+      if (!valid) {
+        if (uploadedLogoAbsolute) {
+          await removeFileIfExists(uploadedLogoAbsolute);
+        }
+        return res.status(400).json({
+          ok: false,
+          message: message || 'Codecanyon purchase code could not be verified.',
+          fieldErrors: {
+            codecanyonKey: message || 'Codecanyon purchase code could not be verified.',
+          },
+        });
+      }
+    } catch (error) {
+      logger.error('Codecanyon license validation failed during install', error);
+      if (uploadedLogoAbsolute) {
+        await removeFileIfExists(uploadedLogoAbsolute);
+      }
+      return res.status(500).json({
+        ok: false,
+        message: 'Unexpected error while validating the Codecanyon purchase code. Please try again.',
+      });
+    }
+  }
 
   let tempDir;
   let configPath;

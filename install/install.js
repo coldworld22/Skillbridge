@@ -237,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const setupSecretError = document.getElementById('setupSecretError');
   const codecanyonStatus = configForm ? configForm.querySelector('[data-license-status]') : null;
   const codecanyonInput = configForm ? configForm.querySelector('input[name="codecanyonKey"]') : null;
-
   const SECRET_STORAGE_KEY = 'skillbridge-install-setup-secret';
   const secretState = { value: '' };
   const supportsSessionStorage = (() => {
@@ -373,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   let submittedConfig = null;
+  const licenseVerificationCache = { code: '', result: null };
 
   function getFieldErrorElement(name) {
     if (fieldErrors.has(name)) {
@@ -380,6 +380,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const el = configForm ? configForm.querySelector(`[data-field-error="${name}"]`) : null;
     fieldErrors.set(name, el || null);
+    return el || null;
+  }
+
+  function getFieldSuccessElement(name) {
+    if (fieldSuccesses.has(name)) {
+      return fieldSuccesses.get(name);
+    }
+    const el = configForm ? configForm.querySelector(`[data-field-success="${name}"]`) : null;
+    fieldSuccesses.set(name, el || null);
     return el || null;
   }
 
@@ -588,6 +597,10 @@ document.addEventListener('DOMContentLoaded', () => {
       el.textContent = '';
       el.classList.add('hidden');
     });
+    configForm.querySelectorAll('[data-field-success]').forEach((el) => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
   }
 
   function clearFieldError(name) {
@@ -611,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
       field.setAttribute('aria-invalid', 'true');
       field.classList.add('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
     }
+    clearFieldSuccess(name);
     const errorEl = getFieldErrorElement(name);
     if (errorEl) {
       errorEl.textContent = message;
@@ -839,7 +853,6 @@ document.addEventListener('DOMContentLoaded', () => {
           data = {};
         }
       }
-
       if (!response.ok || data?.success === false) {
         const message =
           data?.message ||
@@ -1044,6 +1057,58 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (res.status === 400) {
+        const highlightFields = [];
+        const registerFieldError = (field, message) => {
+          if (typeof field !== 'string' || !field) return;
+          highlightFields.push(field);
+          setFieldError(field, message || 'Please correct this value.');
+        };
+
+        if (Array.isArray(data?.errors)) {
+          data.errors.forEach((issue) => {
+            if (!issue) return;
+            const path = Array.isArray(issue.path)
+              ? issue.path.find((segment) => typeof segment === 'string')
+              : typeof issue.path === 'string'
+                ? issue.path
+                : undefined;
+            registerFieldError(path, typeof issue.message === 'string' ? issue.message : undefined);
+          });
+        }
+
+        if (data?.fieldErrors && typeof data.fieldErrors === 'object') {
+          Object.entries(data.fieldErrors).forEach(([field, message]) => {
+            registerFieldError(field, typeof message === 'string' ? message : undefined);
+          });
+        }
+
+        const summaryMessage =
+          typeof data?.message === 'string' && data.message.trim().length > 0
+            ? data.message.trim()
+            : 'Installation configuration contains errors. Please review the highlighted fields.';
+
+        showError(summaryMessage);
+        updateStep('config', { preserveProgress: true });
+        backToConfigBtn?.classList.remove('hidden');
+
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = summaryMessage;
+        }
+
+        if (highlightFields.length > 0) {
+          const firstField = configForm.querySelector(`[name="${highlightFields[0]}"]`);
+          if (firstField && typeof firstField.focus === 'function') {
+            firstField.focus();
+          }
+        }
+
+        if (installBtn) installBtn.disabled = false;
+        return;
+      }
+
       const success = typeof data.ok === 'boolean' ? data.ok : res.ok;
       const outputText =
         typeof data.output === 'string' && data.output.trim().length > 0
@@ -1094,6 +1159,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (configForm) {
     configForm.addEventListener('submit', handleInstallSubmit);
+  }
+
+  if (codecanyonInput) {
+    codecanyonInput.addEventListener('input', () => {
+      licenseVerificationCache.code = '';
+      licenseVerificationCache.result = null;
+      clearFieldSuccess('codecanyonKey');
+      const field = codecanyonInput;
+      field.removeAttribute('aria-invalid');
+      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+      const errorEl = getFieldErrorElement('codecanyonKey');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      }
+    });
   }
 
   if (backToConfigBtn) {
