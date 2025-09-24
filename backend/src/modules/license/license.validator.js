@@ -23,3 +23,10 @@ exports.deactivate = z.object({
     domain: z.string().min(1),
   }),
 });
+
+exports.verifyDemo = z.object({
+  body: z.object({
+    purchase_code: z.string().min(1),
+    domain: z.string().min(1).optional(),
+  }),
+});
