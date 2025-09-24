@@ -159,7 +159,6 @@ describe('GET /api/install/prereqs', () => {
     expect(res.body).toEqual({ message: 'Installer API disabled' });
   });
 
-
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);
     const res = await request(app).get('/api/install/prereqs');
