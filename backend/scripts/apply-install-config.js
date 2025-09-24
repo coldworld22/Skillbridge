@@ -269,6 +269,7 @@ const applyConfiguration = async () => {
         encoding: (process.env.INSTALL_LOGO_FILE_ENCODING || 'base64').toLowerCase(),
       };
     })(),
+    codecanyonKey: (process.env.CODECANYON_SUBSCRIPTION_KEY || '').trim(),
   };
 
   const envUpdates = {
@@ -287,6 +288,10 @@ const applyConfiguration = async () => {
     ENABLE_INSTALL: 'false',
     INSTALL_API_ENABLED: 'false',
   };
+
+  if (config.codecanyonKey) {
+    envUpdates.CODECANYON_SUBSCRIPTION_KEY = config.codecanyonKey;
+  }
 
   await upsertEnvValues(envPath, envUpdates);
 

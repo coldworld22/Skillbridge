@@ -77,6 +77,10 @@ const buildInstallerConfig = (body) => {
     config.logoUrl = body.logoUrl;
   }
 
+  if (body.codecanyonKey) {
+    config.codecanyonKey = body.codecanyonKey;
+  }
+
   return config;
 };
 
@@ -105,6 +109,7 @@ exports.runInstall = async (req, res) => {
     smtpFromEmail,
     smtpFromName,
     logoUrl,
+    codecanyonKey,
   } = req.body;
 
   if (!adminEmail || !adminPassword) {
@@ -156,6 +161,10 @@ exports.runInstall = async (req, res) => {
       START_DEV_SERVICES: 'false',
       MODE: process.env.MODE || 'development',
     };
+
+    if (codecanyonKey) {
+      env.CODECANYON_SUBSCRIPTION_KEY = codecanyonKey;
+    }
 
     const { stdout, stderr } = await runScript('install', { env });
     markAdminExists();
