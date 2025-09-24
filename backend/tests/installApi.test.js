@@ -122,6 +122,15 @@ describe('GET /api/install/prereqs', () => {
     expect(execFile).not.toHaveBeenCalled();
   });
 
+  it.each(['1', 'yes', 'on', ' TRUE ', '  yes  '])(
+    'treats %p as enabling the installer API',
+    async (value) => {
+      process.env.INSTALL_API_ENABLED = value;
+      const res = await request(app).get('/api/install/prereqs');
+      expect(res.status).toBe(200);
+    }
+  );
+
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);
     const res = await request(app).get('/api/install/prereqs');
@@ -237,7 +246,7 @@ describe('POST /api/install/run', () => {
 
     expect(res.status).toBe(200);
     expect(
-      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
+      unlinkMock.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
     ).toBe(true);
   });
 
@@ -251,7 +260,7 @@ describe('POST /api/install/run', () => {
 
     expect(res.status).toBe(200);
     expect(
-      unlinkSpy.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/current-logo.png'))
+      unlinkMock.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/current-logo.png'))
     ).toBe(false);
   });
 
