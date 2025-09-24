@@ -141,6 +141,15 @@ describe('GET /api/install/prereqs', () => {
     expect(res.body).toEqual({ ok: true, allPassed: true });
   });
 
+  it('allows enabling via truthy values that include inline comments', async () => {
+    process.env.INSTALL_API_ENABLED = 'true # enable installer';
+
+    const res = await request(app).get('/api/install/prereqs');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, allPassed: true });
+  });
+
 
   it('executes the prerequisite script and returns its JSON output', async () => {
     mockHasExistingAdmin.mockResolvedValue(false);
