@@ -5,6 +5,7 @@ This document explains how to set up SkillBridge for local development and for h
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18 or later
+- [npm](https://www.npmjs.com/) 9 or later (bundled with Node.js 18+)
 - [Docker](https://www.docker.com/) and the Docker Compose **V2** plugin (`docker compose` command)
 - Git
 - Redis or another session store for production deployments
@@ -23,21 +24,39 @@ cd Skillbridge
 ### Automated install script
 
 The root `install.sh` script streamlines both local and production setups. When
-you run it, the script automatically copies `.env.example` files to `.env` if
-they are missing, then sources the resulting files so migrations and other
-commands inherit the required environment variables. Supply
-`ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+you run it the script:
+
+1. Runs `scripts/check_prereqs.sh` to verify host requirements (Node.js, Docker,
+   Redis, PostgreSQL, etc.). When the check fails you can either fix the
+   problem, acknowledge the warning at the interactive prompt, or set
+   `ALLOW_PREREQ_FAILURES=true` to continue automatically.
+2. Copies `.env.example` files to `.env` when the target file is missing (root,
+   backend, backend production, and `frontend/.env.local`).
+3. Sources the resulting files so migrations, seeds, and helper scripts inherit
+   the configuration.
+4. Ensures `backend/uploads/app` exists before branding assets are written.
+
+Supply `ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
 non-interactive use (for example in CI pipelines). Optional flags include:
+
 
 - `SEED_DB=true` &mdash; run `npm --prefix backend run seed` after migrations.
 - `START_DEV_SERVICES=false` &mdash; skip the automatic `docker compose up` step in
   development mode if you prefer to start services yourself.
+- `SKIP_BACKEND_NPM_INSTALL=true` &mdash; skip the automatic `npm --prefix backend install`
+  step when you manage dependencies separately.
 
 In production mode, the script ensures Docker services are running before it
 executes database migrations. In development mode it starts the compose stack in
 detached mode unless you opt out with `START_DEV_SERVICES=false`. Any migration
 or seeding errors halt the script before the admin user creation step so you can
 address the problem immediately.
+
+Before running migrations the script installs backend dependencies with
+`npm --prefix backend install` so the Node.js helper scripts are available and
+creates `backend/uploads/app/` if it is missing. Use
+`SKIP_BACKEND_NPM_INSTALL=true` if dependencies are already installed and you
+prefer to reuse them.
 
 ### Backend
 
@@ -267,7 +286,7 @@ location ^~ /install/ {
    - The default “from” email address used for outbound messages.
    - (Optional) Your Codecanyon purchase or subscription key so future updates can validate the license.
    - The public application display name.
-   - Either a logo image upload (PNG/JPG/SVG up to 5&nbsp;MB) or an HTTPS URL to an existing logo.
+   - Either a logo image upload (PNG/JPG/SVG up to 2&nbsp;MB) or an HTTPS URL to an existing logo.
    - The admin email and password for the first administrator.
 7. Run the installer to apply the configuration. The script updates `backend/.env`, writes the selected logo to `backend/uploads/app/`, seeds the branding/email settings in the database, and finally provisions the administrator account.
 

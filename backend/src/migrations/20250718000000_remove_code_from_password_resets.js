@@ -5,7 +5,11 @@ exports.up = function(knex) {
 };
 
 exports.down = function(knex) {
-  return knex.schema.alterTable('password_resets', function(table) {
-    table.string('code', 10).notNullable();
-  });
+  return knex.schema
+    .alterTable('password_resets', function(table) {
+      table.string('code', 10).defaultTo('').notNullable();
+    })
+    .then(function() {
+      return knex.raw('ALTER TABLE password_resets ALTER COLUMN code DROP DEFAULT');
+    });
 };

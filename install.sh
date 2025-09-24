@@ -4,8 +4,45 @@ set -euo pipefail
 # Basic installation script.
 # Usage: ./install.sh [development|production] [domain]
 
+MODE_ARG=${1:-}
+DOMAIN_ARG=${2:-}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
+
+check_prerequisites() {
+  local missing=()
+
+  for tool in node npm; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      missing+=("$tool")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    echo "Missing required command(s): ${missing[*]}" >&2
+    echo "Install the missing tools and re-run the installer." >&2
+    exit 1
+  fi
+
+  local node_version
+  node_version=$(node -v 2>/dev/null | sed 's/^v//')
+  if [[ -z "$node_version" ]]; then
+    echo "Unable to determine Node.js version." >&2
+    exit 1
+  fi
+
+  local node_major=${node_version%%.*}
+  if [[ ! "$node_major" =~ ^[0-9]+$ ]]; then
+    echo "Unrecognized Node.js version string: $node_version" >&2
+    exit 1
+  fi
+
+  if (( node_major < 18 )); then
+    echo "SkillBridge requires Node.js 18 or later (found $node_version)." >&2
+    exit 1
+  fi
+}
 
 ensure_env_file() {
   local example_file=$1
@@ -42,6 +79,67 @@ load_env_file() {
 
 url_encode() {
   node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
+}
+
+require_command() {
+  local command_name=$1
+  local friendly_name=${2:-$1}
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "$friendly_name ($command_name) is required but was not found on PATH." >&2
+    exit 1
+  fi
+}
+
+ensure_node_version() {
+  local version major
+  version=$(node -v 2>/dev/null || true)
+  major=${version#v}
+  major=${major%%.*}
+
+  if [[ -z "$major" || ! "$major" =~ ^[0-9]+$ || "$major" -lt 18 ]]; then
+    echo "Node.js 18 or newer is required. Detected ${version:-unknown}." >&2
+    exit 1
+  fi
+}
+
+print_prereq_report() {
+  local payload=$1
+  if [[ -z "$payload" ]]; then
+    return
+  fi
+
+  node - "$payload" <<'NODE'
+const raw = process.argv[2] || '';
+if (!raw.trim()) {
+  process.exit(0);
+}
+
+try {
+  const data = JSON.parse(raw);
+  const ok = Boolean(data.ok ?? data.allPassed);
+  const summary = typeof data.summary === 'string' && data.summary.trim()
+    ? data.summary.trim()
+    : ok
+      ? 'All prerequisites satisfied.'
+      : 'Some prerequisites require attention.';
+
+  console.log(summary);
+
+  if (Array.isArray(data.requirements)) {
+    for (const req of data.requirements) {
+      const statusRaw = (req && (req.status || (req.passed ? 'pass' : 'fail'))) || '';
+      const status = statusRaw.toString().toLowerCase();
+      const icon = status === 'pass' ? '✔' : status === 'warn' ? '⚠' : '✖';
+      const label = (req && (req.label || req.name || req.id)) || 'Requirement';
+      const message = req && (req.message || req.details || req.hint) ? ` - ${req.message || req.details || req.hint}` : '';
+      console.log(`  ${icon} ${label}${message}`);
+    }
+  }
+} catch (err) {
+  console.log(raw.trim());
+}
+NODE
 }
 
 derive_postgres_url() {
@@ -112,11 +210,43 @@ docker_available() {
   return 1
 }
 
-MODE=${1:-}
-DOMAIN=${2:-}
-ADMIN_EMAIL="${ADMIN_EMAIL:-}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
-INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
+install_backend_dependencies() {
+  local skip="${SKIP_BACKEND_NPM_INSTALL:-false}"
+  case "$skip" in
+    1|true|TRUE|yes|YES|on|ON)
+      echo "Skipping backend dependency installation (SKIP_BACKEND_NPM_INSTALL=$skip)."
+      return 0
+      ;;
+  esac
+
+  echo "Installing backend dependencies (npm install)..."
+  if ! npm --prefix "$REPO_ROOT/backend" install; then
+    echo "Failed to install backend dependencies." >&2
+    exit 1
+  fi
+}
+
+CLI_MODE=${1:-}
+CLI_DOMAIN=${2:-}
+
+ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend/.env.production"
+ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
+
+load_env_file "$REPO_ROOT/.env"
+
+UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
+if [[ ! -d "$UPLOADS_DIR" ]]; then
+  echo "Creating backend uploads directory at $UPLOADS_DIR"
+  mkdir -p "$UPLOADS_DIR"
+fi
+
+MODE=${CLI_MODE:-${MODE:-}}
+
+load_env_file "$REPO_ROOT/backend/.env"
+
+DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
 
 if [[ -z "$MODE" ]]; then
   if [[ -t 0 ]]; then
@@ -142,6 +272,11 @@ if [[ "$MODE" == "production" && -z "$DOMAIN" ]]; then
 fi
 
 if [[ "$MODE" == "production" ]]; then
+  load_env_file "$REPO_ROOT/backend/.env.production"
+  DOMAIN=${CLI_DOMAIN:-${DOMAIN:-}}
+fi
+
+if [[ "$MODE" == "production" ]]; then
   if [[ -z "$DOMAIN" ]]; then
     echo "Domain is required for production" >&2
     echo "Usage: $0 production <domain>" >&2
@@ -155,6 +290,22 @@ fi
 
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 START_DEV_SERVICES=${START_DEV_SERVICES:-true}
+
+ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
+ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
+ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
+if [[ "$MODE" == "production" ]]; then
+  ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend/.env.production"
+fi
+
+load_env_file "$REPO_ROOT/.env"
+load_env_file "$REPO_ROOT/backend/.env"
+if [[ "$MODE" == "production" ]]; then
+  load_env_file "$REPO_ROOT/backend/.env.production"
+fi
+
+ensure_backend_upload_dir
+install_node_dependencies "$REPO_ROOT/backend"
 
 if [[ "$MODE" == "production" ]]; then
   if docker_available; then
@@ -179,6 +330,10 @@ elif [[ "$START_DEV_SERVICES" == "true" ]]; then
 else
   echo "Skipping automatic startup of development services."
 fi
+
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+INSTALL_CONFIG_PATH="${INSTALL_CONFIG_PATH:-}"
 
 if [[ -z "$ADMIN_EMAIL" ]]; then
   if [[ -t 0 ]]; then
@@ -232,6 +387,8 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
 
   require_env_var "$required"
 done
+
+install_backend_dependencies
 
 export \
   ADMIN_EMAIL \

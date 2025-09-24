@@ -20,7 +20,6 @@ exports.up = async function up(knex) {
       table.timestamp('verified_at').nullable();
     });
   }
-
   await knex.schema.alterTable('licenses', (table) => {
     table.string('domain').nullable().alter();
   });
