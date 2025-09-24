@@ -6,6 +6,7 @@ const validate = require('../../middleware/validate');
 const logoUpload = require('../appConfig/appLogoUploadMiddleware');
 const { hasExistingAdmin: resolveHasExistingAdminStatus } = require('./install.helpers');
 const controller = require('./install.controller');
+require('../../config/env');
 
 const router = Router();
 
@@ -64,40 +65,11 @@ const toBool = (value) => {
   return false;
 };
 
-const readExplicitBoolean = (value) => {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  if (typeof value === 'string' && value.trim() === '') {
-    return null;
-  }
-
-  return toBool(value);
-};
-
-const resolveEnvOverride = () => {
-  const installFlag = readExplicitBoolean(process.env.INSTALL_API_ENABLED);
-  const enableFlag = readExplicitBoolean(process.env.ENABLE_INSTALL);
-
-  if (installFlag === null && enableFlag === null) {
-    return null;
-  }
-
-  return Boolean(installFlag || enableFlag);
-};
+const isInstallerEnabled = () =>
+  toBool(process.env.INSTALL_API_ENABLED) || toBool(process.env.ENABLE_INSTALL);
 
 const requireInstallApiEnabled = (req, res, next) => {
-  const envOverride = resolveEnvOverride();
-  if (envOverride !== null) {
-    if (envOverride) {
-      return next();
-    }
-    return res.status(403).json({ message: 'Installer API disabled' });
-  }
-
-  const config = getConfig();
-  if (config?.INSTALL_API_ENABLED || config?.ENABLE_INSTALL) {
+  if (isInstallerEnabled()) {
     return next();
   }
   return res.status(403).json({ message: 'Installer API disabled' });
