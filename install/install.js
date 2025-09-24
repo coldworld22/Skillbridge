@@ -235,6 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToConfigBtn = document.getElementById('backToConfigBtn');
   const setupSecretInput = document.getElementById('setupSecretInput');
   const setupSecretError = document.getElementById('setupSecretError');
+  const codecanyonStatus = configForm ? configForm.querySelector('[data-license-status]') : null;
+  const codecanyonInput = configForm ? configForm.querySelector('input[name="codecanyonKey"]') : null;
 
   const SECRET_STORAGE_KEY = 'skillbridge-install-setup-secret';
   const secretState = { value: '' };
@@ -342,6 +344,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const codecanyonVerification = { key: '', status: 'idle', message: '' };
+
+  if (codecanyonInput) {
+    codecanyonInput.addEventListener('input', () => {
+      const sanitized = sanitize(codecanyonInput.value);
+      if (!sanitized) {
+        clearCodecanyonStatus({ resetKey: true });
+        clearFieldError('codecanyonKey');
+        return;
+      }
+      if (codecanyonVerification.status === 'success' && codecanyonVerification.key !== sanitized) {
+        clearCodecanyonStatus();
+      }
+    });
+
+    codecanyonInput.addEventListener('blur', async () => {
+      const sanitized = sanitize(codecanyonInput.value);
+      if (!sanitized) {
+        clearCodecanyonStatus({ resetKey: true });
+        clearFieldError('codecanyonKey');
+        return;
+      }
+      const result = await verifyCodecanyonLicense(sanitized);
+      if (!result.ok) {
+        setFieldError('codecanyonKey', result.message);
+      }
+    });
+  }
   let submittedConfig = null;
 
   function getFieldErrorElement(name) {
@@ -560,6 +590,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function clearFieldError(name) {
+    if (!configForm) return;
+    const field = configForm.querySelector(`[name="${name}"]`);
+    if (field) {
+      field.removeAttribute('aria-invalid');
+      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+    }
+    const errorEl = getFieldErrorElement(name);
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+    }
+  }
+
   function setFieldError(name, message) {
     if (!configForm) return;
     const field = configForm.querySelector(`[name="${name}"]`);
@@ -571,6 +615,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorEl) {
       errorEl.textContent = message;
       errorEl.classList.remove('hidden');
+    }
+  }
+
+  function updateCodecanyonStatus(status, message) {
+    if (!codecanyonStatus) return;
+    codecanyonStatus.textContent = message || '';
+    codecanyonStatus.classList.remove('text-gray-600', 'text-green-600', 'text-red-600');
+    if (!message) {
+      codecanyonStatus.classList.add('hidden');
+      return;
+    }
+    codecanyonStatus.classList.remove('hidden');
+    if (status === 'success') {
+      codecanyonStatus.classList.add('text-green-600');
+    } else if (status === 'error') {
+      codecanyonStatus.classList.add('text-red-600');
+    } else {
+      codecanyonStatus.classList.add('text-gray-600');
+    }
+  }
+
+  function clearCodecanyonStatus({ resetKey = false } = {}) {
+    if (resetKey) {
+      codecanyonVerification.key = '';
+    }
+    codecanyonVerification.status = 'idle';
+    codecanyonVerification.message = '';
+    if (codecanyonStatus) {
+      codecanyonStatus.textContent = '';
+      codecanyonStatus.classList.add('hidden');
+      codecanyonStatus.classList.remove('text-gray-600', 'text-green-600', 'text-red-600');
     }
   }
 
@@ -715,6 +790,85 @@ document.addEventListener('DOMContentLoaded', () => {
     return payload;
   }
 
+  async function verifyCodecanyonLicense(key, { force = false } = {}) {
+    const sanitized = sanitize(key);
+    if (!sanitized) {
+      clearCodecanyonStatus({ resetKey: true });
+      return { ok: true, message: '' };
+    }
+
+    if (!force && codecanyonVerification.status === 'success' && codecanyonVerification.key === sanitized) {
+      updateCodecanyonStatus('success', codecanyonVerification.message);
+      return { ok: true, message: codecanyonVerification.message };
+    }
+
+    codecanyonVerification.key = sanitized;
+    codecanyonVerification.status = 'checking';
+    codecanyonVerification.message = 'Verifying license...';
+    updateCodecanyonStatus('checking', 'Verifying license with Envato...');
+
+    const headers = { 'Content-Type': 'application/json' };
+    const csrfToken = getCookie('csrfToken');
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    const secret = getSetupSecret();
+    if (secret) {
+      headers['x-install-setup-secret'] = secret;
+    }
+
+    const body = { purchase_code: sanitized };
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      body.domain = window.location.hostname;
+    }
+
+    try {
+      const response = await fetch('/api/license/verify', {
+        method: 'POST',
+        headers,
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+      });
+
+      const responseText = await response.text();
+      let data = {};
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch (_err) {
+          data = {};
+        }
+      }
+
+      if (!response.ok || data?.success === false) {
+        const message =
+          data?.message ||
+          data?.error ||
+          (response.status === 403
+            ? 'License verification blocked. Refresh the page and ensure cookies are enabled.'
+            : 'Unable to verify license. Check your Envato/Codecanyon code.');
+        codecanyonVerification.status = 'error';
+        codecanyonVerification.message = message;
+        updateCodecanyonStatus('error', message);
+        return { ok: false, message };
+      }
+
+      const message = data?.message || 'License verified successfully.';
+      codecanyonVerification.status = 'success';
+      codecanyonVerification.message = message;
+      codecanyonVerification.key = sanitized;
+      updateCodecanyonStatus('success', message);
+      clearFieldError('codecanyonKey');
+      return { ok: true, message };
+    } catch (error) {
+      const message = `Unable to verify license: ${error.message}`;
+      codecanyonVerification.status = 'error';
+      codecanyonVerification.message = message;
+      updateCodecanyonStatus('error', message);
+      return { ok: false, message };
+    }
+  }
+
   function showCompletion(result) {
     if (!completionCard) return;
     const messageFromApi =
@@ -766,6 +920,11 @@ document.addEventListener('DOMContentLoaded', () => {
     backToConfigBtn?.classList.add('hidden');
     clearFieldErrors();
 
+    if (installBtn) installBtn.disabled = true;
+    const enableInstallButton = () => {
+      if (installBtn) installBtn.disabled = false;
+    };
+
     const rawFormData = new FormData(configForm);
     const configuration = collectConfiguration(rawFormData);
     const issues = validateConfiguration(configuration);
@@ -778,12 +937,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (firstField && typeof firstField.focus === 'function') {
         firstField.focus();
       }
+      enableInstallButton();
       return;
+    }
+
+    if (configuration.codecanyonKey) {
+      const licenseResult = await verifyCodecanyonLicense(configuration.codecanyonKey, { force: true });
+      if (!licenseResult.ok) {
+        setFieldError('codecanyonKey', licenseResult.message);
+        showError(licenseResult.message);
+        codecanyonInput?.focus();
+        enableInstallButton();
+        return;
+      }
+    } else {
+      clearCodecanyonStatus({ resetKey: true });
     }
 
     submittedConfig = configuration;
 
-    if (installBtn) installBtn.disabled = true;
     updateStep('install');
     setProgress(STEP_PROGRESS.install);
 
@@ -805,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
           installOutput.textContent = message;
         }
         backToConfigBtn?.classList.remove('hidden');
-        if (installBtn) installBtn.disabled = false;
+        enableInstallButton();
         updateStep('config', { preserveProgress: true });
         return;
       }
@@ -850,6 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateStep('config', { preserveProgress: true });
         backToConfigBtn?.classList.remove('hidden');
+        enableInstallButton();
         return;
       }
 
@@ -867,6 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateStep('config', { preserveProgress: true });
         backToConfigBtn?.classList.remove('hidden');
+        enableInstallButton();
         return;
       }
 
@@ -910,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       backToConfigBtn?.classList.remove('hidden');
     } finally {
-      if (installBtn) installBtn.disabled = false;
+      enableInstallButton();
     }
   }
 
