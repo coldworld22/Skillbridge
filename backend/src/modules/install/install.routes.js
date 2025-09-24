@@ -14,19 +14,15 @@ const normalizeBooleanEnvValue = (raw) => {
   if (typeof raw === 'boolean') {
     return raw;
   }
-  if (typeof raw === 'number') {
-    return raw === 1;
-  }
-  if (typeof raw !== 'string') {
-    return undefined;
-  }
-
-  const withoutComments = raw
-    .replace(/[;#].*$/, '')
-    .trim();
-
-  if (!withoutComments) {
-    return undefined;
+  if (typeof value === 'string') {
+    const normalized = value
+      .trim()
+      .replace(/^['"]+|['"]+$/g, '')
+      .toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+    return ['true', '1', 'yes', 'on'].includes(normalized);
   }
 
   const firstToken = withoutComments.split(/\s+/)[0].toLowerCase();
