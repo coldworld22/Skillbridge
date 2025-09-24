@@ -89,7 +89,7 @@ const buildPayload = () => ({
 });
 
 beforeEach(() => {
-  process.env.INSTALL_API_ENABLED = 'true';
+  process.env.INSTALL_API_ENABLED = ' true ';
   delete process.env.ENABLE_INSTALL;
   delete process.env.INSTALL_SETUP_SECRET;
   mockHasExistingAdmin.mockResolvedValue(false);
