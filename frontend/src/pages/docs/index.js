@@ -1,151 +1,96 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import PageHead from '@/components/common/PageHead';
-import Navbar from '@/components/website/sections/Navbar';
-import Footer from '@/components/website/sections/Footer';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
+const DOCS_DIR = path.resolve(process.cwd(), '../docs');
 
-const DOCS_DIR = path.join(process.cwd(), 'docs');
-
-const extractTitle = (content, fallback) => {
-  const match = content.match(/^#\s+(.+)$/m);
-  return match ? match[1].trim() : fallback;
+const titleFromContent = (content, fallback) => {
+  const match = content.match(/^#\s+(.+)/m);
+  if (match) {
+    return match[1].trim();
+  }
+  return fallback;
 };
 
-const extractSummary = (content) => {
-  const normalized = content.replace(/\r/g, '').split('\n');
-  const paragraph = normalized.find(
-    (line) =>
-      line.trim() &&
-      !line.trim().startsWith('#') &&
-      !line.trim().startsWith('- ') &&
-      !line.trim().startsWith('* ') &&
-      !line.trim().startsWith('>'),
-  );
-  return paragraph ? paragraph.trim() : '';
-};
-
-const readDocsIndex = async () => {
-  const files = await fs.readdir(DOCS_DIR);
-  const entries = files.filter((file) => file.endsWith('.md') && file !== 'README.md');
+export async function getStaticProps() {
+  let entries;
+  try {
+    entries = await fs.readdir(DOCS_DIR, { withFileTypes: true });
+  } catch (error) {
+    console.error('Failed to read docs directory:', error);
+    return { props: { docs: [] } };
+  }
 
   const docs = await Promise.all(
-    entries.map(async (file) => {
-      const filePath = path.join(DOCS_DIR, file);
-      const content = await fs.readFile(filePath, 'utf8');
-      const slug = file.replace(/\.md$/, '');
-      return {
-        slug,
-        title: extractTitle(content, slug.replace(/-/g, ' ')),
-        summary: extractSummary(content),
-      };
-    }),
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+      .map(async (entry) => {
+        const filePath = path.join(DOCS_DIR, entry.name);
+        const content = await fs.readFile(filePath, 'utf8');
+        const slug = entry.name.replace(/\.md$/, '');
+        const title = titleFromContent(
+          content,
+          slug
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        );
+        return { slug, title };
+      }),
   );
 
   docs.sort((a, b) => a.title.localeCompare(b.title));
-  return docs;
-};
 
-const MarkdownLink = ({ href, children, ...props }) => {
-  if (!href) {
-    return <span {...props}>{children}</span>;
-  }
-
-  if (href.endsWith('.md')) {
-    const slug = href.replace(/\.md$/, '');
-    return (
-      <Link href={`/docs/${slug}`} {...props}>
-        {children}
-      </Link>
-    );
-  }
-
-  const isExternal = /^https?:\/\//i.test(href);
-  if (isExternal) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-        {children}
-      </a>
-    );
-  }
-
-  return (
-    <Link href={href} {...props}>
-      {children}
-    </Link>
-  );
-};
-
-const markdownComponents = {
-  a: MarkdownLink,
-};
-
-export default function DocsIndexPage({ readme, docs }) {
-  return (
-    <>
-      <PageHead title="Documentation" />
-      <div className="bg-gray-900 text-white min-h-screen">
-        <Navbar />
-        <main className="max-w-5xl mx-auto px-6 py-16">
-          <header className="mb-12 text-center">
-            <h1 className="text-4xl font-bold text-yellow-400 mb-4">SkillBridge Documentation</h1>
-            <p className="text-lg text-gray-300">
-              Explore setup guides, workflows, and reference material for the SkillBridge platform.
-            </p>
-          </header>
-          <article className="prose prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {readme}
-            </ReactMarkdown>
-          </article>
-          {docs.length > 0 && (
-            <section className="mt-16">
-              <h2 className="text-2xl font-semibold mb-6">All guides</h2>
-              <div className="grid gap-6 md:grid-cols-2">
-                {docs.map((doc) => (
-                  <Link
-                    key={doc.slug}
-                    href={`/docs/${doc.slug}`}
-                    className="block bg-gray-800 border border-gray-700 hover:border-yellow-400 transition rounded-lg p-6"
-                  >
-                    <h3 className="text-xl font-semibold text-yellow-300 mb-2">{doc.title}</h3>
-                    <p className="text-gray-300 text-sm">
-                      {doc.summary || `Read the ${doc.title} guide.`}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </main>
-        <Footer />
-      </div>
-    </>
-  );
+  return {
+    props: {
+      docs,
+    },
+  };
 }
 
-export async function getStaticProps({ locale }) {
-  try {
-    const readmePath = path.join(DOCS_DIR, 'README.md');
-    const readme = await fs.readFile(readmePath, 'utf8');
-    const docs = await readDocsIndex();
+export default function DocsIndex({ docs }) {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-black/5 dark:ring-white/10 p-8 sm:p-12">
+          <div className="mb-10 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wide text-yellow-500">
+              SkillBridge Documentation
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              Explore the platform guides
+            </h1>
+            <p className="mt-4 text-base text-gray-600 dark:text-gray-300">
+              Browse the curated guides and reference material for installing, configuring and using SkillBridge.
+            </p>
+          </div>
 
-    return {
-      props: {
-        readme,
-        docs,
-        ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
-      },
-      revalidate: 3600,
-    };
-  } catch (error) {
-    console.error('Failed to load documentation index:', error);
-    return {
-      notFound: true,
-    };
-  }
+          <div className="grid gap-4 sm:grid-cols-2">
+            {docs.map((doc) => (
+              <Link
+                key={doc.slug}
+                href={`/docs/${doc.slug}`}
+                className="group block rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 p-5 transition hover:border-yellow-500 hover:bg-white dark:hover:border-yellow-500 dark:hover:bg-gray-900"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-yellow-600 dark:group-hover:text-yellow-400">
+                    {doc.title}
+                  </h2>
+                  <span className="mt-1 inline-flex items-center justify-center rounded-full border border-current px-2.5 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                    View
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  Read the full guide
+                </p>
+              </Link>
+            ))}
+            {docs.length === 0 && (
+              <div className="col-span-full rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                Documentation files were not found. Please ensure the <code>docs/</code> folder is available at build time.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
