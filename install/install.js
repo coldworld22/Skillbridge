@@ -870,6 +870,58 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (res.status === 400) {
+        const highlightFields = [];
+        const registerFieldError = (field, message) => {
+          if (typeof field !== 'string' || !field) return;
+          highlightFields.push(field);
+          setFieldError(field, message || 'Please correct this value.');
+        };
+
+        if (Array.isArray(data?.errors)) {
+          data.errors.forEach((issue) => {
+            if (!issue) return;
+            const path = Array.isArray(issue.path)
+              ? issue.path.find((segment) => typeof segment === 'string')
+              : typeof issue.path === 'string'
+                ? issue.path
+                : undefined;
+            registerFieldError(path, typeof issue.message === 'string' ? issue.message : undefined);
+          });
+        }
+
+        if (data?.fieldErrors && typeof data.fieldErrors === 'object') {
+          Object.entries(data.fieldErrors).forEach(([field, message]) => {
+            registerFieldError(field, typeof message === 'string' ? message : undefined);
+          });
+        }
+
+        const summaryMessage =
+          typeof data?.message === 'string' && data.message.trim().length > 0
+            ? data.message.trim()
+            : 'Installation configuration contains errors. Please review the highlighted fields.';
+
+        showError(summaryMessage);
+        updateStep('config', { preserveProgress: true });
+        backToConfigBtn?.classList.remove('hidden');
+
+        if (installOutput) {
+          installOutput.classList.remove('text-gray-700');
+          installOutput.classList.add('text-red-700');
+          installOutput.textContent = summaryMessage;
+        }
+
+        if (highlightFields.length > 0) {
+          const firstField = configForm.querySelector(`[name="${highlightFields[0]}"]`);
+          if (firstField && typeof firstField.focus === 'function') {
+            firstField.focus();
+          }
+        }
+
+        if (installBtn) installBtn.disabled = false;
+        return;
+      }
+
       const success = typeof data.ok === 'boolean' ? data.ok : res.ok;
       const outputText =
         typeof data.output === 'string' && data.output.trim().length > 0
