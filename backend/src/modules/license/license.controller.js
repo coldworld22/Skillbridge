@@ -1,5 +1,25 @@
 const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const service = require('./license.service');
+const { validatePurchaseCode } = require('../../services/licenseService');
+
+/**
+ * POST /api/license/verify
+ * Lightweight installer endpoint that accepts demo purchase codes.
+ */
+exports.verifyPurchaseCode = async (req, res, next) => {
+  try {
+    const { purchase_code, domain } = req.body;
+    const result = await validatePurchaseCode(purchase_code, domain);
+
+    if (result.valid) {
+      return res.json({ success: true, message: result.message });
+    }
+
+    return res.status(400).json({ success: false, message: result.message });
+  } catch (err) {
+    next(err);
+  }
+};
 
 /**
  * POST /api/license/activate

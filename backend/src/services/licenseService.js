@@ -1,6 +1,5 @@
 const axios = require('axios');
 const db = require('../config/database');
-
 let hasEmailColumnCache;
 async function hasEmailColumn() {
   if (typeof hasEmailColumnCache === 'boolean') {
@@ -42,7 +41,6 @@ async function validatePurchaseCode(code, domain) {
   //   `https://api.envato.com/v3/market/author/sale?code=${code}`,
   //   { headers: { Authorization: `Bearer ${process.env.ENVATO_TOKEN}` } }
   // );
-
   return { valid: false, message: 'Invalid purchase code' };
 }
 

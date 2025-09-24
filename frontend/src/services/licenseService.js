@@ -7,3 +7,4 @@ export async function verifyLicense(purchaseCode, domain) {
   });
   return data;
 }
+
