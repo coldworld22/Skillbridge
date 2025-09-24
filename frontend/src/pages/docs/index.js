@@ -1,19 +1,93 @@
 import fs from 'fs';
 import path from 'path';
+import { useMemo, useState } from 'react';
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 
-function formatDocTitle(filename) {
-  return filename
-    .replace(/\.md$/i, '')
-    .split('-')
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ');
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+function buildSections(rawContent) {
+  if (!rawContent) {
+    return [];
+  }
+
+  const lines = rawContent.split('\n');
+  const sections = [];
+
+  let current = {
+    id: 'overview',
+    title: 'Overview',
+    content: [],
+  };
+
+  const pushCurrent = () => {
+    if (!current) {
+      return;
+    }
+
+    const body = current.content.join('\n').trim();
+    if (body) {
+      sections.push({ ...current, body });
+    }
+  };
+
+  lines.forEach((line) => {
+    const sectionMatch = line.match(/^##\s+(.+)/);
+    if (sectionMatch) {
+      pushCurrent();
+      current = {
+        id: slugify(sectionMatch[1].trim()),
+        title: sectionMatch[1].trim(),
+        content: [],
+      };
+      return;
+    }
+
+    if (!current) {
+      return;
+    }
+
+    current.content.push(line);
+  });
+
+  pushCurrent();
+
+  return sections;
 }
 
-export default function DocumentationLandingPage({ docs }) {
+export default function DocumentationLandingPage({ sections, lastUpdated }) {
+  const [activeSectionId, setActiveSectionId] = useState(sections[0]?.id ?? null);
+  const activeSection = useMemo(
+    () => sections.find((section) => section.id === activeSectionId) ?? sections[0] ?? null,
+    [activeSectionId, sections],
+  );
+
+  const formattedUpdated = useMemo(() => {
+    if (!lastUpdated) {
+      return null;
+    }
+
+    try {
+      return new Intl.DateTimeFormat('en', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }).format(new Date(lastUpdated));
+    } catch (error) {
+      console.warn('Failed to format installation last updated timestamp:', error);
+      return null;
+    }
+  }, [lastUpdated]);
+
   return (
     <>
       <PageHead title="Documentation" description="SkillBridge product documentation" />
@@ -29,49 +103,144 @@ export default function DocumentationLandingPage({ docs }) {
       </section>
 
       <section className="bg-black py-16 px-6">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-semibold text-white mb-8 text-center">Documentation Library</h2>
-          <div className="grid gap-6 sm:grid-cols-2">
-            {docs.length > 0 ? (
-              docs.map((doc) => (
-                <a
-                  key={doc.filename}
-                  href={doc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block bg-gray-900 hover:bg-gray-800 transition rounded-xl border border-gray-800 p-6 shadow-lg"
-                >
-                  <h3 className="text-xl font-semibold text-white mb-2">{doc.title}</h3>
-                  <p className="text-sm text-gray-300">{doc.description}</p>
-                  <span className="mt-4 inline-flex items-center text-indigo-300 font-medium">
-                    View guide
-                    <svg
-                      className="ml-2 h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col gap-10 lg:flex-row">
+            <aside className="lg:w-72">
+              <div className="sticky top-28 space-y-4 rounded-2xl border border-indigo-500/40 bg-gray-900/70 p-6 shadow-xl backdrop-blur">
+                <h2 className="text-lg font-semibold text-white">Installation Sections</h2>
+                <p className="text-sm text-indigo-200">
+                  Choose a topic to see the installation script instructions tailored for that step.
+                </p>
+                <div className="space-y-2">
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => setActiveSectionId(section.id)}
+                      className={`w-full rounded-xl border px-4 py-2 text-left text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                        activeSection?.id === section.id
+                          ? 'border-indigo-400 bg-indigo-600 text-white shadow-lg'
+                          : 'border-gray-700 bg-gray-900 text-indigo-100 hover:border-indigo-400 hover:bg-gray-800'
+                      }`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </span>
-                </a>
-              ))
-            ) : (
-              <p className="col-span-full text-center text-gray-300">
-                Documentation is currently unavailable. Please visit our{' '}
-                <a
-                  href="https://github.com/eduskillbridge/SkillBridge/tree/main/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  GitHub repository
-                </a>{' '}
-                to browse the latest guides.
-              </p>
-            )}
+                      {section.title}
+                    </button>
+                  ))}
+                </div>
+                {formattedUpdated && (
+                  <p className="text-xs text-indigo-200/80">Last updated {formattedUpdated}</p>
+                )}
+              </div>
+            </aside>
+
+            <div className="flex-1">
+              {activeSection ? (
+                <div className="rounded-3xl border border-indigo-500/30 bg-gray-900/50 p-6 shadow-2xl backdrop-blur">
+                  <h2 className="text-2xl font-semibold text-white">{activeSection.title}</h2>
+                  <div className="mt-6 text-indigo-100">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a({ href, children, ...props }) {
+                          if (!href) {
+                            return <span {...props}>{children}</span>;
+                          }
+
+                          const isExternal = href.startsWith('http://') || href.startsWith('https://');
+
+                          if (isExternal) {
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-300 underline hover:text-indigo-200"
+                                {...props}
+                              >
+                                {children}
+                              </a>
+                            );
+                          }
+
+                          return (
+                            <a href={href} className="text-indigo-300 underline hover:text-indigo-200" {...props}>
+                              {children}
+                            </a>
+                          );
+                        },
+                        code({ inline, className, children, ...props }) {
+                          if (inline) {
+                            return (
+                              <code className="rounded bg-gray-800 px-1 py-0.5 text-xs text-indigo-200" {...props}>
+                                {children}
+                              </code>
+                            );
+                          }
+
+                          return (
+                            <pre className="my-4 overflow-x-auto rounded-2xl border border-gray-800 bg-black/60 p-4 text-sm text-indigo-100">
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          );
+                        },
+                        p({ children, ...props }) {
+                          return (
+                            <p className="mb-4 leading-relaxed" {...props}>
+                              {children}
+                            </p>
+                          );
+                        },
+                        ul({ children, ...props }) {
+                          return (
+                            <ul className="mb-4 list-disc space-y-2 pl-6 marker:text-indigo-300" {...props}>
+                              {children}
+                            </ul>
+                          );
+                        },
+                        ol({ children, ...props }) {
+                          return (
+                            <ol className="mb-4 list-decimal space-y-2 pl-6 marker:text-indigo-300" {...props}>
+                              {children}
+                            </ol>
+                          );
+                        },
+                        li({ children, ...props }) {
+                          return (
+                            <li className="leading-relaxed" {...props}>
+                              {children}
+                            </li>
+                          );
+                        },
+                        h3({ children, ...props }) {
+                          return (
+                            <h3 className="mt-6 text-xl font-semibold text-white" {...props}>
+                              {children}
+                            </h3>
+                          );
+                        },
+                        table({ children, ...props }) {
+                          return (
+                            <div className="my-6 overflow-x-auto rounded-2xl border border-gray-800 bg-black/50" {...props}>
+                              <table className="min-w-full divide-y divide-gray-800 text-left text-sm text-indigo-100">
+                                {children}
+                              </table>
+                            </div>
+                          );
+                        },
+                      }}
+                    >
+                      {activeSection.body}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-indigo-500/30 bg-gray-900/40 p-6 text-center text-indigo-100">
+                  Installation content is currently unavailable. Check back soon for scripted setup guidance.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -123,33 +292,27 @@ function resolveDocsDirectory() {
 
 export async function getStaticProps({ locale }) {
   const docsDir = resolveDocsDirectory();
-  let docs = [];
+  let sections = [];
+  let lastUpdated = null;
 
   if (docsDir) {
+    const installationPath = path.join(docsDir, 'installation.md');
+
     try {
-      const filenames = fs
-        .readdirSync(docsDir)
-        .filter((filename) => filename.toLowerCase().endsWith('.md'))
-        .sort((a, b) => a.localeCompare(b));
+      const installationContent = fs.readFileSync(installationPath, 'utf8');
+      sections = buildSections(installationContent);
 
-      docs = filenames.map((filename) => {
-        const title = formatDocTitle(filename);
-
-        return {
-          filename,
-          title,
-          description: `Read the ${title} guide on GitHub.`,
-          url: `https://github.com/eduskillbridge/SkillBridge/blob/main/docs/${filename}`,
-        };
-      });
+      const stats = fs.statSync(installationPath);
+      lastUpdated = stats.mtime.toISOString();
     } catch (error) {
-      console.error('Failed to read documentation directory:', error);
+      console.error('Failed to load installation documentation for docs landing page:', error);
     }
   }
 
   return {
     props: {
-      docs,
+      sections,
+      lastUpdated,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
   };
