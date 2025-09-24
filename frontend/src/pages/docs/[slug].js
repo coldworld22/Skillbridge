@@ -5,10 +5,6 @@ import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const DOCS_DIR = path.resolve(process.cwd(), '../docs');
-
-const buildDocPath = (slug) => path.join(DOCS_DIR, `${slug}.md`);
-
 const sanitizeSlug = (value) => value.replace(/\.md$/, '').replace(/[^a-zA-Z0-9-_]/g, '');
 
 const resolveDocLink = (href) => {
@@ -33,12 +29,38 @@ const resolveDocLink = (href) => {
   return `/docs/${cleaned}`;
 };
 
+const DOCS_DIR_CANDIDATES = [
+  path.join(process.cwd(), 'docs'),
+  path.join(process.cwd(), '..', 'docs'),
+  path.join(process.cwd(), '..', '..', 'docs'),
+];
+
+async function resolveDocsDirectory() {
+  for (const candidate of DOCS_DIR_CANDIDATES) {
+    try {
+      const stats = await fs.stat(candidate);
+      if (stats.isDirectory()) {
+        return candidate;
+      }
+    } catch (error) {
+      // Ignore missing paths and keep checking candidates.
+    }
+  }
+
+  return null;
+}
+
 export async function getStaticPaths() {
+  const docsDir = await resolveDocsDirectory();
   let entries = [];
-  try {
-    entries = await fs.readdir(DOCS_DIR, { withFileTypes: true });
-  } catch (error) {
-    console.error('Failed to read docs directory:', error);
+  if (!docsDir) {
+    console.warn('Documentation directory not found while generating static paths.');
+  } else {
+    try {
+      entries = await fs.readdir(docsDir, { withFileTypes: true });
+    } catch (error) {
+      console.error('Failed to read docs directory:', error);
+    }
   }
 
   const paths = entries
@@ -54,8 +76,16 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
+  const docsDir = await resolveDocsDirectory();
+  if (!docsDir) {
+    console.error('Documentation directory not available while generating static props.');
+    return {
+      notFound: true,
+    };
+  }
+
   const slug = sanitizeSlug(params.slug);
-  const targetPath = buildDocPath(slug);
+  const targetPath = path.join(docsDir, `${slug}.md`);
 
   try {
     const content = await fs.readFile(targetPath, 'utf8');

@@ -32,31 +32,46 @@ export default function DocumentationLandingPage({ docs }) {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold text-white mb-8 text-center">Documentation Library</h2>
           <div className="grid gap-6 sm:grid-cols-2">
-            {docs.map((doc) => (
-              <a
-                key={doc.filename}
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-gray-900 hover:bg-gray-800 transition rounded-xl border border-gray-800 p-6 shadow-lg"
-              >
-                <h3 className="text-xl font-semibold text-white mb-2">{doc.title}</h3>
-                <p className="text-sm text-gray-300">{doc.description}</p>
-                <span className="mt-4 inline-flex items-center text-indigo-300 font-medium">
-                  View guide
-                  <svg
-                    className="ml-2 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-              </a>
-            ))}
+            {docs.length > 0 ? (
+              docs.map((doc) => (
+                <a
+                  key={doc.filename}
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gray-900 hover:bg-gray-800 transition rounded-xl border border-gray-800 p-6 shadow-lg"
+                >
+                  <h3 className="text-xl font-semibold text-white mb-2">{doc.title}</h3>
+                  <p className="text-sm text-gray-300">{doc.description}</p>
+                  <span className="mt-4 inline-flex items-center text-indigo-300 font-medium">
+                    View guide
+                    <svg
+                      className="ml-2 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </a>
+              ))
+            ) : (
+              <p className="col-span-full text-center text-gray-300">
+                Documentation is currently unavailable. Please visit our{' '}
+                <a
+                  href="https://github.com/eduskillbridge/SkillBridge/tree/main/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  GitHub repository
+                </a>{' '}
+                to browse the latest guides.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -96,23 +111,41 @@ export default function DocumentationLandingPage({ docs }) {
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 
+function resolveDocsDirectory() {
+  const candidatePaths = [
+    path.join(process.cwd(), 'docs'),
+    path.join(process.cwd(), '..', 'docs'),
+    path.join(process.cwd(), '..', '..', 'docs'),
+  ];
+
+  return candidatePaths.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
 export async function getStaticProps({ locale }) {
-  const docsDir = path.join(process.cwd(), '..', 'docs');
-  const filenames = fs
-    .readdirSync(docsDir)
-    .filter((filename) => filename.toLowerCase().endsWith('.md'))
-    .sort((a, b) => a.localeCompare(b));
+  const docsDir = resolveDocsDirectory();
+  let docs = [];
 
-  const docs = filenames.map((filename) => {
-    const title = formatDocTitle(filename);
+  if (docsDir) {
+    try {
+      const filenames = fs
+        .readdirSync(docsDir)
+        .filter((filename) => filename.toLowerCase().endsWith('.md'))
+        .sort((a, b) => a.localeCompare(b));
 
-    return {
-      filename,
-      title,
-      description: `Read the ${title} guide on GitHub.`,
-      url: `https://github.com/eduskillbridge/SkillBridge/blob/main/docs/${filename}`,
-    };
-  });
+      docs = filenames.map((filename) => {
+        const title = formatDocTitle(filename);
+
+        return {
+          filename,
+          title,
+          description: `Read the ${title} guide on GitHub.`,
+          url: `https://github.com/eduskillbridge/SkillBridge/blob/main/docs/${filename}`,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to read documentation directory:', error);
+    }
+  }
 
   return {
     props: {
