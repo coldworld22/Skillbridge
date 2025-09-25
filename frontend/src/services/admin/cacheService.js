@@ -6,7 +6,8 @@ const requestClearCache = async (csrfToken) => {
     throw new Error("CSRF token unavailable");
   }
 
-  const { data } = await api.post("/admin/cache/clear", null, {
+  // Use a relative path so Axios preserves the configured `/api` prefix.
+  const { data } = await api.post("admin/cache/clear", null, {
     headers: { "x-csrf-token": csrfToken },
   });
 
