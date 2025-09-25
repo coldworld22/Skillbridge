@@ -12,6 +12,116 @@ This document explains how to set up SkillBridge for local development and for h
 
 > **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent Docker Engine releases and often fails with `KeyError: 'ContainerConfig'` when rebuilding containers. The installer now refuses to run when only the v1 binary is available so you can address the issue up front. Install the Docker Compose V2 plugin (the `docker compose` command) or downgrade Docker Engine below version&nbsp;27 before running the script.
 
+## Install the required tools
+
+Follow the commands for your operating system to install the prerequisites
+that the installer enforces.
+
+### Node.js 18+ (includes npm)
+
+- **macOS (Homebrew):**
+
+  ```bash
+  brew install node@20
+  echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> ~/.zshrc
+  ```
+
+- **Ubuntu / Debian:**
+
+  ```bash
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  ```
+
+- **Windows:** Download the LTS installer from [nodejs.org](https://nodejs.org/)
+  and run it, then restart your terminal and confirm with `node -v`.
+
+### Docker Engine and Docker Compose V2
+
+- **macOS / Windows:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/),
+  ensure it is running, and verify with `docker --version` and
+  `docker compose version`.
+
+- **Ubuntu / Debian:**
+
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  newgrp docker
+  sudo mkdir -p /usr/lib/docker/cli-plugins
+  sudo curl -SL "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-$(uname -m)" \
+    -o /usr/lib/docker/cli-plugins/docker-compose
+  sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
+  docker --version
+  docker compose version
+  ```
+
+  Docker Desktop already bundles Compose V2; Linux users install the plugin
+  manually as shown above.
+
+### Git
+
+- **macOS:** `brew install git`
+- **Ubuntu / Debian:** `sudo apt-get install -y git`
+- **Windows:** Install [Git for Windows](https://git-scm.com/download/win) and
+  select “Git from the command line” during setup.
+
+### pnpm (optional package manager)
+
+SkillBridge works with npm out of the box, but pnpm can speed up dependency
+installs. The installer only warns when pnpm is missing.
+
+- **macOS / Linux:** `npm install -g pnpm`
+- **Windows (PowerShell):** `npm install -g pnpm`
+
+Verify with `pnpm --version`.
+
+### Python 3 (optional helper runtime)
+
+Some maintenance scripts rely on Python. The prerequisite checker only emits a
+warning when it is unavailable.
+
+- **macOS (Homebrew):** `brew install python@3.11`
+- **Ubuntu / Debian:** `sudo apt-get install -y python3 python3-venv`
+- **Windows:** Download the latest 3.x release from
+  [python.org/downloads](https://www.python.org/downloads/) and enable “Add
+  Python to PATH.”
+
+Confirm with `python3 --version` (or `py --version` on Windows).
+
+### PostgreSQL client or service
+
+SkillBridge stores data in PostgreSQL. You can either install the full database
+locally or just the client tools when connecting to a managed instance. The
+installer uses `pg_isready`/`psql` to verify connectivity and warns when the
+tools are absent.
+
+- **macOS (Homebrew):** `brew install postgresql`
+- **Ubuntu / Debian:** `sudo apt-get install -y postgresql postgresql-client`
+- **Windows:** Install the [PostgreSQL distribution](https://www.postgresql.org/download/)
+  and ensure the `psql` CLI is on your PATH.
+
+After installation, check `psql --version`. When running the server locally,
+start it with `brew services start postgresql` (macOS) or `sudo systemctl
+enable --now postgresql` (Ubuntu/Debian).
+
+### Redis service or CLI tools
+
+Redis (or a compatible service such as KeyDB or Valkey) stores user sessions in
+production. The prerequisite checker pings Redis and warns when the CLI is
+missing.
+
+- **macOS (Homebrew):** `brew install redis`
+- **Ubuntu / Debian:** `sudo apt-get install -y redis`
+- **Windows:** Install [Memurai](https://www.memurai.com/) or run Redis inside
+  Docker with `docker run -d -p 6379:6379 redis`.
+
+Check `redis-cli --version` and, if you started a local instance, verify it is
+reachable with `redis-cli ping`.
+
+Open a fresh terminal after installing these tools so PATH changes take effect,
+then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
+
 ## 1. Clone the repository
 
 ```bash
@@ -26,8 +136,8 @@ cd Skillbridge
 The root `install.sh` script streamlines both local and production setups. When
 you run it the script:
 
-1. Runs `scripts/check_prereqs.sh` to verify host requirements (Node.js, Docker,
-   Redis, PostgreSQL, etc.). When the check fails you can either fix the
+1. Runs `scripts/check_prereqs.sh` to verify the required host tools (Node.js,
+   npm, Docker, Docker Compose V2, and Git). When the check fails you can either fix the
    problem, acknowledge the warning at the interactive prompt, or set
    `ALLOW_PREREQ_FAILURES=true` to continue automatically.
 2. Copies `.env.example` files to `.env` when the target file is missing (root,
