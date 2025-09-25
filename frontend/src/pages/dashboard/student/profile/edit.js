@@ -133,8 +133,8 @@ export default function StudentProfileEdit() {
         });
 
         setFormData({
-          full_name,
-          phone,
+          full_name: full_name ?? "",
+          phone: phone ?? "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
