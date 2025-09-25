@@ -1200,6 +1200,8 @@
     "cache_clear_browser_error": "تم مسح تخزين الخادم لكن تعذر مسح تخزين المتصفح",
     "cache_clear_service_worker_error": "تعذر على عامل الخدمة مسح التخزين المؤقت المُسخن",
     "cache_clear_failed": "فشل مسح التخزين المؤقت",
+    "cache_clear_success": "تم مسح ذاكرة التخزين المؤقت بنجاح",
+    "cache_clear_server_only": "ذاكرة التخزين المؤقت للمتصفح غير متاحة؛ تم مسح ذاكرة التخزين المؤقت للخادم فقط",
     "create_class": "إنشاء صف",
     "my_classes": "صفوفي",
     "tutorials": "الدروس",

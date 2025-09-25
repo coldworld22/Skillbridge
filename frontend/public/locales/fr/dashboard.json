@@ -1200,6 +1200,8 @@
     "cache_clear_browser_error": "Cache serveur effacée mais impossible d'effacer la cache du navigateur",
     "cache_clear_service_worker_error": "Le service worker n'a pas pu effacer la cache préchauffée",
     "cache_clear_failed": "Échec de l'effacement du cache",
+    "cache_clear_success": "Cache vidé avec succès",
+    "cache_clear_server_only": "Cache du navigateur indisponible ; seule la cache serveur a été vidée",
     "create_class": "Créer un cours",
     "my_classes": "Mes cours",
     "tutorials": "Tutoriels",

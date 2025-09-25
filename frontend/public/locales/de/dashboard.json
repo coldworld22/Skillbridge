@@ -1214,6 +1214,8 @@
     "cache_clear_browser_error": "Server-Cache geleert, aber Browser-Cache konnte nicht geleert werden",
     "cache_clear_service_worker_error": "Service Worker konnte den vorgewärmten Cache nicht leeren",
     "cache_clear_failed": "Cache konnte nicht geleert werden",
+    "cache_clear_success": "Cache erfolgreich geleert",
+    "cache_clear_server_only": "Browser-Cache war nicht verfügbar; nur der Server-Cache wurde geleert",
     "create_class": "Create Class",
     "my_classes": "My Classes",
     "tutorials": "Tutorials",

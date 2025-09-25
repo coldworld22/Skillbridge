@@ -6,8 +6,25 @@ import { toast as mockToast } from 'react-toastify';
 jest.mock('../../services/admin/cacheService', () => ({
   clearCache: jest.fn(),
 }));
+jest.mock('react-toastify', () => ({
+  toast: {
+    success: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 jest.mock('next-i18next', () => ({
-  i18n: { t: (key) => key },
+  i18n: {
+    t: (key) =>
+      ({
+        'dashboard.cache_cleared': 'Cache cleared',
+        'dashboard.cache_cleared_server_only':
+          'Browser cache unavailable; server cache cleared',
+        'dashboard.cache_cleared_server_only_hint':
+          'Server cache cleared. Browser cache was not available.',
+        'dashboard.cache_clear_failed': 'Failed to clear cache',
+      }[key] ?? key),
+  },
 }));
 jest.mock('react-toastify', () => ({
   toast: {
@@ -17,6 +34,15 @@ jest.mock('react-toastify', () => ({
     warn: jest.fn(),
   },
 }));
+
+const { toast } = require('react-toastify');
+
+var toastMock;
+
+jest.mock('react-toastify', () => {
+  toastMock = { success: jest.fn(), error: jest.fn() };
+  return { toast: toastMock };
+});
 
 const setupEnvironment = () => {
   Object.defineProperty(window, 'caches', {

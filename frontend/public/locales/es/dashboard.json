@@ -1200,6 +1200,8 @@
     "cache_clear_browser_error": "Caché del servidor limpiada pero no se pudo limpiar la caché del navegador",
     "cache_clear_service_worker_error": "El service worker no pudo limpiar la caché precalentada",
     "cache_clear_failed": "No se pudo limpiar la caché",
+    "cache_clear_success": "Caché borrada correctamente",
+    "cache_clear_server_only": "La caché del navegador no estaba disponible; solo se limpió la caché del servidor",
     "create_class": "Crear clase",
     "my_classes": "Mis clases",
     "tutorials": "Tutoriales",

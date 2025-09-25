@@ -1200,6 +1200,8 @@
     "cache_clear_browser_error": "服务器缓存已清理，但浏览器缓存清理失败",
     "cache_clear_service_worker_error": "Service Worker 无法清理预热缓存",
     "cache_clear_failed": "清除缓存失败",
+    "cache_clear_success": "缓存已成功清除",
+    "cache_clear_server_only": "浏览器缓存不可用；仅清除了服务器缓存",
     "create_class": "创建类",
     "my_classes": "我的课",
     "tutorials": "教程",
