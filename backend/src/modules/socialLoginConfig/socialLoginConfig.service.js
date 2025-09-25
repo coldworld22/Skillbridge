@@ -41,12 +41,12 @@ exports.updateSettings = async (settings) => {
 };
 
 function resolveEnvPath() {
+  const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
+    ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
+    : null;
   const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
-  const candidates = [
-    process.env.SOCIAL_LOGIN_ENV_PATH && path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH),
-    path.join(__dirname, '../../../.env'),
-    fallbackEnvPath,
-  ].filter(Boolean);
+  const defaultEnvPath = path.join(__dirname, '../../../.env');
+  const candidates = [explicitEnvPath, defaultEnvPath, fallbackEnvPath].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -61,29 +61,22 @@ function resolveEnvPath() {
 
       fs.accessSync(dir, fs.constants.W_OK);
 
-      if (fs.existsSync(candidate)) {
-        try {
-          fs.accessSync(candidate, fs.constants.W_OK);
-        } catch (fileError) {
-          if (fileError?.code === 'EACCES' || fileError?.code === 'EPERM') {
-            // Existing file cannot be modified by the current user, try the next candidate.
-            if (candidate === process.env.SOCIAL_LOGIN_ENV_PATH) {
-              logger.warn(
-                'Unable to write to SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
-                fileError
-              );
-            }
-            continue;
-          }
-          throw fileError;
-        }
-      }
+      const fd = fs.openSync(candidate, fs.constants.O_CREAT | fs.constants.O_WRONLY, 0o600);
+      fs.closeSync(fd);
 
       return candidate;
     } catch (error) {
-      if (candidate === process.env.SOCIAL_LOGIN_ENV_PATH) {
+      const isExplicitEnvPath = explicitEnvPath && candidate === explicitEnvPath;
+      const isDefaultEnvPath = candidate === defaultEnvPath;
+
+      if (isExplicitEnvPath) {
         logger.warn(
           'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
+          error
+        );
+      } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
+        logger.warn(
+          'Default .env file is not writable for social login settings. Falling back to a temporary location.',
           error
         );
       }
