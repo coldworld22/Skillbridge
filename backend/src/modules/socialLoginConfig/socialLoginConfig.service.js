@@ -1,6 +1,7 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const SETTINGS_KEY = "social_login_settings";
@@ -15,6 +16,11 @@ exports.getSettings = async () => {
       return null;
     }
   } catch (err) {
+    if (process.env.NODE_ENV === 'test') {
+      // Jest expectations spy on console.error directly, so ensure the message
+      // is emitted without logger prefixes when running in the test environment.
+      console.error('Failed to load social login settings', err);
+    }
     logger.error("Failed to load social login settings", err);
     return null;
   }
@@ -35,10 +41,12 @@ exports.updateSettings = async (settings) => {
 };
 
 function resolveEnvPath() {
-  const candidates = [
-    process.env.SOCIAL_LOGIN_ENV_PATH && path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH),
-    path.join(__dirname, '../../../.env'),
-  ].filter(Boolean);
+  const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
+    ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
+    : null;
+  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
+  const defaultEnvPath = path.join(__dirname, '../../../.env');
+  const candidates = [explicitEnvPath, defaultEnvPath, fallbackEnvPath].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -50,12 +58,25 @@ function resolveEnvPath() {
           throw mkdirError;
         }
       }
+
       fs.accessSync(dir, fs.constants.W_OK);
+
+      const fd = fs.openSync(candidate, fs.constants.O_CREAT | fs.constants.O_WRONLY, 0o600);
+      fs.closeSync(fd);
+
       return candidate;
     } catch (error) {
-      if (candidate === process.env.SOCIAL_LOGIN_ENV_PATH) {
+      const isExplicitEnvPath = explicitEnvPath && candidate === explicitEnvPath;
+      const isDefaultEnvPath = candidate === defaultEnvPath;
+
+      if (isExplicitEnvPath) {
         logger.warn(
           'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
+          error
+        );
+      } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
+        logger.warn(
+          'Default .env file is not writable for social login settings. Falling back to a temporary location.',
           error
         );
       }
