@@ -1194,6 +1194,8 @@
     "third_parties_config": "إعدادات الجهات الخارجية",
     "clear_cache": "مسح التخزين المؤقت",
     "cache_cleared": "تم مسح التخزين المؤقت",
+    "cache_cleared_server_only": "التخزين المؤقت للمتصفح غير متاح؛ تم مسح التخزين المؤقت للخادم",
+    "cache_cleared_server_only_hint": "تم مسح التخزين المؤقت للخادم. لم يكن التخزين المؤقت للمتصفح متاحًا.",
     "cache_clear_failed": "فشل مسح التخزين المؤقت",
     "create_class": "إنشاء صف",
     "my_classes": "صفوفي",

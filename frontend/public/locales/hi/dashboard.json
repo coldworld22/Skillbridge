@@ -1194,6 +1194,8 @@
     "third_parties_config": "तृतीय पक्ष विन्यास",
     "clear_cache": "कैश साफ करें",
     "cache_cleared": "कैश साफ़ किया गया",
+    "cache_cleared_server_only": "ब्राउज़र कैश उपलब्ध नहीं है; सर्वर कैश साफ़ किया गया",
+    "cache_cleared_server_only_hint": "सर्वर कैश साफ़ कर दिया गया। ब्राउज़र कैश उपलब्ध नहीं था।",
     "cache_clear_failed": "कैश साफ़ करने में विफल",
     "create_class": "कक्षा बनाएँ",
     "my_classes": "मेरी कक्षाएँ",

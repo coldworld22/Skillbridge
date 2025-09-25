@@ -83,27 +83,35 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      let browserCacheCleared = false;
-      if ("caches" in window) {
-        await caches.delete(WARM_CACHE);
-        browserCacheCleared = true;
+      let browserCacheHandled = false;
+      if (typeof window !== "undefined" && "caches" in window) {
+        try {
+          await caches.delete(WARM_CACHE);
+          browserCacheHandled = true;
+        } catch (cacheError) {
+          console.warn("Failed to clear browser cache", cacheError);
+        }
       }
       if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
       await clearCache();
+      const successMessage = browserCacheHandled
+        ? i18n.t("dashboard.cache_cleared")
+        : i18n.t("dashboard.cache_cleared_server_only");
       setStatus("idle");
-      setMessage(
-        browserCacheCleared
-          ? "Cache cleared"
-          : "Browser cache unavailable; server cache cleared"
-      );
+      setMessage(successMessage);
+      toast.success(successMessage);
+      if (!browserCacheHandled) {
+        toast.info(i18n.t("dashboard.cache_cleared_server_only_hint"));
+      }
     } catch (err) {
       console.error(err);
-      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      const errorMessage = i18n.t("dashboard.cache_clear_failed");
+      toast.error(errorMessage);
       setStatus("error");
-      setMessage("Failed to clear cache");
+      setMessage(errorMessage);
     } finally {
       setClearing(false);
     }

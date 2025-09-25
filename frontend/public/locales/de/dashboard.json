@@ -1208,6 +1208,8 @@
     "third_parties_config": "Third Parties Config",
     "clear_cache": "Cache leeren",
     "cache_cleared": "Cache geleert",
+    "cache_cleared_server_only": "Browsercache nicht verfügbar; Servercache geleert",
+    "cache_cleared_server_only_hint": "Servercache geleert. Browsercache war nicht verfügbar.",
     "cache_clear_failed": "Cache konnte nicht geleert werden",
     "create_class": "Create Class",
     "my_classes": "My Classes",

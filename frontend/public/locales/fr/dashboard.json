@@ -1194,6 +1194,8 @@
     "third_parties_config": "Configuration des services tiers",
     "clear_cache": "Vider le cache",
     "cache_cleared": "Cache effacé",
+    "cache_cleared_server_only": "Cache navigateur indisponible ; cache serveur effacé",
+    "cache_cleared_server_only_hint": "Cache serveur effacé. Le cache du navigateur n'était pas disponible.",
     "cache_clear_failed": "Échec de l'effacement du cache",
     "create_class": "Créer un cours",
     "my_classes": "Mes cours",
