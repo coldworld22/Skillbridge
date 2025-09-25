@@ -227,6 +227,7 @@ When using Docker Compose the frontend automatically points to the API on port
 `5002`. If you start the Next.js app separately, create `frontend/.env.local`
 and set:
 
+
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
 NEXT_PUBLIC_TRUSTED_ICON_HOSTS=yourdomain.com,cdn.yourdomain.com
@@ -287,6 +288,7 @@ in.
 1. In `backend/.env`, set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true`.
 2. Configure Nginx to proxy the installer route to the backend:
 
+
    ```nginx
    location ^~ /install/ {
      proxy_pass http://backend:5002;
@@ -337,6 +339,7 @@ cd ../frontend && npm test
    docker compose run --rm backend npm run migrate
    docker compose run --rm backend npm run seed
    ```
+
 
 5. Build and start the containers in detached mode:
 
