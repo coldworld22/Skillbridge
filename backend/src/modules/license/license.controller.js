@@ -1,4 +1,3 @@
-const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const service = require('./license.service');
 const { validatePurchaseCode } = require('../../services/licenseService');
 
@@ -31,26 +30,15 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 exports.activateLicense = async (req, res, next) => {
   const { purchase_code, domain, email, ip } = req.body;
   try {
-    const token = process.env.ENVATO_TOKEN;
-    if (!token) {
-      return res.status(500).json({ message: 'Envato token not configured' });
-    }
-    const response = await fetch(
-      `https://api.envato.com/v3/market/author/sale?code=${purchase_code}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!response.ok) {
-      return res.status(400).json({ message: 'Invalid purchase code' });
-    }
-    const data = await response.json();
-    if (!data.item) {
-      return res.status(400).json({ message: 'Invalid purchase code' });
+    const result = await validatePurchaseCode(purchase_code, domain);
+    if (!result?.valid) {
+      return res.status(400).json({ success: false, message: result?.message || 'Invalid purchase code' });
     }
 
     const license = await service.activate({ purchase_code, domain, email, ip });
     await service.logAction(license.id, 'activate', { ip, domain, status: 'success' });
 
-    res.json({ success: true, data: license });
+    res.json({ success: true, data: license, message: result.message });
   } catch (err) {
     next(err);
   }
@@ -85,14 +73,17 @@ exports.validateLicense = async (req, res, next) => {
  * Deactivate a license when moving installations.
  */
 exports.deactivateLicense = async (req, res, next) => {
-  const { purchase_code } = req.body;
+  const { purchase_code, domain } = req.body;
   try {
     const license = await service.findByCode(purchase_code);
     if (!license) {
       return res.status(404).json({ message: 'License not found' });
     }
     await service.update(license.id, { status: 'inactive' });
-    await service.logAction(license.id, 'deactivate', { status: 'success' });
+    await service.logAction(license.id, 'deactivate', {
+      status: 'success',
+      domain: domain || license.domain,
+    });
     res.json({ success: true });
   } catch (err) {
     next(err);
