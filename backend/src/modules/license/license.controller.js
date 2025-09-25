@@ -39,14 +39,9 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 exports.activateLicense = async (req, res, next) => {
   const { purchase_code, domain, email, ip } = req.body;
   try {
-    const normalisedDomain = normaliseDomain(domain);
-    if (!normalisedDomain) {
-      return res.status(400).json({ message: 'Domain required' });
-    }
-    const verification = await validatePurchaseCode(purchase_code, normalisedDomain);
-
-    if (!verification.valid) {
-      return res.status(400).json({ message: verification.message || 'Invalid purchase code' });
+    const result = await validatePurchaseCode(purchase_code, domain);
+    if (!result?.valid) {
+      return res.status(400).json({ success: false, message: result?.message || 'Invalid purchase code' });
     }
 
     const license = await service.activate({
@@ -62,7 +57,7 @@ exports.activateLicense = async (req, res, next) => {
       status: 'success',
     });
 
-    res.json({ success: true, data: license });
+    res.json({ success: true, data: license, message: result.message });
   } catch (err) {
     next(err);
   }
@@ -111,17 +106,16 @@ exports.validateLicense = async (req, res, next) => {
  * Deactivate a license when moving installations.
  */
 exports.deactivateLicense = async (req, res, next) => {
-  const { purchase_code, domain, ip } = req.body;
+  const { purchase_code, domain } = req.body;
   try {
     const license = await service.findByCode(purchase_code);
     if (!license) {
       return res.status(404).json({ message: 'License not found' });
     }
-    await service.update(license.id, { status: 'inactive', domain: null, ip: null, last_check: new Date() });
+    await service.update(license.id, { status: 'inactive' });
     await service.logAction(license.id, 'deactivate', {
       status: 'success',
-      domain: normaliseDomain(domain) || normaliseDomain(license.domain),
-      ip: typeof ip === 'string' ? ip.trim() : ip || license.ip,
+      domain: domain || license.domain,
     });
     res.json({ success: true });
   } catch (err) {
