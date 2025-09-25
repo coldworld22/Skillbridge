@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
-import PageHead from '@/components/common/PageHead';
-import Navbar from '@/components/website/sections/Navbar';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import Footer from '@/components/website/sections/Footer';
+import Navbar from '@/components/website/sections/Navbar';
+import PageHead from '@/components/common/PageHead';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 const sections = [
   {
@@ -322,7 +325,7 @@ export default function DocumentationLandingPage() {
                 </div>
 
                 <div className="mt-12 border-t border-gray-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-                  <span>Need deeper context? Read the full installation reference on our docs site.</span>
+                  <span>Need deeper context? Read the full installation reference in our documentation portal.</span>
                   <a
                     href="https://eduskillbridge.net/docs"
                     target="_blank"
@@ -362,7 +365,7 @@ export default function DocumentationLandingPage() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              View documentation site
+              Browse docs online
             </a>
             <a
               href="https://github.com/eduskillbridge/SkillBridge/discussions"
@@ -380,9 +383,6 @@ export default function DocumentationLandingPage() {
     </>
   );
 }
-
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export async function getStaticProps({ locale }) {
   return {
