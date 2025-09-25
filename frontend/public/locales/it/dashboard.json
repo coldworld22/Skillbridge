@@ -1211,6 +1211,8 @@
     "cache_cleared_server_only": "Cache del browser non disponibile; cache del server svuotata",
     "cache_cleared_server_only_hint": "Cache del server svuotata. La cache del browser non era disponibile.",
     "cache_clear_failed": "Impossibile pulire la cache",
+    "cache_clear_success": "Cache svuotata con successo",
+    "cache_clear_server_only": "La cache del browser non era disponibile; è stata svuotata solo la cache del server",
     "create_class": "Crea classe",
     "my_classes": "Le mie lezioni",
     "tutorials": "Tutorial",

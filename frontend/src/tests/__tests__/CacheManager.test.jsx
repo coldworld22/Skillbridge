@@ -27,6 +27,15 @@ jest.mock('next-i18next', () => ({
   },
 }));
 
+const { toast } = require('react-toastify');
+
+var toastMock;
+
+jest.mock('react-toastify', () => {
+  toastMock = { success: jest.fn(), error: jest.fn() };
+  return { toast: toastMock };
+});
+
 const setupEnvironment = () => {
   Object.defineProperty(window, 'caches', {
     value: { delete: jest.fn().mockResolvedValue(true) },

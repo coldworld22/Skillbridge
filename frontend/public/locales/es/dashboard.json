@@ -1197,6 +1197,8 @@
     "cache_cleared_server_only": "La caché del navegador no está disponible; se limpió la caché del servidor",
     "cache_cleared_server_only_hint": "Se limpió la caché del servidor. La caché del navegador no estaba disponible.",
     "cache_clear_failed": "No se pudo limpiar la caché",
+    "cache_clear_success": "Caché borrada correctamente",
+    "cache_clear_server_only": "La caché del navegador no estaba disponible; solo se limpió la caché del servidor",
     "create_class": "Crear clase",
     "my_classes": "Mis clases",
     "tutorials": "Tutoriales",

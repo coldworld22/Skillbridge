@@ -1211,6 +1211,8 @@
     "cache_cleared_server_only": "Browsercache nicht verfügbar; Servercache geleert",
     "cache_cleared_server_only_hint": "Servercache geleert. Browsercache war nicht verfügbar.",
     "cache_clear_failed": "Cache konnte nicht geleert werden",
+    "cache_clear_success": "Cache erfolgreich geleert",
+    "cache_clear_server_only": "Browser-Cache war nicht verfügbar; nur der Server-Cache wurde geleert",
     "create_class": "Create Class",
     "my_classes": "My Classes",
     "tutorials": "Tutorials",

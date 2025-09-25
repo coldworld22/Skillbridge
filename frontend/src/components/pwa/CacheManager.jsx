@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
 import { clearCache } from "@/services/admin/cacheService";
 import { toast } from "react-toastify";
-import { i18n } from "next-i18next";
+import { useTranslation } from "next-i18next";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList = [];
@@ -22,6 +22,7 @@ export default function CacheManager({
   warmList = pwaWarmList,
   strategy = "A",
 } = {}) {
+  const { t } = useTranslation("dashboard");
   const [status, setStatus] = useState("idle");
   const [ready, setReady] = useState(false);
   const [hasServiceWorker, setHasServiceWorker] = useState(false);
@@ -77,6 +78,16 @@ export default function CacheManager({
       setStatus("error");
       setMessage("Failed to warm cache");
     }
+  };
+
+  const translate = (key, fallback) => {
+    if (typeof i18n?.t === "function") {
+      const translated = i18n.t(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+    }
+    return fallback;
   };
 
   const handleClearCache = async () => {
