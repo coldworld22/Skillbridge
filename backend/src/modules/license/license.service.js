@@ -1,17 +1,38 @@
 const db = require('../../config/database');
 
+const normaliseDomain = (domain) => {
+  if (typeof domain !== 'string') {
+    return domain === undefined ? undefined : null;
+  }
+  const trimmed = domain.trim();
+  return trimmed.length > 0 ? trimmed.toLowerCase() : null;
+};
+
+const normaliseEmail = (email) => {
+  if (typeof email !== 'string') {
+    return email;
+  }
+  return email.trim();
+};
+
 exports.activate = async ({ purchase_code, domain, email, ip }) => {
   const existing = await db('licenses').where({ purchase_code }).first();
+  const normalisedIp = typeof ip === 'string' ? ip.trim() : ip;
+  const payload = {
+    domain: normaliseDomain(domain),
+    email: normaliseEmail(email),
+    ip: normalisedIp && normalisedIp.length ? normalisedIp : null,
+    status: 'active',
+    last_check: new Date(),
+  };
+
   if (existing) {
-    await db('licenses')
-      .where({ id: existing.id })
-      .update({ domain, email, ip, status: 'active', last_check: db.fn.now() });
-    return { ...existing, domain, email, ip, status: 'active' };
+    await db('licenses').where({ id: existing.id }).update(payload);
+  } else {
+    await db('licenses').insert({ purchase_code, ...payload });
   }
-  const [license] = await db('licenses')
-    .insert({ purchase_code, domain, email, ip, status: 'active' })
-    .returning('*');
-  return license;
+
+  return db('licenses').where({ purchase_code }).first();
 };
 
 exports.findByCode = (purchase_code) =>
