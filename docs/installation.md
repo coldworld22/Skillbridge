@@ -76,6 +76,12 @@ git clone <repo-url>
 cd Skillbridge
 ```
 
+If you are provisioning a brand-new host, clone the repository as the system
+user that will own the Docker volumes (typically `root` or a dedicated
+deployment user that belongs to the `docker` group). The installer creates and
+mounts bind volumes relative to the repository root, so keep the project in a
+path that will remain available to Docker (for example `/opt/skillbridge`).
+
 ## 2. Configure environment variables
 
 ### Automated install script
@@ -114,6 +120,40 @@ Before running migrations the script installs backend dependencies with
 creates `backend/uploads/app/` if it is missing. Use
 `SKIP_BACKEND_NPM_INSTALL=true` if dependencies are already installed and you
 prefer to reuse them.
+
+### End-to-end host installation with `install.sh`
+
+To prepare a production host from scratch:
+
+1. **Install the prerequisites** using the commands listed above for your
+   operating system. Reboot or re-open your shell so the new binaries are on
+   `PATH`.
+2. **Clone the repository** and change into the project root. Optionally export
+   `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and any of the optional flags before running
+   the installer if you want to avoid interactive prompts.
+3. **Run the installer** in production mode with your public domain. This step
+   also updates the Nginx configuration and, when certbot is available,
+   provisions TLS certificates:
+
+   ```bash
+   ./install.sh production yourdomain.com
+   ```
+
+   Use `./install.sh development` on local machines when you want Docker to
+   expose the default localhost ports.
+4. **Review the prerequisite report** printed by the script. Address any failed
+   checks (missing Docker Compose plugin, outdated Node.js version, etc.) and
+   rerun the script until all requirements pass.
+5. **Confirm environment files** were created. Adjust `backend/.env`,
+   `backend/.env.production`, and `frontend/.env.local` with the secrets and
+   URLs that match your deployment.
+6. **Allow the installer to run migrations and seeds.** The script starts the
+   Docker services, runs pending migrations, and seeds the initial admin user.
+   If you exported `SEED_DB=true`, it will also populate the sample catalog.
+7. **Log in to the admin dashboard** using the credentials you provided (or the
+   random password printed in the terminal when the variables were omitted) to
+   complete the in-app configuration described in [Post-installation
+   checklist](#8-post-installation-checklist).
 
 ### Backend
 
@@ -415,3 +455,38 @@ For updates, pull the latest changes and rebuild:
 git pull
 docker compose up -d --build
 ```
+
+## 8. Post-installation checklist
+
+After the containers are running and you can sign in to the admin dashboard,
+review these settings so the platform is production-ready:
+
+- **Branding and contact details** – Visit **Admin → Settings → App** to set the
+  public site name, upload the logo/favicon, and provide support contact
+  details. The installer seeds defaults, but confirming them ensures outbound
+  emails and landing pages match your brand. The deployment guide covers
+  additional branding tips in [`docs/deployment.md`](deployment.md).
+- **Email delivery** – Configure SMTP credentials under **Admin → Settings →
+  Email** or by updating the environment variables documented earlier. Verify
+  the test email succeeds; otherwise password resets and notifications will
+  fail.
+- **SMS/OTP provider (optional)** – If you require phone-based OTPs, enable and
+  configure a gateway at **Admin → Settings → Messages**. Only one provider can
+  be active at a time. Detailed instructions are in
+  [`docs/messages-config.md`](messages-config.md).
+- **Payment integrations** – Define the payment gateway keys and verify the
+  plan styling if you intend to sell subscriptions. Refer to
+  [`docs/subscription-plan-style.md`](subscription-plan-style.md) and
+  [`docs/payment-icon-sources.md`](payment-icon-sources.md) for supported
+  options.
+- **Third-party integrations** – Connect optional services such as Zoom, Google
+  login, or Microsoft login from the **Third Party Integrations** admin page as
+  outlined in [`docs/admin-third-party-integrations.md`](admin-third-party-integrations.md)
+  and [`docs/social-login-setup.md`](social-login-setup.md).
+- **License and compliance** – Update license verification settings if your
+  deployment requires automated checks. See
+  [`docs/license-verification.md`](license-verification.md).
+
+Work through any additional domain-specific settings (for example, book
+workflows or alerts) before inviting instructors and students. The remaining
+guides in the `docs/` directory describe each module in detail.
