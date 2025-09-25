@@ -20,7 +20,7 @@ exports.validate = z.object({
 exports.deactivate = z.object({
   body: z.object({
     purchase_code: z.string().min(1),
-    domain: z.string().min(1),
+    domain: z.string().min(1).optional(),
   }),
 });
 
