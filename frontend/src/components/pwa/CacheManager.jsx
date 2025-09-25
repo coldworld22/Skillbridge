@@ -94,23 +94,23 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      let messageKey = "dashboard.cache_clear_success";
+      let messageKey = "cache_clear_success";
       let toastType = "success";
 
-      if ("caches" in window) {
+      if (typeof window !== "undefined" && "caches" in window) {
         try {
           const deleted = await caches.delete(WARM_CACHE);
           if (!deleted) {
-            messageKey = "dashboard.cache_clear_partial";
+            messageKey = "cache_clear_partial";
             toastType = "info";
           }
         } catch (cacheError) {
           console.error("Failed to clear browser cache", cacheError);
-          messageKey = "dashboard.cache_clear_browser_error";
+          messageKey = "cache_clear_browser_error";
           toastType = "warn";
         }
       } else {
-        messageKey = "dashboard.cache_api_unavailable";
+        messageKey = "cache_api_unavailable";
         toastType = "info";
       }
 
@@ -123,13 +123,13 @@ export default function CacheManager({
             "Failed to notify service worker to clear warm cache",
             serviceWorkerError
           );
-          toast.warn(i18n.t("dashboard.cache_clear_service_worker_error"));
+          toast.warn(t("cache_clear_service_worker_error"));
         }
       }
 
       await clearCache();
 
-      const toastMessage = i18n.t(messageKey);
+      const toastMessage = t(messageKey);
       if (toastType === "success") {
         toast.success(toastMessage);
       } else if (toastType === "warn") {
@@ -142,10 +142,14 @@ export default function CacheManager({
       setMessage(toastMessage);
     } catch (err) {
       console.error(err);
-      const errorMessage = i18n.t("dashboard.cache_clear_failed");
+      const isForbidden = err?.response?.status === 403;
+      const errorKey = isForbidden
+        ? "cache_clear_forbidden"
+        : "cache_clear_failed";
+      const errorMessage = t(errorKey);
       toast.error(errorMessage);
       setStatus("error");
-      setMessage(i18n.t("dashboard.cache_clear_failed"));
+      setMessage(errorMessage);
     } finally {
       setClearing(false);
     }
