@@ -72,6 +72,23 @@ check_cli_tool() {
   fi
 }
 
+# Determine whether host-level prerequisite checks should be skipped.
+should_skip_host_prereqs=false
+if [ -n "${SKIP_HOST_PREREQS:-}" ]; then
+  case "$(printf '%s' "${SKIP_HOST_PREREQS}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      should_skip_host_prereqs=true
+      ;;
+    0|false|no|off)
+      should_skip_host_prereqs=false
+      ;;
+  esac
+else
+  if [ -f /.dockerenv ] || grep -qaE 'docker|containerd|kubepods' /proc/1/cgroup 2>/dev/null; then
+    should_skip_host_prereqs=true
+  fi
+fi
+
 # Verify Node.js
 if command -v node >/dev/null 2>&1; then
   NODE_VERSION=$(node -v 2>/dev/null || true)
@@ -90,16 +107,20 @@ check_cli_tool "npm" "npm" "npm" "--version"
 
 # Verify Docker
 docker_present=false
-if command -v docker >/dev/null 2>&1; then
-  docker_present=true
-  DOCKER_VERSION=$(docker --version 2>/dev/null || true)
-  if [ -n "$DOCKER_VERSION" ]; then
-    add_requirement "docker" "Docker" "pass" "$DOCKER_VERSION"
-  else
-    add_requirement "docker" "Docker" "pass" "Docker CLI detected."
-  fi
+if [ "$should_skip_host_prereqs" = true ]; then
+  add_requirement "docker" "Docker" "warn" "Docker check skipped in containerized environment."
 else
-  add_requirement "docker" "Docker" "fail" "Docker CLI not found."
+  if command -v docker >/dev/null 2>&1; then
+    docker_present=true
+    DOCKER_VERSION=$(docker --version 2>/dev/null || true)
+    if [ -n "$DOCKER_VERSION" ]; then
+      add_requirement "docker" "Docker" "pass" "$DOCKER_VERSION"
+    else
+      add_requirement "docker" "Docker" "pass" "Docker CLI detected."
+    fi
+  else
+    add_requirement "docker" "Docker" "fail" "Docker CLI not found."
+  fi
 fi
 
 compose_message="Docker Compose not found. Install Docker Compose V2 (the \"docker compose\" plugin)."
@@ -109,44 +130,53 @@ extract_major_version() {
   echo "$1" | sed -E 's/^v?([0-9]+).*/\1/'
 }
 
-if [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
-  COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version 2>/dev/null | head -n 1)
-  COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
-  if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
-    compose_status="pass"
-    if [ -n "$COMPOSE_VERSION" ]; then
-      compose_message="Docker Compose plugin ${COMPOSE_VERSION}"
+if [ "$should_skip_host_prereqs" = true ]; then
+  compose_status="warn"
+  compose_message="Docker Compose check skipped in containerized environment."
+else
+  if [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
+    COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version 2>/dev/null | head -n 1)
+    COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
+    if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
+      compose_status="pass"
+      if [ -n "$COMPOSE_VERSION" ]; then
+        compose_message="Docker Compose plugin ${COMPOSE_VERSION}"
+      else
+        compose_message="Docker Compose plugin detected."
+      fi
     else
-      compose_message="Docker Compose plugin detected."
+      compose_status="fail"
+      compose_message="Docker Compose plugin ${COMPOSE_VERSION:-unknown} detected. Version 2 or newer is required."
     fi
-  else
-    compose_status="fail"
-    compose_message="Docker Compose plugin ${COMPOSE_VERSION:-unknown} detected. Version 2 or newer is required."
-  fi
-elif command -v docker-compose >/dev/null 2>&1; then
-  COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
-  COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
-  if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
-    compose_status="pass"
-    compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
-  else
-    compose_status="fail"
-    compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If upgrading immediately is not possible, set DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 in your environment so the legacy CLI can build images without triggering that error."
+  elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
+    COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
+    if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
+      compose_status="pass"
+      compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
+    else
+      compose_status="fail"
+      compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If upgrading immediately is not possible, set DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 in your environment so the legacy CLI can build images without triggering that error."
+    fi
   fi
 fi
 
 add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_message"
 
 # Verify Git
-if command -v git >/dev/null 2>&1; then
-  GIT_VERSION=$(git --version 2>/dev/null || true)
-  if [ -n "$GIT_VERSION" ]; then
-    add_requirement "git" "Git" "pass" "$GIT_VERSION"
-  else
-    add_requirement "git" "Git" "pass" "Git executable detected."
-  fi
+if [ "$should_skip_host_prereqs" = true ]; then
+  add_requirement "git" "Git" "warn" "Git check skipped in containerized environment."
 else
-  add_requirement "git" "Git" "fail" "Git executable not found."
+  if command -v git >/dev/null 2>&1; then
+    GIT_VERSION=$(git --version 2>/dev/null || true)
+    if [ -n "$GIT_VERSION" ]; then
+      add_requirement "git" "Git" "pass" "$GIT_VERSION"
+    else
+      add_requirement "git" "Git" "pass" "Git executable detected."
+    fi
+  else
+    add_requirement "git" "Git" "fail" "Git executable not found."
+  fi
 fi
 
 if [ "$all_ok" = true ]; then
