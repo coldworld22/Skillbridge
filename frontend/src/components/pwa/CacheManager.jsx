@@ -94,35 +94,58 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      let browserCacheHandled = false;
-      if (typeof window !== "undefined" && "caches" in window) {
+      let messageKey = "dashboard.cache_clear_success";
+      let toastType = "success";
+
+      if ("caches" in window) {
         try {
-          await caches.delete(WARM_CACHE);
-          browserCacheHandled = true;
+          const deleted = await caches.delete(WARM_CACHE);
+          if (!deleted) {
+            messageKey = "dashboard.cache_clear_partial";
+            toastType = "info";
+          }
         } catch (cacheError) {
-          console.warn("Failed to clear browser cache", cacheError);
+          console.error("Failed to clear browser cache", cacheError);
+          messageKey = "dashboard.cache_clear_browser_error";
+          toastType = "warn";
+        }
+      } else {
+        messageKey = "dashboard.cache_api_unavailable";
+        toastType = "info";
+      }
+
+      if (strategy === "B" && serviceWorkerReady) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
+        } catch (serviceWorkerError) {
+          console.error(
+            "Failed to notify service worker to clear warm cache",
+            serviceWorkerError
+          );
+          toast.warn(i18n.t("dashboard.cache_clear_service_worker_error"));
         }
       }
-      if (strategy === "B" && serviceWorkerReady) {
-        const registration = await navigator.serviceWorker.ready;
-        registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
-      }
+
       await clearCache();
-      const successMessage = browserCacheHandled
-        ? i18n.t("dashboard.cache_cleared")
-        : i18n.t("dashboard.cache_cleared_server_only");
-      setStatus("idle");
-      setMessage(successMessage);
-      toast.success(successMessage);
-      if (!browserCacheHandled) {
-        toast.info(i18n.t("dashboard.cache_cleared_server_only_hint"));
+
+      const toastMessage = i18n.t(messageKey);
+      if (toastType === "success") {
+        toast.success(toastMessage);
+      } else if (toastType === "warn") {
+        toast.warn(toastMessage);
+      } else {
+        toast.info(toastMessage);
       }
+
+      setStatus("idle");
+      setMessage(toastMessage);
     } catch (err) {
       console.error(err);
       const errorMessage = i18n.t("dashboard.cache_clear_failed");
       toast.error(errorMessage);
       setStatus("error");
-      setMessage(errorMessage);
+      setMessage(i18n.t("dashboard.cache_clear_failed"));
     } finally {
       setClearing(false);
     }

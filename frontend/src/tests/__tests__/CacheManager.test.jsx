@@ -1,7 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import CacheManager from '@/components/pwa/CacheManager';
 import { clearCache as mockClearCache } from '../../services/admin/cacheService';
-import { toast } from 'react-toastify';
+import { toast as mockToast } from 'react-toastify';
 
 jest.mock('../../services/admin/cacheService', () => ({
   clearCache: jest.fn(),
@@ -24,6 +24,14 @@ jest.mock('next-i18next', () => ({
           'Server cache cleared. Browser cache was not available.',
         'dashboard.cache_clear_failed': 'Failed to clear cache',
       }[key] ?? key),
+  },
+}));
+jest.mock('react-toastify', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
   },
 }));
 
@@ -51,9 +59,7 @@ describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
     mockClearCache.mockReset();
-    toast.success.mockClear();
-    toast.info.mockClear();
-    toast.error.mockClear();
+    Object.values(mockToast).forEach((fn) => fn.mockReset());
   });
 
   afterEach(() => {
@@ -67,9 +73,10 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    await screen.findByText('Cache cleared');
-    expect(toast.success).toHaveBeenCalledWith('Cache cleared');
-    expect(toast.info).not.toHaveBeenCalled();
+    await screen.findByText('dashboard.cache_clear_success');
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'dashboard.cache_clear_success'
+    );
   });
 
   it('shows error message when clearing cache fails', async () => {
@@ -77,8 +84,8 @@ describe('CacheManager', () => {
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await screen.findByText('Failed to clear cache');
-    expect(toast.error).toHaveBeenCalledWith('Failed to clear cache');
+    await screen.findByText('dashboard.cache_clear_failed');
+    expect(mockToast.error).toHaveBeenCalledWith('dashboard.cache_clear_failed');
   });
 
   it('falls back to server cache clearing when Cache API is unavailable', async () => {
@@ -88,12 +95,7 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    await screen.findByText('Browser cache unavailable; server cache cleared');
-    expect(toast.success).toHaveBeenCalledWith(
-      'Browser cache unavailable; server cache cleared'
-    );
-    expect(toast.info).toHaveBeenCalledWith(
-      'Server cache cleared. Browser cache was not available.'
-    );
+    await screen.findByText('dashboard.cache_api_unavailable');
+    expect(mockToast.info).toHaveBeenCalledWith('dashboard.cache_api_unavailable');
   });
 });
