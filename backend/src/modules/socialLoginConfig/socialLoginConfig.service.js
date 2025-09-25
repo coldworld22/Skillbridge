@@ -44,9 +44,10 @@ function resolveEnvPath() {
   const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
     ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
     : null;
-  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
+  const persistentEnvPath = path.join(__dirname, '../../../data/social-login.env');
   const defaultEnvPath = path.join(__dirname, '../../../.env');
-  const candidates = [explicitEnvPath, defaultEnvPath, fallbackEnvPath].filter(Boolean);
+  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
+  const candidates = [explicitEnvPath, defaultEnvPath, persistentEnvPath, fallbackEnvPath].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -76,7 +77,7 @@ function resolveEnvPath() {
         );
       } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
         logger.warn(
-          'Default .env file is not writable for social login settings. Falling back to a temporary location.',
+          'Default .env file is not writable for social login settings. Falling back to an internal storage location.',
           error
         );
       }
