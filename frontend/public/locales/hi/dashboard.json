@@ -1195,6 +1195,8 @@
     "clear_cache": "कैश साफ करें",
     "cache_cleared": "कैश साफ़ किया गया",
     "cache_clear_failed": "कैश साफ़ करने में विफल",
+    "cache_clear_success": "कैश सफलतापूर्वक साफ़ कर दिया गया",
+    "cache_clear_server_only": "ब्राउज़र कैश उपलब्ध नहीं था; केवल सर्वर कैश साफ़ किया गया",
     "create_class": "कक्षा बनाएँ",
     "my_classes": "मेरी कक्षाएँ",
     "tutorials": "ट्यूटोरियल्स",

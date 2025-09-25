@@ -1213,6 +1213,8 @@
     "clear_cache": "Clear Cache",
     "cache_cleared": "Cache cleared",
     "cache_clear_failed": "Failed to clear cache",
+    "cache_clear_success": "Cache cleared successfully",
+    "cache_clear_server_only": "Browser cache unavailable; server cache cleared",
     "create_class": "Create Class",
     "my_classes": "My Classes",
     "tutorials": "Tutorials",

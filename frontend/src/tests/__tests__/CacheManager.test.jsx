@@ -5,9 +5,25 @@ import { clearCache as mockClearCache } from '../../services/admin/cacheService'
 jest.mock('../../services/admin/cacheService', () => ({
   clearCache: jest.fn(),
 }));
+
+const translationMap = {
+  'cache_clear_success': 'Cache cleared successfully',
+  'cache_clear_server_only': 'Browser cache unavailable; server cache cleared',
+  'cache_clear_failed': 'Failed to clear cache',
+};
+
 jest.mock('next-i18next', () => ({
-  i18n: { t: (key) => key },
+  useTranslation: () => ({
+    t: (key) => translationMap[key] || key,
+  }),
 }));
+
+var toastMock;
+
+jest.mock('react-toastify', () => {
+  toastMock = { success: jest.fn(), error: jest.fn() };
+  return { toast: toastMock };
+});
 
 const setupEnvironment = () => {
   Object.defineProperty(window, 'caches', {
@@ -24,6 +40,8 @@ describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
     mockClearCache.mockReset();
+    toastMock.success.mockReset();
+    toastMock.error.mockReset();
   });
 
   afterEach(() => {
@@ -37,7 +55,8 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    await screen.findByText('Cache cleared');
+    await screen.findByText('Cache cleared successfully');
+    expect(toastMock.success).toHaveBeenCalledWith('Cache cleared successfully');
   });
 
   it('shows error message when clearing cache fails', async () => {
@@ -46,6 +65,7 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await screen.findByText('Failed to clear cache');
+    expect(toastMock.error).toHaveBeenCalledWith('Failed to clear cache');
   });
 
   it('falls back to server cache clearing when Cache API is unavailable', async () => {
@@ -56,5 +76,6 @@ describe('CacheManager', () => {
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
     await screen.findByText('Browser cache unavailable; server cache cleared');
+    expect(toastMock.success).toHaveBeenCalledWith('Browser cache unavailable; server cache cleared');
   });
 });
