@@ -44,10 +44,11 @@ const upsertLicense = async (purchaseCode, { domain, email, verifiedAt }) => {
   return inserted?.id;
 };
 
-async function validatePurchaseCode(code, domain) {
+async function validatePurchaseCode(code, domain, options = {}) {
   const verifiedAt = new Date();
   const normalisedDomain = normaliseDomain(domain);
   const token = process.env.ENVATO_TOKEN;
+  const shouldPersist = options.persist ?? (typeof normalisedDomain === 'string' && normalisedDomain.length > 0);
 
   if (token) {
     try {
@@ -60,11 +61,13 @@ async function validatePurchaseCode(code, domain) {
       }
 
       const envatoEmail = typeof data?.buyer_email === 'string' ? data.buyer_email : null;
-      const licenseId = await upsertLicense(code, {
-        domain: normalisedDomain,
-        email: envatoEmail,
-        verifiedAt,
-      });
+      if (shouldPersist) {
+        await upsertLicense(code, {
+          domain: normalisedDomain,
+          email: envatoEmail,
+          verifiedAt,
+        });
+      }
 
       return { valid: true, message: 'License verified with Envato', licenseId };
     } catch (error) {
@@ -80,11 +83,13 @@ async function validatePurchaseCode(code, domain) {
   }
 
   if (code === 'DEMO-CODE-1234') {
-    const licenseId = await upsertLicense(code, {
-      domain: normalisedDomain,
-      email: PLACEHOLDER_EMAIL,
-      verifiedAt,
-    });
+    if (shouldPersist) {
+      await upsertLicense(code, {
+        domain: normalisedDomain,
+        email: PLACEHOLDER_EMAIL,
+        verifiedAt,
+      });
+    }
 
     return { valid: true, message: 'Demo license accepted', licenseId };
   }

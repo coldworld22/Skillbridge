@@ -46,17 +46,9 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 exports.activateLicense = async (req, res, next) => {
   const { purchase_code, domain, email, ip } = req.body;
   try {
-    const result = await validatePurchaseCode(purchase_code, domain);
+    const result = await validatePurchaseCode(purchase_code, domain, { persist: true });
     if (!result?.valid) {
       return res.status(400).json({ success: false, message: result?.message || 'Invalid purchase code' });
-    }
-
-    if (result.licenseId) {
-      await service.logAction(result.licenseId, 'verify', {
-        status: 'success',
-        domain: domain ?? undefined,
-        ip,
-      });
     }
 
     const license = await service.activate({

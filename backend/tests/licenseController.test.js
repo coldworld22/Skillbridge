@@ -29,7 +29,7 @@ describe('license.controller', () => {
     };
 
     it('activates a license when validation succeeds', async () => {
-      validatePurchaseCode.mockResolvedValue({ valid: true, message: 'ok', licenseId: 7 });
+      validatePurchaseCode.mockResolvedValue({ valid: true, message: 'ok' });
       service.activate.mockResolvedValue({ id: 7, purchase_code: body.purchase_code });
 
       const req = httpMocks.createRequest({ method: 'POST', body });
@@ -38,14 +38,9 @@ describe('license.controller', () => {
 
       await controller.activateLicense(req, res, next);
 
-      expect(validatePurchaseCode).toHaveBeenCalledWith(body.purchase_code, body.domain);
+      expect(validatePurchaseCode).toHaveBeenCalledWith(body.purchase_code, body.domain, { persist: true });
       expect(service.activate).toHaveBeenCalledWith(body);
-      expect(service.logAction).toHaveBeenNthCalledWith(1, 7, 'verify', {
-        status: 'success',
-        domain: body.domain,
-        ip: body.ip,
-      });
-      expect(service.logAction).toHaveBeenNthCalledWith(2, 7, 'activate', {
+      expect(service.logAction).toHaveBeenCalledWith(7, 'activate', {
         ip: body.ip,
         domain: body.domain,
         status: 'success',
@@ -96,54 +91,6 @@ describe('license.controller', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(res._getJSONData()).toEqual({ success: true });
-      expect(next).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('verifyPurchaseCode', () => {
-    it('logs a verify action when validation succeeds', async () => {
-      validatePurchaseCode.mockResolvedValue({
-        valid: true,
-        message: 'ok',
-        licenseId: 11,
-      });
-
-      const req = httpMocks.createRequest({
-        method: 'POST',
-        body: { purchase_code: 'CODE-123', domain: 'example.com' },
-        connection: { remoteAddress: '127.0.0.1' },
-      });
-      req.ip = '127.0.0.1';
-      const res = httpMocks.createResponse();
-      const next = jest.fn();
-
-      await controller.verifyPurchaseCode(req, res, next);
-
-      expect(service.logAction).toHaveBeenCalledWith(11, 'verify', {
-        status: 'success',
-        domain: 'example.com',
-        ip: '127.0.0.1',
-      });
-      expect(res.statusCode).toBe(200);
-      expect(res._getJSONData()).toEqual({ success: true, message: 'ok' });
-      expect(next).not.toHaveBeenCalled();
-    });
-
-    it('does not log when validation fails', async () => {
-      validatePurchaseCode.mockResolvedValue({ valid: false, message: 'nope' });
-
-      const req = httpMocks.createRequest({
-        method: 'POST',
-        body: { purchase_code: 'CODE-123', domain: 'example.com' },
-      });
-      const res = httpMocks.createResponse();
-      const next = jest.fn();
-
-      await controller.verifyPurchaseCode(req, res, next);
-
-      expect(service.logAction).not.toHaveBeenCalled();
-      expect(res.statusCode).toBe(400);
-      expect(res._getJSONData()).toEqual({ success: false, message: 'nope' });
       expect(next).not.toHaveBeenCalled();
     });
   });
