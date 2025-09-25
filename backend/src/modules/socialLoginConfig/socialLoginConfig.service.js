@@ -36,19 +36,11 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
-
   try {
-    saveToEnv(settings);
+    await saveToEnv(settings);
   } catch (error) {
-    const code = error?.code;
-    const isPermissionError = code === 'EACCES' || code === 'EPERM' || code === 'EROFS';
-    const log = isPermissionError ? logger.warn : logger.error;
-    log(
-      'Failed to persist social login settings to the env file. Social login secrets will remain loaded in memory but will not be written to disk.',
-      error
-    );
+    logger.warn('Skipping .env update for social login settings due to an unexpected error.', error);
   }
-
   return settings;
 };
 
@@ -58,7 +50,7 @@ function resolveEnvPath() {
     : null;
   const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
   const defaultEnvPath = path.join(__dirname, '../../../.env');
-  const candidates = [explicitEnvPath, defaultEnvPath, fallbackEnvPath].filter(Boolean);
+  const candidates = [explicitEnvPath, fallbackEnvPath, defaultEnvPath].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -86,6 +78,11 @@ function resolveEnvPath() {
           'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
           error
         );
+      } else if (candidate === fallbackEnvPath) {
+        logger.warn(
+          'Unable to access fallback env file location for social login settings.',
+          error
+        );
       } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
         logger.warn(
           'Default .env file is not writable for social login settings. Falling back to a temporary location.',
@@ -99,7 +96,16 @@ function resolveEnvPath() {
 }
 
 function saveToEnv(settings) {
-  const envPath = resolveEnvPath();
+  let envPath;
+  try {
+    envPath = resolveEnvPath();
+  } catch (error) {
+    logger.warn(
+      'Skipping .env update for social login settings because the env path could not be resolved.',
+      error
+    );
+    return;
+  }
   if (!envPath) {
     logger.warn('Skipping .env update for social login settings because no writable env file was found.');
     updateProcessEnv(settings);
