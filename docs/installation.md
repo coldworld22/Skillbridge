@@ -26,8 +26,8 @@ cd Skillbridge
 The root `install.sh` script streamlines both local and production setups. When
 you run it the script:
 
-1. Runs `scripts/check_prereqs.sh` to verify host requirements (Node.js, Docker,
-   Redis, PostgreSQL, etc.). When the check fails you can either fix the
+1. Runs `scripts/check_prereqs.sh` to verify the required host tools (Node.js,
+   npm, Docker, Docker Compose V2, and Git). When the check fails you can either fix the
    problem, acknowledge the warning at the interactive prompt, or set
    `ALLOW_PREREQ_FAILURES=true` to continue automatically.
 2. Copies `.env.example` files to `.env` when the target file is missing (root,
