@@ -36,7 +36,19 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
-  await saveToEnv(settings);
+
+  try {
+    saveToEnv(settings);
+  } catch (error) {
+    const code = error?.code;
+    const isPermissionError = code === 'EACCES' || code === 'EPERM' || code === 'EROFS';
+    const log = isPermissionError ? logger.warn : logger.error;
+    log(
+      'Failed to persist social login settings to the env file. Social login secrets will remain loaded in memory but will not be written to disk.',
+      error
+    );
+  }
+
   return settings;
 };
 
@@ -90,6 +102,7 @@ function saveToEnv(settings) {
   const envPath = resolveEnvPath();
   if (!envPath) {
     logger.warn('Skipping .env update for social login settings because no writable env file was found.');
+    updateProcessEnv(settings);
     return;
   }
 
@@ -146,7 +159,38 @@ function saveToEnv(settings) {
 
   try {
     fs.writeFileSync(envPath, env, 'utf8');
-  } catch (error) {
-    logger.error('Failed to persist social login settings to the env file.', error);
+  } finally {
+    updateProcessEnv(settings);
+  }
+}
+
+function updateProcessEnv(settings) {
+  const providers = settings.providers || {};
+
+  const assign = (key, value) => {
+    if (value) {
+      process.env[key] = value;
+    } else {
+      delete process.env[key];
+    }
+  };
+
+  assign('GOOGLE_CLIENT_ID', providers.google?.clientId);
+  assign('GOOGLE_CLIENT_SECRET', providers.google?.clientSecret);
+  assign('FACEBOOK_CLIENT_ID', providers.facebook?.clientId);
+  assign('FACEBOOK_CLIENT_SECRET', providers.facebook?.clientSecret);
+  assign('GITHUB_CLIENT_ID', providers.github?.clientId);
+  assign('GITHUB_CLIENT_SECRET', providers.github?.clientSecret);
+
+  if (providers.apple?.active) {
+    assign('APPLE_CLIENT_ID', providers.apple?.clientId);
+    assign('APPLE_TEAM_ID', providers.apple?.teamId);
+    assign('APPLE_KEY_ID', providers.apple?.keyId);
+    assign('APPLE_PRIVATE_KEY', providers.apple?.privateKey);
+  } else {
+    assign('APPLE_CLIENT_ID');
+    assign('APPLE_TEAM_ID');
+    assign('APPLE_KEY_ID');
+    assign('APPLE_PRIVATE_KEY');
   }
 }
