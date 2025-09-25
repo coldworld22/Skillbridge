@@ -29,15 +29,19 @@ const upsertLicense = async (purchaseCode, { domain, email, verifiedAt }) => {
 
   if (existing) {
     await db('licenses').where({ id: existing.id }).update(payload);
-  } else {
-    await db('licenses').insert({
-      purchase_code: purchaseCode,
-      domain: domain ?? null,
-      email: email || PLACEHOLDER_EMAIL,
-      status: 'active',
-      verified_at: verifiedAt,
-    });
+    return existing.id;
   }
+
+  await db('licenses').insert({
+    purchase_code: purchaseCode,
+    domain: domain ?? null,
+    email: email || PLACEHOLDER_EMAIL,
+    status: 'active',
+    verified_at: verifiedAt,
+  });
+
+  const inserted = await db('licenses').where({ purchase_code: purchaseCode }).first();
+  return inserted?.id;
 };
 
 async function validatePurchaseCode(code, domain, options = {}) {
@@ -65,7 +69,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
         });
       }
 
-      return { valid: true, message: 'License verified with Envato' };
+      return { valid: true, message: 'License verified with Envato', licenseId };
     } catch (error) {
       if (error?.response?.status === 404) {
         return { valid: false, message: 'Invalid purchase code' };
@@ -87,7 +91,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
       });
     }
 
-    return { valid: true, message: 'Demo license accepted' };
+    return { valid: true, message: 'Demo license accepted', licenseId };
   }
 
   return { valid: false, message: 'Invalid purchase code' };
