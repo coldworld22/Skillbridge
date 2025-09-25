@@ -34,12 +34,51 @@ exports.updateSettings = async (settings) => {
   return settings;
 };
 
+function resolveEnvPath() {
+  const candidates = [
+    process.env.SOCIAL_LOGIN_ENV_PATH && path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH),
+    path.join(__dirname, '../../../.env'),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      const dir = path.dirname(candidate);
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+      } catch (mkdirError) {
+        if (mkdirError?.code !== 'EEXIST') {
+          throw mkdirError;
+        }
+      }
+      fs.accessSync(dir, fs.constants.W_OK);
+      return candidate;
+    } catch (error) {
+      if (candidate === process.env.SOCIAL_LOGIN_ENV_PATH) {
+        logger.warn(
+          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
+          error
+        );
+      }
+    }
+  }
+
+  return null;
+}
+
 function saveToEnv(settings) {
-  const envPath = path.join(__dirname, '../../../.env');
+  const envPath = resolveEnvPath();
+  if (!envPath) {
+    logger.warn('Skipping .env update for social login settings because no writable env file was found.');
+    return;
+  }
+
   let env = '';
   try {
     env = fs.readFileSync(envPath, 'utf8');
-  } catch (_err) {
+  } catch (err) {
+    if (err?.code !== 'ENOENT') {
+      logger.warn('Failed to read existing env file for social login settings. Proceeding with a blank file.', err);
+    }
     env = '';
   }
 
@@ -84,5 +123,9 @@ function saveToEnv(settings) {
     remove('APPLE_PRIVATE_KEY');
   }
 
-  fs.writeFileSync(envPath, env);
+  try {
+    fs.writeFileSync(envPath, env, 'utf8');
+  } catch (error) {
+    logger.error('Failed to persist social login settings to the env file.', error);
+  }
 }
