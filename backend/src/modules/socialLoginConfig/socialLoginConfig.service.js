@@ -36,7 +36,11 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
-  await saveToEnv(settings);
+  try {
+    await saveToEnv(settings);
+  } catch (error) {
+    logger.warn('Skipping .env update for social login settings due to an unexpected error.', error);
+  }
   return settings;
 };
 
@@ -72,14 +76,15 @@ function resolveEnvPath() {
 
       if (isExplicitEnvPath) {
         logger.warn(
-          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
-          error
+          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.'
         );
+        logger.debug('SOCIAL_LOGIN_ENV_PATH error details:', error);
       } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
         logger.warn(
           'Default .env file is not writable for social login settings. Falling back to an internal storage location.',
           error
         );
+        logger.debug('Default .env permission error details:', error);
       }
     }
   }
@@ -88,9 +93,19 @@ function resolveEnvPath() {
 }
 
 function saveToEnv(settings) {
-  const envPath = resolveEnvPath();
+  let envPath;
+  try {
+    envPath = resolveEnvPath();
+  } catch (error) {
+    logger.warn(
+      'Skipping .env update for social login settings because the env path could not be resolved.',
+      error
+    );
+    return;
+  }
   if (!envPath) {
     logger.warn('Skipping .env update for social login settings because no writable env file was found.');
+    updateProcessEnv(settings);
     return;
   }
 
@@ -147,7 +162,38 @@ function saveToEnv(settings) {
 
   try {
     fs.writeFileSync(envPath, env, 'utf8');
-  } catch (error) {
-    logger.error('Failed to persist social login settings to the env file.', error);
+  } finally {
+    updateProcessEnv(settings);
+  }
+}
+
+function updateProcessEnv(settings) {
+  const providers = settings.providers || {};
+
+  const assign = (key, value) => {
+    if (value) {
+      process.env[key] = value;
+    } else {
+      delete process.env[key];
+    }
+  };
+
+  assign('GOOGLE_CLIENT_ID', providers.google?.clientId);
+  assign('GOOGLE_CLIENT_SECRET', providers.google?.clientSecret);
+  assign('FACEBOOK_CLIENT_ID', providers.facebook?.clientId);
+  assign('FACEBOOK_CLIENT_SECRET', providers.facebook?.clientSecret);
+  assign('GITHUB_CLIENT_ID', providers.github?.clientId);
+  assign('GITHUB_CLIENT_SECRET', providers.github?.clientSecret);
+
+  if (providers.apple?.active) {
+    assign('APPLE_CLIENT_ID', providers.apple?.clientId);
+    assign('APPLE_TEAM_ID', providers.apple?.teamId);
+    assign('APPLE_KEY_ID', providers.apple?.keyId);
+    assign('APPLE_PRIVATE_KEY', providers.apple?.privateKey);
+  } else {
+    assign('APPLE_CLIENT_ID');
+    assign('APPLE_TEAM_ID');
+    assign('APPLE_KEY_ID');
+    assign('APPLE_PRIVATE_KEY');
   }
 }
