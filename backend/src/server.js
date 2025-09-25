@@ -206,7 +206,7 @@ app.use("/install", (req, res, next) => {
     return res
       .status(410)
       .send(
-        'The web installer has been disabled. See the <a href="https://eduskillbridge.net/docs/installation">installation guide</a>.'
+        'The web installer has been disabled. See the <a href="https://eduskillbridge.net/docs">installation guide</a>.'
       );
   }
   return next();
