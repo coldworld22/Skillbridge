@@ -23,6 +23,14 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 
     const result = await validatePurchaseCode(purchase_code, domain);
     if (result.valid) {
+      const license = await service.findByCode(purchase_code);
+      if (license?.id) {
+        await service.logAction(license.id, 'verify', {
+          ip: req.ip,
+          domain: domain ?? license.domain ?? null,
+          status: 'success',
+        });
+      }
       return res.json({ success: true, message: result.message });
     }
 
