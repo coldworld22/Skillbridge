@@ -16,34 +16,12 @@ const { getStudentProfile, updateStudentProfile } = require("./student.service")
  * @access Student
  */
 exports.getProfile = async (req, res) => {
-  const userId = req.user.id;
-
-  const [user] = await db("users")
-    .where({ id: userId })
-    .select(
-      "id",
-      "full_name",
-      "email",
-      "phone",
-      "gender",
-      "date_of_birth",
-      "avatar_url",
-      "is_email_verified",
-      "is_phone_verified",
-      "profile_complete",
-      "created_at",
-      "updated_at"
-    );
-
-  const [student] = await db("student_profiles")
-    .where({ user_id: userId })
-    .select("education_level", "topics", "learning_goals", "identity_doc_url");
-
-  const socialLinks = await db("user_social_links")
-    .where({ user_id: userId })
-    .select("platform", "url");
-
-  res.json({ ...user, student, social_links: socialLinks });
+  try {
+    res.json(await getStudentProfile(req.user.id));
+  } catch (err) {
+    logger.error("Failed to load student profile", err);
+    res.status(500).json({ message: "Failed to load profile" });
+  }
 };
 
 /**
@@ -63,6 +41,9 @@ exports.updateProfile = async (req, res) => {
     learning_goals,
     social_links,
   } = req.body;
+
+  const coerceToString = (value = "") =>
+    typeof value === "string" ? value : value ? String(value) : "";
 
   const normalizeUrl = (url = "") => {
     const trimmed = url.trim();
@@ -87,13 +68,22 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  const userData = { full_name, phone, gender, date_of_birth };
+  const userData = {
+    full_name: coerceToString(full_name),
+    phone: coerceToString(phone),
+    gender: coerceToString(gender),
+    date_of_birth: coerceToString(date_of_birth),
+  };
 
   try {
     await updateStudentProfile(
       userId,
       userData,
-      { education_level, topics, learning_goals },
+      {
+        education_level: coerceToString(education_level),
+        topics: coerceToString(topics),
+        learning_goals: coerceToString(learning_goals),
+      },
       sanitizedLinks
     );
     res.json(await getStudentProfile(userId));
@@ -123,12 +113,16 @@ exports.updateAvatar = async (req, res) => {
       .where({ id: req.user.id })
       .update({ avatar_url: avatarUrl });
 
-    if (oldAvatar) {
-      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
+
+    if (oldAvatar && !isRemoteUrl(oldAvatar)) {
+      const sanitizedOldAvatar = oldAvatar.replace(/^\/+/, "");
       const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
-      fs.unlink(oldPath, (err) =>
-        err && logger.error("Failed to remove old avatar:", err)
-      );
+      fs.unlink(oldPath, (err) => {
+        if (err && err.code !== "ENOENT") {
+          logger.error("Failed to remove old avatar:", err);
+        }
+      });
     }
 
     res.json({ avatar_url: avatarUrl });
