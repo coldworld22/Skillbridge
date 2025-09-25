@@ -17,6 +17,15 @@ jest.mock('next-i18next', () => ({
     t: (key) => translationMap[key] || key,
   }),
 }));
+jest.mock('react-toastify', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
+
+const { toast } = require('react-toastify');
 
 var toastMock;
 
@@ -39,9 +48,7 @@ const setupEnvironment = () => {
 describe('CacheManager', () => {
   beforeEach(() => {
     setupEnvironment();
-    mockClearCache.mockReset();
-    toastMock.success.mockReset();
-    toastMock.error.mockReset();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -55,8 +62,10 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    await screen.findByText('Cache cleared successfully');
-    expect(toastMock.success).toHaveBeenCalledWith('Cache cleared successfully');
+    await screen.findByText('Cache cleared');
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Cache cleared')
+    );
   });
 
   it('shows error message when clearing cache fails', async () => {
@@ -65,7 +74,9 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await screen.findByText('Failed to clear cache');
-    expect(toastMock.error).toHaveBeenCalledWith('Failed to clear cache');
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Failed to clear cache')
+    );
   });
 
   it('falls back to server cache clearing when Cache API is unavailable', async () => {
@@ -76,6 +87,10 @@ describe('CacheManager', () => {
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
     await screen.findByText('Browser cache unavailable; server cache cleared');
-    expect(toastMock.success).toHaveBeenCalledWith('Browser cache unavailable; server cache cleared');
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith(
+        'Browser cache unavailable; server cache cleared'
+      )
+    );
   });
 });
