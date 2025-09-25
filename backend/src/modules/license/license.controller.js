@@ -1,6 +1,15 @@
 const service = require('./license.service');
 const { validatePurchaseCode } = require('../../services/licenseService');
 
+const normaliseDomain = (domain) => {
+  if (typeof domain !== 'string') {
+    return domain;
+  }
+
+  const trimmed = domain.trim();
+  return trimmed.length > 0 ? trimmed.toLowerCase() : null;
+};
+
 /**
  * POST /api/license/verify
  * Validate a purchase code during installation.
@@ -35,8 +44,18 @@ exports.activateLicense = async (req, res, next) => {
       return res.status(400).json({ success: false, message: result?.message || 'Invalid purchase code' });
     }
 
-    const license = await service.activate({ purchase_code, domain, email, ip });
-    await service.logAction(license.id, 'activate', { ip, domain, status: 'success' });
+    const license = await service.activate({
+      purchase_code,
+      domain: normalisedDomain,
+      email,
+      ip,
+    });
+
+    await service.logAction(license.id, 'activate', {
+      ip,
+      domain: normalisedDomain || license.domain,
+      status: 'success',
+    });
 
     res.json({ success: true, data: license, message: result.message });
   } catch (err) {
@@ -55,13 +74,27 @@ exports.validateLicense = async (req, res, next) => {
     if (!license) {
       return res.status(404).json({ message: 'License not found' });
     }
-    if (license.domain !== domain) {
-      await service.markSuspicious(license.id, 'domain_mismatch', `Expected ${license.domain} but got ${domain}`);
-      await service.logAction(license.id, 'validate', { ip, domain, status: 'domain_mismatch' });
+    const incomingDomain = normaliseDomain(domain);
+    if (!incomingDomain) {
+      return res.status(400).json({ message: 'Domain required' });
+    }
+    const storedDomain = normaliseDomain(license.domain);
+
+    if (storedDomain && storedDomain !== incomingDomain) {
+      await service.markSuspicious(
+        license.id,
+        'domain_mismatch',
+        `Expected ${storedDomain} but got ${incomingDomain}`
+      );
+      await service.logAction(license.id, 'validate', {
+        ip,
+        domain: incomingDomain,
+        status: 'domain_mismatch',
+      });
       return res.status(403).json({ message: 'Domain mismatch' });
     }
     await service.update(license.id, { last_check: new Date() });
-    await service.logAction(license.id, 'validate', { ip, domain, status: 'success' });
+    await service.logAction(license.id, 'validate', { ip, domain: incomingDomain, status: 'success' });
     res.json({ success: true });
   } catch (err) {
     next(err);
