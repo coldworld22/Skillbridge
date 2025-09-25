@@ -322,14 +322,14 @@ export default function DocumentationLandingPage() {
                 </div>
 
                 <div className="mt-12 border-t border-gray-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-                  <span>Need deeper context? Read the full installation reference on our documentation site.</span>
+                  <span>Need deeper context? Read the full installation reference on our docs site.</span>
                   <a
                     href="https://eduskillbridge.net/docs"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200"
                   >
-                    Open installation guide
+                    Open installation docs
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -353,7 +353,7 @@ export default function DocumentationLandingPage() {
         <div className="mx-auto max-w-3xl">
           <h2 className="text-3xl font-semibold mb-4">Need more help?</h2>
           <p className="text-indigo-100 mb-6">
-            Browse the full documentation in the repository, join the community discussions, or open an issue if you run into trouble during installation.
+            Browse the full documentation on our website, join the community discussions, or open an issue if you run into trouble during installation.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
@@ -362,7 +362,7 @@ export default function DocumentationLandingPage() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Browse documentation
+              View documentation site
             </a>
             <a
               href="https://github.com/eduskillbridge/SkillBridge/discussions"
