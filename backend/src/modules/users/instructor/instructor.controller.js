@@ -230,9 +230,16 @@ exports.updateAvatar = async (req, res) => {
 
         await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
 
-        if (oldAvatar) {
-            const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-            fs.unlink(oldPath, (error) => error && logger.error("Failed to remove old avatar:", error));
+        const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
+
+        if (oldAvatar && !isRemoteUrl(oldAvatar)) {
+            const sanitizedOldAvatar = oldAvatar.replace(/^\/+/, "");
+            const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+            fs.unlink(oldPath, (error) => {
+                if (error && error.code !== "ENOENT") {
+                    logger.error("Failed to remove old avatar:", error);
+                }
+            });
         }
 
         res.json({ avatar_url: avatarUrl });
