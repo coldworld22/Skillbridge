@@ -85,32 +85,8 @@ else
   add_requirement "node" "Node.js >= 18" "fail" "Node.js executable not found."
 fi
 
-# Verify npm, Yarn, pnpm, and Python
+# Verify npm (bundled with Node.js)
 check_cli_tool "npm" "npm" "npm" "--version"
-check_cli_tool "yarn" "Yarn" "yarn" "--version"
-if command -v pnpm >/dev/null 2>&1; then
-  check_cli_tool "pnpm" "pnpm" "pnpm" "--version"
-else
-  add_requirement "pnpm" "pnpm" "warn" "pnpm executable not found. Install pnpm if you prefer it over npm or Yarn."
-fi
-
-python_cmd=""
-if command -v python3 >/dev/null 2>&1; then
-  python_cmd="python3"
-elif command -v python >/dev/null 2>&1; then
-  python_cmd="python"
-fi
-
-if [ -n "$python_cmd" ]; then
-  PYTHON_VERSION=$($python_cmd --version 2>&1 || true)
-  if [ -n "$PYTHON_VERSION" ]; then
-    add_requirement "python" "Python" "pass" "Detected ${PYTHON_VERSION}"
-  else
-    add_requirement "python" "Python" "pass" "${python_cmd} executable detected."
-  fi
-else
-  add_requirement "python" "Python" "warn" "Python executable not found. Install Python if required for auxiliary scripts."
-fi
 
 # Verify Docker
 docker_present=false
@@ -160,68 +136,6 @@ elif command -v docker-compose >/dev/null 2>&1; then
 fi
 
 add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_message"
-
-# Verify PostgreSQL service
-check_postgres() {
-  if command -v pg_isready >/dev/null 2>&1; then
-    local output status_code
-    status_code=0
-    output=$(pg_isready 2>&1) || status_code=$?
-    if [ "$status_code" -eq 0 ]; then
-      add_requirement "postgres" "PostgreSQL" "pass" "pg_isready: ${output}"
-      return
-    fi
-
-    if [ -n "$output" ]; then
-      add_requirement "postgres" "PostgreSQL" "warn" "$output"
-    else
-      add_requirement "postgres" "PostgreSQL" "warn" "pg_isready reported PostgreSQL as unavailable. Configure connectivity in Step 2 if using a remote database."
-    fi
-    return
-  fi
-
-  if command -v psql >/dev/null 2>&1; then
-    local output status_code
-    status_code=0
-    output=$(PGCONNECT_TIMEOUT=2 psql -Atqc 'SELECT 1' 2>&1) || status_code=$?
-    if [ "$status_code" -eq 0 ]; then
-      add_requirement "postgres" "PostgreSQL" "pass" "psql connected successfully."
-    else
-      if [ -n "$output" ]; then
-        add_requirement "postgres" "PostgreSQL" "warn" "$output"
-      else
-        add_requirement "postgres" "PostgreSQL" "warn" "psql could not connect to PostgreSQL. Provide the remote connection details during configuration."
-      fi
-    fi
-    return
-  fi
-
-  add_requirement "postgres" "PostgreSQL" "warn" "Neither pg_isready nor psql were found. Install the PostgreSQL client tools if you plan to run local diagnostics."
-}
-
-check_redis() {
-  if ! command -v redis-cli >/dev/null 2>&1; then
-    add_requirement "redis" "Redis" "warn" "redis-cli executable not found. Install it if you need to run local diagnostics."
-    return
-  fi
-
-  local redis_output redis_status
-  redis_status=0
-  redis_output=$(redis-cli ping 2>&1) || redis_status=$?
-
-  if [ "$redis_status" -eq 0 ] && echo "$redis_output" | grep -qi 'PONG'; then
-    add_requirement "redis" "Redis" "pass" "redis-cli ping: ${redis_output}"
-  else
-    if [ -n "$redis_output" ]; then
-      add_requirement "redis" "Redis" "warn" "$redis_output"
-    else
-      add_requirement "redis" "Redis" "warn" "redis-cli could not reach a Redis instance. Ensure the service is accessible using the credentials entered later."
-    fi
-  fi
-}
-
-check_postgres
-check_redis
 
 # Verify Git
 if command -v git >/dev/null 2>&1; then
