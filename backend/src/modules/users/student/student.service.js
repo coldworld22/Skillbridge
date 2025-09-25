@@ -47,7 +47,26 @@ const getStudentProfile = async (userId) => {
     .where({ user_id: userId })
     .select("platform", "url");
 
-  return { ...user, student, social_links: socialLinks };
+  const baseUser = user || {};
+  const normalizedUser = {
+    ...baseUser,
+    full_name: baseUser.full_name ?? "",
+    email: baseUser.email ?? "",
+    phone: baseUser.phone ?? "",
+    avatar_url: baseUser.avatar_url ?? "",
+    gender: baseUser.gender ?? "",
+    date_of_birth: baseUser.date_of_birth ?? "",
+  };
+
+  const baseStudent = student || {};
+  const normalizedStudent = {
+    education_level: baseStudent.education_level ?? "",
+    topics: baseStudent.topics ?? "",
+    learning_goals: baseStudent.learning_goals ?? "",
+    identity_doc_url: baseStudent.identity_doc_url ?? "",
+  };
+
+  return { ...normalizedUser, student: normalizedStudent, social_links: socialLinks };
 };
 
 // 🔹 Update student + profile + links in a transaction

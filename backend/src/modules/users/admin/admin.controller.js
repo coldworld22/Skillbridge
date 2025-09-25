@@ -272,11 +272,16 @@ exports.updateAvatar = async (req, res) => {
       .where({ id: userId })
       .update({ avatar_url: filePath, updated_at: new Date() });
 
-    if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) =>
-        err && logger.error("Failed to remove old avatar", { userId, err })
-      );
+    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
+
+    if (oldAvatar && !isRemoteUrl(oldAvatar)) {
+      const sanitizedOldAvatar = oldAvatar.replace(/^\/+/, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) => {
+        if (err && err.code !== "ENOENT") {
+          logger.error("Failed to remove old avatar", { userId, err });
+        }
+      });
     }
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
@@ -303,14 +308,17 @@ exports.deleteAvatar = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (user.avatar_url) {
+    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
+
+    if (user.avatar_url && !isRemoteUrl(user.avatar_url)) {
       const filePath = path.join(
-        __dirname,
-        "../../../../",
-        user.avatar_url.replace(/^\//, "")
+        process.cwd(),
+        user.avatar_url.replace(/^\/+/, "")
       );
       fs.unlink(filePath, (err) => {
-        if (err) logger.error(err);
+        if (err && err.code !== "ENOENT") {
+          logger.error(err);
+        }
       });
     }
 
