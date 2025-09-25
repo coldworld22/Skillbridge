@@ -35,7 +35,7 @@ import getCroppedImg from "@/utils/cropImage";
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z.string().refine((val) => isValidPhoneNumber(val, getUserCountry()), {
-    message: "invalid_phone_number",
+    message: "invalid_phone",
   }),
   gender: z.enum(['male', 'female']),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
@@ -98,6 +98,22 @@ export default function StudentProfileEdit() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
+
+  const translateValidationMessage = useCallback(
+    (key) => {
+      if (!key) return "";
+      const nested = t(`validation.${key}`, { defaultValue: "" });
+      if (typeof nested === "string" && nested.trim().length > 0) {
+        return nested;
+      }
+      const direct = t(key, { defaultValue: "" });
+      if (typeof direct === "string" && direct.trim().length > 0) {
+        return direct;
+      }
+      return key;
+    },
+    [t]
+  );
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -294,11 +310,11 @@ const handleAvatarSelect = (e) => {
       if (err instanceof ZodError) {
         err.errors.forEach((error) => {
           const key = error.path.join(".");
-          errs[key] = t(error.message);
+          errs[key] = translateValidationMessage(error.message);
         });
         setErrors(errs);
         if (err.errors?.length) {
-          toast.error(t(err.errors[0].message));
+          toast.error(translateValidationMessage(err.errors[0].message));
         } else {
           toast.error(t('fix_errors'));
         }
