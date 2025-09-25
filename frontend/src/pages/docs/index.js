@@ -321,14 +321,14 @@ export default function DocumentationLandingPage() {
                 </div>
 
                 <div className="mt-12 border-t border-gray-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-                  <span>Need deeper context? Read the full installation reference in the repository.</span>
+                  <span>Need deeper context? Read the full installation reference on our docs site.</span>
                   <a
-                    href="https://github.com/eduskillbridge/SkillBridge/blob/main/docs/installation.md"
+                    href="https://eduskillbridge.net/docs"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200"
                   >
-                    Open installation.md
+                    Open installation docs
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -352,16 +352,16 @@ export default function DocumentationLandingPage() {
         <div className="mx-auto max-w-3xl">
           <h2 className="text-3xl font-semibold mb-4">Need more help?</h2>
           <p className="text-indigo-100 mb-6">
-            Browse the full documentation in the repository, join the community discussions, or open an issue if you run into trouble during installation.
+            Browse the full documentation on our website, join the community discussions, or open an issue if you run into trouble during installation.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
-              href="https://github.com/eduskillbridge/SkillBridge/tree/main/docs"
+              href="https://eduskillbridge.net/docs"
               className="bg-white text-indigo-700 px-6 py-2 rounded shadow hover:bg-gray-100"
               target="_blank"
               rel="noopener noreferrer"
             >
-              View repository docs
+              View documentation site
             </a>
             <a
               href="https://github.com/eduskillbridge/SkillBridge/discussions"
