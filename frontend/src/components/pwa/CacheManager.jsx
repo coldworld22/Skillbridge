@@ -80,6 +80,16 @@ export default function CacheManager({
     }
   };
 
+  const translate = (key, fallback) => {
+    if (typeof i18n?.t === "function") {
+      const translated = i18n.t(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+    }
+    return fallback;
+  };
+
   const handleClearCache = async () => {
     setClearing(true);
     setMessage(null);
