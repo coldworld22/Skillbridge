@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
@@ -35,6 +35,23 @@ function AdminDashboardHome() {
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [licenseLoading, setLicenseLoading] = useState(false);
   const { t } = useTranslation("dashboard");
+
+  const formatDateTime = useMemo(
+    () =>
+      (value) => {
+        if (!value) {
+          return t("adminDashboardHome.notAvailable");
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return t("adminDashboardHome.notAvailable");
+        }
+
+        return date.toLocaleString();
+      },
+    [t]
+  );
 
   useEffect(() => {
     setHydrated(true);
@@ -198,8 +215,7 @@ function AdminDashboardHome() {
             <>
               <p className="text-sm text-gray-800">
                 {t("adminDashboardHome.lastCheck", {
-                  value:
-                    licenseStatus.last_check || t("adminDashboardHome.notAvailable"),
+                  value: formatDateTime(licenseStatus.last_check),
                 })}
               </p>
               <p
@@ -207,11 +223,13 @@ function AdminDashboardHome() {
                   licenseStatus.unauthorized_count ? "text-red-600" : "text-green-600"
                 }`}
               >
-                  {licenseStatus.unauthorized_count
-                    ? t("adminDashboardHome.unauthorizedInstances", {
+                {licenseStatus.unauthorized_count
+                  ? licenseStatus.unauthorized_count === 1
+                    ? t("adminDashboardHome.unauthorizedInstanceDetected")
+                    : t("adminDashboardHome.unauthorizedInstancesCount", {
                         count: licenseStatus.unauthorized_count,
                       })
-                    : t("adminDashboardHome.noUnauthorizedInstances")}
+                  : t("adminDashboardHome.noUnauthorizedInstances")}
               </p>
             </>
           ) : (
