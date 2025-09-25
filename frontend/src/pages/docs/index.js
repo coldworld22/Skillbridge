@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
@@ -339,7 +340,7 @@ export default function DocumentationLandingPage() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
-                  </a>
+                  </Link>
                 </div>
               </article>
             </div>
