@@ -50,6 +50,16 @@ export const studentProfileSchema = z.object({
     .optional(),
 });
 
+const safeString = (value, fallback = "") => {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return fallback;
+  try {
+    return String(value);
+  } catch (err) {
+    return fallback;
+  }
+};
+
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
@@ -117,13 +127,16 @@ export default function StudentProfileEdit() {
         });
 
         setFormData({
-          full_name,
-          phone,
-          gender: gender || "male",
-          date_of_birth: date_of_birth?.split("T")[0] || "",
-          education_level: student?.education_level || "",
-          topics: student?.topics || [],
-          learning_goals: student?.learning_goals || "",
+          full_name: safeString(full_name),
+          phone: safeString(phone),
+          gender: gender === "male" || gender === "female" ? gender : "male",
+          date_of_birth:
+            typeof date_of_birth === "string" && date_of_birth.includes("T")
+              ? date_of_birth.split("T")[0]
+              : safeString(date_of_birth),
+          education_level: safeString(student?.education_level),
+          topics: Array.isArray(student?.topics) ? student.topics.filter(Boolean) : [],
+          learning_goals: safeString(student?.learning_goals),
           socialLinks: socialMap,
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
