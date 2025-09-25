@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
@@ -321,14 +322,9 @@ export default function DocumentationLandingPage() {
                 </div>
 
                 <div className="mt-12 border-t border-gray-800 pt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-                  <span>Need deeper context? Read the full installation reference in the repository.</span>
-                  <a
-                    href="https://github.com/eduskillbridge/SkillBridge/blob/main/docs/installation.md"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200"
-                  >
-                    Open installation.md
+                  <span>Need deeper context? Read the full installation reference in the documentation center.</span>
+                  <Link href="/docs/installation" className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200">
+                    Open installation guide
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -339,7 +335,7 @@ export default function DocumentationLandingPage() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
-                  </a>
+                  </Link>
                 </div>
               </article>
             </div>
