@@ -1,8 +1,15 @@
 // pages/admin/license-logs.js
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchLicenseLogs } from "@/services/admin/licenseService";
+
+const statusStyles = {
+  success: "bg-green-100 text-green-600",
+  domain_mismatch: "bg-red-100 text-red-600",
+  failed: "bg-red-100 text-red-600",
+  error: "bg-red-100 text-red-600",
+};
 
 function LicenseLogsPage() {
   const [logs, setLogs] = useState([]);
@@ -36,10 +43,11 @@ function LicenseLogsPage() {
     };
   }, []);
 
+  const hasLogs = useMemo(() => logs.length > 0, [logs]);
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">🔒 License Monitoring</h1>
-
       <div className="bg-white shadow rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-500" role="status">
