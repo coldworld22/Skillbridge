@@ -79,14 +79,27 @@ export default function CacheManager({
     }
   };
 
+  const translate = (key, fallback) => {
+    if (typeof i18n?.t === "function") {
+      const translated = i18n.t(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+    }
+    return fallback;
+  };
+
   const handleClearCache = async () => {
     setClearing(true);
     setMessage(null);
     try {
-      let browserCacheCleared = false;
-      if ("caches" in window) {
-        await caches.delete(WARM_CACHE);
-        browserCacheCleared = true;
+      const browserCacheSupported = "caches" in window;
+      if (browserCacheSupported) {
+        try {
+          await caches.delete(WARM_CACHE);
+        } catch (cacheError) {
+          console.warn("Failed to clear warm cache bucket", cacheError);
+        }
       }
       if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
@@ -94,16 +107,21 @@ export default function CacheManager({
       }
       await clearCache();
       setStatus("idle");
-      setMessage(
-        browserCacheCleared
-          ? "Cache cleared"
-          : "Browser cache unavailable; server cache cleared"
-      );
+      const successMessage = translate("dashboard.cache_cleared", "Cache cleared");
+      const fallbackMessage = "Browser cache unavailable; server cache cleared";
+      const finalMessage = browserCacheSupported ? successMessage : fallbackMessage;
+      setMessage(finalMessage);
+      const toastFn = browserCacheSupported ? toast.success : toast.info;
+      toastFn(finalMessage);
     } catch (err) {
       console.error(err);
-      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      const errorMessage = translate(
+        "dashboard.cache_clear_failed",
+        "Failed to clear cache"
+      );
+      toast.error(errorMessage);
       setStatus("error");
-      setMessage("Failed to clear cache");
+      setMessage(errorMessage);
     } finally {
       setClearing(false);
     }
