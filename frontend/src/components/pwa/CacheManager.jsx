@@ -94,42 +94,32 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      const browserCacheSupported = "caches" in window;
-      if (browserCacheSupported) {
+      let browserCacheHandled = false;
+      if (typeof window !== "undefined" && "caches" in window) {
         try {
           await caches.delete(WARM_CACHE);
+          browserCacheHandled = true;
         } catch (cacheError) {
-          console.warn("Failed to clear warm cache bucket", cacheError);
+          console.warn("Failed to clear browser cache", cacheError);
         }
-
       }
       if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
-      const result = await clearCache();
-      const serverMessage =
-        result?.message && typeof result.message === "string"
-          ? result.message
-          : null;
-      const successMessage = serverMessage
-        ? serverMessage
-        : browserCacheCleared
-          ? t("cache_clear_success")
-          : t("cache_clear_server_only");
+      await clearCache();
+      const successMessage = browserCacheHandled
+        ? i18n.t("dashboard.cache_cleared")
+        : i18n.t("dashboard.cache_cleared_server_only");
       setStatus("idle");
-      const successMessage = translate("dashboard.cache_cleared", "Cache cleared");
-      const fallbackMessage = "Browser cache unavailable; server cache cleared";
-      const finalMessage = browserCacheSupported ? successMessage : fallbackMessage;
-      setMessage(finalMessage);
-      const toastFn = browserCacheSupported ? toast.success : toast.info;
-      toastFn(finalMessage);
+      setMessage(successMessage);
+      toast.success(successMessage);
+      if (!browserCacheHandled) {
+        toast.info(i18n.t("dashboard.cache_cleared_server_only_hint"));
+      }
     } catch (err) {
       console.error(err);
-      const errorMessage = translate(
-        "dashboard.cache_clear_failed",
-        "Failed to clear cache"
-      );
+      const errorMessage = i18n.t("dashboard.cache_clear_failed");
       toast.error(errorMessage);
       setStatus("error");
       setMessage(errorMessage);
