@@ -48,9 +48,21 @@ function resolveEnvPath() {
   const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
     ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
     : null;
-  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
-  const defaultEnvPath = path.join(__dirname, '../../../.env');
-  const candidates = [explicitEnvPath, fallbackEnvPath, defaultEnvPath].filter(Boolean);
+  const backendRoot = path.join(__dirname, '../../../');
+  const uploadsFallbackEnvPath = path.join(
+    backendRoot,
+    'uploads',
+    'config',
+    'social-login.env'
+  );
+  const tmpFallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
+  const defaultEnvPath = path.join(backendRoot, '.env');
+  const candidates = [
+    explicitEnvPath,
+    defaultEnvPath,
+    uploadsFallbackEnvPath,
+    tmpFallbackEnvPath,
+  ].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -75,19 +87,14 @@ function resolveEnvPath() {
 
       if (isExplicitEnvPath) {
         logger.warn(
-          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.',
-          error
+          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.'
         );
-      } else if (candidate === fallbackEnvPath) {
-        logger.warn(
-          'Unable to access fallback env file location for social login settings.',
-          error
-        );
+        logger.debug('SOCIAL_LOGIN_ENV_PATH error details:', error);
       } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
         logger.warn(
-          'Default .env file is not writable for social login settings. Falling back to a temporary location.',
-          error
+          'Default .env file is not writable for social login settings. Falling back to a writable location.'
         );
+        logger.debug('Default .env permission error details:', error);
       }
     }
   }
