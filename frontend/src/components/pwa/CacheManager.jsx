@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
 import { clearCache } from "@/services/admin/cacheService";
 import { toast } from "react-toastify";
-import { i18n } from "next-i18next";
+import { useTranslation } from "next-i18next";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList = [];
@@ -22,6 +22,7 @@ export default function CacheManager({
   warmList = pwaWarmList,
   strategy = "A",
 } = {}) {
+  const { t } = useTranslation("dashboard");
   const [status, setStatus] = useState("idle");
   const [ready, setReady] = useState(false);
   const [hasServiceWorker, setHasServiceWorker] = useState(false);
@@ -83,27 +84,62 @@ export default function CacheManager({
     setClearing(true);
     setMessage(null);
     try {
-      let browserCacheCleared = false;
-      if ("caches" in window) {
-        await caches.delete(WARM_CACHE);
-        browserCacheCleared = true;
+      let messageKey = "cache_clear_success";
+      let toastType = "success";
+
+      if (typeof window !== "undefined" && "caches" in window) {
+        try {
+          const deleted = await caches.delete(WARM_CACHE);
+          if (!deleted) {
+            messageKey = "cache_clear_partial";
+            toastType = "info";
+          }
+        } catch (cacheError) {
+          console.error("Failed to clear browser cache", cacheError);
+          messageKey = "cache_clear_browser_error";
+          toastType = "warn";
+        }
+      } else {
+        messageKey = "cache_api_unavailable";
+        toastType = "info";
       }
+
       if (strategy === "B" && serviceWorkerReady) {
-        const registration = await navigator.serviceWorker.ready;
-        registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
+        } catch (serviceWorkerError) {
+          console.error(
+            "Failed to notify service worker to clear warm cache",
+            serviceWorkerError
+          );
+          toast.warn(t("cache_clear_service_worker_error"));
+        }
       }
+
       await clearCache();
+
+      const toastMessage = t(messageKey);
+      if (toastType === "success") {
+        toast.success(toastMessage);
+      } else if (toastType === "warn") {
+        toast.warn(toastMessage);
+      } else {
+        toast.info(toastMessage);
+      }
+
       setStatus("idle");
-      setMessage(
-        browserCacheCleared
-          ? "Cache cleared"
-          : "Browser cache unavailable; server cache cleared"
-      );
+      setMessage(toastMessage);
     } catch (err) {
       console.error(err);
-      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      const isForbidden = err?.response?.status === 403;
+      const errorKey = isForbidden
+        ? "cache_clear_forbidden"
+        : "cache_clear_failed";
+      const errorMessage = t(errorKey);
+      toast.error(errorMessage);
       setStatus("error");
-      setMessage("Failed to clear cache");
+      setMessage(errorMessage);
     } finally {
       setClearing(false);
     }
