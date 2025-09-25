@@ -1,6 +1,14 @@
-const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const service = require('./license.service');
 const { validatePurchaseCode } = require('../../services/licenseService');
+
+const normaliseDomain = (domain) => {
+  if (typeof domain !== 'string') {
+    return domain;
+  }
+
+  const trimmed = domain.trim();
+  return trimmed.length > 0 ? trimmed.toLowerCase() : null;
+};
 
 /**
  * POST /api/license/verify
@@ -31,24 +39,28 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 exports.activateLicense = async (req, res, next) => {
   const { purchase_code, domain, email, ip } = req.body;
   try {
-    const token = process.env.ENVATO_TOKEN;
-    if (!token) {
-      return res.status(500).json({ message: 'Envato token not configured' });
+    const normalisedDomain = normaliseDomain(domain);
+    if (!normalisedDomain) {
+      return res.status(400).json({ message: 'Domain required' });
     }
-    const response = await fetch(
-      `https://api.envato.com/v3/market/author/sale?code=${purchase_code}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!response.ok) {
-      return res.status(400).json({ message: 'Invalid purchase code' });
-    }
-    const data = await response.json();
-    if (!data.item) {
-      return res.status(400).json({ message: 'Invalid purchase code' });
+    const verification = await validatePurchaseCode(purchase_code, normalisedDomain);
+
+    if (!verification.valid) {
+      return res.status(400).json({ message: verification.message || 'Invalid purchase code' });
     }
 
-    const license = await service.activate({ purchase_code, domain, email, ip });
-    await service.logAction(license.id, 'activate', { ip, domain, status: 'success' });
+    const license = await service.activate({
+      purchase_code,
+      domain: normalisedDomain,
+      email,
+      ip,
+    });
+
+    await service.logAction(license.id, 'activate', {
+      ip,
+      domain: normalisedDomain || license.domain,
+      status: 'success',
+    });
 
     res.json({ success: true, data: license });
   } catch (err) {
@@ -67,13 +79,27 @@ exports.validateLicense = async (req, res, next) => {
     if (!license) {
       return res.status(404).json({ message: 'License not found' });
     }
-    if (license.domain !== domain) {
-      await service.markSuspicious(license.id, 'domain_mismatch', `Expected ${license.domain} but got ${domain}`);
-      await service.logAction(license.id, 'validate', { ip, domain, status: 'domain_mismatch' });
+    const incomingDomain = normaliseDomain(domain);
+    if (!incomingDomain) {
+      return res.status(400).json({ message: 'Domain required' });
+    }
+    const storedDomain = normaliseDomain(license.domain);
+
+    if (storedDomain && storedDomain !== incomingDomain) {
+      await service.markSuspicious(
+        license.id,
+        'domain_mismatch',
+        `Expected ${storedDomain} but got ${incomingDomain}`
+      );
+      await service.logAction(license.id, 'validate', {
+        ip,
+        domain: incomingDomain,
+        status: 'domain_mismatch',
+      });
       return res.status(403).json({ message: 'Domain mismatch' });
     }
     await service.update(license.id, { last_check: new Date() });
-    await service.logAction(license.id, 'validate', { ip, domain, status: 'success' });
+    await service.logAction(license.id, 'validate', { ip, domain: incomingDomain, status: 'success' });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -85,14 +111,18 @@ exports.validateLicense = async (req, res, next) => {
  * Deactivate a license when moving installations.
  */
 exports.deactivateLicense = async (req, res, next) => {
-  const { purchase_code } = req.body;
+  const { purchase_code, domain, ip } = req.body;
   try {
     const license = await service.findByCode(purchase_code);
     if (!license) {
       return res.status(404).json({ message: 'License not found' });
     }
-    await service.update(license.id, { status: 'inactive' });
-    await service.logAction(license.id, 'deactivate', { status: 'success' });
+    await service.update(license.id, { status: 'inactive', domain: null, ip: null, last_check: new Date() });
+    await service.logAction(license.id, 'deactivate', {
+      status: 'success',
+      domain: normaliseDomain(domain) || normaliseDomain(license.domain),
+      ip: typeof ip === 'string' ? ip.trim() : ip || license.ip,
+    });
     res.json({ success: true });
   } catch (err) {
     next(err);
