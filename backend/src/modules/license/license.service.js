@@ -16,6 +16,17 @@ const normaliseEmail = (email) => {
 };
 
 exports.activate = async ({ purchase_code, domain, email, ip }) => {
+  const updatePayload = { status: 'active', last_check: db.fn.now() };
+  if (domain !== undefined) {
+    updatePayload.domain = domain;
+  }
+  if (email !== undefined) {
+    updatePayload.email = email;
+  }
+  if (ip !== undefined) {
+    updatePayload.ip = ip;
+  }
+
   const existing = await db('licenses').where({ purchase_code }).first();
   const normalisedIp = typeof ip === 'string' ? ip.trim() : ip;
   const payload = {
@@ -27,12 +38,46 @@ exports.activate = async ({ purchase_code, domain, email, ip }) => {
   };
 
   if (existing) {
-    await db('licenses').where({ id: existing.id }).update(payload);
-  } else {
-    await db('licenses').insert({ purchase_code, ...payload });
+    await db('licenses').where({ id: existing.id }).update(updatePayload);
+    return db('licenses').where({ id: existing.id }).first();
   }
 
-  return db('licenses').where({ purchase_code }).first();
+  const insertPayload = {
+    purchase_code,
+    status: 'active',
+    last_check: db.fn.now(),
+  };
+  if (domain !== undefined) {
+    insertPayload.domain = domain;
+  }
+  if (email !== undefined) {
+    insertPayload.email = email;
+  }
+  if (ip !== undefined) {
+    insertPayload.ip = ip;
+  }
+
+  const inserted = await db('licenses').insert(insertPayload).returning('id');
+
+  let licenseId;
+  if (Array.isArray(inserted) && inserted.length > 0) {
+    const value = inserted[0];
+    if (value && typeof value === 'object') {
+      licenseId = value.id ?? value;
+    } else {
+      licenseId = value;
+    }
+  } else if (inserted && typeof inserted === 'object') {
+    licenseId = inserted.id ?? inserted;
+  } else {
+    licenseId = inserted;
+  }
+
+  if (!licenseId) {
+    return db('licenses').where({ purchase_code }).orderBy('id', 'desc').first();
+  }
+
+  return db('licenses').where({ id: licenseId }).first();
 };
 
 exports.findByCode = (purchase_code) =>
