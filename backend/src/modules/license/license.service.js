@@ -1,5 +1,20 @@
 const db = require('../../config/database');
 
+const normaliseDomain = (domain) => {
+  if (typeof domain !== 'string') {
+    return domain === undefined ? undefined : null;
+  }
+  const trimmed = domain.trim();
+  return trimmed.length > 0 ? trimmed.toLowerCase() : null;
+};
+
+const normaliseEmail = (email) => {
+  if (typeof email !== 'string') {
+    return email;
+  }
+  return email.trim();
+};
+
 exports.activate = async ({ purchase_code, domain, email, ip }) => {
   const updatePayload = { status: 'active', last_check: db.fn.now() };
   if (domain !== undefined) {
@@ -13,6 +28,15 @@ exports.activate = async ({ purchase_code, domain, email, ip }) => {
   }
 
   const existing = await db('licenses').where({ purchase_code }).first();
+  const normalisedIp = typeof ip === 'string' ? ip.trim() : ip;
+  const payload = {
+    domain: normaliseDomain(domain),
+    email: normaliseEmail(email),
+    ip: normalisedIp && normalisedIp.length ? normalisedIp : null,
+    status: 'active',
+    last_check: new Date(),
+  };
+
   if (existing) {
     await db('licenses').where({ id: existing.id }).update(updatePayload);
     return db('licenses').where({ id: existing.id }).first();
