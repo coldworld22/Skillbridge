@@ -23,12 +23,11 @@ exports.verifyPurchaseCode = async (req, res, next) => {
 
     const result = await validatePurchaseCode(purchase_code, domain);
     if (result.valid) {
-      const license = await service.findByCode(purchase_code);
-      if (license?.id) {
-        await service.logAction(license.id, 'verify', {
-          ip: req.ip,
-          domain: domain ?? license.domain ?? null,
+      if (result.licenseId) {
+        await service.logAction(result.licenseId, 'verify', {
           status: 'success',
+          domain: domain ?? undefined,
+          ip: req.ip,
         });
       }
       return res.json({ success: true, message: result.message });
@@ -50,6 +49,14 @@ exports.activateLicense = async (req, res, next) => {
     const result = await validatePurchaseCode(purchase_code, domain);
     if (!result?.valid) {
       return res.status(400).json({ success: false, message: result?.message || 'Invalid purchase code' });
+    }
+
+    if (result.licenseId) {
+      await service.logAction(result.licenseId, 'verify', {
+        status: 'success',
+        domain: domain ?? undefined,
+        ip,
+      });
     }
 
     const license = await service.activate({
