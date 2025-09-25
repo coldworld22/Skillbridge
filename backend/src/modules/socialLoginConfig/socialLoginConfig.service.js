@@ -48,21 +48,10 @@ function resolveEnvPath() {
   const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
     ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
     : null;
-  const backendRoot = path.join(__dirname, '../../../');
-  const uploadsFallbackEnvPath = path.join(
-    backendRoot,
-    'uploads',
-    'config',
-    'social-login.env'
-  );
-  const tmpFallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
-  const defaultEnvPath = path.join(backendRoot, '.env');
-  const candidates = [
-    explicitEnvPath,
-    defaultEnvPath,
-    uploadsFallbackEnvPath,
-    tmpFallbackEnvPath,
-  ].filter(Boolean);
+  const persistentEnvPath = path.join(__dirname, '../../../data/social-login.env');
+  const defaultEnvPath = path.join(__dirname, '../../../.env');
+  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
+  const candidates = [explicitEnvPath, defaultEnvPath, persistentEnvPath, fallbackEnvPath].filter(Boolean);
 
   for (const candidate of candidates) {
     try {
@@ -92,7 +81,8 @@ function resolveEnvPath() {
         logger.debug('SOCIAL_LOGIN_ENV_PATH error details:', error);
       } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
         logger.warn(
-          'Default .env file is not writable for social login settings. Falling back to a writable location.'
+          'Default .env file is not writable for social login settings. Falling back to an internal storage location.',
+          error
         );
         logger.debug('Default .env permission error details:', error);
       }

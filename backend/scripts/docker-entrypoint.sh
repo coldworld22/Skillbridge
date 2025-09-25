@@ -59,6 +59,9 @@ ensure_upload_permissions() {
   done
 
   chown -R node:node /app/uploads
+
+  mkdir -p /app/data
+  chown -R node:node /app/data
 }
 
 url_encode() {
