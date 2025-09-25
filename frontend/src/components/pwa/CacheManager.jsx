@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
 import { clearCache } from "@/services/admin/cacheService";
 import { toast } from "react-toastify";
-import { i18n } from "next-i18next";
+import { useTranslation } from "next-i18next";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList = [];
@@ -22,6 +22,7 @@ export default function CacheManager({
   warmList = pwaWarmList,
   strategy = "A",
 } = {}) {
+  const { t } = useTranslation("dashboard");
   const [status, setStatus] = useState("idle");
   const [ready, setReady] = useState(false);
   const [hasServiceWorker, setHasServiceWorker] = useState(false);
@@ -100,12 +101,22 @@ export default function CacheManager({
         } catch (cacheError) {
           console.warn("Failed to clear warm cache bucket", cacheError);
         }
+
       }
       if (strategy === "B" && serviceWorkerReady) {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
-      await clearCache();
+      const result = await clearCache();
+      const serverMessage =
+        result?.message && typeof result.message === "string"
+          ? result.message
+          : null;
+      const successMessage = serverMessage
+        ? serverMessage
+        : browserCacheCleared
+          ? t("cache_clear_success")
+          : t("cache_clear_server_only");
       setStatus("idle");
       const successMessage = translate("dashboard.cache_cleared", "Cache cleared");
       const fallbackMessage = "Browser cache unavailable; server cache cleared";

@@ -1195,6 +1195,8 @@
     "clear_cache": "Vider le cache",
     "cache_cleared": "Cache effacé",
     "cache_clear_failed": "Échec de l'effacement du cache",
+    "cache_clear_success": "Cache vidé avec succès",
+    "cache_clear_server_only": "Cache du navigateur indisponible ; seule la cache serveur a été vidée",
     "create_class": "Créer un cours",
     "my_classes": "Mes cours",
     "tutorials": "Tutoriels",
