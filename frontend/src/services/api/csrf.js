@@ -12,7 +12,14 @@ export const ensureCsrfToken = async () => {
   let token = getCsrfToken();
   if (!token) {
     try {
-      await api.get("/csrf-token");
+      // Use a relative URL so Axios appends it to the configured base URL.
+      // A leading slash causes Axios to treat the path as absolute, which
+      // skips the `/api` prefix in production and prevents the backend CSRF
+      // route from being hit. That leaves the csrfToken cookie unset and the
+      // next POST request fails with a 403. Using a relative path ensures we
+      // always call `/api/csrf-token`, allowing the server to issue the
+      // expected cookie before we retry the protected request.
+      await api.get("csrf-token");
     } catch (e) {
       // The route may not exist; we only care about the cookie.
     }

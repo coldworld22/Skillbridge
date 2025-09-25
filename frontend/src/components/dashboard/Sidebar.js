@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import logo from '@/shared/assets/images/login/logo.png';
 import { buildUrl } from '@/utils/url';
-import { clearCache } from '@/services/admin/cacheService';
+import { clearCache as clearCacheWithToast } from '@/utils/cache';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -36,7 +36,7 @@ export default function Sidebar({ role = 'admin' }) {
 
   const handleClearCache = async () => {
     try {
-      await clearCache();
+      await clearCacheWithToast();
     } catch (err) {
       console.error('Failed to clear cache', err);
     }
