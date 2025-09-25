@@ -1,129 +1,251 @@
 # SkillBridge Documentation
 
-## Setup
+## Installation
 
-### Installation
+### Prerequisites
 
-This quick-start checklist consolidates the full installation steps directly on
-the documentation index so you do not need to open a separate guide.
+SkillBridge requires the following tools on your workstation or server:
 
-#### 1. Prerequisites
-
-- Node.js 18 or later (npm 9+ is bundled with recent Node.js releases)
+- Node.js 18 or later (npm 9+ is bundled)
 - Docker Engine and the Docker Compose **V2** plugin (`docker compose` command)
 - Git
-- Redis (or another compatible store) for production session persistence
+- Redis or another session store for production deployments
 
-Make sure you are using Docker Compose V2. The legacy v1 CLI frequently fails
-with recent Docker Engine versions and the installer will refuse to run when it
-detects only the v1 binary.
+> **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent
+> Docker Engine releases and often fails with `KeyError: 'ContainerConfig'`
+> when rebuilding containers. Install the Docker Compose V2 plugin or downgrade
+> Docker Engine below version 27 before continuing.
 
-#### 2. Install required tools
+### Install the required tools
 
-Install the tooling that the automated installer checks for on your operating
-system:
+Follow the commands for your operating system to install the prerequisites the
+installer enforces.
 
-- **Node.js 18+**
-  - macOS (Homebrew):
-    ```bash
-    brew install node@20
-    echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> ~/.zshrc
-    ```
-  - Ubuntu / Debian:
-    ```bash
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-    ```
-  - Windows: download and run the LTS installer from [nodejs.org](https://nodejs.org/),
-    then restart your terminal and confirm with `node -v`.
+#### Node.js 18+ (includes npm)
 
-- **Docker Engine and Docker Compose V2**
-  - macOS / Windows: install [Docker Desktop](https://www.docker.com/products/docker-desktop/),
-    ensure it is running, and verify with `docker --version` and
-    `docker compose version`.
-  - Ubuntu / Debian:
-    ```bash
-    curl -fsSL https://get.docker.com | sh
-    sudo usermod -aG docker $USER
-    newgrp docker
-    sudo mkdir -p /usr/lib/docker/cli-plugins
-    sudo curl -SL "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-$(uname -m)" \
-      -o /usr/lib/docker/cli-plugins/docker-compose
-    sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
-    docker --version
-    docker compose version
-    ```
+- **macOS (Homebrew):**
 
-- **Git**
-  - macOS: `brew install git`
-  - Ubuntu / Debian: `sudo apt-get install -y git`
-  - Windows: install [Git for Windows](https://git-scm.com/download/win) and select
-    “Git from the command line” during setup.
+  ```bash
+  brew install node@20
+  echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> ~/.zshrc
+  ```
 
-Open a fresh terminal after installing these tools so PATH changes take effect
-before re-running `./install.sh` or visiting `/install` to confirm the
-prerequisite checks.
+- **Ubuntu / Debian:**
 
-#### 3. Clone the repository
+  ```bash
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  ```
+
+- **Windows:** Download the LTS installer from [nodejs.org](https://nodejs.org/),
+  run it, then restart your terminal and confirm with `node -v`.
+
+#### Docker Engine and Docker Compose V2
+
+- **macOS / Windows:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/),
+  ensure it is running, and verify with `docker --version` and
+  `docker compose version`.
+
+- **Ubuntu / Debian:**
+
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  newgrp docker
+  sudo mkdir -p /usr/lib/docker/cli-plugins
+  sudo curl -SL "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-$(uname -m)" \
+    -o /usr/lib/docker/cli-plugins/docker-compose
+  sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
+  docker --version
+  docker compose version
+  ```
+
+  Docker Desktop already bundles Compose V2; Linux users install the plugin
+  manually as shown above.
+
+#### Git
+
+- **macOS:** `brew install git`
+- **Ubuntu / Debian:** `sudo apt-get install -y git`
+- **Windows:** Install [Git for Windows](https://git-scm.com/download/win) and
+  select “Git from the command line” during setup.
+
+Open a fresh terminal after installing these tools so PATH changes take effect,
+then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
+
+### 1. Clone the repository
 
 ```bash
 git clone <repo-url>
 cd Skillbridge
 ```
 
-#### 4. Configure environment variables
+### 2. Configure environment variables
 
-The root `install.sh` script automates both local and production setups by:
+#### Automated install script
 
-1. Verifying host prerequisites with `scripts/check_prereqs.sh`.
-2. Copying `.env.example` files (root, backend, backend production, and
-   `frontend/.env.local`) when targets are missing.
-3. Sourcing those files so migrations, seeds, and helper scripts inherit the
-   configuration.
-4. Ensuring `backend/uploads/app` exists before branding assets are written.
+The root `install.sh` script streamlines both local and production setups. When
+you run it the script:
 
-Useful flags when running the script:
+1. Runs `scripts/check_prereqs.sh` to verify Node.js, npm, Docker, Docker Compose
+   V2, and Git. Fix the issue, acknowledge the warning at the prompt, or set
+   `ALLOW_PREREQ_FAILURES=true` to continue automatically.
+2. Copies `.env.example` files to `.env` when the target file is missing (root,
+   backend, backend production, and `frontend/.env.local`).
+3. Sources the resulting files so migrations, seeds, and helper scripts inherit
+   the configuration.
+4. Ensures `backend/uploads/app` exists before branding assets are written.
+
+Supply `ADMIN_EMAIL` and `ADMIN_PASSWORD` via environment variables for
+non-interactive use. Optional flags include:
 
 - `SEED_DB=true` — run `npm --prefix backend run seed` after migrations.
-- `START_DEV_SERVICES=false` — skip `docker compose up` in development mode.
-- `SKIP_BACKEND_NPM_INSTALL=true` — reuse existing backend dependencies.
+- `START_DEV_SERVICES=false` — skip the automatic `docker compose up` step in
+  development mode.
+- `SKIP_BACKEND_NPM_INSTALL=true` — skip the automatic backend dependency
+  install step when you manage packages separately.
 
-For backend configuration, copy `backend/.env.example` to `backend/.env` and
-populate the required values. When deploying, also copy
-`backend/.env.production.example` to `backend/.env.production` and provide
-production credentials (database URL, JWT secrets, etc.). Set a display name so
-emails and installer prompts use the desired branding (`APP_NAME=SkillBridge`).
+In production mode, the script ensures Docker services are running before it
+executes database migrations. In development mode it starts the compose stack in
+detached mode unless you opt out with `START_DEV_SERVICES=false`.
+
+Before running migrations the script installs backend dependencies with
+`npm --prefix backend install` so the Node.js helper scripts are available and
+creates `backend/uploads/app/` if it is missing.
+
+#### Backend
+
+Copy the example file and adjust values as needed:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+For deployments, Docker Compose also reads `backend/.env.production`. Copy
+`backend/.env.production.example` to `backend/.env.production` and fill in
+production database credentials and JWT secrets.
+
+Set the display name that should appear in installer prompts and outbound
+emails so the branding check passes:
+
+```
+APP_NAME=SkillBridge
+```
 
 If you plan to disable transactional email during setup, set
-`DISABLE_EMAILS=true`. Otherwise, configure SMTP credentials so the installer
-can verify connectivity. Ensure `backend/uploads/app` exists and is writable.
+`DISABLE_EMAILS=true`. Otherwise provide SMTP credentials so the installer can
+verify connectivity:
 
-Key backend settings to review:
+```
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+```
 
-- `FRONTEND_URL` — list the exact origins where the frontend runs.
-- `COOKIE_SECURE`/`COOKIE_SAMESITE` — adjust when running without HTTPS.
-- `EXTRA_CORS_ORIGINS` — comma-separated list of additional API consumers.
-- Rate limiting defaults (`RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`).
-- `REDIS_URL` — required for production session persistence.
-- `BOOK_PRICE_RANGE_*` — mirrors frontend constants; add `NEXT_PUBLIC_` values
-  to `frontend/.env.local` when running the UI outside Docker.
-- `INSTALL_API_ENABLED` — toggle protected setup endpoints for automation.
-- Optional `INSTALL_SETUP_SECRET` — require a shared secret header for
-  installation API calls.
-- `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` — customize seeded
-  admin credentials.
+Create the uploads directory that stores logos and favicons and ensure it is
+writable by the backend service user:
 
-For the frontend, create `frontend/.env.local` when running outside Docker and
-set:
+```bash
+mkdir -p backend/uploads/app
+```
+
+Edit `backend/.env` and provide your secrets. `FRONTEND_URL` must match the
+exact origin (scheme, host, and port) where the frontend will run to avoid CORS
+errors. Separate multiple origins with commas, for example:
+
+```bash
+FRONTEND_URL=http://localhost:3000,https://example.com
+```
+
+Leave `NODE_ENV` unset so cookies work over HTTP locally. If you need
+cross-subdomain cookies without HTTPS, also set:
+
+```bash
+COOKIE_SECURE=false
+COOKIE_SAMESITE=None
+```
+
+If additional domains need access to the API, add them to
+`EXTRA_CORS_ORIGINS` as a comma-separated list of URLs:
+
+```bash
+EXTRA_CORS_ORIGINS=https://admin.example.com,https://docs.example.com
+```
+
+Rate limiting defaults to 1,000 requests per IP every 15 minutes. Adjust the
+allowance if your deployment expects heavier bursts of traffic:
+
+```
+RATE_LIMIT_MAX=2000
+RATE_LIMIT_WINDOW_MS=300000 # 5 minutes
+```
+
+A Redis instance (or compatible store) is required to persist sessions in
+production. Set `REDIS_URL` in `backend/.env` to point to your Redis server
+(for example `redis://localhost:6379`).
+
+The book filter's price range uses configurable defaults:
+
+```
+BOOK_PRICE_RANGE_DEFAULT=100
+BOOK_PRICE_RANGE_MAX=500
+```
+
+These values are read in `backend/src/config/books.js` and mirrored on the
+frontend via `frontend/src/utils/constants.js`. When running the frontend
+outside Docker, add the `NEXT_PUBLIC_` variants to `frontend/.env.local`:
+
+```
+NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
+NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
+```
+
+##### Installation API
+
+The backend exposes protected setup endpoints at `/api/install` for automated
+deployments. Enable them by setting `INSTALL_API_ENABLED=true` in
+`backend/.env` and restarting the backend. Authenticate every request with an
+administrator JWT and provide the configuration payload when invoking
+`POST /api/install/run`.
+
+If you configure `INSTALL_SETUP_SECRET`, clients must also send the same value
+in the `X-Install-Setup-Secret` header on every installer request. Remove or
+disable the API when setup is complete.
+
+##### Initial admin passwords
+
+Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` before running
+seed scripts if you want to control the passwords for the seeded Admin and
+SuperAdmin accounts. When left unset, the seed process generates secure random
+passwords and prints them to the console.
+
+#### Frontend (optional)
+
+When using Docker Compose the frontend automatically points to the API on port
+`5002`. If you start the Next.js app separately, create `frontend/.env.local`
+and set:
+
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
 NEXT_PUBLIC_TRUSTED_ICON_HOSTS=yourdomain.com,cdn.yourdomain.com
 ```
 
-#### 5. Install dependencies (optional)
+`NEXT_PUBLIC_TRUSTED_ICON_HOSTS` defines a comma-separated list of allowed
+hosts for payment method icons. URLs outside this list will fall back to a
+default icon.
 
-When developing outside Docker:
+The root `.env` file defaults `NEXT_PUBLIC_API_BASE_URL` to
+`http://localhost:5002/api` so Docker services can reach the backend container
+internally during development. For production builds use
+`frontend/.env.production` instead and remove or override the root `.env` so the
+frontend points to your public domain.
+
+### 3. Install dependencies (optional)
+
+For manual development outside of Docker:
 
 ```bash
 cd backend && npm install
@@ -131,7 +253,9 @@ cd ../frontend && npm install
 cd ..
 ```
 
-#### 6. Prepare the database
+### 4. Prepare the database
+
+Run migrations and seed data:
 
 ```bash
 cd backend
@@ -140,7 +264,7 @@ npm run seed
 cd ..
 ```
 
-#### 7. Launch the stack
+### 5. Launch the stack
 
 Start all services with Docker Compose:
 
@@ -148,7 +272,7 @@ Start all services with Docker Compose:
 docker compose up --build
 ```
 
-The containers expose:
+The containers expose the following URLs:
 
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:5002/api`
@@ -156,14 +280,15 @@ The containers expose:
 - pgAdmin: `http://localhost:5050`
 - Redis: `localhost:6379`
 
-Visit the frontend URL, create an account, and log in.
+Once running, open the frontend URL in your browser and create an account or log
+in.
 
-##### Web-based installer (optional)
+#### Web-based installer (optional)
 
-To use the web installer:
+1. In `backend/.env`, set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true`.
+2. Configure Nginx to proxy the installer route to the backend:
 
-1. Set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true` in `backend/.env`.
-2. Proxy `/install/` traffic to the backend in Nginx:
+
    ```nginx
    location ^~ /install/ {
      proxy_pass http://backend:5002;
@@ -174,54 +299,65 @@ To use the web installer:
      proxy_set_header X-Forwarded-Proto $scheme;
    }
    ```
-3. Rebuild/start containers, log in as an administrator, then visit
-   `/install`.
-4. Provide database, SMTP, branding, license (optional), and admin credentials.
-5. Run the installer. It updates `backend/.env`, stores the logo, seeds
-   settings, and creates the administrator account.
 
-If you set `INSTALL_SETUP_SECRET`, include the same value in the
-`X-Install-Setup-Secret` header on every installer request. Disable the API
-again after finishing setup.
+3. Rebuild and start the containers if they are running.
+4. Log in with an administrator account.
+5. Visit `http://localhost:5002/install` (or your domain's `/install`) and
+   verify the page lists the prerequisite checks.
+6. Complete the **Configuration** step by supplying database, SMTP, branding,
+   and admin credentials.
+7. Run the installer. It updates `backend/.env`, uploads the logo, seeds
+   branding/email settings, and provisions the administrator account.
 
-#### 8. Running tests
+### 6. Running tests
 
-- Backend:
-  ```bash
-  cd backend
-  npm test
-  ```
-- Frontend:
-  ```bash
-  cd frontend
-  npm test
-  ```
+The project includes Jest suites for both the API and the frontend.
 
-#### 9. Hosting on a server
+```bash
+cd backend && npm test
+cd ../frontend && npm test
+```
 
-1. Provision a Linux server with Docker and Docker Compose installed.
-2. Clone the repository and configure environment variables with production
-   values (`NODE_ENV=production`, `FRONTEND_URL=https://<your-domain>`, etc.).
-3. Configure Nginx for your domain, set `APP_DOMAIN`, and install TLS
-   certificates (for example via Let’s Encrypt).
-4. Run migrations and seeds:
+### 7. Hosting on a server
+
+1. Provision a Linux server and install Docker and Docker Compose V2.
+2. Clone the repository on the server and configure environment variables as
+   described above.
+   - In `backend/.env`, set production values such as `NODE_ENV=production`,
+     `FRONTEND_URL=https://<your-domain>`, `COOKIE_SECURE=true`, and
+     `COOKIE_SAMESITE=None`.
+   - Create `frontend/.env.local` with
+     `NEXT_PUBLIC_API_BASE_URL=https://<your-domain>/api`.
+3. Adjust Nginx for your domain.
+   - Set the `APP_DOMAIN` environment variable so Nginx and the backend use your
+     domain.
+   - Obtain TLS certificates (for example via Let's Encrypt) and ensure the
+     paths in `ssl.conf` match the certificate locations.
+4. Run database migrations and seeds before starting the containers:
+
    ```bash
    docker compose run --rm backend npm run migrate
    docker compose run --rm backend npm run seed
    ```
-5. Build and start the containers:
+
+
+5. Build and start the containers in detached mode:
+
    ```bash
-   docker compose up -d --build
-   ```
-6. Verify the deployment at `https://<your-domain>` (API lives at
-   `https://<your-domain>/api`).
-7. For updates:
-   ```bash
-   git pull
    docker compose up -d --build
    ```
 
-### Additional setup references
+6. Verify the deployment by visiting `https://<your-domain>` in a browser. The
+   API is available at `https://<your-domain>/api`.
+
+For updates, pull the latest changes and rebuild:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+### Additional references
 
 - [Deployment Guide](deployment.md) — how to deploy SkillBridge.
 - [Architecture Overview](architecture.md) — system components and data flow.
