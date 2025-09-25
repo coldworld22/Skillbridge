@@ -343,7 +343,7 @@ export default function DocumentationLandingPage() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
-                  </Link>
+                  </a>
                 </div>
               </article>
             </div>
