@@ -75,22 +75,14 @@ const normalizeUrl = (url = "") => {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
-const parsePricingValue = (pricing) => {
-  if (pricing === undefined || pricing === null) return NaN;
-  if (typeof pricing === "number") return pricing;
-  if (typeof pricing === "string") {
-    const trimmed = pricing.trim();
-    if (!trimmed) return NaN;
-    const [firstToken] = trimmed.split(/\s+/);
-    const numeric = parseFloat(firstToken);
-    if (!Number.isNaN(numeric)) {
-      return numeric;
-    }
-    const fallback = parseFloat(trimmed);
-    return Number.isNaN(fallback) ? NaN : fallback;
+const extractPricingAmount = (value) => {
+  if (value === undefined || value === null) return Number.NaN;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const match = value.match(/-?\d*\.?\d+/);
+    return match ? Number.parseFloat(match[0]) : Number.NaN;
   }
-  const numeric = Number(pricing);
-  return Number.isNaN(numeric) ? NaN : numeric;
+  return Number.NaN;
 };
 
 // 🔹 Update instructor user data, profile data, and social links in a transaction
@@ -130,25 +122,8 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null &&
     Number(instructorData.experience) > 0;
-  const rawPricing = instructorData.pricing;
-  let parsedPricing = null;
-
-  if (typeof rawPricing === "number") {
-    parsedPricing = rawPricing;
-  } else if (typeof rawPricing === "string") {
-    const trimmed = rawPricing.trim();
-    if (trimmed) {
-      const match = trimmed.match(/-?[\d,.]+/);
-      if (match) {
-        parsedPricing = parseFloat(match[0].replace(/,/g, ""));
-      }
-    }
-  }
-
-  const hasValidPricing =
-    instructorData.pricing !== undefined &&
-    instructorData.pricing !== null &&
-    parsePricingValue(instructorData.pricing) > 0;
+  const pricingAmount = extractPricingAmount(instructorData.pricing);
+  const hasValidPricing = Number.isFinite(pricingAmount) && pricingAmount > 0;
   const hasInstructorFields =
     Array.isArray(instructorData.expertise) &&
     instructorData.expertise.length > 0 &&
@@ -172,10 +147,7 @@ const updateInstructorProfile = async (
       .first();
     const data = {
       ...instructorData,
-      pricing:
-        parsedPricing !== null && !Number.isNaN(parsedPricing)
-          ? parsedPricing
-          : null,
+      pricing: Number.isFinite(pricingAmount) ? pricingAmount : null,
       expertise: instructorData.expertise
         ? JSON.stringify(instructorData.expertise)
         : null,
