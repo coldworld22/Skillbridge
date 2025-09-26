@@ -156,7 +156,7 @@ else
       compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
     else
       compose_status="fail"
-      compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If upgrading immediately is not possible, set DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 in your environment so the legacy CLI can build images without triggering that error."
+      compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If you must continue temporarily, run scripts/run-compose.sh so DOCKER_API_VERSION=1.43 is exported automatically, and consider setting DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 if the legacy CLI struggles with BuildKit."
     fi
   fi
 fi

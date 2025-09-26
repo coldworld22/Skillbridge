@@ -14,7 +14,10 @@ SkillBridge requires the following tools on your workstation or server:
 > **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent
 > Docker Engine releases and often fails with `KeyError: 'ContainerConfig'`
 > when rebuilding containers. Install the Docker Compose V2 plugin or downgrade
-> Docker Engine below version 27 before continuing.
+> Docker Engine below version 27 before continuing. As a short-term workaround,
+> run [`scripts/run-compose.sh`](../scripts/run-compose.sh), which exports
+> `DOCKER_API_VERSION=1.43` automatically when it has to fall back to the
+> legacy binary.
 
 ### Install the required tools
 
