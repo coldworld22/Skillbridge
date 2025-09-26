@@ -187,6 +187,7 @@ export default function Home() {
       element.scrollIntoView({ behavior: "smooth" });
       setCurrentSection(index);
     }
+    setCurrentSection(index);
   };
 
   return (
