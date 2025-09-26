@@ -65,11 +65,11 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    const ref = sectionRefs.current[index];
-    if (ref && ref.current) {
-      ref.current.scrollIntoView({ behavior: "smooth" });
-      setCurrentSection(index);
+    const sectionElement = sectionRefs.current[index];
+    if (sectionElement) {
+      sectionElement.scrollIntoView({ behavior: "smooth" });
     }
+    setCurrentSection(index);
   };
 
   return (
