@@ -26,38 +26,86 @@ const createLogStream = (logDir) => {
   }
 };
 
-let logStream = createLogStream(DEFAULT_LOG_DIR);
-
-if (!logStream && DEFAULT_LOG_DIR !== FALLBACK_LOG_DIR) {
-  logStream = createLogStream(FALLBACK_LOG_DIR);
-}
-
-if (!logStream) {
-  logStream = new Writable({
+const createNoopStream = () =>
+  new Writable({
     write(_chunk, _encoding, callback) {
       callback();
     },
   });
+
+const isWritableStream = (stream) =>
+  Boolean(stream) && !stream.destroyed && !stream.writableEnded && stream.writable !== false;
+
+const cleanupStream = (stream) => {
+  if (stream && typeof stream.removeListener === "function") {
+    stream.removeListener("error", handleLogStreamError);
+  }
+  if (stream && typeof stream.destroy === "function" && !stream.destroyed) {
+    stream.destroy();
+  }
+};
+
+const attachStreamHandlers = (stream) => {
+  if (!stream) {
+    return null;
+  }
+  stream.on("error", handleLogStreamError);
+  return stream;
+};
+
+const initialiseLogStream = (preferredDirs = [DEFAULT_LOG_DIR, FALLBACK_LOG_DIR]) => {
+  for (const dir of preferredDirs) {
+    const stream = attachStreamHandlers(createLogStream(dir));
+    if (stream) {
+      return stream;
+    }
+  }
+
+  return attachStreamHandlers(createNoopStream());
+};
+
+let logStream = initialiseLogStream();
+
+function handleLogStreamError(err) {
+  console.error("Failed to write to log file:", err);
+  cleanupStream(logStream);
+  logStream = initialiseLogStream([FALLBACK_LOG_DIR]);
 }
 
-logStream.on("error", (err) => {
-  console.error("Failed to write to log file:", err);
+const ensureLogStream = () => {
+  if (!isWritableStream(logStream)) {
+    logStream = initialiseLogStream();
+  }
+  return logStream;
+};
+
+process.on("exit", () => {
+  if (isWritableStream(logStream)) {
+    logStream.end();
+  }
 });
 
-process.on("exit", () => logStream.end());
-
 const gracefulShutdown = () => {
-  logStream.end(() => process.exit(0));
+  if (isWritableStream(logStream)) {
+    logStream.end(() => process.exit(0));
+    return;
+  }
+  process.exit(0);
 };
 
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
 function append(type, args) {
+  const stream = ensureLogStream();
+  if (!isWritableStream(stream)) {
+    return;
+  }
+
   const line = `${new Date().toISOString()} [${type}] ${args.join(" ")}\n`;
-  logStream.write(line, (err) => {
+  stream.write(line, (err) => {
     if (err) {
-      console.error("Failed to write to log file:", err);
+      handleLogStreamError(err);
     }
   });
 }
