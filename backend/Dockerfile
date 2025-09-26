@@ -9,8 +9,11 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy the backend source along with the installer assets so the
 # production image can serve /install even when the container is built
-# independently of the repository root.
+# independently of the repository root. Copy the migrations directory
+# explicitly to guarantee that new migration files are always included in
+# the build context.
 COPY backend/ ./
+COPY backend/src/migrations ./src/migrations
 COPY install ./install
 COPY install.sh ./install.sh
 COPY scripts/check_prereqs.sh ./scripts/check_prereqs.sh
