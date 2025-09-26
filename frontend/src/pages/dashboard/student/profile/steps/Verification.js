@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -16,10 +18,12 @@ import {
   confirmPhoneOtp,
 } from "@/services/verificationService";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 
 const Verification = ({ prevStep = () => {} }) => {
   const router = useRouter();
+  const { t } = useTranslation("dashboard");
 
   const { user, refreshUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
@@ -33,24 +37,30 @@ const Verification = ({ prevStep = () => {} }) => {
   // Redirect immediately if already verified
   useEffect(() => {
     if (emailVerified && phoneVerified) {
-      toast.success("Both email and phone verified. Redirecting to dashboard...");
-      const t = setTimeout(() => router.push("/dashboard/student"), 1500);
-      return () => clearTimeout(t);
+      toast.success(t("studentVerificationStep.feedback.bothVerified"));
+      const timeout = setTimeout(() => router.push("/dashboard/student"), 1500);
+      return () => clearTimeout(timeout);
     }
-  }, []);
+  }, [emailVerified, phoneVerified, router, t]);
 
   const sendOtp = async (type) => {
     try {
       const res = type === "email" ? await sendEmailOtp() : await sendPhoneOtp();
       if (res.verified) {
         type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
-        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+        toast.info(
+          t(
+            `studentVerificationStep.feedback.${
+              type === "email" ? "email" : "phone"
+            }AlreadyVerified`
+          )
+        );
         return;
       }
       setOtpSent((prev) => ({ ...prev, [type]: true }));
-      toast.success("OTP sent");
+      toast.success(t("studentVerificationStep.feedback.otpSent"));
     } catch (err) {
-      toast.error("Failed to send OTP");
+      toast.error(t("studentVerificationStep.feedback.sendOtpFailed"));
     }
   };
 
@@ -62,9 +72,21 @@ const Verification = ({ prevStep = () => {} }) => {
           ? await confirmEmailOtp(enteredOTP)
           : await confirmPhoneOtp(enteredOTP);
       if (res.alreadyVerified) {
-        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+        toast.info(
+          t(
+            `studentVerificationStep.feedback.${
+              type === "email" ? "email" : "phone"
+            }AlreadyVerified`
+          )
+        );
       } else {
-        toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
+        toast.success(
+          t(
+            `studentVerificationStep.feedback.${
+              type === "email" ? "email" : "phone"
+            }Verified`
+          )
+        );
       }
 
       if (type === "email") setEmailVerified(true);
@@ -75,7 +97,11 @@ const Verification = ({ prevStep = () => {} }) => {
       refreshMessages?.();
 
       try {
-        const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
+        const message = t(
+          `studentVerificationStep.messages.${
+            type === "email" ? "email" : "phone"
+          }Verified`
+        );
         await createNotification({
           user_id: user.id,
           type: "verification",
@@ -91,11 +117,13 @@ const Verification = ({ prevStep = () => {} }) => {
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {
-        toast.success("Both email and phone verified. Redirecting to dashboard...");
+        toast.success(t("studentVerificationStep.feedback.bothVerified"));
         setTimeout(() => router.push("/dashboard/student"), 1500);
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || "Invalid or expired OTP";
+      const msg =
+        err?.response?.data?.message ||
+        t("studentVerificationStep.feedback.invalidOrExpiredOtp");
       toast.error(msg);
     }
   };
@@ -111,25 +139,31 @@ const Verification = ({ prevStep = () => {} }) => {
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-yellow-600">🔐 Verification</h2>
+        <h2 className="text-2xl font-bold mb-6 text-yellow-600">
+          {t("studentVerificationStep.title")}
+        </h2>
 
         {/* Email Verification */}
         <div className="mb-4">
           <div className="flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
             <FaEnvelope className="text-yellow-500 text-lg" />
-            <span className="font-medium">Email Verification:</span>
+            <span className="font-medium">
+              {t("studentVerificationStep.emailSection.label")}
+            </span>
             {emailVerified ? (
               <span className="text-green-600 flex items-center gap-1">
-                <FaCheckCircle /> Verified
+                <FaCheckCircle /> {t("studentVerificationStep.common.verified")}
               </span>
             ) : otpSent.email ? (
-              <span className="text-sm">OTP sent</span>
+              <span className="text-sm">
+                {t("studentVerificationStep.common.otpSent")}
+              </span>
             ) : (
               <button
                 onClick={() => sendOtp("email")}
                 className="bg-yellow-500 px-3 py-1 rounded-lg text-white hover:bg-yellow-600 transition"
               >
-                Send OTP
+                {t("studentVerificationStep.actions.sendOtp")}
               </button>
             )}
           </div>
@@ -139,7 +173,7 @@ const Verification = ({ prevStep = () => {} }) => {
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
-                placeholder="Enter Email OTP"
+                placeholder={t("studentVerificationStep.emailSection.placeholder")}
                 value={emailOTP}
                 onChange={(e) => setEmailOTP(e.target.value)}
                 className="w-full px-3 py-2 border rounded"
@@ -148,7 +182,7 @@ const Verification = ({ prevStep = () => {} }) => {
                 onClick={() => verifyOtp("email")}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
               >
-                Verify
+                {t("studentVerificationStep.actions.verify")}
               </button>
             </div>
           )}
@@ -158,19 +192,23 @@ const Verification = ({ prevStep = () => {} }) => {
         <div className="mb-4">
           <div className="flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
             <FaPhone className="text-yellow-500 text-lg" />
-            <span className="font-medium">Phone Verification:</span>
+            <span className="font-medium">
+              {t("studentVerificationStep.phoneSection.label")}
+            </span>
             {phoneVerified ? (
               <span className="text-green-600 flex items-center gap-1">
-                <FaCheckCircle /> Verified
+                <FaCheckCircle /> {t("studentVerificationStep.common.verified")}
               </span>
             ) : otpSent.phone ? (
-              <span className="text-sm">OTP sent</span>
+              <span className="text-sm">
+                {t("studentVerificationStep.common.otpSent")}
+              </span>
             ) : (
               <button
                 onClick={() => sendOtp("phone")}
                 className="bg-yellow-500 px-3 py-1 rounded-lg text-white hover:bg-yellow-600 transition"
               >
-                Send OTP
+                {t("studentVerificationStep.actions.sendOtp")}
               </button>
             )}
           </div>
@@ -180,17 +218,19 @@ const Verification = ({ prevStep = () => {} }) => {
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
-                placeholder="Enter Phone OTP"
+                placeholder={t("studentVerificationStep.phoneSection.placeholder")}
                 value={phoneOTP}
                 onChange={(e) => setPhoneOTP(e.target.value)}
                 className="w-full px-3 py-2 border rounded mb-2"
               />
-              <p className="text-xs text-gray-500">Default OTP: <code>123456</code></p>
+              <p className="text-xs text-gray-500">
+                {t("studentVerificationStep.phoneSection.defaultOtp")} <code>123456</code>
+              </p>
               <button
                 onClick={() => verifyOtp("phone")}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
               >
-                Verify
+                {t("studentVerificationStep.actions.verify")}
               </button>
             </div>
           )}
@@ -203,7 +243,7 @@ const Verification = ({ prevStep = () => {} }) => {
             className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center gap-2"
             onClick={prevStep}
           >
-            <FaArrowLeft /> Back
+            <FaArrowLeft /> {t("back")}
           </button>
 
         </div>
@@ -214,3 +254,15 @@ const Verification = ({ prevStep = () => {} }) => {
 };
 
 export default Verification;
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "common"],
+        nextI18NextConfig
+      )),
+    },
+  };
+}
