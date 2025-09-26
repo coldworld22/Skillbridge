@@ -2115,6 +2115,44 @@
       "url_invalid": "Please enter a valid URL"
     }
   },
+  "studentVerificationStep": {
+    "title": "🔐 Verification",
+    "types": {
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "feedback": {
+      "otpSent": "OTP sent",
+      "sendOtpFailed": "Failed to send OTP",
+      "bothVerified": "Both email and phone verified. Redirecting to dashboard...",
+      "emailAlreadyVerified": "Email already verified",
+      "phoneAlreadyVerified": "Phone already verified",
+      "emailVerified": "Email verified",
+      "phoneVerified": "Phone verified",
+      "invalidOrExpiredOtp": "Invalid or expired OTP"
+    },
+    "messages": {
+      "emailVerified": "Email verified successfully.",
+      "phoneVerified": "Phone verified successfully."
+    },
+    "emailSection": {
+      "label": "Email Verification:",
+      "placeholder": "Enter Email OTP"
+    },
+    "phoneSection": {
+      "label": "Phone Verification:",
+      "placeholder": "Enter Phone OTP",
+      "defaultOtp": "Default OTP:"
+    },
+    "common": {
+      "verified": "Verified",
+      "otpSent": "OTP sent"
+    },
+    "actions": {
+      "sendOtp": "Send OTP",
+      "verify": "Verify"
+    }
+  },
   "studentOnlineClassesPage": {
     "title": "🎓 Mis clases inscritas",
     "search_placeholder": "Buscar clases...",
