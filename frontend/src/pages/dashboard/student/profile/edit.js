@@ -60,6 +60,37 @@ const safeString = (value, fallback = "") => {
   }
 };
 
+const normalizeTopics = (topics) => {
+  if (Array.isArray(topics)) {
+    return topics
+      .map((topic) => (typeof topic === "string" ? topic.trim() : ""))
+      .filter((topic) => topic.length > 0);
+  }
+
+  if (typeof topics === "string") {
+    const trimmed = topics.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((topic) => (typeof topic === "string" ? topic.trim() : ""))
+          .filter((topic) => topic.length > 0);
+      }
+    } catch (err) {
+      // Ignore JSON parse errors and fall back to comma-separated parsing
+    }
+
+    return trimmed
+      .split(",")
+      .map((topic) => topic.trim())
+      .filter((topic) => topic.length > 0);
+  }
+
+  return [];
+};
+
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
@@ -148,7 +179,7 @@ export default function StudentProfileEdit() {
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
-          topics: student?.topics || [],
+          topics: normalizeTopics(student?.topics),
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
@@ -295,9 +326,11 @@ const handleAvatarSelect = (e) => {
             allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
         )
       );
+      const normalizedTopics = normalizeTopics(formData.topics);
 
       studentProfileSchema.parse({
         ...formData,
+        topics: normalizedTopics,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
       setErrors({});
@@ -333,6 +366,7 @@ const handleAvatarSelect = (e) => {
       setIsSubmitting(true);
       logger.log("[StudentProfileEdit] Submitting form", formData);
       const social_links = toSocialLinksArray(formData.socialLinks);
+      const normalizedTopics = normalizeTopics(formData.topics);
 
       const payload = {
         full_name: formData.full_name,
@@ -340,7 +374,7 @@ const handleAvatarSelect = (e) => {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         education_level: formData.education_level,
-        topics: formData.topics,
+        topics: normalizedTopics,
         learning_goals: formData.learning_goals,
         social_links,
       };
