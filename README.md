@@ -153,17 +153,18 @@ npm --prefix frontend install
    If the legacy `docker-compose` v1 CLI exits with `KeyError: 'ContainerConfig'`,
    upgrade to Docker Compose V2 and use the `docker compose` command. The
    repository also includes [`scripts/run-compose.sh`](scripts/run-compose.sh),
-   which automatically prefers the V2 plugin and falls back to the standalone
-   binary so you can run:
+   which automatically prefers the V2 plugin and, when falling back to the
+   legacy binary, exports `DOCKER_API_VERSION=1.43` so the command remains
+   compatible with Docker&nbsp;27+. You can simply run:
 
    ```bash
    ./scripts/run-compose.sh up --build
    ```
 
-   If upgrading immediately is not possible, set `DOCKER_BUILDKIT=0` and
-   `COMPOSE_DOCKER_CLI_BUILD=0` in your `.env` file (both are included in
-   `.env.example`) to disable BuildKit so legacy docker-compose releases
-   can run the stack.
+   If you must invoke the legacy CLI directly, set `DOCKER_API_VERSION=1.43`
+   in your shell beforehand to avoid the compatibility error. Disabling
+   BuildKit by exporting `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0`
+   may also be necessary on very old Compose releases.
 
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 

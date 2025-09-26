@@ -10,7 +10,7 @@ This document explains how to set up SkillBridge for local development and for h
 - Git
 - Redis or another session store for production deployments
 
-> **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent Docker Engine releases and often fails with `KeyError: 'ContainerConfig'` when rebuilding containers. The installer now refuses to run when only the v1 binary is available so you can address the issue up front. Install the Docker Compose V2 plugin (the `docker compose` command) or downgrade Docker Engine below version&nbsp;27 before running the script.
+> **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent Docker Engine releases and often fails with `KeyError: 'ContainerConfig'` when rebuilding containers. The installer now refuses to run when only the v1 binary is available so you can address the issue up front. Install the Docker Compose V2 plugin (the `docker compose` command) or downgrade Docker Engine below version&nbsp;27 before running the script. If you are temporarily stuck on the old CLI, use [`scripts/run-compose.sh`](../scripts/run-compose.sh) for local commands—the wrapper exports `DOCKER_API_VERSION=1.43` automatically to avoid the compatibility bug.
 
 ## Install the required tools
 
