@@ -17,7 +17,7 @@ export default function Sidebar({ role = 'admin' }) {
   const { t } = useTranslation('dashboard');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState(null);
   const settings = useAppConfigStore((state) => state.settings);
   const appConfigHydrated = useAppConfigStore((state) => state.hasHydrated);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
@@ -158,7 +158,9 @@ export default function Sidebar({ role = 'admin' }) {
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {currentYear} {displayAppName}
+        &copy;{' '}
+        {currentYear ? `${currentYear} ` : ''}
+        {settings?.appName || 'SkillBridge'}
       </div>
     </aside>
   );
