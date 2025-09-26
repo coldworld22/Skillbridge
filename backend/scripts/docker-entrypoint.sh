@@ -67,8 +67,8 @@ ensure_upload_permissions() {
 ensure_critical_migrations() {
   missing=""
   for migration in \
-    /app/src/migrations/20250926123707_alter_verifications_code_to_text.js \
-    /app/src/migrations/20250926124314_alter_verifications_code_to_text.js; do
+    /app/src/migrations/20250930160000_alter_verifications_code_to_varchar255.js \
+    /app/src/migrations/20250930160010_alter_verifications_code_to_text.js; do
     if [ ! -f "$migration" ]; then
       missing="$missing\n  - ${migration#/app/}"
     fi
@@ -149,8 +149,8 @@ prepare_upload_dirs() {
 ensure_required_migrations() {
   missing_files=""
   for migration in \
-    /app/src/migrations/20250926123707_alter_verifications_code_to_text.js \
-    /app/src/migrations/20250926124314_alter_verifications_code_to_text.js; do
+    /app/src/migrations/20250930160000_alter_verifications_code_to_varchar255.js \
+    /app/src/migrations/20250930160010_alter_verifications_code_to_text.js; do
     if [ ! -f "$migration" ]; then
       missing_files="${missing_files}\n  $(basename "$migration")"
     fi
