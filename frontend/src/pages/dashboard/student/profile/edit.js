@@ -25,6 +25,7 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
+import { buildUrl } from "@/utils/url";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaGlobe,
@@ -192,7 +193,7 @@ export default function StudentProfileEdit() {
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: identityDocUrl,
+          identityPreview: student?.identity_doc_url ? buildUrl(student.identity_doc_url) : null,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -207,7 +208,7 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview && formData.identityPreview.startsWith("blob:")) {
+      if (formData.identityPreview?.startsWith?.("blob:")) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
@@ -341,10 +342,9 @@ const handleAvatarSelect = (e) => {
       if (!user) return;
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => {
-        if (prev.identityPreview && prev.identityPreview.startsWith("blob:")) {
+        if (prev.identityPreview?.startsWith?.("blob:")) {
           URL.revokeObjectURL(prev.identityPreview);
         }
-
         return {
           ...prev,
           identityFile: file,
@@ -359,30 +359,13 @@ const handleAvatarSelect = (e) => {
     }
   };
 
-  const removeIdentity = async () => {
-    if (!user) {
-      toast.error(t('user_not_loaded'));
-      return;
-    }
-
-    try {
-      setIsUploadingIdentity(true);
-      await deleteStudentIdentity(user.id);
-      setFormData(prev => {
-        if (prev.identityPreview) {
-          URL.revokeObjectURL(prev.identityPreview);
-        }
-        return { ...prev, identityFile: null, identityPreview: null };
-      });
-    } catch (err) {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        t('id_remove_failed');
-      toast.error(message);
-    } finally {
-      setIsUploadingIdentity(false);
-    }
+  const removeIdentity = () => {
+    setFormData(prev => {
+      if (prev.identityPreview?.startsWith?.("blob:")) {
+        URL.revokeObjectURL(prev.identityPreview);
+      }
+      return { ...prev, identityFile: null, identityPreview: null };
+    });
   };
 
   const validateForm = () => {
