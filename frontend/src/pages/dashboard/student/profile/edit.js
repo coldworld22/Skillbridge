@@ -9,6 +9,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   getStudentProfile,
   updateStudentProfile,
@@ -60,7 +61,7 @@ const safeString = (value, fallback = "") => {
   }
 };
 
-export default function StudentProfileEdit() {
+function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
   const { user, logout, hasHydrated, setUser } = useAuthStore();
@@ -214,6 +215,7 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
+    if (!user) return;
     setIsUploadingAvatar(true);
     try {
       if (!tempAvatar || !croppedAreaPixels) return;
@@ -264,6 +266,7 @@ const handleAvatarSelect = (e) => {
     }
     try {
       setIsUploadingIdentity(true);
+      if (!user) return;
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => ({
         ...prev,
@@ -795,6 +798,8 @@ const handleAvatarSelect = (e) => {
     </StudentLayout>
   );
 }
+
+export default withAuthProtection(StudentProfileEdit, ['student']);
 
 export async function getServerSideProps({ locale }) {
   return {
