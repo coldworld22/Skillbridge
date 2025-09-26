@@ -11,9 +11,17 @@ exports.up = async function up(knex) {
   }
 
   const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo.code;
+  const codeInfo = columnInfo && columnInfo.code;
 
-  if (codeInfo && codeInfo.maxLength && Number(codeInfo.maxLength) >= 255) {
+  if (!codeInfo) {
+    return;
+  }
+
+  if (codeInfo.type === 'text') {
+    return;
+  }
+
+  if (codeInfo.maxLength && Number(codeInfo.maxLength) >= 255) {
     return;
   }
 
@@ -32,6 +40,26 @@ exports.down = async function down(knex) {
     return;
   }
 
+  const columnInfo = await knex('verifications').columnInfo();
+  const codeInfo = columnInfo && columnInfo.code;
+
+  if (!codeInfo || codeInfo.type === 'text') {
+    return;
+  }
+
+  if (codeInfo.maxLength && Number(codeInfo.maxLength) <= 10) {
+    return;
+  }
+
+  const hasLongCodes = await knex('verifications')
+    .whereRaw('char_length(code) > 10')
+    .first();
+
+  if (hasLongCodes) {
+    throw new Error(
+      'Cannot shrink verifications.code to length 10 because data longer than 10 characters exists.'
+    );
+  }
   await knex.schema.alterTable('verifications', (table) => {
     table.string('code', 10).notNullable().alter();
   });

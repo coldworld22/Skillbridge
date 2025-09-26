@@ -11,9 +11,13 @@ exports.up = async function up(knex) {
   }
 
   const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo.code;
+  const codeInfo = columnInfo && columnInfo.code;
 
-  if (codeInfo && codeInfo.type === 'text') {
+  if (!codeInfo) {
+    return;
+  }
+
+  if (codeInfo.type === 'text') {
     return;
   }
 
@@ -32,6 +36,22 @@ exports.down = async function down(knex) {
     return;
   }
 
+  const columnInfo = await knex('verifications').columnInfo();
+  const codeInfo = columnInfo && columnInfo.code;
+
+  if (!codeInfo || codeInfo.type !== 'text') {
+    return;
+  }
+
+  const hasLongCodes = await knex('verifications')
+    .whereRaw('char_length(code) > 255')
+    .first();
+
+  if (hasLongCodes) {
+    throw new Error(
+      'Cannot shrink verifications.code to length 255 because data longer than 255 characters exists.'
+    );
+  }
   await knex.schema.alterTable('verifications', (table) => {
     table.string('code', 255).notNullable().alter();
   });
