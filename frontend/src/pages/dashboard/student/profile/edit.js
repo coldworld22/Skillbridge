@@ -90,6 +90,7 @@ export default function StudentProfileEdit() {
     avatarPreview: null,
     identityFile: null,
     identityPreview: null,
+    identityPreviewIsBlob: false,
   });
   const [errors, setErrors] = useState({});
   const [showCropper, setShowCropper] = useState(false);
@@ -142,6 +143,8 @@ export default function StudentProfileEdit() {
           }
         });
 
+        const identityDocUrl = student?.identity_doc_url;
+
         setFormData({
           full_name: full_name ?? "",
           phone: phone ?? "",
@@ -154,7 +157,10 @@ export default function StudentProfileEdit() {
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: null,
+          identityPreview: identityDocUrl
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityDocUrl}`
+            : null,
+          identityPreviewIsBlob: false,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -169,11 +175,11 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview) {
+      if (formData.identityPreview && formData.identityPreviewIsBlob) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
-  }, [formData.identityPreview]);
+  }, [formData.identityPreview, formData.identityPreviewIsBlob]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
@@ -265,11 +271,17 @@ const handleAvatarSelect = (e) => {
     try {
       setIsUploadingIdentity(true);
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview && prev.identityPreviewIsBlob) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file),
+          identityPreviewIsBlob: true,
+        };
+      });
       toast.success(t('id_upload_success'));
     } catch (err) {
       toast.error(t('id_upload_failed'));
@@ -280,10 +292,15 @@ const handleAvatarSelect = (e) => {
 
   const removeIdentity = () => {
     setFormData(prev => {
-      if (prev.identityPreview) {
+      if (prev.identityPreview && prev.identityPreviewIsBlob) {
         URL.revokeObjectURL(prev.identityPreview);
       }
-      return { ...prev, identityFile: null, identityPreview: null };
+      return {
+        ...prev,
+        identityFile: null,
+        identityPreview: null,
+        identityPreviewIsBlob: false,
+      };
     });
   };
 

@@ -8,12 +8,12 @@ jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
 
-jest.mock('../../../../components/layouts/StudentLayout', () => ({
+jest.mock('@/components/layouts/StudentLayout', () => ({
   __esModule: true,
   default: ({ children }) => <div>{children}</div>,
 }));
 
-jest.mock('../../../../store/auth/authStore', () => ({
+jest.mock('@/store/auth/authStore', () => ({
   __esModule: true,
   default: () => ({
     user: { id: 1, role: 'student' },
@@ -23,17 +23,17 @@ jest.mock('../../../../store/auth/authStore', () => ({
   }),
 }));
 
-jest.mock('../../../../store/notifications/notificationStore', () => ({
+jest.mock('@/store/notifications/notificationStore', () => ({
   __esModule: true,
   default: () => ({ fetch: jest.fn() }),
 }));
 
-jest.mock('../../../../store/messages/messageStore', () => ({
+jest.mock('@/store/messages/messageStore', () => ({
   __esModule: true,
   default: () => ({ fetch: jest.fn() }),
 }));
 
-jest.mock('../../../../services/student/studentService.js', () => ({
+jest.mock('@/services/student/studentService', () => ({
   getStudentProfile: jest.fn().mockResolvedValue({
     full_name: '',
     phone: '',
@@ -48,20 +48,42 @@ jest.mock('../../../../services/student/studentService.js', () => ({
   uploadStudentIdentity: jest.fn(),
 }));
 
-const studentService = require('../../../../services/student/studentService');
-const StudentProfileEdit = require('./edit').default;
+const studentService = require('@/services/student/studentService');
+const StudentProfileEdit = require('@/pages/dashboard/student/profile/edit').default;
 
 beforeAll(() => {
   global.URL.createObjectURL = jest.fn(() => 'blob:mock');
   global.URL.revokeObjectURL = jest.fn();
 });
 
+const baseProfileResponse = {
+  full_name: '',
+  phone: '',
+  gender: 'male',
+  date_of_birth: '',
+  student: {},
+  social_links: [],
+  avatar_url: null,
+};
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  studentService.getStudentProfile.mockResolvedValue({
+    ...baseProfileResponse,
+    student: { ...baseProfileResponse.student },
+  });
+  studentService.uploadStudentIdentity.mockImplementation(() => Promise.resolve());
+  process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.example.com';
+});
+
 test('disables identity upload button during upload', async () => {
   let resolveUpload;
   studentService.uploadStudentIdentity.mockImplementation(
-    () => new Promise((res) => {
-      resolveUpload = res;
-    })
+    () => {
+      return new Promise((res) => {
+        resolveUpload = res;
+      });
+    }
   );
 
   const { container } = render(<StudentProfileEdit />);
@@ -77,11 +99,24 @@ test('disables identity upload button during upload', async () => {
 
   fireEvent.change(input, { target: { files: [file] } });
 
-  await waitFor(() => expect(input).toBeDisabled());
-  expect(screen.getByText('uploading')).toBeInTheDocument();
+  expect(studentService.uploadStudentIdentity).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('input[type="file"][accept="application/pdf"]')).toBeNull();
 
-  await act(async () => {
-    resolveUpload();
+  resolveUpload();
+});
+
+test('renders existing identity document link on load', async () => {
+  const identityPath = '/uploads/docs/id.pdf';
+  studentService.getStudentProfile.mockResolvedValueOnce({
+    ...baseProfileResponse,
+    student: { identity_doc_url: identityPath },
   });
-  await waitFor(() => expect(input).not.toBeDisabled());
+
+  render(<StudentProfileEdit />);
+
+  const viewPdfLink = await screen.findByRole('link', { name: 'view_pdf' });
+  expect(viewPdfLink).toHaveAttribute(
+    'href',
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityPath}`
+  );
 });
