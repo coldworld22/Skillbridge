@@ -51,8 +51,37 @@ export default function Home() {
           const scrollY = window.scrollY;
           const docHeight =
             document.documentElement.scrollHeight - window.innerHeight;
-          const progress = (scrollY / docHeight) * 100;
+          const progress = docHeight > 0 ? (scrollY / docHeight) * 100 : 100;
           setScrollProgress(progress);
+
+          const viewportMiddle = scrollY + window.innerHeight / 2;
+          let detectedIndex = sectionRefs.current.findIndex((section) => {
+            if (!section) return false;
+            const { offsetTop, offsetHeight } = section;
+            return (
+              viewportMiddle >= offsetTop &&
+              viewportMiddle < offsetTop + offsetHeight
+            );
+          });
+
+          if (detectedIndex === -1) {
+            if (
+              viewportMiddle < (sectionRefs.current[0]?.offsetTop ?? 0)
+            ) {
+              detectedIndex = 0;
+            } else {
+              detectedIndex = sections.length - 1;
+            }
+          }
+
+          detectedIndex = Math.min(
+            Math.max(detectedIndex, 0),
+            sections.length - 1
+          );
+
+          setCurrentSection((prev) =>
+            prev === detectedIndex ? prev : detectedIndex
+          );
           ticking = false;
         });
         ticking = true;
@@ -60,8 +89,9 @@ export default function Home() {
     };
 
     window.addEventListener("scroll", handleScroll);
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [sections]);
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
