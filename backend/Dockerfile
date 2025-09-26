@@ -21,8 +21,8 @@ COPY backend/src/migrations/ ./src/migrations/
 RUN set -eux; \
     ls -1 src/migrations > /dev/null; \
     for migration in \
-      src/migrations/20250926123707_alter_verifications_code_to_text.js \
-      src/migrations/20250926124314_alter_verifications_code_to_text.js; do \
+      src/migrations/20250930160000_alter_verifications_code_to_varchar255.js \
+      src/migrations/20250930160010_alter_verifications_code_to_text.js; do \
         test -f "${migration}"; \
     done
 COPY install ./install

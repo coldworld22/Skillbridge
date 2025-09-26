@@ -157,7 +157,7 @@ database schema matches the application's expectations.
 
 > **Important:** Docker Compose no longer bind-mounts `backend/src/migrations`.
 > When a release adds new migration files (for example the critical verification
-> migrations `20250926123707` and `20250926124314`), rebuild the backend image so
+> migrations `20250930160000` and `20250930160010`), rebuild the backend image so
 > the container sees the updated migration directory before running `npm --prefix
 > backend run migrate`:
 >
@@ -211,8 +211,8 @@ When Compose reuses an older backend image it may not contain the newest
 
 ```
 The migration directory is corrupt, the following files are missing:
-20250926123707_alter_verifications_code_to_text.js,
-20250926124314_alter_verifications_code_to_text.js
+20250930160000_alter_verifications_code_to_varchar255.js,
+20250930160010_alter_verifications_code_to_text.js
 ```
 
 To resolve this:
@@ -231,8 +231,8 @@ To resolve this:
    ```
 
    The output should include the verification migrations
-   `20250926123707_alter_verifications_code_to_text.js` and
-   `20250926124314_alter_verifications_code_to_text.js`.
+   `20250930160000_alter_verifications_code_to_varchar255.js` and
+   `20250930160010_alter_verifications_code_to_text.js`.
 
 3. Re-run the migration command if it did not execute automatically during the
    container start-up:
