@@ -9,6 +9,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   getStudentProfile,
   updateStudentProfile,
@@ -173,6 +174,10 @@ export default function StudentProfileEdit() {
           }
         });
 
+        const identityDocUrl = student?.identity_doc_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${student.identity_doc_url}`
+          : null;
+
         setFormData({
           full_name: full_name ?? "",
           phone: phone ?? "",
@@ -185,7 +190,7 @@ export default function StudentProfileEdit() {
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: null,
+          identityPreview: identityDocUrl,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -200,7 +205,7 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview) {
+      if (formData.identityPreview && formData.identityPreview.startsWith("blob:")) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
@@ -245,6 +250,7 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
+    if (!user) return;
     setIsUploadingAvatar(true);
     try {
       if (!tempAvatar || !croppedAreaPixels) return;
@@ -295,12 +301,19 @@ const handleAvatarSelect = (e) => {
     }
     try {
       setIsUploadingIdentity(true);
+      if (!user) return;
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview && prev.identityPreview.startsWith("blob:")) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file)
+        };
+      });
       toast.success(t('id_upload_success'));
     } catch (err) {
       toast.error(t('id_upload_failed'));
@@ -311,7 +324,7 @@ const handleAvatarSelect = (e) => {
 
   const removeIdentity = () => {
     setFormData(prev => {
-      if (prev.identityPreview) {
+      if (prev.identityPreview && prev.identityPreview.startsWith("blob:")) {
         URL.revokeObjectURL(prev.identityPreview);
       }
       return { ...prev, identityFile: null, identityPreview: null };
@@ -826,6 +839,8 @@ const handleAvatarSelect = (e) => {
     </StudentLayout>
   );
 }
+
+export default withAuthProtection(StudentProfileEdit, ['student']);
 
 export async function getServerSideProps({ locale }) {
   return {
