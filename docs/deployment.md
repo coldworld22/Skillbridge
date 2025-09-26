@@ -155,6 +155,20 @@ npm --prefix backend run migrate
 Running migrations separately keeps `startServer()` lightweight and ensures the
 database schema matches the application's expectations.
 
+> **Important:** Docker Compose no longer bind-mounts `backend/src/migrations`.
+> When a release adds new migration files (for example the critical verification
+> migrations `20250926123707` and `20250926124314`), rebuild the backend image so
+> the container sees the updated migration directory before running `npm --prefix
+> backend run migrate`:
+>
+> ```bash
+> docker compose build backend && docker compose up -d backend
+> ```
+>
+> Otherwise the running container will still contain the previous migration set
+> and Knex will report **"The migration directory is corrupt..."** because it
+> cannot find the new files.
+
 ## Preserve uploaded media
 
 The admin panel lets you upload a logo and favicon under
