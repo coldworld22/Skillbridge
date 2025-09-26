@@ -898,7 +898,11 @@ export default withAuthProtection(StudentProfileEdit, ['student']);
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ['dashboard', 'common'],
+        nextI18NextConfig
+      )),
     },
   };
 }
