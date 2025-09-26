@@ -24,6 +24,12 @@ export const uploadStudentAvatar = async (userId, file) => {
   return res.data;
 };
 
+// Delete avatar (DELETE)
+export const deleteStudentAvatar = async (userId) => {
+  const res = await api.delete(`/users/student/${userId}/avatar`);
+  return res.data;
+};
+
 // Upload identity document (PDF)
 export const uploadStudentIdentity = async (userId, file) => {
   const formData = new FormData();
@@ -33,6 +39,12 @@ export const uploadStudentIdentity = async (userId, file) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+  return res.data;
+};
+
+// Delete identity document (DELETE)
+export const deleteStudentIdentity = async (userId) => {
+  const res = await api.delete(`/users/student/${userId}/identity`);
   return res.data;
 };
 

@@ -9,11 +9,13 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   getStudentProfile,
   updateStudentProfile,
   uploadStudentAvatar,
-  uploadStudentIdentity
+  uploadStudentIdentity,
+  deleteStudentAvatar,
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -61,16 +63,48 @@ const safeString = (value, fallback = "") => {
   }
 };
 
+const normalizeTopics = (value) => {
+  const toTrimmedArray = (arr) =>
+    arr
+      .map((item) => safeString(item).trim())
+      .filter((item) => item.length > 0);
+
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return toTrimmedArray(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return toTrimmedArray(parsed);
+      }
+    } catch (err) {
+      // Ignore JSON parse errors and treat as comma-separated string
+    }
+
+    return toTrimmedArray(trimmed.split(","));
+  }
+
+  return toTrimmedArray([value]);
+};
+
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
-  const { user, logout, hasHydrated, setUser } = useAuthStore();
+  const { user, logout, hasHydrated, setUser, refreshUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingIdentity, setIsUploadingIdentity] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -143,13 +177,17 @@ export default function StudentProfileEdit() {
           }
         });
 
+        const identityDocUrl = student?.identity_doc_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${student.identity_doc_url}`
+          : null;
+
         setFormData({
           full_name: full_name ?? "",
           phone: phone ?? "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
-          topics: student?.topics || [],
+          topics: normalizeTopics(student?.topics),
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
@@ -215,6 +253,7 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
+    if (!user) return;
     setIsUploadingAvatar(true);
     try {
       if (!tempAvatar || !croppedAreaPixels) return;
@@ -252,6 +291,41 @@ const handleAvatarSelect = (e) => {
     setCrop({ x: 0, y: 0 });
   };
 
+  const handleAvatarRemove = async () => {
+    if (!user?.id) {
+      toast.error(t('user_not_loaded'));
+      return;
+    }
+
+    if (!formData.avatar_url) {
+      setFormData((prev) => ({
+        ...prev,
+        avatar_url: null,
+        avatarPreview: null,
+      }));
+      toast.success(t('avatar_remove_success'));
+      return;
+    }
+
+    setIsDeletingAvatar(true);
+    try {
+      await deleteStudentAvatar(user.id);
+      await refreshUser?.();
+      setFormData((prev) => ({
+        ...prev,
+        avatar_url: null,
+        avatarPreview: null,
+      }));
+      toast.success(t('avatar_remove_success'));
+    } catch (error) {
+      logger.error('Avatar remove error:', error);
+      const message = error?.response?.data?.message || t('avatar_remove_failed');
+      toast.error(message);
+    } finally {
+      setIsDeletingAvatar(false);
+    }
+  };
+
   const handleIdentityUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -265,6 +339,7 @@ const handleAvatarSelect = (e) => {
     }
     try {
       setIsUploadingIdentity(true);
+      if (!user) return;
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => {
         if (prev.identityPreview?.startsWith?.("blob:")) {
@@ -346,7 +421,7 @@ const handleAvatarSelect = (e) => {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         education_level: formData.education_level,
-        topics: formData.topics,
+        topics: normalizeTopics(formData.topics),
         learning_goals: formData.learning_goals,
         social_links,
       };
@@ -458,10 +533,18 @@ const handleAvatarSelect = (e) => {
                           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                         <button
-                          onClick={() => setFormData(prev => ({ ...prev, avatar_url: null, avatarPreview: null }))}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                          type="button"
+                          onClick={handleAvatarRemove}
+                          disabled={isDeletingAvatar}
+                          className={`absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full transition-colors ${
+                            isDeletingAvatar ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'
+                          }`}
                         >
-                          <FaTimesCircle className="w-5 h-5" />
+                          {isDeletingAvatar ? (
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FaTimesCircle className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     ) : (
@@ -801,6 +884,8 @@ const handleAvatarSelect = (e) => {
     </StudentLayout>
   );
 }
+
+export default withAuthProtection(StudentProfileEdit, ['student']);
 
 export async function getServerSideProps({ locale }) {
   return {
