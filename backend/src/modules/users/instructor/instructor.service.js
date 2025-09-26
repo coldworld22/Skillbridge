@@ -75,6 +75,24 @@ const normalizeUrl = (url = "") => {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
+const parsePricingValue = (pricing) => {
+  if (pricing === undefined || pricing === null) return NaN;
+  if (typeof pricing === "number") return pricing;
+  if (typeof pricing === "string") {
+    const trimmed = pricing.trim();
+    if (!trimmed) return NaN;
+    const [firstToken] = trimmed.split(/\s+/);
+    const numeric = parseFloat(firstToken);
+    if (!Number.isNaN(numeric)) {
+      return numeric;
+    }
+    const fallback = parseFloat(trimmed);
+    return Number.isNaN(fallback) ? NaN : fallback;
+  }
+  const numeric = Number(pricing);
+  return Number.isNaN(numeric) ? NaN : numeric;
+};
+
 // 🔹 Update instructor user data, profile data, and social links in a transaction
 const updateInstructorProfile = async (
   userId,
@@ -115,7 +133,7 @@ const updateInstructorProfile = async (
   const hasValidPricing =
     instructorData.pricing !== undefined &&
     instructorData.pricing !== null &&
-    Number(instructorData.pricing) > 0;
+    parsePricingValue(instructorData.pricing) > 0;
   const hasInstructorFields =
     Array.isArray(instructorData.expertise) &&
     instructorData.expertise.length > 0 &&
