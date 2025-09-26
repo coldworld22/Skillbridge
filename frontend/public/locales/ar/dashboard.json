@@ -1220,7 +1220,9 @@
     "account": "الحساب",
     "profile": "الملف الشخصي",
     "learning": "التعلم",
+    "favorite_tutorials": "الدروس المفضلة",
     "wishlist": "قائمة الرغبات",
+    "favorite_tutorials": "الدروس المفضلة",
     "instructors_bookings": "المدربون والحجوزات",
     "my_bookings": "حجوزاتي",
     "offers_groups": "العروض والمجموعات",
@@ -2085,6 +2087,7 @@
     "upload": "Upload",
     "saving": "Saving...",
     "save_changes": "Save Changes",
+    "fix_errors": "Please fix the highlighted errors before continuing.",
     "load_failed": "Failed to load profile data",
     "image_size_error": "Image size should be less than 10MB",
     "avatar_invalid_type": "Only image files are allowed",
@@ -2094,6 +2097,7 @@
     "pdf_size_error": "PDF size should be less than 5MB",
     "id_upload_success": "Identity document uploaded successfully!",
     "id_upload_failed": "Failed to upload identity document",
+    "id_remove_failed": "Failed to remove identity document",
     "user_not_loaded": "User not loaded. Please login again.",
     "saving_profile": "Saving profile...",
     "update_success": "Profile updated successfully!",
@@ -2104,7 +2108,8 @@
       "full_name_min": "Full name must be at least 3 characters",
       "invalid_phone": "Invalid phone number",
       "invalid_date": "Invalid date format",
-      "education_required": "Education level is required"
+      "education_required": "Education level is required",
+      "url_invalid": "Please enter a valid URL"
     }
   },
   "studentOnlineClassesPage": {
