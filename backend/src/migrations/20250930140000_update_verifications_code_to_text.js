@@ -14,6 +14,6 @@ exports.up = async function up(knex) {
  */
 exports.down = async function down(knex) {
   await knex.schema.alterTable("verifications", (table) => {
-    table.string("code", 10).notNullable().alter();
+    table.string("code", 255).notNullable().alter();
   });
 };
