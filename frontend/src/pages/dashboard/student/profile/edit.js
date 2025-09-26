@@ -9,6 +9,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   getStudentProfile,
   updateStudentProfile,
@@ -59,6 +60,37 @@ const safeString = (value, fallback = "") => {
   } catch (err) {
     return fallback;
   }
+};
+
+const normalizeTopics = (value) => {
+  const toTrimmedArray = (arr) =>
+    arr
+      .map((item) => safeString(item).trim())
+      .filter((item) => item.length > 0);
+
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return toTrimmedArray(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return toTrimmedArray(parsed);
+      }
+    } catch (err) {
+      // Ignore JSON parse errors and treat as comma-separated string
+    }
+
+    return toTrimmedArray(trimmed.split(","));
+  }
+
+  return toTrimmedArray([value]);
 };
 
 export default function StudentProfileEdit() {
@@ -143,19 +175,23 @@ export default function StudentProfileEdit() {
           }
         });
 
+        const identityDocUrl = student?.identity_doc_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${student.identity_doc_url}`
+          : null;
+
         setFormData({
           full_name: full_name ?? "",
           phone: phone ?? "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
-          topics: student?.topics || [],
+          topics: normalizeTopics(student?.topics),
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: null,
+          identityPreview: identityDocUrl,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -170,7 +206,7 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview) {
+      if (formData.identityPreview && formData.identityPreview.startsWith("blob:")) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
@@ -215,6 +251,7 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
+    if (!user) return;
     setIsUploadingAvatar(true);
     try {
       if (!tempAvatar || !croppedAreaPixels) return;
@@ -265,12 +302,19 @@ const handleAvatarSelect = (e) => {
     }
     try {
       setIsUploadingIdentity(true);
+      if (!user) return;
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview && prev.identityPreview.startsWith("blob:")) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file)
+        };
+      });
       toast.success(t('id_upload_success'));
     } catch (err) {
       toast.error(t('id_upload_failed'));
@@ -358,7 +402,7 @@ const handleAvatarSelect = (e) => {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         education_level: formData.education_level,
-        topics: formData.topics,
+        topics: normalizeTopics(formData.topics),
         learning_goals: formData.learning_goals,
         social_links,
       };
@@ -813,6 +857,8 @@ const handleAvatarSelect = (e) => {
     </StudentLayout>
   );
 }
+
+export default withAuthProtection(StudentProfileEdit, ['student']);
 
 export async function getServerSideProps({ locale }) {
   return {
