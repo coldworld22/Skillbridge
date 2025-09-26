@@ -96,7 +96,7 @@ const normalizeTopics = (value) => {
   return toTrimmedArray([value]);
 };
 
-export default function StudentProfileEdit() {
+function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
   const { user, logout, hasHydrated, setUser, refreshUser } = useAuthStore();
