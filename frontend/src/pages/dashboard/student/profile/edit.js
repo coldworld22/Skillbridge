@@ -15,7 +15,7 @@ import {
   updateStudentProfile,
   uploadStudentAvatar,
   uploadStudentIdentity,
-  deleteStudentIdentity
+  deleteStudentAvatar,
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -96,13 +96,14 @@ const normalizeTopics = (value) => {
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
-  const { user, logout, hasHydrated, setUser } = useAuthStore();
+  const { user, logout, hasHydrated, setUser, refreshUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingIdentity, setIsUploadingIdentity] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -287,6 +288,41 @@ const handleAvatarSelect = (e) => {
     setCroppedAreaPixels(null);
     setZoom(1);
     setCrop({ x: 0, y: 0 });
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user?.id) {
+      toast.error(t('user_not_loaded'));
+      return;
+    }
+
+    if (!formData.avatar_url) {
+      setFormData((prev) => ({
+        ...prev,
+        avatar_url: null,
+        avatarPreview: null,
+      }));
+      toast.success(t('avatar_remove_success'));
+      return;
+    }
+
+    setIsDeletingAvatar(true);
+    try {
+      await deleteStudentAvatar(user.id);
+      await refreshUser?.();
+      setFormData((prev) => ({
+        ...prev,
+        avatar_url: null,
+        avatarPreview: null,
+      }));
+      toast.success(t('avatar_remove_success'));
+    } catch (error) {
+      logger.error('Avatar remove error:', error);
+      const message = error?.response?.data?.message || t('avatar_remove_failed');
+      toast.error(message);
+    } finally {
+      setIsDeletingAvatar(false);
+    }
   };
 
   const handleIdentityUpload = async (e) => {
@@ -514,10 +550,18 @@ const handleAvatarSelect = (e) => {
                           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                         <button
-                          onClick={() => setFormData(prev => ({ ...prev, avatar_url: null, avatarPreview: null }))}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                          type="button"
+                          onClick={handleAvatarRemove}
+                          disabled={isDeletingAvatar}
+                          className={`absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full transition-colors ${
+                            isDeletingAvatar ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'
+                          }`}
                         >
-                          <FaTimesCircle className="w-5 h-5" />
+                          {isDeletingAvatar ? (
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FaTimesCircle className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     ) : (

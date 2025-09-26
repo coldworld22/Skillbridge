@@ -24,6 +24,12 @@ export const uploadStudentAvatar = async (userId, file) => {
   return res.data;
 };
 
+// Delete avatar (DELETE)
+export const deleteStudentAvatar = async (userId) => {
+  const res = await api.delete(`/users/student/${userId}/avatar`);
+  return res.data;
+};
+
 // Upload identity document (PDF)
 export const uploadStudentIdentity = async (userId, file) => {
   const formData = new FormData();
