@@ -118,162 +118,26 @@ prepare_upload_dirs() {
   chown -R node:node /app/uploads
 }
 
-restore_verification_migration_to_string() {
-  cat <<'EOF'
-/**
- * Expand the verifications.code column so hashed OTPs fit without truncation.
- *
- * @param { import('knex').Knex } knex
- * @returns { Promise<void> }
- */
-exports.up = async function up(knex) {
-  const hasTable = await knex.schema.hasTable('verifications');
-  if (!hasTable) {
-    return;
-  }
-
-  const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo && columnInfo.code;
-
-  if (!codeInfo) {
-    return;
-  }
-
-  if (codeInfo.type === 'text') {
-    return;
-  }
-
-  if (codeInfo.maxLength && Number(codeInfo.maxLength) >= 255) {
-    return;
-  }
-
-  await knex.schema.alterTable('verifications', (table) => {
-    table.string('code', 255).notNullable().alter();
-  });
-};
-
-/**
- * @param { import('knex').Knex } knex
- * @returns { Promise<void> }
- */
-exports.down = async function down(knex) {
-  const hasTable = await knex.schema.hasTable('verifications');
-  if (!hasTable) {
-    return;
-  }
-
-  const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo && columnInfo.code;
-
-  if (!codeInfo || codeInfo.type === 'text') {
-    return;
-  }
-
-  if (codeInfo.maxLength && Number(codeInfo.maxLength) <= 10) {
-    return;
-  }
-
-  const hasLongCodes = await knex('verifications')
-    .whereRaw('char_length(code) > 10')
-    .first();
-
-  if (hasLongCodes) {
-    throw new Error(
-      'Cannot shrink verifications.code to length 10 because data longer than 10 characters exists.'
-    );
-  }
-  await knex.schema.alterTable('verifications', (table) => {
-    table.string('code', 10).notNullable().alter();
-  });
-};
-EOF
-}
-
-restore_verification_migration_to_text() {
-  cat <<'EOF'
-/**
- * Migrate verifications.code to TEXT to permanently remove length constraints.
- *
- * @param { import('knex').Knex } knex
- * @returns { Promise<void> }
- */
-exports.up = async function up(knex) {
-  const hasTable = await knex.schema.hasTable('verifications');
-  if (!hasTable) {
-    return;
-  }
-
-  const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo && columnInfo.code;
-
-  if (!codeInfo) {
-    return;
-  }
-
-  if (codeInfo.type === 'text') {
-    return;
-  }
-
-  await knex.schema.alterTable('verifications', (table) => {
-    table.text('code').notNullable().alter();
-  });
-};
-
-/**
- * @param { import('knex').Knex } knex
- * @returns { Promise<void> }
- */
-exports.down = async function down(knex) {
-  const hasTable = await knex.schema.hasTable('verifications');
-  if (!hasTable) {
-    return;
-  }
-
-  const columnInfo = await knex('verifications').columnInfo();
-  const codeInfo = columnInfo && columnInfo.code;
-
-  if (!codeInfo || codeInfo.type !== 'text') {
-    return;
-  }
-
-  const hasLongCodes = await knex('verifications')
-    .whereRaw('char_length(code) > 255')
-    .first();
-
-  if (hasLongCodes) {
-    throw new Error(
-      'Cannot shrink verifications.code to length 255 because data longer than 255 characters exists.'
-    );
-  }
-  await knex.schema.alterTable('verifications', (table) => {
-    table.string('code', 255).notNullable().alter();
-  });
-};
-EOF
-}
-
-restore_required_migrations() {
-  local_base="src/migrations"
-  mkdir -p "$local_base"
-
+ensure_required_migrations() {
+  missing_files=""
   for migration in \
-    20250926123707_alter_verifications_code_to_text.js \
-    20250926124314_alter_verifications_code_to_text.js; do
-    if [ -f "$local_base/$migration" ]; then
-      continue
+    /app/src/migrations/20250926123707_alter_verifications_code_to_text.js \
+    /app/src/migrations/20250926124314_alter_verifications_code_to_text.js; do
+    if [ ! -f "$migration" ]; then
+      missing_files="${missing_files}\n  $(basename "$migration")"
     fi
-
-    echo "WARNING: Missing $local_base/$migration inside the container. Restoring from embedded copy." >&2
-
-    case "$migration" in
-      20250926123707_alter_verifications_code_to_text.js)
-        restore_verification_migration_to_string > "$local_base/$migration"
-        ;;
-      20250926124314_alter_verifications_code_to_text.js)
-        restore_verification_migration_to_text > "$local_base/$migration"
-        ;;
-    esac
   done
+
+  if [ -n "$missing_files" ]; then
+    cat >&2 <<EOF
+ERROR: The backend container is missing the following critical migration files:${missing_files}
+
+This usually means the backend image was built without copying backend/src/migrations.
+Rebuild the backend image (for example: 'docker compose build backend' or
+'docker-compose build backend') and then redeploy with 'docker compose up -d'.
+EOF
+    exit 1
+  fi
 }
 
 main() {
@@ -291,7 +155,7 @@ main() {
 
   if [ "$1" = "node" ] && [ "${2:-}" = "src/server.js" ]; then
     if should_run_migrations; then
-      restore_required_migrations
+      ensure_required_migrations
       run_as_node npx knex migrate:latest
     else
       echo "Skipping automatic database migrations because RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS}."

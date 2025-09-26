@@ -89,6 +89,7 @@ services:
       redis:
         condition: service_started
     volumes:
+      - ./backend/src/migrations:/app/src/migrations:ro
       - ./backend/uploads:/app/uploads
       - ./backend/src/migrations:/app/src/migrations:ro
       - ./backend/src/seeds:/app/src/seeds:ro
