@@ -125,6 +125,7 @@ export default function StudentProfileEdit() {
     avatarPreview: null,
     identityFile: null,
     identityPreview: null,
+    identityPreviewIsBlob: false,
   });
   const [errors, setErrors] = useState({});
   const [showCropper, setShowCropper] = useState(false);
@@ -177,9 +178,7 @@ export default function StudentProfileEdit() {
           }
         });
 
-        const identityDocUrl = student?.identity_doc_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${student.identity_doc_url}`
-          : null;
+        const identityDocUrl = student?.identity_doc_url;
 
         setFormData({
           full_name: full_name ?? "",
@@ -193,7 +192,10 @@ export default function StudentProfileEdit() {
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: student?.identity_doc_url ? buildUrl(student.identity_doc_url) : null,
+          identityPreview: identityDocUrl
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityDocUrl}`
+            : null,
+          identityPreviewIsBlob: false,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -208,11 +210,11 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview?.startsWith?.("blob:")) {
+      if (formData.identityPreview && formData.identityPreviewIsBlob) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
-  }, [formData.identityPreview]);
+  }, [formData.identityPreview, formData.identityPreviewIsBlob]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
@@ -342,13 +344,14 @@ const handleAvatarSelect = (e) => {
       if (!user) return;
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => {
-        if (prev.identityPreview?.startsWith?.("blob:")) {
+        if (prev.identityPreview && prev.identityPreviewIsBlob) {
           URL.revokeObjectURL(prev.identityPreview);
         }
         return {
           ...prev,
           identityFile: file,
-          identityPreview: URL.createObjectURL(file)
+          identityPreview: URL.createObjectURL(file),
+          identityPreviewIsBlob: true,
         };
       });
       toast.success(t('id_upload_success'));
@@ -361,10 +364,15 @@ const handleAvatarSelect = (e) => {
 
   const removeIdentity = () => {
     setFormData(prev => {
-      if (prev.identityPreview?.startsWith?.("blob:")) {
+      if (prev.identityPreview && prev.identityPreviewIsBlob) {
         URL.revokeObjectURL(prev.identityPreview);
       }
-      return { ...prev, identityFile: null, identityPreview: null };
+      return {
+        ...prev,
+        identityFile: null,
+        identityPreview: null,
+        identityPreviewIsBlob: false,
+      };
     });
   };
 

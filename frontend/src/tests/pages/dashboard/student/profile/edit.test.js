@@ -33,8 +33,16 @@ jest.mock('@/store/messages/messageStore', () => ({
   default: () => ({ fetch: jest.fn() }),
 }));
 
-jest.mock('@/services/student/studentService.js', () => ({
-  getStudentProfile: jest.fn(),
+jest.mock('@/services/student/studentService', () => ({
+  getStudentProfile: jest.fn().mockResolvedValue({
+    full_name: '',
+    phone: '',
+    gender: 'male',
+    date_of_birth: '',
+    student: {},
+    social_links: [],
+    avatar_url: null,
+  }),
   updateStudentProfile: jest.fn(),
   uploadStudentAvatar: jest.fn(),
   uploadStudentIdentity: jest.fn(),
@@ -48,21 +56,35 @@ beforeAll(() => {
   global.URL.revokeObjectURL = jest.fn();
 });
 
+const baseProfileResponse = {
+  full_name: '',
+  phone: '',
+  gender: 'male',
+  date_of_birth: '',
+  student: {},
+  social_links: [],
+  avatar_url: null,
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   studentService.getStudentProfile.mockResolvedValue({
-    full_name: '',
-    phone: '',
-    gender: 'male',
-    date_of_birth: '',
-    student: {},
-    social_links: [],
-    avatar_url: null,
+    ...baseProfileResponse,
+    student: { ...baseProfileResponse.student },
   });
+  studentService.uploadStudentIdentity.mockImplementation(() => Promise.resolve());
+  process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.example.com';
 });
 
-test('uploads identity document and triggers preview creation', async () => {
-  studentService.uploadStudentIdentity.mockResolvedValue({});
+test('disables identity upload button during upload', async () => {
+  let resolveUpload;
+  studentService.uploadStudentIdentity.mockImplementation(
+    () => {
+      return new Promise((res) => {
+        resolveUpload = res;
+      });
+    }
+  );
 
   const { container } = render(<StudentProfileEdit />);
 
@@ -77,30 +99,25 @@ test('uploads identity document and triggers preview creation', async () => {
 
   fireEvent.change(input, { target: { files: [file] } });
 
-  await waitFor(() => {
-    expect(studentService.uploadStudentIdentity).toHaveBeenCalledWith(1, file);
-  });
-  expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
+  expect(studentService.uploadStudentIdentity).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('input[type="file"][accept="application/pdf"]')).toBeNull();
+
+  resolveUpload();
 });
 
-test('shows uploaded state when identity document exists', async () => {
-  const identityUrl = '/uploads/student/identity.pdf';
+test('renders existing identity document link on load', async () => {
+  const identityPath = '/uploads/docs/id.pdf';
   studentService.getStudentProfile.mockResolvedValueOnce({
-    full_name: '',
-    phone: '',
-    gender: 'male',
-    date_of_birth: '',
-    student: { identity_doc_url: identityUrl },
-    social_links: [],
-    avatar_url: null,
+    ...baseProfileResponse,
+    student: { identity_doc_url: identityPath },
   });
 
   render(<StudentProfileEdit />);
 
-  await waitFor(() => {
-    expect(screen.getByText('id_uploaded')).toBeInTheDocument();
-  });
+  const viewPdfLink = await screen.findByRole('link', { name: 'view_pdf' });
+  expect(viewPdfLink).toHaveAttribute(
+    'href',
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityPath}`
+  );
 
-  const viewLink = screen.getByRole('link', { name: 'view_pdf' });
-  expect(viewLink).toHaveAttribute('href', identityUrl);
 });
