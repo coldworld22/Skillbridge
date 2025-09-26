@@ -19,6 +19,7 @@ export default function Sidebar({ role = 'admin' }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
   const settings = useAppConfigStore((state) => state.settings);
+  const appConfigHydrated = useAppConfigStore((state) => state.hasHydrated);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   useEffect(() => {
@@ -55,17 +56,26 @@ export default function Sidebar({ role = 'admin' }) {
     setActiveDropdown((prev) => (prev === label ? null : label));
   };
 
+  const shouldUseSettings = isHydrated || appConfigHydrated;
+  const fallbackAppName = 'SkillBridge';
+  const displayAppName =
+    shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
+  const logoSrc =
+    shouldUseSettings && settings?.logo_url
+      ? buildUrl(settings.logo_url)
+      : logo.src || logo;
+
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 shadow-lg p-6 flex flex-col justify-between">
       <div>
         <div className="flex items-center gap-3 mb-8">
           <img
-            src={settings?.logo_url ? buildUrl(settings.logo_url) : logo.src || logo}
-            alt={`${settings?.appName || 'SkillBridge'} Logo`}
+            src={logoSrc}
+            alt={`${displayAppName} Logo`}
             className="w-12 h-12 rounded-full object-contain shadow"
           />
           <h2 className="text-2xl font-extrabold text-yellow-500">
-            {settings?.appName || 'SkillBridge'}
+            {displayAppName}
           </h2>
         </div>
 
@@ -148,7 +158,7 @@ export default function Sidebar({ role = 'admin' }) {
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {currentYear} {settings?.appName || 'SkillBridge'}
+        &copy; {currentYear} {displayAppName}
       </div>
     </aside>
   );
