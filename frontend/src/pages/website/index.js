@@ -33,11 +33,6 @@ export default function Home() {
   ], [planRole]);
 
   const sectionRefs = useRef([]);
-  if (sectionRefs.current.length !== sections.length) {
-    sectionRefs.current = sections.map(
-      (_, i) => sectionRefs.current[i] || React.createRef()
-    );
-  }
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const getSectionElements = () =>
@@ -175,18 +170,7 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    const refOrElement = sectionRefs.current[index];
-    const element =
-      refOrElement &&
-      typeof refOrElement === "object" &&
-      Object.prototype.hasOwnProperty.call(refOrElement, "current")
-        ? refOrElement.current
-        : refOrElement;
-
-    if (element && typeof element.scrollIntoView === "function") {
-      element.scrollIntoView({ behavior: "smooth" });
-      setCurrentSection(index);
-    }
+    sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth" });
     setCurrentSection(index);
   };
 
