@@ -61,6 +61,21 @@ describe('instructor.service updateInstructorProfile', () => {
     expect(user.profile_complete).toBe(true);
   });
 
+  it('treats pricing strings with currency labels as valid', async () => {
+    const userId = uuidv4();
+    await mockDb('users').insert({ id: userId });
+
+    await service.updateInstructorProfile(
+      userId,
+      { full_name: 'Currency Doe', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { experience: 5, expertise: ['Math'], bio: 'Teacher', pricing: '100 USD' },
+      [{ platform: 'facebook', url: 'facebook.com/currencydoe' }]
+    );
+
+    const user = await mockDb('users').where({ id: userId }).first();
+    expect(user.profile_complete).toBe(true);
+  });
+
   it('marks profile as incomplete when missing bio', async () => {
     const userId = uuidv4();
     await mockDb('users').insert({ id: userId });
@@ -130,5 +145,18 @@ describe('instructor.service updateInstructorProfile', () => {
 
     const user2 = await mockDb('users').where({ id: userId2 }).first();
     expect(user2.profile_complete).toBe(false);
+
+    const userId3 = uuidv4();
+    await mockDb('users').insert({ id: userId3 });
+
+    await service.updateInstructorProfile(
+      userId3,
+      { full_name: 'Blank Price', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { experience: 5, expertise: ['Math'], bio: 'Teacher', pricing: '   ' },
+      [{ platform: 'facebook', url: 'facebook.com/blankprice' }]
+    );
+
+    const user3 = await mockDb('users').where({ id: userId3 }).first();
+    expect(user3.profile_complete).toBe(false);
   });
 });
