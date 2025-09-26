@@ -2,8 +2,8 @@
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.up = async function up(knex) {
-  await knex.schema.alterTable("verifications", (table) => {
+exports.up = function up(knex) {
+  return knex.schema.alterTable("verifications", (table) => {
     table.text("code").notNullable().alter();
   });
 };
@@ -12,8 +12,8 @@ exports.up = async function up(knex) {
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.down = async function down(knex) {
-  await knex.schema.alterTable("verifications", (table) => {
+exports.down = function down(knex) {
+  return knex.schema.alterTable("verifications", (table) => {
     table.string("code", 10).notNullable().alter();
   });
 };
