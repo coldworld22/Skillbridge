@@ -52,7 +52,6 @@ exports.down = async function down(knex) {
       'Cannot shrink verifications.code to length 255 because data longer than 255 characters exists.'
     );
   }
-
   await knex.schema.alterTable('verifications', (table) => {
     table.string('code', 255).notNullable().alter();
   });

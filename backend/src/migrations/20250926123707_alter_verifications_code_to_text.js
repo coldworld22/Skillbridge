@@ -60,7 +60,6 @@ exports.down = async function down(knex) {
       'Cannot shrink verifications.code to length 10 because data longer than 10 characters exists.'
     );
   }
-
   await knex.schema.alterTable('verifications', (table) => {
     table.string('code', 10).notNullable().alter();
   });
