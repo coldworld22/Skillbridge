@@ -25,7 +25,6 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
-import { buildUrl } from "@/utils/url";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaGlobe,
@@ -34,6 +33,9 @@ import {
 } from "react-icons/fa";
 const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
+
+const AVATAR_PLACEHOLDER_SRC = "/images/profile/default-avatar.png";
+const IDENTITY_PLACEHOLDER_SRC = "/images/default-book-cover.jpg";
 
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
@@ -126,6 +128,8 @@ export default function StudentProfileEdit() {
     identityFile: null,
     identityPreview: null,
     identityPreviewIsBlob: false,
+    avatarPreviewFallback: false,
+    identityPreviewFallback: false,
   });
   const [errors, setErrors] = useState({});
   const [showCropper, setShowCropper] = useState(false);
@@ -150,6 +154,29 @@ export default function StudentProfileEdit() {
     },
     [t]
   );
+
+  const ensureAssetAvailability = useCallback(async (url, assetType) => {
+    if (!url) {
+      return { resolvedUrl: null, fallback: false };
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "HEAD",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        return { resolvedUrl: url, fallback: false };
+      }
+
+      logger.warn("[StudentProfileEdit] Missing asset", { assetType, url, status: response.status });
+    } catch (error) {
+      logger.warn("[StudentProfileEdit] Asset check failed", { assetType, url, error });
+    }
+
+    return { resolvedUrl: null, fallback: true };
+  }, []);
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -178,7 +205,23 @@ export default function StudentProfileEdit() {
           }
         });
 
+        const avatarFullUrl = avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
+          : null;
         const identityDocUrl = student?.identity_doc_url;
+        const identityFullUrl = identityDocUrl
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityDocUrl}`
+          : null;
+
+        const { resolvedUrl: safeAvatarUrl, fallback: avatarFallback } = await ensureAssetAvailability(
+          avatarFullUrl,
+          "avatar"
+        );
+
+        const { resolvedUrl: safeIdentityUrl, fallback: identityFallback } = await ensureAssetAvailability(
+          identityFullUrl,
+          "identity document"
+        );
 
         setFormData({
           full_name: full_name ?? "",
@@ -190,12 +233,12 @@ export default function StudentProfileEdit() {
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
-          avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
+          avatarPreview: safeAvatarUrl,
+          avatarPreviewFallback: avatarFallback,
           identityFile: null,
-          identityPreview: identityDocUrl
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityDocUrl}`
-            : null,
+          identityPreview: safeIdentityUrl,
           identityPreviewIsBlob: false,
+          identityPreviewFallback: identityFallback,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -206,7 +249,7 @@ export default function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user, hasHydrated, router]);
+  }, [user, hasHydrated, router, ensureAssetAvailability]);
 
   useEffect(() => {
     return () => {
@@ -252,6 +295,10 @@ const handleAvatarSelect = (e) => {
   setTempFileName(file.name);
   setTempAvatar(URL.createObjectURL(file));
   setShowCropper(true);
+  setFormData(prev => ({
+    ...prev,
+    avatarPreviewFallback: false,
+  }));
 };
 
   const handleCropUpload = async () => {
@@ -267,7 +314,8 @@ const handleAvatarSelect = (e) => {
       setFormData(prev => ({
         ...prev,
         avatar_url,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`,
+        avatarPreviewFallback: false,
       }));
       toast.success(t('avatar_upload_success'));
       setShowCropper(false);
@@ -304,6 +352,7 @@ const handleAvatarSelect = (e) => {
         ...prev,
         avatar_url: null,
         avatarPreview: null,
+        avatarPreviewFallback: false,
       }));
       toast.success(t('avatar_remove_success'));
       return;
@@ -317,6 +366,7 @@ const handleAvatarSelect = (e) => {
         ...prev,
         avatar_url: null,
         avatarPreview: null,
+        avatarPreviewFallback: false,
       }));
       toast.success(t('avatar_remove_success'));
     } catch (error) {
@@ -352,6 +402,7 @@ const handleAvatarSelect = (e) => {
           identityFile: file,
           identityPreview: URL.createObjectURL(file),
           identityPreviewIsBlob: true,
+          identityPreviewFallback: false,
         };
       });
       toast.success(t('id_upload_success'));
@@ -372,9 +423,29 @@ const handleAvatarSelect = (e) => {
         identityFile: null,
         identityPreview: null,
         identityPreviewIsBlob: false,
+        identityPreviewFallback: false,
       };
     });
   };
+
+  const handleAvatarImageError = useCallback(() => {
+    setFormData((prev) => {
+      if (prev.avatarPreviewFallback) {
+        return prev;
+      }
+
+      logger.warn("[StudentProfileEdit] Avatar preview failed to load", {
+        assetType: "avatar",
+        url: prev.avatarPreview,
+      });
+
+      return {
+        ...prev,
+        avatarPreview: null,
+        avatarPreviewFallback: true,
+      };
+    });
+  }, []);
 
   const validateForm = () => {
     try {
@@ -533,27 +604,30 @@ const handleAvatarSelect = (e) => {
               {expanded.avatar && (
                 <div className="p-4 space-y-4">
                   <div className="flex flex-col items-center">
-                    {formData.avatarPreview ? (
+                    {formData.avatarPreview || formData.avatarPreviewFallback ? (
                       <div className="relative">
                         <img
-                          src={formData.avatarPreview}
+                          src={formData.avatarPreview || AVATAR_PLACEHOLDER_SRC}
                           alt="Avatar Preview"
                           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                          onError={handleAvatarImageError}
                         />
-                        <button
-                          type="button"
-                          onClick={handleAvatarRemove}
-                          disabled={isDeletingAvatar}
-                          className={`absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full transition-colors ${
-                            isDeletingAvatar ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'
-                          }`}
-                        >
-                          {isDeletingAvatar ? (
-                            <FaSpinner className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FaTimesCircle className="w-5 h-5" />
-                          )}
-                        </button>
+                        {formData.avatarPreview && !formData.avatarPreviewFallback && (
+                          <button
+                            type="button"
+                            onClick={handleAvatarRemove}
+                            disabled={isDeletingAvatar}
+                            className={`absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full transition-colors ${
+                              isDeletingAvatar ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'
+                            }`}
+                          >
+                            {isDeletingAvatar ? (
+                              <FaSpinner className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <FaTimesCircle className="w-5 h-5" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
@@ -625,6 +699,29 @@ const handleAvatarSelect = (e) => {
                             <span>{t('remove')}</span>
                           </button>
                         </div>
+                      </div>
+                    ) : formData.identityPreviewFallback ? (
+                      <div className="space-y-3">
+                        <img
+                          src={IDENTITY_PLACEHOLDER_SRC}
+                          alt="Identity placeholder"
+                          className="mx-auto h-32 w-32 rounded-lg object-cover shadow-sm border border-gray-200"
+                        />
+                        <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
+                        <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
+                        <label className={`cursor-pointer inline-block mt-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                            {isUploadingIdentity ? <FaSpinner className="w-4 h-4 animate-spin" /> : <FaUpload className="w-4 h-4" />}
+                            <span>{t('select_file')}</span>
+                          </div>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handleIdentityUpload}
+                            className="hidden"
+                            disabled={isUploadingIdentity}
+                          />
+                        </label>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -898,7 +995,11 @@ export default withAuthProtection(StudentProfileEdit, ['student']);
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ['dashboard', 'common'],
+        nextI18NextConfig
+      )),
     },
   };
 }
