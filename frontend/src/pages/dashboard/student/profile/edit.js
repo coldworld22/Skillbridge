@@ -60,6 +60,37 @@ const safeString = (value, fallback = "") => {
   }
 };
 
+const normalizeTopics = (value) => {
+  const toTrimmedArray = (arr) =>
+    arr
+      .map((item) => safeString(item).trim())
+      .filter((item) => item.length > 0);
+
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return toTrimmedArray(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return toTrimmedArray(parsed);
+      }
+    } catch (err) {
+      // Ignore JSON parse errors and treat as comma-separated string
+    }
+
+    return toTrimmedArray(trimmed.split(","));
+  }
+
+  return toTrimmedArray([value]);
+};
+
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const router = useRouter();
@@ -148,7 +179,7 @@ export default function StudentProfileEdit() {
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
-          topics: student?.topics || [],
+          topics: normalizeTopics(student?.topics),
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
@@ -340,7 +371,7 @@ const handleAvatarSelect = (e) => {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         education_level: formData.education_level,
-        topics: formData.topics,
+        topics: normalizeTopics(formData.topics),
         learning_goals: formData.learning_goals,
         social_links,
       };
