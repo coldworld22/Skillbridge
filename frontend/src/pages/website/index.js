@@ -35,19 +35,64 @@ export default function Home() {
   const sectionRefs = useRef([]);
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const getSectionElements = () =>
+    sectionRefs.current
+      .map((ref) =>
+        ref && typeof ref === "object" && Object.prototype.hasOwnProperty.call(ref, "current")
+          ? ref.current
+          : ref
+      )
+      .filter(Boolean);
   // Intentionally no console logs to avoid leaking user data
 
   // Track scrolling position
   useEffect(() => {
     let ticking = false;
+
+    const updateScrollState = () => {
+      const scrollY = typeof window.scrollY === "number" ? window.scrollY : 0;
+      const docElement = document.documentElement;
+      const rawDocHeight = docElement.scrollHeight - window.innerHeight;
+      const docHeight = rawDocHeight > 0 ? rawDocHeight : 0;
+      const progress = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+      setScrollProgress(Number.isFinite(progress) ? progress : 0);
+
+      const sectionElements = getSectionElements();
+      if (!sectionElements.length) {
+        setCurrentSection(0);
+        return;
+      }
+
+      if (typeof window.IntersectionObserver === "undefined") {
+        const viewportMid = window.innerHeight / 2;
+        let activeIndex = 0;
+        let smallestDistance = Infinity;
+
+        sectionElements.forEach((section, index) => {
+          if (!section || typeof section.getBoundingClientRect !== "function") {
+            return;
+          }
+
+          const rect = section.getBoundingClientRect();
+          const top = rect?.top ?? 0;
+          const bottom = rect?.bottom ?? top;
+          const center = top + (bottom - top) / 2;
+          const distance = Math.abs(center - viewportMid);
+
+          if (distance < smallestDistance) {
+            smallestDistance = distance;
+            activeIndex = index;
+          }
+        });
+
+        setCurrentSection(activeIndex);
+      }
+    };
+
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const docHeight =
-            document.documentElement.scrollHeight - window.innerHeight;
-          const progress = (scrollY / docHeight) * 100;
-          setScrollProgress(progress);
+          updateScrollState();
           ticking = false;
         });
         ticking = true;
@@ -55,8 +100,73 @@ export default function Home() {
     };
 
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    updateScrollState();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [sections.length]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.IntersectionObserver === "undefined"
+    ) {
+      return undefined;
+    }
+
+    const sectionElements = getSectionElements();
+    if (!sectionElements.length) {
+      return undefined;
+    }
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visibleEntries.length > 0) {
+          const targetIndex = sectionElements.findIndex(
+            (element) => element === visibleEntries[0].target
+          );
+          if (targetIndex !== -1) {
+            setCurrentSection(targetIndex);
+            return;
+          }
+        }
+
+        const viewportMid = window.innerHeight / 2;
+        let closestIndex = 0;
+        let smallestDistance = Infinity;
+
+        sectionElements.forEach((section, index) => {
+          if (!section || typeof section.getBoundingClientRect !== "function") {
+            return;
+          }
+
+          const rect = section.getBoundingClientRect();
+          const top = rect?.top ?? 0;
+          const bottom = rect?.bottom ?? top;
+          const center = top + (bottom - top) / 2;
+          const distance = Math.abs(center - viewportMid);
+
+          if (distance < smallestDistance) {
+            smallestDistance = distance;
+            closestIndex = index;
+          }
+        });
+
+        setCurrentSection(closestIndex);
+      },
+      { threshold: [0.25, 0.5, 0.75, 1] }
+    );
+
+    sectionElements.forEach((section) => observer.observe(section));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [sections.length]);
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
@@ -65,17 +175,12 @@ export default function Home() {
   };
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden" data-current-section={currentSection}>
       <Navbar />
       <IncompleteAlertModal />
 
       {sections.map(({ component: Component, props }, index) => (
-        <section
-          key={index}
-          ref={(el) => {
-            sectionRefs.current[index] = el;
-          }}
-        >
+        <section key={index} ref={sectionRefs.current[index]}>
           <Component {...props} />
         </section>
       ))}
@@ -91,14 +196,22 @@ export default function Home() {
       {/* Smooth Scroll Buttons */}
       <div className="fixed bottom-8 right-8 z-50 gap-4 hidden md:flex md:flex-col">
         {currentSection > 0 && (
-          <motion.button whileHover={{ scale: 1.2 }} onClick={() => scrollToSection(currentSection - 1)}
-            className="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition">
+          <motion.button
+            aria-label="Scroll to previous section"
+            whileHover={{ scale: 1.2 }}
+            onClick={() => scrollToSection(currentSection - 1)}
+            className="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition"
+          >
             <FaArrowUp size={20} />
           </motion.button>
         )}
         {currentSection < sections.length - 1 && (
-          <motion.button whileHover={{ scale: 1.2 }} onClick={() => scrollToSection(currentSection + 1)}
-            className="bg-yellow-500 text-gray-900 p-3 rounded-full shadow-lg hover:bg-yellow-600 transition">
+          <motion.button
+            aria-label="Scroll to next section"
+            whileHover={{ scale: 1.2 }}
+            onClick={() => scrollToSection(currentSection + 1)}
+            className="bg-yellow-500 text-gray-900 p-3 rounded-full shadow-lg hover:bg-yellow-600 transition"
+          >
             <FaArrowDown size={20} />
           </motion.button>
         )}
