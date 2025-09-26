@@ -14,7 +14,8 @@ import {
   getStudentProfile,
   updateStudentProfile,
   uploadStudentAvatar,
-  uploadStudentIdentity
+  uploadStudentIdentity,
+  deleteStudentIdentity
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -322,13 +323,30 @@ const handleAvatarSelect = (e) => {
     }
   };
 
-  const removeIdentity = () => {
-    setFormData(prev => {
-      if (prev.identityPreview && prev.identityPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(prev.identityPreview);
-      }
-      return { ...prev, identityFile: null, identityPreview: null };
-    });
+  const removeIdentity = async () => {
+    if (!user) {
+      toast.error(t('user_not_loaded'));
+      return;
+    }
+
+    try {
+      setIsUploadingIdentity(true);
+      await deleteStudentIdentity(user.id);
+      setFormData(prev => {
+        if (prev.identityPreview) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+        return { ...prev, identityFile: null, identityPreview: null };
+      });
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t('id_remove_failed');
+      toast.error(message);
+    } finally {
+      setIsUploadingIdentity(false);
+    }
   };
 
   const validateForm = () => {

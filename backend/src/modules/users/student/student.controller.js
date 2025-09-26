@@ -196,6 +196,51 @@ exports.updateIdentity = async (req, res) => {
 };
 
 /**
+ * @desc Delete student identity document
+ * @route DELETE /api/users/student/:id/identity
+ * @access Student
+ */
+exports.deleteIdentity = async (req, res) => {
+  try {
+    const profile = await db("student_profiles")
+      .where({ user_id: req.user.id })
+      .first("identity_doc_url");
+
+    if (!profile || !profile.identity_doc_url) {
+      return res.status(404).json({ message: "No identity document found" });
+    }
+
+    const identityUrl = profile.identity_doc_url;
+    const isRemoteUrl = typeof identityUrl === "string" && /^https?:\/\//i.test(identityUrl);
+
+    if (!isRemoteUrl) {
+      const sanitizedPath = identityUrl.replace(/^\/+/, "");
+      const absolutePath = path.join(process.cwd(), sanitizedPath);
+
+      try {
+        await fs.promises.unlink(absolutePath);
+      } catch (err) {
+        if (err && err.code !== "ENOENT") {
+          logger.error("Failed to remove identity document", err);
+          return res
+            .status(500)
+            .json({ message: "Failed to remove identity document" });
+        }
+      }
+    }
+
+    await db("student_profiles")
+      .where({ user_id: req.user.id })
+      .update({ identity_doc_url: null });
+
+    res.json({ identity_doc_url: null });
+  } catch (error) {
+    logger.error("Failed to delete identity document", error);
+    res.status(500).json({ message: "Failed to delete identity document" });
+  }
+};
+
+/**
  * @desc Change student password
  * @route PATCH /api/users/student/change-password
  * @access Student
