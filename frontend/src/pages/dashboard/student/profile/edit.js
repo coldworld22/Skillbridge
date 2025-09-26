@@ -23,6 +23,7 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
+import { buildUrl } from "@/utils/url";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaGlobe,
@@ -154,7 +155,7 @@ export default function StudentProfileEdit() {
           avatar_url,
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: null,
+          identityPreview: student?.identity_doc_url ? buildUrl(student.identity_doc_url) : null,
         });
       } catch (err) {
         toast.error(t('load_failed'));
@@ -169,7 +170,7 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     return () => {
-      if (formData.identityPreview) {
+      if (formData.identityPreview?.startsWith?.("blob:")) {
         URL.revokeObjectURL(formData.identityPreview);
       }
     };
@@ -265,11 +266,16 @@ const handleAvatarSelect = (e) => {
     try {
       setIsUploadingIdentity(true);
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview?.startsWith?.("blob:")) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file)
+        };
+      });
       toast.success(t('id_upload_success'));
     } catch (err) {
       toast.error(t('id_upload_failed'));
@@ -280,7 +286,7 @@ const handleAvatarSelect = (e) => {
 
   const removeIdentity = () => {
     setFormData(prev => {
-      if (prev.identityPreview) {
+      if (prev.identityPreview?.startsWith?.("blob:")) {
         URL.revokeObjectURL(prev.identityPreview);
       }
       return { ...prev, identityFile: null, identityPreview: null };
