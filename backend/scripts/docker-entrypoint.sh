@@ -118,6 +118,28 @@ prepare_upload_dirs() {
   chown -R node:node /app/uploads
 }
 
+ensure_required_migrations() {
+  missing_files=""
+  for migration in \
+    /app/src/migrations/20250926123707_alter_verifications_code_to_text.js \
+    /app/src/migrations/20250926124314_alter_verifications_code_to_text.js; do
+    if [ ! -f "$migration" ]; then
+      missing_files="${missing_files}\n  $(basename "$migration")"
+    fi
+  done
+
+  if [ -n "$missing_files" ]; then
+    cat >&2 <<EOF
+ERROR: The backend container is missing the following critical migration files:${missing_files}
+
+This usually means the backend image was built without copying backend/src/migrations.
+Rebuild the backend image (for example: 'docker compose build backend' or
+'docker-compose build backend') and then redeploy with 'docker compose up -d'.
+EOF
+    exit 1
+  fi
+}
+
 main() {
   ensure_upload_permissions
 
@@ -133,6 +155,7 @@ main() {
 
   if [ "$1" = "node" ] && [ "${2:-}" = "src/server.js" ]; then
     if should_run_migrations; then
+      ensure_required_migrations
       run_as_node npx knex migrate:latest
     else
       echo "Skipping automatic database migrations because RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS}."
