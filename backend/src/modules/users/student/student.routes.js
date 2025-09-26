@@ -63,6 +63,18 @@ router.patch(
 );
 
 /**
+ * @desc Delete identity document
+ * @route DELETE /api/users/student/:id/identity
+ */
+router.delete(
+  "/:id/identity",
+  verifyToken,
+  isStudent,
+  ensureSelf,
+  controller.deleteIdentity
+);
+
+/**
  * @desc Change student password
  * @route PATCH /api/users/student/change-password
  */

@@ -42,6 +42,12 @@ export const uploadStudentIdentity = async (userId, file) => {
   return res.data;
 };
 
+// Delete identity document (DELETE)
+export const deleteStudentIdentity = async (userId) => {
+  const res = await api.delete(`/users/student/${userId}/identity`);
+  return res.data;
+};
+
 /**
  * 
  * @param {*} param0 
