@@ -130,6 +130,21 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null &&
     Number(instructorData.experience) > 0;
+  const rawPricing = instructorData.pricing;
+  let parsedPricing = null;
+
+  if (typeof rawPricing === "number") {
+    parsedPricing = rawPricing;
+  } else if (typeof rawPricing === "string") {
+    const trimmed = rawPricing.trim();
+    if (trimmed) {
+      const match = trimmed.match(/-?[\d,.]+/);
+      if (match) {
+        parsedPricing = parseFloat(match[0].replace(/,/g, ""));
+      }
+    }
+  }
+
   const hasValidPricing =
     instructorData.pricing !== undefined &&
     instructorData.pricing !== null &&
@@ -157,6 +172,10 @@ const updateInstructorProfile = async (
       .first();
     const data = {
       ...instructorData,
+      pricing:
+        parsedPricing !== null && !Number.isNaN(parsedPricing)
+          ? parsedPricing
+          : null,
       expertise: instructorData.expertise
         ? JSON.stringify(instructorData.expertise)
         : null,
