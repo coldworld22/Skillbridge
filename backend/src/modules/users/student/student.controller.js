@@ -136,6 +136,49 @@ exports.updateAvatar = async (req, res) => {
 };
 
 /**
+ * @desc Delete student avatar
+ * @route DELETE /api/users/student/:id/avatar
+ * @access Student
+ */
+exports.deleteAvatar = async (req, res) => {
+  const userId = String(req.user.id);
+
+  if (req.params.id !== userId) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  try {
+    const existing = await db("users").where({ id: userId }).first("avatar_url");
+
+    if (!existing || !existing.avatar_url) {
+      return res.status(404).json({ message: "Avatar not found." });
+    }
+
+    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
+
+    if (!isRemoteUrl(existing.avatar_url)) {
+      const sanitizedPath = existing.avatar_url.replace(/^\/+/, "");
+      const absolutePath = path.join(process.cwd(), sanitizedPath);
+
+      try {
+        await fs.promises.unlink(absolutePath);
+      } catch (err) {
+        if (err?.code !== "ENOENT") {
+          logger.error("Failed to delete student avatar:", err);
+        }
+      }
+    }
+
+    await db("users").where({ id: userId }).update({ avatar_url: null });
+
+    res.json({ message: "Avatar deleted successfully." });
+  } catch (error) {
+    logger.error("Failed to delete student avatar", error);
+    res.status(500).json({ message: "Failed to delete avatar" });
+  }
+};
+
+/**
  * @desc Update student identity document
  * @route PATCH /api/users/student/:id/identity
  * @access Student
