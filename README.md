@@ -151,8 +151,16 @@ npm --prefix frontend install
    ```
 
    If the legacy `docker-compose` v1 CLI exits with `KeyError: 'ContainerConfig'`,
-   upgrade to Docker Compose V2 and use the `docker compose` command. If
-   upgrading immediately is not possible, set `DOCKER_BUILDKIT=0` and
+   upgrade to Docker Compose V2 and use the `docker compose` command. The
+   repository also includes [`scripts/run-compose.sh`](scripts/run-compose.sh),
+   which automatically prefers the V2 plugin and falls back to the standalone
+   binary so you can run:
+
+   ```bash
+   ./scripts/run-compose.sh up --build
+   ```
+
+   If upgrading immediately is not possible, set `DOCKER_BUILDKIT=0` and
    `COMPOSE_DOCKER_CLI_BUILD=0` in your `.env` file (both are included in
    `.env.example`) to disable BuildKit so legacy docker-compose releases
    can run the stack.
