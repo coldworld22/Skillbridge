@@ -155,6 +155,20 @@ npm --prefix backend run migrate
 Running migrations separately keeps `startServer()` lightweight and ensures the
 database schema matches the application's expectations.
 
+> **Important:** Docker Compose no longer bind-mounts `backend/src/migrations`.
+> When a release adds new migration files (for example the critical verification
+> migrations `20250926123707` and `20250926124314`), rebuild the backend image so
+> the container sees the updated migration directory before running `npm --prefix
+> backend run migrate`:
+>
+> ```bash
+> docker compose build backend && docker compose up -d backend
+> ```
+>
+> Otherwise the running container will still contain the previous migration set
+> and Knex will report **"The migration directory is corrupt..."** because it
+> cannot find the new files.
+
 ## Preserve uploaded media
 
 The admin panel lets you upload a logo and favicon under
@@ -189,6 +203,49 @@ domains you can still extend `remotePatterns` in
 `frontend/next.config.mjs`.
 
 ## Troubleshooting
+
+### Knex reports "The migration directory is corrupt"
+
+When Compose reuses an older backend image it may not contain the newest
+`backend/src/migrations` files.  Knex then aborts with errors like:
+
+```
+The migration directory is corrupt, the following files are missing:
+20250926123707_alter_verifications_code_to_text.js,
+20250926124314_alter_verifications_code_to_text.js
+```
+
+To resolve this:
+
+1. Rebuild the backend image so the container bakes in the updated migration
+   list (pass `--no-cache` if you want to discard any cached layers):
+
+   ```bash
+   docker compose build --no-cache backend && docker compose up -d backend
+   ```
+
+2. Confirm the new container can see the migrations:
+
+   ```bash
+   docker compose exec backend ls /app/src/migrations
+   ```
+
+   The output should include the verification migrations
+   `20250926123707_alter_verifications_code_to_text.js` and
+   `20250926124314_alter_verifications_code_to_text.js`.
+
+3. Re-run the migration command if it did not execute automatically during the
+   container start-up:
+
+   ```bash
+   docker compose exec backend npm run migrate
+   ```
+
+If the error persists, stop the backend service and remove the old container so
+Compose cannot reuse it (`docker compose rm -fs backend`), then repeat the
+build/start steps above.  Always rebuild the backend image after adding or
+renaming migration files because the directory is no longer bind-mounted into
+the container.
 
 ### Login page requests `http://localhost:5002`
 
