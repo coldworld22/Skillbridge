@@ -131,4 +131,22 @@ describe('instructor.service updateInstructorProfile', () => {
     const user2 = await mockDb('users').where({ id: userId2 }).first();
     expect(user2.profile_complete).toBe(false);
   });
+
+  it('accepts pricing strings with currency information', async () => {
+    const userId = uuidv4();
+    await mockDb('users').insert({ id: userId });
+
+    await service.updateInstructorProfile(
+      userId,
+      { full_name: 'Currency User', phone: '123', gender: 'non-binary', date_of_birth: '1990-01-01' },
+      { experience: 5, expertise: ['Math'], bio: 'Teacher', pricing: '100 USD' },
+      [{ platform: 'facebook', url: 'facebook.com/currencyuser' }]
+    );
+
+    const user = await mockDb('users').where({ id: userId }).first();
+    const profile = await mockDb('instructor_profiles').where({ user_id: userId }).first();
+
+    expect(user.profile_complete).toBe(true);
+    expect(profile.pricing).toBe(100);
+  });
 });

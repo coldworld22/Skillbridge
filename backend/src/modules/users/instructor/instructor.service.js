@@ -75,6 +75,16 @@ const normalizeUrl = (url = "") => {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
+const extractPricingAmount = (value) => {
+  if (value === undefined || value === null) return Number.NaN;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const match = value.match(/-?\d*\.?\d+/);
+    return match ? Number.parseFloat(match[0]) : Number.NaN;
+  }
+  return Number.NaN;
+};
+
 // 🔹 Update instructor user data, profile data, and social links in a transaction
 const updateInstructorProfile = async (
   userId,
@@ -112,10 +122,8 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null &&
     Number(instructorData.experience) > 0;
-  const hasValidPricing =
-    instructorData.pricing !== undefined &&
-    instructorData.pricing !== null &&
-    Number(instructorData.pricing) > 0;
+  const pricingAmount = extractPricingAmount(instructorData.pricing);
+  const hasValidPricing = Number.isFinite(pricingAmount) && pricingAmount > 0;
   const hasInstructorFields =
     Array.isArray(instructorData.expertise) &&
     instructorData.expertise.length > 0 &&
@@ -139,6 +147,7 @@ const updateInstructorProfile = async (
       .first();
     const data = {
       ...instructorData,
+      pricing: Number.isFinite(pricingAmount) ? pricingAmount : null,
       expertise: instructorData.expertise
         ? JSON.stringify(instructorData.expertise)
         : null,
