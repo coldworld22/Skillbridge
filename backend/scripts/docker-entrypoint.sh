@@ -64,6 +64,34 @@ ensure_upload_permissions() {
   chown -R node:node /app/data
 }
 
+ensure_critical_migrations() {
+  missing=""
+  for migration in \
+    /app/src/migrations/20250926123707_alter_verifications_code_to_text.js \
+    /app/src/migrations/20250926124314_alter_verifications_code_to_text.js; do
+    if [ ! -f "$migration" ]; then
+      missing="$missing\n  - ${migration#/app/}"
+    fi
+  done
+
+  if [ -n "$missing" ]; then
+    cat >&2 <<EOF
+ERROR: Critical database migrations are missing from the container image:
+$missing
+
+The backend cannot start safely without them. Rebuild the backend image to
+refresh the bundled migrations, for example:
+
+  docker compose build backend && docker compose up -d backend
+
+If you are running in production, ensure the deployment pipeline copies the
+backend/src/migrations directory into the build context before building the
+image.
+EOF
+    exit 1
+  fi
+}
+
 url_encode() {
   node -e "process.stdout.write(encodeURIComponent(process.argv[1] ?? ''));" "$1"
 }
@@ -132,6 +160,7 @@ main() {
   fi
 
   if [ "$1" = "node" ] && [ "${2:-}" = "src/server.js" ]; then
+    ensure_critical_migrations
     if should_run_migrations; then
       run_as_node npx knex migrate:latest
     else

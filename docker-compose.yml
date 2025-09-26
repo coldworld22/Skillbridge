@@ -90,6 +90,7 @@ services:
         condition: service_started
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/src/migrations:/app/src/migrations:ro
     networks:
       - app-network
 
