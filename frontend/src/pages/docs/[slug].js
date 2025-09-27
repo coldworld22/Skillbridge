@@ -7,20 +7,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DOMPurify from 'isomorphic-dompurify';
 import cheerio from 'cheerio';
-import { resolveDocsDirectory } from '@/utils/docsDirectory';
+import { buildDefaultDocsExplicitPaths, resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 // Ensure standalone builds can still locate the project-level docs directory.
-const docsDirectoryExplicitPaths = [
-  path.join(process.cwd(), 'docs'),
-  path.join(process.cwd(), '..', 'docs'),
-  path.join(process.cwd(), '..', '..', 'docs'),
-  path.join(process.cwd(), '..', '..', '..', 'docs'),
-  path.resolve(moduleDir, '../../docs'),
-  path.resolve(moduleDir, '../../../docs'),
-  path.resolve(moduleDir, '../../../..', 'docs'),
-];
+const docsDirectoryExplicitPaths = buildDefaultDocsExplicitPaths(moduleDir);
 
 const sanitizeSlug = (value = '') =>
   value

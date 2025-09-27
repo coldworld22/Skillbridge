@@ -51,7 +51,10 @@ function attemptStructuralRepairs(input) {
   let output = input;
   let scriptOverrides = null;
 
-  const duplicateScriptsPattern = /("scripts"\s*:\s*{[\s\S]*?}\s*,\s*\n)(\s*"dev"\s*:\s*"[^"]*",?\s*\n\s*"build"\s*:\s*"[^"]*",?\s*\n\s*"start"\s*:\s*"[^"]*",?\s*\n\s*"lint"\s*:\s*"[^"]*",?\s*\n\s*"test"\s*:\s*"[^"]*"\s*,?\s*\n)(\s*},)/m;
+  // Some merge tools accidentally inline a second scripts block directly after the
+  // real one, leaving behind duplicated entries without the surrounding "scripts" key.
+  // Capture the valid block and the stray entries so we can merge them safely.
+  const duplicateScriptsPattern = /("scripts"\s*:\s*{[\s\S]*?}\s*,\s*\n)(\s*"dev"\s*:\s*"[^"]*",?[\s\S]*?\n\s*"test"\s*:\s*"[^"]*"\s*,?\s*\n)(\s*},)/m;
   const redundantClosingPattern = /},\s*\n\s*},/m;
 
   const match = output.match(duplicateScriptsPattern);
