@@ -25,8 +25,24 @@ const ReactQuill = dynamic(() => import('react-quill'), {
 });
 import 'react-quill/dist/quill.snow.css';
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+const ALLOWED_VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-matroska',
+];
+const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.mkv'];
+
+const isAllowedFileType = (file, allowedTypes, allowedExtensions) => {
+  if (allowedTypes.includes(file.type)) return true;
+  const name = file.name || '';
+  const dotIndex = name.lastIndexOf('.');
+  if (dotIndex === -1) return false;
+  const extension = name.slice(dotIndex).toLowerCase();
+  return allowedExtensions.includes(extension);
+};
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -127,8 +143,8 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast.error('Unsupported image type');
+    if (!isAllowedFileType(file, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_EXTENSIONS)) {
+      toast.error('Unsupported image type. Allowed formats: JPG, PNG, WEBP.');
       return;
     }
 
@@ -143,8 +159,8 @@ function CreateOnlineClass() {
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-      toast.error('Unsupported video type');
+    if (!isAllowedFileType(file, ALLOWED_VIDEO_TYPES, ALLOWED_VIDEO_EXTENSIONS)) {
+      toast.error('Unsupported video type. Allowed formats: MP4, MOV, WEBM, MKV.');
       return;
     }
 
@@ -275,8 +291,14 @@ function CreateOnlineClass() {
         router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
+        const serverMessage = error.response?.data?.message;
+        const normalizedServerMessage = serverMessage?.toLowerCase?.() || '';
+        if (normalizedServerMessage.includes('invalid file type')) {
+          toast.error('Invalid file type. Please use JPG/PNG/WEBP images and MP4/MOV/WEBM/MKV videos.');
+          return;
+        }
         toast.error(
-          error.response?.data?.message ||
+          serverMessage ||
           error.message ||
           'Upload failed. Please try again.'
         );
@@ -615,7 +637,10 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept={ALLOWED_VIDEO_TYPES.join(',')}
+                              accept={[
+                                ...ALLOWED_VIDEO_TYPES,
+                                ...ALLOWED_VIDEO_EXTENSIONS,
+                              ].join(',')}
                               onChange={handleVideoUpload}
                               className="hidden"
                             />
