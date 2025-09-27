@@ -13,16 +13,13 @@ exports.verifyByCode = catchAsync(async (req, res) => {
 
   const query = db("certificates")
     .leftJoin("users", "users.id", "certificates.user_id")
-    .leftJoin("tutorials", "tutorials.id", "certificates.tutorial_id");
-
-  applyTemplateJoin(query);
-
-  const cert = await query
+    .leftJoin("tutorials", "tutorials.id", "certificates.tutorial_id")
+    .leftJoin("certificate_templates as ct", "ct.id", "certificates.template_id")
     .select(
       "certificates.*",
       "users.full_name as user_name",
       "tutorials.title as tutorial_title",
-      ...TEMPLATE_SELECT_FIELDS
+      db.raw("row_to_json(ct) as template")
     )
     .where("certificates.certificate_code", code)
     .first();

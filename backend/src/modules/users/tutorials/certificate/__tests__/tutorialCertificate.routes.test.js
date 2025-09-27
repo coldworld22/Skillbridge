@@ -55,13 +55,13 @@ describe("generate certificate route", () => {
 
     const res = await request(app)
       .post(`/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`)
-      .set('x-certificate-template-id', 'tmpl1');
+      .send({ templateId: "tpl-123" });
 
     expect(res.statusCode).toBe(200);
     expect(service.issueCertificate).toHaveBeenCalledWith({
-      userId: 'user1',
+      userId: "user1",
       tutorialId: TUTORIAL_ID,
-      templateId: 'tmpl1',
+      templateId: "tpl-123",
     });
   });
 });

@@ -2,10 +2,7 @@
 // Instructor Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
-import {
-  normalizeCertificate,
-  normalizeCertificates,
-} from "@/services/certificates/transformers";
+import { toSnakeCase } from "@/utils/case";
 
 export const fetchCertificates = async () => {
   const { data } = await api.get("/certificates/instructor");
@@ -22,8 +19,8 @@ export const deleteCertificate = async (id) => {
 };
 
 export const issueCertificate = async (payload) => {
-  const { data } = await api.post("/certificates/instructor", payload);
-  return normalizeCertificate(data?.data);
+  const { data } = await api.post("/certificates/instructor", toSnakeCase(payload));
+  return data?.data;
 };
 
 export const downloadCertificate = async (id) => {

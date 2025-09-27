@@ -1,10 +1,7 @@
 const db = require("../../../../config/database");
 const { v4: uuidv4 } = require("uuid");
-const {
-  TEMPLATE_SELECT_FIELDS,
-  applyTemplateJoin,
-  formatCertificateRow,
-} = require("../../../certificates/certificate.utils");
+const { resolveTemplateId } = require("../../../certificateTemplates/certificateTemplates.service");
+
 
 // Generate a unique certificate code
 const generateCode = () => {
@@ -74,10 +71,7 @@ const resolveTemplateId = async (templateId) => {
 
 // Create a new certificate
 const issueCertificate = async ({ userId, tutorialId, templateId = null }) => {
-  const resolvedTemplateId =
-    templateId != null
-      ? templateId
-      : await certificateTemplatesService.getActiveTemplateId();
+  const resolvedTemplateId = await resolveTemplateId(templateId);
 
   const newCert = {
     id: uuidv4(),

@@ -1,39 +1,45 @@
 const db = require("../../config/database");
 
-exports.getAll = async () => {
+const getAll = async () => {
   return db("certificate_templates").select("*").orderBy("created_at", "desc");
 };
 
-exports.getActiveTemplate = async () => {
-  return db("certificate_templates")
-    .where({ active: true })
-    .orderBy([
-      { column: "updated_at", order: "desc" },
-      { column: "created_at", order: "desc" },
-    ])
-    .first();
-};
-
-exports.getById = async (id) => {
+const getById = async (id) => {
+  if (!id) return null;
   return db("certificate_templates").where({ id }).first();
 };
 
-exports.create = async (data) => {
-  const payload = { ...data };
-  if (payload.sample_data == null) {
-    payload.sample_data = {};
+const getDefaultTemplate = async () => {
+  const activeTemplate = await db("certificate_templates")
+    .where({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
+
+  if (activeTemplate) {
+    return activeTemplate;
   }
-  const [row] = await db("certificate_templates")
-    .insert(payload)
-    .returning("*");
+
+  return db("certificate_templates")
+    .orderBy("updated_at", "desc")
+    .first();
+};
+
+const resolveTemplateId = async (templateId) => {
+  const provided = await getById(templateId);
+  if (provided) {
+    return provided.id;
+  }
+
+  const fallback = await getDefaultTemplate();
+  return fallback ? fallback.id : null;
+};
+
+const create = async (data) => {
+  const [row] = await db("certificate_templates").insert(data).returning("*");
   return row;
 };
 
-exports.update = async (id, data) => {
-  const payload = { ...data };
-  if (payload.sample_data == null) {
-    payload.sample_data = {};
-  }
+const update = async (id, data) => {
   const rows = await db("certificate_templates")
     .where({ id })
     .update(payload)
@@ -42,27 +48,11 @@ exports.update = async (id, data) => {
   return rows[0];
 };
 
-exports.remove = async (id) => {
+const remove = async (id) => {
   const deleted = await db("certificate_templates").where({ id }).del();
   return deleted;
 };
-
-exports.getActiveTemplateId = async () => {
-  const activeTemplate = await db("certificate_templates")
-    .where({ active: true })
-    .orderBy("updated_at", "desc")
-    .first();
-
-  if (activeTemplate) return activeTemplate.id;
-
-  const fallbackTemplate = await db("certificate_templates")
-    .orderBy("created_at", "desc")
-    .first();
-
-  return fallbackTemplate ? fallbackTemplate.id : null;
-};
-
-exports.toggleStatus = async (id) => {
+const toggleStatus = async (id) => {
   const [row] = await db("certificate_templates")
     .where({ id })
     .update({ active: db.raw("NOT active") })
@@ -70,8 +60,8 @@ exports.toggleStatus = async (id) => {
   return row || null;
 };
 
-exports.duplicate = async (id) => {
-  const template = await exports.getById(id);
+const duplicate = async (id) => {
+  const template = await getById(id);
   if (!template) return null;
   const newTemplate = { ...template };
   delete newTemplate.id;
@@ -84,75 +74,14 @@ exports.duplicate = async (id) => {
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
 };
-
-const buildFallbackPreview = (template) => {
-  const now = new Date();
-  const safeId = template?.id ? template.id : `preview-${now.getTime()}`;
-  const baseCourseName = template?.name ? `${template.name} Course` : "Sample Course";
-  const safePlatform = process.env.APP_NAME || "SkillBridge";
-
-  return {
-    id: safeId,
-    studentName: "Sample Student",
-    courseName: baseCourseName,
-    issueDate: now.toISOString(),
-    instructor: "Sample Instructor",
-    platformName: safePlatform,
-    grade: "A+",
-    certificateCode: `PREVIEW-${String(safeId).slice(0, 8).toUpperCase()}`,
-  };
-};
-
-exports.getPreview = async (id) => {
-  const template = await exports.getById(id);
-  if (!template) return null;
-
-  const certificate = await db("certificates as c")
-    .leftJoin("users as student", "c.user_id", "student.id")
-    .leftJoin("tutorials as tut", "c.tutorial_id", "tut.id")
-    .leftJoin("online_classes as cls", "c.class_id", "cls.id")
-    .leftJoin("users as tut_instructor", "tut.instructor_id", "tut_instructor.id")
-    .leftJoin("users as cls_instructor", "cls.instructor_id", "cls_instructor.id")
-    .select(
-      "c.id as certificate_id",
-      "c.certificate_code",
-      "c.created_at",
-      "student.full_name as student_name",
-      "tut.title as tutorial_title",
-      "cls.title as class_title",
-      "tut_instructor.full_name as tutorial_instructor_name",
-      "cls_instructor.full_name as class_instructor_name"
-    )
-    .where("c.template_id", id)
-    .orderBy("c.created_at", "desc")
-    .first();
-
-  if (!certificate) {
-    return buildFallbackPreview(template);
-  }
-
-  const issueDate = certificate.created_at instanceof Date
-    ? certificate.created_at.toISOString()
-    : new Date(certificate.created_at || Date.now()).toISOString();
-
-  const platformName = process.env.APP_NAME || "SkillBridge";
-
-  return {
-    id: certificate.certificate_id,
-    studentName: certificate.student_name || "Sample Student",
-    courseName:
-      certificate.tutorial_title ||
-      certificate.class_title ||
-      (template.name ? `${template.name} Course` : "Sample Course"),
-    issueDate,
-    instructor:
-      certificate.tutorial_instructor_name ||
-      certificate.class_instructor_name ||
-      "Sample Instructor",
-    platformName,
-    grade: "A+",
-    certificateCode:
-      certificate.certificate_code ||
-      `PREVIEW-${String(certificate.certificate_id).slice(0, 8).toUpperCase()}`,
-  };
+module.exports = {
+  getAll,
+  getById,
+  getDefaultTemplate,
+  resolveTemplateId,
+  create,
+  update,
+  remove,
+  toggleStatus,
+  duplicate,
 };
