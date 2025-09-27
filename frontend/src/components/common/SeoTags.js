@@ -78,16 +78,11 @@ export default function SeoTags() {
     ? `${robotsBase ? 'noindex' : 'index'},${robotsFollow ? 'nofollow' : 'follow'}`
     : null;
 
-  const allowedSchemaFields = ['@context', '@type', 'name', 'url', 'logo', 'sameAs'];
   let sanitizedJsonSchema;
   if (effectiveSettings.jsonSchema) {
     try {
       const parsed = JSON.parse(effectiveSettings.jsonSchema);
-      if (
-        typeof parsed === 'object' &&
-        parsed !== null &&
-        Object.keys(parsed).every((key) => allowedSchemaFields.includes(key))
-      ) {
+      if (parsed && typeof parsed === 'object') {
         sanitizedJsonSchema = JSON.stringify(parsed)
           .replace(/</g, '\\u003c')
           .replace(/>/g, '\\u003e')
