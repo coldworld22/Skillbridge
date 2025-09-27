@@ -11,7 +11,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 
 check_prerequisites() {
+  local prereq_script="$REPO_ROOT/scripts/check_prereqs.sh"
+  local payload=""
+  local status=0
+
+  if [[ -x "$prereq_script" ]]; then
+    set +e
+    payload=$("$prereq_script")
+    status=$?
+    set -e
+    if command -v node >/dev/null 2>&1; then
+      print_prereq_report "$payload"
+    else
+      printf '%s\n' "$payload"
+    fi
+    return "$status"
+  fi
+
   local missing=()
+  local result=0
 
   for tool in node npm; do
     if ! command -v "$tool" >/dev/null 2>&1; then
@@ -22,26 +40,43 @@ check_prerequisites() {
   if (( ${#missing[@]} > 0 )); then
     echo "Missing required command(s): ${missing[*]}" >&2
     echo "Install the missing tools and re-run the installer." >&2
-    exit 1
+    result=1
   fi
 
-  local node_version
-  node_version=$(node -v 2>/dev/null | sed 's/^v//')
-  if [[ -z "$node_version" ]]; then
-    echo "Unable to determine Node.js version." >&2
-    exit 1
+  if command -v node >/dev/null 2>&1; then
+    local node_version
+    node_version=$(node -v 2>/dev/null | sed 's/^v//')
+    if [[ -z "$node_version" ]]; then
+      echo "Unable to determine Node.js version." >&2
+      result=1
+    else
+      local node_major=${node_version%%.*}
+      if [[ ! "$node_major" =~ ^[0-9]+$ ]]; then
+        echo "Unrecognized Node.js version string: $node_version" >&2
+        result=1
+      elif (( node_major < 18 )); then
+        echo "SkillBridge requires Node.js 18 or later (found $node_version)." >&2
+        result=1
+      fi
+    fi
   fi
 
-  local node_major=${node_version%%.*}
-  if [[ ! "$node_major" =~ ^[0-9]+$ ]]; then
-    echo "Unrecognized Node.js version string: $node_version" >&2
-    exit 1
+  return "$result"
+}
+
+is_truthy() {
+  local value="${1:-}"
+  if [[ -z "$value" ]]; then
+    return 1
   fi
 
-  if (( node_major < 18 )); then
-    echo "SkillBridge requires Node.js 18 or later (found $node_version)." >&2
-    exit 1
-  fi
+  case "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      return 0
+      ;;
+  esac
+
+  return 1
 }
 
 ensure_env_file() {
@@ -99,6 +134,30 @@ ensure_node_version() {
 
   if [[ -z "$major" || ! "$major" =~ ^[0-9]+$ || "$major" -lt 18 ]]; then
     echo "Node.js 18 or newer is required. Detected ${version:-unknown}." >&2
+    exit 1
+  fi
+}
+
+ensure_backend_upload_dir() {
+  local uploads_dir="$REPO_ROOT/backend/uploads/app"
+
+  if [[ ! -d "$uploads_dir" ]]; then
+    echo "Creating backend uploads directory at $uploads_dir"
+    mkdir -p "$uploads_dir"
+  fi
+}
+
+install_node_dependencies() {
+  local target_dir=${1:-}
+
+  if [[ -z "$target_dir" ]]; then
+    echo "install_node_dependencies requires a target path." >&2
+    exit 1
+  fi
+
+  echo "Installing Node.js dependencies in $target_dir"
+  if ! npm --prefix "$target_dir" install; then
+    echo "Failed to install Node.js dependencies in $target_dir." >&2
     exit 1
   fi
 }
@@ -236,6 +295,16 @@ ensure_backend_upload_dir() {
 
 CLI_MODE=${1:-}
 CLI_DOMAIN=${2:-}
+
+if ! check_prerequisites; then
+  if ! is_truthy "${ALLOW_PREREQ_FAILURES:-}"; then
+    echo "Aborting installation due to failed prerequisite checks." >&2
+    echo "Resolve the issues above or set ALLOW_PREREQ_FAILURES=true to override." >&2
+    exit 1
+  fi
+
+  echo "Continuing despite prerequisite failures because ALLOW_PREREQ_FAILURES=${ALLOW_PREREQ_FAILURES:-true}." >&2
+fi
 
 ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
 ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
@@ -390,7 +459,6 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
   require_env_var "$required"
 done
 
-install_backend_dependencies
 
 export \
   ADMIN_EMAIL \
