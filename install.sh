@@ -226,6 +226,14 @@ install_backend_dependencies() {
   fi
 }
 
+ensure_backend_upload_dir() {
+  local uploads_dir="$REPO_ROOT/backend/uploads/app"
+  if [[ ! -d "$uploads_dir" ]]; then
+    echo "Creating backend uploads directory at $uploads_dir"
+    mkdir -p "$uploads_dir"
+  fi
+}
+
 CLI_MODE=${1:-}
 CLI_DOMAIN=${2:-}
 
@@ -235,12 +243,6 @@ ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend
 ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
 
 load_env_file "$REPO_ROOT/.env"
-
-UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
-if [[ ! -d "$UPLOADS_DIR" ]]; then
-  echo "Creating backend uploads directory at $UPLOADS_DIR"
-  mkdir -p "$UPLOADS_DIR"
-fi
 
 MODE=${CLI_MODE:-${MODE:-}}
 
@@ -305,7 +307,7 @@ if [[ "$MODE" == "production" ]]; then
 fi
 
 ensure_backend_upload_dir
-install_node_dependencies "$REPO_ROOT/backend"
+install_backend_dependencies
 
 if [[ "$MODE" == "production" ]]; then
   if docker_available; then
