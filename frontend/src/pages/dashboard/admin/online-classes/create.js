@@ -222,15 +222,20 @@ function CreateOnlineClass() {
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
+      const priceValue = Number(formData.price);
       if (formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error(t('complete_lesson_details'));
         return;
       }
       if (
         formData.accessType === 'paid' &&
-        (!formData.price || Number(formData.price) <= 0)
+        (!Number.isFinite(priceValue) || priceValue <= 0)
       ) {
-        toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
+        toast.error(
+          t('invalid_price', {
+            defaultValue: 'Please provide a valid numeric price greater than zero for paid classes.'
+          })
+        );
         return;
       }
       if (!user?.id) {
@@ -259,8 +264,8 @@ function CreateOnlineClass() {
           payload.append('price', '0');
           if (formData.includedPlans.length)
             payload.append('included_plans', JSON.stringify(formData.includedPlans));
-        } else if (formData.price || formData.price === 0) {
-          payload.append('price', Number(formData.price).toFixed(2));
+        } else if (Number.isFinite(priceValue)) {
+          payload.append('price', priceValue.toFixed(2));
         }
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
