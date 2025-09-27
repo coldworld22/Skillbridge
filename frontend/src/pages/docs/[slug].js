@@ -2,13 +2,20 @@ import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import DOMPurify from 'isomorphic-dompurify';
+import cheerio from 'cheerio';
 
 const sanitizeSlug = (value) => value.replace(/\.md$/, '').replace(/[^a-zA-Z0-9-_]/g, '');
 
 const resolveDocLink = (href) => {
   if (!href) {
+    return href;
+  }
+
+  if (href.startsWith('#') || href.startsWith('?')) {
     return href;
   }
 
@@ -18,8 +25,8 @@ const resolveDocLink = (href) => {
 
   const cleaned = href.replace(/^\.\//, '').replace(/^docs\//, '');
 
-  if (cleaned.endsWith('.md')) {
-    return `/docs/${cleaned.replace(/\.md$/, '')}`;
+  if (cleaned.endsWith('.md') || cleaned.endsWith('.html')) {
+    return `/docs/${cleaned.replace(/\.(md|html)$/, '')}`;
   }
 
   if (cleaned.startsWith('/')) {
@@ -63,11 +70,16 @@ export async function getStaticPaths() {
     }
   }
 
-  const paths = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
-    .map((entry) => ({
-      params: { slug: entry.name.replace(/\.md$/, '') },
-    }));
+  const slugs = new Set();
+  entries
+    .filter((entry) => entry.isFile() && (/\.md$/i.test(entry.name) || /\.html$/i.test(entry.name)))
+    .forEach((entry) => {
+      slugs.add(entry.name.replace(/\.(md|html)$/i, ''));
+    });
+
+  const paths = Array.from(slugs).map((slug) => ({
+    params: { slug },
+  }));
 
   return {
     paths,
@@ -85,11 +97,12 @@ export async function getStaticProps({ params }) {
   }
 
   const slug = sanitizeSlug(params.slug);
-  const targetPath = path.join(docsDir, `${slug}.md`);
+  const markdownPath = path.join(docsDir, `${slug}.md`);
+  const htmlPath = path.join(docsDir, `${slug}.html`);
 
   try {
-    const content = await fs.readFile(targetPath, 'utf8');
-    const stats = await fs.stat(targetPath);
+    const content = await fs.readFile(markdownPath, 'utf8');
+    const stats = await fs.stat(markdownPath);
     const match = content.match(/^#\s+(.+)/m);
     const title = match ? match[1].trim() : slug.replace(/[-_]/g, ' ');
 
@@ -99,6 +112,53 @@ export async function getStaticProps({ params }) {
         title,
         content,
         lastUpdated: stats.mtime.toISOString(),
+        format: 'md',
+      },
+      revalidate: 300,
+    };
+  } catch (error) {
+    console.warn(`Markdown version for slug "${slug}" not found:`, error);
+  }
+
+  try {
+    const content = await fs.readFile(htmlPath, 'utf8');
+    const stats = await fs.stat(htmlPath);
+    const $ = cheerio.load(content);
+    const title = $('h1').first().text().trim() || slug.replace(/[-_]/g, ' ');
+
+    $('a[href]').each((_, element) => {
+      const href = $(element).attr('href');
+      const resolved = resolveDocLink(href);
+      if (!resolved) {
+        return;
+      }
+
+      $(element).attr('href', resolved);
+
+      if (resolved.startsWith('/docs/') || resolved.startsWith('/')) {
+        $(element).removeAttr('target');
+        $(element).removeAttr('rel');
+      } else {
+        $(element).attr('target', '_blank');
+        $(element).attr('rel', 'noopener noreferrer');
+      }
+    });
+
+    const normalizedHtml = $('body').length
+      ? $('body').html() || ''
+      : $.root()
+          .children()
+          .toArray()
+          .map((element) => $.html(element))
+          .join('');
+
+    return {
+      props: {
+        slug,
+        title,
+        content: normalizedHtml || '',
+        lastUpdated: stats.mtime.toISOString(),
+        format: 'html',
       },
       revalidate: 300,
     };
@@ -109,7 +169,7 @@ export async function getStaticProps({ params }) {
     };
   }
 }
-export default function DocPage({ title, content, lastUpdated }) {
+export default function DocPage({ title, content, lastUpdated, format }) {
   const formattedUpdated = lastUpdated
     ? new Intl.DateTimeFormat('en', {
         year: 'numeric',
@@ -117,6 +177,14 @@ export default function DocPage({ title, content, lastUpdated }) {
         day: 'numeric',
       }).format(new Date(lastUpdated))
     : null;
+
+  const sanitizedHtml = useMemo(() => {
+    if (format !== 'html' || !content) {
+      return null;
+    }
+
+    return DOMPurify.sanitize(content, { USE_PROFILES: { html: true } });
+  }, [content, format]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-16 px-4 sm:px-6 lg:px-8">
@@ -148,68 +216,72 @@ export default function DocPage({ title, content, lastUpdated }) {
           </div>
 
           <div className="docs-content mt-10 text-base leading-7 text-gray-700 dark:text-gray-200">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a({ href, children, ...props }) {
-                  const resolved = resolveDocLink(href);
+            {format === 'html' ? (
+              <div dangerouslySetInnerHTML={{ __html: sanitizedHtml || '' }} />
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a({ href, children, ...props }) {
+                    const resolved = resolveDocLink(href);
 
-                  if (!resolved) {
-                    return <span {...props}>{children}</span>;
-                  }
+                    if (!resolved) {
+                      return <span {...props}>{children}</span>;
+                    }
 
-                  if (resolved.startsWith('/docs/')) {
+                    if (resolved.startsWith('/docs/')) {
+                      return (
+                        <Link href={resolved} {...props} className="docs-link">
+                          {children}
+                        </Link>
+                      );
+                    }
+
+                    if (resolved.startsWith('/')) {
+                      return (
+                        <Link href={resolved} {...props} className="docs-link">
+                          {children}
+                        </Link>
+                      );
+                    }
+
                     return (
-                      <Link href={resolved} {...props} className="docs-link">
+                      <a
+                        href={resolved}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        {...props}
+                        className="docs-link"
+                      >
                         {children}
-                      </Link>
+                      </a>
                     );
-                  }
-
-                  if (resolved.startsWith('/')) {
+                  },
+                  table({ children }) {
                     return (
-                      <Link href={resolved} {...props} className="docs-link">
-                        {children}
-                      </Link>
+                      <div className="docs-table-wrapper">
+                        <table>{children}</table>
+                      </div>
                     );
-                  }
-
-                  return (
-                    <a
-                      href={resolved}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      {...props}
-                      className="docs-link"
-                    >
-                      {children}
-                    </a>
-                  );
-                },
-                table({ children }) {
-                  return (
-                    <div className="docs-table-wrapper">
-                      <table>{children}</table>
-                    </div>
-                  );
-                },
-                img({ alt, src, ...props }) {
-                  if (!src) {
-                    return null;
-                  }
-                  return (
-                    <img
-                      src={src}
-                      alt={alt}
-                      {...props}
-                      className="docs-image"
-                    />
-                  );
-                },
-              }}
-            >
-              {content}
-            </ReactMarkdown>
+                  },
+                  img({ alt, src, ...props }) {
+                    if (!src) {
+                      return null;
+                    }
+                    return (
+                      <img
+                        src={src}
+                        alt={alt}
+                        {...props}
+                        className="docs-image"
+                      />
+                    );
+                  },
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            )}
           </div>
         </div>
       </div>

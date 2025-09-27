@@ -1,8 +1,11 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import DOMPurify from 'isomorphic-dompurify';
+import cheerio from 'cheerio';
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -61,7 +64,43 @@ function extractSummaryFromContent(content) {
   return '';
 }
 
-export default function DocumentationLandingPage({ docs, installationContent }) {
+function extractMetadataFromHtml(html, slug) {
+  const $ = cheerio.load(html);
+  const title = $('h1').first().text().trim() || slug.replace(/[-_]/g, ' ');
+
+  let summary = '';
+  $('p').each((_, element) => {
+    if (summary) {
+      return false;
+    }
+
+    const text = $(element).text().replace(/\s+/g, ' ').trim();
+    if (text) {
+      summary = text;
+    }
+
+    return undefined;
+  });
+
+  return {
+    title,
+    summary,
+  };
+}
+
+function sanitizeHtmlContent(content) {
+  return DOMPurify.sanitize(content, { USE_PROFILES: { html: true } });
+}
+
+export default function DocumentationLandingPage({ docs, installationContent, installationFormat }) {
+  const sanitizedInstallation = useMemo(() => {
+    if (installationFormat !== 'html' || !installationContent) {
+      return null;
+    }
+
+    return sanitizeHtmlContent(installationContent);
+  }, [installationContent, installationFormat]);
+
   return (
     <>
       <PageHead
@@ -92,12 +131,16 @@ export default function DocumentationLandingPage({ docs, installationContent }) 
 
           {installationContent ? (
             <div className="docs-content mx-auto max-w-none space-y-6 text-left text-gray-100">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{installationContent}</ReactMarkdown>
+              {installationFormat === 'html' ? (
+                <div dangerouslySetInnerHTML={{ __html: sanitizedInstallation }} />
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{installationContent}</ReactMarkdown>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-8 text-center text-gray-300">
-              The installation guide could not be loaded. Please ensure <code>installation.md</code> exists in the
-              <code>docs/</code> directory.
+              The installation guide could not be loaded. Please ensure <code>installation.md</code> or
+              <code>installation.html</code> exists in the <code>docs/</code> directory.
             </div>
           )}
         </div>
@@ -178,7 +221,7 @@ export default function DocumentationLandingPage({ docs, installationContent }) 
                 >
                   <div className="space-y-4">
                     <div className="inline-flex items-center rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-200">
-                      Markdown guide
+                      {doc.format === 'html' ? 'HTML guide' : 'Markdown guide'}
                     </div>
                     <h3 className="text-2xl font-semibold text-white transition group-hover:text-indigo-200">{doc.title}</h3>
                     {doc.summary && <p className="text-sm text-gray-300">{doc.summary}</p>}
@@ -208,20 +251,46 @@ export async function getStaticProps({ locale }) {
   const docsDir = await resolveDocsDirectory();
   let docs = [];
   let installationContent = null;
+  let installationFormat = null;
 
   if (docsDir) {
     try {
       const entries = await fs.readdir(docsDir, { withFileTypes: true });
-      const markdownFiles = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.md'));
+      const docEntries = entries.filter(
+        (entry) => entry.isFile() && (/\.md$/i.test(entry.name) || /\.html$/i.test(entry.name)),
+      );
+
+      const docsBySlug = new Map();
+      for (const entry of docEntries) {
+        const slug = entry.name.replace(/\.(md|html)$/i, '');
+        const ext = entry.name.toLowerCase().endsWith('.md') ? 'md' : 'html';
+        if (!docsBySlug.has(slug)) {
+          docsBySlug.set(slug, {});
+        }
+        docsBySlug.get(slug)[ext] = entry.name;
+      }
 
       docs = await Promise.all(
-        markdownFiles.map(async (entry) => {
-          const slug = entry.name.replace(/\.md$/, '');
-          const filePath = path.join(docsDir, entry.name);
+        Array.from(docsBySlug.entries()).map(async ([slug, files]) => {
+          const targetName = files.md || files.html;
+          const format = files.md ? 'md' : 'html';
+          const filePath = path.join(docsDir, targetName);
           const content = await fs.readFile(filePath, 'utf8');
           const stats = await fs.stat(filePath);
-          const title = extractTitleFromContent(content, slug.replace(/[-_]/g, ' '));
-          const summary = extractSummaryFromContent(content);
+          const fallbackTitle = slug.replace(/[-_]/g, ' ');
+
+          let title = fallbackTitle;
+          let summary = '';
+
+          if (format === 'md') {
+            title = extractTitleFromContent(content, fallbackTitle);
+            summary = extractSummaryFromContent(content);
+          } else {
+            const metadata = extractMetadataFromHtml(content, slug);
+            title = metadata.title;
+            summary = metadata.summary;
+          }
+
           const lastUpdated = new Intl.DateTimeFormat('en', {
             year: 'numeric',
             month: 'short',
@@ -233,6 +302,7 @@ export async function getStaticProps({ locale }) {
             title,
             summary,
             lastUpdated,
+            format,
           };
         }),
       );
@@ -243,10 +313,17 @@ export async function getStaticProps({ locale }) {
     }
 
     try {
-      const installationPath = path.join(docsDir, 'installation.md');
-      installationContent = await fs.readFile(installationPath, 'utf8');
+      const installationMdPath = path.join(docsDir, 'installation.md');
+      installationContent = await fs.readFile(installationMdPath, 'utf8');
+      installationFormat = 'md';
     } catch (error) {
-      console.warn('Installation guide not found or failed to load:', error);
+      try {
+        const installationHtmlPath = path.join(docsDir, 'installation.html');
+        installationContent = await fs.readFile(installationHtmlPath, 'utf8');
+        installationFormat = 'html';
+      } catch (htmlError) {
+        console.warn('Installation guide not found or failed to load:', error, htmlError);
+      }
     }
   }
 
@@ -254,6 +331,7 @@ export async function getStaticProps({ locale }) {
     props: {
       docs,
       installationContent,
+      installationFormat,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
     revalidate: 300,
