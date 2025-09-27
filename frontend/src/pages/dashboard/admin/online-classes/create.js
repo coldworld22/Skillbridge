@@ -347,6 +347,23 @@ function CreateOnlineClass() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const parseDate = (value) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const startDateValue = parseDate(formData.startDate);
+    const endDateValue = parseDate(formData.endDate);
+
+    if (startDateValue && endDateValue && endDateValue < startDateValue) {
+      toast.error(
+        t('end_date_after_start', {
+          defaultValue: 'End date must be after the start date.',
+        })
+      );
+      return;
+    }
     if (currentStep === 1) {
       if (!formData.title || !formData.startDate) {
         toast.error(t('fill_required_fields'));

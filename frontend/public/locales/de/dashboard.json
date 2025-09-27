@@ -145,6 +145,7 @@
   "image_preview_failed": "Failed to load image preview.",
   "video_size_exceeded": "Video must be less than 100MB",
   "fill_required_fields": "Please fill in all required fields",
+  "end_date_after_start": "Das Enddatum muss nach dem Startdatum liegen.",
   "complete_lesson_details": "Please complete all lesson details",
   "add_at_least_one_lesson": "Bitte fügen Sie vor dem Absenden mindestens eine Lektion hinzu.",
   "user_info_unavailable": "User information unavailable",

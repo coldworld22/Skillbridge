@@ -145,6 +145,7 @@
   "image_preview_failed": "Impossibile caricare l'anteprima dell'immagine.",
   "video_size_exceeded": "Il video deve essere inferiore a 100 MB",
   "fill_required_fields": "Si prega di compilare tutti i campi richiesti",
+  "end_date_after_start": "La data di fine deve essere successiva alla data di inizio.",
   "complete_lesson_details": "Si prega di completare tutti i dettagli della lezione",
   "add_at_least_one_lesson": "Aggiungi almeno una lezione prima di inviare.",
   "user_info_unavailable": "Informazioni sull'utente non disponibile",

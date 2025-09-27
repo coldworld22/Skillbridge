@@ -145,6 +145,7 @@
   "image_preview_failed": "छवि पूर्वावलोकन लोड करने में विफल।",
   "video_size_exceeded": "वीडियो 100mb से कम होना चाहिए",
   "fill_required_fields": "कृपया सभी अपेक्षित फ़ील्ड को भरें",
+  "end_date_after_start": "समापन तिथि प्रारंभ तिथि के बाद होनी चाहिए।",
   "complete_lesson_details": "कृपया सभी पाठ विवरण पूरा करें",
   "add_at_least_one_lesson": "सबमिट करने से पहले कम से कम एक पाठ जोड़ें।",
   "user_info_unavailable": "उपयोगकर्ता जानकारी अनुपलब्ध है",
