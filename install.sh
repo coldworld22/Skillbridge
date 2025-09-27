@@ -287,12 +287,47 @@ install_backend_dependencies() {
 
 ensure_backend_upload_dir() {
   local uploads_dir="$REPO_ROOT/backend/uploads/app"
-  if [[ ! -d "$uploads_dir" ]]; then
-    echo "Creating backend uploads directory at $uploads_dir"
-    mkdir -p "$uploads_dir"
+
+  if [[ -d "$uploads_dir" ]]; then
+    return 0
+  fi
+
+  echo "Creating backend uploads directory at $uploads_dir"
+  if ! mkdir -p "$uploads_dir"; then
+    echo "Failed to create backend uploads directory at $uploads_dir" >&2
+    exit 1
   fi
 }
 
+install_node_dependencies() {
+  local target_dir=${1:-}
+
+  if [[ -z "$target_dir" ]]; then
+    echo "install_node_dependencies requires a target directory argument." >&2
+    exit 1
+  fi
+
+  if [[ "${NODE_DEPS_INSTALLED:-false}" == "true" ]]; then
+    return 0
+  fi
+
+  case "$target_dir" in
+    "$REPO_ROOT/backend")
+      install_backend_dependencies
+      ;;
+    *)
+      echo "Installing Node dependencies in $target_dir..."
+      if ! npm --prefix "$target_dir" install; then
+        echo "Failed to install Node dependencies in $target_dir." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
+  NODE_DEPS_INSTALLED=true
+}
+
+NODE_DEPS_INSTALLED=false
 CLI_MODE=${1:-}
 CLI_DOMAIN=${2:-}
 
@@ -313,6 +348,7 @@ ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.e
 
 load_env_file "$REPO_ROOT/.env"
 
+ensure_backend_upload_dir
 MODE=${CLI_MODE:-${MODE:-}}
 
 load_env_file "$REPO_ROOT/backend/.env"
@@ -375,8 +411,7 @@ if [[ "$MODE" == "production" ]]; then
   load_env_file "$REPO_ROOT/backend/.env.production"
 fi
 
-ensure_backend_upload_dir
-install_backend_dependencies
+install_node_dependencies "$REPO_ROOT/backend"
 
 if [[ "$MODE" == "production" ]]; then
   if docker_available; then
@@ -458,7 +493,7 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
 
   require_env_var "$required"
 done
-
+install_node_dependencies "$REPO_ROOT/backend"
 
 export \
   ADMIN_EMAIL \
