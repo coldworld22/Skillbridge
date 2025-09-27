@@ -1,6 +1,7 @@
 const logger = require('../../../utils/logger.js');
 const redisClient = require("../../../utils/redisClient");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const userModel = require("../../users/user.model");
@@ -43,6 +44,43 @@ const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
 const OTP_ATTEMPT_PREFIX = "otpAttempt:";
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+
+// Bcrypt only hashes the first 72 bytes of input which can silently truncate
+// long refresh tokens. To avoid rejecting valid tokens we migrate to a SHA-256
+// based hash while still accepting legacy bcrypt hashes stored in the
+// database. Once the old tokens expire naturally we can remove the fallback.
+const BCRYPT_HASH_PREFIXES = ["$2a$", "$2b$", "$2y$"];
+
+const hashRefreshToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+async function compareRefreshToken(token, storedHash) {
+  if (!storedHash) return false;
+
+  if (BCRYPT_HASH_PREFIXES.some((prefix) => storedHash.startsWith(prefix))) {
+    try {
+      return await bcrypt.compare(token, storedHash);
+    } catch (err) {
+      logger.warn("Failed to compare legacy bcrypt refresh token hash", err);
+      return false;
+    }
+  }
+
+  const hashedToken = hashRefreshToken(token);
+  if (storedHash.length !== hashedToken.length) return false;
+
+  try {
+    const storedBuffer = Buffer.from(storedHash, "hex");
+    const tokenBuffer = Buffer.from(hashedToken, "hex");
+
+    if (storedBuffer.length !== tokenBuffer.length) return false;
+
+    return crypto.timingSafeEqual(tokenBuffer, storedBuffer);
+  } catch (err) {
+    logger.warn("Failed to compare refresh token hash", err);
+    return false;
+  }
+}
 
 async function getActivePasswordResetRequests(userId) {
   return db("password_resets")
@@ -374,7 +412,7 @@ async function issueRefreshToken(userId, roles = []) {
     { id: userId, role: primaryRole, roles: roleArr },
     jti
   );
-  const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
+  const tokenHash = hashRefreshToken(token);
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await db("refresh_tokens").insert({
     id: jti,
@@ -399,7 +437,7 @@ exports.verifyRefreshToken = async (token) => {
   if (!row || row.revoked_at || row.expires_at < new Date()) {
     throw new Error("Invalid refresh token");
   }
-  const match = await bcrypt.compare(token, row.token_hash);
+  const match = await compareRefreshToken(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
   const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
   const primaryRole = resolvePrimaryRole(roles, decoded.role);
