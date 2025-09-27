@@ -141,6 +141,7 @@ describe('Class enrollment routes', () => {
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
     expect(creditInstructorSubscription).toHaveBeenCalledWith(
       'class',
       'abc',
