@@ -385,6 +385,22 @@ function CreateOnlineClass() {
         );
         return;
       }
+      const startDateValue = formData.startDate ? new Date(formData.startDate) : null;
+      const endDateValue = formData.endDate ? new Date(formData.endDate) : null;
+      if (
+        endDateValue &&
+        startDateValue &&
+        !Number.isNaN(startDateValue.getTime()) &&
+        !Number.isNaN(endDateValue.getTime()) &&
+        endDateValue < startDateValue
+      ) {
+        toast.error(
+          t('end_date_after_start', {
+            defaultValue: 'End date must be after the start date.',
+          })
+        );
+        return;
+      }
       try {
         setIsSubmitting(true);
         setIsServerUploading(true);
