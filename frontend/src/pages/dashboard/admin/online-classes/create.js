@@ -131,18 +131,27 @@ function CreateOnlineClass() {
     };
   }, [demoPreview]);
 
-  const filteredTagSuggestions = useMemo(
-    () =>
-      allTags.filter(
-        (t) =>
-          tagInput &&
-          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.some(
-            (selected) => selected.toLowerCase() === t.name.toLowerCase()
-          )
-      ),
-    [allTags, tagInput, selectedTags]
-  );
+  const filteredTagSuggestions = useMemo(() => {
+    if (!tagInput) {
+      return [];
+    }
+
+    const lowerInput = tagInput.toLowerCase();
+
+    return allTags.filter((t) => {
+      const name = typeof t?.name === 'string' ? t.name.trim() : '';
+      if (!name) {
+        return false;
+      }
+
+      const lowerName = name.toLowerCase();
+
+      return (
+        lowerName.includes(lowerInput) &&
+        !selectedTags.some((selected) => selected.toLowerCase() === lowerName)
+      );
+    });
+  }, [allTags, tagInput, selectedTags]);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -298,8 +307,15 @@ function CreateOnlineClass() {
     }));
   };
 
-  const addTag = (tag) => {
-    const normalized = tag.trim();
+  const addTag = (tagLike) => {
+    const name =
+      typeof tagLike === 'string'
+        ? tagLike
+        : typeof tagLike?.name === 'string'
+          ? tagLike.name
+          : '';
+
+    const normalized = name.trim();
     if (!normalized) return;
 
     const alreadySelected = selectedTags.some(
