@@ -113,6 +113,56 @@ export default function DocumentationLandingPage({ docs, installationContent }) 
             </p>
           </div>
 
+          <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-8">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-2xl font-semibold text-white">Getting Started</h3>
+                <p className="text-gray-300">
+                  Install SkillBridge from the CodeCanyon ZIP with these quick steps. The summary below mirrors the
+                  installation guide so you can launch the stack without reading the entire document first.
+                </p>
+              </div>
+              <ol className="space-y-4 text-gray-200">
+                <li>
+                  <span className="font-semibold text-indigo-200">1. Upload the archive.</span> Move the purchased
+                  ZIP into the target directory locally or transfer it to your server with <code>scp</code> or another
+                  file copy tool.
+                </li>
+                <li>
+                  <span className="font-semibold text-indigo-200">2. Extract it to <code>Skillbridge/</code>.</span> Unzip
+                  the package, ensure the project root is named <code>Skillbridge</code>, and change into that directory so
+                  scripts such as <code>install.sh</code> sit at the top level.
+                </li>
+                <li>
+                  <span className="font-semibold text-indigo-200">3. Copy the environment templates.</span> Duplicate the
+                  provided <code>.env.example</code> files: <code>cp .env.example .env</code>,
+                  <code>cp backend/.env.example backend/.env</code>, and the remaining frontend/backend variants that ship in
+                  the archive.
+                </li>
+                <li>
+                  <span className="font-semibold text-indigo-200">4. Run the installer.</span> From the project root,
+                  execute <code>./install.sh</code> to configure dependencies, migrations, and the initial admin account.
+                </li>
+                <li>
+                  <span className="font-semibold text-indigo-200">5. Start Docker.</span> Launch the stack with
+                  <code>docker compose up --build</code> for local work or add <code>-d</code> to run in the background on a
+                  server.
+                </li>
+              </ol>
+              <div>
+                <Link
+                  href="/docs/installation"
+                  className="inline-flex items-center gap-2 rounded-full bg-indigo-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+                >
+                  Read the full installation guide
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+
           {docs.length === 0 ? (
             <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-8 text-center text-gray-300">
               No documentation files were found. Add Markdown files to the <code>docs/</code> directory to populate this
