@@ -192,6 +192,8 @@ npm --prefix frontend install
 
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
+For an offline-friendly overview open [`docs/index.html`](docs/index.html) in a browser. It links to the HTML and Markdown guides bundled in the repository ZIP.
+
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.
 When deploying, ensure the backend's exported `clearServerCache` utility remains available so the admin **Clear Cache** button can purge server-side caches; otherwise `/api/cache/clear` will return a 503 status.
