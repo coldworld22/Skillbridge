@@ -18,7 +18,39 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
     grade: "A+",
   };
 
-  const data = { ...defaultData, ...(mockData || {}) };
+  const sampleData = template.sample_data || {};
+  const normalizedSampleData = {
+    id:
+      sampleData.id ??
+      sampleData.sample_id ??
+      sampleData.serial_number ??
+      sampleData.serial ??
+      undefined,
+    studentName:
+      sampleData.student_name ?? sampleData.studentName ?? undefined,
+    courseName:
+      sampleData.course_name ?? sampleData.courseName ?? undefined,
+    issueDate:
+      sampleData.issue_date ?? sampleData.issueDate ?? undefined,
+    instructor:
+      sampleData.instructor ??
+      sampleData.instructor_name ??
+      sampleData.teacher ??
+      undefined,
+    platformName:
+      sampleData.platform_name ?? sampleData.platformName ?? undefined,
+    grade: sampleData.grade ?? sampleData.final_grade ?? undefined,
+  };
+
+  const sanitizedSampleData = Object.fromEntries(
+    Object.entries(normalizedSampleData).filter(([, value]) => value !== undefined && value !== null)
+  );
+
+  const data = {
+    ...defaultData,
+    ...sanitizedSampleData,
+    ...(mockData || {}),
+  };
 
   const {
     border_color,
