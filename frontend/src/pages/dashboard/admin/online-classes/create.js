@@ -130,7 +130,6 @@ function CreateOnlineClass() {
       toast.error(t('image_size_exceeded'));
       return;
     }
-
     setImageUploading(true);
     setUploadProgress(0);
 
@@ -232,7 +231,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -301,7 +300,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };
