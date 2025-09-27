@@ -32,6 +32,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import { getPendingLessonEntries } from '@/utils/lessonSubmission';
 import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '@/../next-i18next.config.js';
 
@@ -62,7 +63,8 @@ function CreateOnlineClass() {
     title: '',
     duration: '',
     resource: null,
-    start_time: ''
+    start_time: '',
+    status: 'pending'
   });
 
   const [formData, setFormData] = useState({
@@ -94,8 +96,6 @@ function CreateOnlineClass() {
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
   const [createdClass, setCreatedClass] = useState(null);
-  const [lessonResults, setLessonResults] = useState({});
-  const [successfulLessons, setSuccessfulLessons] = useState({});
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
   const [instructorSearch, setInstructorSearch] = useState('');
@@ -297,9 +297,10 @@ function CreateOnlineClass() {
   };
 
   const handleAddLesson = () => {
+    const newLesson = createEmptyLesson();
     setFormData((prev) => ({
       ...prev,
-      lessons: [...prev.lessons, createEmptyLesson()],
+      lessons: [...prev.lessons, newLesson],
     }));
   };
 
@@ -309,24 +310,6 @@ function CreateOnlineClass() {
       ...prev,
       lessons: prev.lessons.filter((_, idx) => idx !== index),
     }));
-    if (lessonToRemove?.id) {
-      setSuccessfulLessons((prev) => {
-        if (!prev[lessonToRemove.id]) {
-          return prev;
-        }
-        const updated = { ...prev };
-        delete updated[lessonToRemove.id];
-        return updated;
-      });
-      setLessonResults((prev) => {
-        if (!prev[lessonToRemove.id]) {
-          return prev;
-        }
-        const updated = { ...prev };
-        delete updated[lessonToRemove.id];
-        return updated;
-      });
-    }
     setFailedLessonIndices((prev) =>
       prev
         .filter((idx) => idx !== index)
@@ -465,36 +448,57 @@ function CreateOnlineClass() {
         setIsServerUploading(true);
         setUploadProgress(0);
         setFailedLessonIndices([]);
+        const finalizeCreation = (classRecord) => {
+          const events = [
+            {
+              id: `class-${classRecord.id}`,
+              title: `Class: ${classRecord.title}`,
+              start: toDateTimeISO(formData.startDate || classRecord.start_date),
+            },
+            ...formData.lessons.map((l) => ({
+              id: `lesson-${classRecord.id}-${l.id}`,
+              title: `Lesson: ${l.title}`,
+              start: toDateTimeISO(l.start_time),
+            })),
+          ];
+          addEvents(events);
 
-        const payload = new FormData();
-        payload.append('instructor_id', instructorId);
-        payload.append('title', formData.title);
-        if (formData.description) payload.append('description', formData.description);
-        if (formData.level) payload.append('level', formData.level);
-        if (formData.language) payload.append('language', formData.language);
-        if (formData.startDate)
-          payload.append('start_date', toDateTimeISO(formData.startDate));
-        if (formData.endDate)
-          payload.append('end_date', toDateTimeISO(formData.endDate));
+          toast.success(t('class_created'));
+          fetchNotifications();
+          fetchMessages();
+          router.push('/dashboard/admin/online-classes');
+        };
 
-        payload.append('access_type', formData.accessType);
-        if (formData.accessType === 'free') {
-          payload.append('price', '0');
-          if (formData.includedPlans.length)
-            payload.append('included_plans', JSON.stringify(formData.includedPlans));
-        } else if (Number.isFinite(priceValue)) {
-          payload.append('price', priceValue.toFixed(2));
-        }
-        if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
-        payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
-        payload.append('status', formData.isApproved ? 'published' : 'draft');
-        if (formData.category) payload.append('category_id', formData.category);
-        if (formData.image) payload.append('cover_image', formData.image);
-        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+        let classRecord = createdClass;
 
-        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
-        let activeClass = createdClass;
-        if (!activeClass?.id) {
+        if (!classRecord?.id) {
+          const payload = new FormData();
+          payload.append('instructor_id', instructorId);
+          payload.append('title', formData.title);
+          if (formData.description) payload.append('description', formData.description);
+          if (formData.level) payload.append('level', formData.level);
+          if (formData.language) payload.append('language', formData.language);
+          if (formData.startDate)
+            payload.append('start_date', toDateTimeISO(formData.startDate));
+          if (formData.endDate)
+            payload.append('end_date', toDateTimeISO(formData.endDate));
+
+          payload.append('access_type', formData.accessType);
+          if (formData.accessType === 'free') {
+            payload.append('price', '0');
+            if (formData.includedPlans.length)
+              payload.append('included_plans', JSON.stringify(formData.includedPlans));
+          } else if (Number.isFinite(priceValue)) {
+            payload.append('price', priceValue.toFixed(2));
+          }
+          if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
+          payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
+          payload.append('status', formData.isApproved ? 'published' : 'draft');
+          if (formData.category) payload.append('category_id', formData.category);
+          if (formData.image) payload.append('cover_image', formData.image);
+          if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+
+          if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
           const newClass = await createAdminClass(payload, (e) => {
             if (!e?.total) return;
             const percent = Math.round((e.loaded * 100) / e.total);
@@ -513,60 +517,60 @@ function CreateOnlineClass() {
           }
 
           setCreatedClass(newClass);
-          activeClass = newClass;
+          classRecord = newClass;
         }
 
-        const settledResults = await Promise.allSettled(
-          formData.lessons.map((lesson) => {
-            if (lesson?.id && successfulLessons[lesson.id]) {
-              return Promise.resolve({
-                serverId: successfulLessons[lesson.id],
-                skipped: true,
-              });
-            }
+        const lessonsToSubmit = getPendingLessonEntries(formData.lessons);
 
+        if (!lessonsToSubmit.length) {
+          finalizeCreation(classRecord);
+          return;
+        }
+
+        const lessonResults = await Promise.allSettled(
+          lessonsToSubmit.map(async ({ lesson }) => {
             const lessonData = new FormData();
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
             lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(activeClass.id, lessonData);
+            return createClassLesson(classRecord.id, lessonData);
           })
         );
 
-        const nextLessonResults = {};
-        const nextSuccessfulLessons = { ...successfulLessons };
+        const indexToStatus = new Map();
         const failedIndices = [];
 
-        settledResults.forEach((result, index) => {
-          const lesson = formData.lessons[index];
-          if (!lesson?.id) {
-            return;
-          }
-
+        lessonResults.forEach((result, idx) => {
+          const { index } = lessonsToSubmit[idx];
           if (result.status === 'fulfilled') {
-            const value = result.value ?? null;
-            const serverId = value?.id ?? value?.serverId ?? null;
-            if (serverId) {
-              nextSuccessfulLessons[lesson.id] = serverId;
-            }
-            nextLessonResults[lesson.id] = { status: 'fulfilled', value };
+            indexToStatus.set(index, 'succeeded');
           } else {
+            indexToStatus.set(index, 'failed');
             failedIndices.push(index);
-            nextLessonResults[lesson.id] = { status: 'rejected', reason: result.reason };
           }
         });
 
-        setLessonResults(nextLessonResults);
-        setSuccessfulLessons(nextSuccessfulLessons);
+        if (indexToStatus.size) {
+          setFormData((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((lesson, idx) => {
+              if (!indexToStatus.has(idx)) {
+                return lesson;
+              }
+              return { ...lesson, status: indexToStatus.get(idx) };
+            }),
+          }));
+        }
 
         if (failedIndices.length) {
-          setFailedLessonIndices(failedIndices);
+          const sortedFailed = [...failedIndices].sort((a, b) => a - b);
+          setFailedLessonIndices(sortedFailed);
           toast.error(
             t('lesson_creation_failed', {
-              count: failedIndices.length,
-              indices: failedIndices.map((idx) => idx + 1).join(', '),
-              defaultValue: `Failed to create ${failedIndices.length} lesson(s). Please review highlighted lessons (${failedIndices
+              count: sortedFailed.length,
+              indices: sortedFailed.map((idx) => idx + 1).join(', '),
+              defaultValue: `Failed to create ${sortedFailed.length} lesson(s). Please review highlighted lessons (${sortedFailed
                 .map((idx) => idx + 1)
                 .join(', ')}).`,
             })
@@ -575,29 +579,7 @@ function CreateOnlineClass() {
           return;
         }
 
-        const events = [
-          {
-            id: `class-${activeClass.id}`,
-            title: `Class: ${activeClass.title}`,
-            start: toDateTimeISO(formData.startDate || activeClass.start_date),
-          },
-          ...formData.lessons.map((l) => ({
-            id: `lesson-${activeClass.id}-${l.id}`,
-            title: `Lesson: ${l.title}`,
-            start: toDateTimeISO(l.start_time),
-          })),
-        ];
-        addEvents(events);
-
-        toast.success(t('class_created'));
-        fetchNotifications();
-        fetchMessages();
-        router.push('/dashboard/admin/online-classes');
-
-        setCreatedClass(null);
-        setLessonResults({});
-        setSuccessfulLessons({});
-        setFailedLessonIndices([]);
+        finalizeCreation(classRecord);
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
