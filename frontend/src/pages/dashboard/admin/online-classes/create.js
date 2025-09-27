@@ -93,6 +93,9 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
+  const [createdClass, setCreatedClass] = useState(null);
+  const [lessonResults, setLessonResults] = useState({});
+  const [successfulLessons, setSuccessfulLessons] = useState({});
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
   const [instructorSearch, setInstructorSearch] = useState('');
@@ -301,10 +304,34 @@ function CreateOnlineClass() {
   };
 
   const handleRemoveLesson = (index) => {
+    const lessonToRemove = formData.lessons[index];
     setFormData((prev) => ({
       ...prev,
       lessons: prev.lessons.filter((_, idx) => idx !== index),
     }));
+    if (lessonToRemove?.id) {
+      setSuccessfulLessons((prev) => {
+        if (!prev[lessonToRemove.id]) {
+          return prev;
+        }
+        const updated = { ...prev };
+        delete updated[lessonToRemove.id];
+        return updated;
+      });
+      setLessonResults((prev) => {
+        if (!prev[lessonToRemove.id]) {
+          return prev;
+        }
+        const updated = { ...prev };
+        delete updated[lessonToRemove.id];
+        return updated;
+      });
+    }
+    setFailedLessonIndices((prev) =>
+      prev
+        .filter((idx) => idx !== index)
+        .map((idx) => (idx > index ? idx - 1 : idx))
+    );
   };
 
   const addTag = (tag) => {
@@ -466,40 +493,72 @@ function CreateOnlineClass() {
         if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
-        const newClass = await createAdminClass(payload, (e) => {
-          if (!e?.total) return;
-          const percent = Math.round((e.loaded * 100) / e.total);
-          setUploadProgress(percent);
-        });
+        let activeClass = createdClass;
+        if (!activeClass?.id) {
+          const newClass = await createAdminClass(payload, (e) => {
+            if (!e?.total) return;
+            const percent = Math.round((e.loaded * 100) / e.total);
+            setUploadProgress(percent);
+          });
 
-        if (!newClass?.id) {
-          console.error('createAdminClass returned an unexpected payload', newClass);
-          toast.error(
-            t('class_creation_failed', {
-              defaultValue:
-                'We could not confirm the new class details. Please try again in a moment.',
-            })
-          );
-          return;
+          if (!newClass?.id) {
+            console.error('createAdminClass returned an unexpected payload', newClass);
+            toast.error(
+              t('class_creation_failed', {
+                defaultValue:
+                  'We could not confirm the new class details. Please try again in a moment.',
+              })
+            );
+            return;
+          }
+
+          setCreatedClass(newClass);
+          activeClass = newClass;
         }
 
-        const lessonResults = await Promise.allSettled(
-          formData.lessons.map(async (lesson) => {
+        const settledResults = await Promise.allSettled(
+          formData.lessons.map((lesson) => {
+            if (lesson?.id && successfulLessons[lesson.id]) {
+              return Promise.resolve({
+                serverId: successfulLessons[lesson.id],
+                skipped: true,
+              });
+            }
+
             const lessonData = new FormData();
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
             lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData);
+            return createClassLesson(activeClass.id, lessonData);
           })
         );
 
-        const failedIndices = lessonResults.reduce((acc, result, index) => {
-          if (result.status === 'rejected') {
-            acc.push(index);
+        const nextLessonResults = {};
+        const nextSuccessfulLessons = { ...successfulLessons };
+        const failedIndices = [];
+
+        settledResults.forEach((result, index) => {
+          const lesson = formData.lessons[index];
+          if (!lesson?.id) {
+            return;
           }
-          return acc;
-        }, []);
+
+          if (result.status === 'fulfilled') {
+            const value = result.value ?? null;
+            const serverId = value?.id ?? value?.serverId ?? null;
+            if (serverId) {
+              nextSuccessfulLessons[lesson.id] = serverId;
+            }
+            nextLessonResults[lesson.id] = { status: 'fulfilled', value };
+          } else {
+            failedIndices.push(index);
+            nextLessonResults[lesson.id] = { status: 'rejected', reason: result.reason };
+          }
+        });
+
+        setLessonResults(nextLessonResults);
+        setSuccessfulLessons(nextSuccessfulLessons);
 
         if (failedIndices.length) {
           setFailedLessonIndices(failedIndices);
@@ -518,12 +577,12 @@ function CreateOnlineClass() {
 
         const events = [
           {
-            id: `class-${newClass.id}`,
-            title: `Class: ${newClass.title}`,
-            start: toDateTimeISO(formData.startDate || newClass.start_date),
+            id: `class-${activeClass.id}`,
+            title: `Class: ${activeClass.title}`,
+            start: toDateTimeISO(formData.startDate || activeClass.start_date),
           },
           ...formData.lessons.map((l) => ({
-            id: `lesson-${newClass.id}-${l.id}`,
+            id: `lesson-${activeClass.id}-${l.id}`,
             title: `Lesson: ${l.title}`,
             start: toDateTimeISO(l.start_time),
           })),
@@ -534,6 +593,11 @@ function CreateOnlineClass() {
         fetchNotifications();
         fetchMessages();
         router.push('/dashboard/admin/online-classes');
+
+        setCreatedClass(null);
+        setLessonResults({});
+        setSuccessfulLessons({});
+        setFailedLessonIndices([]);
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
@@ -959,7 +1023,13 @@ function CreateOnlineClass() {
                         {t('no_lessons_added')}
                       </p>
                     ) : (
-                      formData.lessons.map((lesson, index) => (
+                      formData.lessons.map((lesson, index) => {
+                        const result = lessonResults[lesson.id];
+                        const wasSkipped = Boolean(result?.value?.skipped);
+                        const wasSuccessful =
+                          result?.status === 'fulfilled' &&
+                          (wasSkipped || Boolean(successfulLessons[lesson.id]));
+                        return (
                         <div
                           key={lesson.id}
                           className={`border rounded-lg p-4 space-y-4 ${
@@ -1049,8 +1119,18 @@ function CreateOnlineClass() {
                               })}
                             </p>
                           )}
+
+                          {!failedLessonIndices.includes(index) && wasSuccessful && (
+                            <p className="text-sm text-green-600">
+                              {t('lesson_already_uploaded', {
+                                defaultValue:
+                                  'This lesson was uploaded successfully and will be skipped on retry.',
+                              })}
+                            </p>
+                          )}
                         </div>
-                      ))
+                      );
+                      })
                     )}
 
                     <div className="flex justify-end">
