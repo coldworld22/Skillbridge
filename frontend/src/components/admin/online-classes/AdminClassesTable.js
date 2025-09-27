@@ -84,11 +84,20 @@ export default function AdminClassesTable() {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const canManageRules = user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const canManageRules =
+    isMounted &&
+    hasHydrated &&
+    !!user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     const load = async () => {
