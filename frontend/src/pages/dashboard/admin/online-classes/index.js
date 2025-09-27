@@ -43,9 +43,11 @@ ProtectedAdminOnlineClassesPage.getLayout = AdminOnlineClassesPage.getLayout;
 export default ProtectedAdminOnlineClassesPage;
 
 export async function getStaticProps({ locale }) {
+  const namespaces = ['common', 'dashboard'];
+
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, namespaces, nextI18NextConfig)),
     },
   };
 }
