@@ -8,10 +8,12 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredTutorials = useMemo(() => {
+    const normalizedQuery = searchQuery.toLowerCase();
+
     return tutorials.filter((tut) => {
       const matchesSearch =
-        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+        tut.title?.toLowerCase()?.includes(normalizedQuery) ||
+        tut.instructor?.toLowerCase()?.includes(normalizedQuery);
       const matchesCategory =
         filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
