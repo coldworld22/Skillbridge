@@ -2,6 +2,16 @@
 
 Follow these steps to run SkillBridge on a server or production host.
 
+## ZIP package deployments
+
+If you received the managed archive from Memonet, follow the
+[ZIP installation workflow](./installation.md#deploy-from-the-customer-zip-package)
+to upload the bundle, prepare the environment files, and run the install
+scripts. That section covers cPanel/FTP uploads, SSH-based installs, and
+fallbacks for hosts that cannot run Docker. Use this approach when you do not
+have Git access on the production server or when you prefer to promote a tested
+bundle directly from the customer portal.
+
 ## Automated Nginx and SSL setup
 
 After pointing your domain DNS records to the server, run the installation

@@ -165,6 +165,121 @@ you would rather upload the packaged build than clone from Git.
 After unpacking a release you can pull future updates from Git or repeat the
 workflow with the next packaged ZIP.
 
+## Deploy from the customer ZIP package
+
+The managed customer bundle distributed by Memonet contains a snapshot of the
+repository (including the backend, frontend, and helper scripts) so you can
+launch SkillBridge without cloning the Git repo. Use this workflow on shared
+hosts where the provider gives you cPanel/FTP access or limited SSH.
+
+### 1. Download and extract the archive
+
+1. Sign in to the [Memonet customer portal](https://customer.memonet.in/).
+2. Download the latest `skillbridge-<version>.zip` release from the “Downloads”
+   section.
+3. Extract the ZIP on your workstation. The bundle unpacks to a top-level
+   folder with `backend/`, `frontend/`, `nginx/`, the root `.env.example`, and
+   automation scripts such as `install.sh`.
+
+> **Tip:** Keep a pristine copy of the ZIP so you can re-upload files later
+> without having to redownload the package.
+
+### 2. Upload the bundle to your host
+
+- **cPanel File Manager:** Upload the ZIP to your hosting account (for example
+  into `~/skillbridge`), then use the “Extract” action. Ensure the `backend/`
+  and `frontend/` directories sit next to each other just like they do locally.
+- **SFTP/FTP:** Extract the ZIP on your workstation first, then upload the
+  folders and files using a client such as FileZilla or Cyberduck. Preserve the
+  directory structure so relative paths (e.g. `backend/uploads/app`) continue to
+  work.
+- **SSH:** Copy the archive with `scp`/`rsync`, then run `unzip` on the server.
+  If your provider enables SSH but not Docker, you can still run the Node.js
+  services directly from this extracted directory.
+
+When deploying to a subdirectory (e.g. `public_html/skillbridge`), update any
+reverse-proxy rules so the backend API and Next.js frontend continue to resolve
+correctly at `/api` and the site root.
+
+### 3. Copy environment files and adjust settings
+
+After the upload finishes, duplicate each example environment file so the app
+can read real configuration values:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+cp backend/.env.production.example backend/.env.production
+cp frontend/.env.local.example frontend/.env.local
+cp frontend/.env.production.expanded frontend/.env.production
+```
+
+Edit the resulting files with the values that match your target environment:
+
+- **Local or staging:** Point `DATABASE_URL`/`PGHOST`, `REDIS_URL`, and
+  `NEXT_PUBLIC_API_BASE_URL` to services that run on the same machine (for
+  example `http://localhost:5002/api`). Keep `NODE_ENV` unset and set
+  `COOKIE_SECURE=false` so browser cookies work over plain HTTP. You can also
+  list both localhost and your staging URL in `FRONTEND_URL`.
+- **Live production:** Replace all localhost URLs with your public domain. Set
+  `APP_DOMAIN` to your apex domain (for example `example.com`), update
+  `FRONTEND_URL` to `https://example.com`, and point
+  `NEXT_PUBLIC_API_BASE_URL`/`NEXT_PUBLIC_SOCKET_URL` to the HTTPS endpoints
+  your reverse proxy exposes. Update SMTP credentials, JWT secrets, and payment
+  keys before inviting real users.
+
+Uploads for branding (logos and favicons) belong in
+`backend/uploads/app/`. Create the directory if it does not exist and ensure
+the PHP/Node.js user has write access:
+
+```bash
+mkdir -p backend/uploads/app
+chmod 775 backend/uploads backend/uploads/app
+```
+
+If you deploy multiple instances, keep each environment’s `.env` files outside
+version control and back them up securely alongside the uploaded assets.
+
+### 4. Run install scripts or fall back to manual commands
+
+Shared hosting varies widely, so choose the approach that matches what your
+provider allows:
+
+- **SSH with Docker support:** Run the same automation as the Git-based
+  workflow. From the extracted root folder execute `./install.sh production
+  yourdomain.com`. The script checks prerequisites, prepares `.env` files,
+  brings up Docker containers, and runs database migrations for you.
+- **SSH without Docker:** Install Node.js 18+ via the host’s package manager or
+  the Node Version Manager (nvm). Then run:
+
+  ```bash
+  npm --prefix backend install
+  npm --prefix backend run migrate
+  npm --prefix backend run seed   # optional sample data
+  npm --prefix backend run start  # or use pm2/forever for background processes
+
+  npm --prefix frontend install
+  npm --prefix frontend run build
+  npm --prefix frontend run start
+  ```
+
+  Configure a process manager (PM2, Supervisor, or your provider’s “Node.js
+  App” feature) to keep the backend and frontend running. If the host only
+  allows PHP/Node cron jobs, schedule scripts such as
+  `npm --prefix backend run migrate` nightly to keep the database schema up to
+  date and use `pm2 resurrect` in the cron task that restarts services after
+  maintenance windows.
+- **No SSH access:** Use cPanel’s “Setup Node.js App” or “Application Manager”
+  to point to the uploaded backend and frontend directories, then upload the
+  built `.next/` directory generated locally. When Node.js apps are not
+  supported, deploy the frontend separately on a platform that can host Next.js
+  (Vercel, Netlify, or a Node-capable VPS) and connect it to the backend API
+  running on a server you control.
+
+Regardless of the method, verify that cron or scheduled tasks run any long-lived
+jobs you rely on, and confirm that outbound ports for SMTP and payment gateways
+are open on your hosting plan.
+
 ## 1. Clone the repository
 
 ```bash
