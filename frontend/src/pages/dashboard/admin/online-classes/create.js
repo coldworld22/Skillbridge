@@ -131,29 +131,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setImageUploading(true);
-    setUploadProgress(0);
-
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
@@ -169,13 +147,13 @@ function CreateOnlineClass() {
       toast.error(t('video_size_exceeded'));
       return;
     }
-
-    setVideoUploading(false);
+    setVideoUploading(true);
     setFormData((prev) => ({
       ...prev,
       demoVideo: file,
       demoPreview: URL.createObjectURL(file),
     }));
+    setVideoUploading(false);
   };
 
   const addTag = (tag) => {
@@ -228,7 +206,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -297,7 +275,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };

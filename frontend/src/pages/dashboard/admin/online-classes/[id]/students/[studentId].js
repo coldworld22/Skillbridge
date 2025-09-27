@@ -40,11 +40,18 @@ function ManageStudentInClassPage() {
     return <div className="p-6">{t('studentDetailPage.student_not_found')}</div>;
   }
 
+  const lessonList = Array.isArray(student.lessons) ? student.lessons : [];
+  const attendanceRecords = Array.isArray(student.attendance)
+    ? student.attendance
+    : [];
+  const notes = Array.isArray(student.notes) ? student.notes : [];
+  const certificate = student.certificate ?? null;
+
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
-          🧑‍🎓 {t('studentDetailPage.title')}: {student.name}
+          🧑‍🎓 {t('studentDetailPage.title')}: {student.full_name ?? student.name}
         </h1>
         <Link
           href={`/dashboard/admin/online-classes/${id}/students`}
@@ -59,49 +66,104 @@ function ManageStudentInClassPage() {
       <div className="bg-white shadow rounded-xl p-6 border space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <p><strong>Name:</strong> {student.name}</p>
+            <p><strong>Name:</strong> {student.full_name ?? student.name}</p>
             <p><strong>Email:</strong> {student.email}</p>
             <p><strong>Status:</strong> {student.status}</p>
           </div>
           <div>
-            <p><strong>Certificate:</strong> {student.certificateIssued ? "✅ Issued" : "❌ Not Issued"}</p>
+            <p>
+              <strong>Certificate:</strong>{' '}
+              {student.certificateIssued ? '✅ Issued' : '❌ Not Issued'}
+            </p>
+            {certificate && (
+              <ul className="mt-2 text-sm text-gray-600 space-y-1">
+                <li>
+                  <strong>
+                    {t('studentDetailPage.passed_label', { defaultValue: 'Passed' })}:
+                  </strong>{' '}
+                  {certificate.passed ? '✅' : '⏳'}
+                </li>
+                {typeof certificate.totalScore === 'number' && (
+                  <li>
+                    <strong>
+                      {t('studentDetailPage.total_score', { defaultValue: 'Total Score' })}:
+                    </strong>{' '}
+                    {certificate.totalScore}
+                  </li>
+                )}
+                {certificate.issuedAt && (
+                  <li>
+                    <strong>
+                      {t('studentDetailPage.issued_at', { defaultValue: 'Issued At' })}:
+                    </strong>{' '}
+                    {new Date(certificate.issuedAt).toLocaleString()}
+                  </li>
+                )}
+              </ul>
+            )}
           </div>
         </div>
 
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">📚 Lesson Progress</h2>
-          <ul className="space-y-2">
-            {student.lessons.map((lesson, i) => (
-              <li key={i} className="flex justify-between items-center bg-gray-50 p-3 rounded">
-                <span>{lesson.title}</span>
-                <span className="text-sm">
-                  {lesson.completed ? "✅ Completed" : "⏳ In Progress"} — Test: {lesson.testScore ?? "N/A"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {lessonList.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">📚 Lesson Progress</h2>
+            <ul className="space-y-2">
+              {lessonList.map((lesson) => (
+                <li
+                  key={lesson.id ?? lesson.title}
+                  className="flex justify-between items-center bg-gray-50 p-3 rounded"
+                >
+                  <span>
+                    {lesson.order ? `${lesson.order}. ` : ''}
+                    {lesson.title}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {lesson.completed
+                      ? '✅ Completed'
+                      : lesson.completed === false
+                      ? '⏳ In Progress'
+                      : t('studentDetailPage.progress_unknown', {
+                          defaultValue: 'Progress unavailable',
+                        })}
+                    {typeof lesson.testScore !== 'undefined' && (
+                      <span className="ml-1">
+                        — Test: {lesson.testScore ?? 'N/A'}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">📅 Attendance</h2>
-          <ul className="space-y-2">
-            {student.attendance.map((record, i) => (
-              <li key={i} className="flex justify-between items-center text-sm bg-gray-100 p-2 rounded">
-                <span>{record.lesson}</span>
-                <span>{record.attended ? "✔ Present" : "— Absent"}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {attendanceRecords.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">📅 Attendance</h2>
+            <ul className="space-y-2">
+              {attendanceRecords.map((record) => (
+                <li
+                  key={record.id ?? `${record.lessonId}-${record.timestamp}`}
+                  className="flex justify-between items-center text-sm bg-gray-100 p-2 rounded"
+                >
+                  <span>{record.lessonTitle ?? record.lesson}</span>
+                  <span>{record.attended ? '✔ Present' : '— Absent'}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">📝 Notes</h2>
-          <ul className="list-disc list-inside text-sm text-gray-600">
-            {student.notes.map((note, i) => (
-              <li key={i}>{note}</li>
-            ))}
-          </ul>
-        </div>
+        {notes.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">📝 Notes</h2>
+            <ul className="list-disc list-inside text-sm text-gray-600">
+              {notes.map((note, i) => (
+                <li key={i}>{note}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="pt-4 flex gap-3">
           <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">
