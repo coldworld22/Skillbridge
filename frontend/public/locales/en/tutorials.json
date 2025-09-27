@@ -63,8 +63,9 @@
       "add_tags_placeholder": "Add tags...",
       "add_tag": "Add",
       "is_free": "Is it Free?",
-      "price_label": "Price (USD) *",
+      "price_label": "Price *",
       "price_placeholder": "Enter price, e.g., 19.99",
+      "select_currency": "Select Currency",
       "next": "Next ➡️",
       "validation": {
         "title_required": "Title is required.",
@@ -73,7 +74,8 @@
         "level_required": "Level is required.",
         "language_required": "Tutorial language is required.",
         "lessons_required": "Number of lessons is required.",
-        "price_required": "Valid price is required."
+        "price_required": "Valid price is required.",
+        "currency_required": "Currency is required."
       }
     },
     "curriculum": {
