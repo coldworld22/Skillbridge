@@ -113,10 +113,12 @@ function CreateOnlineClass() {
     uploadProgress = 0,
     handleImageUpload: mediaImageUpload,
     handleVideoUpload: mediaVideoUpload,
-    setUploadProgress,
+    setUploadProgress = () => {},
+    imageUploading: rawImageUploading = false,
+    videoUploading: rawVideoUploading = false,
   } = mediaUploader ?? {};
-  const isImageUploading = Boolean(mediaUploader?.imageUploading);
-  const isVideoUploading = Boolean(mediaUploader?.videoUploading);
+  const isImageUploading = Boolean(rawImageUploading);
+  const isVideoUploading = Boolean(rawVideoUploading);
 
   const priceValue = useMemo(() => {
     const parsed = Number.parseFloat(formData.price);
