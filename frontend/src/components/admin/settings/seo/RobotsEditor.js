@@ -9,16 +9,22 @@ export default function RobotsEditor({ config, update }) {
     (typeof window !== "undefined" ? window.location.origin : "");
   const defaultContent = `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${fallbackUrl}/uploads/seo/sitemap.xml`;
 
-  const [content, setContent] = useState(config.robots || defaultContent);
+  const robotsContent = config?.robots;
+  const hasStoredRobots = robotsContent !== null && robotsContent !== undefined;
+
+  const [content, setContent] = useState(
+    hasStoredRobots ? robotsContent : defaultContent,
+  );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (config?.robots) {
-      setContent(config.robots);
+    if (robotsContent !== null && robotsContent !== undefined) {
+      setContent(robotsContent);
     } else {
       setContent(defaultContent);
     }
-  }, [config?.robots, defaultContent]);
+  }, [robotsContent, defaultContent]);
+
 
   const handleSave = async () => {
     const updated = { ...config, robots: content };
