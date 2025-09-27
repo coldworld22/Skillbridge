@@ -156,10 +156,10 @@ function CreateOnlineClass() {
       })
       .catch(() => setCategories([]));
     fetchClassTags()
-      .then(setAllTags)
+      .then((res) => setAllTags(Array.isArray(res) ? res : res?.data ?? []))
       .catch(() => setAllTags([]));
     fetchPlanIdentifiers()
-      .then(setPlans)
+      .then((res) => setPlans(Array.isArray(res) ? res : res?.data ?? []))
       .catch(() => setPlans([]));
   }, []);
 
