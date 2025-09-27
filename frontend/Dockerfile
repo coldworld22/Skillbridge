@@ -2,12 +2,12 @@
 FROM node:20 AS builder
 
 COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
-COPY frontend/package.json /tmp/package.json
-RUN node /tmp/normalize-package-json.js /tmp/package.json \
-    && cp /tmp/package.json /tmp/sanitized-package.json
+COPY frontend/package.json /tmp/input/package.json
+RUN node /tmp/normalize-package-json.js /tmp/input/package.json \
+    && cp /tmp/input/package.json /tmp/sanitized-package.json
 COPY frontend/package-lock.json /app/package-lock.json
 RUN mkdir -p /app \
-    && mv /tmp/package.json /app/package.json
+    && mv /tmp/input/package.json /app/package.json
 WORKDIR /app
 RUN npm ci && npm cache clean --force
 COPY frontend/ ./
@@ -63,12 +63,12 @@ FROM node:20-alpine AS production
 
 RUN apk add --no-cache curl
 COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
-COPY frontend/package.json /tmp/package.json
-RUN node /tmp/normalize-package-json.js /tmp/package.json \
-    && cp /tmp/package.json /tmp/sanitized-package.json
+COPY frontend/package.json /tmp/input/package.json
+RUN node /tmp/normalize-package-json.js /tmp/input/package.json \
+    && cp /tmp/input/package.json /tmp/sanitized-package.json
 COPY frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js /app/
 RUN mkdir -p /app \
-    && mv /tmp/package.json /app/package.json
+    && mv /tmp/input/package.json /app/package.json
 WORKDIR /app
 RUN npm ci --omit=dev && npm cache clean --force
 COPY frontend/ ./
