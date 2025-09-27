@@ -71,7 +71,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 
 check_prerequisites() {
+  local prereq_script="$REPO_ROOT/scripts/check_prereqs.sh"
+  local payload=""
+  local status=0
+
+  if [[ -x "$prereq_script" ]]; then
+    set +e
+    payload=$("$prereq_script")
+    status=$?
+    set -e
+    if command -v node >/dev/null 2>&1; then
+      print_prereq_report "$payload"
+    else
+      printf '%s\n' "$payload"
+    fi
+    return "$status"
+  fi
+
   local missing=()
+  local result=0
 
   for tool in node npm; do
     if ! command -v "$tool" >/dev/null 2>&1; then
@@ -97,6 +115,14 @@ check_prerequisites() {
   if (( node_major < 18 )); then
     fail "SkillBridge requires Node.js 18 or later (found $node_version)."
   fi
+
+  case "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      return 0
+      ;;
+  esac
+
+  return 1
 }
 
 ensure_env_file() {
@@ -152,6 +178,30 @@ ensure_node_version() {
 
   if [[ -z "$major" || ! "$major" =~ ^[0-9]+$ || "$major" -lt 18 ]]; then
     fail "Node.js 18 or newer is required. Detected ${version:-unknown}."
+  fi
+}
+
+ensure_backend_upload_dir() {
+  local uploads_dir="$REPO_ROOT/backend/uploads/app"
+
+  if [[ ! -d "$uploads_dir" ]]; then
+    echo "Creating backend uploads directory at $uploads_dir"
+    mkdir -p "$uploads_dir"
+  fi
+}
+
+install_node_dependencies() {
+  local target_dir=${1:-}
+
+  if [[ -z "$target_dir" ]]; then
+    echo "install_node_dependencies requires a target path." >&2
+    exit 1
+  fi
+
+  echo "Installing Node.js dependencies in $target_dir"
+  if ! npm --prefix "$target_dir" install; then
+    echo "Failed to install Node.js dependencies in $target_dir." >&2
+    exit 1
   fi
 }
 
@@ -277,8 +327,61 @@ install_backend_dependencies() {
   fi
 }
 
+ensure_backend_upload_dir() {
+  local uploads_dir="$REPO_ROOT/backend/uploads/app"
+
+  if [[ -d "$uploads_dir" ]]; then
+    return 0
+  fi
+
+  echo "Creating backend uploads directory at $uploads_dir"
+  if ! mkdir -p "$uploads_dir"; then
+    echo "Failed to create backend uploads directory at $uploads_dir" >&2
+    exit 1
+  fi
+}
+
+install_node_dependencies() {
+  local target_dir=${1:-}
+
+  if [[ -z "$target_dir" ]]; then
+    echo "install_node_dependencies requires a target directory argument." >&2
+    exit 1
+  fi
+
+  if [[ "${NODE_DEPS_INSTALLED:-false}" == "true" ]]; then
+    return 0
+  fi
+
+  case "$target_dir" in
+    "$REPO_ROOT/backend")
+      install_backend_dependencies
+      ;;
+    *)
+      echo "Installing Node dependencies in $target_dir..."
+      if ! npm --prefix "$target_dir" install; then
+        echo "Failed to install Node dependencies in $target_dir." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
+  NODE_DEPS_INSTALLED=true
+}
+
+NODE_DEPS_INSTALLED=false
 CLI_MODE=${1:-}
 CLI_DOMAIN=${2:-}
+
+if ! check_prerequisites; then
+  if ! is_truthy "${ALLOW_PREREQ_FAILURES:-}"; then
+    echo "Aborting installation due to failed prerequisite checks." >&2
+    echo "Resolve the issues above or set ALLOW_PREREQ_FAILURES=true to override." >&2
+    exit 1
+  fi
+
+  echo "Continuing despite prerequisite failures because ALLOW_PREREQ_FAILURES=${ALLOW_PREREQ_FAILURES:-true}." >&2
+fi
 
 ensure_env_file "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
 ensure_env_file "$REPO_ROOT/backend/.env.example" "$REPO_ROOT/backend/.env"
@@ -287,12 +390,7 @@ ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.e
 
 load_env_file "$REPO_ROOT/.env"
 
-UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
-if [[ ! -d "$UPLOADS_DIR" ]]; then
-  echo "Creating backend uploads directory at $UPLOADS_DIR"
-  mkdir -p "$UPLOADS_DIR"
-fi
-
+ensure_backend_upload_dir
 MODE=${CLI_MODE:-${MODE:-}}
 
 load_env_file "$REPO_ROOT/backend/.env"
@@ -352,7 +450,6 @@ if [[ "$MODE" == "production" ]]; then
   load_env_file "$REPO_ROOT/backend/.env.production"
 fi
 
-ensure_backend_upload_dir
 install_node_dependencies "$REPO_ROOT/backend"
 
 if [[ "$MODE" == "production" ]]; then
@@ -431,8 +528,7 @@ for required in DATABASE_URL DATABASE_USER DATABASE_PASSWORD SMTP_HOST SMTP_PORT
 
   require_env_var "$required"
 done
-
-install_backend_dependencies
+install_node_dependencies "$REPO_ROOT/backend"
 
 export \
   ADMIN_EMAIL \
