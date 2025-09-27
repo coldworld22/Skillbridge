@@ -12,7 +12,35 @@ function parsePositiveInt(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const host = process.env.HEALTHCHECK_HOST || DEFAULT_HOST;
+function normalizeHost(rawHost) {
+  const trimmed = rawHost?.trim();
+  if (!trimmed) {
+    return { hostname: DEFAULT_HOST, displayHost: DEFAULT_HOST };
+  }
+
+  const lower = trimmed.toLowerCase();
+
+  if (lower === '0.0.0.0') {
+    return { hostname: DEFAULT_HOST, displayHost: DEFAULT_HOST };
+  }
+
+  if (['::', '::0', '0:0:0:0:0:0:0:0', '[::]', '[::0]'].includes(lower)) {
+    return { hostname: '::1', displayHost: '[::1]' };
+  }
+
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    const inner = trimmed.slice(1, -1);
+    return { hostname: inner, displayHost: trimmed };
+  }
+
+  if (trimmed.includes(':')) {
+    return { hostname: trimmed, displayHost: `[${trimmed}]` };
+  }
+
+  return { hostname: trimmed, displayHost: trimmed };
+}
+
+const { hostname: host, displayHost } = normalizeHost(process.env.HEALTHCHECK_HOST);
 const port = parsePositiveInt(process.env.PORT, 3000);
 const protocol = (process.env.HEALTHCHECK_PROTOCOL || DEFAULT_PROTOCOL).toLowerCase();
 const path = process.env.HEALTHCHECK_PATH || DEFAULT_PATH;
@@ -25,7 +53,7 @@ const defaultPorts = new Map([
 ]);
 
 const defaultPortForProtocol = defaultPorts.get(protocol);
-const hostHeader = defaultPortForProtocol && port === defaultPortForProtocol ? host : `${host}:${port}`;
+const hostHeader = defaultPortForProtocol && port === defaultPortForProtocol ? displayHost : `${displayHost}:${port}`;
 
 const allowedProtocols = new Set(['http', 'https']);
 if (!allowedProtocols.has(protocol)) {
@@ -45,7 +73,7 @@ const requestOptions = {
   headers: {
     'User-Agent': 'skillbridge-frontend-healthcheck',
     Accept: 'application/json',
-    host: hostHeader,
+    Host: hostHeader,
   },
 };
 
