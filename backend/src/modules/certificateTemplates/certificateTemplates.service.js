@@ -74,14 +74,13 @@ const duplicate = async (id) => {
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
 };
-module.exports = {
-  getAll,
-  getById,
-  getDefaultTemplate,
-  resolveTemplateId,
-  create,
-  update,
-  remove,
-  toggleStatus,
-  duplicate,
+
+exports.getActiveByType = async (type) => {
+  if (!type) return null;
+
+  return db("certificate_templates")
+    .where({ type })
+    .andWhere({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
 };

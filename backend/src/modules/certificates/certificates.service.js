@@ -20,12 +20,23 @@ exports.getAll = async ({ page = 1, limit = 10 } = {}) => {
   const query = db("certificates")
     .leftJoin("users", "certificates.user_id", "users.id")
     .leftJoin("online_classes", "certificates.class_id", "online_classes.id")
-    .leftJoin("certificate_templates as ct", "ct.id", "certificates.template_id")
+    .leftJoin(
+      "certificate_templates as template",
+      "certificates.template_id",
+      "template.id",
+    )
     .select(
       "certificates.*",
       "users.full_name as student_name",
       "online_classes.title as class_name",
-      db.raw("row_to_json(ct) as template")
+      "template.name as template_name",
+      "template.type as template_type",
+      "template.font_family as template_font_family",
+      "template.title_font as template_title_font",
+      "template.border_color as template_border_color",
+      "template.logo as template_logo",
+      "template.background as template_background",
+      "template.show_qr as template_show_qr"
     )
     .orderBy("certificates.created_at", "desc")
     .offset(offset)
