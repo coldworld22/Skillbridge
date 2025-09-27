@@ -80,34 +80,10 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const {
-    uploadProgress,
-    imageUploading,
-    videoUploading,
-    handleImageUpload: mediaImageUpload,
-    handleVideoUpload: mediaVideoUpload,
-    setUploadProgress,
-  } = useMediaUploader({
-    t,
-    onError: (message) => toast.error(message),
-    onImageSelect: (file, preview) =>
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: preview,
-      })),
-    onVideoSelect: (file, preview) =>
-      setFormData((prev) => {
-        if (prev.demoPreview && prev.demoPreview !== preview) {
-          URL.revokeObjectURL(prev.demoPreview);
-        }
-        return {
-          ...prev,
-          demoVideo: file,
-          demoPreview: preview,
-        };
-      }),
-  });
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [failedLessonIndices, setFailedLessonIndices] = useState([]);
 
   const demoPreview = formData.demoPreview;
 
@@ -242,6 +218,7 @@ function CreateOnlineClass() {
           start_time: ''
         }))
       }));
+      setFailedLessonIndices([]);
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
@@ -264,6 +241,7 @@ function CreateOnlineClass() {
         setIsSubmitting(true);
         setIsServerUploading(true);
         setUploadProgress(0);
+        setFailedLessonIndices([]);
 
         const payload = new FormData();
         payload.append('instructor_id', user?.id);
@@ -298,50 +276,36 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        const createdLessons = [];
-        const failedLessons = [];
+        const lessonResults = await Promise.allSettled(
+          formData.lessons.map(async (lesson) => {
+            const lessonData = new FormData();
+            lessonData.append('title', lesson.title);
+            if (lesson.duration) lessonData.append('duration', lesson.duration);
+            if (lesson.resource) lessonData.append('resource', lesson.resource);
+            lessonData.append('start_time', toDateTimeISO(lesson.start_time));
+            return createClassLesson(newClass.id, lessonData);
+          })
+        );
 
-        for (const lesson of formData.lessons) {
-          const lessonData = new FormData();
-          lessonData.append('title', lesson.title);
-          if (lesson.duration) lessonData.append('duration', lesson.duration);
-          if (lesson.resource) lessonData.append('resource', lesson.resource);
-          lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-
-          try {
-            const createdLesson = await createClassLesson(newClass.id, lessonData);
-            createdLessons.push({
-              title: lesson.title,
-              id: createdLesson?.id || null,
-            });
-          } catch (lessonError) {
-            console.error('Failed to create lesson', lesson.title, lessonError);
-            failedLessons.push({
-              title: lesson.title,
-              error: lessonError,
-            });
+        const failedIndices = lessonResults.reduce((acc, result, index) => {
+          if (result.status === 'rejected') {
+            acc.push(index);
           }
-        }
+          return acc;
+        }, []);
 
-        if (failedLessons.length) {
-          if (createdLessons.length) {
-            toast.info(
-              t('lessons_created_successfully', {
-                defaultValue:
-                  'The following lessons were saved successfully: {{lessons}}.',
-                lessons: createdLessons.map((lesson) => lesson.title).join(', '),
-              })
-            );
-          }
-
+        if (failedIndices.length) {
+          setFailedLessonIndices(failedIndices);
           toast.error(
-            t('lessons_creation_failed', {
-              defaultValue:
-                'Some lessons could not be saved: {{lessons}}. Please review and try again.',
-              lessons: failedLessons.map((lesson) => lesson.title).join(', '),
+            t('lesson_creation_failed', {
+              count: failedIndices.length,
+              indices: failedIndices.map((idx) => idx + 1).join(', '),
+              defaultValue: `Failed to create ${failedIndices.length} lesson(s). Please review highlighted lessons (${failedIndices
+                .map((idx) => idx + 1)
+                .join(', ')}).`,
             })
           );
-
+          setCurrentStep(2);
           return;
         }
 
@@ -746,10 +710,12 @@ function CreateOnlineClass() {
                       {t('lesson_plan')}
                     </h2>
 
-                    {formData.lessons.map((lesson, index) => (
+                    {formData.lessons.map((lesson, index) => {
+                      const lessonHasError = failedLessonIndices.includes(index);
+                      return (
                       <div
                         key={index}
-                        className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                        className={`border rounded-lg p-4 ${lessonHasError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}
                       >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div>
@@ -763,6 +729,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].title = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                               placeholder={t('lesson_title_placeholder')}
@@ -780,6 +747,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].duration = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                               placeholder={t('duration_placeholder')}
@@ -797,6 +765,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].start_time = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                             />
@@ -814,6 +783,7 @@ function CreateOnlineClass() {
                                   const updated = [...formData.lessons];
                                   updated[index].resource = e.target.files[0];
                                   setFormData(prev => ({ ...prev, lessons: updated }));
+                                  setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                                 }}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               />
@@ -826,8 +796,17 @@ function CreateOnlineClass() {
                             </div>
                           </div>
                         </div>
+                        {lessonHasError && (
+                          <p className="mt-3 text-sm text-red-600">
+                            {t('lesson_failed_hint', {
+                              number: index + 1,
+                              defaultValue: `Lesson ${index + 1} failed to save. Please review the details and try again.`,
+                            })}
+                          </p>
+                        )}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
               </motion.div>
