@@ -13,6 +13,7 @@ RUN npm ci && npm cache clean --force
 COPY frontend/ ./
 RUN cp /tmp/sanitized-package.json package.json
 COPY shared /shared
+COPY docs ./docs
 
 # Ensure subsequent RUN instructions use bash so pipefail is respected.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -73,6 +74,7 @@ WORKDIR /app
 RUN npm ci --omit=dev && npm cache clean --force
 COPY frontend/ ./
 RUN cp /tmp/sanitized-package.json package.json
+COPY docs ./docs
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
