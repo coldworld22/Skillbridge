@@ -229,15 +229,21 @@ function CreateOnlineClass() {
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
         payload.append('status', formData.isApproved ? 'published' : 'draft');
+        payload.append('access_type', formData.isFree ? 'free' : 'paid');
         if (formData.category) payload.append('category_id', formData.category);
         if (formData.image) payload.append('cover_image', formData.image);
         if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
         const newClass = await createInstructorClass(payload, (e) => {
+          if (!e?.total) return;
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
+
+        if (!newClass?.id) {
+          throw new Error('Failed to create class. Please try again.');
+        }
 
         await Promise.all(
           formData.lessons.map(async (lesson) => {
@@ -269,7 +275,11 @@ function CreateOnlineClass() {
         router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || 'Upload failed. Please try again.');
+        toast.error(
+          error.response?.data?.message ||
+          error.message ||
+          'Upload failed. Please try again.'
+        );
       } finally {
         setIsSubmitting(false);
         setIsServerUploading(false);
