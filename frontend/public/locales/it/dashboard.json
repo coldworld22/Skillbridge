@@ -1025,17 +1025,17 @@
     "all_levels": "Tutti i livelli"
   },
   "tutorialCreatePage": {
-    "title": "🎬 Crea un nuovo tutorial",
-    "step_basic_info": "Informazioni di base",
-    "step_curriculum": "Curriculum",
-    "step_media": "Media",
-    "step_pricing_publish": "Prezzi e pubblicazione",
-    "upload_video_each_lesson": "Carica un video per ogni lezione prima di inviare.",
-    "draft_saved": "Tutorial salvato come bozza!",
-    "submitted_success": "Tutorial inviato con successo! In attesa dell'approvazione amministrativa.",
-    "failed_create": "Impossibile creare tutorial",
-    "back": "⬅️ Back",
-    "save_draft": "💾 Salva la bozza",
+    "title": "Crea un nuovo tutorial",
+    "basic_info": "Informazioni di base",
+    "curriculum": "Curriculum",
+    "media": "Media",
+    "pricing_publish": "Prezzi e pubblicazione",
+    "video_required": "Carica un video per ogni lezione prima di inviare.",
+    "draft_success": "Tutorial salvato come bozza!",
+    "submit_success": "Tutorial inviato con successo! In attesa dell'approvazione dell'amministratore.",
+    "creation_failed": "Impossibile creare il tutorial",
+    "back": "⬅️ Indietro",
+    "save_draft": "💾 Salva bozza",
     "next": "Successivo ➡️"
   },
   "tutorialEditPage": {
