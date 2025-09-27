@@ -77,6 +77,9 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -168,12 +171,13 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(false);
+    setVideoUploading(true);
     setFormData((prev) => ({
       ...prev,
       demoVideo: file,
       demoPreview: URL.createObjectURL(file),
     }));
+    setVideoUploading(false);
   };
 
   const addTag = (tag) => {
