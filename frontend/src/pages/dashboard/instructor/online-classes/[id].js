@@ -11,6 +11,7 @@ import StudentProgressPanel from "@/components/instructors/StudentProgressPanel"
 import { fetchClassManagementData } from "@/services/instructor/classService";
 import useAuthStore from "@/store/auth/authStore";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 
 
 const isClassLive = (classData) => {
@@ -158,6 +159,8 @@ function InstructorClassRoom() {
     </div>
   );
 }
+
+InstructorClassRoom.getLayout = (page) => <InstructorLayout>{page}</InstructorLayout>;
 
 const ProtectedInstructorClassRoom = withAuthProtection(
   InstructorClassRoom,
