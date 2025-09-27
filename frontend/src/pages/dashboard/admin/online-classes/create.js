@@ -790,9 +790,11 @@ function CreateOnlineClass() {
                   <>
                     <FaSpinner className="animate-spin mr-2" />
                     {t('server_upload_in_progress', { defaultValue: 'Server upload in progress...' })}
-                  </div>
+                  </>
+                ) : (
+                  t(currentStep === 1 ? 'next' : 'create_class')
                 )}
-              </div>
+              </button>
             </div>
           </form>
         </div>
