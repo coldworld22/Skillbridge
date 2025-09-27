@@ -12,6 +12,7 @@ const mockCreateClassLesson = jest.fn();
 const mockUser = {
   id: 'user-1',
   full_name: 'Test Instructor',
+  role: 'instructor',
 };
 
 jest.mock('next/router', () => ({
@@ -54,6 +55,19 @@ jest.mock('@/services/admin/classTagService', () => ({
 
 jest.mock('@/services/admin/planService', () => ({
   fetchPlanIdentifiers: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/services/admin/instructorService', () => ({
+  fetchAllInstructors: jest.fn().mockResolvedValue({
+    instructors: [
+      {
+        id: 'user-1',
+        full_name: 'Test Instructor',
+        email: 'instructor@example.com',
+      },
+    ],
+    meta: { hasNextPage: false },
+  }),
 }));
 
 jest.mock('@/services/admin/classService', () => ({
@@ -115,9 +129,6 @@ describe('CreateOnlineClass date validation', () => {
     });
     fireEvent.change(screen.getByPlaceholderText('price_label'), {
       target: { value: '100' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('lesson_count_label'), {
-      target: { value: '1' },
     });
   };
 

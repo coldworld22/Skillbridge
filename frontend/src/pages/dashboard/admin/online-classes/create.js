@@ -360,6 +360,18 @@ function CreateOnlineClass() {
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
+      if (
+        formData.startDate &&
+        formData.endDate &&
+        new Date(formData.endDate) < new Date(formData.startDate)
+      ) {
+        toast.error(
+          t('end_date_after_start_date', {
+            defaultValue: 'End date must be after the start date.',
+          })
+        );
+        return;
+      }
       if (!formData.lessons.length) {
         toast.error(t('add_at_least_one_lesson'));
         return;
