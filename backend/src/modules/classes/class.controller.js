@@ -37,6 +37,7 @@ exports.createClass = catchAsync(async (req, res) => {
     slug,
     status: status === "published" ? "published" : "draft",
     moderation_status: "Pending",
+    access_type: "paid",
   };
   if (included_plans) {
     let plansList = included_plans;
