@@ -57,7 +57,7 @@ const resolveDocLink = (href) => {
   const slug = sanitizeSlug(cleaned);
   return slug ? `/docs/${slug}` : href;
 };
-
+// Additional resolution handled by shared utility.
 export async function getStaticPaths() {
   const docsDir = await resolveDocsDirectory({
     moduleDirectory: moduleDir,
