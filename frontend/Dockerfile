@@ -2,7 +2,16 @@
 FROM node:20 AS builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
-RUN node -e 'const fs=require("fs"); const path="package.json"; const sanitize=(input)=>input.replace(/\ufeff/g,"").replace(/\u00a0/g," "); fs.writeFileSync(path, sanitize(fs.readFileSync(path, "utf8")));' \
+RUN node -e '
+const fs = require("fs");
+const path = "package.json";
+const sanitize = (input) => input
+  .replace(/\ufeff/g, "")
+  .replace(/\u00a0/g, " ");
+const cleaned = sanitize(fs.readFileSync(path, "utf8"));
+const parsed = JSON.parse(cleaned);
+fs.writeFileSync(path, `${JSON.stringify(parsed, null, 2)}\n`);
+' \
     && npm ci && npm cache clean --force
 COPY frontend/ ./
 COPY shared /shared
@@ -56,7 +65,16 @@ FROM node:20-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js ./
-RUN node -e 'const fs=require("fs"); const path="package.json"; const sanitize=(input)=>input.replace(/\ufeff/g,"").replace(/\u00a0/g," "); fs.writeFileSync(path, sanitize(fs.readFileSync(path, "utf8")));' \
+RUN node -e '
+const fs = require("fs");
+const path = "package.json";
+const sanitize = (input) => input
+  .replace(/\ufeff/g, "")
+  .replace(/\u00a0/g, " ");
+const cleaned = sanitize(fs.readFileSync(path, "utf8"));
+const parsed = JSON.parse(cleaned);
+fs.writeFileSync(path, `${JSON.stringify(parsed, null, 2)}\n`);
+' \
     && npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
