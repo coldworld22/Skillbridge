@@ -18,13 +18,8 @@ export default function RobotsEditor({ config, update }) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (robotsContent !== null && robotsContent !== undefined) {
-      setContent(robotsContent);
-    } else {
-      setContent(defaultContent);
-    }
-  }, [robotsContent, defaultContent]);
-
+    setContent(config.robots || defaultContent);
+  }, [config.robots, defaultContent]);
 
   const handleSave = async () => {
     const updated = { ...config, robots: content };
