@@ -107,6 +107,8 @@ const { toast } = require('react-toastify');
 describe('CreateOnlineClass date validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCreateAdminClass.mockReset();
+    mockCreateClassLesson.mockReset();
 
     mockCreateAdminClass.mockResolvedValue({
       id: 'class-1',
@@ -144,17 +146,11 @@ describe('CreateOnlineClass date validation', () => {
   };
 
   it('blocks submission when the end date is before the start date', async () => {
-    const { container } = render(<CreateOnlineClass />);
+    render(<CreateOnlineClass />);
 
     fillStepOne('2025-01-02', '2025-01-01');
 
     fireEvent.click(screen.getByText('next'));
-
-    await waitFor(() => expect(screen.getByText('lesson_plan')).toBeInTheDocument());
-
-    fillLessonDetails(container);
-
-    fireEvent.click(screen.getByText('create_class'));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('End date must be after the start date.');
@@ -183,5 +179,63 @@ describe('CreateOnlineClass date validation', () => {
     expect(toast.error).not.toHaveBeenCalled();
     expect(toast.success).toHaveBeenCalledWith('class_created');
     expect(pushMock).toHaveBeenCalledWith('/dashboard/admin/online-classes');
+  });
+
+  it('retries only failed lessons without duplicating successful uploads', async () => {
+    const { container } = render(<CreateOnlineClass />);
+
+    fillStepOne('2025-01-01', '2025-01-03');
+
+    fireEvent.click(screen.getByText('next'));
+
+    await waitFor(() => expect(screen.getByText('lesson_plan')).toBeInTheDocument());
+
+    const firstTitleInput = screen.getAllByPlaceholderText('lesson_title_placeholder')[0];
+    fireEvent.change(firstTitleInput, { target: { value: 'Lesson 1' } });
+
+    let dateInputs = container.querySelectorAll('input[type="datetime-local"]');
+    fireEvent.change(dateInputs[0], { target: { value: '2025-01-02T10:00' } });
+
+    fireEvent.click(screen.getByText('add_lesson_button'));
+
+    const titleInputs = screen.getAllByPlaceholderText('lesson_title_placeholder');
+    fireEvent.change(titleInputs[1], { target: { value: 'Lesson 2' } });
+
+    dateInputs = container.querySelectorAll('input[type="datetime-local"]');
+    fireEvent.change(dateInputs[1], { target: { value: '2025-01-02T12:00' } });
+
+    mockCreateClassLesson.mockImplementationOnce(() => Promise.resolve({ id: 'lesson-1' }));
+    mockCreateClassLesson.mockImplementationOnce(() => Promise.reject(new Error('Lesson failed')));
+
+    fireEvent.click(screen.getByText('create_class'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    expect(mockCreateAdminClass).toHaveBeenCalledTimes(1);
+    expect(mockCreateClassLesson).toHaveBeenCalledTimes(2);
+
+    expect(
+      await screen.findByText('This lesson was uploaded successfully and will be skipped on retry.')
+    ).toBeInTheDocument();
+
+    mockCreateClassLesson.mockImplementationOnce(() => Promise.resolve({ id: 'lesson-2' }));
+
+    const secondLessonTitle = screen.getAllByPlaceholderText('lesson_title_placeholder')[1];
+    fireEvent.change(secondLessonTitle, { target: { value: 'Lesson 2 updated' } });
+
+    fireEvent.click(screen.getByText('create_class'));
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('class_created');
+    });
+
+    expect(mockCreateAdminClass).toHaveBeenCalledTimes(1);
+    expect(mockCreateClassLesson).toHaveBeenCalledTimes(3);
+
+    const retryCall = mockCreateClassLesson.mock.calls[2];
+    expect(retryCall[0]).toBe('class-1');
+    expect(retryCall[1].get('title')).toBe('Lesson 2 updated');
   });
 });
