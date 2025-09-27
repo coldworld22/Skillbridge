@@ -32,16 +32,18 @@ export default function RuleList({ rules = [], onAdd, onUpdate, onDelete, canMan
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Title</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Description</th>
-              {canManage && <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Actions</th>}
+              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Rule</th>
+              {canManage && (
+                <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {rules.map((rule) => (
               <tr key={rule.id}>
-                <td className="px-4 py-2">{rule.title}</td>
-                <td className="px-4 py-2">{rule.description}</td>
+                <td className="px-4 py-2 whitespace-pre-line">
+                  {rule.text || [rule.title, rule.description].filter(Boolean).join("\n")}
+                </td>
                 {canManage && (
                   <td className="px-4 py-2 text-right space-x-2">
                     <button
@@ -64,7 +66,7 @@ export default function RuleList({ rules = [], onAdd, onUpdate, onDelete, canMan
               <tr>
                 <td
                   className="px-4 py-4 text-center text-gray-500"
-                  colSpan={canManage ? 3 : 2}
+                  colSpan={canManage ? 2 : 1}
                 >
                   No rules found
                 </td>
