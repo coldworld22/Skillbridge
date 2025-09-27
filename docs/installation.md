@@ -68,7 +68,6 @@ that the installer enforces.
 
 Open a fresh terminal after installing these tools so PATH changes take effect,
 then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
-
 ## Install from ZIP release
 
 If you purchased SkillBridge on CodeCanyon (released as **memonet**), the
