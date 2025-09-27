@@ -118,6 +118,7 @@
   "rejected": "Rejected",
   "free_class": "Free Class",
   "free_label": "Free",
+  "rejection_reason_min_length": "Bitte geben Sie mindestens 3 Zeichen für den Ablehnungsgrund ein.",
   "allow_installments": "Allow Installments",
   "publish_immediately": "Publish Immediately",
   "description_label": "Description",

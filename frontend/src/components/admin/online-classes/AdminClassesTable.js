@@ -32,6 +32,7 @@ import {
 } from "react-icons/fa";
 
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
+const MIN_REJECTION_REASON_LENGTH = 3;
 
 export const mapStatusFilterToQuery = (filterStatus) => {
   if (!filterStatus || filterStatus === "All") {
@@ -268,6 +269,27 @@ export default function AdminClassesTable() {
     } finally {
       setModalClass(null);
     }
+  };
+
+  const trimmedRejectionReason = rejectionReason.trim();
+  const isRejectionReasonValid =
+    trimmedRejectionReason.length >= MIN_REJECTION_REASON_LENGTH;
+
+  const handleModalConfirm = () => {
+    if (!modalClass) {
+      return;
+    }
+
+    if (modalType === 'reject') {
+      if (!isRejectionReasonValid) {
+        toast.error(t('rejection_reason_min_length'));
+        return;
+      }
+      handleStatusChange(modalClass.id, 'reject', trimmedRejectionReason);
+      return;
+    }
+
+    handleDeleteClass(modalClass.id);
   };
 
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
@@ -537,10 +559,11 @@ export default function AdminClassesTable() {
             <div className="flex justify-center gap-4">
               <button onClick={() => setModalClass(null)} className="bg-gray-200 px-4 py-2 rounded">Cancel</button>
               <button
-                onClick={() => modalType === 'reject'
-                  ? handleStatusChange(modalClass.id, 'reject', rejectionReason)
-                  : handleDeleteClass(modalClass.id)}
-                className={`px-4 py-2 rounded text-white ${modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'}`}
+                onClick={handleModalConfirm}
+                disabled={modalType === 'reject' && !isRejectionReasonValid}
+                className={`px-4 py-2 rounded text-white ${
+                  modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 Yes, {modalType === 'reject' ? 'Reject' : 'Delete'}
               </button>

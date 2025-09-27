@@ -118,6 +118,7 @@
   "rejected": "Rechazado",
   "free_class": "Clase gratuita",
   "free_label": "Gratis",
+  "rejection_reason_min_length": "Proporcione al menos 3 caracteres para el motivo del rechazo.",
   "allow_installments": "Permitir cuotas",
   "publish_immediately": "Publicar inmediatamente",
   "description_label": "Descripción",

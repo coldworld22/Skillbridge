@@ -118,6 +118,7 @@
   "rejected": "مرفوض",
   "free_class": "صف مجاني",
   "free_label": "مجاني",
+  "rejection_reason_min_length": "يرجى إدخال ما لا يقل عن 3 أحرف لسبب الرفض.",
   "allow_installments": "السماح بالتقسيط",
   "publish_immediately": "النشر فوراً",
   "description_label": "الوصف",
