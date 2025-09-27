@@ -26,6 +26,9 @@ jest.mock('../class.service', () => ({
   getClassTags: jest.fn(),
   getClassById: jest.fn(),
   updateClass: jest.fn(),
+  togglePublishStatus: jest.fn(),
+  countPublishedClasses: jest.fn(),
+  updateModeration: jest.fn(),
 }));
 
 jest.mock('../classTag.service', () => ({
@@ -47,17 +50,20 @@ jest.mock('../../users/user.model', () => ({
 }));
 
 jest.mock('../../plans/instructor.helper', () => ({
-  getActiveInstructorPlan: jest.fn(() => Promise.resolve({}))
+  getActiveInstructorPlan: jest.fn(() => Promise.resolve({})),
 }));
 jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
 
 const controller = require('../class.controller');
 const service = require('../class.service');
+const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
+const notificationService = require('../../notifications/notifications.service');
 
 describe('class.controller createClass', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveInstructorPlan.mockResolvedValue({});
     planService.getPlanById.mockResolvedValue({
       features: [{ feature_key: 'classes_create', value: 'true' }],
     });
@@ -201,6 +207,7 @@ describe('class.controller createClass', () => {
 describe('class.controller updateClass', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveInstructorPlan.mockResolvedValue({});
   });
 
   test('instructor cannot change instructor_id', async () => {
@@ -279,5 +286,41 @@ describe('class.controller updateClass', () => {
         data: expect.objectContaining({ instructor_id: 'newInst' }),
       })
     );
+  });
+});
+
+describe('class.controller approveClass', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getActiveInstructorPlan.mockResolvedValue({});
+  });
+
+  test('rejects approval when instructor is at course capacity', async () => {
+    service.getClassById.mockResolvedValue({
+      id: 'class1',
+      instructor_id: 'instructor1',
+      status: 'draft',
+    });
+    getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 1 });
+    service.countPublishedClasses.mockResolvedValue(1);
+
+    const req = { params: { id: 'class1' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toBe('Course limit reached for your plan');
+        resolve();
+        return err;
+      });
+      controller.approveClass(req, res, next);
+    });
+
+    expect(service.countPublishedClasses).toHaveBeenCalledWith('instructor1');
+    expect(service.updateModeration).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(notificationService.createNotification).not.toHaveBeenCalled();
   });
 });
