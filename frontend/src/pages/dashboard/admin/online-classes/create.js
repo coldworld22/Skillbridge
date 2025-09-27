@@ -147,12 +147,12 @@ function CreateOnlineClass() {
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
       .then((res) => {
-        const list = Array.isArray(res?.data)
+        const normalizedCategories = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res)
             ? res
             : [];
-        setCategories(list);
+        setCategories(normalizedCategories);
       })
       .catch(() => setCategories([]));
     fetchClassTags()
