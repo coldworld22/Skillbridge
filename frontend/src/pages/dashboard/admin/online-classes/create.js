@@ -304,16 +304,52 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await Promise.all(
-          formData.lessons.map(async (lesson) => {
-            const lessonData = new FormData();
-            lessonData.append('title', lesson.title);
-            if (lesson.duration) lessonData.append('duration', lesson.duration);
-            if (lesson.resource) lessonData.append('resource', lesson.resource);
-            lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData).catch(() => null);
-          })
-        );
+        const createdLessons = [];
+        const failedLessons = [];
+
+        for (const lesson of formData.lessons) {
+          const lessonData = new FormData();
+          lessonData.append('title', lesson.title);
+          if (lesson.duration) lessonData.append('duration', lesson.duration);
+          if (lesson.resource) lessonData.append('resource', lesson.resource);
+          lessonData.append('start_time', toDateTimeISO(lesson.start_time));
+
+          try {
+            const createdLesson = await createClassLesson(newClass.id, lessonData);
+            createdLessons.push({
+              title: lesson.title,
+              id: createdLesson?.id || null,
+            });
+          } catch (lessonError) {
+            console.error('Failed to create lesson', lesson.title, lessonError);
+            failedLessons.push({
+              title: lesson.title,
+              error: lessonError,
+            });
+          }
+        }
+
+        if (failedLessons.length) {
+          if (createdLessons.length) {
+            toast.info(
+              t('lessons_created_successfully', {
+                defaultValue:
+                  'The following lessons were saved successfully: {{lessons}}.',
+                lessons: createdLessons.map((lesson) => lesson.title).join(', '),
+              })
+            );
+          }
+
+          toast.error(
+            t('lessons_creation_failed', {
+              defaultValue:
+                'Some lessons could not be saved: {{lessons}}. Please review and try again.',
+              lessons: failedLessons.map((lesson) => lesson.title).join(', '),
+            })
+          );
+
+          return;
+        }
 
         const events = [
           {
