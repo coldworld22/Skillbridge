@@ -58,7 +58,13 @@ describe("generate certificate route", () => {
     );
 
     expect(res.statusCode).toBe(200);
-    expect(service.issueCertificate).toHaveBeenCalled();
+    expect(service.issueCertificate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user1",
+        tutorialId: TUTORIAL_ID,
+        certificateType: "Completion",
+      }),
+    );
   });
 });
 

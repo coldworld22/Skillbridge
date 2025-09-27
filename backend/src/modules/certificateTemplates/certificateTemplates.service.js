@@ -49,3 +49,13 @@ exports.duplicate = async (id) => {
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
 };
+
+exports.getActiveByType = async (type) => {
+  if (!type) return null;
+
+  return db("certificate_templates")
+    .where({ type })
+    .andWhere({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
+};
