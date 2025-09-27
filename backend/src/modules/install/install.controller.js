@@ -58,20 +58,38 @@ const runScript = async (scriptKey, { env = {}, args = [] } = {}) => {
   }
 };
 
-const parseInstallerOutput = (stdout, stderr) => {
-  const trimmed = (stdout || '').trim();
-  if (trimmed) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed && typeof parsed === 'object') {
-        return parsed;
+const parseInstallerOutput = (stdout, stderr, { assumeOk = false } = {}) => {
+  const stdoutString = typeof stdout === 'string' ? stdout : (stdout || '').toString();
+  const stderrString = typeof stderr === 'string' ? stderr : (stderr || '').toString();
+  const trimmedStdout = stdoutString.trim();
+
+  if (trimmedStdout) {
+    const lines = trimmedStdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      const candidate = lines[index];
+      if (!candidate) continue;
+      try {
+        const parsed = JSON.parse(candidate);
+        if (parsed && typeof parsed === 'object') {
+          if (index !== lines.length - 1) {
+            parsed.output = trimmedStdout;
+          }
+          return parsed;
+        }
+      } catch (_err) {
+        // Continue scanning for a JSON payload.
       }
-    } catch (_err) {
-      // fall through to raw output
     }
+
+    return { ok: assumeOk, output: trimmedStdout };
   }
-  const combined = `${stdout || ''}${stderr || ''}`.trim();
-  return { ok: false, output: combined };
+
+  const combined = `${stdoutString || ''}${stderrString || ''}`.trim();
+  if (combined) {
+    return { ok: assumeOk, output: combined };
+  }
+
+  return { ok: assumeOk, output: '' };
 };
 
 exports.checkPrereqs = async (req, res, next) => {
@@ -339,7 +357,7 @@ exports.runInstall = async (req, res) => {
     }
     await emailConfigService.updateSettings(nextEmailSettings);
 
-    const parsed = parseInstallerOutput(stdout, stderr);
+    const parsed = parseInstallerOutput(stdout, stderr, { assumeOk: true });
     const ok = typeof parsed.ok === 'boolean' ? parsed.ok : true;
     await cleanupTempConfig();
     return res.status(ok ? 200 : 500).json({ ...parsed, ok });
