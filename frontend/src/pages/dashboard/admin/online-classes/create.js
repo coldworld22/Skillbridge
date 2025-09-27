@@ -130,8 +130,30 @@ function CreateOnlineClass() {
       toast.error(t('image_size_exceeded'));
       return;
     }
+    setImageUploading(true);
+    setUploadProgress(0);
 
-    mediaImageUpload(e);
+    const reader = new FileReader();
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      }
+    };
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: reader.result
+      }));
+      setUploadProgress(100);
+      setImageUploading(false);
+    };
+    reader.onerror = () => {
+      toast.error(t('image_preview_failed'));
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleVideoUpload = (e) => {
@@ -147,12 +169,15 @@ function CreateOnlineClass() {
       toast.error(t('video_size_exceeded'));
       return;
     }
+
     setVideoUploading(true);
+    setUploadProgress(0);
     setFormData((prev) => ({
       ...prev,
       demoVideo: file,
       demoPreview: URL.createObjectURL(file),
     }));
+    setUploadProgress(100);
     setVideoUploading(false);
   };
 
