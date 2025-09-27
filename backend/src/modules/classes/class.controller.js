@@ -61,9 +61,11 @@ exports.createClass = catchAsync(async (req, res) => {
     }
     data.included_plans = ids;
   }
-  if (access_type) {
-    data.access_type = access_type;
-  }
+  const normalizedAccessType =
+    typeof access_type === "string" && ["paid", "free"].includes(access_type)
+      ? access_type
+      : "paid";
+  data.access_type = normalizedAccessType;
   if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
     const plan = await getActiveInstructorPlan(req.user.id);
