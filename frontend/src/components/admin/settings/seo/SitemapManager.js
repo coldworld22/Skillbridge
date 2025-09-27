@@ -7,19 +7,23 @@ const DEFAULT_PAGE = { path: "/", include: true, priority: 1.0, freq: "daily" };
 
 export default function SitemapManager({ config, update, availablePages }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.sitemap" });
-  const [pages, setPages] = useState(
-    config.sitemap.length
+  const defaultPages = () => [
+    { path: "/", include: true, priority: 1.0, freq: "daily" },
+  ];
+
+  const [pages, setPages] = useState(() =>
+    config?.sitemap?.length
       ? config.sitemap.map((page) => ({ ...page }))
-      : [DEFAULT_PAGE]
+      : defaultPages()
   );
 
   useEffect(() => {
-    if (Array.isArray(config.sitemap) && config.sitemap.length > 0) {
+    if (Array.isArray(config?.sitemap) && config.sitemap.length) {
       setPages(config.sitemap.map((page) => ({ ...page })));
-    } else if (Array.isArray(config.sitemap)) {
-      setPages([DEFAULT_PAGE]);
+    } else {
+      setPages(defaultPages());
     }
-  }, [config.sitemap]);
+  }, [config?.sitemap]);
 
   const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 
