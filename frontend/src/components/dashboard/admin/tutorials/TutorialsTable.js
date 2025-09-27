@@ -70,9 +70,9 @@ function TutorialsTable({
                     <Button
                       onClick={() => {
                         setSearchQuery("");
-                        setFilterCategory("All");
-                        setFilterStatus("All");
-                        setFilterApproval("All");
+                        setFilterCategory("");
+                        setFilterStatus("");
+                        setFilterApproval("");
                         setCurrentPage(1);
                       }}
                       className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800"
