@@ -1,5 +1,9 @@
 # SkillBridge Documentation
 
+Open `index.html` in this folder for the fully linked HTML landing page. It
+provides quick access to every guide plus shortcuts back to the original
+Markdown files when you prefer a text-first view.
+
 ## Installation
 
 Choose the path that matches your environment:
