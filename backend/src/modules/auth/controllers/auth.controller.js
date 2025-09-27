@@ -10,6 +10,14 @@ const authMiddleware = require("../../../middleware/auth/authMiddleware");
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
 
+const omitCookieExpiry = (options = {}) => {
+  const { maxAge, expires, ...rest } = options;
+  return rest;
+};
+
+const refreshCookieClearOptions = omitCookieExpiry(refreshCookieOptions);
+const csrfCookieClearOptions = omitCookieExpiry(csrfCookieOptions);
+
 /**
  * @desc Register a new user
  * @access Public
@@ -145,7 +153,11 @@ exports.refreshToken = catchAsync(async (req, res) => {
     response.json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
-    return res.status(401).json({ message: "Invalid or expired refresh token" });
+    return res
+      .clearCookie("refreshToken", refreshCookieClearOptions)
+      .clearCookie("csrfToken", csrfCookieClearOptions)
+      .status(401)
+      .json({ message: "Invalid or expired refresh token" });
   }
 });
 
@@ -172,8 +184,8 @@ exports.logout = catchAsync(async (req, res) => {
     await authMiddleware.addTokenToBlacklist(access);
   }
   res
-    .clearCookie("refreshToken", refreshCookieOptions)
-    .clearCookie("csrfToken", csrfCookieOptions)
+    .clearCookie("refreshToken", refreshCookieClearOptions)
+    .clearCookie("csrfToken", csrfCookieClearOptions)
     .json({ message: "Logged out successfully" });
 });
 
