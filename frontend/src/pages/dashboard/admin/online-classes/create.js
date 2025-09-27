@@ -12,9 +12,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
-import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
+import { FaSpinner, FaUpload } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -30,6 +31,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -77,9 +79,19 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const demoPreview = formData.demoPreview;
+
+  useEffect(() => {
+    return () => {
+      if (demoPreview) {
+        URL.revokeObjectURL(demoPreview);
+      }
+    };
+  }, [demoPreview]);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -87,7 +99,9 @@ function CreateOnlineClass() {
         (t) =>
           tagInput &&
           t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.includes(t.name)
+          !selectedTags.some(
+            (selected) => selected.toLowerCase() === t.name.toLowerCase()
+          )
       ),
     [allTags, tagInput, selectedTags]
   );
@@ -131,7 +145,7 @@ function CreateOnlineClass() {
       toast.error(t('image_size_exceeded'));
       return;
     }
-    setImageUploading(true);
+    setIsImageUploading(true);
     setUploadProgress(0);
 
     const reader = new FileReader();
@@ -148,11 +162,11 @@ function CreateOnlineClass() {
         imagePreview: reader.result
       }));
       setUploadProgress(100);
-      setImageUploading(false);
+      setIsImageUploading(false);
     };
     reader.onerror = () => {
       toast.error(t('image_preview_failed'));
-      setImageUploading(false);
+      setIsImageUploading(false);
     };
     reader.readAsDataURL(file);
   };
@@ -171,22 +185,37 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(true);
+    setIsVideoUploading(true);
     setUploadProgress(0);
-    setFormData((prev) => ({
-      ...prev,
-      demoVideo: file,
-      demoPreview: URL.createObjectURL(file),
-    }));
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.demoPreview) {
+        URL.revokeObjectURL(prev.demoPreview);
+      }
+      return {
+        ...prev,
+        demoVideo: file,
+        demoPreview: previewUrl,
+      };
+    });
     setUploadProgress(100);
-    setVideoUploading(false);
+    setIsVideoUploading(false);
   };
 
   const addTag = (tag) => {
-    if (tag && !selectedTags.includes(tag)) {
-      setSelectedTags((prev) => [...prev, tag]);
+    const normalized = tag.trim();
+    if (!normalized) return;
+
+    const alreadySelected = selectedTags.some(
+      (existing) => existing.toLowerCase() === normalized.toLowerCase()
+    );
+    if (alreadySelected) {
       setTagInput('');
+      return;
     }
+
+    setSelectedTags((prev) => [...prev, normalized]);
+    setTagInput('');
   };
 
   const removeTag = (tagToRemove) => {
@@ -226,6 +255,13 @@ function CreateOnlineClass() {
         toast.error(t('complete_lesson_details'));
         return;
       }
+      if (
+        formData.accessType === 'paid' &&
+        (!formData.price || Number(formData.price) <= 0)
+      ) {
+        toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
+        return;
+      }
       if (!user?.id) {
         toast.error(t('user_info_unavailable'));
         return;
@@ -263,6 +299,7 @@ function CreateOnlineClass() {
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
         const newClass = await createAdminClass(payload, (e) => {
+          if (!e?.total) return;
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
@@ -582,7 +619,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {imageUploading ? (
+                            {isImageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -629,7 +666,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {videoUploading ? (
+                            {isVideoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -813,9 +850,6 @@ const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, {
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
-
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 export async function getStaticProps({ locale }) {
   return {
