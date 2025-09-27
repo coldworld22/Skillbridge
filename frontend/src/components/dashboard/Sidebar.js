@@ -56,7 +56,7 @@ export default function Sidebar({ role = 'admin' }) {
     setActiveDropdown((prev) => (prev === label ? null : label));
   };
 
-  const shouldUseSettings = isHydrated || appConfigHydrated;
+  const shouldUseSettings = isHydrated && appConfigHydrated;
   const fallbackAppName = 'SkillBridge';
   const displayAppName =
     shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
