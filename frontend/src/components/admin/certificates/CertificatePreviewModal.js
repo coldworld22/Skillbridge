@@ -23,67 +23,40 @@ const buildFallbackPreview = (template) => {
     grade: "A+",
     certificateCode: `PREVIEW-${String(safeId).slice(0, 8).toUpperCase()}`,
   };
-};
 
-export default function CertificatePreviewModal({
-  template,
-  onClose,
-  previewData,
-  loadingPreview = false,
-}) {
-  const [data, setData] = useState(previewData ?? null);
-  const [isLoading, setIsLoading] = useState(false);
+  const sampleData = template.sample_data || {};
+  const normalizedSampleData = {
+    id:
+      sampleData.id ??
+      sampleData.sample_id ??
+      sampleData.serial_number ??
+      sampleData.serial ??
+      undefined,
+    studentName:
+      sampleData.student_name ?? sampleData.studentName ?? undefined,
+    courseName:
+      sampleData.course_name ?? sampleData.courseName ?? undefined,
+    issueDate:
+      sampleData.issue_date ?? sampleData.issueDate ?? undefined,
+    instructor:
+      sampleData.instructor ??
+      sampleData.instructor_name ??
+      sampleData.teacher ??
+      undefined,
+    platformName:
+      sampleData.platform_name ?? sampleData.platformName ?? undefined,
+    grade: sampleData.grade ?? sampleData.final_grade ?? undefined,
+  };
 
-  useEffect(() => {
-    setData(previewData ?? null);
-  }, [previewData]);
+  const sanitizedSampleData = Object.fromEntries(
+    Object.entries(normalizedSampleData).filter(([, value]) => value !== undefined && value !== null)
+  );
 
-  useEffect(() => {
-    if (!template) {
-      setData(null);
-      return;
-    }
-
-    if (previewData) return;
-
-    if (!template.id) {
-      setData(buildFallbackPreview(template));
-      return;
-    }
-
-    let mounted = true;
-    setIsLoading(true);
-
-    getTemplatePreview(template.id)
-      .then((payload) => {
-        if (!mounted) return;
-        if (payload) {
-          setData(payload);
-        } else {
-          setData(buildFallbackPreview(template));
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load certificate preview", err);
-        if (mounted) setData(buildFallbackPreview(template));
-      })
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [template, previewData]);
-
-  const resolvedData = useMemo(() => {
-    if (!template) return null;
-    return data ?? buildFallbackPreview(template);
-  }, [data, template]);
-
-  if (!template || !resolvedData) return null;
-
-  const effectiveLoading = loadingPreview || isLoading;
+  const data = {
+    ...defaultData,
+    ...sanitizedSampleData,
+    ...(mockData || {}),
+  };
 
   const {
     border_color,

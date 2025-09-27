@@ -19,14 +19,24 @@ exports.getById = async (id) => {
 };
 
 exports.create = async (data) => {
-  const [row] = await db("certificate_templates").insert(data).returning("*");
+  const payload = { ...data };
+  if (payload.sample_data == null) {
+    payload.sample_data = {};
+  }
+  const [row] = await db("certificate_templates")
+    .insert(payload)
+    .returning("*");
   return row;
 };
 
 exports.update = async (id, data) => {
+  const payload = { ...data };
+  if (payload.sample_data == null) {
+    payload.sample_data = {};
+  }
   const rows = await db("certificate_templates")
     .where({ id })
-    .update(data)
+    .update(payload)
     .returning("*");
   if (!rows.length) return null;
   return rows[0];
