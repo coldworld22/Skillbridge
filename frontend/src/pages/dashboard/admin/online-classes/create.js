@@ -78,6 +78,25 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading: uploaderVideoUploading,
+    handleImageUpload: mediaImageUpload,
+    handleVideoUpload: mediaVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    t,
+    onError: (msg) => toast.error(msg),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+  });
+
+  const [isServerUploading, setIsServerUploading] = useState(false);
+  const videoUploading = uploaderVideoUploading || isServerUploading;
+
   const filteredTagSuggestions = useMemo(
     () =>
       allTags.filter(
@@ -129,29 +148,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setImageUploading(true);
-    setUploadProgress(0);
-
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
@@ -168,12 +165,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(false);
-    setFormData((prev) => ({
-      ...prev,
-      demoVideo: file,
-      demoPreview: URL.createObjectURL(file),
-    }));
+    mediaVideoUpload(e);
   };
 
   const addTag = (tag) => {
@@ -226,7 +218,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -295,7 +287,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };
