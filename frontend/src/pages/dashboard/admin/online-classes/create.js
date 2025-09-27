@@ -130,30 +130,27 @@ function CreateOnlineClass() {
       }
     };
   }, [demoPreview]);
+  const filteredTagSuggestions = useMemo(() => {
+    const input = tagInput.trim();
+    if (!input) {
+      return [];
+    }
 
-  const filteredTagSuggestions = useMemo(
-    () =>
-      allTags.filter((t) => {
-        if (!tagInput) {
-          return false;
-        }
+    const lowerInput = input.toLowerCase();
+    return allTags.filter((t) => {
+      const name = typeof t?.name === 'string' ? t.name.trim() : '';
+      if (!name) {
+        return false;
+      }
 
-        const rawName = typeof t?.name === 'string' ? t.name : '';
-        const trimmedName = rawName.trim();
-        if (!trimmedName) {
-          return false;
-        }
+      const lowerName = name.toLowerCase();
+      const alreadySelected = selectedTags.some(
+        (selected) => selected.toLowerCase() === lowerName
+      );
 
-        const lowerName = trimmedName.toLowerCase();
-        const lowerInput = tagInput.toLowerCase();
-
-        return (
-          lowerName.includes(lowerInput) &&
-          !selectedTags.some((selected) => selected.toLowerCase() === lowerName)
-        );
-      }),
-    [allTags, tagInput, selectedTags]
-  );
+      return lowerName.includes(lowerInput) && !alreadySelected;
+    });
+  }, [allTags, tagInput, selectedTags]);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -310,15 +307,18 @@ function CreateOnlineClass() {
   };
 
   const addTag = (tag) => {
-    const rawTag =
+    const raw =
       typeof tag === 'string'
         ? tag
         : typeof tag?.name === 'string'
           ? tag.name
           : '';
 
-    const normalized = rawTag.trim();
-    if (!normalized) return;
+    const normalized = raw.trim();
+    if (!normalized) {
+      setTagInput('');
+      return;
+    }
 
     const alreadySelected = selectedTags.some(
       (existing) => existing.toLowerCase() === normalized.toLowerCase()
