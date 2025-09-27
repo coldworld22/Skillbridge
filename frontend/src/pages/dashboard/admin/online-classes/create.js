@@ -30,7 +30,6 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
-import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -77,6 +76,9 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -128,7 +130,6 @@ function CreateOnlineClass() {
       toast.error(t('image_size_exceeded'));
       return;
     }
-
     setImageUploading(true);
     setUploadProgress(0);
 
@@ -145,6 +146,7 @@ function CreateOnlineClass() {
         image: file,
         imagePreview: reader.result
       }));
+      setUploadProgress(100);
       setImageUploading(false);
     };
     reader.onerror = () => {
@@ -168,12 +170,15 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(false);
+    setVideoUploading(true);
+    setUploadProgress(0);
     setFormData((prev) => ({
       ...prev,
       demoVideo: file,
       demoPreview: URL.createObjectURL(file),
     }));
+    setUploadProgress(100);
+    setVideoUploading(false);
   };
 
   const addTag = (tag) => {
@@ -226,7 +231,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -295,7 +300,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };
