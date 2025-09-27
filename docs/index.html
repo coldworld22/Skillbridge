@@ -1,280 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SkillBridge Documentation</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-    }
-    body {
-      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f7fa;
-      color: #102a43;
-      line-height: 1.6;
-    }
-    header {
-      background: linear-gradient(135deg, #4338ca, #0ea5e9);
-      color: #ffffff;
-      padding: 3rem 1.5rem 2.5rem;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: clamp(2.25rem, 5vw, 3rem);
-      letter-spacing: -0.03em;
-    }
-    header p {
-      margin: 0.75rem auto 0;
-      max-width: 720px;
-      font-size: 1.05rem;
-      color: rgba(255, 255, 255, 0.9);
-    }
-    main {
-      max-width: 1100px;
-      margin: -2rem auto 4rem;
-      padding: 0 1.5rem;
-    }
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 18px;
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-      padding: 1.75rem 1.5rem;
-      border: 1px solid rgba(15, 23, 42, 0.06);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.16);
-    }
-    .card h2 {
-      margin-top: 0;
-      font-size: 1.35rem;
-      color: #0f172a;
-    }
-    .card p {
-      margin: 0.75rem 0 1.25rem;
-      color: #475569;
-      font-size: 0.95rem;
-    }
-    .link-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .link-group a {
-      background: #1d4ed8;
-      color: #ffffff;
-      text-decoration: none;
-      padding: 0.45rem 0.9rem;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      transition: background 0.2s ease;
-    }
-    .link-group a.secondary {
-      background: rgba(37, 99, 235, 0.12);
-      color: #1d4ed8;
-    }
-    .link-group a:hover {
-      background: #1e40af;
-      color: #ffffff;
-    }
-    .link-group a.secondary:hover {
-      background: rgba(29, 78, 216, 0.22);
-      color: #1d4ed8;
-    }
-    section + section {
-      margin-top: 3.5rem;
-    }
-    section h3 {
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #64748b;
-      margin-bottom: 1.5rem;
-    }
-    footer {
-      margin: 4rem auto 3rem;
-      max-width: 900px;
-      text-align: center;
-      color: #475569;
-      font-size: 0.95rem;
-    }
-    footer a {
-      color: #1d4ed8;
-      text-decoration: none;
-    }
-    footer a:hover {
-      text-decoration: underline;
-    }
-    @media (max-width: 600px) {
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkillBridge Documentation</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f8fafc;
+        --card-bg: #ffffffcc;
+        --text: #0f172a;
+        --muted: #475569;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --border: #cbd5f5;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f172a;
+          --card-bg: #1e293bcc;
+          --text: #e2e8f0;
+          --muted: #94a3b8;
+          --accent: #60a5fa;
+          --accent-hover: #3b82f6;
+          --border: #334155;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
       header {
-        padding: 2.5rem 1.25rem 2rem;
+        padding: 3.5rem 1.5rem 2rem;
+        text-align: center;
       }
+
+      header h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 5vw, 2.75rem);
+      }
+
+      header p {
+        margin: 0 auto;
+        max-width: 680px;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+
       main {
-        margin-top: -2.5rem;
+        padding: 0 1.5rem 3rem;
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        gap: 2.5rem;
       }
-      .card {
-        padding: 1.5rem 1.35rem;
+
+      section {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 20px 45px -25px rgba(15, 23, 42, 0.25);
       }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>SkillBridge Documentation Hub</h1>
-    <p>
-      Start here when unpacking the customer ZIP or cloning the repository. These guides cover installation,
-      day-to-day operations, integration details, and release management. All links work offline &mdash; just
-      open this page directly from the <code>docs/</code> folder.
-    </p>
-  </header>
-  <main>
-    <section>
-      <h3>Start here</h3>
-      <div class="card-grid">
-        <article class="card">
-          <div>
-            <h2>Getting Started</h2>
-            <p>Unpack the CodeCanyon package, review prerequisites, and bootstrap your environment quickly.</p>
-          </div>
-          <div class="link-group">
-            <a href="./getting-started.html">Read HTML</a>
-            <a class="secondary" href="./getting-started.md">View Markdown</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>Installation Guide</h2>
-            <p>Detailed setup for Docker, environment variables, and local or production deployments.</p>
-          </div>
-          <div class="link-group">
-            <a href="./installation.html">Read HTML</a>
-            <a class="secondary" href="./installation.md">View Markdown</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>Deployment Checklist</h2>
-            <p>Best practices for shipping updates, securing services, and handling ZIP deployments.</p>
-          </div>
-          <div class="link-group">
-            <a href="./deployment.html">Read HTML</a>
-            <a class="secondary" href="./deployment.md">View Markdown</a>
-          </div>
-        </article>
-      </div>
-    </section>
 
-    <section>
-      <h3>Platform Architecture &amp; API</h3>
-      <div class="card-grid">
-        <article class="card">
-          <div>
-            <h2>Architecture Overview</h2>
-            <p>Understand the backend, frontend, and infrastructure layers that power SkillBridge.</p>
-          </div>
-          <div class="link-group">
-            <a href="./architecture.html">Read HTML</a>
-            <a class="secondary" href="./architecture.md">View Markdown</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>API Reference</h2>
-            <p>Endpoints, authentication, and integration guidance for building against the SkillBridge API.</p>
-          </div>
-          <div class="link-group">
-            <a href="./api-docs.html">Read HTML</a>
-            <a class="secondary" href="./api-docs.md">View Markdown</a>
-          </div>
-        </article>
-      </div>
-    </section>
+      h2 {
+        margin-top: 0;
+        font-size: 1.5rem;
+      }
 
-    <section>
-      <h3>Operations &amp; Administration</h3>
-      <div class="card-grid">
-        <article class="card">
-          <div>
-            <h2>Admin Workflows</h2>
-            <p>Guides for alerts, ads, enrollment, third-party integrations, and other staff tasks.</p>
-          </div>
-          <div class="link-group">
-            <a href="./admin-alerts.html">Alerts</a>
-            <a class="secondary" href="./admin-alerts.md">Markdown</a>
-            <a href="./admin-ads-management.html">Ads</a>
-            <a class="secondary" href="./admin-third-party-integrations.html">Integrations</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>Student Journeys</h2>
-            <p>Walkthroughs covering registration, enrollment, class lifecycle, and subscription styling.</p>
-          </div>
-          <div class="link-group">
-            <a href="./student-registration-guide.html">Registration</a>
-            <a class="secondary" href="./student-registration-guide.md">Markdown</a>
-            <a href="./student-enrollment-workflow.html">Enrollment</a>
-            <a class="secondary" href="./class-lifecycle-workflow.html">Class lifecycle</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>Billing &amp; Compliance</h2>
-            <p>Configure subscription plans, coupons, payment icons, and license verification.</p>
-          </div>
-          <div class="link-group">
-            <a href="./subscription-plan-style.html">Subscriptions</a>
-            <a class="secondary" href="./subscription-plan-style.md">Markdown</a>
-            <a href="./coupon-management.html">Coupons</a>
-            <a class="secondary" href="./license-verification.html">License checks</a>
-          </div>
-        </article>
-      </div>
-    </section>
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.85rem;
+      }
 
-    <section>
-      <h3>Release management</h3>
-      <div class="card-grid">
-        <article class="card">
-          <div>
-            <h2>Release Checklist</h2>
-            <p>Follow this list before publishing updates to customers or pushing new Docker images.</p>
-          </div>
-          <div class="link-group">
-            <a href="./release-checklist.html">Read HTML</a>
-            <a class="secondary" href="./release-checklist.md">View Markdown</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <h2>Changelog</h2>
-            <p>Track notable fixes and features to communicate what changed between releases.</p>
-          </div>
-          <div class="link-group">
-            <a href="./changelog.html">Read HTML</a>
-            <a class="secondary" href="./changelog.md">View Markdown</a>
-          </div>
-        </article>
-      </div>
-    </section>
-  </main>
-  <footer>
-    Need something else? Browse the full list of Markdown sources in this folder or open the
-    <a href="../frontend/src/pages/docs/index.js">in-app documentation index</a> for the live UI.
-  </footer>
-</body>
+      li a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      li a:hover,
+      li a:focus {
+        color: var(--accent-hover);
+        text-decoration: underline;
+      }
+
+      .description {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 0.95rem;
+        margin: 0.15rem 0 0 1.75rem;
+      }
+
+      .quick-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+        margin: 2.5rem 0 0;
+      }
+
+      .quick-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .quick-links a:hover,
+      .quick-links a:focus {
+        border-color: var(--accent-hover);
+        color: var(--accent-hover);
+      }
+
+      footer {
+        text-align: center;
+        padding: 2.5rem 1.5rem 3.5rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 720px) {
+        section {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SkillBridge Documentation</h1>
+      <p>
+        Start with the quick links below or explore the full library of HTML
+        guides. Each page also includes a link to the original Markdown source
+        if you prefer a raw or text-only version.
+      </p>
+      <nav class="quick-links" aria-label="Top documentation links">
+        <a href="./installation.html">🚀 Installation</a>
+        <a href="./getting-started.html">✨ Getting Started</a>
+        <a href="./deployment.html">☁️ Deployment</a>
+        <a href="./architecture.html">📐 Architecture</a>
+        <a href="./api-docs.html">🛠️ API Reference</a>
+      </nav>
+    </header>
+    <main>
+      <section aria-labelledby="setup">
+        <h2 id="setup">Setup &amp; Operations</h2>
+        <ul>
+          <li>
+            <a href="./installation.html">Installation Guide</a>
+            <p class="description">
+              Full walkthrough for installing SkillBridge from the packaged ZIP
+              or Git repository. <a href="./installation.md">Markdown version</a>
+              available.
+            </p>
+          </li>
+          <li>
+            <a href="./getting-started.html">Getting Started</a>
+            <p class="description">
+              Learn the basics of setting up your environment and verifying the
+              stack. <a href="./getting-started.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./deployment.html">Deployment Checklist</a>
+            <p class="description">
+              Production hardening, environment variables, and hosting tips.
+              <a href="./deployment.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./architecture.html">System Architecture</a>
+            <p class="description">
+              Overview of backend, frontend, and infrastructure layers.
+              <a href="./architecture.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./release-checklist.html">Release Checklist</a>
+            <p class="description">
+              Final QA and publishing tasks for new versions.
+              <a href="./release-checklist.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./changelog.html">Changelog</a>
+            <p class="description">
+              Track notable updates between releases.
+              <a href="./changelog.md">Markdown version</a>.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="admin">
+        <h2 id="admin">Administrator Guides</h2>
+        <ul>
+          <li>
+            <a href="./admin-alerts.html">Admin Alerts</a>
+            <p class="description">
+              Monitor runtime warnings and errors from the dashboard.
+              <a href="./admin-alerts.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./admin-category-management.html">Category Management</a>
+            <p class="description">
+              Build and organize course categories.
+              <a href="./admin-category-management.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./admin-ads-management.html">Ads Management</a>
+            <p class="description">
+              Configure promotional placements across the platform.
+              <a href="./admin-ads-management.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./admin-third-party-integrations.html">Third-party Integrations</a>
+            <p class="description">
+              Connect external services such as ChatGPT and payment providers.
+              <a href="./admin-third-party-integrations.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./messages-config.html">Messages Config</a>
+            <p class="description">
+              Manage transactional SMS and email gateways.
+              <a href="./messages-config.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./subscription-plan-style.html">Subscription Plan Styling</a>
+            <p class="description">
+              Customize the subscription plan presentation.
+              <a href="./subscription-plan-style.md">Markdown version</a>.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="workflows">
+        <h2 id="workflows">Core Workflows</h2>
+        <ul>
+          <li>
+            <a href="./book-workflow.html">Book Workflow</a>
+            <p class="description">
+              Manage book listings from creation to publishing.
+              <a href="./book-workflow.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./class-lifecycle-workflow.html">Class Lifecycle Workflow</a>
+            <p class="description">
+              Create classes, manage assignments, and issue certificates.
+              <a href="./class-lifecycle-workflow.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./class-plan-coverage.html">Class Plan Coverage</a>
+            <p class="description">
+              Configure class plan coverage options.
+              <a href="./class-plan-coverage.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./student-registration-guide.html">Student Registration Guide</a>
+            <p class="description">
+              Walk through the learner registration experience.
+              <a href="./student-registration-guide.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./student-enrollment-workflow.html">Enrollment Workflow</a>
+            <p class="description">
+              Understand student purchasing and enrollment flows.
+              <a href="./student-enrollment-workflow.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./social-login-setup.html">Social Login Setup</a>
+            <p class="description">
+              Configure Google, Facebook, Apple, and GitHub sign-in.
+              <a href="./social-login-setup.md">Markdown version</a>.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="commerce">
+        <h2 id="commerce">Commerce &amp; Monetization</h2>
+        <ul>
+          <li>
+            <a href="./license-verification.html">License Verification</a>
+            <p class="description">
+              Verify purchase codes to unlock gated features.
+              <a href="./license-verification.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./coupon-management.html">Coupon Management</a>
+            <p class="description">
+              Create, update, and report on promotional offers.
+              <a href="./coupon-management.md">Markdown version</a>.
+            </p>
+          </li>
+          <li>
+            <a href="./payment-icon-sources.html">Payment Icon Sources</a>
+            <p class="description">
+              Attribution and licensing for payment method artwork.
+              <a href="./payment-icon-sources.md">Markdown version</a>.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="developers">
+        <h2 id="developers">Developer Reference</h2>
+        <ul>
+          <li>
+            <a href="./api-docs.html">REST API Overview</a>
+            <p class="description">
+              Explore backend endpoints and payload formats.
+              <a href="./api-docs.md">Markdown version</a>.
+            </p>
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      Looking for something else? Browse the <a href="./">docs directory</a>
+      directly or search within this folder. Open the Markdown files in any text
+      editor if you prefer plain text.
+    </footer>
+  </body>
 </html>
