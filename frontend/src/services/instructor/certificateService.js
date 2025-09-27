@@ -2,15 +2,24 @@
 // Instructor Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
+import { toCamelCase } from "@/utils/case";
+
+const mapCertificateResponse = (payload) => {
+  if (payload === undefined || payload === null) {
+    return payload;
+  }
+  return toCamelCase(payload);
+};
 
 export const fetchCertificates = async () => {
   const { data } = await api.get("/certificates/instructor");
-  return data?.data ?? [];
+  const certificates = data?.data ?? [];
+  return mapCertificateResponse(certificates) ?? [];
 };
 
 export const getCertificate = async (id) => {
   const { data } = await api.get(`/certificates/instructor/${id}`);
-  return data?.data;
+  return mapCertificateResponse(data?.data);
 };
 
 export const deleteCertificate = async (id) => {
@@ -19,7 +28,7 @@ export const deleteCertificate = async (id) => {
 
 export const issueCertificate = async (payload) => {
   const { data } = await api.post("/certificates/instructor", payload);
-  return data?.data;
+  return mapCertificateResponse(data?.data);
 };
 
 export const downloadCertificate = async (id) => {

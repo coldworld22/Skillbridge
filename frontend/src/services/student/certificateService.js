@@ -2,15 +2,24 @@
 // Student Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
+import { toCamelCase } from "@/utils/case";
+
+const mapCertificateResponse = (payload) => {
+  if (payload === undefined || payload === null) {
+    return payload;
+  }
+  return toCamelCase(payload);
+};
 
 export const fetchCertificates = async () => {
   const { data } = await api.get("/certificates/student");
-  return data?.data ?? [];
+  const certificates = data?.data ?? [];
+  return mapCertificateResponse(certificates) ?? [];
 };
 
 export const getCertificate = async (id) => {
   const { data } = await api.get(`/certificates/student/${id}`);
-  return data?.data;
+  return mapCertificateResponse(data?.data);
 };
 
 export const downloadCertificate = async (id) => {
@@ -22,10 +31,10 @@ export const downloadCertificate = async (id) => {
 
 export const issueCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/issue`);
-  return data?.data;
+  return mapCertificateResponse(data?.data);
 };
 
 export const revokeCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/revoke`);
-  return data?.data;
+  return mapCertificateResponse(data?.data);
 };
