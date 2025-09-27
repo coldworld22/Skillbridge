@@ -3,7 +3,17 @@ const ClassModel = require("./class.model");
 const { parsePagination } = require("../../utils/pagination");
 
 exports.createClass = async (data) => {
-  return ClassModel.create(data);
+  const normalizedAccessType =
+    typeof data?.access_type === "string" && ["paid", "free"].includes(data.access_type)
+      ? data.access_type
+      : "paid";
+
+  const payload = {
+    ...data,
+    access_type: normalizedAccessType,
+  };
+
+  return ClassModel.create(payload);
 };
 
 exports.countPublishedClasses = async (instructorId) => {

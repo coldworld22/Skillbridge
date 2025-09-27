@@ -203,6 +203,26 @@ describe('Class routes', () => {
     expect(res.body.data.access_type).toBe('free');
   });
 
+  test('instructor class creation defaults access_type to paid when omitted', async () => {
+    const created = {
+      id: '2',
+      instructor_id: 'test-user',
+      title: 'Paid Class',
+      access_type: 'paid',
+    };
+    service.createClass.mockResolvedValue(created);
+
+    const res = await request(app)
+      .post('/classes/instructor')
+      .send({ title: 'Paid Class' });
+
+    expect(res.statusCode).toBe(200);
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({ access_type: 'paid' })
+    );
+    expect(res.body.data.access_type).toBe('paid');
+  });
+
   test('instructor cannot create class when feature disabled', async () => {
     planService.getPlanById.mockResolvedValueOnce({
       id: 'plan1',
