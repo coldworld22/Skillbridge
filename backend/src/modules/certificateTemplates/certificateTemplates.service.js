@@ -27,6 +27,21 @@ exports.remove = async (id) => {
   return deleted;
 };
 
+exports.getActiveTemplateId = async () => {
+  const activeTemplate = await db("certificate_templates")
+    .where({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
+
+  if (activeTemplate) return activeTemplate.id;
+
+  const fallbackTemplate = await db("certificate_templates")
+    .orderBy("created_at", "desc")
+    .first();
+
+  return fallbackTemplate ? fallbackTemplate.id : null;
+};
+
 exports.toggleStatus = async (id) => {
   const [row] = await db("certificate_templates")
     .where({ id })

@@ -1,6 +1,7 @@
 const db = require('../../../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { generateCode } = require('../../users/tutorials/certificate/certificate.service');
+const certificateTemplatesService = require('../../certificateTemplates/certificateTemplates.service');
 
 const getPolicy = async (classId) => {
   const existing = await db('class_scoring_policies').where({ class_id: classId }).first();
@@ -110,7 +111,7 @@ const getStudentScore = async (classId, studentId) => {
   return row;
 };
 
-const issueCertificate = async (classId, studentId) => {
+const issueCertificate = async (classId, studentId, templateId = null) => {
   let cert = await db('certificates').where({ class_id: classId, user_id: studentId }).first();
   if (cert) return cert;
 
@@ -118,12 +119,16 @@ const issueCertificate = async (classId, studentId) => {
   if (!score || !score.passed) {
     throw new Error('Student has not passed');
   }
+  const resolvedTemplateId =
+    templateId != null
+      ? templateId
+      : await certificateTemplatesService.getActiveTemplateId();
   cert = {
     id: uuidv4(),
     user_id: studentId,
     class_id: classId,
     tutorial_id: null,
-    template_id: null,
+    template_id: resolvedTemplateId,
     certificate_code: generateCode().replace('TUT', 'CLS'),
     status: 'issued',
   };
