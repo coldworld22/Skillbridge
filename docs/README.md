@@ -1,5 +1,7 @@
 # SkillBridge Documentation
 
+Open `index.html` in this folder for the bundled documentation hub when viewing the packaged ZIP offline. It links directly to every HTML guide and their Markdown sources.
+
 ## Installation
 
 Choose the path that matches your environment:
