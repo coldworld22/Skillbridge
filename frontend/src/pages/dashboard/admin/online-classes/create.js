@@ -108,7 +108,7 @@ function CreateOnlineClass() {
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
-      .then((res) => setCategories(res?.data || []))
+      .then((res) => setCategories(res || []))
       .catch(() => setCategories([]));
     fetchClassTags()
       .then(setAllTags)
