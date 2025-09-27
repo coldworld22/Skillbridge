@@ -52,6 +52,19 @@ function CreateOnlineClass() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
+  const createEmptyLesson = () => ({
+    id:
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `lesson-${Date.now().toString(36)}-${Math.random()
+            .toString(36)
+            .slice(2, 10)}`,
+    title: '',
+    duration: '',
+    resource: null,
+    start_time: ''
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -70,8 +83,7 @@ function CreateOnlineClass() {
     imagePreview: '',
     demoVideo: null,
     demoPreview: '',
-    lessons: [],
-    lessonCount: ''
+    lessons: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isServerUploading, setIsServerUploading] = useState(false);
@@ -228,6 +240,38 @@ function CreateOnlineClass() {
     mediaVideoUpload(e);
   };
 
+  const handleLessonChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      lessons: prev.lessons.map((lesson, idx) =>
+        idx === index ? { ...lesson, [field]: value } : lesson
+      ),
+    }));
+  };
+
+  const handleLessonResourceChange = (index, file) => {
+    setFormData((prev) => ({
+      ...prev,
+      lessons: prev.lessons.map((lesson, idx) =>
+        idx === index ? { ...lesson, resource: file } : lesson
+      ),
+    }));
+  };
+
+  const handleAddLesson = () => {
+    setFormData((prev) => ({
+      ...prev,
+      lessons: [...prev.lessons, createEmptyLesson()],
+    }));
+  };
+
+  const handleRemoveLesson = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      lessons: prev.lessons.filter((_, idx) => idx !== index),
+    }));
+  };
+
   const addTag = (tag) => {
     const normalized = tag.trim();
     if (!normalized) return;
@@ -260,25 +304,22 @@ function CreateOnlineClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      const count = parseInt(formData.lessonCount, 10);
-      if (!formData.title || !formData.startDate || !count || count <= 0) {
+      if (!formData.title || !formData.startDate) {
         toast.error(t('fill_required_fields'));
         return;
       }
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        lessons: Array.from({ length: count }, () => ({
-          title: '',
-          duration: '',
-          resource: null,
-          start_time: ''
-        }))
+        lessons: prev.lessons.length ? prev.lessons : [createEmptyLesson()]
       }));
       setFailedLessonIndices([]);
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
-      const priceValue = Number(formData.price);
+      if (!formData.lessons.length) {
+        toast.error(t('add_at_least_one_lesson'));
+        return;
+      }
       if (formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error(t('complete_lesson_details'));
         return;
@@ -380,8 +421,8 @@ function CreateOnlineClass() {
             title: `Class: ${newClass.title}`,
             start: toDateTimeISO(formData.startDate || newClass.start_date),
           },
-          ...formData.lessons.map((l, idx) => ({
-            id: `lesson-${newClass.id}-${idx}`,
+          ...formData.lessons.map((l) => ({
+            id: `lesson-${newClass.id}-${l.id}`,
             title: `Lesson: ${l.title}`,
             start: toDateTimeISO(l.start_time),
           })),
@@ -631,14 +672,6 @@ function CreateOnlineClass() {
                         />
                       </div>
 
-                      <FloatingInput
-                        label={t('lesson_count_label')}
-                        type="number"
-                        name="lessonCount"
-                        value={formData.lessonCount}
-                        onChange={handleChange}
-                      />
-
                       <div className="space-y-2">
                         <div className="flex items-center space-x-4">
                           <label className="inline-flex items-center">
@@ -820,103 +853,101 @@ function CreateOnlineClass() {
                       {t('lesson_plan')}
                     </h2>
 
-                    {formData.lessons.map((lesson, index) => {
-                      const lessonHasError = failedLessonIndices.includes(index);
-                      return (
-                      <div
-                        key={index}
-                        className={`border rounded-lg p-4 ${lessonHasError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {t('lesson_title_label', { number: index + 1 })}
-                              </label>
-                            <input
-                              type="text"
-                              value={lesson.title}
-                              onChange={(e) => {
-                                const updated = [...formData.lessons];
-                                updated[index].title = e.target.value;
-                                setFormData(prev => ({ ...prev, lessons: updated }));
-                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
-                              }}
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
-                              placeholder={t('lesson_title_placeholder')}
-                            />
+                    {formData.lessons.length === 0 ? (
+                      <p className="text-sm text-gray-600">
+                        {t('no_lessons_added')}
+                      </p>
+                    ) : (
+                      formData.lessons.map((lesson, index) => (
+                        <div
+                          key={lesson.id}
+                          className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4"
+                        >
+                          <div className="flex items-start justify-between">
+                            <h3 className="text-sm font-medium text-gray-800">
+                              {t('lesson_title_label', { number: index + 1 })}
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLesson(index)}
+                              className="text-sm text-red-600 hover:text-red-700"
+                            >
+                              {t('remove_lesson_button')}
+                            </button>
                           </div>
 
-                          <div>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t('lesson_title_field_label')}
+                              </label>
+                              <input
+                                type="text"
+                                value={lesson.title}
+                                onChange={(e) => handleLessonChange(index, 'title', e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                                placeholder={t('lesson_title_placeholder')}
+                              />
+                            </div>
+
+                            <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
                                 {t('duration_label')}
                               </label>
-                            <input
-                              type="text"
-                              value={lesson.duration}
-                              onChange={(e) => {
-                                const updated = [...formData.lessons];
-                                updated[index].duration = e.target.value;
-                                setFormData(prev => ({ ...prev, lessons: updated }));
-                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
-                              }}
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
-                              placeholder={t('duration_placeholder')}
-                            />
-                          </div>
+                              <input
+                                type="text"
+                                value={lesson.duration}
+                                onChange={(e) => handleLessonChange(index, 'duration', e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                                placeholder={t('duration_placeholder')}
+                              />
+                            </div>
 
-                          <div>
+                            <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
                                 {t('start_time_label')}
                               </label>
-                            <input
-                              type="datetime-local"
-                              value={lesson.start_time}
-                              onChange={(e) => {
-                                const updated = [...formData.lessons];
-                                updated[index].start_time = e.target.value;
-                                setFormData(prev => ({ ...prev, lessons: updated }));
-                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
-                              }}
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
-                            />
-                          </div>
+                              <input
+                                type="datetime-local"
+                                value={lesson.start_time}
+                                onChange={(e) => handleLessonChange(index, 'start_time', e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                              />
+                            </div>
 
-                          <div>
+                            <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
                                 {t('resource_file_label')}
                               </label>
-                            <div className="relative">
-                              <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.ppt,.pptx"
-                                onChange={(e) => {
-                                  const updated = [...formData.lessons];
-                                  updated[index].resource = e.target.files[0];
-                                  setFormData(prev => ({ ...prev, lessons: updated }));
-                                  setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
-                                }}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              />
-                              <div className="flex items-center justify-between px-3 py-2 bg-white rounded-md border border-gray-300 text-sm">
-                                <span className="truncate">
-                                  {lesson.resource?.name || t('choose_file_placeholder')}
-                                </span>
-                                <FaUpload className="text-gray-400" />
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                                  onChange={(e) => handleLessonResourceChange(index, e.target.files?.[0] || null)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                                <div className="flex items-center justify-between px-3 py-2 bg-white rounded-md border border-gray-300 text-sm">
+                                  <span className="truncate">
+                                    {lesson.resource?.name || t('choose_file_placeholder')}
+                                  </span>
+                                  <FaUpload className="text-gray-400" />
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                        {lessonHasError && (
-                          <p className="mt-3 text-sm text-red-600">
-                            {t('lesson_failed_hint', {
-                              number: index + 1,
-                              defaultValue: `Lesson ${index + 1} failed to save. Please review the details and try again.`,
-                            })}
-                          </p>
-                        )}
-                      </div>
-                    );
-                    })}
+                      ))
+                    )}
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleAddLesson}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-md"
+                      >
+                        {t('add_lesson_button')}
+                      </button>
+                    </div>
                   </div>
                 )}
               </motion.div>
