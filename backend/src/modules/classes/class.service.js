@@ -25,9 +25,21 @@ exports.countPublishedClasses = async (instructorId) => {
 };
 
 exports.getAllClasses = async (
-  { page = 1, limit = 10, filter, approval, status } = {}
+  { page = 1, limit = 10, filter, approval, status, schedule } = {}
 ) => {
   const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
+  const scheduleCaseSql = `
+    CASE
+      WHEN c.start_date IS NOT NULL AND c.start_date > NOW() THEN 'Upcoming'
+      WHEN c.start_date IS NOT NULL AND c.end_date IS NOT NULL AND NOW() BETWEEN c.start_date AND c.end_date THEN 'Ongoing'
+      WHEN c.end_date IS NOT NULL AND NOW() > c.end_date THEN 'Completed'
+      ELSE 'Upcoming'
+    END
+  `;
+  const scheduleNormalized =
+    typeof schedule === "string" && schedule.trim()
+      ? schedule.trim().toLowerCase()
+      : null;
 
   const countQuery = db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id");
@@ -41,6 +53,8 @@ exports.getAllClasses = async (
   }
   if (approval) countQuery.where("c.moderation_status", approval);
   if (status) countQuery.where("c.status", status);
+  if (scheduleNormalized)
+    countQuery.whereRaw(`LOWER(${scheduleCaseSql}) = ?`, [scheduleNormalized]);
   const totalRow = await countQuery.countDistinct("c.id as count").first();
   const total = parseInt(totalRow.count, 10) || 0;
 
@@ -64,6 +78,7 @@ exports.getAllClasses = async (
       "c.instructor_id",
       "u.full_name as instructor",
       "cat.name as category",
+      db.raw(`${scheduleCaseSql} as schedule_status`),
       db.raw(
         "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
       )
@@ -79,6 +94,8 @@ exports.getAllClasses = async (
   }
   if (approval) query.where("c.moderation_status", approval);
   if (status) query.where("c.status", status);
+  if (scheduleNormalized)
+    query.whereRaw(`LOWER(${scheduleCaseSql}) = ?`, [scheduleNormalized]);
 
   const classes = await query
     .groupBy(
