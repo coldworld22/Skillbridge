@@ -47,47 +47,7 @@ const resolveDocLink = (href) => {
   return slug ? `/docs/${slug}` : href;
 };
 
-// Mirror the landing page fallbacks so standalone builds that execute from
-// .next/standalone/server still reach the root docs directory.
-const DOCS_DIR_CANDIDATES = [
-  path.join(process.cwd(), 'docs'),
-  path.join(process.cwd(), '..', 'docs'),
-  path.join(process.cwd(), '..', '..', 'docs'),
-  path.join(process.cwd(), '..', '..', '..', 'docs'),
-  path.resolve(moduleDir, '../../docs'),
-  path.resolve(moduleDir, '../../../docs'),
-  path.resolve(moduleDir, '../../../..', 'docs'),
-];
-
-async function resolveDocsDirectory() {
-  const envDocsDir = process.env.DOCS_DIR
-    ? path.resolve(process.cwd(), process.env.DOCS_DIR)
-    : null;
-
-  if (envDocsDir) {
-    try {
-      const stats = await fs.stat(envDocsDir);
-      if (stats.isDirectory()) {
-        return envDocsDir;
-      }
-    } catch (error) {
-      // Ignore invalid overrides and fall back to default locations.
-    }
-  }
-
-  for (const candidate of DOCS_DIR_CANDIDATES) {
-    try {
-      const stats = await fs.stat(candidate);
-      if (stats.isDirectory()) {
-        return candidate;
-      }
-    } catch (error) {
-      // Ignore missing paths and keep checking candidates.
-    }
-  }
-
-  return null;
-}
+// Additional resolution handled by shared utility.
 
 export async function getStaticPaths() {
   const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
