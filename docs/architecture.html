@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Backend Architecture Overview | Skillbridge Documentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: #1a1d23;
+    }
+    header {
+      background: #1f2933;
+      color: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    main {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+    nav {
+      width: 260px;
+      background: #f0f4f8;
+      border-right: 1px solid #d9e2ec;
+      padding: 1.5rem 1rem;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    nav h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #52606d;
+      margin-top: 0;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    nav li {
+      margin: 0.35rem 0;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      color: #1f2933;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    nav a:hover {
+      background: #d9e2ec;
+    }
+    nav a.active {
+      background: #3e4c59;
+      color: #fff;
+      font-weight: 600;
+    }
+    article {
+      flex: 1;
+      padding: 2rem 3rem;
+      box-sizing: border-box;
+      max-width: 960px;
+    }
+    article h1, article h2, article h3, article h4 {
+      color: #102a43;
+    }
+    article pre {
+      background: #243b53;
+      color: #f0f4f8;
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+    }
+    article code {
+      background: rgba(15, 23, 42, 0.08);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    article table, article th, article td {
+      border: 1px solid #cbd2d9;
+    }
+    article th, article td {
+      padding: 0.75rem;
+      text-align: left;
+    }
+    article blockquote {
+      border-left: 4px solid #9fb3c8;
+      margin: 1.5rem 0;
+      padding: 0.5rem 1rem;
+      background: #e4ebf5;
+      color: #334e68;
+    }
+    @media (max-width: 960px) {
+      main {
+        flex-direction: column;
+      }
+      nav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #d9e2ec;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Skillbridge Documentation</h1>
+  </header>
+  <main>
+    <nav>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+<li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+<li><a href="admin-alerts.html">Admin Alerts</a></li>
+<li><a href="admin-category-management.html">Admin Category Management</a></li>
+<li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+<li><a href="api-docs.html">API Overview</a></li>
+<li><a href="architecture.html" class="active">Backend Architecture Overview</a></li>
+<li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+<li><a href="changelog.html">Changelog</a></li>
+<li><a href="class-lifecycle-workflow.html">Class Lifecycle &amp; Certificate Workflow</a></li>
+<li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+<li><a href="coupon-management.html">Coupon Management</a></li>
+<li><a href="deployment.html">Deployment Guide</a></li>
+<li><a href="index.html">Getting Started</a></li>
+<li><a href="installation.html">Installation Guide</a></li>
+<li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+<li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+<li><a href="release-checklist.html">Release Checklist</a></li>
+<li><a href="social-login-setup.html">Social Login Setup</a></li>
+<li><a href="student-enrollment-workflow.html">Student Class Purchase &amp; Enrollment Workflow</a></li>
+<li><a href="student-registration-guide.html">Student Registration &amp; Class Enrollment Guide</a></li>
+<li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h1 id="backend-architecture-overview">Backend Architecture Overview</h1>
+<p>This project uses a modular Express.js structure. Each user role (Student, Instructor, Admin and SuperAdmin) has its own set of controllers and routes under <code>src/modules/users</code>. Tutorials and their related resources live under <code>src/modules/users/tutorials</code>.</p>
+<p>The valid roles available in the system are <code>Student</code>, <code>Instructor</code>, <code>Admin</code> and <code>SuperAdmin</code>. These values are referenced throughout the codebase and database migrations from a single shared constant.</p>
+<p>Uploaded tutorial assets are stored in role specific folders:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">backend</span><span class="o">/</span><span class="n">uploads</span><span class="o">/</span><span class="n">tutorials</span><span class="o">/</span><span class="n">admin</span><span class="o">/</span>
+<span class="n">backend</span><span class="o">/</span><span class="n">uploads</span><span class="o">/</span><span class="n">tutorials</span><span class="o">/</span><span class="n">instructor</span><span class="o">/</span>
+<span class="n">backend</span><span class="o">/</span><span class="n">uploads</span><span class="o">/</span><span class="n">tutorials</span><span class="o">/</span><span class="n">student</span><span class="o">/</span>
+</code></pre></div>
+
+<p>The upload middleware automatically places files in these folders based on the authenticated user's role.</p>
+    </article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Third Party Integrations | Skillbridge Documentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: #1a1d23;
+    }
+    header {
+      background: #1f2933;
+      color: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    main {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+    nav {
+      width: 260px;
+      background: #f0f4f8;
+      border-right: 1px solid #d9e2ec;
+      padding: 1.5rem 1rem;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    nav h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #52606d;
+      margin-top: 0;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    nav li {
+      margin: 0.35rem 0;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      color: #1f2933;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    nav a:hover {
+      background: #d9e2ec;
+    }
+    nav a.active {
+      background: #3e4c59;
+      color: #fff;
+      font-weight: 600;
+    }
+    article {
+      flex: 1;
+      padding: 2rem 3rem;
+      box-sizing: border-box;
+      max-width: 960px;
+    }
+    article h1, article h2, article h3, article h4 {
+      color: #102a43;
+    }
+    article pre {
+      background: #243b53;
+      color: #f0f4f8;
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+    }
+    article code {
+      background: rgba(15, 23, 42, 0.08);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    article table, article th, article td {
+      border: 1px solid #cbd2d9;
+    }
+    article th, article td {
+      padding: 0.75rem;
+      text-align: left;
+    }
+    article blockquote {
+      border-left: 4px solid #9fb3c8;
+      margin: 1.5rem 0;
+      padding: 0.5rem 1rem;
+      background: #e4ebf5;
+      color: #334e68;
+    }
+    @media (max-width: 960px) {
+      main {
+        flex-direction: column;
+      }
+      nav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #d9e2ec;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Skillbridge Documentation</h1>
+  </header>
+  <main>
+    <nav>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+<li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+<li><a href="admin-alerts.html">Admin Alerts</a></li>
+<li><a href="admin-category-management.html">Admin Category Management</a></li>
+<li><a href="admin-third-party-integrations.html" class="active">Admin Third Party Integrations</a></li>
+<li><a href="api-docs.html">API Overview</a></li>
+<li><a href="architecture.html">Backend Architecture Overview</a></li>
+<li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+<li><a href="changelog.html">Changelog</a></li>
+<li><a href="class-lifecycle-workflow.html">Class Lifecycle &amp; Certificate Workflow</a></li>
+<li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+<li><a href="coupon-management.html">Coupon Management</a></li>
+<li><a href="deployment.html">Deployment Guide</a></li>
+<li><a href="index.html">Getting Started</a></li>
+<li><a href="installation.html">Installation Guide</a></li>
+<li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+<li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+<li><a href="release-checklist.html">Release Checklist</a></li>
+<li><a href="social-login-setup.html">Social Login Setup</a></li>
+<li><a href="student-enrollment-workflow.html">Student Class Purchase &amp; Enrollment Workflow</a></li>
+<li><a href="student-registration-guide.html">Student Registration &amp; Class Enrollment Guide</a></li>
+<li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h1 id="admin-third-party-integrations">Admin Third Party Integrations</h1>
+<p>SkillBridge lets administrators manage API keys and settings for various third-party services. These include the ChatGPT and Hugging Face AI providers used on the community "Ask" page.</p>
+<blockquote>
+<p><strong>Note:</strong> Google reCAPTCHA configuration is no longer managed here. Administrators can configure reCAPTCHA under the <strong>Social Login</strong> settings page.</p>
+</blockquote>
+<h2 id="backend">Backend</h2>
+<ul>
+<li><strong>Settings storage:</strong> <code>backend/src/modules/thirdPartyConfig</code></li>
+<li><strong>API endpoints:</strong> <code>/api/third-party-config</code> for get and update</li>
+<li><strong>AI endpoint:</strong> <code>/api/ai-assistance</code> implemented in <code>backend/src/modules/ai</code></li>
+<li>AI service reads provider config from the settings record before sending requests.</li>
+</ul>
+<h2 id="frontend">Frontend</h2>
+<ul>
+<li>Admin page: <code>frontend/src/pages/dashboard/admin/settings/thirdParty</code></li>
+<li>Integration modals under <code>frontend/src/components/admin/integrations</code> allow entering API keys for ChatGPT and Hugging Face.</li>
+<li>Saved settings are fetched through <code>frontend/src/services/admin/thirdPartyService.js</code>.</li>
+<li>Community question page <code>frontend/src/pages/community/ask.js</code> calls <code>fetchThirdPartyConfig</code> to list available AI providers for users.</li>
+<li>When no provider has an API key configured the page shows "No AI integrations available".</li>
+</ul>
+<p>After storing keys on the admin page, users can select ChatGPT or Hugging Face from a dropdown on the AI Assistance tab and submit questions powered by the chosen model.</p>
+<h3 id="chatgpt-configuration">ChatGPT Configuration</h3>
+<ol>
+<li>Sign in to your OpenAI account and create an API key.</li>
+<li>In the admin dashboard navigate to <strong>Settings → Third Party</strong> and open the
+   <strong>ChatGPT</strong> modal.</li>
+<li>Paste the key into the <strong>API Key</strong> field. You can configure multiple models
+   by listing their names and default temperatures.</li>
+<li>Click <strong>Add model</strong> in the modal to create additional model rows (e.g.
+   <code>gpt-4</code>, <code>gpt-3.5-turbo</code>). Each question on the Ask page can then choose one
+   of the configured models.</li>
+<li>Click <strong>Save</strong> to persist the settings. The backend will use the selected
+   model when calling the OpenAI Chat Completion API.</li>
+</ol>
+<h3 id="hugging-face-configuration">Hugging Face Configuration</h3>
+<ol>
+<li>Generate an access token in your Hugging Face account: <a href="https://huggingface.co/settings/tokens">https://huggingface.co/settings/tokens</a>.
+   A fine‑grained token with the <code>inference:serverless</code> permission is sufficient.</li>
+<li>In the admin dashboard open <strong>Settings → Third Party</strong> and launch the <strong>Hugging Face</strong> modal.</li>
+<li>Paste the token into the <strong>Access Token</strong> field and specify the desired model
+   endpoint (e.g. <code>gpt2</code> or <code>google/flan-t5-base</code>).</li>
+<li>Click <strong>Save</strong> to store the settings.</li>
+<li>Users can now choose <code>huggingface</code> as the provider when asking AI questions.</li>
+</ol>
+<h3 id="deepseek-configuration">DeepSeek Configuration</h3>
+<ol>
+<li>Generate an API key in your DeepSeek account.</li>
+<li>In the admin dashboard open <strong>Settings → Third Party</strong> and select <strong>DeepSeek</strong>.</li>
+<li>Provide the API key and the desired model name (e.g. <code>deepseek-chat</code>) and optional max tokens such as <code>1024</code>.</li>
+<li>Save the settings to enable DeepSeek. Other providers can be deactivated by toggling them off.</li>
+</ol>
+    </article>
+  </main>
+</body>
+</html>
