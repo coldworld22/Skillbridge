@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
 import VideoCallScreen from "@/components/video-call/VideoCallScreen";
 import StudentScoreSummary from "@/components/students/StudentScoreSummary";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   fetchClassDetails,
   fetchClassLessons,
@@ -21,7 +22,7 @@ const computeScheduleStatus = (start, end) => {
   return "Upcoming";
 };
 
-export default function StudentClassRoom() {
+function StudentClassRoom() {
   const router = useRouter();
   const { id } = router.query;
   const [classData, setClassData] = useState(null);
@@ -244,3 +245,5 @@ export default function StudentClassRoom() {
     </div>
   );
 }
+
+export default withAuthProtection(StudentClassRoom, ['student']);
