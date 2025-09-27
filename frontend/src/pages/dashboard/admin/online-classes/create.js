@@ -12,9 +12,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
-import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
+import { FaSpinner, FaUpload } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -30,6 +31,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -80,6 +82,16 @@ function CreateOnlineClass() {
   const [imageUploading, setImageUploading] = useState(false);
   const [videoUploading, setVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const demoPreview = formData.demoPreview;
+
+  useEffect(() => {
+    return () => {
+      if (demoPreview) {
+        URL.revokeObjectURL(demoPreview);
+      }
+    };
+  }, [demoPreview]);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -173,11 +185,17 @@ function CreateOnlineClass() {
 
     setVideoUploading(true);
     setUploadProgress(0);
-    setFormData((prev) => ({
-      ...prev,
-      demoVideo: file,
-      demoPreview: URL.createObjectURL(file),
-    }));
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.demoPreview) {
+        URL.revokeObjectURL(prev.demoPreview);
+      }
+      return {
+        ...prev,
+        demoVideo: file,
+        demoPreview: previewUrl,
+      };
+    });
     setUploadProgress(100);
     setVideoUploading(false);
   };
@@ -263,6 +281,7 @@ function CreateOnlineClass() {
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
         const newClass = await createAdminClass(payload, (e) => {
+          if (!e?.total) return;
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
@@ -813,9 +832,6 @@ const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, {
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
-
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 export async function getStaticProps({ locale }) {
   return {
