@@ -91,12 +91,10 @@ function CreateOnlineClass() {
     handleImageUpload: mediaImageUpload = () => {},
     handleVideoUpload: mediaVideoUpload = () => {},
     setUploadProgress = () => {},
-    imageUploading: rawImageUploading = false,
-    videoUploading: rawVideoUploading = false,
   } = mediaUploader ?? {};
 
-  const isImageUploading = Boolean(rawImageUploading);
-  const isVideoUploading = Boolean(rawVideoUploading);
+  const isImageUploading = Boolean(mediaUploader?.imageUploading);
+  const isVideoUploading = Boolean(mediaUploader?.videoUploading);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
