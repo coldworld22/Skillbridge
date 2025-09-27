@@ -11,7 +11,13 @@ import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
-const sanitizeSlug = (value) => value.replace(/\.md$/, '').replace(/[^a-zA-Z0-9-_]/g, '');
+const sanitizeSlug = (value = '') =>
+  value
+    .replace(/\.(md|html)$/i, '')
+    .split('/')
+    .map((segment) => segment.replace(/[^a-zA-Z0-9-_]/g, ''))
+    .filter(Boolean)
+    .join('/');
 
 const resolveDocLink = (href) => {
   if (!href) {
@@ -29,14 +35,16 @@ const resolveDocLink = (href) => {
   const cleaned = href.replace(/^\.\//, '').replace(/^docs\//, '');
 
   if (cleaned.endsWith('.md') || cleaned.endsWith('.html')) {
-    return `/docs/${cleaned.replace(/\.(md|html)$/, '')}`;
+    const slug = sanitizeSlug(cleaned);
+    return slug ? `/docs/${slug}` : href;
   }
 
   if (cleaned.startsWith('/')) {
     return cleaned;
   }
 
-  return `/docs/${cleaned}`;
+  const slug = sanitizeSlug(cleaned);
+  return slug ? `/docs/${slug}` : href;
 };
 
 export async function getStaticPaths() {
@@ -56,7 +64,10 @@ export async function getStaticPaths() {
   entries
     .filter((entry) => entry.isFile() && (/\.md$/i.test(entry.name) || /\.html$/i.test(entry.name)))
     .forEach((entry) => {
-      slugs.add(entry.name.replace(/\.(md|html)$/i, ''));
+      const slug = sanitizeSlug(entry.name);
+      if (slug) {
+        slugs.add(slug);
+      }
     });
 
   const paths = Array.from(slugs).map((slug) => ({
@@ -79,6 +90,11 @@ export async function getStaticProps({ params }) {
   }
 
   const slug = sanitizeSlug(params.slug);
+  if (!slug) {
+    return {
+      notFound: true,
+    };
+  }
   const markdownPath = path.join(docsDir, `${slug}.md`);
   const htmlPath = path.join(docsDir, `${slug}.html`);
 

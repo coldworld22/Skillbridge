@@ -16,7 +16,37 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+const DOCS_DIR_CANDIDATES = [
+  path.join(process.cwd(), 'docs'),
+  path.join(process.cwd(), '..', 'docs'),
+  path.join(process.cwd(), '..', '..', 'docs'),
+  path.resolve(moduleDir, '../../docs'),
+  path.resolve(moduleDir, '../../../docs'),
+];
 
+async function resolveDocsDirectory() {
+  for (const candidate of DOCS_DIR_CANDIDATES) {
+    try {
+      const stats = await fs.stat(candidate);
+      if (stats.isDirectory()) {
+        return candidate;
+      }
+    } catch (error) {
+      // Ignore missing paths and continue.
+    }
+  }
+
+  return null;
+}
+
+function sanitizeSlug(value) {
+  return value
+    .replace(/\.(md|html)$/i, '')
+    .split('/')
+    .map((segment) => segment.replace(/[^a-zA-Z0-9-_]/g, ''))
+    .filter(Boolean)
+    .join('/');
+}
 function extractTitleFromContent(content, fallback) {
   const match = content.match(/^#\s+(.+)/m);
   if (match) {
@@ -244,11 +274,16 @@ export async function getStaticProps({ locale }) {
 
       const docsBySlug = new Map();
       for (const entry of docEntries) {
-        const slug = entry.name.replace(/\.(md|html)$/i, '');
+        const slug = sanitizeSlug(entry.name);
+        if (!slug) {
+          continue;
+        }
+
         const ext = entry.name.toLowerCase().endsWith('.md') ? 'md' : 'html';
         if (!docsBySlug.has(slug)) {
           docsBySlug.set(slug, {});
         }
+
         docsBySlug.get(slug)[ext] = entry.name;
       }
 
