@@ -147,7 +147,7 @@ describe('Class enrollment routes', () => {
       'plan1',
       expect.anything(),
     );
-    expect(logger.error).not.toHaveBeenCalled();
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
     expect(db.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'test-user',
