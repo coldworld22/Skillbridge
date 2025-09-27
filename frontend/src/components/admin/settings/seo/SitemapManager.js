@@ -1,15 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
 
 export default function SitemapManager({ config, update, availablePages }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.sitemap" });
-  const [pages, setPages] = useState(
-    config.sitemap.length
-      ? config.sitemap
-      : [{ path: "/", include: true, priority: 1.0, freq: "daily" }]
+  const defaultPages = () => [
+    { path: "/", include: true, priority: 1.0, freq: "daily" },
+  ];
+
+  const [pages, setPages] = useState(() =>
+    config?.sitemap?.length
+      ? config.sitemap.map((page) => ({ ...page }))
+      : defaultPages()
   );
+
+  useEffect(() => {
+    if (Array.isArray(config?.sitemap) && config.sitemap.length) {
+      setPages(config.sitemap.map((page) => ({ ...page })));
+    } else {
+      setPages(defaultPages());
+    }
+  }, [config?.sitemap]);
 
   const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 
