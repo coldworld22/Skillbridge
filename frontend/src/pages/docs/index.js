@@ -16,15 +16,17 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+
+// Include deep fallbacks so standalone builds (where process.cwd() resolves to
+// .next/standalone/server) can still locate the project-level docs directory.
 const DOCS_DIR_CANDIDATES = [
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
-  path.join(process.cwd(), '.next', 'standalone', 'docs'),
-  path.join(process.cwd(), '.next', 'server', 'docs'),
-  path.join(process.cwd(), '.next', 'server', 'app', 'docs'),
+  path.join(process.cwd(), '..', '..', '..', 'docs'),
   path.resolve(moduleDir, '../../docs'),
   path.resolve(moduleDir, '../../../docs'),
+  path.resolve(moduleDir, '../../../..', 'docs'),
 ];
 
 async function resolveDocsDirectory() {
