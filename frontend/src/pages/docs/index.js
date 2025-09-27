@@ -17,9 +17,8 @@ import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
-// Include deep fallbacks so standalone builds (where process.cwd() resolves to
-// .next/standalone/server) can still locate the project-level docs directory.
-const DOCS_DIR_CANDIDATES = [
+// Ensure standalone builds can still locate the project-level docs directory.
+const docsDirectoryExplicitPaths = [
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
@@ -28,36 +27,6 @@ const DOCS_DIR_CANDIDATES = [
   path.resolve(moduleDir, '../../../docs'),
   path.resolve(moduleDir, '../../../..', 'docs'),
 ];
-
-async function resolveDocsDirectory() {
-  const envDocsDir = process.env.DOCS_DIR
-    ? path.resolve(process.cwd(), process.env.DOCS_DIR)
-    : null;
-
-  if (envDocsDir) {
-    try {
-      const stats = await fs.stat(envDocsDir);
-      if (stats.isDirectory()) {
-        return envDocsDir;
-      }
-    } catch (error) {
-      // Ignore invalid overrides and fall back to default locations.
-    }
-  }
-
-  for (const candidate of DOCS_DIR_CANDIDATES) {
-    try {
-      const stats = await fs.stat(candidate);
-      if (stats.isDirectory()) {
-        return candidate;
-      }
-    } catch (error) {
-      // Ignore missing paths and continue.
-    }
-  }
-
-  return null;
-}
 
 function sanitizeSlug(value) {
   return value
@@ -280,7 +249,10 @@ export default function DocumentationLandingPage({ docs, installationContent, in
 }
 
 export async function getStaticProps({ locale }) {
-  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
+  const docsDir = await resolveDocsDirectory({
+    moduleDirectory: moduleDir,
+    explicitPaths: docsDirectoryExplicitPaths,
+  });
   let docs = [];
   let installationContent = null;
   let installationFormat = null;
