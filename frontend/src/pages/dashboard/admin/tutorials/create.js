@@ -39,7 +39,7 @@ function CreateTutorialPage() {
 
   const notify = async (type, message) => {
     if (!user?.id) {
-      toast.warn('Notification skipped: missing user data.');
+      toast.warn(t('notification_warning'));
       return;
     }
 
@@ -70,8 +70,8 @@ function CreateTutorialPage() {
       );
       const msg =
         status === "draft"
-          ? `Tutorial "${tutorialData.title}" saved as draft.`
-          : `Tutorial "${tutorialData.title}" submitted for approval.`;
+          ? t('notification_draft_message', { title: tutorialData.title })
+          : t('notification_submitted_message', { title: tutorialData.title });
       notify('tutorial_created', msg);
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
