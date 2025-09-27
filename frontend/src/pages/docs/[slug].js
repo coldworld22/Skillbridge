@@ -38,12 +38,16 @@ const resolveDocLink = (href) => {
   return `/docs/${cleaned}`;
 };
 
+// Mirror the landing page fallbacks so standalone builds that execute from
+// .next/standalone/server still reach the root docs directory.
 const DOCS_DIR_CANDIDATES = [
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
+  path.join(process.cwd(), '..', '..', '..', 'docs'),
   path.resolve(moduleDir, '../../docs'),
   path.resolve(moduleDir, '../../../docs'),
+  path.resolve(moduleDir, '../../../..', 'docs'),
 ];
 
 async function resolveDocsDirectory() {
