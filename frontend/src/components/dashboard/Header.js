@@ -182,6 +182,22 @@ export default function Header() {
     isHydrated,
   ]);
 
+  const handleSearch = (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      return;
+    }
+
+    router.push({
+      pathname: "/search",
+      query: { q: trimmedQuery },
+    });
+  };
+
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
       <div className="flex items-center gap-4">
@@ -191,16 +207,31 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 relative">
-        <div className="relative hidden md:block">
+        <form
+          onSubmit={handleSearch}
+          className="relative hidden md:flex items-center"
+        >
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleSearch(event);
+              }
+            }}
             placeholder={t('search_placeholder')}
-            className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="pl-10 pr-12 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
-        </div>
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300 pointer-events-none" />
+          <button
+            type="submit"
+            className="absolute right-1 top-1.5 p-1 rounded text-gray-500 hover:text-yellow-500"
+            aria-label={t('search_placeholder')}
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        </form>
 
         <button
           onClick={toggleDarkMode}
