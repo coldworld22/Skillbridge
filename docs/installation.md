@@ -7,7 +7,7 @@ This document explains how to set up SkillBridge for local development and for h
 - [Node.js](https://nodejs.org/) 18 or later
 - [npm](https://www.npmjs.com/) 9 or later (bundled with Node.js 18+)
 - [Docker](https://www.docker.com/) and the Docker Compose **V2** plugin (`docker compose` command)
-- Git
+- Git (only required when cloning or updating from the repository; skip this for packaged ZIP installs)
 - Redis or another session store for production deployments
 
 > **Heads up:** The legacy `docker-compose` v1 CLI is incompatible with recent Docker Engine releases and often fails with `KeyError: 'ContainerConfig'` when rebuilding containers. The installer now refuses to run when only the v1 binary is available so you can address the issue up front. Install the Docker Compose V2 plugin (the `docker compose` command) or downgrade Docker Engine below version&nbsp;27 before running the script. If you are temporarily stuck on the old CLI, use [`scripts/run-compose.sh`](../scripts/run-compose.sh) for local commands—the wrapper exports `DOCKER_API_VERSION=1.43` automatically to avoid the compatibility bug.
@@ -73,6 +73,9 @@ then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
 If you purchased SkillBridge on CodeCanyon (released as **memonet**), the
 downloadable ZIP already contains the full repository. Use this workflow when
 you would rather upload the packaged build than clone from Git.
+
+> **Note:** You can skip installing Git for this workflow unless you plan to
+> migrate to Git-based updates later.
 
 1. **Upload the archive.**
    - **Local workstation:** download the ZIP and move it into the directory
