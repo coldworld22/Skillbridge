@@ -186,11 +186,21 @@ describe('Class routes', () => {
   });
 
   test('instructor can create class within plan limit', async () => {
-    const data = { id: '1', instructor_id: 'test-user', title: 'Test Class' };
+    const data = {
+      id: '1',
+      instructor_id: 'test-user',
+      title: 'Test Class',
+      access_type: 'free',
+    };
     service.createClass.mockResolvedValue(data);
-    const res = await request(app).post('/classes/instructor').send(data);
+    const res = await request(app)
+      .post('/classes/instructor')
+      .send({ ...data, access_type: 'free' });
     expect(res.statusCode).toBe(200);
-    expect(service.createClass).toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({ access_type: 'free' })
+    );
+    expect(res.body.data.access_type).toBe('free');
   });
 
   test('instructor cannot create class when feature disabled', async () => {

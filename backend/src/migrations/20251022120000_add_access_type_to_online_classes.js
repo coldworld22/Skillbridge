@@ -8,6 +8,7 @@ exports.up = async function (knex) {
       .notNullable()
       .defaultTo('paid');
   });
+
 };
 
 exports.down = async function (knex) {
