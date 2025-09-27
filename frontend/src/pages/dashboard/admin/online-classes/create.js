@@ -156,10 +156,10 @@ function CreateOnlineClass() {
       })
       .catch(() => setCategories([]));
     fetchClassTags()
-      .then(setAllTags)
+      .then((res) => setAllTags(Array.isArray(res) ? res : res?.data ?? []))
       .catch(() => setAllTags([]));
     fetchPlanIdentifiers()
-      .then(setPlans)
+      .then((res) => setPlans(Array.isArray(res) ? res : res?.data ?? []))
       .catch(() => setPlans([]));
   }, []);
 
@@ -589,7 +589,7 @@ function CreateOnlineClass() {
                           className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                         >
                           <option value="">{t('select_category')}</option>
-                          {categories.map((cat) => (
+                          {(Array.isArray(categories) ? categories : []).map((cat) => (
                             <option key={cat.id} value={cat.id}>
                               {cat.name}
                             </option>
