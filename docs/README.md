@@ -76,6 +76,44 @@ installer enforces.
 Open a fresh terminal after installing these tools so PATH changes take effect,
 then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
 
+### Install from ZIP release
+
+If you downloaded the packaged CodeCanyon release (published as **memonet**)
+rather than cloning Git, follow these steps to get the archive running on a
+workstation or live server:
+
+1. **Upload the ZIP.** Copy the release to the host. For remote servers use
+   `scp`/`rsync` (e.g. `scp Skillbridge-v1.0.0.zip deploy@example.com:/var/www`).
+2. **Extract into `Skillbridge/`.** Unzip the archive, rename the extracted
+   folder to `Skillbridge`, and `cd` into it so `install.sh`, `docker-compose.yml`,
+   `backend/`, and `frontend/` sit in the project root.
+3. **Fix ownership and permissions.** On Linux change ownership to the deploy
+   user (`sudo chown -R deploy:deploy Skillbridge`) and ensure helper scripts
+   are executable (`chmod +x install.sh scripts/*.sh`). Local macOS/Windows
+   users can usually skip the `chown` step.
+4. **Copy the `.env` templates.** Duplicate `.env.example` files for the root,
+   backend (both `.env` and `.env.production`), and frontend (`frontend/.env.local`).
+   Update the values with your domain, database URL, SMTP credentials, and admin
+   account details. See [deployment.md](./deployment.md) for production-only
+   settings such as TLS certificates and domain variables.
+5. **Run the installer.** Execute `./install.sh` from the project root. The
+   script asks whether you are installing locally or in production and applies
+   migrations/seeds automatically. For unattended production use the CLI form
+   (`./install.sh production yourdomain.com`).
+6. **Start Docker services.** Launch the stack with `docker compose up --build`
+   for local development or `docker compose up -d --build` on a live host. If
+   you skip the automated compose step, run the commands manually after the
+   installer exits. When you handle migrations yourself, apply them before
+   serving traffic:
+
+   ```bash
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed
+   ```
+
+The dedicated [installation guide](./installation.md#install-from-zip-release)
+contains the same workflow with command examples and troubleshooting tips.
+
 ### 1. Clone the repository
 
 ```bash
