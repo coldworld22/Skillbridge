@@ -131,27 +131,29 @@ function CreateOnlineClass() {
     };
   }, [demoPreview]);
 
-  const filteredTagSuggestions = useMemo(() => {
-    if (!tagInput) {
-      return [];
-    }
+  const filteredTagSuggestions = useMemo(
+    () =>
+      allTags.filter((t) => {
+        if (!tagInput) {
+          return false;
+        }
 
-    const lowerInput = tagInput.toLowerCase();
+        const rawName = typeof t?.name === 'string' ? t.name : '';
+        const trimmedName = rawName.trim();
+        if (!trimmedName) {
+          return false;
+        }
 
-    return allTags.filter((t) => {
-      const name = typeof t?.name === 'string' ? t.name.trim() : '';
-      if (!name) {
-        return false;
-      }
+        const lowerName = trimmedName.toLowerCase();
+        const lowerInput = tagInput.toLowerCase();
 
-      const lowerName = name.toLowerCase();
-
-      return (
-        lowerName.includes(lowerInput) &&
-        !selectedTags.some((selected) => selected.toLowerCase() === lowerName)
-      );
-    });
-  }, [allTags, tagInput, selectedTags]);
+        return (
+          lowerName.includes(lowerInput) &&
+          !selectedTags.some((selected) => selected.toLowerCase() === lowerName)
+        );
+      }),
+    [allTags, tagInput, selectedTags]
+  );
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -307,15 +309,15 @@ function CreateOnlineClass() {
     }));
   };
 
-  const addTag = (tagLike) => {
-    const name =
-      typeof tagLike === 'string'
-        ? tagLike
-        : typeof tagLike?.name === 'string'
-          ? tagLike.name
+  const addTag = (tag) => {
+    const rawTag =
+      typeof tag === 'string'
+        ? tag
+        : typeof tag?.name === 'string'
+          ? tag.name
           : '';
 
-    const normalized = name.trim();
+    const normalized = rawTag.trim();
     if (!normalized) return;
 
     const alreadySelected = selectedTags.some(
