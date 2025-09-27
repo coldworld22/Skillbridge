@@ -47,8 +47,16 @@ jest.mock('../../../payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
 
+jest.mock('../../../../utils/logger.js', () => ({
+  log: jest.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+}));
+
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 
 const routes = require('../../class.routes');
