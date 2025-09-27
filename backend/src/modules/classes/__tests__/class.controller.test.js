@@ -91,11 +91,11 @@ describe('class.controller createClass', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ instructor_id: 'instructor1' })
+      expect.objectContaining({ instructor_id: 'instructor1', access_type: 'paid' })
     );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ instructor_id: 'instructor1' }),
+        data: expect.objectContaining({ instructor_id: 'instructor1', access_type: 'paid' }),
       })
     );
   });
@@ -134,44 +134,7 @@ describe('class.controller createClass', () => {
     );
   });
 
-  test('defaults access_type to paid when omitted', async () => {
-    service.createClass.mockImplementation(async (data) => data);
-
-    const req = {
-      body: { title: 'Test Class' },
-      user: { id: 'admin1', role: 'admin' },
-      files: {},
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
-    const next = jest.fn();
-
-    await new Promise((resolve) => {
-      res.json.mockImplementation((data) => {
-        resolve();
-        return data;
-      });
-      next.mockImplementation((err) => {
-        resolve();
-        return err;
-      });
-      controller.createClass(req, res, next);
-    });
-
-    expect(next).not.toHaveBeenCalled();
-    expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ access_type: 'paid' })
-    );
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ access_type: 'paid' }),
-      })
-    );
-  });
-
-  test('allows creating free access classes', async () => {
+  test('allows creating free access classes when specified', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
     const req = {
