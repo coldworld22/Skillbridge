@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
@@ -35,27 +34,54 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
+  const PAGE_SIZE = 10;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterApproval, setFilterApproval] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filterParams = useMemo(() => {
+    const search = searchQuery.trim();
+    return {
+      ...(search ? { search } : {}),
+      ...(filterStatus ? { status: filterStatus } : {}),
+      ...(filterCategory ? { category: filterCategory } : {}),
+      ...(filterApproval ? { approvalStatus: filterApproval } : {}),
+    };
+  }, [searchQuery, filterStatus, filterCategory, filterApproval]);
+
   const { tutorials, setTutorials, categories, loading, meta, setMeta } =
-    useTutorialsData(t);
+    useTutorialsData(t, {
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      filters: filterParams,
+    });
 
-  const {
-    searchQuery,
-    setSearchQuery,
-    filterCategory,
-    setFilterCategory,
-    filterStatus,
-    setFilterStatus,
-    filterApproval,
-    setFilterApproval,
-    currentPage,
-    setCurrentPage,
-    filteredTutorials,
-    paginatedTutorials,
-    totalPages,
-    startIndex,
-    goToPage,
-  } = useTutorialFilters(tutorials);
+  const totalResults = meta?.total ?? tutorials.length;
+  const totalPages =
+    meta?.totalPages ?? (totalResults > 0 ? Math.ceil(totalResults / PAGE_SIZE) : 0);
 
+  useEffect(() => {
+    if (totalPages === null || totalPages === undefined) return;
+    if (totalPages === 0) {
+      if (currentPage !== 1) setCurrentPage(1);
+      return;
+    }
+
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const goToPage = (page) => {
+    if (!Number.isFinite(page)) return;
+    const maxPages = totalPages > 0 ? totalPages : 1;
+    const nextPage = Math.min(Math.max(page, 1), maxPages);
+    if (nextPage !== currentPage) {
+      setCurrentPage(nextPage);
+    }
+  };
 
   const {
     selectedTutorials,
@@ -63,19 +89,19 @@ function AdminTutorialsPage() {
     toggleSelectOne,
     toggleSelectAll,
     clearSelected,
-  } = useBulkSelection(paginatedTutorials, [
+  } = useBulkSelection(tutorials, [
     searchQuery,
     filterCategory,
     filterStatus,
     filterApproval,
+    currentPage,
   ]);
 
-  const totalResults = filteredTutorials.length;
-  const paginatedCount = paginatedTutorials.length;
+  const startIndex = totalResults === 0 ? 0 : (currentPage - 1) * PAGE_SIZE;
   const displayEndIndex =
     totalResults === 0
       ? 0
-      : Math.min(startIndex + paginatedCount, totalResults);
+      : Math.min(startIndex + tutorials.length, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -381,7 +407,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
+            <p className="text-2xl font-bold">{totalResults}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -406,7 +432,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={tutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
