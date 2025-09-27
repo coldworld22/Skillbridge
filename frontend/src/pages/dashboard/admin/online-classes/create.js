@@ -8,7 +8,7 @@
 // Notifications and translations are also integrated.
 // ─────────────────────────────────────────────────────
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -25,12 +25,14 @@ import { createAdminClass } from '@/services/admin/classService';
 import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
 import { fetchPlanIdentifiers } from '@/services/admin/planService';
+import { fetchAllInstructors } from '@/services/admin/instructorService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -65,7 +67,6 @@ function CreateOnlineClass() {
 
   const [formData, setFormData] = useState({
     title: '',
-    instructor: user?.full_name || '',
     category: '',
     level: '',
     language: '',
@@ -94,6 +95,12 @@ function CreateOnlineClass() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [instructors, setInstructors] = useState([]);
+  const [instructorId, setInstructorId] = useState('');
+  const [instructorSearch, setInstructorSearch] = useState('');
+  const [instructorsPage, setInstructorsPage] = useState(1);
+  const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
+  const [loadingInstructors, setLoadingInstructors] = useState(false);
 
   const demoPreview = formData.demoPreview;
 
@@ -130,11 +137,62 @@ function CreateOnlineClass() {
       .catch(() => setPlans([]));
   }, []);
 
+  const loadInstructors = useCallback(
+    async (page = 1, reset = false) => {
+      try {
+        setLoadingInstructors(true);
+        const { instructors: data, meta } = await fetchAllInstructors(page, 50);
+        setInstructors((prev) => {
+          const incoming = data ?? [];
+          const combined = reset ? incoming : [...prev, ...incoming];
+          const unique = new Map();
+          combined.forEach((inst) => {
+            if (inst?.id) {
+              unique.set(inst.id, inst);
+            }
+          });
+          return Array.from(unique.values());
+        });
+        setHasMoreInstructors(meta?.hasNextPage ?? ((data ?? []).length >= 50));
+        setInstructorsPage(page);
+      } catch (err) {
+        console.error('Failed to load instructors', err);
+        toast.error(
+          t('failed_to_load_instructors', {
+            defaultValue: 'Failed to load instructors. Please try again.',
+          })
+        );
+      } finally {
+        setLoadingInstructors(false);
+      }
+    },
+    [t]
+  );
+
   useEffect(() => {
-    if (user?.full_name) {
-      setFormData((prev) => ({ ...prev, instructor: user.full_name }));
+    loadInstructors(1, true);
+  }, [loadInstructors]);
+
+  useEffect(() => {
+    if (user?.role === 'instructor' && user?.id) {
+      setInstructorId(String(user.id));
     }
   }, [user]);
+
+  const filteredInstructors = useMemo(() => {
+    const lower = instructorSearch.trim().toLowerCase();
+    if (!lower) {
+      return instructors;
+    }
+    return instructors.filter((inst) => {
+      const fullName = inst?.full_name || '';
+      const email = inst?.email || '';
+      return (
+        fullName.toLowerCase().includes(lower) ||
+        email.toLowerCase().includes(lower)
+      );
+    });
+  }, [instructors, instructorSearch]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -145,73 +203,41 @@ function CreateOnlineClass() {
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error(t('invalid_image_type', { defaultValue: 'Unsupported image type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(t('image_size_exceeded'));
+      e.target.value = '';
       return;
     }
-    setIsImageUploading(true);
-    setUploadProgress(0);
 
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setUploadProgress(100);
-      setIsImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setIsImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
       toast.error(t('invalid_video_type', { defaultValue: 'Unsupported video type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 100 * 1024 * 1024) {
       toast.error(t('video_size_exceeded'));
+      e.target.value = '';
       return;
     }
 
-    setIsVideoUploading(true);
-    setUploadProgress(0);
-    const previewUrl = URL.createObjectURL(file);
-    setFormData((prev) => {
-      if (prev.demoPreview) {
-        URL.revokeObjectURL(prev.demoPreview);
-      }
-      return {
-        ...prev,
-        demoVideo: file,
-        demoPreview: previewUrl,
-      };
-    });
-    setUploadProgress(100);
-    setIsVideoUploading(false);
+    mediaVideoUpload(e);
   };
 
   const handleLessonChange = (index, field, value) => {
@@ -286,6 +312,7 @@ function CreateOnlineClass() {
         ...prev,
         lessons: prev.lessons.length ? prev.lessons : [createEmptyLesson()]
       }));
+      setFailedLessonIndices([]);
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
@@ -299,22 +326,31 @@ function CreateOnlineClass() {
       }
       if (
         formData.accessType === 'paid' &&
-        (!formData.price || Number(formData.price) <= 0)
+        (!Number.isFinite(priceValue) || priceValue <= 0)
       ) {
-        toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
+        toast.error(
+          t('invalid_price', {
+            defaultValue: 'Please provide a valid numeric price greater than zero for paid classes.'
+          })
+        );
         return;
       }
-      if (!user?.id) {
-        toast.error(t('user_info_unavailable'));
+      if (!instructorId) {
+        toast.error(
+          t('select_instructor_required', {
+            defaultValue: 'Please select an instructor before submitting.',
+          })
+        );
         return;
       }
       try {
         setIsSubmitting(true);
         setIsServerUploading(true);
         setUploadProgress(0);
+        setFailedLessonIndices([]);
 
         const payload = new FormData();
-        payload.append('instructor_id', user?.id);
+        payload.append('instructor_id', instructorId);
         payload.append('title', formData.title);
         if (formData.description) payload.append('description', formData.description);
         if (formData.level) payload.append('level', formData.level);
@@ -329,8 +365,8 @@ function CreateOnlineClass() {
           payload.append('price', '0');
           if (formData.includedPlans.length)
             payload.append('included_plans', JSON.stringify(formData.includedPlans));
-        } else if (formData.price || formData.price === 0) {
-          payload.append('price', Number(formData.price).toFixed(2));
+        } else if (Number.isFinite(priceValue)) {
+          payload.append('price', priceValue.toFixed(2));
         }
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
@@ -346,16 +382,38 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await Promise.all(
+        const lessonResults = await Promise.allSettled(
           formData.lessons.map(async (lesson) => {
             const lessonData = new FormData();
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
             lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData).catch(() => null);
+            return createClassLesson(newClass.id, lessonData);
           })
         );
+
+        const failedIndices = lessonResults.reduce((acc, result, index) => {
+          if (result.status === 'rejected') {
+            acc.push(index);
+          }
+          return acc;
+        }, []);
+
+        if (failedIndices.length) {
+          setFailedLessonIndices(failedIndices);
+          toast.error(
+            t('lesson_creation_failed', {
+              count: failedIndices.length,
+              indices: failedIndices.map((idx) => idx + 1).join(', '),
+              defaultValue: `Failed to create ${failedIndices.length} lesson(s). Please review highlighted lessons (${failedIndices
+                .map((idx) => idx + 1)
+                .join(', ')}).`,
+            })
+          );
+          setCurrentStep(2);
+          return;
+        }
 
         const events = [
           {
@@ -430,13 +488,58 @@ function CreateOnlineClass() {
                         value={formData.title}
                         onChange={handleChange}
                       />
-                      <FloatingInput
-                        label={t('instructor_name_label')}
-                        name="instructor"
-                        value={formData.instructor}
-                        onChange={handleChange}
-                        disabled
-                      />
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t('instructor_select_label')}
+                        </label>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                            <input
+                              type="text"
+                              value={instructorSearch}
+                              onChange={(event) => setInstructorSearch(event.target.value)}
+                              placeholder={t('instructor_search_placeholder')}
+                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm px-3 py-2"
+                            />
+                            {hasMoreInstructors && (
+                              <button
+                                type="button"
+                                onClick={() => loadInstructors(instructorsPage + 1)}
+                                disabled={loadingInstructors}
+                                className="mt-2 sm:mt-0 inline-flex items-center justify-center rounded-md border border-yellow-500 px-3 py-2 text-sm font-medium text-yellow-600 hover:bg-yellow-50 disabled:opacity-50"
+                              >
+                                {loadingInstructors
+                                  ? t('loading', { defaultValue: 'Loading...' })
+                                  : t('load_more_instructors')}
+                              </button>
+                            )}
+                          </div>
+                          <select
+                            value={instructorId}
+                            onChange={(event) => setInstructorId(event.target.value)}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                          >
+                            <option value="">{t('select_instructor_placeholder')}</option>
+                            {filteredInstructors.map((inst) => {
+                              const name = inst?.full_name || inst?.email || '';
+                              const email = inst?.email && inst?.full_name ? ` (${inst.email})` : '';
+                              return (
+                                <option key={inst.id} value={inst.id}>
+                                  {`${name}${email}`}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {loadingInstructors && instructors.length === 0 && (
+                            <p className="text-sm text-gray-500">
+                              {t('loading', { defaultValue: 'Loading...' })}
+                            </p>
+                          )}
+                          {!loadingInstructors && filteredInstructors.length === 0 && (
+                            <p className="text-sm text-gray-500">{t('no_instructors_found')}</p>
+                          )}
+                        </div>
+                      </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -653,7 +756,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isImageUploading ? (
+                            {imageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -700,7 +803,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isVideoUploading ? (
+                            {videoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
