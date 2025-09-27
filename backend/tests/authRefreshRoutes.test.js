@@ -109,6 +109,9 @@ describe('POST /api/auth/refresh', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.message).toMatch(/invalid or expired/i);
+    const clearedCookies = res.headers['set-cookie'] || [];
+    expect(clearedCookies.some((cookie) => cookie.startsWith('refreshToken=;'))).toBe(true);
+    expect(clearedCookies.some((cookie) => cookie.startsWith('csrfToken=;'))).toBe(true);
   });
 
   it('rejects refresh without CSRF token', async () => {
