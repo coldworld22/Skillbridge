@@ -25,7 +25,35 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import { toDateInput } from '@/utils/date';
 
-function EditClassPage() {
+const normalizeIncludedPlans = (included = [], availablePlans = []) => {
+  if (!Array.isArray(included) || included.length === 0) return [];
+
+  const idToSlug = availablePlans.reduce((acc, plan) => {
+    if (!plan) return acc;
+    if (plan.slug) {
+      acc[plan.slug] = plan.slug;
+    }
+    if (plan.id !== undefined && plan.slug) {
+      acc[String(plan.id)] = plan.slug;
+    }
+    return acc;
+  }, {});
+
+  const normalized = included
+    .map((value) => {
+      if (value === undefined || value === null) return null;
+      const key = typeof value === 'number' ? String(value) : String(value);
+      return idToSlug[key] || idToSlug[value] || key;
+    })
+    .filter(Boolean);
+
+  return Array.from(new Set(normalized));
+};
+
+const arraysEqual = (a = [], b = []) =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
+export function EditClassPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
@@ -72,7 +100,7 @@ function EditClassPage() {
             description: data.description || '',
             max_students: data.max_students || '',
             access_type: data.access_type || 'paid',
-            included_plans: data.included_plans || [],
+            included_plans: normalizeIncludedPlans(data.included_plans || [], plans),
           });
           setInstructorId(data.instructor_id || '');
         }
@@ -85,48 +113,18 @@ function EditClassPage() {
 
   useEffect(() => {
     fetchPlanIdentifiers()
-      .then(setPlans)
+      .then((list) => setPlans(Array.isArray(list) ? list : []))
       .catch(() => setPlans([]));
   }, []);
 
   useEffect(() => {
-    setLoadingInstructors(true);
-    fetchAllInstructors(1, 100)
-      .then(({ instructors: data }) => {
-        setInstructors(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        console.error('Failed to load instructors', err);
-        setInstructors([]);
-      })
-      .finally(() => setLoadingInstructors(false));
-  }, []);
-
-  useEffect(() => {
-    if (!instructorId || !formData.instructor) return;
-    setInstructors((prev) => {
-      if (prev.some((inst) => inst?.id === instructorId)) {
-        return prev;
-      }
-      return [
-        ...prev,
-        {
-          id: instructorId,
-          full_name: formData.instructor,
-        },
-      ];
+    if (!plans.length) return;
+    setFormData((prev) => {
+      const normalized = normalizeIncludedPlans(prev.included_plans, plans);
+      if (arraysEqual(prev.included_plans, normalized)) return prev;
+      return { ...prev, included_plans: normalized };
     });
-  }, [instructorId, formData.instructor]);
-
-  const filteredInstructors = useMemo(() => {
-    if (!instructorSearch.trim()) return instructors;
-    const term = instructorSearch.toLowerCase();
-    return instructors.filter((inst) => {
-      const name = inst?.full_name?.toLowerCase?.() || '';
-      const email = inst?.email?.toLowerCase?.() || '';
-      return name.includes(term) || email.includes(term);
-    });
-  }, [instructors, instructorSearch]);
+  }, [plans]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -157,8 +155,8 @@ function EditClassPage() {
       if (instructorId) payload.append('instructor_id', instructorId);
       if (formData.access_type === 'free') {
         payload.append('price', '0');
-        if (formData.included_plans.length)
-          payload.append('included_plans', JSON.stringify(formData.included_plans));
+        const uniquePlans = Array.from(new Set(formData.included_plans));
+        payload.append('included_plans', JSON.stringify(uniquePlans));
       } else if (formData.price || formData.price === 0) {
         payload.append('price', formData.price);
       }
