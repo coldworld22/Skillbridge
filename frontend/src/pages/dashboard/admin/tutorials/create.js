@@ -91,7 +91,7 @@ function CreateTutorialPage() {
   return (
     <AdminLayout>
       <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 {t('title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">{t('title')}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
@@ -150,14 +150,14 @@ function CreateTutorialPage() {
                 onClick={prevStep}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-full font-bold"
               >
-                ⬅️ {t('back')}
+                {t('back')}
               </button>
             )}
             <button
               onClick={saveDraft}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              💾 {t('save_draft')}
+              {t('save_draft')}
             </button>
           </div>
           {step < 4 && (
@@ -165,7 +165,7 @@ function CreateTutorialPage() {
               onClick={nextStep}
               className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              {t('next')} ➡️
+              {t('next')}
             </button>
           )}
         </div>
