@@ -9,6 +9,11 @@ const REPLACEMENTS = [
   { pattern: /\u00a0/g, replacement: ' ', description: 'non-breaking spaces' },
   { pattern: /[\u200b\u200c\u200d\u2060]/g, replacement: '', description: 'zero-width characters' },
   { pattern: /[\u2028\u2029]/g, replacement: '\n', description: 'unicode line separators' },
+  {
+    pattern: /[^\x09\x0a\x0d\x20-\uffff]+/g,
+    replacement: '',
+    description: 'non-printable control characters',
+  },
 ];
 
 function sanitize(input) {
