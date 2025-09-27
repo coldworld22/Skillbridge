@@ -39,6 +39,8 @@ export default function Header() {
   const userIsOnline = hydratedUser?.is_online ?? false;
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
+  const searchPlaceholder = t("search_placeholder", { defaultValue: "Search" });
+  const searchButtonLabel = t("search", { defaultValue: "Search" });
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -66,6 +68,17 @@ export default function Header() {
   const appSettings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+
+    setDropdownOpen(false);
+    setNotifOpen(false);
+    setMsgOpen(false);
+
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
 
   const notificationFallbackMessage = t("notification_missing_message", {
     defaultValue: t("notification_message_unavailable", {
@@ -191,16 +204,30 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 relative">
-        <div className="relative hidden md:block">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('search_placeholder')}
-            className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
-        </div>
+        <form
+          onSubmit={handleSearchSubmit}
+          className="hidden md:flex items-center gap-2"
+          role="search"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" aria-hidden="true" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+          </div>
+          <button
+            type="submit"
+            className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 rounded-md hover:text-yellow-500 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <Search className="w-4 h-4" aria-hidden="true" />
+            <span>{searchButtonLabel}</span>
+          </button>
+        </form>
 
         <button
           onClick={toggleDarkMode}
