@@ -1,11 +1,17 @@
 # Build stage
 FROM node:20 AS builder
+
+COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
+COPY frontend/package.json /tmp/package.json
+RUN node /tmp/normalize-package-json.js /tmp/package.json \
+    && cp /tmp/package.json /tmp/sanitized-package.json
+COPY frontend/package-lock.json /app/package-lock.json
+RUN mkdir -p /app \
+    && mv /tmp/package.json /app/package.json
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json ./
-COPY frontend/scripts/normalize-package-json.js ./scripts/normalize-package-json.js
-RUN node ./scripts/normalize-package-json.js package.json \
-    && npm ci && npm cache clean --force
+RUN npm ci && npm cache clean --force
 COPY frontend/ ./
+RUN cp /tmp/sanitized-package.json package.json
 COPY shared /shared
 
 # Ensure subsequent RUN instructions use bash so pipefail is respected.
@@ -54,12 +60,19 @@ SHELL ["/bin/sh", "-c"]
 
 # Production stage
 FROM node:20-alpine AS production
-WORKDIR /app
+
 RUN apk add --no-cache curl
-COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js ./
-COPY frontend/scripts/normalize-package-json.js ./scripts/normalize-package-json.js
-RUN node ./scripts/normalize-package-json.js package.json \
-    && npm ci --omit=dev && npm cache clean --force
+COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
+COPY frontend/package.json /tmp/package.json
+RUN node /tmp/normalize-package-json.js /tmp/package.json \
+    && cp /tmp/package.json /tmp/sanitized-package.json
+COPY frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js /app/
+RUN mkdir -p /app \
+    && mv /tmp/package.json /app/package.json
+WORKDIR /app
+RUN npm ci --omit=dev && npm cache clean --force
+COPY frontend/ ./
+RUN cp /tmp/sanitized-package.json package.json
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
