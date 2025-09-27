@@ -84,20 +84,20 @@ export default function AdminClassesTable() {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [isMounted, setIsMounted] = useState(false);
-  const user = useAuthStore((state) => state.user);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const [isMounted, setMounted] = useState(false);
+  const { user, hasHydrated } = useAuthStore((state) => ({
+    user: state.user,
+    hasHydrated: state.hasHydrated,
+  }));
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
-  const canManageRules =
-    isMounted &&
-    hasHydrated &&
-    !!user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
+  const hydratedUser = isMounted && hasHydrated ? user : null;
+  const canManageRules = hydratedUser?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     const load = async () => {
@@ -180,6 +180,9 @@ export default function AdminClassesTable() {
 
   
   const handleStatusChange = async (id, action, reason = "") => {
+    if (!hydratedUser) {
+      return;
+    }
     const target = classList.find((c) => c.id === id);
     try {
 
@@ -194,9 +197,9 @@ export default function AdminClassesTable() {
         );
         toast.success("Class approved");
         const message = `Class "${target.title}" approved.`;
-        await createNotification({ user_id: user.id, type: "class_approved", message });
-        await sendChatMessage(user.id, { text: message });
-        if (target.instructor_id && target.instructor_id !== user.id) {
+        await createNotification({ user_id: hydratedUser.id, type: "class_approved", message });
+        await sendChatMessage(hydratedUser.id, { text: message });
+        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
           await createNotification({
             user_id: target.instructor_id,
             type: "class_approved",
@@ -217,9 +220,9 @@ export default function AdminClassesTable() {
         );
         toast.success("Class rejected");
         const message = `Class "${target.title}" was rejected.`;
-        await createNotification({ user_id: user.id, type: "class_rejected", message });
-        await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
-        if (target.instructor_id && target.instructor_id !== user.id) {
+        await createNotification({ user_id: hydratedUser.id, type: "class_rejected", message });
+        await sendChatMessage(hydratedUser.id, { text: `${message} Reason: ${reason}` });
+        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
           await createNotification({
             user_id: target.instructor_id,
             type: "class_rejected",
@@ -240,9 +243,9 @@ export default function AdminClassesTable() {
         );
         toast.success("Status updated");
         const message = `Class "${target.title}" publish status changed to ${updated.publishStatus}.`;
-        await createNotification({ user_id: user.id, type: "class_status_changed", message });
-        await sendChatMessage(user.id, { text: message });
-        if (target.instructor_id && target.instructor_id !== user.id) {
+        await createNotification({ user_id: hydratedUser.id, type: "class_status_changed", message });
+        await sendChatMessage(hydratedUser.id, { text: message });
+        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
           await createNotification({
             user_id: target.instructor_id,
             type: "class_status_changed",
@@ -463,7 +466,7 @@ export default function AdminClassesTable() {
                       <FaEdit className="w-4 h-4" />
                     </button>
                   </Link>
-                  {canManageRules && (
+                  {hydratedUser && canManageRules && (
                     <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} title="Manage Rules">
                       <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow">
                         <FaList className="w-4 h-4" />
