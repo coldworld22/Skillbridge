@@ -74,7 +74,17 @@ export const permanentlyDeleteTutorial = async (id) => {
 
 export const toggleTutorialStatus = async (id) => {
   const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
-  return data?.data;
+  const payload = data?.data;
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const { status = null, moderation_status = null } = payload;
+
+  return {
+    status,
+    moderation_status,
+  };
 };
 
 export const approveTutorial = async (id) => {

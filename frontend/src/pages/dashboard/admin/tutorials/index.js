@@ -120,12 +120,27 @@ function AdminTutorialsPage() {
         toast.error(t("not_found"));
         return;
       }
-      await toggleTutorialStatus(id);
-      const newStatus =
+      const updated = await toggleTutorialStatus(id);
+      if (!updated) {
+        toast.error(t("update_failed"));
+        return;
+      }
+
+      const toggledStatus =
         existing.status === TUTORIAL_STATUS.PUBLISHED
           ? TUTORIAL_STATUS.DRAFT
           : TUTORIAL_STATUS.PUBLISHED;
-      const target = { ...existing, status: newStatus };
+
+      const resolvedStatus = updated.status ?? toggledStatus;
+      const moderationStatus =
+        updated.moderation_status ?? existing.approvalStatus ?? "Pending";
+
+      const target = {
+        ...existing,
+        status: resolvedStatus,
+        approvalStatus: moderationStatus,
+        rejectionReason: null,
+      };
       setTutorials((prev) =>
         prev.map((tut) =>
           tut.id === id
