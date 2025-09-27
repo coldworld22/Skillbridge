@@ -69,6 +69,122 @@ that the installer enforces.
 Open a fresh terminal after installing these tools so PATH changes take effect,
 then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
 
+## 0. Deploying from the memonet-distributed zip
+
+If you receive SkillBridge as the pre-packaged **memonet** archive instead of
+cloning the Git repository, complete these steps before running any installer
+scripts.
+
+### Download, verify, and extract
+
+1. Download the `skillbridge-memonet-<version>.zip` package from your memonet
+   distribution portal. Record the checksum that accompanies the download.
+2. Verify the archive so you know it was not tampered with during transit:
+
+   ```bash
+   sha256sum skillbridge-memonet-<version>.zip
+   # Compare the resulting hash to the published checksum
+   ```
+
+3. Extract the package on the target machine (or on your workstation if you
+   plan to upload the files afterward):
+
+   ```bash
+   unzip skillbridge-memonet-<version>.zip -d Skillbridge
+   cd Skillbridge
+   ```
+
+   The archive mirrors the Git repository layout and includes the `backend/`,
+   `frontend/`, `install/`, `scripts/`, and `docker-compose.yml` directories at
+   the top level.
+
+### Uploading to your hosting environment
+
+The extracted folder is ready to deploy as-is. Ensure the root directory on
+your server looks like this once the transfer completes:
+
+```
+Skillbridge/
+├── backend/
+├── docker-compose.yml
+├── frontend/
+├── install/
+├── install.sh
+├── nginx/
+└── scripts/
+```
+
+- **Local workstation:** move or copy the extracted directory to the location
+  where you normally run development projects (for example `~/Projects`).
+- **Remote or production server:** upload the entire directory via `scp`, rsync,
+  or your preferred deployment tool. Example using rsync:
+
+  ```bash
+  rsync -avz Skillbridge/ user@your-server:/var/www/skillbridge/
+  ssh user@your-server "cd /var/www/skillbridge && ls"
+  ```
+
+  Confirm the directory structure on the server matches the tree above.
+
+### Create environment files without Git metadata
+
+Because the zip omits Git metadata hooks, copy the example environment files
+manually before running any scripts:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+cp backend/.env.production.example backend/.env.production
+cp frontend/.env.local.example frontend/.env.local
+```
+
+Fill in the mandatory variables after copying:
+
+- **Root `.env`:** supply `APP_ENV`, `APP_URL`, and any global overrides used by
+  scripts.
+- **`backend/.env`:** configure `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`,
+  and any SMTP credentials. In production also review
+  `backend/.env.production`.
+- **`frontend/.env.local`:** set `NEXT_PUBLIC_API_URL` so the frontend points to
+  the correct backend origin.
+
+Refer to the inline comments in each example file for additional optional
+values.
+
+### Install dependencies and bootstrap services
+
+When installing from the archive the `node_modules/` directories are excluded.
+Run the installs explicitly before executing migrations or the installer:
+
+```bash
+npm --prefix backend install
+npm --prefix frontend install
+```
+
+Once dependencies are present you can run the usual database bootstrap
+commands:
+
+```bash
+npm --prefix backend run migrate
+npm --prefix backend run seed   # optional, requires SEED_DB=true or manual run
+docker compose up -d
+```
+
+The `install.sh` helper will perform many of these steps automatically, but the
+manual commands above are useful when you prefer finer-grained control.
+
+### Zip-specific troubleshooting
+
+- **File permissions:** some archive tools strip execute bits. After uploading,
+  ensure the installer is runnable: `chmod +x install.sh install/*.sh`.
+- **Uploads directory ownership:** verify `backend/uploads/app` exists and is
+  writable by the user running Docker containers (often UID 1000 on Linux).
+- **Cache and dependency resets:** if services behave unexpectedly after
+  extraction, delete `backend/node_modules`, `frontend/node_modules`, and any
+  `*.next/` caches before reinstalling dependencies.
+- **Checksum mismatches:** re-download the archive if the SHA-256 hash does not
+  match the published value.
+
 ## 1. Clone the repository
 
 ```bash
