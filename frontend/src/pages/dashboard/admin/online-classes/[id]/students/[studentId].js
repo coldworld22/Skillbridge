@@ -9,6 +9,7 @@ import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchClassStudent } from "@/services/admin/classService";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import { formatDateWithLocale } from "@/utils/date";
 
 function ManageStudentInClassPage() {
   const { id, studentId } = useRouter().query;
@@ -96,7 +97,13 @@ function ManageStudentInClassPage() {
                     <strong>
                       {t('studentDetailPage.issued_at', { defaultValue: 'Issued At' })}:
                     </strong>{' '}
-                    {new Date(certificate.issuedAt).toLocaleString()}
+                    {formatDateWithLocale(certificate.issuedAt, {
+                      locale: i18n.language,
+                      options: {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      },
+                    })}
                   </li>
                 )}
               </ul>
