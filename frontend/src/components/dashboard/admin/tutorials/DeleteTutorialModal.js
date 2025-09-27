@@ -6,8 +6,8 @@ export default function DeleteTutorialModal({ isOpen, onClose, onConfirm, t }) {
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title={t("confirm_title")}
-      message={t("confirm_delete")}
+      title={t("delete_confirm_title")}
+      message={t("delete_confirm_message")}
     />
   );
 }

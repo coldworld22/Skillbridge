@@ -91,7 +91,7 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === id);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
       await toggleTutorialStatus(id);
@@ -135,13 +135,13 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Status updated but failed to send some notifications.");
+        toast.warn(t("status_update_partial"));
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t("update_failed"));
+      toast.error(t("status_update_failed"));
     }
   };
 
@@ -165,7 +165,7 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - 1) }
           : prev,
       );
-      toast.success(t("deleted"));
+      toast.success(t("delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("delete_failed"));
@@ -182,7 +182,7 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === tutorialToReject);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
       await rejectTutorial(tutorialToReject, reason);
@@ -198,7 +198,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("rejected"));
+      toast.success(t("reject_success"));
       const message = `Tutorial "${target.title}" was rejected.`;
       const notificationPromises = [
         createNotification({
@@ -226,9 +226,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn(
-          "Rejection processed but failed to send some notifications.",
-        );
+        toast.warn(t("reject_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -254,7 +252,7 @@ function AdminTutorialsPage() {
           return tut;
         }),
       );
-      toast.success(t("approved"));
+      toast.success(t("approval_success"));
       const message = `Tutorial "${target.title}" approved.`;
       const notificationPromises = [
         createNotification({
@@ -282,7 +280,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Tutorial approved but failed to send some notifications.");
+        toast.warn(t("approval_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -304,7 +302,7 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - selectedTutorials.length) }
           : prev,
       );
-      toast.success(t("bulk_deleted"));
+      toast.success(t("bulk_delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_delete_failed"));
@@ -328,7 +326,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("bulk_approved"));
+      toast.success(t("bulk_approve_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_approve_failed"));
@@ -343,9 +341,9 @@ function AdminTutorialsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">
-              📚 {t("title")}
+              📚 {t("heading")}
             </h1>
-            <p className="text-gray-600 mt-1">{t("description")}</p>
+            <p className="text-gray-600 mt-1">{t("subheading")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
