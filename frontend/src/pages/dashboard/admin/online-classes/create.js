@@ -788,14 +788,10 @@ function CreateOnlineClass() {
                 {isSubmitting || isServerUploading ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
-                    {currentStep === 1 ? t('processing') : t('submitting')}
-                  </>
-                ) : currentStep === 1 ? (
-                  t('continue_lessons')
-                ) : (
-                  t('submit_class')
+                    {t('server_upload_in_progress', { defaultValue: 'Server upload in progress...' })}
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
           </form>
         </div>
