@@ -96,6 +96,9 @@ export default function AdminClassesTable() {
     setMounted(true);
   }, []);
 
+  const sortClasses = (items) =>
+    [...items].sort((a, b) => compareValues(a, b, sortKey));
+
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
@@ -104,33 +107,70 @@ export default function AdminClassesTable() {
     const load = async () => {
       setLoading(true);
       try {
+        const scheduleFiltering = shouldApplyScheduleFilter(filterStatus);
         const statusQuery = mapStatusFilterToQuery(filterStatus);
-        const { data, meta } = await fetchAdminClasses({
-          page: currentPage,
-          limit: itemsPerPage,
+        const safeLimit = Math.max(itemsPerPage, 1);
+        const baseParams = {
+          limit: safeLimit,
           filter: searchTerm,
-          approval: filterApproval !== "All" ? filterApproval : undefined,
-          status: statusQuery,
-        });
-        const filteredData = shouldApplyScheduleFilter(filterStatus)
-          ? data.filter(
-              (cls) =>
-                cls.scheduleStatus?.toLowerCase() ===
-                filterStatus.toLowerCase()
-            )
-          : data;
-        const sortedData = [...filteredData].sort((a, b) =>
-          a[sortKey] > b[sortKey] ? 1 : -1
-        );
-        setClassList(sortedData);
+          ...(filterApproval !== "All" ? { approval: filterApproval } : {}),
+          ...(statusQuery ? { status: statusQuery } : {}),
+        };
 
-        if (shouldApplyScheduleFilter(filterStatus)) {
-          setTotalItems(filteredData.length);
-          setTotalPages(
-            Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
+        const initialPage = scheduleFiltering ? 1 : currentPage;
+        const { data, meta } = await fetchAdminClasses({
+          ...baseParams,
+          page: initialPage,
+        });
+
+        if (scheduleFiltering) {
+          const totalPagesFromMeta = meta?.totalPages ?? 1;
+          let aggregatedData = data;
+
+          if (totalPagesFromMeta > 1) {
+            const subsequentPages = await Promise.all(
+              Array.from({ length: totalPagesFromMeta - 1 }, (_, index) =>
+                fetchAdminClasses({
+                  ...baseParams,
+                  page: index + 2,
+                }).then((res) => res.data)
+              )
+            );
+            aggregatedData = aggregatedData.concat(...subsequentPages);
+          }
+
+          const filteredData = aggregatedData.filter(
+            (cls) =>
+              cls.scheduleStatus?.toLowerCase() ===
+              filterStatus.toLowerCase()
           );
+          const sortedData = sortClasses(filteredData);
+          const totalFilteredItems = sortedData.length;
+          const totalFilteredPages = Math.max(
+            1,
+            Math.ceil(totalFilteredItems / safeLimit)
+          );
+          const normalizedPage = Math.min(
+            Math.max(currentPage, 1),
+            totalFilteredPages
+          );
+
+          setTotalItems(totalFilteredItems);
+          setTotalPages(totalFilteredPages);
+          if (normalizedPage !== currentPage) {
+            setCurrentPage(normalizedPage);
+          }
+
+          const startIndex = (normalizedPage - 1) * safeLimit;
+          const paginatedData = sortedData.slice(
+            startIndex,
+            startIndex + safeLimit
+          );
+          setClassList(paginatedData);
         } else {
-          setTotalPages(meta?.totalPages || 1);
+          const sortedData = sortClasses(data);
+          setClassList(sortedData);
+          setTotalPages(meta?.totalPages ? Math.max(meta.totalPages, 1) : 1);
           setTotalItems(meta?.total ?? data.length);
         }
       } catch (err) {
