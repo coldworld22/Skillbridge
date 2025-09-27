@@ -2,6 +2,14 @@
 
 ## Installation
 
+Choose the path that matches your environment:
+
+- [Deploy from the customer ZIP package](./installation.md#deploy-from-the-customer-zip-package)
+  – ideal for cPanel/FTP hosts and managed servers where you upload a prepared
+  archive from the Memonet portal.
+- [Install from Git](./installation.md#1-clone-the-repository) – clone the
+  repository, run the install script, and manage updates with Git.
+
 ### Prerequisites
 
 SkillBridge requires the following tools on your workstation or server:
