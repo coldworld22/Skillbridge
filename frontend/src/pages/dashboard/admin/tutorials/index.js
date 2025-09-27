@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
@@ -35,27 +34,54 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
+  const PAGE_SIZE = 10;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterApproval, setFilterApproval] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filterParams = useMemo(() => {
+    const search = searchQuery.trim();
+    return {
+      ...(search ? { search } : {}),
+      ...(filterStatus ? { status: filterStatus } : {}),
+      ...(filterCategory ? { category: filterCategory } : {}),
+      ...(filterApproval ? { approvalStatus: filterApproval } : {}),
+    };
+  }, [searchQuery, filterStatus, filterCategory, filterApproval]);
+
   const { tutorials, setTutorials, categories, loading, meta, setMeta } =
-    useTutorialsData(t);
+    useTutorialsData(t, {
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      filters: filterParams,
+    });
 
-  const {
-    searchQuery,
-    setSearchQuery,
-    filterCategory,
-    setFilterCategory,
-    filterStatus,
-    setFilterStatus,
-    filterApproval,
-    setFilterApproval,
-    currentPage,
-    setCurrentPage,
-    filteredTutorials,
-    paginatedTutorials,
-    totalPages,
-    startIndex,
-    goToPage,
-  } = useTutorialFilters(tutorials);
+  const totalResults = meta?.total ?? tutorials.length;
+  const totalPages =
+    meta?.totalPages ?? (totalResults > 0 ? Math.ceil(totalResults / PAGE_SIZE) : 0);
 
+  useEffect(() => {
+    if (totalPages === null || totalPages === undefined) return;
+    if (totalPages === 0) {
+      if (currentPage !== 1) setCurrentPage(1);
+      return;
+    }
+
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const goToPage = (page) => {
+    if (!Number.isFinite(page)) return;
+    const maxPages = totalPages > 0 ? totalPages : 1;
+    const nextPage = Math.min(Math.max(page, 1), maxPages);
+    if (nextPage !== currentPage) {
+      setCurrentPage(nextPage);
+    }
+  };
 
   const {
     selectedTutorials,
@@ -63,19 +89,19 @@ function AdminTutorialsPage() {
     toggleSelectOne,
     toggleSelectAll,
     clearSelected,
-  } = useBulkSelection(paginatedTutorials, [
+  } = useBulkSelection(tutorials, [
     searchQuery,
     filterCategory,
     filterStatus,
     filterApproval,
+    currentPage,
   ]);
 
-  const totalResults = filteredTutorials.length;
-  const paginatedCount = paginatedTutorials.length;
+  const startIndex = totalResults === 0 ? 0 : (currentPage - 1) * PAGE_SIZE;
   const displayEndIndex =
     totalResults === 0
       ? 0
-      : Math.min(startIndex + paginatedCount, totalResults);
+      : Math.min(startIndex + tutorials.length, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -91,7 +117,7 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === id);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
       await toggleTutorialStatus(id);
@@ -135,13 +161,13 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Status updated but failed to send some notifications.");
+        toast.warn(t("status_update_partial"));
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t("update_failed"));
+      toast.error(t("status_update_failed"));
     }
   };
 
@@ -165,7 +191,7 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - 1) }
           : prev,
       );
-      toast.success(t("deleted"));
+      toast.success(t("delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("delete_failed"));
@@ -182,7 +208,7 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === tutorialToReject);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
       await rejectTutorial(tutorialToReject, reason);
@@ -198,7 +224,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("rejected"));
+      toast.success(t("reject_success"));
       const message = `Tutorial "${target.title}" was rejected.`;
       const notificationPromises = [
         createNotification({
@@ -226,9 +252,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn(
-          "Rejection processed but failed to send some notifications.",
-        );
+        toast.warn(t("reject_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -254,7 +278,7 @@ function AdminTutorialsPage() {
           return tut;
         }),
       );
-      toast.success(t("approved"));
+      toast.success(t("approval_success"));
       const message = `Tutorial "${target.title}" approved.`;
       const notificationPromises = [
         createNotification({
@@ -282,7 +306,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Tutorial approved but failed to send some notifications.");
+        toast.warn(t("approval_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -304,7 +328,7 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - selectedTutorials.length) }
           : prev,
       );
-      toast.success(t("bulk_deleted"));
+      toast.success(t("bulk_delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_delete_failed"));
@@ -328,7 +352,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("bulk_approved"));
+      toast.success(t("bulk_approve_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_approve_failed"));
@@ -343,9 +367,9 @@ function AdminTutorialsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">
-              📚 {t("title")}
+              📚 {t("heading")}
             </h1>
-            <p className="text-gray-600 mt-1">{t("description")}</p>
+            <p className="text-gray-600 mt-1">{t("subheading")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
@@ -381,7 +405,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
+            <p className="text-2xl font-bold">{totalResults}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -406,7 +430,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={tutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}

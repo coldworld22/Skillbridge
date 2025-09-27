@@ -8,6 +8,8 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredTutorials = useMemo(() => {
+    const normalizedQuery = searchQuery.toLowerCase();
+
     return tutorials.filter((tut) => {
       const normalizedTitle = (tut.title ?? "").toLowerCase();
       const normalizedInstructor = (tut.instructor ?? "").toLowerCase();
