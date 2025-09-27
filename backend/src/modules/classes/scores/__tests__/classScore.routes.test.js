@@ -47,9 +47,11 @@ describe('class score routes', () => {
 
   test('issue certificate', async () => {
     service.issueCertificate.mockResolvedValue({ id: 'c1' });
-    const res = await request(app).post('/classes/scores/instructor/1/students/u1/issue');
+    const res = await request(app)
+      .post('/classes/scores/instructor/1/students/u1/issue')
+      .send({ templateId: 'tpl-1' });
     expect(res.status).toBe(200);
-    expect(service.issueCertificate).toHaveBeenCalled();
+    expect(service.issueCertificate).toHaveBeenCalledWith('1', 'u1', 'tpl-1');
   });
 
   test('get my score', async () => {

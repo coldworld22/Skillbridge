@@ -22,7 +22,8 @@ exports.generateCertificate = catchAsync(async (req, res) => {
   if (existing) return sendSuccess(res, existing, "Certificate already issued");
 
   // 3. Create new
-  const newCert = await service.issueCertificate({ userId, tutorialId });
+  const { templateId } = req.body || {};
+  const newCert = await service.issueCertificate({ userId, tutorialId, templateId });
 
   // 4. Notify user
   const tutorial = await db("tutorials").where({ id: tutorialId }).first();
