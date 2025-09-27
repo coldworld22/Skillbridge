@@ -63,7 +63,7 @@ function EditClassPage() {
               (data.end_date ? toDateInput(data.end_date) : ''),
             category: data.category_id || '',
             price: data.price || '',
-            status: data.status || '',
+            status: data.publishStatus || data.status || '',
             description: data.description || '',
             max_students: data.max_students || '',
             access_type: data.access_type || 'paid',
@@ -107,7 +107,7 @@ function EditClassPage() {
       if (formData.end_date) payload.append('end_date', formData.end_date);
       if (formData.category) payload.append('category_id', formData.category);
       if (formData.max_students) payload.append('max_students', formData.max_students);
-      payload.append('status', formData.status);
+      payload.append('status', formData.status || '');
       payload.append('access_type', formData.access_type);
       if (formData.access_type === 'free') {
         payload.append('price', '0');
