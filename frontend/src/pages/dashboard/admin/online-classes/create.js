@@ -32,6 +32,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -190,73 +191,41 @@ function CreateOnlineClass() {
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error(t('invalid_image_type', { defaultValue: 'Unsupported image type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(t('image_size_exceeded'));
+      e.target.value = '';
       return;
     }
-    setIsImageUploading(true);
-    setUploadProgress(0);
 
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setUploadProgress(100);
-      setIsImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setIsImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
       toast.error(t('invalid_video_type', { defaultValue: 'Unsupported video type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 100 * 1024 * 1024) {
       toast.error(t('video_size_exceeded'));
+      e.target.value = '';
       return;
     }
 
-    setIsVideoUploading(true);
-    setUploadProgress(0);
-    const previewUrl = URL.createObjectURL(file);
-    setFormData((prev) => {
-      if (prev.demoPreview) {
-        URL.revokeObjectURL(prev.demoPreview);
-      }
-      return {
-        ...prev,
-        demoVideo: file,
-        demoPreview: previewUrl,
-      };
-    });
-    setUploadProgress(100);
-    setIsVideoUploading(false);
+    mediaVideoUpload(e);
   };
 
   const addTag = (tag) => {
@@ -305,18 +274,24 @@ function CreateOnlineClass() {
           start_time: ''
         }))
       }));
+      setFailedLessonIndices([]);
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
+      const priceValue = Number(formData.price);
       if (formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error(t('complete_lesson_details'));
         return;
       }
       if (
         formData.accessType === 'paid' &&
-        (!formData.price || Number(formData.price) <= 0)
+        (!Number.isFinite(priceValue) || priceValue <= 0)
       ) {
-        toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
+        toast.error(
+          t('invalid_price', {
+            defaultValue: 'Please provide a valid numeric price greater than zero for paid classes.'
+          })
+        );
         return;
       }
       if (!instructorId) {
@@ -331,6 +306,7 @@ function CreateOnlineClass() {
         setIsSubmitting(true);
         setIsServerUploading(true);
         setUploadProgress(0);
+        setFailedLessonIndices([]);
 
         const payload = new FormData();
         payload.append('instructor_id', instructorId);
@@ -348,8 +324,8 @@ function CreateOnlineClass() {
           payload.append('price', '0');
           if (formData.includedPlans.length)
             payload.append('included_plans', JSON.stringify(formData.includedPlans));
-        } else if (formData.price || formData.price === 0) {
-          payload.append('price', Number(formData.price).toFixed(2));
+        } else if (Number.isFinite(priceValue)) {
+          payload.append('price', priceValue.toFixed(2));
         }
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
@@ -365,16 +341,38 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await Promise.all(
+        const lessonResults = await Promise.allSettled(
           formData.lessons.map(async (lesson) => {
             const lessonData = new FormData();
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
             lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData).catch(() => null);
+            return createClassLesson(newClass.id, lessonData);
           })
         );
+
+        const failedIndices = lessonResults.reduce((acc, result, index) => {
+          if (result.status === 'rejected') {
+            acc.push(index);
+          }
+          return acc;
+        }, []);
+
+        if (failedIndices.length) {
+          setFailedLessonIndices(failedIndices);
+          toast.error(
+            t('lesson_creation_failed', {
+              count: failedIndices.length,
+              indices: failedIndices.map((idx) => idx + 1).join(', '),
+              defaultValue: `Failed to create ${failedIndices.length} lesson(s). Please review highlighted lessons (${failedIndices
+                .map((idx) => idx + 1)
+                .join(', ')}).`,
+            })
+          );
+          setCurrentStep(2);
+          return;
+        }
 
         const events = [
           {
@@ -725,7 +723,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isImageUploading ? (
+                            {imageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -772,7 +770,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isVideoUploading ? (
+                            {videoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -822,10 +820,12 @@ function CreateOnlineClass() {
                       {t('lesson_plan')}
                     </h2>
 
-                    {formData.lessons.map((lesson, index) => (
+                    {formData.lessons.map((lesson, index) => {
+                      const lessonHasError = failedLessonIndices.includes(index);
+                      return (
                       <div
                         key={index}
-                        className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                        className={`border rounded-lg p-4 ${lessonHasError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}
                       >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div>
@@ -839,6 +839,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].title = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                               placeholder={t('lesson_title_placeholder')}
@@ -856,6 +857,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].duration = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                               placeholder={t('duration_placeholder')}
@@ -873,6 +875,7 @@ function CreateOnlineClass() {
                                 const updated = [...formData.lessons];
                                 updated[index].start_time = e.target.value;
                                 setFormData(prev => ({ ...prev, lessons: updated }));
+                                setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                             />
@@ -890,6 +893,7 @@ function CreateOnlineClass() {
                                   const updated = [...formData.lessons];
                                   updated[index].resource = e.target.files[0];
                                   setFormData(prev => ({ ...prev, lessons: updated }));
+                                  setFailedLessonIndices((prev) => prev.filter((i) => i !== index));
                                 }}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               />
@@ -902,8 +906,17 @@ function CreateOnlineClass() {
                             </div>
                           </div>
                         </div>
+                        {lessonHasError && (
+                          <p className="mt-3 text-sm text-red-600">
+                            {t('lesson_failed_hint', {
+                              number: index + 1,
+                              defaultValue: `Lesson ${index + 1} failed to save. Please review the details and try again.`,
+                            })}
+                          </p>
+                        )}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
               </motion.div>
