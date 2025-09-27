@@ -31,6 +31,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -79,9 +80,34 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [isImageUploading, setIsImageUploading] = useState(false);
-  const [isVideoUploading, setIsVideoUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading,
+    handleImageUpload: mediaImageUpload,
+    handleVideoUpload: mediaVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    t,
+    onError: (message) => toast.error(message),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: preview,
+      })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => {
+        if (prev.demoPreview && prev.demoPreview !== preview) {
+          URL.revokeObjectURL(prev.demoPreview);
+        }
+        return {
+          ...prev,
+          demoVideo: file,
+          demoPreview: preview,
+        };
+      }),
+  });
 
   const demoPreview = formData.demoPreview;
 
@@ -133,73 +159,41 @@ function CreateOnlineClass() {
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error(t('invalid_image_type', { defaultValue: 'Unsupported image type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(t('image_size_exceeded'));
+      e.target.value = '';
       return;
     }
-    setIsImageUploading(true);
-    setUploadProgress(0);
 
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setUploadProgress(100);
-      setIsImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setIsImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
       toast.error(t('invalid_video_type', { defaultValue: 'Unsupported video type' }));
+      e.target.value = '';
       return;
     }
 
     if (file.size > 100 * 1024 * 1024) {
       toast.error(t('video_size_exceeded'));
+      e.target.value = '';
       return;
     }
 
-    setIsVideoUploading(true);
-    setUploadProgress(0);
-    const previewUrl = URL.createObjectURL(file);
-    setFormData((prev) => {
-      if (prev.demoPreview) {
-        URL.revokeObjectURL(prev.demoPreview);
-      }
-      return {
-        ...prev,
-        demoVideo: file,
-        demoPreview: previewUrl,
-      };
-    });
-    setUploadProgress(100);
-    setIsVideoUploading(false);
+    mediaVideoUpload(e);
   };
 
   const addTag = (tag) => {
@@ -638,7 +632,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isImageUploading ? (
+                            {imageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -685,7 +679,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isVideoUploading ? (
+                            {videoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
