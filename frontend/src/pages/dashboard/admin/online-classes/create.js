@@ -401,6 +401,17 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
+        if (!newClass?.id) {
+          console.error('createAdminClass returned an unexpected payload', newClass);
+          toast.error(
+            t('class_creation_failed', {
+              defaultValue:
+                'We could not confirm the new class details. Please try again in a moment.',
+            })
+          );
+          return;
+        }
+
         const lessonResults = await Promise.allSettled(
           formData.lessons.map(async (lesson) => {
             const lessonData = new FormData();
