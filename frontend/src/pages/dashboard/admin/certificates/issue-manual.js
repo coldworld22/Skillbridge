@@ -1,9 +1,10 @@
 // pages/dashboard/admin/certificates/issue-manual.js
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { issueCertificate } from "@/services/admin/certificateService";
+import { getTemplates } from "@/services/admin/certificateTemplateService";
 import withAdminGuard from "@/hooks/withAdminGuard";
 
 function ManualCertificateIssuePage() {
@@ -14,7 +15,30 @@ function ManualCertificateIssuePage() {
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 16)); // default to now
   const [status, setStatus] = useState("Issued");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [templateId, setTemplateId] = useState("");
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const data = await getTemplates();
+        setTemplates(data);
+        if (data?.length) {
+          setTemplateId(data[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to load templates", err);
+        setError("Failed to load templates");
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    loadTemplates();
+  }, []);
 
   const handleSubmit = async () => {
     if (!studentName.trim() || !className.trim()) {
@@ -25,7 +49,13 @@ function ManualCertificateIssuePage() {
     setSaving(true);
     setError('');
     try {
-      await issueCertificate({ studentName, className, issueDate, status });
+      await issueCertificate({
+        studentName,
+        className,
+        issueDate,
+        status,
+        templateId: templateId || null,
+      });
       router.push("/dashboard/admin/certificates");
     } catch (err) {
       console.error('Issue certificate failed', err);
@@ -76,6 +106,29 @@ function ManualCertificateIssuePage() {
                 onChange={(e) => setIssueDate(e.target.value)}
                 className="w-full p-3 bg-gray-200 rounded"
               />
+            </div>
+
+            {/* Template */}
+            <div>
+              <label className="block mb-2 font-semibold">Certificate Template</label>
+              <select
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                className="w-full p-3 bg-gray-200 rounded"
+                disabled={loadingTemplates || templates.length === 0}
+              >
+                {loadingTemplates ? (
+                  <option>Loading templates...</option>
+                ) : templates.length === 0 ? (
+                  <option value="">No templates available</option>
+                ) : (
+                  templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
 
             {/* Status */}

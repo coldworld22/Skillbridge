@@ -50,7 +50,19 @@ function AnalyticsDashboard() {
   useEffect(() => {
     if (!id) return;
     fetchAdminClassAnalytics(id)
-      .then((data) => setStats(data))
+      .then((data) =>
+        setStats({
+          ...EMPTY_STATS,
+          ...(data ?? {}),
+          revenueBreakdown: {
+            ...EMPTY_STATS.revenueBreakdown,
+            ...(data?.revenueBreakdown ?? {}),
+          },
+          locations: data?.locations ?? EMPTY_STATS.locations,
+          devices: data?.devices ?? EMPTY_STATS.devices,
+          registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
+        })
+      )
       .catch((err) => {
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
@@ -65,17 +77,26 @@ function AnalyticsDashboard() {
     );
   }
 
+  const totalStudents = stats.totalStudents ?? 0;
+  const totalRevenue = stats.totalRevenue ?? 0;
+  const totalAttendance = stats.totalAttendance ?? 0;
+  const totalCompleted = stats.completed ?? 0;
+  const revenueBreakdown = stats.revenueBreakdown ?? EMPTY_STATS.revenueBreakdown;
+  const locations = stats.locations ?? EMPTY_STATS.locations;
+  const devices = stats.devices ?? EMPTY_STATS.devices;
+  const registrationTrend = stats.registrationTrend ?? EMPTY_STATS.registrationTrend;
+
   const avgRevenue =
-    stats.totalStudents > 0
-      ? (stats.totalRevenue / stats.totalStudents).toFixed(2)
+    totalStudents > 0
+      ? (totalRevenue / totalStudents).toFixed(2)
       : "0";
   const attendanceRate =
-    stats.totalStudents > 0
-      ? ((stats.totalAttendance / stats.totalStudents) * 100).toFixed(1)
+    totalStudents > 0
+      ? ((totalAttendance / totalStudents) * 100).toFixed(1)
       : "0";
   const completionRate =
-    stats.totalStudents > 0
-      ? ((stats.completed / stats.totalStudents) * 100).toFixed(1)
+    totalStudents > 0
+      ? ((totalCompleted / totalStudents) * 100).toFixed(1)
       : "0";
 
   return (
@@ -87,20 +108,20 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 {t('classAnalyticsPage.total_enrolled_students')}</h2>
-          <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
+          <p className="text-3xl font-bold text-green-600">{totalStudents}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 {t('classAnalyticsPage.total_revenue')}</h2>
-          <p className="text-3xl font-bold text-indigo-600">${stats.totalRevenue}</p>
+          <p className="text-3xl font-bold text-indigo-600">${totalRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 {t('classAnalyticsPage.revenue_breakdown')}</h2>
           <ul className="text-gray-700 space-y-1">
-            <li><strong>{t('classAnalyticsPage.full_payments')}:</strong> {stats.revenueBreakdown.full}</li>
-            <li><strong>{t('classAnalyticsPage.installments')}:</strong> {stats.revenueBreakdown.installments}</li>
-            <li><strong>{t('classAnalyticsPage.free_seats')}:</strong> {stats.revenueBreakdown.free}</li>
+            <li><strong>{t('classAnalyticsPage.full_payments')}:</strong> {revenueBreakdown?.full ?? 0}</li>
+            <li><strong>{t('classAnalyticsPage.installments')}:</strong> {revenueBreakdown?.installments ?? 0}</li>
+            <li><strong>{t('classAnalyticsPage.free_seats')}:</strong> {revenueBreakdown?.free ?? 0}</li>
           </ul>
         </div>
       </div>
@@ -127,8 +148,8 @@ function AnalyticsDashboard() {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">🌍 {t('classAnalyticsPage.top_countries')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={stats.locations} dataKey="value" nameKey="name" outerRadius={100}>
-                {stats.locations.map((entry, index) => (
+              <Pie data={locations} dataKey="value" nameKey="name" outerRadius={100}>
+                {(locations ?? []).map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -142,8 +163,8 @@ function AnalyticsDashboard() {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">📱 {t('classAnalyticsPage.devices_used')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={stats.devices} dataKey="value" nameKey="name" outerRadius={100}>
-                {stats.devices.map((entry, index) => (
+              <Pie data={devices} dataKey="value" nameKey="name" outerRadius={100}>
+                {(devices ?? []).map((entry, index) => (
                   <Cell key={`cell-dev-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -157,7 +178,7 @@ function AnalyticsDashboard() {
       <div className="bg-white p-6 rounded-xl shadow border">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 {t('classAnalyticsPage.registration_trend')}</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={stats.registrationTrend}>
+          <BarChart data={registrationTrend}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />

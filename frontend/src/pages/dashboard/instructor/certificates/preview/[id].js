@@ -6,6 +6,86 @@ import QRCode from "react-qr-code";
 import { getCertificate } from "@/services/instructor/certificateService";
 import { getTemplate } from "@/services/admin/certificateTemplateService";
 
+const FALLBACK_BACKGROUND = "/images/paper-texture.png";
+const FALLBACK_LOGO = "/images/certificate/logo.png";
+const FALLBACK_BORDER_COLOR = "#FACC15";
+const FALLBACK_FONT_FAMILY = "Georgia, serif";
+const FALLBACK_TITLE_FONT = "'Great Vibes', cursive";
+
+const firstDefined = (...values) =>
+  values.find((value) => value !== undefined && value !== null && value !== "");
+
+const sanitizeAsset = (value, fallback) =>
+  typeof value === "string" && value.trim().length > 0 ? value : fallback;
+
+const deriveTemplateSettings = (certificate) => {
+  const template = certificate?.template ?? {};
+
+  const borderColor =
+    firstDefined(
+      template.border_color,
+      template.borderColor,
+      certificate?.border_color,
+      certificate?.borderColor,
+      FALLBACK_BORDER_COLOR
+    ) || FALLBACK_BORDER_COLOR;
+
+  const fontFamily =
+    firstDefined(
+      template.font_family,
+      template.fontFamily,
+      certificate?.font_family,
+      certificate?.fontFamily,
+      FALLBACK_FONT_FAMILY
+    ) || FALLBACK_FONT_FAMILY;
+
+  const titleFont =
+    firstDefined(
+      template.title_font,
+      template.titleFont,
+      certificate?.title_font,
+      certificate?.titleFont,
+      FALLBACK_TITLE_FONT
+    ) || FALLBACK_TITLE_FONT;
+
+  const background = sanitizeAsset(
+    firstDefined(
+      template.background,
+      template.backgroundUrl,
+      certificate?.background,
+      certificate?.backgroundImage
+    ),
+    FALLBACK_BACKGROUND
+  );
+
+  const logo = sanitizeAsset(
+    firstDefined(
+      template.logo,
+      template.logoUrl,
+      certificate?.logo,
+      certificate?.logoUrl
+    ),
+    FALLBACK_LOGO
+  );
+
+  const showQrPreference = firstDefined(
+    template.show_qr,
+    template.showQr,
+    certificate?.show_qr,
+    certificate?.showQR
+  );
+
+  return {
+    borderColor,
+    fontFamily,
+    titleFont,
+    background,
+    logo,
+    accentColor: borderColor,
+    showQR: showQrPreference === undefined ? true : Boolean(showQrPreference),
+  };
+};
+
 export default function CertificatePreviewPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -16,6 +96,11 @@ export default function CertificatePreviewPage() {
   const [template, setTemplate] = useState(null);
   const [templateError, setTemplateError] = useState("");
   const [templateLoading, setTemplateLoading] = useState(false);
+
+  const templateSettings = useMemo(
+    () => deriveTemplateSettings(certificate),
+    [certificate]
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -187,10 +272,10 @@ export default function CertificatePreviewPage() {
 
             {/* Issue Date and Serial */}
             <p className="text-sm text-gray-500 mb-2">
-              Issued on: <strong>{new Date(certificate.issueDate).toLocaleDateString()}</strong>
+              Issued on: <strong>{formattedIssueDate}</strong>
             </p>
             <p className="text-sm text-gray-500 mb-8">
-              Serial Number: <strong>CERT-{certificate.id.slice(0, 6).toUpperCase()}</strong>
+              Serial Number: <strong>CERT-{certificateSerial}</strong>
             </p>
 
             {/* Bottom Signature / QR Section */}

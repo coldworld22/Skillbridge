@@ -1,5 +1,6 @@
 const db = require("../../../../config/database");
 const { v4: uuidv4 } = require("uuid");
+const certificateTemplateService = require("../../../certificateTemplates/certificateTemplates.service");
 
 // Generate a unique certificate code
 const generateCode = () => {
@@ -38,20 +39,54 @@ const isUserCompletedTutorial = async (userId, tutorialId) => {
 };
 
 // Check if certificate already exists
+const buildTemplateAwareQuery = () => {
+  const query = db("certificates");
+  applyTemplateJoin(query);
+  return query.select("certificates.*", ...TEMPLATE_SELECT_FIELDS);
+};
+
 const findExisting = async (userId, tutorialId) => {
-  return await db("certificates")
-    .where({ user_id: userId, tutorial_id: tutorialId })
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.user_id", userId)
+    .where("certificates.tutorial_id", tutorialId)
     .first();
+
+  return formatCertificateRow(row);
+};
+
+const findById = async (id) => {
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.id", id)
+    .first();
+
+  return formatCertificateRow(row);
+};
+
+const resolveTemplateId = async (templateId) => {
+  if (templateId) return templateId;
+  const template = await templateService.getActiveTemplate();
+  return template?.id || null;
 };
 
 // Create a new certificate
-const issueCertificate = async ({ userId, tutorialId, templateId = null }) => {
+const issueCertificate = async ({
+  userId,
+  tutorialId,
+  templateId = null,
+  certificateType = "Completion",
+}) => {
+  let resolvedTemplateId = templateId;
+  if (!resolvedTemplateId && certificateType) {
+    const activeTemplate = await certificateTemplateService.getActiveByType(certificateType);
+    resolvedTemplateId = activeTemplate?.id || null;
+  }
+
   const newCert = {
     id: uuidv4(),
     user_id: userId,
     tutorial_id: tutorialId,
     class_id: null,
-    template_id: templateId,
+    template_id: resolvedTemplateId,
     certificate_code: generateCode(),
     status: "issued"
   };
@@ -64,5 +99,6 @@ module.exports = {
   generateCode,
   isUserCompletedTutorial,
   findExisting,
+  findById,
   issueCertificate,
 };
