@@ -33,7 +33,7 @@ import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
 import useMediaUploader from '@/hooks/useMediaUploader';
-import nextI18NextConfig from '../../../../../next-i18next.config.js';
+import nextI18NextConfig from '@/../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
