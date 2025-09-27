@@ -118,6 +118,7 @@
   "rejected": "अस्वीकार कर दिया",
   "free_class": "नि: शुल्क वर्ग",
   "free_label": "मुक्त",
+  "rejection_reason_min_length": "कृपया अस्वीकृति के कारण के लिए कम से कम 3 अक्षर दर्ज करें।",
   "allow_installments": "किस्तों की अनुमति दें",
   "publish_immediately": "तुरंत प्रकाशित करें",
   "description_label": "विवरण",

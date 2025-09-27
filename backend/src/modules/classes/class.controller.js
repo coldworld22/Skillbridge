@@ -195,6 +195,7 @@ exports.getAllClasses = catchAsync(async (req, res) => {
     filter,
     approval,
     status,
+    schedule,
   } = req.query;
   const result = await service.getAllClasses({
     page: Number(page),
@@ -202,6 +203,7 @@ exports.getAllClasses = catchAsync(async (req, res) => {
     filter,
     approval,
     status,
+    schedule,
   });
   sendSuccess(res, result.data, undefined, result.meta);
 });
@@ -418,6 +420,18 @@ exports.toggleClassStatus = catchAsync(async (req, res) => {
 });
 
 exports.approveClass = catchAsync(async (req, res) => {
+  const existing = await service.getClassById(req.params.id);
+  if (!existing) throw new AppError("Class not found", 404);
+  const plan = await getActiveInstructorPlan(existing.instructor_id);
+  if (!plan) {
+    throw new AppError("Course limit reached for your plan", 403);
+  }
+  if (plan.max_courses) {
+    const count = await service.countPublishedClasses(existing.instructor_id);
+    if (count >= plan.max_courses) {
+      throw new AppError("Course limit reached for your plan", 403);
+    }
+  }
   const cls = await service.updateModeration(req.params.id, "Approved");
   await notificationService.createNotification({
     user_id: cls.instructor_id,

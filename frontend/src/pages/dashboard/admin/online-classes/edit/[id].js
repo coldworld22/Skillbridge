@@ -10,7 +10,7 @@
 // is alerted about the update.
 // -------------------------------------------------
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -19,6 +19,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { FaArrowLeft } from 'react-icons/fa';
 import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
+import { fetchAllInstructors } from '@/services/admin/instructorService';
 import { fetchPlanIdentifiers } from '@/services/admin/planService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
@@ -73,6 +74,10 @@ export function EditClassPage() {
     included_plans: [],
   });
   const [plans, setPlans] = useState([]);
+  const [instructors, setInstructors] = useState([]);
+  const [instructorSearch, setInstructorSearch] = useState('');
+  const [loadingInstructors, setLoadingInstructors] = useState(false);
+  const [instructorId, setInstructorId] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -97,6 +102,7 @@ export function EditClassPage() {
             access_type: data.access_type || 'paid',
             included_plans: normalizeIncludedPlans(data.included_plans || [], plans),
           });
+          setInstructorId(data.instructor_id || '');
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -146,6 +152,7 @@ export function EditClassPage() {
       if (formData.max_students) payload.append('max_students', formData.max_students);
       payload.append('status', formData.status || '');
       payload.append('access_type', formData.access_type);
+      if (instructorId) payload.append('instructor_id', instructorId);
       if (formData.access_type === 'free') {
         payload.append('price', '0');
         const uniquePlans = Array.from(new Set(formData.included_plans));
@@ -181,13 +188,40 @@ export function EditClassPage() {
           placeholder={t('class_title_label')}
           className="w-full border rounded px-4 py-2"
         />
-        <input
-          name="instructor"
-          value={formData.instructor}
-          onChange={handleChange}
-          placeholder={t('instructor_name_label')}
-          className="w-full border rounded px-4 py-2"
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {t('instructor_select_label')}
+          </label>
+          <input
+            type="text"
+            value={instructorSearch}
+            onChange={(event) => setInstructorSearch(event.target.value)}
+            placeholder={t('instructor_search_placeholder')}
+            className="w-full border rounded px-4 py-2"
+          />
+          <select
+            value={instructorId}
+            onChange={(event) => setInstructorId(event.target.value)}
+            className="w-full border rounded px-4 py-2"
+          >
+            <option value="">{t('select_instructor_placeholder')}</option>
+            {filteredInstructors.map((inst) => {
+              const name = inst?.full_name || inst?.email || '';
+              const email = inst?.email && inst?.full_name ? ` (${inst.email})` : '';
+              return (
+                <option key={inst.id} value={inst.id}>
+                  {`${name}${email}`}
+                </option>
+              );
+            })}
+          </select>
+          {loadingInstructors && (
+            <p className="text-sm text-gray-500">{t('loading', { defaultValue: 'Loading...' })}</p>
+          )}
+          {!loadingInstructors && filteredInstructors.length === 0 && (
+            <p className="text-sm text-gray-500">{t('no_instructors_found')}</p>
+          )}
+        </div>
         <div className="flex gap-4">
           <input
             name="start_date"

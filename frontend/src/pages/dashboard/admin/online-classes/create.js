@@ -32,6 +32,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import { getPendingLessonEntries } from '@/utils/lessonSubmission';
 import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '@/../next-i18next.config.js';
 
@@ -62,7 +63,8 @@ function CreateOnlineClass() {
     title: '',
     duration: '',
     resource: null,
-    start_time: ''
+    start_time: '',
+    status: 'pending'
   });
 
   const [formData, setFormData] = useState({
@@ -93,6 +95,7 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
+  const [createdClass, setCreatedClass] = useState(null);
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
   const [instructorSearch, setInstructorSearch] = useState('');
@@ -294,17 +297,24 @@ function CreateOnlineClass() {
   };
 
   const handleAddLesson = () => {
+    const newLesson = createEmptyLesson();
     setFormData((prev) => ({
       ...prev,
-      lessons: [...prev.lessons, createEmptyLesson()],
+      lessons: [...prev.lessons, newLesson],
     }));
   };
 
   const handleRemoveLesson = (index) => {
+    const lessonToRemove = formData.lessons[index];
     setFormData((prev) => ({
       ...prev,
       lessons: prev.lessons.filter((_, idx) => idx !== index),
     }));
+    setFailedLessonIndices((prev) =>
+      prev
+        .filter((idx) => idx !== index)
+        .map((idx) => (idx > index ? idx - 1 : idx))
+    );
   };
 
   const addTag = (tag) => {
@@ -438,76 +448,129 @@ function CreateOnlineClass() {
         setIsServerUploading(true);
         setUploadProgress(0);
         setFailedLessonIndices([]);
+        const finalizeCreation = (classRecord) => {
+          const events = [
+            {
+              id: `class-${classRecord.id}`,
+              title: `Class: ${classRecord.title}`,
+              start: toDateTimeISO(formData.startDate || classRecord.start_date),
+            },
+            ...formData.lessons.map((l) => ({
+              id: `lesson-${classRecord.id}-${l.id}`,
+              title: `Lesson: ${l.title}`,
+              start: toDateTimeISO(l.start_time),
+            })),
+          ];
+          addEvents(events);
 
-        const payload = new FormData();
-        payload.append('instructor_id', instructorId);
-        payload.append('title', formData.title);
-        if (formData.description) payload.append('description', formData.description);
-        if (formData.level) payload.append('level', formData.level);
-        if (formData.language) payload.append('language', formData.language);
-        if (formData.startDate)
-          payload.append('start_date', toDateTimeISO(formData.startDate));
-        if (formData.endDate)
-          payload.append('end_date', toDateTimeISO(formData.endDate));
+          toast.success(t('class_created'));
+          fetchNotifications();
+          fetchMessages();
+          router.push('/dashboard/admin/online-classes');
+        };
 
-        payload.append('access_type', formData.accessType);
-        if (formData.accessType === 'free') {
-          payload.append('price', '0');
-          if (formData.includedPlans.length)
-            payload.append('included_plans', JSON.stringify(formData.includedPlans));
-        } else if (Number.isFinite(priceValue)) {
-          payload.append('price', priceValue.toFixed(2));
+        let classRecord = createdClass;
+
+        if (!classRecord?.id) {
+          const payload = new FormData();
+          payload.append('instructor_id', instructorId);
+          payload.append('title', formData.title);
+          if (formData.description) payload.append('description', formData.description);
+          if (formData.level) payload.append('level', formData.level);
+          if (formData.language) payload.append('language', formData.language);
+          if (formData.startDate)
+            payload.append('start_date', toDateTimeISO(formData.startDate));
+          if (formData.endDate)
+            payload.append('end_date', toDateTimeISO(formData.endDate));
+
+          payload.append('access_type', formData.accessType);
+          if (formData.accessType === 'free') {
+            payload.append('price', '0');
+            if (formData.includedPlans.length)
+              payload.append('included_plans', JSON.stringify(formData.includedPlans));
+          } else if (Number.isFinite(priceValue)) {
+            payload.append('price', priceValue.toFixed(2));
+          }
+          if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
+          payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
+          payload.append('status', formData.isApproved ? 'published' : 'draft');
+          if (formData.category) payload.append('category_id', formData.category);
+          if (formData.image) payload.append('cover_image', formData.image);
+          if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+
+          if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+          const newClass = await createAdminClass(payload, (e) => {
+            if (!e?.total) return;
+            const percent = Math.round((e.loaded * 100) / e.total);
+            setUploadProgress(percent);
+          });
+
+          if (!newClass?.id) {
+            console.error('createAdminClass returned an unexpected payload', newClass);
+            toast.error(
+              t('class_creation_failed', {
+                defaultValue:
+                  'We could not confirm the new class details. Please try again in a moment.',
+              })
+            );
+            return;
+          }
+
+          setCreatedClass(newClass);
+          classRecord = newClass;
         }
-        if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
-        payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
-        payload.append('status', formData.isApproved ? 'published' : 'draft');
-        if (formData.category) payload.append('category_id', formData.category);
-        if (formData.image) payload.append('cover_image', formData.image);
-        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
 
-        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
-        const newClass = await createAdminClass(payload, (e) => {
-          if (!e?.total) return;
-          const percent = Math.round((e.loaded * 100) / e.total);
-          setUploadProgress(percent);
-        });
+        const lessonsToSubmit = getPendingLessonEntries(formData.lessons);
 
-        if (!newClass?.id) {
-          console.error('createAdminClass returned an unexpected payload', newClass);
-          toast.error(
-            t('class_creation_failed', {
-              defaultValue:
-                'We could not confirm the new class details. Please try again in a moment.',
-            })
-          );
+        if (!lessonsToSubmit.length) {
+          finalizeCreation(classRecord);
           return;
         }
 
         const lessonResults = await Promise.allSettled(
-          formData.lessons.map(async (lesson) => {
+          lessonsToSubmit.map(async ({ lesson }) => {
             const lessonData = new FormData();
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
             lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData);
+            return createClassLesson(classRecord.id, lessonData);
           })
         );
 
-        const failedIndices = lessonResults.reduce((acc, result, index) => {
-          if (result.status === 'rejected') {
-            acc.push(index);
+        const indexToStatus = new Map();
+        const failedIndices = [];
+
+        lessonResults.forEach((result, idx) => {
+          const { index } = lessonsToSubmit[idx];
+          if (result.status === 'fulfilled') {
+            indexToStatus.set(index, 'succeeded');
+          } else {
+            indexToStatus.set(index, 'failed');
+            failedIndices.push(index);
           }
-          return acc;
-        }, []);
+        });
+
+        if (indexToStatus.size) {
+          setFormData((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((lesson, idx) => {
+              if (!indexToStatus.has(idx)) {
+                return lesson;
+              }
+              return { ...lesson, status: indexToStatus.get(idx) };
+            }),
+          }));
+        }
 
         if (failedIndices.length) {
-          setFailedLessonIndices(failedIndices);
+          const sortedFailed = [...failedIndices].sort((a, b) => a - b);
+          setFailedLessonIndices(sortedFailed);
           toast.error(
             t('lesson_creation_failed', {
-              count: failedIndices.length,
-              indices: failedIndices.map((idx) => idx + 1).join(', '),
-              defaultValue: `Failed to create ${failedIndices.length} lesson(s). Please review highlighted lessons (${failedIndices
+              count: sortedFailed.length,
+              indices: sortedFailed.map((idx) => idx + 1).join(', '),
+              defaultValue: `Failed to create ${sortedFailed.length} lesson(s). Please review highlighted lessons (${sortedFailed
                 .map((idx) => idx + 1)
                 .join(', ')}).`,
             })
@@ -516,24 +579,7 @@ function CreateOnlineClass() {
           return;
         }
 
-        const events = [
-          {
-            id: `class-${newClass.id}`,
-            title: `Class: ${newClass.title}`,
-            start: toDateTimeISO(formData.startDate || newClass.start_date),
-          },
-          ...formData.lessons.map((l) => ({
-            id: `lesson-${newClass.id}-${l.id}`,
-            title: `Lesson: ${l.title}`,
-            start: toDateTimeISO(l.start_time),
-          })),
-        ];
-        addEvents(events);
-
-        toast.success(t('class_created'));
-        fetchNotifications();
-        fetchMessages();
-        router.push('/dashboard/admin/online-classes');
+        finalizeCreation(classRecord);
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
@@ -959,7 +1005,13 @@ function CreateOnlineClass() {
                         {t('no_lessons_added')}
                       </p>
                     ) : (
-                      formData.lessons.map((lesson, index) => (
+                      formData.lessons.map((lesson, index) => {
+                        const result = lessonResults[lesson.id];
+                        const wasSkipped = Boolean(result?.value?.skipped);
+                        const wasSuccessful =
+                          result?.status === 'fulfilled' &&
+                          (wasSkipped || Boolean(successfulLessons[lesson.id]));
+                        return (
                         <div
                           key={lesson.id}
                           className={`border rounded-lg p-4 space-y-4 ${
@@ -1049,8 +1101,18 @@ function CreateOnlineClass() {
                               })}
                             </p>
                           )}
+
+                          {!failedLessonIndices.includes(index) && wasSuccessful && (
+                            <p className="text-sm text-green-600">
+                              {t('lesson_already_uploaded', {
+                                defaultValue:
+                                  'This lesson was uploaded successfully and will be skipped on retry.',
+                              })}
+                            </p>
+                          )}
                         </div>
-                      ))
+                      );
+                      })
                     )}
 
                     <div className="flex justify-end">
