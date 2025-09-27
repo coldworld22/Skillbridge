@@ -97,7 +97,8 @@ export default function AdminClassesTable() {
   }, []);
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
-  const canManageRules = hydratedUser?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
+  const canManageRules =
+    isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     const load = async () => {
@@ -466,7 +467,7 @@ export default function AdminClassesTable() {
                       <FaEdit className="w-4 h-4" />
                     </button>
                   </Link>
-                  {hydratedUser && canManageRules && (
+                  {canManageRules && (
                     <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} title="Manage Rules">
                       <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow">
                         <FaList className="w-4 h-4" />
