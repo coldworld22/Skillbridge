@@ -39,7 +39,7 @@ function CreateTutorialPage() {
 
   const notify = async (type, message) => {
     if (!user?.id) {
-      toast.warn('Notification skipped: missing user data.');
+      toast.warn(t('notification_warning'));
       return;
     }
 
@@ -50,14 +50,14 @@ function CreateTutorialPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || t('creation_failed');
+      const msg = err.response?.data?.message || t('failed_create');
       toast.error(msg);
     }
   };
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error(t('video_required'));
+      toast.error(t('upload_video_each_lesson'));
       return;
     }
 
@@ -66,12 +66,12 @@ function CreateTutorialPage() {
     try {
       await createTutorial(formData);
       toast.success(
-        status === "draft" ? t('draft_success') : t('submit_success')
+        status === "draft" ? t('draft_saved') : t('submitted_success')
       );
       const msg =
         status === "draft"
-          ? `Tutorial "${tutorialData.title}" saved as draft.`
-          : `Tutorial "${tutorialData.title}" submitted for approval.`;
+          ? t('notification_draft_message', { title: tutorialData.title })
+          : t('notification_submitted_message', { title: tutorialData.title });
       notify('tutorial_created', msg);
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
@@ -80,7 +80,7 @@ function CreateTutorialPage() {
       if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else {
-        toast.error(t('creation_failed'));
+        toast.error(t('failed_create'));
       }
     }
   };
@@ -91,15 +91,15 @@ function CreateTutorialPage() {
   return (
     <AdminLayout>
       <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 {t('title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">{t('title')}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
           steps={[
-            t('basic_info'),
-            t('curriculum'),
-            t('media'),
-            t('pricing_publish'),
+            t('step_basic_info'),
+            t('step_curriculum'),
+            t('step_media'),
+            t('step_pricing_publish'),
           ]}
           currentStep={step}
           onStepClick={(s) => {
@@ -150,14 +150,14 @@ function CreateTutorialPage() {
                 onClick={prevStep}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-full font-bold"
               >
-                ⬅️ {t('back')}
+                {t('back')}
               </button>
             )}
             <button
               onClick={saveDraft}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              💾 {t('save_draft')}
+              {t('save_draft')}
             </button>
           </div>
           {step < 4 && (
@@ -165,7 +165,7 @@ function CreateTutorialPage() {
               onClick={nextStep}
               className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              {t('next')} ➡️
+              {t('next')}
             </button>
           )}
         </div>
