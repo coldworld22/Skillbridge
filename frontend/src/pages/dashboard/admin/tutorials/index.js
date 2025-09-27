@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
@@ -35,8 +35,15 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const { tutorials, setTutorials, categories, loading, meta, setMeta } =
-    useTutorialsData(t);
+  const {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    meta,
+    setMeta,
+    loadTutorials,
+  } = useTutorialsData(t);
 
   const {
     searchQuery,
@@ -47,14 +54,60 @@ function AdminTutorialsPage() {
     setFilterStatus,
     filterApproval,
     setFilterApproval,
-    currentPage,
-    setCurrentPage,
     filteredTutorials,
-    paginatedTutorials,
-    totalPages,
-    startIndex,
-    goToPage,
   } = useTutorialFilters(tutorials);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadTutorials({
+      page: currentPage,
+      limit: pageSize,
+      signal: controller.signal,
+    }).catch((err) => {
+      if (err?.name === "AbortError" || err?.name === "CanceledError") {
+        return;
+      }
+      console.error(err);
+    });
+
+    return () => controller.abort();
+  }, [currentPage, pageSize, loadTutorials]);
+
+  useEffect(() => {
+    if (meta?.per_page && meta.per_page !== pageSize) {
+      setPageSize(meta.per_page);
+    }
+  }, [meta?.per_page, pageSize]);
+
+  useEffect(() => {
+    if (meta?.last_page && currentPage > meta.last_page) {
+      setCurrentPage(Math.max(1, meta.last_page));
+    }
+  }, [meta?.last_page, currentPage]);
+
+  const totalResults = meta?.total ?? filteredTutorials.length;
+  const totalPages =
+    meta?.last_page ??
+    (pageSize > 0 ? Math.max(1, Math.ceil(totalResults / pageSize)) : 1);
+  const pageItemCount = filteredTutorials.length;
+  const displayStartIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1;
+  const displayEndIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : Math.min(displayStartIndex + pageItemCount - 1, totalResults);
+  const paginationStartIndex = displayStartIndex > 0 ? displayStartIndex - 1 : 0;
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
 
   const {
@@ -63,19 +116,12 @@ function AdminTutorialsPage() {
     toggleSelectOne,
     toggleSelectAll,
     clearSelected,
-  } = useBulkSelection(paginatedTutorials, [
+  } = useBulkSelection(filteredTutorials, [
     searchQuery,
     filterCategory,
     filterStatus,
     filterApproval,
   ]);
-
-  const totalResults = filteredTutorials.length;
-  const paginatedCount = paginatedTutorials.length;
-  const displayEndIndex =
-    totalResults === 0
-      ? 0
-      : Math.min(startIndex + paginatedCount, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -170,9 +216,7 @@ function AdminTutorialsPage() {
       console.error(err);
       toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) =>
-        prev.filter((id) => id !== tutorialToDelete),
-      );
+      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -381,7 +425,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
+            <p className="text-2xl font-bold">{meta?.total ?? 0}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -406,7 +450,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={filteredTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -427,7 +471,7 @@ function AdminTutorialsPage() {
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
-              startIndex={startIndex}
+              startIndex={paginationStartIndex}
               endIndex={displayEndIndex}
               totalResults={totalResults}
             />
