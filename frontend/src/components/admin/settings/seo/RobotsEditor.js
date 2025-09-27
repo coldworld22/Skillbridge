@@ -7,7 +7,7 @@ export default function RobotsEditor({ config, update }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.robots" });
   const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL ||
     (typeof window !== "undefined" ? window.location.origin : "");
-  const defaultContent = `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${fallbackUrl}/sitemap.xml`;
+  const defaultContent = `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${fallbackUrl}/uploads/seo/sitemap.xml`;
 
   const [content, setContent] = useState(config.robots || defaultContent);
   const [saved, setSaved] = useState(false);
