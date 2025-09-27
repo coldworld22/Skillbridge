@@ -66,14 +66,25 @@ const findById = async (id) => {
   return formatCertificateRow(row);
 };
 
+const resolveTemplateId = async (templateId) => {
+  if (templateId) return templateId;
+  const template = await templateService.getActiveTemplate();
+  return template?.id || null;
+};
+
 // Create a new certificate
 const issueCertificate = async ({ userId, tutorialId, templateId = null }) => {
+  const resolvedTemplateId =
+    templateId != null
+      ? templateId
+      : await certificateTemplatesService.getActiveTemplateId();
+
   const newCert = {
     id: uuidv4(),
     user_id: userId,
     tutorial_id: tutorialId,
     class_id: null,
-    template_id: templateId,
+    template_id: resolvedTemplateId,
     certificate_code: generateCode(),
     status: "issued"
   };

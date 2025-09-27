@@ -41,9 +41,9 @@ describe("generate certificate route", () => {
   test("returns 403 when tutorial is not fully completed", async () => {
     service.isUserCompletedTutorial.mockResolvedValue(false);
 
-    const res = await request(app).post(
-      `/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`,
-    );
+    const res = await request(app)
+      .post(`/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`)
+      .set('x-certificate-template-id', 'tmpl1');
 
     expect(res.statusCode).toBe(403);
   });
@@ -51,14 +51,18 @@ describe("generate certificate route", () => {
   test("issues certificate when requirements are met", async () => {
     service.isUserCompletedTutorial.mockResolvedValue(true);
     service.findExisting.mockResolvedValue(null);
-    service.issueCertificate.mockResolvedValue({ id: "cert1" });
+    service.issueCertificate.mockResolvedValue({ id: 'cert1' });
 
-    const res = await request(app).post(
-      `/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`,
-    );
+    const res = await request(app)
+      .post(`/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`)
+      .set('x-certificate-template-id', 'tmpl1');
 
     expect(res.statusCode).toBe(200);
-    expect(service.issueCertificate).toHaveBeenCalled();
+    expect(service.issueCertificate).toHaveBeenCalledWith({
+      userId: 'user1',
+      tutorialId: TUTORIAL_ID,
+      templateId: 'tmpl1',
+    });
   });
 });
 
