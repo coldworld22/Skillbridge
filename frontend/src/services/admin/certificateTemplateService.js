@@ -11,6 +11,11 @@ export const getTemplate = async (id) => {
   return res.data?.data || null;
 };
 
+export const getTemplatePreview = async (id) => {
+  const res = await api.get(`/certificate-templates/${id}/preview`);
+  return res.data?.data || null;
+};
+
 export const saveTemplate = async (template) => {
   const res = await api.post(
     "/certificate-templates",
