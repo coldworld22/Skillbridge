@@ -103,6 +103,30 @@ ensure_node_version() {
   fi
 }
 
+ensure_backend_upload_dir() {
+  local uploads_dir="$REPO_ROOT/backend/uploads/app"
+
+  if [[ ! -d "$uploads_dir" ]]; then
+    echo "Creating backend uploads directory at $uploads_dir"
+    mkdir -p "$uploads_dir"
+  fi
+}
+
+install_node_dependencies() {
+  local target_dir=${1:-}
+
+  if [[ -z "$target_dir" ]]; then
+    echo "install_node_dependencies requires a target path." >&2
+    exit 1
+  fi
+
+  echo "Installing Node.js dependencies in $target_dir"
+  if ! npm --prefix "$target_dir" install; then
+    echo "Failed to install Node.js dependencies in $target_dir." >&2
+    exit 1
+  fi
+}
+
 print_prereq_report() {
   local payload=$1
   if [[ -z "$payload" ]]; then
@@ -235,12 +259,6 @@ ensure_env_file "$REPO_ROOT/backend/.env.production.example" "$REPO_ROOT/backend
 ensure_env_file "$REPO_ROOT/frontend/.env.local.example" "$REPO_ROOT/frontend/.env.local"
 
 load_env_file "$REPO_ROOT/.env"
-
-UPLOADS_DIR="$REPO_ROOT/backend/uploads/app"
-if [[ ! -d "$UPLOADS_DIR" ]]; then
-  echo "Creating backend uploads directory at $UPLOADS_DIR"
-  mkdir -p "$UPLOADS_DIR"
-fi
 
 MODE=${CLI_MODE:-${MODE:-}}
 
