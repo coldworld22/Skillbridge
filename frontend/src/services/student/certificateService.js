@@ -2,19 +2,24 @@
 // Student Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
-import {
-  normalizeCertificate,
-  normalizeCertificates,
-} from "@/services/certificates/transformers";
+import { toCamelCase } from "@/utils/case";
+
+const mapCertificateResponse = (payload) => {
+  if (payload === undefined || payload === null) {
+    return payload;
+  }
+  return toCamelCase(payload);
+};
 
 export const fetchCertificates = async () => {
   const { data } = await api.get("/certificates/student");
-  return normalizeCertificates(data?.data);
+  const certificates = data?.data ?? [];
+  return mapCertificateResponse(certificates) ?? [];
 };
 
 export const getCertificate = async (id) => {
   const { data } = await api.get(`/certificates/student/${id}`);
-  return normalizeCertificate(data?.data);
+  return mapCertificateResponse(data?.data);
 };
 
 export const downloadCertificate = async (id) => {
@@ -26,10 +31,10 @@ export const downloadCertificate = async (id) => {
 
 export const issueCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/issue`);
-  return normalizeCertificate(data?.data);
+  return mapCertificateResponse(data?.data);
 };
 
 export const revokeCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/revoke`);
-  return normalizeCertificate(data?.data);
+  return mapCertificateResponse(data?.data);
 };
