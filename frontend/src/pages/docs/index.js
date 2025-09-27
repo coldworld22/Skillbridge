@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -14,6 +16,28 @@ const DOCS_DIR_CANDIDATES = [
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
 ];
+
+const resolveDocLink = (href) => {
+  if (!href) {
+    return href;
+  }
+
+  if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+    return href;
+  }
+
+  const cleaned = href.replace(/^\.\//, '').replace(/^docs\//, '');
+
+  if (cleaned.endsWith('.md')) {
+    return `/docs/${cleaned.replace(/\.md$/, '')}`;
+  }
+
+  if (cleaned.startsWith('/')) {
+    return cleaned;
+  }
+
+  return `/docs/${cleaned}`;
+};
 
 async function resolveDocsDirectory() {
   for (const candidate of DOCS_DIR_CANDIDATES) {
@@ -59,7 +83,53 @@ function extractSummaryFromContent(content) {
   return '';
 }
 
-export default function DocumentationLandingPage({ docs }) {
+const markdownComponents = {
+  a({ href, children, ...props }) {
+    const resolved = resolveDocLink(href);
+
+    if (!resolved) {
+      return <span {...props}>{children}</span>;
+    }
+
+    if (resolved.startsWith('/docs/')) {
+      return (
+        <Link href={resolved} {...props} className="docs-link">
+          {children}
+        </Link>
+      );
+    }
+
+    if (resolved.startsWith('/')) {
+      return (
+        <Link href={resolved} {...props} className="docs-link">
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <a href={resolved} target="_blank" rel="noopener noreferrer" {...props} className="docs-link">
+        {children}
+      </a>
+    );
+  },
+  table({ children }) {
+    return (
+      <div className="docs-table-wrapper">
+        <table>{children}</table>
+      </div>
+    );
+  },
+  img({ alt, src, ...props }) {
+    if (!src) {
+      return null;
+    }
+
+    return <img src={src} alt={alt} {...props} className="docs-image" />;
+  },
+};
+
+export default function DocumentationLandingPage({ docs, installation }) {
   return (
     <>
       <PageHead
@@ -72,11 +142,44 @@ export default function DocumentationLandingPage({ docs }) {
         <div className="mx-auto max-w-3xl space-y-6">
           <h1 className="text-4xl font-bold md:text-5xl">SkillBridge Documentation</h1>
           <p className="text-lg text-indigo-100">
-            Explore detailed guides, walkthroughs, and references sourced directly from the Markdown files in the
-            repository.
+            Explore detailed guides, walkthroughs, and references sourced directly from the Markdown files bundled with the
+            packaged release.
           </p>
         </div>
       </section>
+
+      {installation && (
+        <section className="bg-gray-50 py-16 px-6">
+          <div className="mx-auto max-w-5xl">
+            <div className="rounded-3xl bg-white shadow-xl ring-1 ring-black/5 p-10 sm:p-14">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Start here</p>
+                  <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">{installation.title}</h2>
+                  {installation.lastUpdated && (
+                    <p className="text-sm text-gray-500">Last updated {installation.lastUpdated}</p>
+                  )}
+                </div>
+                <Link
+                  href="/docs/installation"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-indigo-500 px-5 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-500 hover:text-white"
+                >
+                  View as standalone page
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+
+              <div className="docs-content mt-10 text-base leading-7 text-gray-700">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {installation.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="bg-black py-16 px-6 text-white">
         <div className="max-w-6xl mx-auto space-y-10">
@@ -132,6 +235,7 @@ export default function DocumentationLandingPage({ docs }) {
 export async function getStaticProps({ locale }) {
   const docsDir = await resolveDocsDirectory();
   let docs = [];
+  let installation = null;
 
   if (docsDir) {
     try {
@@ -162,6 +266,25 @@ export async function getStaticProps({ locale }) {
       );
 
       docs.sort((a, b) => a.title.localeCompare(b.title));
+
+      try {
+        const installationPath = path.join(docsDir, 'installation.md');
+        const installationContent = await fs.readFile(installationPath, 'utf8');
+        const installationStats = await fs.stat(installationPath);
+        const installationTitleMatch = installationContent.match(/^#\s+(.+)/m);
+
+        installation = {
+          title: installationTitleMatch ? installationTitleMatch[1].trim() : 'Installation Guide',
+          content: installationContent,
+          lastUpdated: new Intl.DateTimeFormat('en', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          }).format(installationStats.mtime),
+        };
+      } catch (installationError) {
+        console.warn('Installation guide not found or unreadable for documentation landing page.', installationError);
+      }
     } catch (error) {
       console.error('Failed to load documentation index:', error);
     }
@@ -170,6 +293,7 @@ export async function getStaticProps({ locale }) {
   return {
     props: {
       docs,
+      installation,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
     revalidate: 300,
