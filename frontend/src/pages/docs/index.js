@@ -13,9 +13,10 @@ import Footer from '@/components/website/sections/Footer';
 import Navbar from '@/components/website/sections/Navbar';
 import PageHead from '@/components/common/PageHead';
 import nextI18NextConfig from '../../../next-i18next.config.js';
-import { resolveDocsDirectory } from '@/utils/docsDirectory';
+import { buildDefaultDocsExplicitPaths, resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+const docsDirectoryExplicitPaths = buildDefaultDocsExplicitPaths(moduleDir);
 
 function sanitizeSlug(value) {
   return value

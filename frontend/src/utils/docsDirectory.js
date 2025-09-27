@@ -4,6 +4,32 @@ import path from 'path';
 const DEFAULT_DOCS_DIR_NAME = 'docs';
 const DEFAULT_MAX_DEPTH = 8;
 
+function resolveModuleDirectory(moduleDirectory) {
+  if (moduleDirectory) {
+    return moduleDirectory;
+  }
+
+  if (typeof __dirname !== 'undefined') {
+    return __dirname;
+  }
+
+  return process.cwd();
+}
+
+export function buildDefaultDocsExplicitPaths(moduleDirectory) {
+  const moduleDir = resolveModuleDirectory(moduleDirectory);
+
+  return [
+    path.join(process.cwd(), 'docs'),
+    path.join(process.cwd(), '..', 'docs'),
+    path.join(process.cwd(), '..', '..', 'docs'),
+    path.join(process.cwd(), '..', '..', '..', 'docs'),
+    path.resolve(moduleDir, '../../docs'),
+    path.resolve(moduleDir, '../../../docs'),
+    path.resolve(moduleDir, '../../../..', 'docs'),
+  ];
+}
+
 function addCandidate(candidates, value) {
   if (!value) {
     return;
@@ -47,11 +73,11 @@ export function computeDocsDirCandidates({
 
   [...explicitPaths, ...envPaths].forEach((candidate) => addCandidate(candidates, candidate));
 
-  const fallbackModuleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+  const fallbackModuleDir = resolveModuleDirectory(moduleDirectory);
   const allStartDirs = [
     ...startDirs,
     process.cwd(),
-    moduleDirectory || fallbackModuleDir,
+    fallbackModuleDir,
   ];
 
   allStartDirs.forEach((startDir) => {
