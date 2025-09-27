@@ -1,214 +1,431 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Installation Guide | Skillbridge Documentation</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f7fa;
-      color: #1a1d23;
-    }
-    header {
-      background: #1f2933;
-      color: #fff;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.75rem;
-    }
-    main {
-      display: flex;
-      min-height: calc(100vh - 64px);
-    }
-    nav {
-      width: 260px;
-      background: #f0f4f8;
-      border-right: 1px solid #d9e2ec;
-      padding: 1.5rem 1rem;
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
-    nav h2 {
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #52606d;
-      margin-top: 0;
-    }
-    nav ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    nav li {
-      margin: 0.35rem 0;
-    }
-    nav a {
-      display: block;
-      padding: 0.35rem 0.5rem;
-      border-radius: 6px;
-      color: #1f2933;
-      text-decoration: none;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-    nav a:hover {
-      background: #d9e2ec;
-    }
-    nav a.active {
-      background: #3e4c59;
-      color: #fff;
-      font-weight: 600;
-    }
-    article {
-      flex: 1;
-      padding: 2rem 3rem;
-      box-sizing: border-box;
-      max-width: 960px;
-    }
-    article h1, article h2, article h3, article h4 {
-      color: #102a43;
-    }
-    article pre {
-      background: #243b53;
-      color: #f0f4f8;
-      padding: 1rem;
-      overflow-x: auto;
-      border-radius: 6px;
-    }
-    article code {
-      background: rgba(15, 23, 42, 0.08);
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
-      font-size: 0.95em;
-    }
-    article table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5rem 0;
-    }
-    article table, article th, article td {
-      border: 1px solid #cbd2d9;
-    }
-    article th, article td {
-      padding: 0.75rem;
-      text-align: left;
-    }
-    article blockquote {
-      border-left: 4px solid #9fb3c8;
-      margin: 1.5rem 0;
-      padding: 0.5rem 1rem;
-      background: #e4ebf5;
-      color: #334e68;
-    }
-    @media (max-width: 960px) {
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkillBridge Documentation</title>
+    <meta
+      name="description"
+      content="SkillBridge documentation hub with install instructions and links to every administrator and integration guide."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f172a;
+        --bg-alt: #111827;
+        --panel: rgba(15, 23, 42, 0.85);
+        --panel-border: rgba(148, 163, 184, 0.3);
+        --text: #e2e8f0;
+        --muted: #cbd5f5;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc;
+          --bg-alt: #e2e8f0;
+          --panel: #ffffff;
+          --panel-border: rgba(15, 23, 42, 0.08);
+          --text: #0f172a;
+          --muted: #475569;
+          --accent: #0ea5e9;
+          --accent-strong: #0284c7;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, var(--bg), var(--bg-alt));
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      a {
+        color: var(--accent-strong);
+        text-decoration: none;
+      }
+
+      a:hover,
+      a:focus {
+        text-decoration: underline;
+      }
+
+      header {
+        padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 0;
+      }
+
+      .hero {
+        max-width: 70rem;
+        margin: 0 auto;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        padding: clamp(2rem, 4vw, 3rem);
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+      }
+
+      .hero h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        line-height: 1.05;
+      }
+
+      .hero p {
+        margin: 0 0 1.5rem;
+        font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+        color: var(--muted);
+      }
+
+      .hero .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .hero .cta a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.85rem 1.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        border: 1px solid transparent;
+        background: var(--accent);
+        color: #0b1120;
+        transition: transform 0.2s ease, box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .hero .cta a.secondary {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--panel-border);
+      }
+
+      .hero .cta a:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 15px 40px rgba(14, 165, 233, 0.25);
+      }
+
       main {
+        padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+        max-width: 75rem;
+        margin: 0 auto;
+      }
+
+      h2 {
+        font-size: clamp(1.65rem, 3vw, 2.3rem);
+        margin-top: 3rem;
+        margin-bottom: 1.25rem;
+      }
+
+      h3 {
+        font-size: clamp(1.2rem, 2.3vw, 1.55rem);
+        margin-bottom: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      p,
+      li {
+        line-height: 1.7;
+      }
+
+      code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo,
+          Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 0.95rem;
+        background: rgba(15, 23, 42, 0.35);
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+      }
+
+      pre {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--panel-border);
+        overflow-x: auto;
+      }
+
+      pre code {
+        background: transparent;
+        padding: 0;
+        font-size: 0.95rem;
+      }
+
+      .quickstart ol {
+        counter-reset: install-steps;
+        padding-left: 1rem;
+      }
+
+      .quickstart li {
+        list-style: none;
+        position: relative;
+        margin-bottom: 2rem;
+        padding-left: 3.5rem;
+      }
+
+      .quickstart li::before {
+        counter-increment: install-steps;
+        content: counter(install-steps);
+        position: absolute;
+        left: 0;
+        top: 0.25rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        background: rgba(14, 165, 233, 0.2);
+        color: var(--accent-strong);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .quickstart ul {
+        margin: 0.75rem 0 0.25rem 0;
+        padding-left: 1.25rem;
+      }
+
+      .doc-grid {
+        display: grid;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      @media (min-width: 48rem) {
+        .doc-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 72rem) {
+        .doc-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .doc-card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        padding: 1.75rem;
+        display: flex;
         flex-direction: column;
+        gap: 0.75rem;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
       }
-      nav {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #d9e2ec;
+
+      .doc-card h3 {
+        margin: 0;
       }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Skillbridge Documentation</h1>
-  </header>
-  <main>
-    <nav>
-      <h2>Guides</h2>
-      <ul>
-        <li><a href="README.html">SkillBridge Documentation</a></li>
-<li><a href="admin-ads-management.html">Admin Ads Management</a></li>
-<li><a href="admin-alerts.html">Admin Alerts</a></li>
-<li><a href="admin-category-management.html">Admin Category Management</a></li>
-<li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
-<li><a href="api-docs.html">API Overview</a></li>
-<li><a href="architecture.html">Backend Architecture Overview</a></li>
-<li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
-<li><a href="changelog.html">Changelog</a></li>
-<li><a href="class-lifecycle-workflow.html">Class Lifecycle &amp; Certificate Workflow</a></li>
-<li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
-<li><a href="coupon-management.html">Coupon Management</a></li>
-<li><a href="deployment.html">Deployment Guide</a></li>
-<li><a href="index.html" class="active">Getting Started</a></li>
-<li><a href="installation.html">Installation Guide</a></li>
-<li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
-<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
-<li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
-<li><a href="release-checklist.html">Release Checklist</a></li>
-<li><a href="social-login-setup.html">Social Login Setup</a></li>
-<li><a href="student-enrollment-workflow.html">Student Class Purchase &amp; Enrollment Workflow</a></li>
-<li><a href="student-registration-guide.html">Student Registration &amp; Class Enrollment Guide</a></li>
-<li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
-      </ul>
-    </nav>
-    <article>
-      <h1 id="installation-guide">Installation Guide</h1>
-<p>This guide walks through the ZIP-based installation workflow for SkillBridge so you can unpack the customer bundle and bring the stack online without cloning the Git repository. Follow these steps when you receive the packaged release from CodeCanyon or the Memonet customer portal.</p>
-<h2 id="1-upload-the-archive">1. Upload the archive</h2>
-<ul>
-<li><strong>Local workstation:</strong> Download the ZIP file and move it into the directory where you want the project to live.</li>
-<li><strong>Remote server:</strong> Copy the archive to the host with a tool such as <code>scp</code> or <code>rsync</code>:</li>
-</ul>
-<p><code>bash
-  scp Skillbridge-v1.0.0.zip deploy@example.com:/var/www</code></p>
-<p>Keep a pristine copy of the downloaded ZIP so you can re-upload clean files later if needed.</p>
-<h2 id="2-extract-and-position-the-project-directory">2. Extract and position the project directory</h2>
-<p>Unzip the package and ensure the project root is named <code>Skillbridge/</code> so the helper scripts can find the expected paths:</p>
-<div class="codehilite"><pre><span></span><code>unzip<span class="w"> </span>Skillbridge-v1.0.0.zip
-mv<span class="w"> </span>Skillbridge-v1.0.0<span class="w"> </span>Skillbridge
-<span class="nb">cd</span><span class="w"> </span>Skillbridge
-</code></pre></div>
 
-<p>The root folder should now contain <code>install.sh</code>, <code>docker-compose.yml</code>, and the <code>backend/</code>, <code>frontend/</code>, and <code>nginx/</code> directories directly under <code>Skillbridge/</code>.</p>
-<p>On Linux servers adjust permissions so your deploy user owns the files and the shell scripts remain executable:</p>
-<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>chown<span class="w"> </span>-R<span class="w"> </span>deploy:deploy<span class="w"> </span>Skillbridge
-chmod<span class="w"> </span>+x<span class="w"> </span>install.sh<span class="w"> </span>scripts/*.sh
-</code></pre></div>
+      .doc-card p {
+        margin: 0;
+        color: var(--muted);
+      }
 
-<h2 id="3-copy-environment-templates">3. Copy environment templates</h2>
-<p>Duplicate each <code>.env.example</code> file so the backend and frontend can read real configuration values:</p>
-<div class="codehilite"><pre><span></span><code>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
-cp<span class="w"> </span>backend/.env.example<span class="w"> </span>backend/.env
-cp<span class="w"> </span>backend/.env.production.example<span class="w"> </span>backend/.env.production
-cp<span class="w"> </span>frontend/.env.local.example<span class="w"> </span>frontend/.env.local
-</code></pre></div>
+      .doc-card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.4rem;
+      }
 
-<p>Edit the resulting files to match your target environment. Use local URLs (for example <code>http://localhost:5002/api</code>) and <code>COOKIE_SECURE=false</code> for development, then replace them with your public domain, SMTP credentials, and production secrets before going live.</p>
-<h2 id="4-run-the-installer">4. Run the installer</h2>
-<p>From the project root execute the installer. It validates prerequisites, prepares environment files when missing, runs database migrations and seeds, and creates the initial admin user:</p>
-<div class="codehilite"><pre><span></span><code>./install.sh
-</code></pre></div>
+      footer {
+        padding: 4rem 0 2.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
 
-<p>For unattended production deployments, pass the target mode and domain (for example <code>./install.sh production yourdomain.com</code>) and supply <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> via environment variables if you need non-interactive credentials.</p>
-<h2 id="5-start-the-services">5. Start the services</h2>
-<p>Start the Docker stack after the installer completes:</p>
-<ul>
-<li><strong>Local development:</strong></li>
-</ul>
-<p><code>bash
-  docker compose up --build</code></p>
-<ul>
-<li><strong>Production host:</strong></li>
-</ul>
-<p><code>bash
-  docker compose up -d --build</code></p>
-<p>When you manage containers manually, remember to run migrations yourself before serving traffic:</p>
-<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>backend<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>migrate
-docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>backend<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>seed
-</code></pre></div>
+      footer a {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="hero">
+        <h1>SkillBridge Documentation Hub</h1>
+        <p>
+          Everything you need to install, configure, and launch SkillBridge. Follow the
+          quick start checklist below or jump straight to the guide you need.
+        </p>
+        <div class="cta">
+          <a href="./installation.md">View full installation guide</a>
+          <a class="secondary" href="./README.md">Browse documentation overview</a>
+        </div>
+      </div>
+    </header>
 
-<p>Once the services are running you can sign in with the admin credentials you configured during installation and begin configuring SkillBridge.</p>
-    </article>
-  </main>
-</body>
+    <main>
+      <section class="quickstart" aria-labelledby="quickstart-title">
+        <h2 id="quickstart-title">Quick start from the customer ZIP</h2>
+        <p>
+          The summary mirrors <code>docs/index.md</code> so CodeCanyon buyers have an HTML
+          landing page that works online and inside the downloaded bundle.
+        </p>
+        <ol>
+          <li>
+            <strong>Upload the archive.</strong>
+            <ul>
+              <li><strong>Local workstation:</strong> move the downloaded ZIP into the project directory.</li>
+              <li>
+                <strong>Remote server:</strong> transfer the archive with
+                <code>scp</code> or <code>rsync</code>.
+              </li>
+            </ul>
+            <pre><code>scp Skillbridge-v1.0.0.zip deploy@example.com:/var/www</code></pre>
+            <p>Keep a pristine copy of the ZIP so you can redeploy clean files later.</p>
+          </li>
+          <li>
+            <strong>Extract and position the project.</strong>
+            <p>
+              Unzip the package, rename the extracted folder to <code>Skillbridge</code>, and switch into the
+              directory so helper scripts find the expected paths.
+            </p>
+            <pre><code>unzip Skillbridge-v1.0.0.zip
+mv Skillbridge-v1.0.0 Skillbridge
+cd Skillbridge</code></pre>
+            <p>
+              Ensure <code>install.sh</code>, <code>docker-compose.yml</code>, and the <code>backend/</code>, <code>frontend/</code>, and
+              <code>nginx/</code> folders live directly under <code>Skillbridge/</code>.
+            </p>
+            <p>
+              On Linux hosts update ownership and permissions so deploy users can run the scripts:
+            </p>
+            <pre><code>sudo chown -R deploy:deploy Skillbridge
+chmod +x install.sh scripts/*.sh</code></pre>
+          </li>
+          <li>
+            <strong>Copy environment templates.</strong>
+            <p>
+              Duplicate each <code>.env.example</code> so both applications and automation read real configuration values before you run the installer.
+            </p>
+            <pre><code>cp .env.example .env
+cp backend/.env.example backend/.env
+cp backend/.env.production.example backend/.env.production
+cp frontend/.env.local.example frontend/.env.local</code></pre>
+            <p>Update the new files with URLs, SMTP credentials, and secrets for your environment.</p>
+          </li>
+          <li>
+            <strong>Run the installer.</strong>
+            <p>
+              Execute the bundled installer to validate prerequisites, copy templates, run database migrations and seeds, and create the initial admin account.
+            </p>
+            <pre><code>./install.sh</code></pre>
+            <p>
+              For unattended production deployments supply the mode, domain, and admin credentials via CLI arguments and environment variables.
+            </p>
+          </li>
+          <li>
+            <strong>Start the services.</strong>
+            <p>
+              Launch the Docker stack after the installer finishes. Run migrations manually first if you manage containers yourself.
+            </p>
+            <ul>
+              <li>
+                <strong>Local development:</strong>
+                <pre><code>docker compose up --build</code></pre>
+              </li>
+              <li>
+                <strong>Production host:</strong>
+                <pre><code>docker compose up -d --build</code></pre>
+              </li>
+            </ul>
+            <p>Manual migration commands:</p>
+            <pre><code>docker compose run --rm backend npm run migrate
+docker compose run --rm backend npm run seed</code></pre>
+            <p>Sign in with the admin credentials you configured and begin customizing SkillBridge.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="library-title">
+        <h2 id="library-title">Documentation library</h2>
+        <p>
+          Every Markdown file inside <code>docs/</code> remains available. Use the HTML links below when browsing the hosted
+          documentation or opening the offline bundle.
+        </p>
+        <div class="doc-grid">
+          <article class="doc-card">
+            <h3>Installation &amp; Infrastructure</h3>
+            <p>Set up SkillBridge locally or in production and understand the platform architecture.</p>
+            <ul>
+              <li><a href="./README.md">Documentation overview</a></li>
+              <li><a href="./installation.md">Installation guide</a></li>
+              <li><a href="./deployment.md">Deployment playbook</a></li>
+              <li><a href="./architecture.md">System architecture</a></li>
+              <li><a href="./release-checklist.md">Release checklist</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Administration guides</h3>
+            <p>Configure platform features and manage catalog content from the admin dashboard.</p>
+            <ul>
+              <li><a href="./admin-category-management.md">Category management</a></li>
+              <li><a href="./admin-ads-management.md">Ads management</a></li>
+              <li><a href="./admin-alerts.md">Alerts &amp; notifications</a></li>
+              <li><a href="./admin-third-party-integrations.md">Third-party integrations</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Workflows &amp; operations</h3>
+            <p>Understand the lifecycle for classes, bookings, and student onboarding.</p>
+            <ul>
+              <li><a href="./book-workflow.md">Booking workflow</a></li>
+              <li><a href="./class-lifecycle-workflow.md">Class lifecycle workflow</a></li>
+              <li><a href="./class-plan-coverage.md">Class plan coverage</a></li>
+              <li><a href="./student-enrollment-workflow.md">Student enrollment workflow</a></li>
+              <li><a href="./student-registration-guide.md">Student registration guide</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Billing &amp; monetization</h3>
+            <p>Customize how SkillBridge presents plans, coupons, and payment methods.</p>
+            <ul>
+              <li><a href="./subscription-plan-style.md">Subscription plan styling</a></li>
+              <li><a href="./coupon-management.md">Coupon management</a></li>
+              <li><a href="./payment-icon-sources.md">Payment icon sources</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Integrations &amp; compliance</h3>
+            <p>Connect external services and verify CodeCanyon purchases.</p>
+            <ul>
+              <li><a href="./license-verification.md">CodeCanyon license verification</a></li>
+              <li><a href="./social-login-setup.md">Social login setup</a></li>
+              <li><a href="./messages-config.md">Email &amp; SMS messaging</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Reference</h3>
+            <p>Dive into API endpoints and change history.</p>
+            <ul>
+              <li><a href="./api-docs.md">API documentation</a></li>
+              <li><a href="./changelog.md">Changelog</a></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Looking for the Markdown version of this page? Open <a href="./index.md">index.md</a> in your editor of choice.
+      </p>
+    </footer>
+  </body>
 </html>
