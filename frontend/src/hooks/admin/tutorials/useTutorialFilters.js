@@ -11,9 +11,12 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
     const normalizedQuery = searchQuery.toLowerCase();
 
     return tutorials.filter((tut) => {
+      const normalizedTitle = (tut.title ?? "").toLowerCase();
+      const normalizedInstructor = (tut.instructor ?? "").toLowerCase();
+      const normalizedSearch = searchQuery.toLowerCase();
       const matchesSearch =
-        tut.title?.toLowerCase()?.includes(normalizedQuery) ||
-        tut.instructor?.toLowerCase()?.includes(normalizedQuery);
+        normalizedTitle.includes(normalizedSearch) ||
+        normalizedInstructor.includes(normalizedSearch);
       const matchesCategory =
         filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
