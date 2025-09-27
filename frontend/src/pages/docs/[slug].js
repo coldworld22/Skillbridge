@@ -57,7 +57,8 @@ const resolveDocLink = (href) => {
   const slug = sanitizeSlug(cleaned);
   return slug ? `/docs/${slug}` : href;
 };
-// Additional resolution handled by shared utility.
+// Provide moduleDirectory so standalone builds running from .next/standalone/server
+// still reach the root docs directory via the shared helper.
 export async function getStaticPaths() {
   const docsDir = await resolveDocsDirectory({
     moduleDirectory: moduleDir,
