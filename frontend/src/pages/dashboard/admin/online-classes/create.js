@@ -262,6 +262,18 @@ function CreateOnlineClass() {
         toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
         return;
       }
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        if (end <= start) {
+          toast.error(
+            t('invalid_date_range', {
+              defaultValue: 'End date must be after the start date.'
+            })
+          );
+          return;
+        }
+      }
       if (!user?.id) {
         toast.error(t('user_info_unavailable'));
         return;
