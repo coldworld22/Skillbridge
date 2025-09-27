@@ -16,10 +16,11 @@ import {
   FaSortAmountDown
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
+import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
 import { toast } from 'react-toastify';
 
-export default function MyEnrolledClassesPage() {
+function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(6);
@@ -272,3 +273,5 @@ export default function MyEnrolledClassesPage() {
     </StudentLayout>
   );
 }
+
+export default withAuthProtection(MyEnrolledClassesPage, ['student']);
