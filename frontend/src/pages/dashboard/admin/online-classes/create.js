@@ -304,16 +304,35 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await Promise.all(
-          formData.lessons.map(async (lesson) => {
-            const lessonData = new FormData();
-            lessonData.append('title', lesson.title);
-            if (lesson.duration) lessonData.append('duration', lesson.duration);
-            if (lesson.resource) lessonData.append('resource', lesson.resource);
-            lessonData.append('start_time', toDateTimeISO(lesson.start_time));
-            return createClassLesson(newClass.id, lessonData).catch(() => null);
-          })
-        );
+        const failedLessonTitles = [];
+        try {
+          await Promise.all(
+            formData.lessons.map(async (lesson) => {
+              const lessonData = new FormData();
+              lessonData.append('title', lesson.title);
+              if (lesson.duration) lessonData.append('duration', lesson.duration);
+              if (lesson.resource) lessonData.append('resource', lesson.resource);
+              lessonData.append('start_time', toDateTimeISO(lesson.start_time));
+              try {
+                return await createClassLesson(newClass.id, lessonData);
+              } catch (lessonError) {
+                failedLessonTitles.push(lesson.title);
+                throw lessonError;
+              }
+            })
+          );
+        } catch (lessonCreationError) {
+          const failedLessonsMessage = failedLessonTitles.length
+            ? t('lesson_creation_failed_with_titles', {
+                defaultValue: 'Failed to create the following lessons: {{titles}}',
+                titles: failedLessonTitles.join(', '),
+              })
+            : t('lesson_creation_failed', {
+                defaultValue: 'Failed to create one or more lessons.',
+              });
+          toast.error(failedLessonsMessage);
+          return;
+        }
 
         const events = [
           {
