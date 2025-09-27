@@ -1,33 +1,58 @@
 const db = require("../../config/database");
 
-exports.getAll = async () => {
+const getAll = async () => {
   return db("certificate_templates").select("*").orderBy("created_at", "desc");
 };
 
-exports.getById = async (id) => {
+const getById = async (id) => {
+  if (!id) return null;
   return db("certificate_templates").where({ id }).first();
 };
 
-exports.create = async (data) => {
+const getDefaultTemplate = async () => {
+  const activeTemplate = await db("certificate_templates")
+    .where({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
+
+  if (activeTemplate) {
+    return activeTemplate;
+  }
+
+  return db("certificate_templates")
+    .orderBy("updated_at", "desc")
+    .first();
+};
+
+const resolveTemplateId = async (templateId) => {
+  const provided = await getById(templateId);
+  if (provided) {
+    return provided.id;
+  }
+
+  const fallback = await getDefaultTemplate();
+  return fallback ? fallback.id : null;
+};
+
+const create = async (data) => {
   const [row] = await db("certificate_templates").insert(data).returning("*");
   return row;
 };
 
-exports.update = async (id, data) => {
+const update = async (id, data) => {
   const rows = await db("certificate_templates")
     .where({ id })
-    .update(data)
+    .update(payload)
     .returning("*");
   if (!rows.length) return null;
   return rows[0];
 };
 
-exports.remove = async (id) => {
+const remove = async (id) => {
   const deleted = await db("certificate_templates").where({ id }).del();
   return deleted;
 };
-
-exports.toggleStatus = async (id) => {
+const toggleStatus = async (id) => {
   const [row] = await db("certificate_templates")
     .where({ id })
     .update({ active: db.raw("NOT active") })
@@ -35,8 +60,8 @@ exports.toggleStatus = async (id) => {
   return row || null;
 };
 
-exports.duplicate = async (id) => {
-  const template = await exports.getById(id);
+const duplicate = async (id) => {
+  const template = await getById(id);
   if (!template) return null;
   const newTemplate = { ...template };
   delete newTemplate.id;
@@ -48,4 +73,14 @@ exports.duplicate = async (id) => {
   newTemplate.name = `Copy of ${template.name}`;
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
+};
+
+exports.getActiveByType = async (type) => {
+  if (!type) return null;
+
+  return db("certificate_templates")
+    .where({ type })
+    .andWhere({ active: true })
+    .orderBy("updated_at", "desc")
+    .first();
 };

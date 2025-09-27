@@ -1,0 +1,81 @@
+import React from "react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+
+const mockRouter = {
+  query: { id: "123" },
+  replace: jest.fn(),
+  push: jest.fn(),
+};
+
+jest.mock("next/router", () => ({
+  useRouter: () => mockRouter,
+}));
+
+jest.mock("next-i18next", () => ({
+  useTranslation: () => ({
+    t: (key) => key,
+    i18n: { dir: () => "ltr" },
+  }),
+}));
+
+jest.mock("@/hooks/withAuthProtection", () => ({
+  __esModule: true,
+  default: (Component) => Component,
+}));
+
+jest.mock("@/components/layouts/AdminLayout", () => ({
+  __esModule: true,
+  default: ({ children }) => <div data-testid="admin-layout">{children}</div>,
+}));
+
+jest.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }) => <div data-testid="responsive">{children}</div>,
+  PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
+  Pie: ({ children }) => <div data-testid="pie">{children}</div>,
+  Cell: () => <div data-testid="cell" />,
+  Legend: () => <div data-testid="legend" />,
+  Tooltip: () => <div data-testid="tooltip" />,
+  BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
+  CartesianGrid: () => <div data-testid="grid" />,
+  XAxis: () => <div data-testid="x-axis" />,
+  YAxis: () => <div data-testid="y-axis" />,
+  Bar: () => <div data-testid="bar" />,
+}));
+
+const mockFetchAdminClassAnalytics = jest.fn();
+jest.mock("@/services/admin/classService", () => ({
+  fetchAdminClassAnalytics: (...args) => mockFetchAdminClassAnalytics(...args),
+}));
+
+import AnalyticsPage from "@/pages/dashboard/admin/online-classes/[id]/analytics";
+
+describe("Admin class analytics page", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFetchAdminClassAnalytics.mockResolvedValue({ totalStudents: 3 });
+  });
+
+  it("renders with minimal analytics payload", async () => {
+    render(<AnalyticsPage />);
+
+    await waitFor(() => expect(mockFetchAdminClassAnalytics).toHaveBeenCalledWith("123"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText((content) => content.includes("classAnalyticsPage.total_revenue"))
+      ).toBeInTheDocument();
+      expect(screen.getByText("$0")).toBeInTheDocument();
+    });
+
+    const totalStudentsValue = screen.getByText(
+      (content, element) => element?.textContent === "3"
+    );
+    expect(totalStudentsValue).toBeInTheDocument();
+
+    const fullPaymentsRow = screen
+      .getByText((content) => content.includes("classAnalyticsPage.full_payments"))
+      .closest("li");
+    expect(fullPaymentsRow).not.toBeNull();
+    expect(within(fullPaymentsRow).getByText("0")).toBeInTheDocument();
+  });
+});
