@@ -40,6 +40,7 @@ describe('certificate templates and certificates integration', () => {
     await mockDb.schema.createTable('online_classes', (table) => {
       table.uuid('id').primary();
       table.string('title');
+      table.string('access_type').notNullable().defaultTo('paid');
     });
 
     await mockDb.schema.createTable('certificates', (table) => {
@@ -152,7 +153,7 @@ describe('certificate templates and certificates integration', () => {
     const classId = uuidv4();
 
     await mockDb('users').insert({ id: userId, full_name: 'Jane Student' });
-    await mockDb('online_classes').insert({ id: classId, title: 'Physics 101' });
+    await mockDb('online_classes').insert({ id: classId, title: 'Physics 101', access_type: 'paid' });
     await mockDb('certificate_templates').insert({
       id: templateId,
       name: 'Class Template',
