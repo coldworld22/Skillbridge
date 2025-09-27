@@ -135,6 +135,7 @@
   "image_preview_failed": "No se pudo cargar la vista previa de la imagen.",
   "video_size_exceeded": "El video debe ser menos de 100 MB",
   "fill_required_fields": "Complete todos los campos requeridos",
+  "end_date_before_start": "La fecha de finalización no puede ser anterior a la fecha de inicio.",
   "complete_lesson_details": "Complete todos los detalles de la lección",
   "user_info_unavailable": "Información del usuario no disponible",
   "step_of_total": "Paso {{actual}} de {{Total}}",

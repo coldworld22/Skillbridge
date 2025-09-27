@@ -126,10 +126,31 @@ function CreateOnlineClass() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData((prev) => {
+      const nextValue = type === 'checkbox' ? checked : value;
+
+      if (name === 'startDate') {
+        let adjustedEndDate = prev.endDate;
+        if (
+          adjustedEndDate &&
+          nextValue &&
+          new Date(adjustedEndDate) < new Date(nextValue)
+        ) {
+          adjustedEndDate = nextValue;
+        }
+
+        return {
+          ...prev,
+          [name]: nextValue,
+          endDate: adjustedEndDate,
+        };
+      }
+
+      return {
+        ...prev,
+        [name]: nextValue,
+      };
+    });
   };
 
   const handleImageUpload = (e) => {
@@ -266,6 +287,19 @@ function CreateOnlineClass() {
         toast.error(t('user_info_unavailable'));
         return;
       }
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        if (end < start) {
+          toast.error(
+            t('end_date_before_start', {
+              defaultValue: 'End date cannot be earlier than start date.',
+            })
+          );
+          return;
+        }
+      }
+
       try {
         setIsSubmitting(true);
         setIsServerUploading(true);
@@ -507,6 +541,7 @@ function CreateOnlineClass() {
                         name="endDate"
                         value={formData.endDate}
                         onChange={handleChange}
+                        min={formData.startDate || undefined}
                       />
 
                       <div className="grid grid-cols-2 gap-4">
