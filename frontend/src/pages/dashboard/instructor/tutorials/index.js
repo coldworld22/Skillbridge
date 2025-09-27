@@ -230,7 +230,9 @@ export default function InstructorTutorialsPage() {
               >
               <div className="relative">
                 <img
-                  src={tutorial.thumbnail || "/default-thumbnail.jpg"}
+                  src={
+                    tutorial.thumbnail || "/images/default-tutorial.jpg"
+                  }
                   alt={tutorial.title}
                   className="h-48 w-full object-cover"
                 />

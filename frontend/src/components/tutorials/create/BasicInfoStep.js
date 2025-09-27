@@ -227,8 +227,9 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.category}
           onChange={(e) => {
-            const selected = categories.find((c) => c.id === e.target.value);
-            handleChange("category", e.target.value);
+            const { value } = e.target;
+            const selected = categories.find((c) => String(c.id) === value);
+            handleChange("category", value);
             handleChange("categoryName", selected ? selected.name : "");
           }}
         >
