@@ -84,6 +84,7 @@ export default function AdminClassesTable() {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const [isMounted, setMounted] = useState(false);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
@@ -148,35 +149,74 @@ export default function AdminClassesTable() {
       .map((value) => `"${String(value).replace(/"/g, '""')}"`)
       .join(",");
 
-  const exportCSV = () => {
-    const headers = [
-      "Title",
-      "Instructor",
-      "Start Date",
-      "End Date",
-      "Category",
-      "Publish Status",
-    ];
-    const rows = classList.map((cls) => [
-      cls.title,
-      cls.instructor,
-      cls.start_date,
-      cls.end_date,
-      cls.category,
-      cls.publishStatus,
-    ]);
-    const csvRows = [headers, ...rows].map(formatCSVRow);
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "online_classes.csv");
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    toast.success("Classes exported");
+  const exportCSV = async () => {
+    try {
+      setExporting(true);
+      const statusQuery = mapStatusFilterToQuery(filterStatus);
+      const limit = 100;
+      let page = 1;
+      let allClasses = [];
+      // Fetch every page of classes that match the current filters
+      while (true) {
+        const { data, meta } = await fetchAdminClasses({
+          page,
+          limit,
+          filter: searchTerm,
+          approval: filterApproval !== "All" ? filterApproval : undefined,
+          status: statusQuery,
+        });
+        allClasses = allClasses.concat(data);
+        const metaTotalPages =
+          meta?.totalPages || meta?.total_pages || meta?.totalpages;
+        if ((metaTotalPages && page >= metaTotalPages) || data.length < limit) {
+          break;
+        }
+        page += 1;
+      }
+
+      const filteredClasses = shouldApplyScheduleFilter(filterStatus)
+        ? allClasses.filter(
+            (cls) =>
+              cls.scheduleStatus?.toLowerCase() === filterStatus.toLowerCase()
+          )
+        : allClasses;
+      const sortedClasses = [...filteredClasses].sort((a, b) =>
+        a[sortKey] > b[sortKey] ? 1 : -1
+      );
+      const headers = [
+        "Title",
+        "Instructor",
+        "Start Date",
+        "End Date",
+        "Category",
+        "Publish Status",
+      ];
+      const rows = sortedClasses.map((cls) => [
+        cls.title,
+        cls.instructor,
+        cls.start_date,
+        cls.end_date,
+        cls.category,
+        cls.publishStatus,
+      ]);
+      const csvRows = [headers, ...rows].map(formatCSVRow);
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "online_classes.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Classes exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export classes");
+    } finally {
+      setExporting(false);
+    }
   };
 
   
@@ -354,10 +394,17 @@ export default function AdminClassesTable() {
           </select>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-xl px-4 py-2"
-            title="Export all classes to CSV"
+            className={`flex items-center gap-2 text-sm text-white rounded-xl px-4 py-2 ${
+              exporting ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            }`}
+            title={
+              exporting
+                ? "Export in progress"
+                : "Export all filtered classes to CSV"
+            }
+            disabled={exporting}
           >
-            <FaDownload /> Export
+            <FaDownload /> {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
       </div>
