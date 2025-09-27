@@ -3,10 +3,10 @@ FROM node:20 AS builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
-RUN node /tmp/normalize-package-json.js package.json \
+RUN node /tmp/normalize-package-json.js /app/package.json \
     && npm ci && npm cache clean --force
 COPY frontend/ ./
-RUN node /tmp/normalize-package-json.js package.json
+RUN node /tmp/normalize-package-json.js /app/package.json
 COPY shared /shared
 
 # Ensure subsequent RUN instructions use bash so pipefail is respected.
@@ -59,7 +59,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js ./
 COPY frontend/scripts/normalize-package-json.js /tmp/normalize-package-json.js
-RUN node /tmp/normalize-package-json.js package.json \
+RUN node /tmp/normalize-package-json.js /app/package.json \
     && npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
