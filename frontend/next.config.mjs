@@ -224,6 +224,10 @@ const nextConfig = {
   experimental: {
     largePageDataBytes: 256 * 1024,
     externalDir: true,
+    outputFileTracingIncludes: {
+      '/docs': ['./docs/**/*'],
+      '/docs/[slug]': ['./docs/**/*'],
+    },
     turbo: {
       resolveAlias: {
         '@shared': path.resolve(__dirname, '../shared'),
