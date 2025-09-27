@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Social Login Setup | Skillbridge Documentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: #1a1d23;
+    }
+    header {
+      background: #1f2933;
+      color: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    main {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+    nav {
+      width: 260px;
+      background: #f0f4f8;
+      border-right: 1px solid #d9e2ec;
+      padding: 1.5rem 1rem;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    nav h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #52606d;
+      margin-top: 0;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    nav li {
+      margin: 0.35rem 0;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      color: #1f2933;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    nav a:hover {
+      background: #d9e2ec;
+    }
+    nav a.active {
+      background: #3e4c59;
+      color: #fff;
+      font-weight: 600;
+    }
+    article {
+      flex: 1;
+      padding: 2rem 3rem;
+      box-sizing: border-box;
+      max-width: 960px;
+    }
+    article h1, article h2, article h3, article h4 {
+      color: #102a43;
+    }
+    article pre {
+      background: #243b53;
+      color: #f0f4f8;
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+    }
+    article code {
+      background: rgba(15, 23, 42, 0.08);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    article table, article th, article td {
+      border: 1px solid #cbd2d9;
+    }
+    article th, article td {
+      padding: 0.75rem;
+      text-align: left;
+    }
+    article blockquote {
+      border-left: 4px solid #9fb3c8;
+      margin: 1.5rem 0;
+      padding: 0.5rem 1rem;
+      background: #e4ebf5;
+      color: #334e68;
+    }
+    @media (max-width: 960px) {
+      main {
+        flex-direction: column;
+      }
+      nav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #d9e2ec;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Skillbridge Documentation</h1>
+  </header>
+  <main>
+    <nav>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+<li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+<li><a href="admin-alerts.html">Admin Alerts</a></li>
+<li><a href="admin-category-management.html">Admin Category Management</a></li>
+<li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+<li><a href="api-docs.html">API Overview</a></li>
+<li><a href="architecture.html">Backend Architecture Overview</a></li>
+<li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+<li><a href="changelog.html">Changelog</a></li>
+<li><a href="class-lifecycle-workflow.html">Class Lifecycle &amp; Certificate Workflow</a></li>
+<li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+<li><a href="coupon-management.html">Coupon Management</a></li>
+<li><a href="deployment.html">Deployment Guide</a></li>
+<li><a href="index.html">Getting Started</a></li>
+<li><a href="installation.html">Installation Guide</a></li>
+<li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+<li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+<li><a href="release-checklist.html">Release Checklist</a></li>
+<li><a href="social-login-setup.html" class="active">Social Login Setup</a></li>
+<li><a href="student-enrollment-workflow.html">Student Class Purchase &amp; Enrollment Workflow</a></li>
+<li><a href="student-registration-guide.html">Student Registration &amp; Class Enrollment Guide</a></li>
+<li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h1 id="social-login-setup">Social Login Setup</h1>
+<p>This guide explains how to configure OAuth providers like Google so users can sign in to SkillBridge using their existing accounts.</p>
+<h2 id="seed-default-settings">Seed default settings</h2>
+<p>Run this seed from the <code>backend</code> directory to create a default <code>social_login_settings</code> row with all providers disabled:</p>
+<div class="codehilite"><pre><span></span><code>knex<span class="w"> </span>seed:run<span class="w"> </span>--specific<span class="o">=</span>08_social_login_settings_seed.js
+</code></pre></div>
+
+<h2 id="google">Google</h2>
+<ol>
+<li>Open the <strong>Google Cloud Console</strong> and create OAuth 2.0 credentials.</li>
+<li>Add the following URI to the <strong>Authorized redirect URIs</strong> list:</li>
+</ol>
+<p><code>http://localhost:5002/api/auth/google/callback</code></p>
+<p>Replace <code>http://localhost:5002</code> with your production backend URL when deploying. For example:</p>
+<p><code>https://yourdomain.com/api/auth/google/callback</code></p>
+<ol start="3">
+<li>Copy the generated <strong>Client ID</strong> and <strong>Client secret</strong> and enter them in the admin dashboard under <strong>Social Login Settings</strong>. Saving will automatically write the values to <code>backend/.env</code>.</li>
+<li>If the auto-generated redirect URL shown in the admin panel does not match the one configured in Google, enter the desired URL in the <strong>Redirect URL</strong> field for Google and save.</li>
+<li>Restart the backend so the new credentials take effect.</li>
+</ol>
+<p>If the redirect URI does not exactly match what is configured on Google, the login page will display <strong>Error 400: redirect_uri_mismatch</strong>.</p>
+<p>If clicking <strong>Sign in with Google</strong> takes you to <code>/auth/google</code> and shows a 404 error, verify the frontend's <code>NEXT_PUBLIC_API_BASE_URL</code> points to your backend URL including the <code>/api</code> prefix. When using Docker Compose, configure this in <code>frontend/.env.production</code> and remove or ignore the root <code>.env</code> which defaults to <code>http://localhost:5002/api</code>. Set it to your externally reachable domain such as <code>https://yourdomain.com/api</code>. Without this variable the login and register buttons default to <code>/api/auth/*</code> which only works when the frontend and backend share the same host. Both buttons now append <code>?origin=</code> with the current site origin so the API can redirect back correctly even when <code>FRONTEND_URL</code> is not configured.</p>
+<p>If requests to <code>/api/*</code> still return a Next.js 404 page, confirm your reverse proxy forwards the <code>/api</code> path to the backend container. The provided <code>nginx/conf.d</code> configs use <code>location ^~ /api/</code> to proxy to <code>backend:5002</code> without rewriting the prefix. Restart nginx after updating the configuration.</p>
+<p>After editing the files you can verify that nginx picked up the change by running:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>nginx<span class="w"> </span>-T<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;/api&#39;</span>
+</code></pre></div>
+
+<p>The output should list the <code>/api</code> location pointing at the backend. If the block is missing, reload nginx (for example <code>sudo systemctl reload nginx</code>) and try the login flow again.</p>
+<p>If the authentication completes but you land on a 404 page, check that the backend's
+<code>FRONTEND_URL</code> matches your frontend domain. An incorrect value can cause the API
+to redirect to the wrong host. You may also omit <code>FRONTEND_URL</code> to use the
+request's <code>Origin</code> header automatically.</p>
+<h2 id="github">GitHub</h2>
+<ol>
+<li>On GitHub open <strong>Settings → Developer settings → OAuth Apps</strong> and create a new OAuth App.</li>
+<li>Set the <strong>Authorization callback URL</strong> to:
+   <code>http://localhost:5002/api/auth/github/callback</code>
+   Replace <code>http://localhost:5002</code> with your backend URL when deployed. For example:
+   <code>https://${APP_DOMAIN}/api/auth/github/callback</code></li>
+<li>Enter the generated <strong>Client ID</strong> and <strong>Client Secret</strong> in the admin panel under <strong>Social Login Settings</strong>. These values will be stored in <code>backend/.env</code> automatically.</li>
+<li>Save the settings and restart the backend so the GitHub strategy is initialized.</li>
+</ol>
+<p>After completing these steps the <strong>Sign in with GitHub</strong> button should redirect back to <code>/auth/social-success</code> and automatically log the user in.</p>
+<h2 id="facebook">Facebook</h2>
+<ol>
+<li>Go to the <strong>Meta for Developers</strong> portal and create a new app with the <strong>Facebook Login</strong> product.</li>
+<li>Under <strong>Valid OAuth Redirect URIs</strong>, add:
+   <code>https://&lt;backend&gt;/api/auth/facebook/callback</code>
+   Replace <code>&lt;backend&gt;</code> with your backend's base URL.</li>
+<li>Request the <code>email</code> and <code>public_profile</code> permissions for the app.</li>
+<li>Enter the generated <strong>App ID</strong> and <strong>App Secret</strong> in the admin panel under <strong>Social Login Settings</strong>. Saving will update <code>backend/.env</code>.</li>
+<li>Restart the backend so the Facebook strategy is initialized.</li>
+</ol>
+<h2 id="recaptcha">reCAPTCHA</h2>
+<p>SkillBridge can optionally validate a Google reCAPTCHA token during login and registration. This behaviour is controlled by the <code>social_login_settings</code> record stored in the database. When the <code>recaptcha.active</code> flag is <code>true</code> the backend will verify the provided token using Google's API before authenticating the user. reCAPTCHA settings are only available under <strong>Social Login Settings</strong> in the admin dashboard.</p>
+<p>To temporarily disable reCAPTCHA you can call the configuration endpoint with admin credentials:</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>http://localhost:5002/api/social-login/config<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{ &quot;recaptcha&quot;: { &quot;active&quot;: false } }&#39;</span>
+</code></pre></div>
+
+<p>Setting <code>active</code> back to <code>true</code> re-enables the verification check. When disabled, the server only validates the email and password.</p>
+    </article>
+  </main>
+</body>
+</html>

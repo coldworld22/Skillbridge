@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book Marketplace Module Workflow | Skillbridge Documentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: #1a1d23;
+    }
+    header {
+      background: #1f2933;
+      color: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    main {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+    nav {
+      width: 260px;
+      background: #f0f4f8;
+      border-right: 1px solid #d9e2ec;
+      padding: 1.5rem 1rem;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    nav h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #52606d;
+      margin-top: 0;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    nav li {
+      margin: 0.35rem 0;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      color: #1f2933;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    nav a:hover {
+      background: #d9e2ec;
+    }
+    nav a.active {
+      background: #3e4c59;
+      color: #fff;
+      font-weight: 600;
+    }
+    article {
+      flex: 1;
+      padding: 2rem 3rem;
+      box-sizing: border-box;
+      max-width: 960px;
+    }
+    article h1, article h2, article h3, article h4 {
+      color: #102a43;
+    }
+    article pre {
+      background: #243b53;
+      color: #f0f4f8;
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+    }
+    article code {
+      background: rgba(15, 23, 42, 0.08);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    article table, article th, article td {
+      border: 1px solid #cbd2d9;
+    }
+    article th, article td {
+      padding: 0.75rem;
+      text-align: left;
+    }
+    article blockquote {
+      border-left: 4px solid #9fb3c8;
+      margin: 1.5rem 0;
+      padding: 0.5rem 1rem;
+      background: #e4ebf5;
+      color: #334e68;
+    }
+    @media (max-width: 960px) {
+      main {
+        flex-direction: column;
+      }
+      nav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #d9e2ec;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Skillbridge Documentation</h1>
+  </header>
+  <main>
+    <nav>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+<li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+<li><a href="admin-alerts.html">Admin Alerts</a></li>
+<li><a href="admin-category-management.html">Admin Category Management</a></li>
+<li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+<li><a href="api-docs.html">API Overview</a></li>
+<li><a href="architecture.html">Backend Architecture Overview</a></li>
+<li><a href="book-workflow.html" class="active">Book Marketplace Module Workflow</a></li>
+<li><a href="changelog.html">Changelog</a></li>
+<li><a href="class-lifecycle-workflow.html">Class Lifecycle &amp; Certificate Workflow</a></li>
+<li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+<li><a href="coupon-management.html">Coupon Management</a></li>
+<li><a href="deployment.html">Deployment Guide</a></li>
+<li><a href="index.html">Getting Started</a></li>
+<li><a href="installation.html">Installation Guide</a></li>
+<li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+<li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+<li><a href="release-checklist.html">Release Checklist</a></li>
+<li><a href="social-login-setup.html">Social Login Setup</a></li>
+<li><a href="student-enrollment-workflow.html">Student Class Purchase &amp; Enrollment Workflow</a></li>
+<li><a href="student-registration-guide.html">Student Registration &amp; Class Enrollment Guide</a></li>
+<li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h1 id="book-marketplace-module-workflow">Book Marketplace Module Workflow</h1>
+<h2 id="module-goal">Module Goal</h2>
+<p>Allow instructors to upload and sell PDF books, and allow students to browse, purchase, and download them. Admin approves books, tracks sales, and configures settings.</p>
+<h2 id="database-schema">Database Schema</h2>
+<h3 id="books">books</h3>
+<ul>
+<li><code>id</code></li>
+<li><code>title</code></li>
+<li><code>short_description</code></li>
+<li><code>detailed_description</code></li>
+<li><code>price</code> (decimal)</li>
+<li><code>pdf_url</code></li>
+<li><code>cover_image_url</code></li>
+<li><code>category_id</code> (FK → categories)</li>
+<li><code>language</code></li>
+<li><code>license_type</code></li>
+<li><code>allow_preview</code></li>
+<li><code>preview_pages</code></li>
+<li><code>instructor_id</code> (FK → users)</li>
+<li><code>status</code> (pending, approved, rejected)</li>
+<li><code>created_at</code></li>
+</ul>
+<h3 id="book_purchases">book_purchases</h3>
+<ul>
+<li><code>id</code></li>
+<li><code>student_id</code> (FK → users)</li>
+<li><code>book_id</code> (FK → books)</li>
+<li><code>price_paid</code></li>
+<li><code>purchased_at</code></li>
+</ul>
+<h3 id="book_categories-optional">book_categories (optional)</h3>
+<ul>
+<li><code>id</code></li>
+<li><code>name</code></li>
+<li><code>slug</code></li>
+<li><code>status</code></li>
+</ul>
+<h2 id="route-map-frontend">Route Map (Frontend)</h2>
+<h3 id="public">Public</h3>
+<ul>
+<li><code>/marketplace/books</code> → Browse books</li>
+<li><code>/marketplace/books/[id]</code> → Book details</li>
+</ul>
+<h3 id="student">Student</h3>
+<ul>
+<li><code>/cart</code> → View cart</li>
+<li><code>/payments/checkout</code> → Pay for books</li>
+<li><code>/dashboard/student/library</code> → Purchased books list (download access)</li>
+</ul>
+<h3 id="instructor">Instructor</h3>
+<ul>
+<li><code>/dashboard/instructor/books</code> → Book list (own)</li>
+<li><code>/dashboard/instructor/books/create</code> → Add new book</li>
+<li><code>/dashboard/instructor/books/[id]/edit</code> → Edit book</li>
+<li><code>/dashboard/instructor/books/analytics</code> → Sales overview</li>
+</ul>
+<h3 id="admin">Admin</h3>
+<ul>
+<li><code>/dashboard/admin/books</code> → View all books</li>
+<li><code>/dashboard/admin/books/pending</code> → Approve/reject</li>
+<li><code>/dashboard/admin/settings/books</code> → Commission %, file rules</li>
+<li><code>/dashboard/admin/books/analytics</code> → Sales statistics</li>
+</ul>
+<h2 id="api-endpoints-backend">API Endpoints (Backend)</h2>
+<h3 id="instructor_1">Instructor</h3>
+<ul>
+<li><code>POST /api/books</code> → Create new book</li>
+<li><code>PUT /api/books/:id</code> → Update book</li>
+<li><code>GET /api/instructor/books</code> → List instructor's books</li>
+<li><code>GET /api/instructor/books/analytics</code> → View sales</li>
+</ul>
+<h3 id="student_1">Student</h3>
+<ul>
+<li><code>GET /api/books</code> → Public book list</li>
+<li><code>GET /api/books/:id</code> → Book details</li>
+<li><code>POST /api/cart</code> → Add to cart</li>
+<li><code>POST /api/checkout</code> → Process purchase</li>
+<li><code>GET /api/library</code> → List purchased books</li>
+<li><code>GET /api/library/download/:bookId</code> → Download secure PDF</li>
+</ul>
+<h3 id="admin_1">Admin</h3>
+<ul>
+<li><code>GET /api/admin/books/pending</code> → Pending list</li>
+<li><code>PATCH /api/admin/books/:id/approve</code> → Approve book</li>
+<li><code>PATCH /api/admin/books/:id/reject</code> → Reject book</li>
+<li><code>GET /api/admin/books/analytics</code> → View stats</li>
+</ul>
+<h2 id="components">Components</h2>
+<ul>
+<li><code>&lt;BookCard /&gt;</code> – Title, price, instructor, thumbnail</li>
+<li><code>&lt;BookForm /&gt;</code> – Form to create/edit book</li>
+<li><code>&lt;BookDetails /&gt;</code> – Full view + “Add to Cart” button</li>
+<li><code>&lt;CartItem /&gt;</code> – Book row in cart with quantity controls</li>
+<li><code>&lt;LibraryItem /&gt;</code> – Book row in student library</li>
+<li><code>&lt;SecureDownload /&gt;</code> – Button for PDF access (with auth token check)</li>
+<li><code>&lt;AdminBookRow /&gt;</code> – Approve/reject actions</li>
+</ul>
+<h2 id="permission-flow">Permission Flow</h2>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Upload book</td>
+<td>Instructor only</td>
+</tr>
+<tr>
+<td>Approve/reject</td>
+<td>Admin only</td>
+</tr>
+<tr>
+<td>Purchase book</td>
+<td>Student only</td>
+</tr>
+<tr>
+<td>View library</td>
+<td>Student only</td>
+</tr>
+<tr>
+<td>Download book</td>
+<td>Student only (if purchased) and plan feature <code>books_download</code> enabled</td>
+</tr>
+<tr>
+<td>View earnings</td>
+<td>Instructor</td>
+</tr>
+<tr>
+<td>Manage commission/settings</td>
+<td>Admin</td>
+</tr>
+</tbody>
+</table>
+<h2 id="payment-access-flow">Payment &amp; Access Flow</h2>
+<ol>
+<li>Student adds book to cart</li>
+<li>Proceeds to checkout</li>
+<li>After successful payment:
+   - <code>book_purchases</code> entry is created
+   - PDF is added to My Library
+   - Student can access book via secure download route</li>
+</ol>
+<h2 id="notifications-optional-enhancements">Notifications (optional enhancements)</h2>
+<ul>
+<li>Instructor notified when book is approved</li>
+<li>Instructor notified on each new sale</li>
+<li>Admin notified on new book submission</li>
+<li>Student gets confirmation email after purchase</li>
+</ul>
+<h2 id="admin-configuration">Admin Configuration</h2>
+<ul>
+<li>Commission percentage (20% default)</li>
+<li>Max PDF size (e.g., 50MB)</li>
+<li>Toggle book module on/off</li>
+<li>Book categories manager (optional)</li>
+</ul>
+    </article>
+  </main>
+</body>
+</html>
