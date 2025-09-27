@@ -17,17 +17,6 @@ import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
-// Ensure standalone builds can still locate the project-level docs directory.
-const docsDirectoryExplicitPaths = [
-  path.join(process.cwd(), 'docs'),
-  path.join(process.cwd(), '..', 'docs'),
-  path.join(process.cwd(), '..', '..', 'docs'),
-  path.join(process.cwd(), '..', '..', '..', 'docs'),
-  path.resolve(moduleDir, '../../docs'),
-  path.resolve(moduleDir, '../../../docs'),
-  path.resolve(moduleDir, '../../../..', 'docs'),
-];
-
 function sanitizeSlug(value) {
   return value
     .replace(/\.(md|html)$/i, '')
