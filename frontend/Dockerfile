@@ -2,34 +2,8 @@
 FROM node:20 AS builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
-# Strip any stray characters that may have been accidentally appended to the
-# package.json file (for example by editors that leave a trailing NUL byte).
-# npm's JSON parser is strict and will fail with "Unexpected non-whitespace"
-# errors if such characters are present, so we trim down to the JSON object
-# before installing dependencies.
-RUN node - <<'NODE'
-const fs = require('fs');
-const path = 'package.json';
-const raw = fs.readFileSync(path, 'utf8');
-const trimmed = raw.trim();
-const start = trimmed.indexOf('{');
-const end = trimmed.lastIndexOf('}');
-if (start === -1 || end === -1 || end < start) {
-  throw new Error('package.json does not contain a JSON object.');
-}
-const candidate = trimmed.slice(start, end + 1);
-try {
-  JSON.parse(candidate);
-} catch (error) {
-  console.error('Failed to parse sanitized package.json:', error.message);
-  throw error;
-}
-if (candidate !== trimmed) {
-  console.warn('package.json contained data outside the JSON object; it has been trimmed.');
-}
-fs.writeFileSync(path, candidate + '\n');
-NODE
-RUN npm ci && npm cache clean --force
+RUN node -e 'const fs=require("fs"); const path="package.json"; const sanitize=(input)=>input.replace(/\ufeff/g,"").replace(/\u00a0/g," "); fs.writeFileSync(path, sanitize(fs.readFileSync(path, "utf8")));' \
+    && npm ci && npm cache clean --force
 COPY frontend/ ./
 COPY shared /shared
 
@@ -82,29 +56,8 @@ FROM node:20-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY frontend/package.json frontend/package-lock.json frontend/next.config.mjs frontend/next-i18next.config.js ./
-RUN node - <<'NODE'
-const fs = require('fs');
-const path = 'package.json';
-const raw = fs.readFileSync(path, 'utf8');
-const trimmed = raw.trim();
-const start = trimmed.indexOf('{');
-const end = trimmed.lastIndexOf('}');
-if (start === -1 || end === -1 || end < start) {
-  throw new Error('package.json does not contain a JSON object.');
-}
-const candidate = trimmed.slice(start, end + 1);
-try {
-  JSON.parse(candidate);
-} catch (error) {
-  console.error('Failed to parse sanitized package.json:', error.message);
-  throw error;
-}
-if (candidate !== trimmed) {
-  console.warn('package.json contained data outside the JSON object; it has been trimmed.');
-}
-fs.writeFileSync(path, candidate + '\n');
-NODE
-RUN npm ci --omit=dev && npm cache clean --force
+RUN node -e 'const fs=require("fs"); const path="package.json"; const sanitize=(input)=>input.replace(/\ufeff/g,"").replace(/\u00a0/g," "); fs.writeFileSync(path, sanitize(fs.readFileSync(path, "utf8")));' \
+    && npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
