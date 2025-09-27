@@ -144,7 +144,7 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onPrev}
           />
         )}
         {step === 3 && (
@@ -152,13 +152,13 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onPrev}
           />
         )}
         {step === 4 && (
             <ReviewStep
               tutorialData={tutorialData}
-              onPrev={onPrev}
+              onBack={onPrev}
               actionLabel="Save Changes"
               onPublish={async () => {
                 const formData = buildTutorialFormData(tutorialData);

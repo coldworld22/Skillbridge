@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
-import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
@@ -35,8 +34,15 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const { tutorials, setTutorials, categories, loading, meta, setMeta } =
-    useTutorialsData(t);
+  const {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    meta,
+    setMeta,
+    loadTutorials,
+  } = useTutorialsData(t);
 
   const {
     searchQuery,
@@ -47,14 +53,60 @@ function AdminTutorialsPage() {
     setFilterStatus,
     filterApproval,
     setFilterApproval,
-    currentPage,
-    setCurrentPage,
     filteredTutorials,
-    paginatedTutorials,
-    totalPages,
-    startIndex,
-    goToPage,
   } = useTutorialFilters(tutorials);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadTutorials({
+      page: currentPage,
+      limit: pageSize,
+      signal: controller.signal,
+    }).catch((err) => {
+      if (err?.name === "AbortError" || err?.name === "CanceledError") {
+        return;
+      }
+      console.error(err);
+    });
+
+    return () => controller.abort();
+  }, [currentPage, pageSize, loadTutorials]);
+
+  useEffect(() => {
+    if (meta?.per_page && meta.per_page !== pageSize) {
+      setPageSize(meta.per_page);
+    }
+  }, [meta?.per_page, pageSize]);
+
+  useEffect(() => {
+    if (meta?.last_page && currentPage > meta.last_page) {
+      setCurrentPage(Math.max(1, meta.last_page));
+    }
+  }, [meta?.last_page, currentPage]);
+
+  const totalResults = meta?.total ?? filteredTutorials.length;
+  const totalPages =
+    meta?.last_page ??
+    (pageSize > 0 ? Math.max(1, Math.ceil(totalResults / pageSize)) : 1);
+  const pageItemCount = filteredTutorials.length;
+  const displayStartIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1;
+  const displayEndIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : Math.min(displayStartIndex + pageItemCount - 1, totalResults);
+  const paginationStartIndex = displayStartIndex > 0 ? displayStartIndex - 1 : 0;
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
 
   const {
@@ -63,19 +115,13 @@ function AdminTutorialsPage() {
     toggleSelectOne,
     toggleSelectAll,
     clearSelected,
-  } = useBulkSelection(paginatedTutorials, [
+  } = useBulkSelection(filteredTutorials, [
     searchQuery,
     filterCategory,
     filterStatus,
     filterApproval,
+    currentPage,
   ]);
-
-  const totalResults = filteredTutorials.length;
-  const paginatedCount = paginatedTutorials.length;
-  const displayEndIndex =
-    totalResults === 0
-      ? 0
-      : Math.min(startIndex + paginatedCount, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -91,15 +137,30 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === id);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
-      await toggleTutorialStatus(id);
-      const newStatus =
+      const updated = await toggleTutorialStatus(id);
+      if (!updated) {
+        toast.error(t("update_failed"));
+        return;
+      }
+
+      const toggledStatus =
         existing.status === TUTORIAL_STATUS.PUBLISHED
           ? TUTORIAL_STATUS.DRAFT
           : TUTORIAL_STATUS.PUBLISHED;
-      const target = { ...existing, status: newStatus };
+
+      const resolvedStatus = updated.status ?? toggledStatus;
+      const moderationStatus =
+        updated.moderation_status ?? existing.approvalStatus ?? "Pending";
+
+      const target = {
+        ...existing,
+        status: resolvedStatus,
+        approvalStatus: moderationStatus,
+        rejectionReason: null,
+      };
       setTutorials((prev) =>
         prev.map((tut) =>
           tut.id === id
@@ -135,13 +196,13 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Status updated but failed to send some notifications.");
+        toast.warn(t("status_update_partial"));
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t("update_failed"));
+      toast.error(t("status_update_failed"));
     }
   };
 
@@ -165,14 +226,12 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - 1) }
           : prev,
       );
-      toast.success(t("deleted"));
+      toast.success(t("delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) =>
-        prev.filter((id) => id !== tutorialToDelete),
-      );
+      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -182,7 +241,7 @@ function AdminTutorialsPage() {
     try {
       const existing = tutorials.find((tut) => tut.id === tutorialToReject);
       if (!existing) {
-        toast.error("Tutorial not found");
+        toast.error(t("not_found"));
         return;
       }
       await rejectTutorial(tutorialToReject, reason);
@@ -198,7 +257,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("rejected"));
+      toast.success(t("reject_success"));
       const message = `Tutorial "${target.title}" was rejected.`;
       const notificationPromises = [
         createNotification({
@@ -226,9 +285,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn(
-          "Rejection processed but failed to send some notifications.",
-        );
+        toast.warn(t("reject_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -254,7 +311,7 @@ function AdminTutorialsPage() {
           return tut;
         }),
       );
-      toast.success(t("approved"));
+      toast.success(t("approval_success"));
       const message = `Tutorial "${target.title}" approved.`;
       const notificationPromises = [
         createNotification({
@@ -282,7 +339,7 @@ function AdminTutorialsPage() {
         notificationResults
           .filter((res) => res.status === "rejected")
           .forEach((res) => console.error(res.reason));
-        toast.warn("Tutorial approved but failed to send some notifications.");
+        toast.warn(t("approval_partial_failure"));
       }
       refreshNotifications?.();
       refreshMessages?.();
@@ -304,7 +361,7 @@ function AdminTutorialsPage() {
           ? { ...prev, total: Math.max(0, prev.total - selectedTutorials.length) }
           : prev,
       );
-      toast.success(t("bulk_deleted"));
+      toast.success(t("bulk_delete_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_delete_failed"));
@@ -328,7 +385,7 @@ function AdminTutorialsPage() {
             : tut,
         ),
       );
-      toast.success(t("bulk_approved"));
+      toast.success(t("bulk_approve_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("bulk_approve_failed"));
@@ -343,9 +400,9 @@ function AdminTutorialsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">
-              📚 {t("title")}
+              📚 {t("heading")}
             </h1>
-            <p className="text-gray-600 mt-1">{t("description")}</p>
+            <p className="text-gray-600 mt-1">{t("subheading")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
@@ -381,7 +438,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
+            <p className="text-2xl font-bold">{meta?.total ?? 0}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -406,7 +463,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={filteredTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -427,7 +484,7 @@ function AdminTutorialsPage() {
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
-              startIndex={startIndex}
+              startIndex={paginationStartIndex}
               endIndex={displayEndIndex}
               totalResults={totalResults}
             />

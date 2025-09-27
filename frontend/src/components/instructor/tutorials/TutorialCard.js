@@ -8,7 +8,7 @@ export default function TutorialCard({ tutorial, onView, onEdit, onChecklist, on
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100">
       <div className="relative">
         <img
-          src={tutorial.thumbnail || '/default-thumbnail.jpg'}
+          src={tutorial.thumbnail || '/images/default-tutorial.jpg'}
           alt={tutorial.title}
           className="h-48 w-full object-cover"
         />

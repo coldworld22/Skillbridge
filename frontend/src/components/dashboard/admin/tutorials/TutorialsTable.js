@@ -70,9 +70,9 @@ function TutorialsTable({
                     <Button
                       onClick={() => {
                         setSearchQuery("");
-                        setFilterCategory("All");
-                        setFilterStatus("All");
-                        setFilterApproval("All");
+                        setFilterCategory("");
+                        setFilterStatus("");
+                        setFilterApproval("");
                         setCurrentPage(1);
                       }}
                       className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800"
@@ -95,12 +95,14 @@ function TutorialsTable({
                   </td>
                   <td className="py-3 px-4">
                     <img
-                      src={tutorial.thumbnail || "/default-thumbnail.jpg"}
+                      src={
+                        tutorial.thumbnail || "/images/default-tutorial.jpg"
+                      }
                       alt={tutorial.title}
                       className="h-14 w-24 object-cover rounded-lg border"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/default-thumbnail.jpg";
+                        e.target.src = "/images/default-tutorial.jpg";
                       }}
                     />
                   </td>

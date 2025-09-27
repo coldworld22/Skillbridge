@@ -4,7 +4,6 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClassById } from "@/services/instructor/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
-import { safeEncodeURI } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import DOMPurify from "isomorphic-dompurify";
 
@@ -47,7 +46,7 @@ function InstructorClassDetailPage() {
           )}
           {details?.demo_video_url && (
             <div className="mt-4">
-              <CustomVideoPlayer videos={[{ src: safeEncodeURI(details.demo_video_url) }]} />
+              <CustomVideoPlayer videos={[{ src: details.demo_video_url }]} />
             </div>
           )}
 

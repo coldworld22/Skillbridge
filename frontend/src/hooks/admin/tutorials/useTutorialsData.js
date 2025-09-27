@@ -1,45 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchAllTutorials } from "@/services/admin/tutorialService";
 
-export default function useTutorialsData(t) {
+export default function useTutorialsData(
+  t,
+  { initialPage = 1, initialLimit = 10 } = {},
+) {
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState(null);
+  const lastRequestRef = useRef({ page: initialPage, limit: initialLimit });
+  const isMountedRef = useRef(true);
+
+  const normalizedFilters = useMemo(() => {
+    if (!filters || typeof filters !== "object") return {};
+
+    return Object.entries(filters).reduce((acc, [key, value]) => {
+      if (value === undefined || value === null) return acc;
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed === "All") return acc;
+        acc[key] = trimmed;
+        return acc;
+      }
+
+      acc[key] = value;
+      return acc;
+    }, {});
+  }, [filters]);
 
   useEffect(() => {
     const controller = new AbortController();
     let isMounted = true;
 
-    const loadData = async () => {
+    const loadCategories = async () => {
       try {
-        setLoading(true);
-        const [tutorialResponse, cats] = await Promise.all([
-          fetchAllTutorials(undefined, undefined, { signal: controller.signal }),
-          fetchAllCategories({}, { signal: controller.signal }),
-        ]);
+        const cats = await fetchAllCategories({}, { signal: controller.signal });
         if (!isMounted) return;
-        const fetchedTutorials = Array.isArray(tutorialResponse)
-          ? tutorialResponse
-          : tutorialResponse?.tutorials || [];
-        const paginationMeta = Array.isArray(tutorialResponse)
-          ? null
-          : tutorialResponse?.meta || null;
-        setTutorials(fetchedTutorials);
         setCategories(cats?.data || cats || []);
-        setMeta(paginationMeta || null);
       } catch (err) {
         if (err.name === "AbortError" || err.name === "CanceledError") return;
         console.error(err);
         if (isMounted) toast.error(t("load_error"));
-      } finally {
-        if (isMounted) setLoading(false);
       }
     };
 
-    loadData();
+    loadCategories();
 
     return () => {
       isMounted = false;
@@ -47,5 +56,87 @@ export default function useTutorialsData(t) {
     };
   }, [t]);
 
-  return { tutorials, setTutorials, categories, loading, meta, setMeta };
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const loadTutorials = useCallback(
+    async ({ page, limit, signal, params } = {}) => {
+      const nextPage = page ?? lastRequestRef.current.page;
+      const nextLimit = limit ?? lastRequestRef.current.limit;
+
+      try {
+        setLoading(true);
+        const response = await fetchAllTutorials(nextPage, nextLimit, {
+          signal,
+          params,
+        });
+        if (!isMountedRef.current) {
+          return response;
+        }
+        const fetchedTutorials = Array.isArray(response?.tutorials)
+          ? response.tutorials
+          : response?.tutorials?.tutorials || [];
+        const paginationMeta = response?.meta ?? null;
+        setTutorials(fetchedTutorials);
+        setMeta(paginationMeta);
+        lastRequestRef.current = { page: nextPage, limit: nextLimit };
+        return { tutorials: fetchedTutorials, meta: paginationMeta };
+      } catch (err) {
+        if (err?.name === "AbortError" || err?.name === "CanceledError") {
+          return null;
+        }
+        console.error(err);
+        if (isMountedRef.current) {
+          toast.error(t("load_error"));
+        }
+        throw err;
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const loadCategories = async () => {
+      try {
+        const cats = await fetchAllCategories({}, { signal: controller.signal });
+        if (!active || !isMountedRef.current) return;
+        setCategories(cats?.data || cats || []);
+      } catch (err) {
+        if (err?.name === "AbortError" || err?.name === "CanceledError") {
+          return;
+        }
+        console.error(err);
+        if (isMountedRef.current) {
+          toast.error(t("load_error"));
+        }
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      controller.abort();
+      active = false;
+    };
+  }, [page, pageSize, normalizedFilters, t]);
+
+  return {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    meta,
+    setMeta,
+    loadTutorials,
+  };
 }

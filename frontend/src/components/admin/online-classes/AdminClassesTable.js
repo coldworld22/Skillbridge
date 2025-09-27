@@ -31,6 +31,25 @@ import {
   FaList
 } from "react-icons/fa";
 
+const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
+
+export const mapStatusFilterToQuery = (filterStatus) => {
+  if (!filterStatus || filterStatus === "All") {
+    return undefined;
+  }
+
+  const normalized = filterStatus.toLowerCase();
+  return BACKEND_STATUSES.has(normalized) ? normalized : undefined;
+};
+
+const shouldApplyScheduleFilter = (filterStatus) => {
+  if (!filterStatus || filterStatus === "All") {
+    return false;
+  }
+
+  return !BACKEND_STATUSES.has(filterStatus.toLowerCase());
+};
+
 export function compareValues(a, b, key) {
   const valA = a[key];
   const valB = b[key];
@@ -75,16 +94,35 @@ export default function AdminClassesTable() {
     const load = async () => {
       setLoading(true);
       try {
+        const statusQuery = mapStatusFilterToQuery(filterStatus);
         const { data, meta } = await fetchAdminClasses({
           page: currentPage,
           limit: itemsPerPage,
           filter: searchTerm,
           approval: filterApproval !== "All" ? filterApproval : undefined,
-          status: filterStatus !== "All" ? filterStatus : undefined,
+          status: statusQuery,
         });
-        setClassList(data.sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1)));
-        setTotalPages(meta?.totalPages || 1);
-        setTotalItems(meta?.total || data.length);
+        const filteredData = shouldApplyScheduleFilter(filterStatus)
+          ? data.filter(
+              (cls) =>
+                cls.scheduleStatus?.toLowerCase() ===
+                filterStatus.toLowerCase()
+            )
+          : data;
+        const sortedData = [...filteredData].sort((a, b) =>
+          a[sortKey] > b[sortKey] ? 1 : -1
+        );
+        setClassList(sortedData);
+
+        if (shouldApplyScheduleFilter(filterStatus)) {
+          setTotalItems(filteredData.length);
+          setTotalPages(
+            Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
+          );
+        } else {
+          setTotalPages(meta?.totalPages || 1);
+          setTotalItems(meta?.total ?? data.length);
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load classes");

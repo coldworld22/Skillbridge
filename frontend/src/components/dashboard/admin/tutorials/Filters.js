@@ -43,9 +43,9 @@ function Filters({
           }}
           className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
         >
-          <option value="All">All Categories</option>
+          <option value="">All Categories</option>
           {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>
+            <option key={cat.id} value={cat.id}>
               {cat.name}
             </option>
           ))}
@@ -59,7 +59,7 @@ function Filters({
           }}
           className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
         >
-          <option value="All">All Status</option>
+          <option value="">All Status</option>
           <option value={TUTORIAL_STATUS.PUBLISHED}>Published</option>
           <option value={TUTORIAL_STATUS.DRAFT}>Draft</option>
         </select>
@@ -72,7 +72,7 @@ function Filters({
           }}
           className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
         >
-          <option value="All">All Approval</option>
+          <option value="">All Approval</option>
           <option value="Approved">Approved</option>
           <option value="Pending">Pending</option>
           <option value="Rejected">Rejected</option>
@@ -81,9 +81,9 @@ function Filters({
         <Button
           onClick={() => {
             setSearchQuery("");
-            setFilterCategory("All");
-            setFilterStatus("All");
-            setFilterApproval("All");
+            setFilterCategory("");
+            setFilterStatus("");
+            setFilterApproval("");
             setCurrentPage(1);
           }}
           className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg border border-gray-300"
