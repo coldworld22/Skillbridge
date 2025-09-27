@@ -105,34 +105,23 @@ export default function AdminClassesTable() {
       setLoading(true);
       try {
         const statusQuery = mapStatusFilterToQuery(filterStatus);
+        const scheduleFilter = shouldApplyScheduleFilter(filterStatus)
+          ? filterStatus
+          : undefined;
         const { data, meta } = await fetchAdminClasses({
           page: currentPage,
           limit: itemsPerPage,
           filter: searchTerm,
           approval: filterApproval !== "All" ? filterApproval : undefined,
           status: statusQuery,
+          schedule: scheduleFilter,
         });
-        const filteredData = shouldApplyScheduleFilter(filterStatus)
-          ? data.filter(
-              (cls) =>
-                cls.scheduleStatus?.toLowerCase() ===
-                filterStatus.toLowerCase()
-            )
-          : data;
-        const sortedData = [...filteredData].sort((a, b) =>
+        const sortedData = [...data].sort((a, b) =>
           a[sortKey] > b[sortKey] ? 1 : -1
         );
         setClassList(sortedData);
-
-        if (shouldApplyScheduleFilter(filterStatus)) {
-          setTotalItems(filteredData.length);
-          setTotalPages(
-            Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
-          );
-        } else {
-          setTotalPages(meta?.totalPages || 1);
-          setTotalItems(meta?.total ?? data.length);
-        }
+        setTotalPages(Math.max(1, meta?.totalPages || 0));
+        setTotalItems(meta?.total ?? data.length);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load classes");
