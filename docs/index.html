@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Messaging Providers Configuration | Skillbridge Documentation</title>
+  <title>SkillBridge Documentation Hub | Skillbridge Documentation</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -140,10 +140,10 @@
 <li><a href="coupon-management.html">Coupon Management</a></li>
 <li><a href="deployment.html">Deployment Guide</a></li>
 <li><a href="getting-started.html">Installation Guide</a></li>
-<li><a href="index.html">SkillBridge Documentation Hub</a></li>
+<li><a href="index.html" class="active">SkillBridge Documentation Hub</a></li>
 <li><a href="installation.html">Installation Guide</a></li>
 <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
-<li><a href="messages-config.html" class="active">Messaging Providers Configuration</a></li>
+<li><a href="messages-config.html">Messaging Providers Configuration</a></li>
 <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
 <li><a href="release-checklist.html">Release Checklist</a></li>
 <li><a href="social-login-setup.html">Social Login Setup</a></li>
@@ -153,29 +153,59 @@
       </ul>
     </nav>
     <article>
-      <h1 id="messaging-providers-configuration">Messaging Providers Configuration</h1>
-<p>SkillBridge lets administrators manage SMS gateway settings from the dashboard.
-Only one gateway provider can be <strong>Active</strong> and <strong>Default</strong> at a time so
-outgoing messages don't conflict.</p>
-<h2 id="backend">Backend</h2>
+      <h1 id="skillbridge-documentation-hub">SkillBridge Documentation Hub</h1>
+<p>Welcome! This landing page helps you find the right guide whether you are
+setting up SkillBridge for the first time, preparing an Envato submission, or
+operating an existing deployment. Each section below links to the detailed
+Markdown guides that are also bundled in HTML form for convenience.</p>
+<h2 id="start-here">Start here</h2>
 <ul>
-<li>Settings are stored with the key <code>messages_settings</code> in the <code>settings</code> table.</li>
-<li>API routes under <code>/api/messages/config</code> read and update the configuration.</li>
-<li>When sending phone OTPs the service in <code>backend/src/services/smsService.js</code>
-  checks the active provider and sends SMS via Infobip if configured.</li>
+<li><a href="./README.html">Platform overview</a> – learn how the repository is organised and
+  where the backend, frontend, and infrastructure pieces live.</li>
+<li><a href="./installation.html">Installation guide</a> – complete walkthrough for Docker,
+  Git-based installs, and manual ZIP deployments.</li>
+<li><a href="./getting-started.html">Getting started from the packaged ZIP</a> – follow this
+  when unpacking the customer archive from Envato or the Memonet portal.</li>
+<li><a href="./deployment.html">Deployment checklist</a> – environment configuration notes and
+  launch-day verification steps.</li>
 </ul>
-<h2 id="frontend">Frontend</h2>
+<h2 id="operations-and-maintenance">Operations and maintenance</h2>
 <ul>
-<li>Admin page: <code>frontend/src/pages/dashboard/admin/settings/messages-config</code>.</li>
-<li>Providers are listed in the UI. Toggle <strong>Active</strong> to enable one gateway and
-  select <strong>Default</strong> for the provider used for most messages.</li>
-<li>The Infobip form asks for <strong>API Key</strong>, <strong>Sender ID</strong> and <strong>Base URL / Region</strong>.
-  Enter your API key <em>without</em> the <code>App</code> prefix; the app will add it
-  automatically.</li>
-<li>The verification dialogs display a "Default OTP: <code>123456</code>" hint so users can
-  proceed even if SMS delivery fails during testing.</li>
+<li><a href="./release-checklist.html">Release checklist</a> – required before cutting a new
+  Envato submission, including regenerating static documentation.</li>
+<li><a href="./book-workflow.html">Book management workflow</a> and
+  <a href="./class-lifecycle-workflow.html">class lifecycle overview</a> – ensure admin teams
+  understand how to manage content after launch.</li>
+<li><a href="./admin-alerts.html">Alerts, ads, coupons, and messaging</a>,
+  <a href="./admin-ads-management.html">admin ads management</a>, and
+  <a href="./messages-config.html">messages configuration</a> – configure in-app engagement
+  tools.</li>
+<li><a href="./admin-third-party-integrations.html">Third-party integrations</a> – connect
+  social login providers and other external services.</li>
 </ul>
-<p>Once saved, SMS OTPs will be delivered through the active provider.</p>
+<h2 id="student-experience">Student experience</h2>
+<ul>
+<li><a href="./student-registration-guide.html">Student registration guide</a> – walk students
+  through account creation and verification.</li>
+<li><a href="./student-enrollment-workflow.html">Enrollment workflow</a> – explain how classes
+  are booked and tracked.</li>
+<li><a href="./subscription-plan-style.html">Subscription styling tips</a> – customise pricing
+  pages to match your brand.</li>
+</ul>
+<h2 id="reference-material">Reference material</h2>
+<ul>
+<li><a href="./api-docs.html">API documentation</a> – REST endpoints exposed by the backend.</li>
+<li><a href="./architecture.html">Architecture overview</a> – how the services communicate and
+  which infrastructure components are required.</li>
+<li><a href="./license-verification.html">License verification with CodeCanyon/Envato</a> –
+  backend flow for validating purchase codes.</li>
+<li><a href="./payment-icon-sources.html">Payment icon sources</a> – attribution for bundled
+  assets.</li>
+</ul>
+<p>Looking for something else? Browse the rest of the <code>docs/</code> directory or use the
+sidebar navigation in any HTML guide. All Markdown files are converted to HTML
+when you run <code>python scripts/generate_docs_html.py</code>, so the release bundle
+always includes an offline-friendly knowledge base.</p>
     </article>
   </main>
 </body>
