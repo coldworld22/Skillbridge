@@ -42,7 +42,7 @@ const create = async (data) => {
 const update = async (id, data) => {
   const rows = await db("certificate_templates")
     .where({ id })
-    .update(data)
+    .update(payload)
     .returning("*");
   if (!rows.length) return null;
   return rows[0];
@@ -52,7 +52,6 @@ const remove = async (id) => {
   const deleted = await db("certificate_templates").where({ id }).del();
   return deleted;
 };
-
 const toggleStatus = async (id) => {
   const [row] = await db("certificate_templates")
     .where({ id })
@@ -75,7 +74,6 @@ const duplicate = async (id) => {
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
 };
-
 module.exports = {
   getAll,
   getById,
