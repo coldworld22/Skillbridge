@@ -792,10 +792,7 @@ function CreateOnlineClass() {
                     {t('server_upload_in_progress', { defaultValue: 'Server upload in progress...' })}
                   </>
                 ) : (
-                  <>
-                    <FaCheck className="mr-2" />
-                    {t('create_class')}
-                  </>
+                  t(currentStep === 1 ? 'next' : 'create_class')
                 )}
               </button>
             </div>
