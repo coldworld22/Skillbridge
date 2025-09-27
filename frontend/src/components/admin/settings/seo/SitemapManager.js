@@ -3,6 +3,8 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
 
+const DEFAULT_PAGE = { path: "/", include: true, priority: 1.0, freq: "daily" };
+
 export default function SitemapManager({ config, update, availablePages }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.sitemap" });
   const defaultPages = () => [

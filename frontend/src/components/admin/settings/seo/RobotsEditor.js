@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
@@ -7,10 +7,18 @@ export default function RobotsEditor({ config, update }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.robots" });
   const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL ||
     (typeof window !== "undefined" ? window.location.origin : "");
-  const defaultContent = `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${fallbackUrl}/sitemap.xml`;
+  const defaultContent = `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${fallbackUrl}/uploads/seo/sitemap.xml`;
 
   const [content, setContent] = useState(config.robots || defaultContent);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (config?.robots) {
+      setContent(config.robots);
+    } else {
+      setContent(defaultContent);
+    }
+  }, [config?.robots, defaultContent]);
 
   const handleSave = async () => {
     const updated = { ...config, robots: content };
