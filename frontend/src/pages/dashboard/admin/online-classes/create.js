@@ -30,7 +30,7 @@ import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
-import { toDateTimeISO } from '@/utils/date';
+import { toDateTimeISO, toLocalDateStartISO } from '@/utils/date';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -278,9 +278,9 @@ function CreateOnlineClass() {
         if (formData.level) payload.append('level', formData.level);
         if (formData.language) payload.append('language', formData.language);
         if (formData.startDate)
-          payload.append('start_date', toDateTimeISO(formData.startDate));
+          payload.append('start_date', toLocalDateStartISO(formData.startDate));
         if (formData.endDate)
-          payload.append('end_date', toDateTimeISO(formData.endDate));
+          payload.append('end_date', toLocalDateStartISO(formData.endDate));
 
         payload.append('access_type', formData.accessType);
         if (formData.accessType === 'free') {
@@ -319,7 +319,7 @@ function CreateOnlineClass() {
           {
             id: `class-${newClass.id}`,
             title: `Class: ${newClass.title}`,
-            start: toDateTimeISO(formData.startDate || newClass.start_date),
+            start: toLocalDateStartISO(formData.startDate || newClass.start_date),
           },
           ...formData.lessons.map((l, idx) => ({
             id: `lesson-${newClass.id}-${idx}`,
