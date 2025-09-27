@@ -39,6 +39,8 @@ const resolveDocLink = (href) => {
 };
 
 const DOCS_DIR_CANDIDATES = [
+  path.join(process.cwd(), 'public', 'docs'),
+  path.resolve(moduleDir, '../../../public/docs'),
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),

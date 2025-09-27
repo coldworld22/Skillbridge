@@ -17,6 +17,8 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 const DOCS_DIR_CANDIDATES = [
+  path.join(process.cwd(), 'public', 'docs'),
+  path.resolve(moduleDir, '../../../public/docs'),
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
