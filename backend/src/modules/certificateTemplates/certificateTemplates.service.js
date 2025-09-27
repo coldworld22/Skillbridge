@@ -4,6 +4,16 @@ exports.getAll = async () => {
   return db("certificate_templates").select("*").orderBy("created_at", "desc");
 };
 
+exports.getActiveTemplate = async () => {
+  return db("certificate_templates")
+    .where({ active: true })
+    .orderBy([
+      { column: "updated_at", order: "desc" },
+      { column: "created_at", order: "desc" },
+    ])
+    .first();
+};
+
 exports.getById = async (id) => {
   return db("certificate_templates").where({ id }).first();
 };
