@@ -8,6 +8,8 @@ const { requireUserAndTutorial } = require("../utils");
 
 exports.generateCertificate = catchAsync(async (req, res) => {
   const { userId, tutorialId } = requireUserAndTutorial(req);
+  const body = req.body || {};
+  const templateId = body.templateId || body.template_id || null;
 
   // 1. Validate completion (including assignments)
   const completed = await service.isUserCompletedTutorial(userId, tutorialId);
@@ -22,7 +24,7 @@ exports.generateCertificate = catchAsync(async (req, res) => {
   if (existing) return sendSuccess(res, existing, "Certificate already issued");
 
   // 3. Create new
-  const newCert = await service.issueCertificate({ userId, tutorialId });
+  const newCert = await service.issueCertificate({ userId, tutorialId, templateId });
 
   // 4. Notify user
   const tutorial = await db("tutorials").where({ id: tutorialId }).first();

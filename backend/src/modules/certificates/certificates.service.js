@@ -15,10 +15,12 @@ exports.getAll = async ({ page = 1, limit = 10 } = {}) => {
   return db("certificates")
     .leftJoin("users", "certificates.user_id", "users.id")
     .leftJoin("online_classes", "certificates.class_id", "online_classes.id")
+    .leftJoin("certificate_templates as ct", "ct.id", "certificates.template_id")
     .select(
       "certificates.*",
       "users.full_name as student_name",
-      "online_classes.title as class_name"
+      "online_classes.title as class_name",
+      db.raw("row_to_json(ct) as template")
     )
     .orderBy("certificates.created_at", "desc")
     .offset(offset)

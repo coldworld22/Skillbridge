@@ -53,12 +53,16 @@ describe("generate certificate route", () => {
     service.findExisting.mockResolvedValue(null);
     service.issueCertificate.mockResolvedValue({ id: "cert1" });
 
-    const res = await request(app).post(
-      `/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`,
-    );
+    const res = await request(app)
+      .post(`/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`)
+      .send({ templateId: "tpl-123" });
 
     expect(res.statusCode).toBe(200);
-    expect(service.issueCertificate).toHaveBeenCalled();
+    expect(service.issueCertificate).toHaveBeenCalledWith({
+      userId: "user1",
+      tutorialId: TUTORIAL_ID,
+      templateId: "tpl-123",
+    });
   });
 });
 

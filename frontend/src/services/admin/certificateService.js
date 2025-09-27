@@ -2,6 +2,7 @@
 // Admin Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
+import { toSnakeCase } from "@/utils/case";
 
 /**
  * Fetch all certificates for admin
@@ -33,13 +34,13 @@ export const rejectCertificate = async (id) => {
 
 /** Issue certificate manually */
 export const issueCertificate = async (payload) => {
-  const { data } = await api.post("/certificates/admin", payload);
+  const { data } = await api.post("/certificates/admin", toSnakeCase(payload));
   return data?.data;
 };
 
 /** Update certificate */
 export const updateCertificate = async (id, payload) => {
-  const { data } = await api.put(`/certificates/admin/${id}`, payload);
+  const { data } = await api.put(`/certificates/admin/${id}`, toSnakeCase(payload));
   return data?.data;
 };
 
