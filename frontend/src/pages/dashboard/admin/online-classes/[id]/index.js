@@ -6,7 +6,6 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
-import { safeEncodeURI } from "@/utils/url";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -82,7 +81,7 @@ function AdminClassDetailPage() {
           <h3 className="text-sm font-medium text-gray-700">{t('adminClassDetailPage.class_demo_video')}</h3>
                 </div>
                 <CustomVideoPlayer
-                  videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
+                  videos={[{ src: details.demo_video_url }]}
                 />
               </div>
             )}
