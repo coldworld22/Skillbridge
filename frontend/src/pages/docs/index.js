@@ -13,9 +13,9 @@ import Footer from '@/components/website/sections/Footer';
 import Navbar from '@/components/website/sections/Navbar';
 import PageHead from '@/components/common/PageHead';
 import nextI18NextConfig from '../../../next-i18next.config.js';
+import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
-
 const DOCS_DIR_CANDIDATES = [
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
@@ -47,7 +47,6 @@ function sanitizeSlug(value) {
     .filter(Boolean)
     .join('/');
 }
-
 function extractTitleFromContent(content, fallback) {
   const match = content.match(/^#\s+(.+)/m);
   if (match) {
@@ -261,7 +260,7 @@ export default function DocumentationLandingPage({ docs, installationContent, in
 }
 
 export async function getStaticProps({ locale }) {
-  const docsDir = await resolveDocsDirectory();
+  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
   let docs = [];
   let installationContent = null;
   let installationFormat = null;

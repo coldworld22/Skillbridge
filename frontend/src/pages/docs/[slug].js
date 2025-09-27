@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DOMPurify from 'isomorphic-dompurify';
 import cheerio from 'cheerio';
+import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
@@ -46,31 +47,8 @@ const resolveDocLink = (href) => {
   return slug ? `/docs/${slug}` : href;
 };
 
-const DOCS_DIR_CANDIDATES = [
-  path.join(process.cwd(), 'docs'),
-  path.join(process.cwd(), '..', 'docs'),
-  path.join(process.cwd(), '..', '..', 'docs'),
-  path.resolve(moduleDir, '../../docs'),
-  path.resolve(moduleDir, '../../../docs'),
-];
-
-async function resolveDocsDirectory() {
-  for (const candidate of DOCS_DIR_CANDIDATES) {
-    try {
-      const stats = await fs.stat(candidate);
-      if (stats.isDirectory()) {
-        return candidate;
-      }
-    } catch (error) {
-      // Ignore missing paths and keep checking candidates.
-    }
-  }
-
-  return null;
-}
-
 export async function getStaticPaths() {
-  const docsDir = await resolveDocsDirectory();
+  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
   let entries = [];
   if (!docsDir) {
     console.warn('Documentation directory not found while generating static paths.');
@@ -103,7 +81,7 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  const docsDir = await resolveDocsDirectory();
+  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
   if (!docsDir) {
     console.error('Documentation directory not available while generating static props.');
     return {
