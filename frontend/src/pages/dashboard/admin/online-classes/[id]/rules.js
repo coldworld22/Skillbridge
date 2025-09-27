@@ -36,18 +36,18 @@ function ClassRulesPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleAdd = async (payload) => {
+  const handleAdd = async ({ text }) => {
     try {
-      const created = await createClassRule(id, payload);
+      const created = await createClassRule(id, { text });
       if (created) setRules((prev) => [...prev, created]);
     } catch (err) {
       console.error('Failed to create rule', err);
     }
   };
 
-  const handleUpdate = async (ruleId, payload) => {
+  const handleUpdate = async (ruleId, { text }) => {
     try {
-      const updated = await updateClassRule(id, ruleId, payload);
+      const updated = await updateClassRule(id, ruleId, { text });
       if (updated) setRules((prev) => prev.map((r) => (r.id === ruleId ? updated : r)));
     } catch (err) {
       console.error('Failed to update rule', err);
