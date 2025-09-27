@@ -11,6 +11,7 @@ RUN mkdir -p /app \
 WORKDIR /app
 RUN npm ci && npm cache clean --force
 COPY frontend/ ./
+COPY docs ./docs
 RUN cp /tmp/sanitized-package.json package.json
 COPY shared /shared
 
@@ -72,9 +73,11 @@ RUN mkdir -p /app \
 WORKDIR /app
 RUN npm ci --omit=dev && npm cache clean --force
 COPY frontend/ ./
+COPY docs ./docs
 RUN cp /tmp/sanitized-package.json package.json
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /shared /shared
 RUN addgroup -S app && adduser -S -G app app && chown -R app:app /app
