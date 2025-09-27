@@ -95,12 +95,14 @@ function TutorialsTable({
                   </td>
                   <td className="py-3 px-4">
                     <img
-                      src={tutorial.thumbnail || "/default-thumbnail.jpg"}
+                      src={
+                        tutorial.thumbnail || "/images/default-tutorial.jpg"
+                      }
                       alt={tutorial.title}
                       className="h-14 w-24 object-cover rounded-lg border"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/default-thumbnail.jpg";
+                        e.target.src = "/images/default-tutorial.jpg";
                       }}
                     />
                   </td>
