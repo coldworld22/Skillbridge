@@ -56,6 +56,7 @@ function CreateOnlineClass() {
     lessonCount: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isServerUploading, setIsServerUploading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -206,7 +207,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -271,7 +272,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || 'Upload failed. Please try again.');
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };
@@ -722,10 +723,10 @@ function CreateOnlineClass() {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isServerUploading}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
+                {isSubmitting || isServerUploading ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
                     {currentStep === 1 ? 'Processing...' : 'Submitting...'}
