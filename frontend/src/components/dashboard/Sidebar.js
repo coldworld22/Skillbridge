@@ -58,12 +58,15 @@ export default function Sidebar({ role = 'admin' }) {
 
   const shouldUseSettings = isHydrated && appConfigHydrated;
   const fallbackAppName = 'SkillBridge';
+  const fallbackLogoSrc = logo.src || logo;
   const displayAppName =
     shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
   const logoSrc =
     shouldUseSettings && settings?.logo_url
       ? buildUrl(settings.logo_url)
-      : logo.src || logo;
+      : fallbackLogoSrc;
+  const footerBranding =
+    shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
 
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 shadow-lg p-6 flex flex-col justify-between">
@@ -160,7 +163,7 @@ export default function Sidebar({ role = 'admin' }) {
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
         &copy;{' '}
         {currentYear ? `${currentYear} ` : ''}
-        {settings?.appName || 'SkillBridge'}
+        {footerBranding}
       </div>
     </aside>
   );
