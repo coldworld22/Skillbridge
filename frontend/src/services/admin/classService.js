@@ -5,7 +5,7 @@ import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
 const formatClass = (cls) => {
-  const { status, ...rest } = cls;
+  const { status, schedule_status, ...rest } = cls;
   return {
     ...rest,
     publishStatus: status,
@@ -33,7 +33,8 @@ const formatClass = (cls) => {
     endDateInput: cls.end_date ? toDateInput(cls.end_date) : "",
 
     approvalStatus: cls.moderation_status || "Pending",
-    scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+    scheduleStatus:
+      schedule_status || computeScheduleStatus(cls.start_date, cls.end_date),
     views: cls.views || 0,
   };
 };
@@ -44,11 +45,13 @@ export const fetchAdminClasses = async ({
   filter = "",
   approval = "All",
   status = "All",
+  schedule,
 } = {}) => {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (filter) params.set("filter", filter);
   if (approval && approval !== "All") params.set("approval", approval);
   if (status && status !== "All") params.set("status", status);
+  if (schedule) params.set("schedule", schedule);
   const { data } = await api.get(`/users/classes/admin?${params.toString()}`);
   const list = data?.data ?? [];
   return { data: list.map(formatClass), meta: data?.meta || {} };

@@ -118,6 +118,7 @@
   "rejected": "Respinto",
   "free_class": "Classe gratuita",
   "free_label": "Gratuito",
+  "rejection_reason_min_length": "Fornisci almeno 3 caratteri per il motivo del rifiuto.",
   "allow_installments": "Consentire rate",
   "publish_immediately": "Pubblica immediatamente",
   "description_label": "Descrizione",

@@ -32,6 +32,7 @@ import {
 } from "react-icons/fa";
 
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
+const MIN_REJECTION_REASON_LENGTH = 3;
 
 export const mapStatusFilterToQuery = (filterStatus) => {
   if (!filterStatus || filterStatus === "All") {
@@ -84,6 +85,7 @@ export default function AdminClassesTable() {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const [isMounted, setMounted] = useState(false);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
@@ -188,35 +190,74 @@ export default function AdminClassesTable() {
       .map((value) => `"${String(value).replace(/"/g, '""')}"`)
       .join(",");
 
-  const exportCSV = () => {
-    const headers = [
-      "Title",
-      "Instructor",
-      "Start Date",
-      "End Date",
-      "Category",
-      "Publish Status",
-    ];
-    const rows = classList.map((cls) => [
-      cls.title,
-      cls.instructor,
-      cls.start_date,
-      cls.end_date,
-      cls.category,
-      cls.publishStatus,
-    ]);
-    const csvRows = [headers, ...rows].map(formatCSVRow);
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "online_classes.csv");
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    toast.success("Classes exported");
+  const exportCSV = async () => {
+    try {
+      setExporting(true);
+      const statusQuery = mapStatusFilterToQuery(filterStatus);
+      const limit = 100;
+      let page = 1;
+      let allClasses = [];
+      // Fetch every page of classes that match the current filters
+      while (true) {
+        const { data, meta } = await fetchAdminClasses({
+          page,
+          limit,
+          filter: searchTerm,
+          approval: filterApproval !== "All" ? filterApproval : undefined,
+          status: statusQuery,
+        });
+        allClasses = allClasses.concat(data);
+        const metaTotalPages =
+          meta?.totalPages || meta?.total_pages || meta?.totalpages;
+        if ((metaTotalPages && page >= metaTotalPages) || data.length < limit) {
+          break;
+        }
+        page += 1;
+      }
+
+      const filteredClasses = shouldApplyScheduleFilter(filterStatus)
+        ? allClasses.filter(
+            (cls) =>
+              cls.scheduleStatus?.toLowerCase() === filterStatus.toLowerCase()
+          )
+        : allClasses;
+      const sortedClasses = [...filteredClasses].sort((a, b) =>
+        a[sortKey] > b[sortKey] ? 1 : -1
+      );
+      const headers = [
+        "Title",
+        "Instructor",
+        "Start Date",
+        "End Date",
+        "Category",
+        "Publish Status",
+      ];
+      const rows = sortedClasses.map((cls) => [
+        cls.title,
+        cls.instructor,
+        cls.start_date,
+        cls.end_date,
+        cls.category,
+        cls.publishStatus,
+      ]);
+      const csvRows = [headers, ...rows].map(formatCSVRow);
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "online_classes.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Classes exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export classes");
+    } finally {
+      setExporting(false);
+    }
   };
 
   
@@ -321,6 +362,27 @@ export default function AdminClassesTable() {
     }
   };
 
+  const trimmedRejectionReason = rejectionReason.trim();
+  const isRejectionReasonValid =
+    trimmedRejectionReason.length >= MIN_REJECTION_REASON_LENGTH;
+
+  const handleModalConfirm = () => {
+    if (!modalClass) {
+      return;
+    }
+
+    if (modalType === 'reject') {
+      if (!isRejectionReasonValid) {
+        toast.error(t('rejection_reason_min_length'));
+        return;
+      }
+      handleStatusChange(modalClass.id, 'reject', trimmedRejectionReason);
+      return;
+    }
+
+    handleDeleteClass(modalClass.id);
+  };
+
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
 
@@ -394,10 +456,17 @@ export default function AdminClassesTable() {
           </select>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-xl px-4 py-2"
-            title="Export all classes to CSV"
+            className={`flex items-center gap-2 text-sm text-white rounded-xl px-4 py-2 ${
+              exporting ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            }`}
+            title={
+              exporting
+                ? "Export in progress"
+                : "Export all filtered classes to CSV"
+            }
+            disabled={exporting}
           >
-            <FaDownload /> Export
+            <FaDownload /> {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
       </div>
@@ -588,10 +657,11 @@ export default function AdminClassesTable() {
             <div className="flex justify-center gap-4">
               <button onClick={() => setModalClass(null)} className="bg-gray-200 px-4 py-2 rounded">Cancel</button>
               <button
-                onClick={() => modalType === 'reject'
-                  ? handleStatusChange(modalClass.id, 'reject', rejectionReason)
-                  : handleDeleteClass(modalClass.id)}
-                className={`px-4 py-2 rounded text-white ${modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'}`}
+                onClick={handleModalConfirm}
+                disabled={modalType === 'reject' && !isRejectionReasonValid}
+                className={`px-4 py-2 rounded text-white ${
+                  modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 Yes, {modalType === 'reject' ? 'Reject' : 'Delete'}
               </button>
