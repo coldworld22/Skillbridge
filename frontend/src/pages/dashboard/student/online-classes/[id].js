@@ -16,6 +16,7 @@ const computeScheduleStatus = (start, end) => {
   const e = end ? new Date(end) : null;
   if (s && now < s) return "Upcoming";
   if (s && e && now >= s && now <= e) return "Ongoing";
+  if (s && !e && now >= s) return "Ongoing";
   if (e && now > e) return "Completed";
   return "Upcoming";
 };
