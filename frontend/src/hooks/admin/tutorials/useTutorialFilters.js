@@ -9,9 +9,12 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
 
   const filteredTutorials = useMemo(() => {
     return tutorials.filter((tut) => {
+      const normalizedTitle = (tut.title ?? "").toLowerCase();
+      const normalizedInstructor = (tut.instructor ?? "").toLowerCase();
+      const normalizedSearch = searchQuery.toLowerCase();
       const matchesSearch =
-        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+        normalizedTitle.includes(normalizedSearch) ||
+        normalizedInstructor.includes(normalizedSearch);
       const matchesCategory =
         filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
