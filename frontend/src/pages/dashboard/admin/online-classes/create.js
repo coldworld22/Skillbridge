@@ -92,15 +92,34 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [isImageUploading, setIsImageUploading] = useState(false);
-  const [isVideoUploading, setIsVideoUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [failedLessonIndices, setFailedLessonIndices] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
   const [instructorSearch, setInstructorSearch] = useState('');
   const [instructorsPage, setInstructorsPage] = useState(1);
   const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
   const [loadingInstructors, setLoadingInstructors] = useState(false);
+
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading,
+    handleImageUpload: mediaImageUpload,
+    handleVideoUpload: mediaVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    t,
+    onError: (message) => toast.error(message),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+  });
+
+  const priceValue = useMemo(() => {
+    const parsed = Number.parseFloat(formData.price);
+    return Number.isNaN(parsed) ? NaN : parsed;
+  }, [formData.price]);
 
   const demoPreview = formData.demoPreview;
 
@@ -861,7 +880,11 @@ function CreateOnlineClass() {
                       formData.lessons.map((lesson, index) => (
                         <div
                           key={lesson.id}
-                          className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4"
+                          className={`border rounded-lg p-4 space-y-4 ${
+                            failedLessonIndices.includes(index)
+                              ? 'border-red-300 bg-red-50'
+                              : 'border-gray-200 bg-gray-50'
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <h3 className="text-sm font-medium text-gray-800">
@@ -935,6 +958,15 @@ function CreateOnlineClass() {
                               </div>
                             </div>
                           </div>
+
+                          {failedLessonIndices.includes(index) && (
+                            <p className="text-sm text-red-600">
+                              {t('lesson_requires_attention', {
+                                defaultValue:
+                                  'We could not save this lesson. Please review its details and try again.',
+                              })}
+                            </p>
+                          )}
                         </div>
                       ))
                     )}

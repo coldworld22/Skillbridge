@@ -32,7 +32,9 @@ export default function PopupAnnouncement() {
         }
         setPopup(ann);
       } catch (err) {
-        console.error("Failed to load popup", err);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Failed to load popup", err);
+        }
       }
     };
     fetchPopup();
