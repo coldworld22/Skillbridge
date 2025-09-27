@@ -79,8 +79,8 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const demoPreview = formData.demoPreview;
@@ -99,7 +99,9 @@ function CreateOnlineClass() {
         (t) =>
           tagInput &&
           t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.includes(t.name)
+          !selectedTags.some(
+            (selected) => selected.toLowerCase() === t.name.toLowerCase()
+          )
       ),
     [allTags, tagInput, selectedTags]
   );
@@ -143,7 +145,7 @@ function CreateOnlineClass() {
       toast.error(t('image_size_exceeded'));
       return;
     }
-    setImageUploading(true);
+    setIsImageUploading(true);
     setUploadProgress(0);
 
     const reader = new FileReader();
@@ -160,11 +162,11 @@ function CreateOnlineClass() {
         imagePreview: reader.result
       }));
       setUploadProgress(100);
-      setImageUploading(false);
+      setIsImageUploading(false);
     };
     reader.onerror = () => {
       toast.error(t('image_preview_failed'));
-      setImageUploading(false);
+      setIsImageUploading(false);
     };
     reader.readAsDataURL(file);
   };
@@ -183,7 +185,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(true);
+    setIsVideoUploading(true);
     setUploadProgress(0);
     const previewUrl = URL.createObjectURL(file);
     setFormData((prev) => {
@@ -197,14 +199,23 @@ function CreateOnlineClass() {
       };
     });
     setUploadProgress(100);
-    setVideoUploading(false);
+    setIsVideoUploading(false);
   };
 
   const addTag = (tag) => {
-    if (tag && !selectedTags.includes(tag)) {
-      setSelectedTags((prev) => [...prev, tag]);
+    const normalized = tag.trim();
+    if (!normalized) return;
+
+    const alreadySelected = selectedTags.some(
+      (existing) => existing.toLowerCase() === normalized.toLowerCase()
+    );
+    if (alreadySelected) {
       setTagInput('');
+      return;
     }
+
+    setSelectedTags((prev) => [...prev, normalized]);
+    setTagInput('');
   };
 
   const removeTag = (tagToRemove) => {
@@ -242,6 +253,13 @@ function CreateOnlineClass() {
       // Step 2 validation and submission
       if (formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error(t('complete_lesson_details'));
+        return;
+      }
+      if (
+        formData.accessType === 'paid' &&
+        (!formData.price || Number(formData.price) <= 0)
+      ) {
+        toast.error(t('invalid_price', { defaultValue: 'Please provide a valid price for paid classes.' }));
         return;
       }
       if (!user?.id) {
@@ -601,7 +619,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {imageUploading ? (
+                            {isImageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -648,7 +666,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {videoUploading ? (
+                            {isVideoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
