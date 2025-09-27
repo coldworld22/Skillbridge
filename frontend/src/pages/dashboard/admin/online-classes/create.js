@@ -146,8 +146,20 @@ function CreateOnlineClass() {
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
-      .then((res) => setCategories(res || []))
-      .catch(() => setCategories([]));
+      .then((res) => {
+        if (Array.isArray(res?.data)) {
+          setCategories(res.data);
+        } else if (Array.isArray(res)) {
+          setCategories(res);
+        } else {
+          console.warn('Unexpected categories payload format', res);
+          setCategories([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch categories', err);
+        setCategories([]);
+      });
     fetchClassTags()
       .then(setAllTags)
       .catch(() => setAllTags([]));
