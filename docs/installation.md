@@ -68,122 +68,102 @@ that the installer enforces.
 
 Open a fresh terminal after installing these tools so PATH changes take effect,
 then rerun `./install.sh` or revisit `/install` to confirm the checks pass.
+## Install from ZIP release
 
-## 0. Deploying from the memonet-distributed zip
+If you purchased SkillBridge on CodeCanyon (released as **memonet**), the
+downloadable ZIP already contains the full repository. Use this workflow when
+you would rather upload the packaged build than clone from Git.
 
-If you receive SkillBridge as the pre-packaged **memonet** archive instead of
-cloning the Git repository, complete these steps before running any installer
-scripts.
+1. **Upload the archive.**
+   - **Local workstation:** download the ZIP and move it into the directory
+     where you want the project to live.
+   - **Remote server:** copy the file to the server with a tool such as `scp`
+     or `rsync`:
 
-### Download, verify, and extract
+     ```bash
+     scp Skillbridge-v1.0.0.zip deploy@example.com:/var/www
+     ```
 
-1. Download the `skillbridge-memonet-<version>.zip` package from your memonet
-   distribution portal. Record the checksum that accompanies the download.
-2. Verify the archive so you know it was not tampered with during transit:
-
-   ```bash
-   sha256sum skillbridge-memonet-<version>.zip
-   # Compare the resulting hash to the published checksum
-   ```
-
-3. Extract the package on the target machine (or on your workstation if you
-   plan to upload the files afterward):
+2. **Extract and rename the project directory** so the root folder is named
+   `Skillbridge/`:
 
    ```bash
-   unzip skillbridge-memonet-<version>.zip -d Skillbridge
+   unzip Skillbridge-v1.0.0.zip
+   mv Skillbridge-v1.0.0 Skillbridge
    cd Skillbridge
    ```
 
-   The archive mirrors the Git repository layout and includes the `backend/`,
-   `frontend/`, `install/`, `scripts/`, and `docker-compose.yml` directories at
-   the top level.
+   The install scripts expect to run from the project root. If the archive
+   extracts to a nested directory, rename or move it until
+   `install.sh`, `docker-compose.yml`, `backend/`, and `frontend/` sit directly
+   under `Skillbridge/`.
 
-### Uploading to your hosting environment
+3. **Fix file ownership and permissions.** On Linux servers ensure the deploy
+   user owns the files and that the helper scripts are executable:
 
-The extracted folder is ready to deploy as-is. Ensure the root directory on
-your server looks like this once the transfer completes:
+   ```bash
+   sudo chown -R deploy:deploy Skillbridge
+   chmod +x install.sh scripts/*.sh
+   ```
 
-```
-Skillbridge/
-├── backend/
-├── docker-compose.yml
-├── frontend/
-├── install/
-├── install.sh
-├── nginx/
-└── scripts/
-```
+   Skip the `chown` step on macOS or Windows if you extracted the archive as
+   your own user.
 
-- **Local workstation:** move or copy the extracted directory to the location
-  where you normally run development projects (for example `~/Projects`).
-- **Remote or production server:** upload the entire directory via `scp`, rsync,
-  or your preferred deployment tool. Example using rsync:
+4. **Copy the environment templates.** The packaged archive ships with
+   `.env.example` files so you can bootstrap configuration without Git:
 
-  ```bash
-  rsync -avz Skillbridge/ user@your-server:/var/www/skillbridge/
-  ssh user@your-server "cd /var/www/skillbridge && ls"
-  ```
+   ```bash
+   cp .env.example .env
+   cp backend/.env.example backend/.env
+   cp backend/.env.production.example backend/.env.production
+   cp frontend/.env.local.example frontend/.env.local
+   ```
 
-  Confirm the directory structure on the server matches the tree above.
+   Adjust `backend/.env` for local development. When preparing a live host also
+   update `backend/.env.production` and the frontend files with your domain,
+   database, and SMTP credentials. See [deployment.md](./deployment.md) for TLS
+   requirements, domain-specific variables, and email guidance.
 
-### Create environment files without Git metadata
+5. **Run the installer.** From the project root execute `install.sh`. The
+   script prompts for environment type and handles prerequisites, migrations,
+   seeds, and the initial admin account.
 
-Because the zip omits Git metadata hooks, copy the example environment files
-manually before running any scripts:
+   ```bash
+   ./install.sh
+   ```
 
-```bash
-cp .env.example .env
-cp backend/.env.example backend/.env
-cp backend/.env.production.example backend/.env.production
-cp frontend/.env.local.example frontend/.env.local
-```
+   For unattended production setups you can pass arguments as documented in
+   [deployment.md](./deployment.md) (for example
+   `./install.sh production yourdomain.com`).
 
-Fill in the mandatory variables after copying:
+6. **Start the containers.**
+   - **Local development:**
 
-- **Root `.env`:** supply `APP_ENV`, `APP_URL`, and any global overrides used by
-  scripts.
-- **`backend/.env`:** configure `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`,
-  and any SMTP credentials. In production also review
-  `backend/.env.production`.
-- **`frontend/.env.local`:** set `NEXT_PUBLIC_API_URL` so the frontend points to
-  the correct backend origin.
+     ```bash
+     docker compose up --build
+     ```
 
-Refer to the inline comments in each example file for additional optional
-values.
+   - **Production host:**
 
-### Install dependencies and bootstrap services
+     ```bash
+     docker compose up -d --build
+     ```
 
-When installing from the archive the `node_modules/` directories are excluded.
-Run the installs explicitly before executing migrations or the installer:
+   If you prefer to manage Docker manually, launch the stack after the
+   installer finishes. Review [deployment.md](./deployment.md) for production
+   follow-up tasks such as enabling TLS, updating Nginx, and running migrations
+   in detached environments.
 
-```bash
-npm --prefix backend install
-npm --prefix frontend install
-```
+   When you bypass the automated installer, apply database changes manually
+   before serving traffic:
 
-Once dependencies are present you can run the usual database bootstrap
-commands:
+   ```bash
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed
+   ```
 
-```bash
-npm --prefix backend run migrate
-npm --prefix backend run seed   # optional, requires SEED_DB=true or manual run
-docker compose up -d
-```
-
-The `install.sh` helper will perform many of these steps automatically, but the
-manual commands above are useful when you prefer finer-grained control.
-
-### Zip-specific troubleshooting
-
-- **File permissions:** some archive tools strip execute bits. After uploading,
-  ensure the installer is runnable: `chmod +x install.sh install/*.sh`.
-- **Uploads directory ownership:** verify `backend/uploads/app` exists and is
-  writable by the user running Docker containers (often UID 1000 on Linux).
-- **Cache and dependency resets:** if services behave unexpectedly after
-  extraction, delete `backend/node_modules`, `frontend/node_modules`, and any
-  `*.next/` caches before reinstalling dependencies.
-- **Checksum mismatches:** re-download the archive if the SHA-256 hash does not
-  match the published value.
+After unpacking a release you can pull future updates from Git or repeat the
+workflow with the next packaged ZIP.
 
 ## 1. Clone the repository
 
