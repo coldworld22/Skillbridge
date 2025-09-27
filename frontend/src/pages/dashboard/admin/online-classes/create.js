@@ -305,6 +305,7 @@ function CreateOnlineClass() {
   };
 
   const handleRemoveLesson = (index) => {
+    const lessonToRemove = formData.lessons[index];
     setFormData((prev) => ({
       ...prev,
       lessons: prev.lessons.filter((_, idx) => idx !== index),
@@ -1004,7 +1005,13 @@ function CreateOnlineClass() {
                         {t('no_lessons_added')}
                       </p>
                     ) : (
-                      formData.lessons.map((lesson, index) => (
+                      formData.lessons.map((lesson, index) => {
+                        const result = lessonResults[lesson.id];
+                        const wasSkipped = Boolean(result?.value?.skipped);
+                        const wasSuccessful =
+                          result?.status === 'fulfilled' &&
+                          (wasSkipped || Boolean(successfulLessons[lesson.id]));
+                        return (
                         <div
                           key={lesson.id}
                           className={`border rounded-lg p-4 space-y-4 ${
@@ -1094,8 +1101,18 @@ function CreateOnlineClass() {
                               })}
                             </p>
                           )}
+
+                          {!failedLessonIndices.includes(index) && wasSuccessful && (
+                            <p className="text-sm text-green-600">
+                              {t('lesson_already_uploaded', {
+                                defaultValue:
+                                  'This lesson was uploaded successfully and will be skipped on retry.',
+                              })}
+                            </p>
+                          )}
                         </div>
-                      ))
+                      );
+                      })
                     )}
 
                     <div className="flex justify-end">

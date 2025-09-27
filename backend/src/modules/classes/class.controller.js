@@ -195,6 +195,7 @@ exports.getAllClasses = catchAsync(async (req, res) => {
     filter,
     approval,
     status,
+    schedule,
   } = req.query;
   const result = await service.getAllClasses({
     page: Number(page),
@@ -202,6 +203,7 @@ exports.getAllClasses = catchAsync(async (req, res) => {
     filter,
     approval,
     status,
+    schedule,
   });
   sendSuccess(res, result.data, undefined, result.meta);
 });
