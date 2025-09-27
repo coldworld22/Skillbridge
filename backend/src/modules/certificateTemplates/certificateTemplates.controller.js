@@ -23,6 +23,16 @@ exports.get = async (req, res, next) => {
   }
 };
 
+exports.preview = async (req, res, next) => {
+  try {
+    const preview = await service.getPreview(req.params.id);
+    if (!preview) return res.status(404).json({ message: "Template not found" });
+    sendSuccess(res, preview);
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.create = async (req, res, next) => {
   try {
     const template = await service.create(req.body);

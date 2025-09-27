@@ -1,24 +1,89 @@
+import { useEffect, useMemo, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code";
+import { getTemplatePreview } from "@/services/admin/certificateTemplateService";
 
 const isTemplateAsset = (url) =>
   typeof url === "string" &&
   url.startsWith("/api/uploads/certificateTemplates/");
 
-export default function CertificatePreviewModal({ template, onClose, mockData }) {
-  if (!template) return null;
+const buildFallbackPreview = (template) => {
+  const now = new Date();
+  const safeId = template?.id || `preview-${now.getTime()}`;
+  const courseName = template?.name ? `${template.name} Course` : "Sample Course";
+  const platformName = process.env.NEXT_PUBLIC_APP_NAME || "SkillBridge";
 
-  const defaultData = {
-    id: "ABC123",
-    studentName: "Student Name",
-    courseName: "Course Title",
-    issueDate: new Date().toISOString().split("T")[0],
-    instructor: "Instructor Name",
-    platformName: "Platform Name",
+  return {
+    id: safeId,
+    studentName: "Sample Student",
+    courseName,
+    issueDate: now.toISOString(),
+    instructor: "Sample Instructor",
+    platformName,
     grade: "A+",
+    certificateCode: `PREVIEW-${String(safeId).slice(0, 8).toUpperCase()}`,
   };
+};
 
-  const data = { ...defaultData, ...(mockData || {}) };
+export default function CertificatePreviewModal({
+  template,
+  onClose,
+  previewData,
+  loadingPreview = false,
+}) {
+  const [data, setData] = useState(previewData ?? null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setData(previewData ?? null);
+  }, [previewData]);
+
+  useEffect(() => {
+    if (!template) {
+      setData(null);
+      return;
+    }
+
+    if (previewData) return;
+
+    if (!template.id) {
+      setData(buildFallbackPreview(template));
+      return;
+    }
+
+    let mounted = true;
+    setIsLoading(true);
+
+    getTemplatePreview(template.id)
+      .then((payload) => {
+        if (!mounted) return;
+        if (payload) {
+          setData(payload);
+        } else {
+          setData(buildFallbackPreview(template));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load certificate preview", err);
+        if (mounted) setData(buildFallbackPreview(template));
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [template, previewData]);
+
+  const resolvedData = useMemo(() => {
+    if (!template) return null;
+    return data ?? buildFallbackPreview(template);
+  }, [data, template]);
+
+  if (!template || !resolvedData) return null;
+
+  const effectiveLoading = loadingPreview || isLoading;
 
   const {
     border_color,
@@ -44,6 +109,8 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
     ? logo
     : "/images/certificate/logo.png";
 
+  const serialValue = (resolvedData.certificateCode || `CERT-${String(resolvedData.id).slice(0, 6)}`).toUpperCase();
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-black/60 flex items-center justify-center z-50">
       <div className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl p-6 overflow-auto border border-gray-200">
@@ -66,6 +133,11 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
             fontFamily,
           }}
         >
+          {effectiveLoading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-20 rounded-xl">
+              <span className="text-gray-600 font-semibold">Loading preview...</span>
+            </div>
+          )}
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <img src={safeLogo} alt="Logo" className="w-32" />
@@ -81,23 +153,27 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
 
           <p className="text-lg text-gray-700 mb-1">This certifies that</p>
 
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-4">{data.studentName}</h2>
+          <h2 className="text-4xl font-extrabold text-gray-800 mb-4">
+            {resolvedData.studentName}
+          </h2>
 
           <p className="text-lg text-gray-700 mb-1">has successfully completed</p>
 
-          <h3 className="text-2xl italic text-gray-700 mb-6">"{data.courseName}"</h3>
+          <h3 className="text-2xl italic text-gray-700 mb-6">
+            "{resolvedData.courseName}"
+          </h3>
 
-          {data.grade && (
+          {resolvedData.grade && (
             <p className="text-lg text-gray-600 mb-4">
-              Final Grade: <span className="text-green-600 font-bold text-2xl">{data.grade}</span>
+              Final Grade: <span className="text-green-600 font-bold text-2xl">{resolvedData.grade}</span>
             </p>
           )}
 
           <p className="text-sm text-gray-500 mb-1">
-            Issued on: <strong>{new Date(data.issueDate).toLocaleDateString()}</strong>
+            Issued on: <strong>{new Date(resolvedData.issueDate).toLocaleDateString()}</strong>
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            Serial Number: <strong>CERT-{data.id.slice(0, 6).toUpperCase()}</strong>
+            Serial Number: <strong>{serialValue}</strong>
           </p>
 
           {/* Footer Row */}
@@ -105,7 +181,7 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
             {/* Instructor Signature */}
             <div className="text-center">
               <p className="text-sm text-gray-500">Instructor</p>
-              <h4 className="font-bold text-gray-700">{data.instructor}</h4>
+              <h4 className="font-bold text-gray-700">{resolvedData.instructor}</h4>
               <img
                 src="/images/certificate/instructor-signature.png"
                 alt="Instructor Signature"
@@ -118,7 +194,7 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
               <div className="text-center">
                 <div className="bg-white border border-gray-200 p-2 rounded-md inline-block shadow-sm">
                   <QRCode
-                    value={`https://yourplatform.com/certificate/verify/${data.id}`}
+                    value={`https://yourplatform.com/certificate/verify/${resolvedData.id}`}
                     size={80}
                   />
                 </div>
@@ -129,7 +205,7 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
             {/* Platform Signature */}
             <div className="text-center">
               <p className="text-sm text-gray-500">Issued by</p>
-              <h4 className="font-bold text-gray-700">{data.platformName}</h4>
+              <h4 className="font-bold text-gray-700">{resolvedData.platformName}</h4>
             </div>
           </div>
         </div>
