@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
@@ -11,6 +11,14 @@ export default function RobotsEditor({ config, update }) {
 
   const [content, setContent] = useState(config.robots || defaultContent);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (config?.robots) {
+      setContent(config.robots);
+    } else {
+      setContent(defaultContent);
+    }
+  }, [config?.robots, defaultContent]);
 
   const handleSave = async () => {
     const updated = { ...config, robots: content };
