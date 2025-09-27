@@ -47,12 +47,42 @@ const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 
 // Bcrypt only hashes the first 72 bytes of input which can silently truncate
 // long refresh tokens. To avoid rejecting valid tokens we migrate to a SHA-256
-// based hash while still accepting legacy bcrypt hashes stored in the
-// database. Once the old tokens expire naturally we can remove the fallback.
+// based hash (stored as base64) while still accepting legacy bcrypt hashes
+// stored in the database. We also support the interim SHA-256 hex strings
+// produced during the initial rollout. Once those tokens expire naturally we
+// can remove the fallbacks.
 const BCRYPT_HASH_PREFIXES = ["$2a$", "$2b$", "$2y$"];
 
 const hashRefreshToken = (token) =>
-  crypto.createHash("sha256").update(token).digest("hex");
+  crypto.createHash("sha256").update(token).digest();
+
+const encodeRefreshTokenHash = (buffer) => buffer.toString("base64");
+
+const decodeRefreshTokenHash = (storedHash) => {
+  if (!storedHash) return null;
+
+  // Preferred encoding going forward is base64 to guarantee shorter strings
+  try {
+    const base64Buffer = Buffer.from(storedHash, "base64");
+    if (base64Buffer.length === 32) {
+      return base64Buffer;
+    }
+  } catch (err) {
+    logger.debug("Failed to decode base64 refresh token hash", err);
+  }
+
+  // Legacy SHA-256 hashes stored as lowercase hex (introduced in previous fix)
+  try {
+    const hexBuffer = Buffer.from(storedHash, "hex");
+    if (hexBuffer.length === 32) {
+      return hexBuffer;
+    }
+  } catch (err) {
+    logger.debug("Failed to decode hex refresh token hash", err);
+  }
+
+  return null;
+};
 
 async function compareRefreshToken(token, storedHash) {
   if (!storedHash) return false;
@@ -66,15 +96,14 @@ async function compareRefreshToken(token, storedHash) {
     }
   }
 
-  const hashedToken = hashRefreshToken(token);
-  if (storedHash.length !== hashedToken.length) return false;
+  const tokenBuffer = hashRefreshToken(token);
+  const storedBuffer = decodeRefreshTokenHash(storedHash);
+
+  if (!storedBuffer || storedBuffer.length !== tokenBuffer.length) {
+    return false;
+  }
 
   try {
-    const storedBuffer = Buffer.from(storedHash, "hex");
-    const tokenBuffer = Buffer.from(hashedToken, "hex");
-
-    if (storedBuffer.length !== tokenBuffer.length) return false;
-
     return crypto.timingSafeEqual(tokenBuffer, storedBuffer);
   } catch (err) {
     logger.warn("Failed to compare refresh token hash", err);
@@ -412,7 +441,7 @@ async function issueRefreshToken(userId, roles = []) {
     { id: userId, role: primaryRole, roles: roleArr },
     jti
   );
-  const tokenHash = hashRefreshToken(token);
+  const tokenHash = encodeRefreshTokenHash(hashRefreshToken(token));
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await db("refresh_tokens").insert({
     id: jti,
