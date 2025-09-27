@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import SeoTags from '@/components/common/SeoTags';
 import useSEOConfigStore from '@/store/seoConfigStore';
 
@@ -10,8 +10,16 @@ jest.mock('next-i18next', () => ({
   useTranslation: () => ({ i18n: { options: { locales: ['en'] } } }),
 }));
 
+jest.mock('next/head', () => ({
+  __esModule: true,
+  default: ({ children }) => children,
+}));
+
 beforeEach(() => {
   useSEOConfigStore.persist?.clearStorage();
+  if (useSEOConfigStore.persist?.hasHydrated) {
+    useSEOConfigStore.persist.hasHydrated = () => true;
+  }
   useSEOConfigStore.setState({
     fetch: jest.fn(),
     loaded: true,
@@ -28,21 +36,42 @@ test('rejects malformed json schema input', () => {
   expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
 });
 
-test('rejects schema with unexpected fields', () => {
+test('preserves additional json schema fields and sanitizes output', async () => {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'SkillBridge',
+    description: 'A <great> & inclusive place',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '123 Example <Street>',
+      addressLocality: 'Sample City',
+    },
+    sameAs: ['https://twitter.com/skillbridge'],
+  };
+
   useSEOConfigStore.setState((s) => ({
     ...s,
     settings: {
       ...s.settings,
-      jsonSchema: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        name: 'SkillBridge',
-        url: 'https://example.com',
-        evil: 'true',
-      }),
+      jsonSchema: JSON.stringify(schema),
     },
   }));
+
   const { container } = render(<SeoTags />);
-  expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
+  await waitFor(() => {
+    expect(container.querySelector('script[type="application/ld+json"]')).not.toBeNull();
+  });
+  const script = container.querySelector('script[type="application/ld+json"]');
+  const scriptContent = script.textContent;
+  expect(scriptContent).not.toContain('<');
+  expect(scriptContent).not.toContain('>');
+  expect(scriptContent).toContain('\\u003c');
+  expect(scriptContent).toContain('\\u0026');
+
+  const parsed = JSON.parse(scriptContent);
+  expect(parsed.description).toBe(schema.description);
+  expect(parsed.address.streetAddress).toBe(schema.address.streetAddress);
+  expect(parsed.sameAs).toEqual(schema.sameAs);
 });
 
