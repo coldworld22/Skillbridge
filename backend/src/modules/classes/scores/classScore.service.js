@@ -1,6 +1,7 @@
 const db = require('../../../config/database');
 const { v4: uuidv4 } = require('uuid');
-const { generateCode, resolveTemplateId } = require('../../users/tutorials/certificate/certificate.service');
+const { generateCode } = require('../../users/tutorials/certificate/certificate.service');
+const certificateTemplatesService = require('../../certificateTemplates/certificateTemplates.service');
 
 const getPolicy = async (classId) => {
   const existing = await db('class_scoring_policies').where({ class_id: classId }).first();
@@ -118,7 +119,10 @@ const issueCertificate = async (classId, studentId, templateId = null) => {
   if (!score || !score.passed) {
     throw new Error('Student has not passed');
   }
-  const resolvedTemplateId = await resolveTemplateId(templateId);
+  const resolvedTemplateId =
+    templateId != null
+      ? templateId
+      : await certificateTemplatesService.getActiveTemplateId();
   cert = {
     id: uuidv4(),
     user_id: studentId,
