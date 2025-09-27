@@ -100,25 +100,22 @@ function CreateOnlineClass() {
   const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
   const [loadingInstructors, setLoadingInstructors] = useState(false);
 
-  const mediaUploader = useMediaUploader({
-    t,
-    onError: (message) => toast.error(message),
-    onImageSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
-    onVideoSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
-  });
-
   const {
     uploadProgress = 0,
+    imageUploading: isImageUploading = false,
+    videoUploading: isVideoUploading = false,
     handleImageUpload: mediaImageUpload,
     handleVideoUpload: mediaVideoUpload,
-    setUploadProgress = () => {},
-    imageUploading: rawImageUploading = false,
-    videoUploading: rawVideoUploading = false,
-  } = mediaUploader ?? {};
-  const isImageUploading = Boolean(rawImageUploading);
-  const isVideoUploading = Boolean(rawVideoUploading);
+    setUploadProgress,
+  } =
+    useMediaUploader({
+      t,
+      onError: (message) => toast.error(message),
+      onImageSelect: (file, preview) =>
+        setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+      onVideoSelect: (file, preview) =>
+        setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+    }) ?? {};
 
   const priceValue = useMemo(() => {
     const parsed = Number.parseFloat(formData.price);
