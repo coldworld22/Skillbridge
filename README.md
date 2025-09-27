@@ -138,6 +138,11 @@ npm --prefix frontend install
       `backend/src/seeds`. A raw SQL snapshot of the schema is also available
       at `database/schema.sql` for reference.
 
+      The SEO settings seed now publishes the sitemap at
+      `${BASE_URL}/uploads/seo/sitemap.xml`. Re-run the seeds after upgrading
+      to this release so deployments advertise the updated robots.txt
+      location.
+
    Seeding is meant for development environments only and should not be executed in production.
 
    If `ADMIN_INITIAL_PASSWORD` or `SUPERADMIN_INITIAL_PASSWORD` are not set in
