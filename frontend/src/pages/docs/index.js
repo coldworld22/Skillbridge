@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -59,7 +61,7 @@ function extractSummaryFromContent(content) {
   return '';
 }
 
-export default function DocumentationLandingPage({ docs }) {
+export default function DocumentationLandingPage({ docs, installationContent }) {
   return (
     <>
       <PageHead
@@ -75,6 +77,29 @@ export default function DocumentationLandingPage({ docs }) {
             Explore detailed guides, walkthroughs, and references sourced directly from the Markdown files in the
             repository.
           </p>
+        </div>
+      </section>
+
+      <section className="bg-gray-950 py-16 px-6 text-white">
+        <div className="mx-auto max-w-4xl space-y-8">
+          <div className="space-y-4 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wide text-indigo-300">Start here</p>
+            <h2 className="text-3xl font-semibold">Installation workflow</h2>
+            <p className="text-gray-300">
+              Follow the steps below to get SkillBridge up and running before diving into the rest of the documentation.
+            </p>
+          </div>
+
+          {installationContent ? (
+            <div className="docs-content mx-auto max-w-none space-y-6 text-left text-gray-100">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{installationContent}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-8 text-center text-gray-300">
+              The installation guide could not be loaded. Please ensure <code>installation.md</code> exists in the
+              <code>docs/</code> directory.
+            </div>
+          )}
         </div>
       </section>
 
@@ -132,6 +157,7 @@ export default function DocumentationLandingPage({ docs }) {
 export async function getStaticProps({ locale }) {
   const docsDir = await resolveDocsDirectory();
   let docs = [];
+  let installationContent = null;
 
   if (docsDir) {
     try {
@@ -165,11 +191,19 @@ export async function getStaticProps({ locale }) {
     } catch (error) {
       console.error('Failed to load documentation index:', error);
     }
+
+    try {
+      const installationPath = path.join(docsDir, 'installation.md');
+      installationContent = await fs.readFile(installationPath, 'utf8');
+    } catch (error) {
+      console.warn('Installation guide not found or failed to load:', error);
+    }
   }
 
   return {
     props: {
       docs,
+      installationContent,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
     revalidate: 300,
