@@ -1,11 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 
-export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
+export default function useTutorialFilters(tutorials) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredTutorials = useMemo(() => {
     const normalizedQuery = searchQuery.toLowerCase();
@@ -26,28 +25,6 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
     });
   }, [tutorials, searchQuery, filterCategory, filterStatus, filterApproval]);
 
-  const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage) || 1;
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(Math.min(currentPage, totalPages) || 1);
-    }
-  }, [currentPage, totalPages]);
-
-  const startIndex = (currentPage - 1) * tutorialsPerPage;
-  const tentativeEndIndex = startIndex + tutorialsPerPage;
-  const paginatedTutorials = filteredTutorials.slice(startIndex, tentativeEndIndex);
-  const endIndex = Math.min(
-    startIndex + paginatedTutorials.length,
-    filteredTutorials.length
-  );
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
   return {
     searchQuery,
     setSearchQuery,
@@ -57,13 +34,6 @@ export default function useTutorialFilters(tutorials, tutorialsPerPage = 10) {
     setFilterStatus,
     filterApproval,
     setFilterApproval,
-    currentPage,
-    setCurrentPage,
     filteredTutorials,
-    paginatedTutorials,
-    totalPages,
-    startIndex,
-    endIndex,
-    goToPage,
   };
 }

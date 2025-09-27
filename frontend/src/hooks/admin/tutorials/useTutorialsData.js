@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchAllTutorials } from "@/services/admin/tutorialService";
 
 export default function useTutorialsData(
   t,
-  { page = 1, pageSize = 10, filters = {} } = {},
+  { initialPage = 1, initialLimit = 10 } = {},
 ) {
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState(null);
+  const lastRequestRef = useRef({ page: initialPage, limit: initialLimit });
+  const isMountedRef = useRef(true);
 
   const normalizedFilters = useMemo(() => {
     if (!filters || typeof filters !== "object") return {};
@@ -55,41 +57,86 @@ export default function useTutorialsData(
   }, [t]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    let isMounted = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    const loadData = async () => {
+  const loadTutorials = useCallback(
+    async ({ page, limit, signal, params } = {}) => {
+      const nextPage = page ?? lastRequestRef.current.page;
+      const nextLimit = limit ?? lastRequestRef.current.limit;
+
       try {
         setLoading(true);
-        const tutorialResponse = await fetchAllTutorials(page, pageSize, {
-          signal: controller.signal,
-          params: normalizedFilters,
+        const response = await fetchAllTutorials(nextPage, nextLimit, {
+          signal,
+          params,
         });
-        if (!isMounted) return;
-        const fetchedTutorials = Array.isArray(tutorialResponse)
-          ? tutorialResponse
-          : tutorialResponse?.tutorials || [];
-        const paginationMeta = Array.isArray(tutorialResponse)
-          ? null
-          : tutorialResponse?.meta || null;
+        if (!isMountedRef.current) {
+          return response;
+        }
+        const fetchedTutorials = Array.isArray(response?.tutorials)
+          ? response.tutorials
+          : response?.tutorials?.tutorials || [];
+        const paginationMeta = response?.meta ?? null;
         setTutorials(fetchedTutorials);
-        setMeta(paginationMeta || null);
+        setMeta(paginationMeta);
+        lastRequestRef.current = { page: nextPage, limit: nextLimit };
+        return { tutorials: fetchedTutorials, meta: paginationMeta };
       } catch (err) {
-        if (err.name === "AbortError" || err.name === "CanceledError") return;
+        if (err?.name === "AbortError" || err?.name === "CanceledError") {
+          return null;
+        }
         console.error(err);
-        if (isMounted) toast.error(t("load_error"));
+        if (isMountedRef.current) {
+          toast.error(t("load_error"));
+        }
+        throw err;
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const loadCategories = async () => {
+      try {
+        const cats = await fetchAllCategories({}, { signal: controller.signal });
+        if (!active || !isMountedRef.current) return;
+        setCategories(cats?.data || cats || []);
+      } catch (err) {
+        if (err?.name === "AbortError" || err?.name === "CanceledError") {
+          return;
+        }
+        console.error(err);
+        if (isMountedRef.current) {
+          toast.error(t("load_error"));
+        }
       }
     };
 
-    loadData();
+    loadCategories();
 
     return () => {
-      isMounted = false;
       controller.abort();
+      active = false;
     };
   }, [page, pageSize, normalizedFilters, t]);
 
-  return { tutorials, setTutorials, categories, loading, meta, setMeta };
+  return {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    meta,
+    setMeta,
+    loadTutorials,
+  };
 }

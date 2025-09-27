@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
@@ -34,54 +34,80 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const PAGE_SIZE = 10;
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterApproval, setFilterApproval] = useState("");
+  const {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    meta,
+    setMeta,
+    loadTutorials,
+  } = useTutorialsData(t);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    filterCategory,
+    setFilterCategory,
+    filterStatus,
+    setFilterStatus,
+    filterApproval,
+    setFilterApproval,
+    filteredTutorials,
+  } = useTutorialFilters(tutorials);
+
   const [currentPage, setCurrentPage] = useState(1);
-
-  const filterParams = useMemo(() => {
-    const search = searchQuery.trim();
-    return {
-      ...(search ? { search } : {}),
-      ...(filterStatus ? { status: filterStatus } : {}),
-      ...(filterCategory ? { category: filterCategory } : {}),
-      ...(filterApproval ? { approvalStatus: filterApproval } : {}),
-    };
-  }, [searchQuery, filterStatus, filterCategory, filterApproval]);
-
-  const { tutorials, setTutorials, categories, loading, meta, setMeta } =
-    useTutorialsData(t, {
-      page: currentPage,
-      pageSize: PAGE_SIZE,
-      filters: filterParams,
-    });
-
-  const totalResults = meta?.total ?? tutorials.length;
-  const totalPages =
-    meta?.totalPages ?? (totalResults > 0 ? Math.ceil(totalResults / PAGE_SIZE) : 0);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
-    if (totalPages === null || totalPages === undefined) return;
-    if (totalPages === 0) {
-      if (currentPage !== 1) setCurrentPage(1);
-      return;
-    }
+    const controller = new AbortController();
+    loadTutorials({
+      page: currentPage,
+      limit: pageSize,
+      signal: controller.signal,
+    }).catch((err) => {
+      if (err?.name === "AbortError" || err?.name === "CanceledError") {
+        return;
+      }
+      console.error(err);
+    });
 
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    return () => controller.abort();
+  }, [currentPage, pageSize, loadTutorials]);
+
+  useEffect(() => {
+    if (meta?.per_page && meta.per_page !== pageSize) {
+      setPageSize(meta.per_page);
     }
-  }, [totalPages, currentPage]);
+  }, [meta?.per_page, pageSize]);
+
+  useEffect(() => {
+    if (meta?.last_page && currentPage > meta.last_page) {
+      setCurrentPage(Math.max(1, meta.last_page));
+    }
+  }, [meta?.last_page, currentPage]);
+
+  const totalResults = meta?.total ?? filteredTutorials.length;
+  const totalPages =
+    meta?.last_page ??
+    (pageSize > 0 ? Math.max(1, Math.ceil(totalResults / pageSize)) : 1);
+  const pageItemCount = filteredTutorials.length;
+  const displayStartIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1;
+  const displayEndIndex =
+    totalResults === 0 || pageItemCount === 0
+      ? 0
+      : Math.min(displayStartIndex + pageItemCount - 1, totalResults);
+  const paginationStartIndex = displayStartIndex > 0 ? displayStartIndex - 1 : 0;
 
   const goToPage = (page) => {
-    if (!Number.isFinite(page)) return;
-    const maxPages = totalPages > 0 ? totalPages : 1;
-    const nextPage = Math.min(Math.max(page, 1), maxPages);
-    if (nextPage !== currentPage) {
-      setCurrentPage(nextPage);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
+
 
   const {
     selectedTutorials,
@@ -89,19 +115,13 @@ function AdminTutorialsPage() {
     toggleSelectOne,
     toggleSelectAll,
     clearSelected,
-  } = useBulkSelection(tutorials, [
+  } = useBulkSelection(filteredTutorials, [
     searchQuery,
     filterCategory,
     filterStatus,
     filterApproval,
     currentPage,
   ]);
-
-  const startIndex = totalResults === 0 ? 0 : (currentPage - 1) * PAGE_SIZE;
-  const displayEndIndex =
-    totalResults === 0
-      ? 0
-      : Math.min(startIndex + tutorials.length, totalResults);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -211,9 +231,7 @@ function AdminTutorialsPage() {
       console.error(err);
       toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) =>
-        prev.filter((id) => id !== tutorialToDelete),
-      );
+      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -420,7 +438,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{totalResults}</p>
+            <p className="text-2xl font-bold">{meta?.total ?? 0}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -445,7 +463,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={tutorials}
+            paginatedTutorials={filteredTutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -466,7 +484,7 @@ function AdminTutorialsPage() {
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
-              startIndex={startIndex}
+              startIndex={paginationStartIndex}
               endIndex={displayEndIndex}
               totalResults={totalResults}
             />
