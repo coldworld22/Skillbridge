@@ -5,6 +5,8 @@ import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+
 const sanitizeSlug = (value) => value.replace(/\.md$/, '').replace(/[^a-zA-Z0-9-_]/g, '');
 
 const resolveDocLink = (href) => {
@@ -33,6 +35,8 @@ const DOCS_DIR_CANDIDATES = [
   path.join(process.cwd(), 'docs'),
   path.join(process.cwd(), '..', 'docs'),
   path.join(process.cwd(), '..', '..', 'docs'),
+  path.resolve(moduleDir, '../../docs'),
+  path.resolve(moduleDir, '../../../docs'),
 ];
 
 async function resolveDocsDirectory() {
