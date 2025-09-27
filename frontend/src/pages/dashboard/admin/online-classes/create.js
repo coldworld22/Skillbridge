@@ -71,6 +71,7 @@ function CreateOnlineClass() {
     lessonCount: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isServerUploading, setIsServerUploading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [allTags, setAllTags] = useState([]);
@@ -779,22 +780,35 @@ function CreateOnlineClass() {
                 <div></div>
               )}
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <>
+              <div className="flex flex-col items-end space-y-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isServerUploading}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isServerUploading ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      {t('server_uploading', { defaultValue: 'Uploading to server...' })}
+                    </>
+                  ) : isSubmitting ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      {currentStep === 1 ? t('processing') : t('submitting')}
+                    </>
+                  ) : currentStep === 1 ? (
+                    t('continue_lessons')
+                  ) : (
+                    t('submit_class')
+                  )}
+                </button>
+                {isServerUploading && (
+                  <div className="flex items-center text-sm text-yellow-600">
                     <FaSpinner className="animate-spin mr-2" />
-                    {currentStep === 1 ? t('processing') : t('submitting')}
-                  </>
-                ) : currentStep === 1 ? (
-                  t('continue_lessons')
-                ) : (
-                  t('submit_class')
+                    {t('server_upload_in_progress', { defaultValue: 'Server upload in progress...' })}
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
           </form>
         </div>
