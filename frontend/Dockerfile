@@ -76,6 +76,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY frontend/ ./
 COPY docs ./docs
 RUN cp /tmp/sanitized-package.json package.json
+COPY docs ./docs
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/public ./public
