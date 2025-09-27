@@ -56,6 +56,7 @@ function CreateOnlineClass() {
     lessonCount: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isServerUploading, setIsServerUploading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -206,7 +207,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setVideoUploading(true);
+        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -271,7 +272,7 @@ function CreateOnlineClass() {
         toast.error(error.response?.data?.message || 'Upload failed. Please try again.');
       } finally {
         setIsSubmitting(false);
-        setVideoUploading(false);
+        setIsServerUploading(false);
       }
     }
   };
@@ -569,7 +570,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {videoUploading ? (
+                            {videoUploading || isServerUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
