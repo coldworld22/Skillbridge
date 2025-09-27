@@ -2,15 +2,19 @@
 // Student Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
+import {
+  normalizeCertificate,
+  normalizeCertificates,
+} from "@/services/certificates/transformers";
 
 export const fetchCertificates = async () => {
   const { data } = await api.get("/certificates/student");
-  return data?.data ?? [];
+  return normalizeCertificates(data?.data);
 };
 
 export const getCertificate = async (id) => {
   const { data } = await api.get(`/certificates/student/${id}`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 export const downloadCertificate = async (id) => {
@@ -22,10 +26,10 @@ export const downloadCertificate = async (id) => {
 
 export const issueCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/issue`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 export const revokeCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/student/${id}/revoke`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };

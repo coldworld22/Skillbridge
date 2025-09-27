@@ -2,6 +2,10 @@
 // Admin Certificates API helpers
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
+import {
+  normalizeCertificate,
+  normalizeCertificates,
+} from "@/services/certificates/transformers";
 
 /**
  * Fetch all certificates for admin
@@ -10,37 +14,37 @@ export const fetchAllCertificates = async (page = 1, limit = 10) => {
   const { data } = await api.get("/certificates/admin", {
     params: { page, limit },
   });
-  return data?.data ?? [];
+  return normalizeCertificates(data?.data);
 };
 
 /** Fetch single certificate details */
 export const getCertificate = async (id) => {
   const { data } = await api.get(`/certificates/admin/${id}`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 /** Approve certificate */
 export const approveCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/admin/${id}/approve`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 /** Reject certificate */
 export const rejectCertificate = async (id) => {
   const { data } = await api.patch(`/certificates/admin/${id}/reject`);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 /** Issue certificate manually */
 export const issueCertificate = async (payload) => {
   const { data } = await api.post("/certificates/admin", payload);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 /** Update certificate */
 export const updateCertificate = async (id, payload) => {
   const { data } = await api.put(`/certificates/admin/${id}`, payload);
-  return data?.data;
+  return normalizeCertificate(data?.data);
 };
 
 /** Download certificate */

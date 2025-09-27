@@ -1,6 +1,10 @@
 const db = require("../../../../config/database");
 const { v4: uuidv4 } = require("uuid");
-const certificateTemplatesService = require("../../../certificateTemplates/certificateTemplates.service");
+const {
+  TEMPLATE_SELECT_FIELDS,
+  applyTemplateJoin,
+  formatCertificateRow,
+} = require("../../../certificates/certificate.utils");
 
 // Generate a unique certificate code
 const generateCode = () => {
@@ -39,10 +43,27 @@ const isUserCompletedTutorial = async (userId, tutorialId) => {
 };
 
 // Check if certificate already exists
+const buildTemplateAwareQuery = () => {
+  const query = db("certificates");
+  applyTemplateJoin(query);
+  return query.select("certificates.*", ...TEMPLATE_SELECT_FIELDS);
+};
+
 const findExisting = async (userId, tutorialId) => {
-  return await db("certificates")
-    .where({ user_id: userId, tutorial_id: tutorialId })
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.user_id", userId)
+    .where("certificates.tutorial_id", tutorialId)
     .first();
+
+  return formatCertificateRow(row);
+};
+
+const findById = async (id) => {
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.id", id)
+    .first();
+
+  return formatCertificateRow(row);
 };
 
 const resolveTemplateId = async (templateId) => {
@@ -76,6 +97,6 @@ module.exports = {
   generateCode,
   isUserCompletedTutorial,
   findExisting,
-  resolveTemplateId,
+  findById,
   issueCertificate,
 };
