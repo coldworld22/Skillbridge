@@ -137,6 +137,11 @@
   "fill_required_fields": "请填写所有必填字段",
   "complete_lesson_details": "请完成所有课程详情",
   "user_info_unavailable": "用户信息不可用",
+  "select_instructor_placeholder": "选择讲师",
+  "loading_instructors": "正在加载讲师...",
+  "select_instructor_required": "请选择一位讲师",
+  "selected_instructor_display": "已选择的讲师：{{name}}",
+  "instructors_load_failed": "无法加载讲师",
   "step_of_total": "第 {{current}} 步，共 {{total}} 步",
   "preview_alt": "预览",
   "dashboardPage": {

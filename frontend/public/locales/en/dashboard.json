@@ -137,6 +137,11 @@
   "fill_required_fields": "Please fill in all required fields",
   "complete_lesson_details": "Please complete all lesson details",
   "user_info_unavailable": "User information unavailable",
+  "select_instructor_placeholder": "Select an instructor",
+  "loading_instructors": "Loading instructors...",
+  "select_instructor_required": "Please select an instructor",
+  "selected_instructor_display": "Selected instructor: {{name}}",
+  "instructors_load_failed": "Failed to load instructors",
   "step_of_total": "Step {{current}} of {{total}}",
   "preview_alt": "Preview",
   "dashboardPage": {

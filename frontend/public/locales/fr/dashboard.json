@@ -137,6 +137,11 @@
   "fill_required_fields": "Veuillez remplir tous les champs requis",
   "complete_lesson_details": "Veuillez compléter tous les détails de la leçon",
   "user_info_unavailable": "Informations utilisateur indisponibles",
+  "select_instructor_placeholder": "Sélectionnez un instructeur",
+  "loading_instructors": "Chargement des instructeurs...",
+  "select_instructor_required": "Veuillez sélectionner un instructeur",
+  "selected_instructor_display": "Instructeur sélectionné : {{name}}",
+  "instructors_load_failed": "Échec du chargement des instructeurs",
   "step_of_total": "Étape {{current}} sur {{total}}",
   "preview_alt": "Aperçu",
   "dashboardPage": {

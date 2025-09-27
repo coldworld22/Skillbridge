@@ -137,6 +137,11 @@
   "fill_required_fields": "कृपया सभी अपेक्षित फ़ील्ड को भरें",
   "complete_lesson_details": "कृपया सभी पाठ विवरण पूरा करें",
   "user_info_unavailable": "उपयोगकर्ता जानकारी अनुपलब्ध है",
+  "select_instructor_placeholder": "किसी प्रशिक्षक का चयन करें",
+  "loading_instructors": "प्रशिक्षक लोड हो रहे हैं...",
+  "select_instructor_required": "कृपया एक प्रशिक्षक चुनें",
+  "selected_instructor_display": "चयनित प्रशिक्षक: {{name}}",
+  "instructors_load_failed": "प्रशिक्षकों को लोड नहीं किया जा सका",
   "step_of_total": "{{total}} का चरण {{current}}",
   "preview_alt": "पूर्व दर्शन",
   "dashboardPage": {

@@ -137,6 +137,11 @@
   "fill_required_fields": "Si prega di compilare tutti i campi richiesti",
   "complete_lesson_details": "Si prega di completare tutti i dettagli della lezione",
   "user_info_unavailable": "Informazioni sull'utente non disponibile",
+  "select_instructor_placeholder": "Seleziona un istruttore",
+  "loading_instructors": "Caricamento istruttori...",
+  "select_instructor_required": "Seleziona un istruttore",
+  "selected_instructor_display": "Istruttore selezionato: {{name}}",
+  "instructors_load_failed": "Impossibile caricare gli istruttori",
   "step_of_total": "Passaggio {{current}} di {{total}}",
   "preview_alt": "Anteprima",
   "dashboardPage": {

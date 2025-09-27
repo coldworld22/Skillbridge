@@ -25,12 +25,14 @@ import { createAdminClass } from '@/services/admin/classService';
 import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
 import { fetchPlanIdentifiers } from '@/services/admin/planService';
+import { fetchAllInstructors } from '@/services/admin/instructorService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -52,7 +54,6 @@ function CreateOnlineClass() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
-    instructor: user?.full_name || '',
     category: '',
     level: '',
     language: '',
@@ -82,6 +83,10 @@ function CreateOnlineClass() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [instructorOptions, setInstructorOptions] = useState([]);
+  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [selectedInstructorName, setSelectedInstructorName] = useState('');
+  const [isLoadingInstructors, setIsLoadingInstructors] = useState(false);
 
   const demoPreview = formData.demoPreview;
 
@@ -119,10 +124,77 @@ function CreateOnlineClass() {
   }, []);
 
   useEffect(() => {
-    if (user?.full_name) {
-      setFormData((prev) => ({ ...prev, instructor: user.full_name }));
+    let isMounted = true;
+
+    const loadInstructors = async () => {
+      setIsLoadingInstructors(true);
+      try {
+        const { instructors: data } = await fetchAllInstructors(1, 100);
+        if (!isMounted) return;
+        let mapped = (data ?? []).map((inst) => ({
+          id: inst.id,
+          name: inst.full_name || inst.username || inst.email?.split('@')[0] || `#${inst.id}`,
+        }));
+        if (user?.id && !mapped.some((inst) => String(inst.id) === String(user.id))) {
+          mapped = [
+            ...mapped,
+            {
+              id: user.id,
+              name: user.full_name || user.username || user.email?.split('@')[0] || `#${user.id}`,
+            },
+          ];
+        }
+        setInstructorOptions(mapped);
+      } catch (error) {
+        if (isMounted) {
+          console.error('Failed to load instructors', error);
+          toast.error(t('instructors_load_failed', { defaultValue: 'Failed to load instructors' }));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingInstructors(false);
+        }
+      }
+    };
+
+    loadInstructors();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t, user]);
+
+  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
+  const isInstructorUser = normalizedRoles.includes('instructor');
+
+  useEffect(() => {
+    if (!isInstructorUser || !user?.id || selectedInstructorId) {
+      return;
     }
-  }, [user]);
+    const match = instructorOptions.find((inst) => String(inst.id) === String(user.id));
+    if (match) {
+      setSelectedInstructorId(String(match.id));
+      setSelectedInstructorName(match.name);
+    }
+  }, [instructorOptions, isInstructorUser, selectedInstructorId, user]);
+
+  useEffect(() => {
+    if (!selectedInstructorId) {
+      setSelectedInstructorName('');
+      return;
+    }
+    const match = instructorOptions.find((inst) => String(inst.id) === String(selectedInstructorId));
+    if (match && match.name !== selectedInstructorName) {
+      setSelectedInstructorName(match.name);
+    }
+  }, [instructorOptions, selectedInstructorId, selectedInstructorName]);
+
+  const handleInstructorChange = (e) => {
+    const { value } = e.target;
+    setSelectedInstructorId(value);
+    const match = instructorOptions.find((inst) => String(inst.id) === String(value));
+    setSelectedInstructorName(match?.name || '');
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -239,6 +311,10 @@ function CreateOnlineClass() {
         toast.error(t('fill_required_fields'));
         return;
       }
+      if (!selectedInstructorId) {
+        toast.error(t('select_instructor_required', { defaultValue: 'Please select an instructor' }));
+        return;
+      }
       setFormData(prev => ({
         ...prev,
         lessons: Array.from({ length: count }, () => ({
@@ -266,13 +342,17 @@ function CreateOnlineClass() {
         toast.error(t('user_info_unavailable'));
         return;
       }
+      if (!selectedInstructorId) {
+        toast.error(t('select_instructor_required', { defaultValue: 'Please select an instructor' }));
+        return;
+      }
       try {
         setIsSubmitting(true);
         setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
-        payload.append('instructor_id', user?.id);
+        payload.append('instructor_id', selectedInstructorId);
         payload.append('title', formData.title);
         if (formData.description) payload.append('description', formData.description);
         if (formData.level) payload.append('level', formData.level);
@@ -388,13 +468,42 @@ function CreateOnlineClass() {
                         value={formData.title}
                         onChange={handleChange}
                       />
-                      <FloatingInput
-                        label={t('instructor_name_label')}
-                        name="instructor"
-                        value={formData.instructor}
-                        onChange={handleChange}
-                        disabled
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('instructor_name_label')}
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="instructor"
+                            value={selectedInstructorId}
+                            onChange={handleInstructorChange}
+                            disabled={isLoadingInstructors}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm pr-10"
+                          >
+                            <option value="">
+                              {isLoadingInstructors
+                                ? t('loading_instructors', { defaultValue: 'Loading instructors...' })
+                                : t('select_instructor_placeholder', { defaultValue: 'Select an instructor' })}
+                            </option>
+                            {instructorOptions.map((inst) => (
+                              <option key={inst.id} value={inst.id}>
+                                {inst.name}
+                              </option>
+                            ))}
+                          </select>
+                          {isLoadingInstructors && (
+                            <FaSpinner className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-yellow-500" />
+                          )}
+                        </div>
+                        {selectedInstructorName && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            {t('selected_instructor_display', {
+                              name: selectedInstructorName,
+                              defaultValue: `Selected instructor: ${selectedInstructorName}`,
+                            })}
+                          </p>
+                        )}
+                      </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">

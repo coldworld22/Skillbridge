@@ -137,6 +137,11 @@
   "fill_required_fields": "Please fill in all required fields",
   "complete_lesson_details": "Please complete all lesson details",
   "user_info_unavailable": "User information unavailable",
+  "select_instructor_placeholder": "Wählen Sie einen Dozenten",
+  "loading_instructors": "Dozenten werden geladen...",
+  "select_instructor_required": "Bitte wählen Sie einen Dozenten aus",
+  "selected_instructor_display": "Ausgewählter Dozent: {{name}}",
+  "instructors_load_failed": "Dozenten konnten nicht geladen werden",
   "step_of_total": "Step {{current}} of {{total}}",
   "preview_alt": "Preview",
   "dashboardPage": {

@@ -137,6 +137,11 @@
   "fill_required_fields": "يرجى تعبئة جميع الحقول المطلوبة",
   "complete_lesson_details": "يرجى استكمال تفاصيل الدرس",
   "user_info_unavailable": "معلومات المستخدم غير متاحة",
+  "select_instructor_placeholder": "اختر مدربًا",
+  "loading_instructors": "جارٍ تحميل المدربين...",
+  "select_instructor_required": "يرجى اختيار مدرب",
+  "selected_instructor_display": "المدرب المختار: {{name}}",
+  "instructors_load_failed": "تعذر تحميل المدربين",
   "step_of_total": "الخطوة {{current}} من {{total}}",
   "preview_alt": "معاينة",
   "dashboardPage": {
