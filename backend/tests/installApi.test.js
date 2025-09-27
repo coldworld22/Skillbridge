@@ -245,6 +245,7 @@ describe('POST /api/install/run', () => {
     const res = await postInstall(payload);
 
     expect(res.status).toBe(200);
+    expect(res.body).toEqual(expect.objectContaining({ ok: true }));
     expect(execFile).toHaveBeenCalledTimes(1);
     const installCall = execFile.mock.calls[0];
     expect(installCall[0]).toContain('install.sh');
@@ -285,6 +286,22 @@ describe('POST /api/install/run', () => {
     expect(
       unlinkMock.mock.calls.some(([calledPath]) => calledPath.endsWith('uploads/app/old-logo.png'))
     ).toBe(true);
+  });
+
+  it('treats non-JSON success output as ok', async () => {
+    execFile.mockImplementationOnce((script, args, options, callback) => {
+      if (typeof args === 'function') {
+        callback = args;
+      } else if (typeof options === 'function') {
+        callback = options;
+      }
+      callback(null, 'Installer finished successfully\n', '');
+    });
+
+    const res = await postInstall(buildPayload());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, output: 'Installer finished successfully' });
   });
 
   it('skips logo cleanup when the stored logo path is unchanged', async () => {

@@ -1,6 +1,66 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+exec 3>&1
+exec 1>&2
+
+SUCCESS_SUMMARY="SkillBridge installation completed successfully."
+LAST_ERROR_MESSAGE=""
+CURRENT_STEP=""
+
+json_string() {
+  local input="${1-}"
+  input=${input//\\/\\\\}
+  input=${input//\"/\\\"}
+  input=${input//$'\n'/\\n}
+  input=${input//$'\r'/}
+  input=${input//$'\t'/\\t}
+  printf '"%s"' "$input"
+}
+
+emit_exit_payload() {
+  local status=$1
+  local summary message
+  if (( status == 0 )); then
+    summary=${CURRENT_STEP:-$SUCCESS_SUMMARY}
+    printf '{ "ok": true, "summary": %s }\n' "$(json_string "$summary")" >&3
+  else
+    message=${LAST_ERROR_MESSAGE:-${CURRENT_STEP:+"${CURRENT_STEP} failed."}}
+    if [[ -z "$message" ]]; then
+      message="Installation failed. Review stderr output for details."
+    fi
+    printf '{ "ok": false, "summary": %s, "exitCode": %s }\n' "$(json_string "$message")" "$status" >&3
+  fi
+}
+
+record_error() {
+  local status=$1
+  local command=$2
+  if [[ -z "$LAST_ERROR_MESSAGE" ]]; then
+    LAST_ERROR_MESSAGE="Command failed (exit ${status}): ${command}"
+  fi
+}
+
+fail() {
+  local message="$1"
+  shift || true
+  LAST_ERROR_MESSAGE="$message"
+  echo "$message"
+  for line in "$@"; do
+    echo "$line"
+  done
+  exit 1
+}
+
+announce_step() {
+  local message="$1"
+  CURRENT_STEP="$message"
+  echo "$message"
+}
+
+trap 'emit_exit_payload $?' EXIT
+trap 'record_error $? "$BASH_COMMAND"' ERR
+
 # Basic installation script.
 # Usage: ./install.sh [development|production] [domain]
 
@@ -20,27 +80,22 @@ check_prerequisites() {
   done
 
   if (( ${#missing[@]} > 0 )); then
-    echo "Missing required command(s): ${missing[*]}" >&2
-    echo "Install the missing tools and re-run the installer." >&2
-    exit 1
+    fail "Missing required command(s): ${missing[*]}" "Install the missing tools and re-run the installer."
   fi
 
   local node_version
   node_version=$(node -v 2>/dev/null | sed 's/^v//')
   if [[ -z "$node_version" ]]; then
-    echo "Unable to determine Node.js version." >&2
-    exit 1
+    fail "Unable to determine Node.js version."
   fi
 
   local node_major=${node_version%%.*}
   if [[ ! "$node_major" =~ ^[0-9]+$ ]]; then
-    echo "Unrecognized Node.js version string: $node_version" >&2
-    exit 1
+    fail "Unrecognized Node.js version string: $node_version"
   fi
 
   if (( node_major < 18 )); then
-    echo "SkillBridge requires Node.js 18 or later (found $node_version)." >&2
-    exit 1
+    fail "SkillBridge requires Node.js 18 or later (found $node_version)."
   fi
 }
 
@@ -62,8 +117,7 @@ require_env_var() {
 
   local value="${!var_name-}"
   if [[ -z "$value" ]]; then
-    echo "Environment variable $var_name must be set before running the installer." >&2
-    exit 1
+    fail "Environment variable $var_name must be set before running the installer."
   fi
 }
 
@@ -86,8 +140,7 @@ require_command() {
   local friendly_name=${2:-$1}
 
   if ! command -v "$command_name" >/dev/null 2>&1; then
-    echo "$friendly_name ($command_name) is required but was not found on PATH." >&2
-    exit 1
+    fail "$friendly_name ($command_name) is required but was not found on PATH."
   fi
 }
 
@@ -98,8 +151,7 @@ ensure_node_version() {
   major=${major%%.*}
 
   if [[ -z "$major" || ! "$major" =~ ^[0-9]+$ || "$major" -lt 18 ]]; then
-    echo "Node.js 18 or newer is required. Detected ${version:-unknown}." >&2
-    exit 1
+    fail "Node.js 18 or newer is required. Detected ${version:-unknown}."
   fi
 }
 
@@ -184,14 +236,14 @@ run_compose() {
       fi
     fi
 
-    echo "Docker is installed but the docker compose plugin is not available." >&2
-    echo "Install the Docker Compose plugin (the 'docker compose' command) to continue." >&2
+    echo "Docker is installed but the docker compose plugin is not available."
+    echo "Install the Docker Compose plugin (the 'docker compose' command) to continue."
     return 1
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
-    echo "Only the legacy docker-compose v1 binary was found." >&2
-    echo "Install the Docker Compose plugin (the 'docker compose' command) or downgrade Docker Engine below version 27 to avoid errors such as KeyError: 'ContainerConfig'." >&2
+    echo "Only the legacy docker-compose v1 binary was found."
+    echo "Install the Docker Compose plugin (the 'docker compose' command) or downgrade Docker Engine below version 27 to avoid errors such as KeyError: 'ContainerConfig'."
     return 1
   fi
 
@@ -219,10 +271,9 @@ install_backend_dependencies() {
       ;;
   esac
 
-  echo "Installing backend dependencies (npm install)..."
+  announce_step "Installing backend dependencies (npm install)..."
   if ! npm --prefix "$REPO_ROOT/backend" install; then
-    echo "Failed to install backend dependencies." >&2
-    exit 1
+    fail "Failed to install backend dependencies."
   fi
 }
 
@@ -255,7 +306,7 @@ if [[ -z "$MODE" ]]; then
     case "$MODE_INPUT" in
       ""|d|development) MODE=development ;;
       p|production) MODE=production ;;
-      *) echo "Invalid selection: $MODE_INPUT" >&2; exit 1 ;;
+      *) fail "Invalid selection: $MODE_INPUT" ;;
     esac
   else
     MODE=development
@@ -266,8 +317,7 @@ if [[ "$MODE" == "production" && -z "$DOMAIN" ]]; then
   if [[ -t 0 ]]; then
     read -rp "Enter domain (e.g., example.com): " DOMAIN
   else
-    echo "Domain is required for production" >&2
-    exit 1
+    fail "Domain is required for production"
   fi
 fi
 
@@ -278,14 +328,12 @@ fi
 
 if [[ "$MODE" == "production" ]]; then
   if [[ -z "$DOMAIN" ]]; then
-    echo "Domain is required for production" >&2
-    echo "Usage: $0 production <domain>" >&2
-    exit 1
+    fail "Domain is required for production" "Usage: $0 production <domain>"
   fi
-  echo "Running server deployment for $DOMAIN"
+  announce_step "Running server deployment for $DOMAIN"
   "$SCRIPT_DIR/scripts/deploy_server.sh" "$DOMAIN"
 else
-  echo "Running in development mode; no deployment actions performed."
+  announce_step "Running in development mode; no deployment actions performed."
 fi
 
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
@@ -309,26 +357,24 @@ install_node_dependencies "$REPO_ROOT/backend"
 
 if [[ "$MODE" == "production" ]]; then
   if docker_available; then
-    echo "Ensuring Docker services are running before migrations..."
+    announce_step "Ensuring Docker services are running before migrations..."
     if ! run_compose -f "$COMPOSE_FILE" up -d; then
-      echo "Failed to start Docker services required for production." >&2
-      exit 1
+      fail "Failed to start Docker services required for production."
     fi
   else
-    echo "Docker CLI not available; skipping compose startup for production mode." >&2
+    echo "Docker CLI not available; skipping compose startup for production mode."
   fi
 elif [[ "$START_DEV_SERVICES" == "true" ]]; then
   if docker_available; then
-    echo "Starting development services with docker compose (detached)..."
+    announce_step "Starting development services with docker compose (detached)..."
     if ! run_compose -f "$COMPOSE_FILE" up --build -d; then
-      echo "Failed to start development Docker services." >&2
-      exit 1
+      fail "Failed to start development Docker services."
     fi
   else
     echo "Docker CLI not available; skipping development compose startup."
   fi
 else
-  echo "Skipping automatic startup of development services."
+  announce_step "Skipping automatic startup of development services."
 fi
 
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
@@ -339,8 +385,7 @@ if [[ -z "$ADMIN_EMAIL" ]]; then
   if [[ -t 0 ]]; then
     read -rp "Enter admin email: " ADMIN_EMAIL
   else
-    echo "ADMIN_EMAIL must be provided when running non-interactively." >&2
-    exit 1
+    fail "ADMIN_EMAIL must be provided when running non-interactively."
   fi
 fi
 
@@ -349,8 +394,7 @@ if [[ -z "$ADMIN_PASSWORD" ]]; then
     read -rsp "Enter admin password: " ADMIN_PASSWORD
     echo
   else
-    echo "ADMIN_PASSWORD must be provided when running non-interactively." >&2
-    exit 1
+    fail "ADMIN_PASSWORD must be provided when running non-interactively."
   fi
 fi
 
@@ -403,46 +447,43 @@ export \
   DEFAULT_FROM_EMAIL \
   APP_DISPLAY_NAME
 
-echo "Applying configuration values..."
+announce_step "Applying configuration values..."
 CONFIG_SCRIPT="$SCRIPT_DIR/backend/scripts/apply-install-config.js"
 if ! node "$CONFIG_SCRIPT"; then
-  echo "Failed to apply installation configuration." >&2
-  exit 1
+  fail "Failed to apply installation configuration."
 fi
 
 
-echo "Running database migrations..."
+announce_step "Running database migrations..."
 if ! npm --prefix "$REPO_ROOT/backend" run migrate; then
-  echo "Database migration failed. Aborting installation." >&2
-  exit 1
+  fail "Database migration failed. Aborting installation."
 fi
 
 if [[ "${SEED_DB:-false}" == "true" ]]; then
-  echo "Seeding database..."
+  announce_step "Seeding database..."
   if ! npm --prefix "$REPO_ROOT/backend" run seed; then
-    echo "Database seeding failed. Aborting installation." >&2
-    exit 1
+    fail "Database seeding failed. Aborting installation."
   fi
 fi
 
-echo "Provisioning initial admin account..."
+announce_step "Provisioning initial admin account..."
 node "$SCRIPT_DIR/backend/scripts/create-admin.js"
 
 APPLY_CONFIG_SCRIPT="$SCRIPT_DIR/backend/scripts/apply-installer-config.js"
 
 if [[ -n "$INSTALL_CONFIG_PATH" ]]; then
   if [[ ! -f "$INSTALL_CONFIG_PATH" ]]; then
-    echo "Installer configuration file not found: $INSTALL_CONFIG_PATH" >&2
-    exit 1
+    fail "Installer configuration file not found: $INSTALL_CONFIG_PATH"
   fi
 
   if [[ -f "$APPLY_CONFIG_SCRIPT" ]]; then
-    echo "Applying installer configuration..."
+    announce_step "Applying installer configuration..."
     if ! node "$APPLY_CONFIG_SCRIPT" "$INSTALL_CONFIG_PATH"; then
-      echo "Failed to apply installer configuration" >&2
-      exit 1
+      fail "Failed to apply installer configuration"
     fi
   else
-    echo "Warning: apply-installer-config script missing at $APPLY_CONFIG_SCRIPT" >&2
+    echo "Warning: apply-installer-config script missing at $APPLY_CONFIG_SCRIPT"
   fi
 fi
+
+announce_step "$SUCCESS_SUMMARY"
