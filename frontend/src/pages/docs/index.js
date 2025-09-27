@@ -39,6 +39,15 @@ async function resolveDocsDirectory() {
   return null;
 }
 
+function sanitizeSlug(value) {
+  return value
+    .replace(/\.(md|html)$/i, '')
+    .split('/')
+    .map((segment) => segment.replace(/[^a-zA-Z0-9-_]/g, ''))
+    .filter(Boolean)
+    .join('/');
+}
+
 function extractTitleFromContent(content, fallback) {
   const match = content.match(/^#\s+(.+)/m);
   if (match) {
@@ -266,11 +275,16 @@ export async function getStaticProps({ locale }) {
 
       const docsBySlug = new Map();
       for (const entry of docEntries) {
-        const slug = entry.name.replace(/\.(md|html)$/i, '');
+        const slug = sanitizeSlug(entry.name);
+        if (!slug) {
+          continue;
+        }
+
         const ext = entry.name.toLowerCase().endsWith('.md') ? 'md' : 'html';
         if (!docsBySlug.has(slug)) {
           docsBySlug.set(slug, {});
         }
+
         docsBySlug.get(slug)[ext] = entry.name;
       }
 
