@@ -11,6 +11,17 @@ import { resolveDocsDirectory } from '@/utils/docsDirectory';
 
 const moduleDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
+// Ensure standalone builds can still locate the project-level docs directory.
+const docsDirectoryExplicitPaths = [
+  path.join(process.cwd(), 'docs'),
+  path.join(process.cwd(), '..', 'docs'),
+  path.join(process.cwd(), '..', '..', 'docs'),
+  path.join(process.cwd(), '..', '..', '..', 'docs'),
+  path.resolve(moduleDir, '../../docs'),
+  path.resolve(moduleDir, '../../../docs'),
+  path.resolve(moduleDir, '../../../..', 'docs'),
+];
+
 const sanitizeSlug = (value = '') =>
   value
     .replace(/\.(md|html)$/i, '')
@@ -46,11 +57,12 @@ const resolveDocLink = (href) => {
   const slug = sanitizeSlug(cleaned);
   return slug ? `/docs/${slug}` : href;
 };
-
 // Additional resolution handled by shared utility.
-
 export async function getStaticPaths() {
-  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
+  const docsDir = await resolveDocsDirectory({
+    moduleDirectory: moduleDir,
+    explicitPaths: docsDirectoryExplicitPaths,
+  });
   let entries = [];
   if (!docsDir) {
     console.warn('Documentation directory not found while generating static paths.');
@@ -83,7 +95,10 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
+  const docsDir = await resolveDocsDirectory({
+    moduleDirectory: moduleDir,
+    explicitPaths: docsDirectoryExplicitPaths,
+  });
   if (!docsDir) {
     console.error('Documentation directory not available while generating static props.');
     return {
