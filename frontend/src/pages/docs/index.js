@@ -238,7 +238,10 @@ export default function DocumentationLandingPage({ docs, installationContent, in
 }
 
 export async function getStaticProps({ locale }) {
-  const docsDir = await resolveDocsDirectory({ moduleDirectory: moduleDir });
+  const docsDir = await resolveDocsDirectory({
+    moduleDirectory: moduleDir,
+    explicitPaths: docsDirectoryExplicitPaths,
+  });
   let docs = [];
   let installationContent = null;
   let installationFormat = null;
