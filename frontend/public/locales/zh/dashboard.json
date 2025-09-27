@@ -145,6 +145,7 @@
   "image_preview_failed": "加载图片预览失败",
   "video_size_exceeded": "视频必须小于 100MB",
   "fill_required_fields": "请填写所有必填字段",
+  "end_date_after_start": "结束日期必须晚于开始日期。",
   "complete_lesson_details": "请完成所有课程详情",
   "add_at_least_one_lesson": "提交前请至少添加一节课。",
   "user_info_unavailable": "用户信息不可用",

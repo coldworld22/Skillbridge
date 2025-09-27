@@ -145,6 +145,7 @@
   "image_preview_failed": "فشل تحميل معاينة الصورة.",
   "video_size_exceeded": "يجب أن يكون الفيديو أقل من 100 ميجابايت",
   "fill_required_fields": "يرجى تعبئة جميع الحقول المطلوبة",
+  "end_date_after_start": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.",
   "complete_lesson_details": "يرجى استكمال تفاصيل الدرس",
   "add_at_least_one_lesson": "يرجى إضافة درس واحد على الأقل قبل الإرسال.",
   "user_info_unavailable": "معلومات المستخدم غير متاحة",

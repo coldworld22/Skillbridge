@@ -145,6 +145,7 @@
   "image_preview_failed": "Échec du chargement de l'aperçu de l'image.",
   "video_size_exceeded": "La vidéo doit faire moins de 100MB",
   "fill_required_fields": "Veuillez remplir tous les champs requis",
+  "end_date_after_start": "La date de fin doit être postérieure à la date de début.",
   "complete_lesson_details": "Veuillez compléter tous les détails de la leçon",
   "add_at_least_one_lesson": "Veuillez ajouter au moins une leçon avant de soumettre.",
   "user_info_unavailable": "Informations utilisateur indisponibles",
