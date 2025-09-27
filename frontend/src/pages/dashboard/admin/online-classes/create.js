@@ -77,6 +77,9 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const {
     uploadProgress,
@@ -164,8 +167,13 @@ function CreateOnlineClass() {
       toast.error(t('video_size_exceeded'));
       return;
     }
-
-    mediaVideoUpload(e);
+    setVideoUploading(true);
+    setFormData((prev) => ({
+      ...prev,
+      demoVideo: file,
+      demoPreview: URL.createObjectURL(file),
+    }));
+    setVideoUploading(false);
   };
 
   const addTag = (tag) => {
