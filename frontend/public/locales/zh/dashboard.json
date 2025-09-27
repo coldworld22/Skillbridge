@@ -118,6 +118,7 @@
   "rejected": "已拒绝",
   "free_class": "免费课程",
   "free_label": "免费",
+  "rejection_reason_min_length": "请为拒绝原因提供至少3个字符。",
   "allow_installments": "允许分期付款",
   "publish_immediately": "立即发布",
   "description_label": "描述",

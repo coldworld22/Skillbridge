@@ -118,6 +118,7 @@
   "rejected": "Rejeté",
   "free_class": "Cours gratuit",
   "free_label": "Gratuit",
+  "rejection_reason_min_length": "Veuillez fournir au moins 3 caractères pour la raison du rejet.",
   "allow_installments": "Autoriser les paiements échelonnés",
   "publish_immediately": "Publier immédiatement",
   "description_label": "Description",
