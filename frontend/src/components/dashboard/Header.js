@@ -195,6 +195,22 @@ export default function Header() {
     isHydrated,
   ]);
 
+  const handleSearch = (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      return;
+    }
+
+    router.push({
+      pathname: "/search",
+      query: { q: trimmedQuery },
+    });
+  };
+
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
       <div className="flex items-center gap-4">
