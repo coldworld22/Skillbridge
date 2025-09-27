@@ -63,8 +63,9 @@
       "add_tags_placeholder": "添加标签...",
       "add_tag": "添加",
       "is_free": "是否免费？",
-      "price_label": "价格（美元） *",
+      "price_label": "价格 *",
       "price_placeholder": "输入价格，例如 19.99",
+      "select_currency": "选择货币",
       "next": "下一步 ➡️",
       "validation": {
         "title_required": "标题为必填项。",
@@ -73,7 +74,8 @@
         "level_required": "等级为必选项。",
         "language_required": "教程语言为必填项。",
         "lessons_required": "课时数为必填项。",
-        "price_required": "必须提供有效价格。"
+        "price_required": "必须提供有效价格。",
+        "currency_required": "必须选择货币。"
       }
     },
     "curriculum": {
@@ -124,8 +126,7 @@
       "price_label": "价格：",
       "publish_tutorial": "发布教程"
     }
-  }
-  ,
+  },
   "filters": {
     "title": "筛选",
     "max_price": "最高价格：${{price}}",
@@ -181,4 +182,3 @@
     "remove": "移除"
   }
 }
-
