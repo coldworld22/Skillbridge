@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkillBridge Documentation</title>
+    <meta
+      name="description"
+      content="SkillBridge documentation hub with install instructions and links to every administrator and integration guide."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f172a;
+        --bg-alt: #111827;
+        --panel: rgba(15, 23, 42, 0.85);
+        --panel-border: rgba(148, 163, 184, 0.3);
+        --text: #e2e8f0;
+        --muted: #cbd5f5;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc;
+          --bg-alt: #e2e8f0;
+          --panel: #ffffff;
+          --panel-border: rgba(15, 23, 42, 0.08);
+          --text: #0f172a;
+          --muted: #475569;
+          --accent: #0ea5e9;
+          --accent-strong: #0284c7;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, var(--bg), var(--bg-alt));
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      a {
+        color: var(--accent-strong);
+        text-decoration: none;
+      }
+
+      a:hover,
+      a:focus {
+        text-decoration: underline;
+      }
+
+      header {
+        padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 0;
+      }
+
+      .hero {
+        max-width: 70rem;
+        margin: 0 auto;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        padding: clamp(2rem, 4vw, 3rem);
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+      }
+
+      .hero h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        line-height: 1.05;
+      }
+
+      .hero p {
+        margin: 0 0 1.5rem;
+        font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+        color: var(--muted);
+      }
+
+      .hero .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .hero .cta a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.85rem 1.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        border: 1px solid transparent;
+        background: var(--accent);
+        color: #0b1120;
+        transition: transform 0.2s ease, box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .hero .cta a.secondary {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--panel-border);
+      }
+
+      .hero .cta a:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 15px 40px rgba(14, 165, 233, 0.25);
+      }
+
+      main {
+        padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+        max-width: 75rem;
+        margin: 0 auto;
+      }
+
+      h2 {
+        font-size: clamp(1.65rem, 3vw, 2.3rem);
+        margin-top: 3rem;
+        margin-bottom: 1.25rem;
+      }
+
+      h3 {
+        font-size: clamp(1.2rem, 2.3vw, 1.55rem);
+        margin-bottom: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      p,
+      li {
+        line-height: 1.7;
+      }
+
+      code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo,
+          Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 0.95rem;
+        background: rgba(15, 23, 42, 0.35);
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+      }
+
+      pre {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--panel-border);
+        overflow-x: auto;
+      }
+
+      pre code {
+        background: transparent;
+        padding: 0;
+        font-size: 0.95rem;
+      }
+
+      .quickstart ol {
+        counter-reset: install-steps;
+        padding-left: 1rem;
+      }
+
+      .quickstart li {
+        list-style: none;
+        position: relative;
+        margin-bottom: 2rem;
+        padding-left: 3.5rem;
+      }
+
+      .quickstart li::before {
+        counter-increment: install-steps;
+        content: counter(install-steps);
+        position: absolute;
+        left: 0;
+        top: 0.25rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        background: rgba(14, 165, 233, 0.2);
+        color: var(--accent-strong);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .quickstart ul {
+        margin: 0.75rem 0 0.25rem 0;
+        padding-left: 1.25rem;
+      }
+
+      .doc-grid {
+        display: grid;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      @media (min-width: 48rem) {
+        .doc-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 72rem) {
+        .doc-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .doc-card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        padding: 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
+      }
+
+      .doc-card h3 {
+        margin: 0;
+      }
+
+      .doc-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .doc-card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      footer {
+        padding: 4rem 0 2.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      footer a {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="hero">
+        <h1>SkillBridge Documentation Hub</h1>
+        <p>
+          Everything you need to install, configure, and launch SkillBridge. Follow the
+          quick start checklist below or jump straight to the guide you need.
+        </p>
+        <div class="cta">
+          <a href="./installation.md">View full installation guide</a>
+          <a class="secondary" href="./README.md">Browse documentation overview</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="quickstart" aria-labelledby="quickstart-title">
+        <h2 id="quickstart-title">Quick start from the customer ZIP</h2>
+        <p>
+          The summary mirrors <code>docs/index.md</code> so CodeCanyon buyers have an HTML
+          landing page that works online and inside the downloaded bundle.
+        </p>
+        <ol>
+          <li>
+            <strong>Upload the archive.</strong>
+            <ul>
+              <li><strong>Local workstation:</strong> move the downloaded ZIP into the project directory.</li>
+              <li>
+                <strong>Remote server:</strong> transfer the archive with
+                <code>scp</code> or <code>rsync</code>.
+              </li>
+            </ul>
+            <pre><code>scp Skillbridge-v1.0.0.zip deploy@example.com:/var/www</code></pre>
+            <p>Keep a pristine copy of the ZIP so you can redeploy clean files later.</p>
+          </li>
+          <li>
+            <strong>Extract and position the project.</strong>
+            <p>
+              Unzip the package, rename the extracted folder to <code>Skillbridge</code>, and switch into the
+              directory so helper scripts find the expected paths.
+            </p>
+            <pre><code>unzip Skillbridge-v1.0.0.zip
+mv Skillbridge-v1.0.0 Skillbridge
+cd Skillbridge</code></pre>
+            <p>
+              Ensure <code>install.sh</code>, <code>docker-compose.yml</code>, and the <code>backend/</code>, <code>frontend/</code>, and
+              <code>nginx/</code> folders live directly under <code>Skillbridge/</code>.
+            </p>
+            <p>
+              On Linux hosts update ownership and permissions so deploy users can run the scripts:
+            </p>
+            <pre><code>sudo chown -R deploy:deploy Skillbridge
+chmod +x install.sh scripts/*.sh</code></pre>
+          </li>
+          <li>
+            <strong>Copy environment templates.</strong>
+            <p>
+              Duplicate each <code>.env.example</code> so both applications and automation read real configuration values before you run the installer.
+            </p>
+            <pre><code>cp .env.example .env
+cp backend/.env.example backend/.env
+cp backend/.env.production.example backend/.env.production
+cp frontend/.env.local.example frontend/.env.local</code></pre>
+            <p>Update the new files with URLs, SMTP credentials, and secrets for your environment.</p>
+          </li>
+          <li>
+            <strong>Run the installer.</strong>
+            <p>
+              Execute the bundled installer to validate prerequisites, copy templates, run database migrations and seeds, and create the initial admin account.
+            </p>
+            <pre><code>./install.sh</code></pre>
+            <p>
+              For unattended production deployments supply the mode, domain, and admin credentials via CLI arguments and environment variables.
+            </p>
+          </li>
+          <li>
+            <strong>Start the services.</strong>
+            <p>
+              Launch the Docker stack after the installer finishes. Run migrations manually first if you manage containers yourself.
+            </p>
+            <ul>
+              <li>
+                <strong>Local development:</strong>
+                <pre><code>docker compose up --build</code></pre>
+              </li>
+              <li>
+                <strong>Production host:</strong>
+                <pre><code>docker compose up -d --build</code></pre>
+              </li>
+            </ul>
+            <p>Manual migration commands:</p>
+            <pre><code>docker compose run --rm backend npm run migrate
+docker compose run --rm backend npm run seed</code></pre>
+            <p>Sign in with the admin credentials you configured and begin customizing SkillBridge.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="library-title">
+        <h2 id="library-title">Documentation library</h2>
+        <p>
+          Every Markdown file inside <code>docs/</code> remains available. Use the HTML links below when browsing the hosted
+          documentation or opening the offline bundle.
+        </p>
+        <div class="doc-grid">
+          <article class="doc-card">
+            <h3>Installation &amp; Infrastructure</h3>
+            <p>Set up SkillBridge locally or in production and understand the platform architecture.</p>
+            <ul>
+              <li><a href="./README.md">Documentation overview</a></li>
+              <li><a href="./installation.md">Installation guide</a></li>
+              <li><a href="./deployment.md">Deployment playbook</a></li>
+              <li><a href="./architecture.md">System architecture</a></li>
+              <li><a href="./release-checklist.md">Release checklist</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Administration guides</h3>
+            <p>Configure platform features and manage catalog content from the admin dashboard.</p>
+            <ul>
+              <li><a href="./admin-category-management.md">Category management</a></li>
+              <li><a href="./admin-ads-management.md">Ads management</a></li>
+              <li><a href="./admin-alerts.md">Alerts &amp; notifications</a></li>
+              <li><a href="./admin-third-party-integrations.md">Third-party integrations</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Workflows &amp; operations</h3>
+            <p>Understand the lifecycle for classes, bookings, and student onboarding.</p>
+            <ul>
+              <li><a href="./book-workflow.md">Booking workflow</a></li>
+              <li><a href="./class-lifecycle-workflow.md">Class lifecycle workflow</a></li>
+              <li><a href="./class-plan-coverage.md">Class plan coverage</a></li>
+              <li><a href="./student-enrollment-workflow.md">Student enrollment workflow</a></li>
+              <li><a href="./student-registration-guide.md">Student registration guide</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Billing &amp; monetization</h3>
+            <p>Customize how SkillBridge presents plans, coupons, and payment methods.</p>
+            <ul>
+              <li><a href="./subscription-plan-style.md">Subscription plan styling</a></li>
+              <li><a href="./coupon-management.md">Coupon management</a></li>
+              <li><a href="./payment-icon-sources.md">Payment icon sources</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Integrations &amp; compliance</h3>
+            <p>Connect external services and verify CodeCanyon purchases.</p>
+            <ul>
+              <li><a href="./license-verification.md">CodeCanyon license verification</a></li>
+              <li><a href="./social-login-setup.md">Social login setup</a></li>
+              <li><a href="./messages-config.md">Email &amp; SMS messaging</a></li>
+            </ul>
+          </article>
+          <article class="doc-card">
+            <h3>Reference</h3>
+            <p>Dive into API endpoints and change history.</p>
+            <ul>
+              <li><a href="./api-docs.md">API documentation</a></li>
+              <li><a href="./changelog.md">Changelog</a></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Looking for the Markdown version of this page? Open <a href="./index.md">index.md</a> in your editor of choice.
+      </p>
+    </footer>
+  </body>
+</html>
