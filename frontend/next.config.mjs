@@ -225,8 +225,8 @@ const nextConfig = {
     largePageDataBytes: 256 * 1024,
     externalDir: true,
     outputFileTracingIncludes: {
-      '/docs': ['./docs/**/*'],
-      '/docs/[slug]': ['./docs/**/*'],
+      '/docs': ['../docs/**/*'],
+      '/docs/[slug]': ['../docs/**/*'],
     },
     turbo: {
       resolveAlias: {
