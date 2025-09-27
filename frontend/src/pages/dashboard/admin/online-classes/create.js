@@ -133,14 +133,25 @@ function CreateOnlineClass() {
 
   const filteredTagSuggestions = useMemo(
     () =>
-      allTags.filter(
-        (t) =>
-          tagInput &&
-          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.some(
-            (selected) => selected.toLowerCase() === t.name.toLowerCase()
-          )
-      ),
+      allTags.filter((t) => {
+        if (!tagInput) {
+          return false;
+        }
+
+        const rawName = typeof t?.name === 'string' ? t.name : '';
+        const trimmedName = rawName.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        const lowerName = trimmedName.toLowerCase();
+        const lowerInput = tagInput.toLowerCase();
+
+        return (
+          lowerName.includes(lowerInput) &&
+          !selectedTags.some((selected) => selected.toLowerCase() === lowerName)
+        );
+      }),
     [allTags, tagInput, selectedTags]
   );
 
@@ -299,7 +310,14 @@ function CreateOnlineClass() {
   };
 
   const addTag = (tag) => {
-    const normalized = tag.trim();
+    const rawTag =
+      typeof tag === 'string'
+        ? tag
+        : typeof tag?.name === 'string'
+          ? tag.name
+          : '';
+
+    const normalized = rawTag.trim();
     if (!normalized) return;
 
     const alreadySelected = selectedTags.some(
