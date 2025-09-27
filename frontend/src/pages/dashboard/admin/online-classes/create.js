@@ -131,18 +131,27 @@ function CreateOnlineClass() {
     };
   }, [demoPreview]);
 
-  const filteredTagSuggestions = useMemo(
-    () =>
-      allTags.filter(
-        (t) =>
-          tagInput &&
-          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.some(
-            (selected) => selected.toLowerCase() === t.name.toLowerCase()
-          )
-      ),
-    [allTags, tagInput, selectedTags]
-  );
+  const filteredTagSuggestions = useMemo(() => {
+    const input = tagInput.trim();
+    if (!input) {
+      return [];
+    }
+
+    const lowerInput = input.toLowerCase();
+    return allTags.filter((t) => {
+      const name = typeof t?.name === 'string' ? t.name.trim() : '';
+      if (!name) {
+        return false;
+      }
+
+      const lowerName = name.toLowerCase();
+      const alreadySelected = selectedTags.some(
+        (selected) => selected.toLowerCase() === lowerName
+      );
+
+      return lowerName.includes(lowerInput) && !alreadySelected;
+    });
+  }, [allTags, tagInput, selectedTags]);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -299,8 +308,18 @@ function CreateOnlineClass() {
   };
 
   const addTag = (tag) => {
-    const normalized = tag.trim();
-    if (!normalized) return;
+    const raw =
+      typeof tag === 'string'
+        ? tag
+        : typeof tag?.name === 'string'
+          ? tag.name
+          : '';
+
+    const normalized = raw.trim();
+    if (!normalized) {
+      setTagInput('');
+      return;
+    }
 
     const alreadySelected = selectedTags.some(
       (existing) => existing.toLowerCase() === normalized.toLowerCase()
