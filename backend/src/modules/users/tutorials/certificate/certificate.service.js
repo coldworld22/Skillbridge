@@ -45,6 +45,12 @@ const findExisting = async (userId, tutorialId) => {
     .first();
 };
 
+const resolveTemplateId = async (templateId) => {
+  if (templateId) return templateId;
+  const template = await templateService.getActiveTemplate();
+  return template?.id || null;
+};
+
 // Create a new certificate
 const issueCertificate = async ({ userId, tutorialId, templateId = null }) => {
   const resolvedTemplateId =
@@ -70,5 +76,6 @@ module.exports = {
   generateCode,
   isUserCompletedTutorial,
   findExisting,
+  resolveTemplateId,
   issueCertificate,
 };
