@@ -6,6 +6,7 @@ import {
   fetchClassStudents,
   issueCertificate,
 } from "@/services/instructor/certificateService";
+import { getTemplates } from "@/services/admin/certificateTemplateService";
 
 export default function IssueCertificatePage() {
   const router = useRouter();
@@ -18,13 +19,16 @@ export default function IssueCertificatePage() {
   const [issueDate, setIssueDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       if (!classId) return;
       setLoading(true);
-      setError('');
+      setError("");
       try {
         const data = await fetchClassStudents(classId);
         setStudents(data?.students || []);
@@ -32,13 +36,33 @@ export default function IssueCertificatePage() {
         setIssueDate(new Date().toISOString().slice(0, 10));
       } catch (err) {
         console.error('Failed to load class info', err);
-        setError('Failed to load class info');
+        setError("Failed to load class info");
       } finally {
         setLoading(false);
       }
     };
     load();
   }, [classId]);
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const data = await getTemplates();
+        setTemplates(data);
+        if (data?.length) {
+          setSelectedTemplate(data[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to load templates", err);
+        setError("Failed to load templates");
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    loadTemplates();
+  }, []);
 
   const handleSubmit = async () => {
     if (!selectedStudent || !studentName) {
@@ -47,18 +71,19 @@ export default function IssueCertificatePage() {
     }
 
     setSaving(true);
-    setError('');
+    setError("");
     try {
       await issueCertificate({
         classId,
         studentId: selectedStudent,
         studentName,
         issueDate,
+        templateId: selectedTemplate || null,
       });
       router.push(`/dashboard/instructor/certificates`);
     } catch (err) {
       console.error('Issue failed', err);
-      setError('Failed to issue certificate');
+      setError("Failed to issue certificate");
     } finally {
       setSaving(false);
     }
@@ -112,6 +137,28 @@ export default function IssueCertificatePage() {
             onChange={(e) => setIssueDate(e.target.value)}
             className="w-full p-3 bg-gray-100 rounded-md"
           />
+
+          <label className="block text-sm font-semibold text-gray-600">
+            Certificate Template
+          </label>
+          <select
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+            className="w-full p-3 bg-gray-100 rounded-md"
+            disabled={loadingTemplates || templates.length === 0}
+          >
+            {loadingTemplates ? (
+              <option>Loading templates...</option>
+            ) : templates.length === 0 ? (
+              <option value="">No templates available</option>
+            ) : (
+              templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))
+            )}
+          </select>
 
           <button
             onClick={handleSubmit}

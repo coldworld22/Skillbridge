@@ -39,10 +39,33 @@ const isUserCompletedTutorial = async (userId, tutorialId) => {
 };
 
 // Check if certificate already exists
+const buildTemplateAwareQuery = () => {
+  const query = db("certificates");
+  applyTemplateJoin(query);
+  return query.select("certificates.*", ...TEMPLATE_SELECT_FIELDS);
+};
+
 const findExisting = async (userId, tutorialId) => {
-  return await db("certificates")
-    .where({ user_id: userId, tutorial_id: tutorialId })
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.user_id", userId)
+    .where("certificates.tutorial_id", tutorialId)
     .first();
+
+  return formatCertificateRow(row);
+};
+
+const findById = async (id) => {
+  const row = await buildTemplateAwareQuery()
+    .where("certificates.id", id)
+    .first();
+
+  return formatCertificateRow(row);
+};
+
+const resolveTemplateId = async (templateId) => {
+  if (templateId) return templateId;
+  const template = await templateService.getActiveTemplate();
+  return template?.id || null;
 };
 
 // Create a new certificate
@@ -76,5 +99,6 @@ module.exports = {
   generateCode,
   isUserCompletedTutorial,
   findExisting,
+  findById,
   issueCertificate,
 };
