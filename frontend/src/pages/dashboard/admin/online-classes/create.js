@@ -100,14 +100,7 @@ function CreateOnlineClass() {
   const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
   const [loadingInstructors, setLoadingInstructors] = useState(false);
 
-  const {
-    uploadProgress,
-    imageUploading,
-    videoUploading,
-    handleImageUpload: mediaImageUpload,
-    handleVideoUpload: mediaVideoUpload,
-    setUploadProgress,
-  } = useMediaUploader({
+  const mediaUploader = useMediaUploader({
     t,
     onError: (message) => toast.error(message),
     onImageSelect: (file, preview) =>
@@ -115,6 +108,15 @@ function CreateOnlineClass() {
     onVideoSelect: (file, preview) =>
       setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
   });
+
+  const {
+    uploadProgress = 0,
+    handleImageUpload: mediaImageUpload,
+    handleVideoUpload: mediaVideoUpload,
+    setUploadProgress,
+  } = mediaUploader ?? {};
+  const isImageUploading = Boolean(mediaUploader?.imageUploading);
+  const isVideoUploading = Boolean(mediaUploader?.videoUploading);
 
   const priceValue = useMemo(() => {
     const parsed = Number.parseFloat(formData.price);
@@ -856,7 +858,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {imageUploading ? (
+                            {isImageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
@@ -903,7 +905,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {videoUploading ? (
+                            {isVideoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
