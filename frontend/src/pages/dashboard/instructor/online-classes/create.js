@@ -78,20 +78,23 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
-  const {
-    uploadProgress,
-    imageUploading,
-    videoUploading,
-    handleImageUpload: mediaImageUpload,
-    handleVideoUpload: mediaVideoUpload,
-    setUploadProgress,
-  } = useMediaUploader({
+  const mediaUploader = useMediaUploader({
     onError: (msg) => toast.error(msg),
     onImageSelect: (file, preview) =>
       setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
     onVideoSelect: (file, preview) =>
       setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
   });
+
+  const {
+    uploadProgress = 0,
+    handleImageUpload: mediaImageUpload = () => {},
+    handleVideoUpload: mediaVideoUpload = () => {},
+    setUploadProgress = () => {},
+  } = mediaUploader ?? {};
+
+  const isImageUploading = Boolean(mediaUploader?.imageUploading);
+  const isVideoUploading = Boolean(mediaUploader?.videoUploading);
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -555,7 +558,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {imageUploading ? (
+                            {isImageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
@@ -602,7 +605,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {videoUploading || isServerUploading ? (
+                            {isVideoUploading || isServerUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
