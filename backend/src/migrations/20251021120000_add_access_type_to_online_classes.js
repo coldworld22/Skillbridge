@@ -1,7 +1,8 @@
 exports.up = async function () {
-  // No-op: superseded by 20251022120000_add_access_type_to_online_classes.js
+  // This migration is intentionally left empty. The access_type column is now
+  // fully managed by later migrations that ensure a consistent enum type.
 };
 
 exports.down = async function () {
-  // No-op: superseded by 20251022120000_add_access_type_to_online_classes.js
+  // No-op: nothing was changed in the up migration.
 };
