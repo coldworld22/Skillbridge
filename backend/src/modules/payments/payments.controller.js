@@ -174,15 +174,16 @@ exports.createPayment = catchAsync(async (req, res) => {
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-        const attachmentPath = resolveInvoicePdfPath(invoice);
-        if (attachmentPath) {
-          await mailService.sendMail({
-            to: user.email,
-            subject: "Payment Invoice",
-            html: `<p>Please find your invoice attached.</p>`,
-            attachments: [{ path: attachmentPath }],
-          });
-        }
+        const attachmentPath = path.join(
+          process.cwd(),
+          invoice.pdf_url.replace(/^\/+/, "")
+        );
+        await mailService.sendMail({
+          to: user.email,
+          subject: "Payment Invoice",
+          html: `<p>Please find your invoice attached.</p>`,
+          attachments: [{ path: attachmentPath }],
+        });
       }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
