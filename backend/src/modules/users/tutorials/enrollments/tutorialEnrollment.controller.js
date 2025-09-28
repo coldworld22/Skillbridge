@@ -9,6 +9,7 @@ const planRevenue = require("../../../payments/helpers/planRevenue");
 const paymentsService = require("../../../payments/payments.service");
 const paymentMethodsService = require("../../../paymentMethods/paymentMethods.service");
 
+
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
   const { userId, tutorialId } = requireUserAndTutorial(req);
@@ -38,7 +39,6 @@ exports.enroll = catchAsync(async (req, res) => {
       if (!subscriptionMethod) {
         throw new AppError("Subscription payment method not configured", 500);
       }
-
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,

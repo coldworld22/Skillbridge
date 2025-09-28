@@ -65,6 +65,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const paymentMethodsService = require('../../../paymentMethods/paymentMethods.service');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 const paymentsService = require('../../../payments/payments.service');
@@ -79,6 +80,11 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    paymentMethodsService.getByType.mockImplementation((type) => {
+      if (type === 'subscription') return Promise.resolve(null);
+      if (type === 'free') return Promise.resolve({ id: 'free-method' });
+      return Promise.resolve(null);
+    });
   });
 
   test('enroll in class', async () => {
