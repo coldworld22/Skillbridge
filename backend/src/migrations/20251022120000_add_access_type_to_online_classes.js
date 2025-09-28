@@ -1,6 +1,4 @@
 exports.up = async function (knex) {
-  const hasColumn = await knex.schema.hasColumn('online_classes', 'access_type');
-
   const {
     rows: [typeExists],
   } = await knex.raw(
@@ -13,23 +11,25 @@ exports.up = async function (knex) {
     );
   }
 
-  if (!hasColumn) {
-    await knex.raw(
-      "ALTER TABLE online_classes ADD COLUMN IF NOT EXISTS access_type online_class_access_type NOT NULL DEFAULT 'paid'"
-    );
-    return;
-  }
-
-  const columnInfo = await knex('information_schema.columns')
-    .select('udt_name', 'data_type')
-    .where({
-      table_schema: 'public',
-      table_name: 'online_classes',
-      column_name: 'access_type',
-    })
-    .first();
+  const {
+    rows: [columnInfo],
+  } = await knex.raw(
+    "SELECT data_type, udt_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'online_classes' AND column_name = 'access_type'"
+  );
 
   if (!columnInfo) {
+    await knex.raw(
+      "ALTER TABLE online_classes ADD COLUMN access_type online_class_access_type"
+    );
+    await knex.raw(
+      "UPDATE online_classes SET access_type = 'paid' WHERE access_type IS NULL"
+    );
+    await knex.raw(
+      "ALTER TABLE online_classes ALTER COLUMN access_type SET DEFAULT 'paid'"
+    );
+    await knex.raw(
+      "ALTER TABLE online_classes ALTER COLUMN access_type SET NOT NULL"
+    );
     return;
   }
 
