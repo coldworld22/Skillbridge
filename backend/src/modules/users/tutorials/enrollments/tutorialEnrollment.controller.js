@@ -5,7 +5,44 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
-const { creditInstructorSubscription } = require("../../../payments/helpers/wallet");
+const planRevenue = require("../../../payments/helpers/planRevenue");
+const paymentsService = require("../../../payments/payments.service");
+
+const { STATUS: PAYMENT_STATUS } = paymentsService;
+
+const SUBSCRIPTION_METHOD_TYPE = "subscription";
+const SUBSCRIPTION_METHOD_NAME = "Subscription Credit";
+const SUBSCRIPTION_SOURCE = "subscription";
+
+const ensureSubscriptionPaymentMethod = async (trx) => {
+  const existing = await trx("payment_methods_config")
+    .where({ type: SUBSCRIPTION_METHOD_TYPE })
+    .first();
+
+  if (existing) return existing.id;
+
+  const inserted = await trx("payment_methods_config")
+    .insert({
+      id: uuidv4(),
+      name: SUBSCRIPTION_METHOD_NAME,
+      type: SUBSCRIPTION_METHOD_TYPE,
+      icon: null,
+      active: true,
+      settings: {},
+      is_default: false,
+    })
+    .returning("*");
+
+  const row = Array.isArray(inserted) ? inserted[0] : inserted;
+  if (row?.id) return row.id;
+
+  const created = await trx("payment_methods_config")
+    .where({ type: SUBSCRIPTION_METHOD_TYPE })
+    .first();
+  if (created?.id) return created.id;
+
+  throw new AppError("Subscription payment method unavailable", 500);
+};
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -26,22 +63,59 @@ exports.enroll = catchAsync(async (req, res) => {
   const coveredBySubscription =
     activePlanId && includedPlans.includes(activePlanId);
 
-  const id = uuidv4();
+  const enrollmentId = uuidv4();
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      await trx("payments").insert({
-        user_id,
-        item_id: tutorialId,
-        item_type: "tutorial",
-        source: "subscription",
-      });
+      const usage = await trx("plan_usage_metrics")
+        .where({
+          plan_id: activePlanId,
+          item_type: "tutorial",
+          item_id: tutorialId,
+        })
+        .first();
 
-      await creditInstructorSubscription(
-        "tutorial",
-        tutorialId,
+      if (usage) {
+        await trx("plan_usage_metrics")
+          .where({
+            plan_id: activePlanId,
+            item_type: "tutorial",
+            item_id: tutorialId,
+          })
+          .update({ usage_count: usage.usage_count + 1 });
+      } else {
+        await trx("plan_usage_metrics").insert({
+          plan_id: activePlanId,
+          item_type: "tutorial",
+          item_id: tutorialId,
+          usage_count: 1,
+        });
+      }
+
+      await planRevenue.calculateInstructorAmount(
         activePlanId,
-        trx
+        tutorialId,
+        trx,
+        "tutorial"
+      );
+
+      const methodId = await ensureSubscriptionPaymentMethod(trx);
+      await paymentsService.create(
+        {
+          id: uuidv4(),
+          user_id,
+          method_id: methodId,
+          item_id: tutorialId,
+          item_type: "tutorial",
+          amount: 0,
+          currency: tutorial.currency || "USD",
+          status: PAYMENT_STATUS.PAID,
+          source: SUBSCRIPTION_SOURCE,
+          platform_fee: 0,
+          instructor_amount: 0,
+        },
+        [],
+        trx,
       );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
@@ -54,7 +128,7 @@ exports.enroll = catchAsync(async (req, res) => {
     }
 
     await trx("tutorial_enrollments").insert({
-      id,
+      id: enrollmentId,
       user_id,
       tutorial_id: tutorialId,
       status: "enrolled",
@@ -74,7 +148,7 @@ exports.enroll = catchAsync(async (req, res) => {
     throw err;
   }
 
-  sendSuccess(res, { id }, "Enrolled successfully");
+  sendSuccess(res, { id: enrollmentId }, "Enrolled successfully");
 });
 
 // Mark as completed
