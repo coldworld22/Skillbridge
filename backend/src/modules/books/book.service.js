@@ -333,17 +333,28 @@ exports.checkout = async (studentId) => {
 
         await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
 
-        const [payment] = await trx('payments')
-          .insert({
+        const subscriptionMethod = await paymentMethodsService.getByType(
+          'subscription'
+        );
+        if (!subscriptionMethod) {
+          throw new AppError('Subscription payment method not configured', 500);
+        }
+
+        const payment = await paymentsService.create(
+          {
             id: uuidv4(),
             user_id: studentId,
             item_type: 'book',
             item_id: b.id,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
+            method_id: subscriptionMethod.id,
             source: 'subscription',
-          })
-          .returning('*');
+            paid_at: new Date(),
+          },
+          [],
+          trx
+        );
 
         await trx('book_purchases').insert({
           student_id: studentId,
