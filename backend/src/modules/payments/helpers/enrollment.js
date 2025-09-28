@@ -11,6 +11,7 @@ async function handleEnrollment(item_type, user_id, item_id) {
     if (existingEnrollment) {
       if (existingEnrollment.status !== "enrolled") {
         await enrollmentService.updateEnrollment(user_id, item_id, {
+
           status: "enrolled",
         });
       }
