@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -26,10 +27,12 @@ exports.enroll = catchAsync(async (req, res) => {
   const coveredBySubscription =
     activePlanId && includedPlans.includes(activePlanId);
 
-  const id = uuidv4();
+  const enrollmentId = uuidv4();
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
+      const planMethod = await getPlanCoveredMethod(trx);
+
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
@@ -64,11 +67,14 @@ exports.enroll = catchAsync(async (req, res) => {
 
       await trx("payments").insert({
         user_id,
+        method_id: planMethod.id,
         item_id: tutorialId,
         item_type: "tutorial",
         source: "subscription",
         amount: 0,
       });
+
+      await creditTutorialSubscription(tutorialId, activePlanId, trx);
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })
@@ -80,7 +86,7 @@ exports.enroll = catchAsync(async (req, res) => {
     }
 
     await trx("tutorial_enrollments").insert({
-      id,
+      id: enrollmentId,
       user_id,
       tutorial_id: tutorialId,
       status: "enrolled",
@@ -100,7 +106,7 @@ exports.enroll = catchAsync(async (req, res) => {
     throw err;
   }
 
-  sendSuccess(res, { id }, "Enrolled successfully");
+  sendSuccess(res, { id: enrollmentId }, "Enrolled successfully");
 });
 
 // Mark as completed
