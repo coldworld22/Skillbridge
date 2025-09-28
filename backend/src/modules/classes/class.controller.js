@@ -18,6 +18,34 @@ const db = require("../../config/database");
 const fs = require("fs");
 const path = require("path");
 
+const TAGS_FORMAT_ERROR = "Invalid tags format. Expected an array of strings.";
+
+const normalizeTagsInput = (input, { defaultValue = [] } = {}) => {
+  if (input === undefined || input === null || input === "") {
+    return defaultValue;
+  }
+
+  if (Array.isArray(input)) {
+    return input;
+  }
+
+  if (typeof input === "string") {
+    try {
+      const parsed = JSON.parse(input);
+
+      if (!Array.isArray(parsed)) {
+        throw new AppError(TAGS_FORMAT_ERROR, 400);
+      }
+
+      return parsed;
+    } catch (error) {
+      throw new AppError(TAGS_FORMAT_ERROR, 400);
+    }
+  }
+
+  throw new AppError(TAGS_FORMAT_ERROR, 400);
+};
+
 const generateUniqueSlug = async (title) => {
   const base = slugify(title, { lower: true, strict: true });
   let slug = base;
@@ -91,7 +119,7 @@ exports.createClass = catchAsync(async (req, res) => {
   if (req.files?.demo_video?.[0]) {
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
-  const tags = rawTags ? JSON.parse(rawTags) : [];
+  const tags = normalizeTagsInput(rawTags);
   const cls = await service.createClass(data);
   if (tags.length) {
     const tagIds = [];
@@ -282,24 +310,28 @@ exports.updateClass = catchAsync(async (req, res) => {
   if (req.user.role === 'instructor') {
     data.instructor_id = existing.instructor_id;
   }
-  const tags = rawTags ? JSON.parse(rawTags) : null;
+  const tags = normalizeTagsInput(rawTags, { defaultValue: null });
   const cls = await service.updateClass(req.params.id, data);
-  if (tags) {
+  if (tags !== null) {
     // remove existing then add
     await db('class_tag_map').where({ class_id: cls.id }).del();
-    const tagIds = [];
-    for (const name of tags) {
-      const existingTag = await tagService.findByName(name);
-      const tag =
-        existingTag ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
+    if (tags.length) {
+      const tagIds = [];
+      for (const name of tags) {
+        const existingTag = await tagService.findByName(name);
+        const tag =
+          existingTag ||
+          (await tagService.createTag({
+            name,
+            slug: slugify(name, { lower: true, strict: true }),
+          }));
+        tagIds.push(tag.id);
+      }
+      await service.addClassTags(cls.id, tagIds);
+      cls.tags = await service.getClassTags(cls.id);
+    } else {
+      cls.tags = [];
     }
-    await service.addClassTags(cls.id, tagIds);
-    cls.tags = await service.getClassTags(cls.id);
   }
   if (
     req.user.role !== "instructor" &&
