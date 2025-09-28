@@ -5,6 +5,7 @@ const paypalService = require("../../../services/paypalService");
 const stripeService = require("../../../services/stripeService");
 const couponService = require("../../coupons/coupons.service");
 const classService = require("../../classes/class.service");
+const classEnrollmentService = require("../../classes/enrollments/classEnrollment.service");
 const bookService = require("../../books/book.service");
 const tutorialService = require("../../users/tutorials/tutorial.service");
 const plansService = require("../../plans/plans.service");
@@ -122,14 +123,16 @@ async function validatePaymentData(body, userId) {
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
-    if (
-      !cls.allow_installments &&
-      (allow_installments || (Number(installments) || 0) > 1)
-    ) {
-      throw new AppError("Installments not allowed for this class", 400);
+    if (cls.status !== "published" || cls.moderation_status !== "Approved") {
+      throw new AppError("Class is not available for enrollment", 400);
     }
-    if (!cls.allow_installments) {
-      totalInstallments = 1;
+    if (cls.max_students) {
+      const currentEnrollments = await classEnrollmentService.countEnrollments(
+        item_id
+      );
+      if (currentEnrollments >= cls.max_students) {
+        throw new AppError("Class is fully booked", 400);
+      }
     }
     basePrice = Number(cls.price);
   } else if (item_type === "book") {
