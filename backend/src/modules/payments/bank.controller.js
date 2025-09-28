@@ -1,3 +1,4 @@
+const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -19,6 +20,24 @@ const tutorialService = require("../users/tutorials/tutorial.service");
 const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
+const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
+
+const resolveInvoiceAttachmentPath = (invoice) => {
+  if (typeof invoiceService.resolveInvoiceAttachmentPath === "function") {
+    const resolved = invoiceService.resolveInvoiceAttachmentPath(invoice);
+    if (resolved) return resolved;
+  }
+
+  if (!invoice?.pdf_url) {
+    return null;
+  }
+
+  return path.join(
+    __dirname,
+    "../../../",
+    invoice.pdf_url.replace(/^\/+/, "")
+  );
+};
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -336,12 +355,15 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     if (user) {
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
-        await mailService.sendMail({
-          to: user.email,
-          subject: "Payment Invoice",
-          html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
-        });
+        const attachmentPath = resolveInvoicePdfPath(invoice);
+        if (attachmentPath) {
+          await mailService.sendMail({
+            to: user.email,
+            subject: "Payment Invoice",
+            html: `<p>Please find your invoice attached.</p>`,
+            attachments: [{ path: attachmentPath }],
+          });
+        }
       }
     }
   } catch (err) {

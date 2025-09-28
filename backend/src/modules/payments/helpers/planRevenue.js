@@ -13,44 +13,65 @@ exports.calculateInstructorAmount = async (
 ) => {
   const query = trx || db;
   try {
-    let row = await query("plan_usage_metrics")
-      .where({ plan_id: planId, item_type: itemType, item_id: itemId })
-      .first();
+    let usageQuery = query("plan_usage_metrics").where({
+      plan_id: planId,
+      item_type: itemType,
+      item_id: itemId,
+    });
+
+    if (trx && typeof usageQuery.forUpdate === "function") {
+      usageQuery = usageQuery.forUpdate();
+    }
+
+    let row = await usageQuery.first();
 
     if (!row) {
       await query("plan_usage_metrics").insert({
         plan_id: planId,
         item_type: itemType,
         item_id: itemId,
-        usage_count: 1,
+        usage_count: 0,
         instructor_amount: 0,
       });
-      row = { usage_count: 1 };
+      row = { usage_count: 0, instructor_amount: 0 };
     }
 
     const plan = await query("plans").where({ id: planId }).first();
-    if (!plan) return 0;
 
-    const featureRows = await query("plan_features")
-      .where({ plan_id: planId })
-      .select("feature_key", "value");
+    const featureRows = plan
+      ? await query("plan_features")
+          .where({ plan_id: planId })
+          .select("feature_key", "value")
+      : [];
     const features = parsePlanFeatures({ features: featureRows });
 
-    const price = Number(plan.price_monthly || 0);
-    let net;
-    if (features.commission_rate != null) {
-      const commissionRate = Number(features.commission_rate);
-      net = price - price * commissionRate;
-    } else {
-      ({ instructor_amount: net } = await calculatePlatformFee(itemType, price));
+    const price = Number(plan?.price_monthly || 0);
+    let net = 0;
+    if (plan) {
+      if (features.commission_rate != null) {
+        const commissionRate = Number(features.commission_rate);
+        net = price - price * commissionRate;
+      } else {
+        ({ instructor_amount: net } = await calculatePlatformFee(itemType, price));
+      }
     }
-    const amount = row.usage_count > 0 ? net / row.usage_count : 0;
+
+    const roundCurrency = (value) =>
+      Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+
+    const previousTotal = roundCurrency(Number(row.instructor_amount || 0));
+    const targetTotal = roundCurrency(net);
+    const delta = targetTotal > previousTotal ? targetTotal - previousTotal : 0;
+    const newTotal = roundCurrency(previousTotal + delta);
 
     await query("plan_usage_metrics")
       .where({ plan_id: planId, item_type: itemType, item_id: itemId })
-      .update({ instructor_amount: amount });
+      .update({
+        usage_count: Number(row.usage_count || 0) + 1,
+        instructor_amount: newTotal,
+      });
 
-    return Number(amount);
+    return roundCurrency(delta);
   } catch (err) {
     // If metrics table missing or query fails, do not block enrollment
     return 0;

@@ -10,10 +10,15 @@ jest.mock('../src/modules/plans/subscription.helper', () => ({
 }));
 const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
-jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
-  calculateInstructorAmount: jest.fn(),
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditInstructorSubscription: jest.fn(),
 }));
-const planRevenue = require('../src/modules/payments/helpers/planRevenue');
+const { creditInstructorSubscription } = require('../src/modules/payments/helpers/wallet');
+
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getByType: jest.fn(),
+}));
+const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(() => Promise.resolve({})),
@@ -202,8 +207,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       tutorialId,
-      expect.anything(),
-      'tutorial'
+      'plan1',
+      expect.anything()
     );
   });
 });
