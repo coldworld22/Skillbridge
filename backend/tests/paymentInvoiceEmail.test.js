@@ -19,10 +19,34 @@ jest.mock('../src/modules/coupons/coupons.service', () => ({ getCouponById: jest
 jest.mock('../src/modules/plans/plans.service', () => ({ getPlanById: jest.fn() }));
 jest.mock('../src/modules/subscriptions/subscription.service', () => ({ createOrRenewSubscription: jest.fn() }));
 jest.mock('../src/modules/payouts/wallet.service', () => ({ increment: jest.fn() }));
+jest.mock('../src/modules/payments/helpers/planRevenue', () => ({ calculateInstructorAmount: jest.fn().mockResolvedValue(0) }));
 jest.mock('../src/modules/classes/class.service', () => ({ getClassById: jest.fn() }));
 jest.mock('../src/modules/books/book.service', () => ({ getBookById: jest.fn() }));
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({ getTutorialById: jest.fn() }));
-jest.mock('../src/modules/invoices/invoices.service', () => ({ generateFromPayment: jest.fn() }));
+const path = require("path");
+
+jest.mock('../src/modules/invoices/invoices.service', () => {
+  const mockPath = require('path');
+  const invoicesDir = mockPath.join(__dirname, '../src/modules/invoices');
+  const buildAbsolutePath = (pdfUrl) => {
+    if (!pdfUrl) return null;
+    return mockPath.join(invoicesDir, '../../../', pdfUrl.replace(/^\//, ''));
+  };
+  const resolveInvoicePath = jest.fn((invoiceOrUrl) => {
+    if (!invoiceOrUrl) return null;
+    if (typeof invoiceOrUrl === 'string') {
+      return buildAbsolutePath(invoiceOrUrl);
+    }
+    if (invoiceOrUrl.pdf_path) {
+      return invoiceOrUrl.pdf_path;
+    }
+    return buildAbsolutePath(invoiceOrUrl.pdf_url);
+  });
+  return {
+    generateFromPayment: jest.fn(),
+    resolveInvoicePath,
+  };
+});
 jest.mock('../src/modules/payments/paymentAccess', () => ({ grantAccess: jest.fn() }));
 
 const paymentsController = require('../src/modules/payments/payments.controller');
@@ -43,7 +67,15 @@ const notificationService = require('../src/modules/notifications/notifications.
 beforeEach(() => {
   jest.clearAllMocks();
   invoiceService.generateFromPayment.mockResolvedValue({ pdf_url: '/inv.pdf' });
-  mailService.sendMail.mockResolvedValue();
+  const expectedAttachmentPath = invoiceService.resolveInvoicePath({ pdf_url: '/inv.pdf' });
+  mailService.sendMail.mockImplementation((options = {}) => {
+    const attachmentPath = options.attachments?.[0]?.path;
+    if (attachmentPath) {
+      expect(attachmentPath).toBe(expectedAttachmentPath);
+      expect(path.isAbsolute(attachmentPath)).toBe(true);
+    }
+    return Promise.resolve();
+  });
   paymentConfigService.getSettings.mockResolvedValue({ platformCut: {} });
   userModel.findById.mockResolvedValue({ id: 'u1', email: 'u@test.com', full_name: 'User' });
   bookService.getBookById.mockResolvedValue({ price: 100, instructor_id: 'i1' });
@@ -67,7 +99,23 @@ describe('invoice email dispatch', () => {
     await paymentsController.createPayment(req, res, () => {});
     await new Promise(process.nextTick);
 
-    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+    const expectedAttachmentPath = invoiceService.resolveInvoicePath({ pdf_url: '/inv.pdf' });
+    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: expectedAttachmentPath }] }));
+  });
+
+  it('resolves invoice attachment paths to an absolute filesystem location', async () => {
+    paymentMethodsService.getById.mockResolvedValue({ id: 'mA', type: 'card', active: true });
+    paymentsService.create.mockResolvedValue({ id: 'pA', user_id: 'u1', method_id: 'mA', item_type: 'book', item_id: 'b1', amount: 100, currency: 'USD', status: 'paid' });
+
+    const req = { body: { method_id: 'mA', item_type: 'book', item_id: 'b1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
+    const res = mockRes();
+    await paymentsController.createPayment(req, res, () => {});
+    await new Promise(process.nextTick);
+
+    const mailArgs = mailService.sendMail.mock.calls[0][0];
+    const attachmentPath = mailArgs.attachments?.[0]?.path;
+    expect(path.isAbsolute(attachmentPath)).toBe(true);
+    await expect(mailService.sendMail.mock.results[0].value).resolves.toBeUndefined();
   });
 
   it('sends invoice email for zero-amount payments', async () => {
@@ -81,7 +129,8 @@ describe('invoice email dispatch', () => {
     await new Promise(process.nextTick);
 
     expect(paymentsService.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 0, status: 'paid' }));
-    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+    const expectedAttachmentPath = invoiceService.resolveInvoicePath({ pdf_url: '/inv.pdf' });
+    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: expectedAttachmentPath }] }));
   });
 
   it('sends invoice email for bank payments upon approval', async () => {
@@ -90,7 +139,8 @@ describe('invoice email dispatch', () => {
     await bankController.approveBankPayment(req, res, () => {});
     await new Promise(process.nextTick);
 
-    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+    const expectedAttachmentPath = invoiceService.resolveInvoicePath({ pdf_url: '/inv.pdf' });
+    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: expectedAttachmentPath }] }));
   });
 
   it('handles zero-amount payments without a method', async () => {
@@ -107,7 +157,8 @@ describe('invoice email dispatch', () => {
     expect(paymentsService.create).toHaveBeenCalled();
     expect(paymentsService.create.mock.calls[0][0].status).toBe('paid');
     expect(walletService.increment).toHaveBeenCalledWith('i1', 0);
-    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+    const expectedAttachmentPath = invoiceService.resolveInvoicePath({ pdf_url: '/inv.pdf' });
+    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: expectedAttachmentPath }] }));
   });
 
   it('triggers notification for paid plan payments', async () => {

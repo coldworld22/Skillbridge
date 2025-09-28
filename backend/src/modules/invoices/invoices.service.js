@@ -6,9 +6,36 @@ const model = require("./invoice.model");
 
 const uploadDir = path.join(__dirname, "../../../uploads/invoices");
 
+const buildAbsolutePath = (pdfUrl) => {
+  if (!pdfUrl) return null;
+  return path.join(__dirname, "../../../", pdfUrl.replace(/^\//, ""));
+};
+
+const resolveInvoicePath = (invoiceOrUrl) => {
+  if (!invoiceOrUrl) return null;
+  if (typeof invoiceOrUrl === "string") {
+    return buildAbsolutePath(invoiceOrUrl);
+  }
+  if (invoiceOrUrl.pdf_path) {
+    return invoiceOrUrl.pdf_path;
+  }
+  return buildAbsolutePath(invoiceOrUrl.pdf_url);
+};
+
+const withResolvedPath = (invoice) => {
+  if (!invoice) return invoice;
+  const pdf_path = resolveInvoicePath(invoice);
+  if (pdf_path && invoice.pdf_path !== pdf_path) {
+    return { ...invoice, pdf_path };
+  }
+  return invoice;
+};
+
+exports.resolveInvoicePath = resolveInvoicePath;
+
 exports.generateFromPayment = async (payment, user) => {
   const existing = await model.findByPayment(payment.id);
-  if (existing) return existing;
+  if (existing) return withResolvedPath(existing);
 
   await fs.promises.mkdir(uploadDir, { recursive: true });
 
@@ -56,7 +83,8 @@ exports.generateFromPayment = async (payment, user) => {
     },
   };
 
-  return model.create(data);
+  const created = await model.create(data);
+  return withResolvedPath(created);
 };
 
 exports.getInvoices = () => model.getAll();
