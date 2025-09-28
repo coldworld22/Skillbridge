@@ -19,6 +19,11 @@ jest.mock('../src/modules/payments/helpers/methods.js', () => ({
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditTutorialSubscription: jest.fn(),
+}));
+const { creditTutorialSubscription } = require('../src/modules/payments/helpers/wallet');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -38,7 +43,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
-    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
+    planRevenue.calculateInstructorAmount.mockResolvedValue(0);
+    creditTutorialSubscription.mockResolvedValue();
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -136,10 +142,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
 
   it('enrolls in paid tutorial covered by subscription', async () => {
     const planInsert = jest.fn(() => Promise.resolve());
-    const paymentMethodWhere = jest.fn(() => ({
-      first: jest.fn(() => Promise.resolve({ id: 'subscription-method-id' })),
-    }));
-    const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
+    const paymentInsert = jest.fn(() => Promise.resolve());
+    const calculatedAmount = 42;
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -170,6 +174,11 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     });
 
     getActiveStudentPlanId.mockResolvedValue('plan1');
+    planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
+    let instructorWalletBalance = 0;
+    creditTutorialSubscription.mockImplementation(async () => {
+      instructorWalletBalance += calculatedAmount;
+    });
 
     const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
     const res = await request(app).post(
@@ -193,6 +202,12 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       'plan1',
       expect.anything()
     );
+    expect(creditTutorialSubscription).toHaveBeenCalledWith(
+      tutorialId,
+      'plan1',
+      expect.anything(),
+    );
+    expect(instructorWalletBalance).toBe(calculatedAmount);
   });
 });
 
