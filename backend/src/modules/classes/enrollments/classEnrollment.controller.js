@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
+const paymentMethodsService = require("../../paymentMethods/paymentMethods.service");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 const planRevenue = require("../../payments/helpers/planRevenue");
@@ -81,14 +82,27 @@ exports.enroll = catchAsync(async (req, res) => {
         "class"
       );
 
-      await trx("payments").insert({
-        user_id,
-        item_id: classId,
-        item_type: "class",
-        source: "subscription",
-        amount: 0,
-        method_id: subscriptionMethod.id,
-      });
+      const subscriptionMethod = await paymentMethodsService.getByType(
+        "subscription"
+      );
+      if (!subscriptionMethod) {
+        throw new AppError("Subscription payment method not configured", 500);
+      }
+
+      await paymentsService.create(
+        {
+          user_id,
+          item_id: classId,
+          item_type: "class",
+          amount: 0,
+          status: paymentsService.STATUS.PAID,
+          paid_at: new Date(),
+          method_id: subscriptionMethod.id,
+          source: "subscription",
+        },
+        [],
+        trx
+      );
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.
       await creditInstructorSubscription("class", classId, activePlanId, trx);

@@ -6,19 +6,9 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const paymentsService = require("../../../payments/payments.service");
 const paymentMethodsService = require("../../../paymentMethods/paymentMethods.service");
 
-const getSubscriptionPaymentMethod = async () => {
-  const method =
-    (await paymentMethodsService.getByType("subscription")) ||
-    (await paymentMethodsService.getByType("free"));
-
-  if (!method) {
-    throw new AppError("Subscription payment method not configured", 400);
-  }
-
-  return method;
-};
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -43,7 +33,12 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      const subscriptionMethod = await getSubscriptionPaymentMethod();
+      const subscriptionMethod = await paymentMethodsService.getByType(
+        "subscription"
+      );
+      if (!subscriptionMethod) {
+        throw new AppError("Subscription payment method not configured", 500);
+      }
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
@@ -76,14 +71,20 @@ exports.enroll = catchAsync(async (req, res) => {
         "tutorial"
       );
 
-      await trx("payments").insert({
-        user_id,
-        item_id: tutorialId,
-        item_type: "tutorial",
-        source: "subscription",
-        amount: 0,
-        method_id: subscriptionMethod.id,
-      });
+      await paymentsService.create(
+        {
+          user_id,
+          item_id: tutorialId,
+          item_type: "tutorial",
+          amount: 0,
+          status: paymentsService.STATUS.PAID,
+          paid_at: new Date(),
+          method_id: subscriptionMethod.id,
+          source: "subscription",
+        },
+        [],
+        trx
+      );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })
