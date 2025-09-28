@@ -11,14 +11,11 @@ exports.up = async function (knex) {
     );
   }
 
-  const columnInfo = await knex('information_schema.columns')
-    .select('udt_name', 'data_type')
-    .where({
-      table_schema: 'public',
-      table_name: 'online_classes',
-      column_name: 'access_type',
-    })
-    .first();
+  const {
+    rows: [columnInfo],
+  } = await knex.raw(
+    "SELECT data_type, udt_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'online_classes' AND column_name = 'access_type'"
+  );
 
   if (!columnInfo) {
     await knex.raw(
