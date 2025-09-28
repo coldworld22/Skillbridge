@@ -6,43 +6,36 @@ const model = require("./invoice.model");
 
 const uploadDir = path.join(__dirname, "../../../uploads/invoices");
 
-const getInvoiceFilePaths = (value) => {
-  if (!value) {
-    return { publicUrl: null, absolutePath: null, relativePath: null };
-  }
-
-  const sanitized = String(value).replace(/\\/g, "/").replace(/^\/+/, "");
-  const relativePath = sanitized.startsWith("uploads/invoices")
-    ? sanitized
-    : path.posix.join("uploads/invoices", sanitized);
-
-  const publicUrl = `/${relativePath}`;
-  const absolutePath = path.join(__dirname, "../../../", relativePath);
-
-  return { publicUrl, absolutePath, relativePath };
+const buildAbsolutePath = (pdfUrl) => {
+  if (!pdfUrl) return null;
+  return path.join(__dirname, "../../../", pdfUrl.replace(/^\//, ""));
 };
 
-exports.getInvoiceFilePaths = getInvoiceFilePaths;
-
-exports.resolveInvoiceAttachmentPath = (invoice) => {
-  if (!invoice || !invoice.pdf_url) {
-    return null;
+const resolveInvoicePath = (invoiceOrUrl) => {
+  if (!invoiceOrUrl) return null;
+  if (typeof invoiceOrUrl === "string") {
+    return buildAbsolutePath(invoiceOrUrl);
   }
-
-  if (invoice.file_path) {
-    return invoice.file_path;
+  if (invoiceOrUrl.pdf_path) {
+    return invoiceOrUrl.pdf_path;
   }
-
-  const { absolutePath } = getInvoiceFilePaths(invoice.pdf_url);
-  return absolutePath;
+  return buildAbsolutePath(invoiceOrUrl.pdf_url);
 };
+
+const withResolvedPath = (invoice) => {
+  if (!invoice) return invoice;
+  const pdf_path = resolveInvoicePath(invoice);
+  if (pdf_path && invoice.pdf_path !== pdf_path) {
+    return { ...invoice, pdf_path };
+  }
+  return invoice;
+};
+
+exports.resolveInvoicePath = resolveInvoicePath;
 
 exports.generateFromPayment = async (payment, user) => {
   const existing = await model.findByPayment(payment.id);
-  if (existing) {
-    const paths = getInvoiceFilePaths(existing.pdf_url);
-    return { ...existing, file_path: paths.absolutePath };
-  }
+  if (existing) return withResolvedPath(existing);
 
   await fs.promises.mkdir(uploadDir, { recursive: true });
 
@@ -92,7 +85,7 @@ exports.generateFromPayment = async (payment, user) => {
   };
 
   const created = await model.create(data);
-  return { ...created, file_path: filePath };
+  return withResolvedPath(created);
 };
 
 exports.getInvoices = () => model.getAll();

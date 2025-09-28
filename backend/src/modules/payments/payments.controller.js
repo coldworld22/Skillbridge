@@ -229,13 +229,30 @@ exports.createPayment = catchAsync(async (req, res) => {
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-        const attachmentPath = resolveInvoiceAttachmentPath(invoice);
-        await mailService.sendMail({
-          to: user.email,
-          subject: "Payment Invoice",
-          html: `<p>Please find your invoice attached.</p>`,
-          attachments: attachmentPath ? [{ path: attachmentPath }] : undefined,
-        });
+        const attachmentPath =
+          (typeof invoiceService.resolveInvoicePath === "function"
+            ? invoiceService.resolveInvoicePath(invoice)
+            : null) ||
+          invoice.pdf_path ||
+          path.join(
+            __dirname,
+            "../../../",
+            invoice.pdf_url.replace(/^\//, "")
+          );
+
+        if (attachmentPath) {
+          await mailService.sendMail({
+            to: user.email,
+            subject: "Payment Invoice",
+            html: `<p>Please find your invoice attached.</p>`,
+            attachments: [{ path: attachmentPath }],
+          });
+        } else {
+          logger.warn(
+            "Invoice generated without a resolvable attachment path",
+            { invoiceId: invoice?.id, pdf_url: invoice?.pdf_url }
+          );
+        }
       }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
@@ -323,13 +340,30 @@ exports.updatePayment = catchAsync(async (req, res) => {
         try {
           const invoice = await invoiceService.generateFromPayment(payment, user);
           if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-            const attachmentPath = resolveInvoiceAttachmentPath(invoice);
-            await mailService.sendMail({
-              to: user.email,
-              subject: "Payment Invoice",
-              html: `<p>Please find your invoice attached.</p>`,
-              attachments: attachmentPath ? [{ path: attachmentPath }] : undefined,
-            });
+            const attachmentPath =
+              (typeof invoiceService.resolveInvoicePath === "function"
+                ? invoiceService.resolveInvoicePath(invoice)
+                : null) ||
+              invoice.pdf_path ||
+              path.join(
+                __dirname,
+                "../../../",
+                invoice.pdf_url.replace(/^\//, "")
+              );
+
+            if (attachmentPath) {
+              await mailService.sendMail({
+                to: user.email,
+                subject: "Payment Invoice",
+                html: `<p>Please find your invoice attached.</p>`,
+                attachments: [{ path: attachmentPath }],
+              });
+            } else {
+              logger.warn(
+                "Invoice generated without a resolvable attachment path",
+                { invoiceId: invoice?.id, pdf_url: invoice?.pdf_url }
+              );
+            }
           }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
