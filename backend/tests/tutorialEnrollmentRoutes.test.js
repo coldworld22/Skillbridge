@@ -15,6 +15,17 @@ jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
 }));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 
+jest.mock('../src/modules/payments/payments.service', () => ({
+  create: jest.fn(() => Promise.resolve({})),
+  STATUS: {
+    PENDING_PAYMENT: 'pending_payment',
+    AWAITING_APPROVAL: 'awaiting_approval',
+    PAID: 'paid',
+    REJECTED: 'rejected',
+  },
+}));
+const paymentsService = require('../src/modules/payments/payments.service');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -34,6 +45,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
+    paymentsService.create.mockResolvedValue({});
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -131,7 +143,10 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
 
   it('enrolls in paid tutorial covered by subscription', async () => {
     const planInsert = jest.fn(() => Promise.resolve());
-    const paymentInsert = jest.fn(() => Promise.resolve());
+    const paymentMethodWhere = jest.fn(() => ({
+      first: jest.fn(() => Promise.resolve({ id: 'subscription-method-id' })),
+    }));
+    const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -157,8 +172,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
           insert: planInsert,
         };
-      if (table === 'payments')
-        return { insert: paymentInsert };
+      if (table === 'payment_methods_config')
+        return { where: paymentMethodWhere, insert: paymentMethodInsert };
     });
 
     getActiveStudentPlanId.mockResolvedValue('plan1');
@@ -170,13 +185,20 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
     expect(planInsert).toHaveBeenCalled();
-    expect(paymentInsert).toHaveBeenCalledWith({
-      user_id: 'user1',
-      item_id: tutorialId,
-      item_type: 'tutorial',
-      source: 'subscription',
-      amount: 0,
-    });
+    expect(paymentMethodWhere).toHaveBeenCalledWith({ type: 'subscription' });
+    expect(paymentsService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'user1',
+        item_id: tutorialId,
+        item_type: 'tutorial',
+        method_id: 'subscription-method-id',
+        amount: 0,
+        status: 'paid',
+        source: 'subscription',
+      }),
+      [],
+      expect.anything(),
+    );
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       tutorialId,
