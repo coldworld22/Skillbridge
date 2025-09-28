@@ -27,7 +27,7 @@ exports.enroll = catchAsync(async (req, res) => {
   const coveredBySubscription =
     activePlanId && includedPlans.includes(activePlanId);
 
-  const id = uuidv4();
+  const enrollmentId = uuidv4();
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
@@ -84,7 +84,7 @@ exports.enroll = catchAsync(async (req, res) => {
     }
 
     await trx("tutorial_enrollments").insert({
-      id,
+      id: enrollmentId,
       user_id,
       tutorial_id: tutorialId,
       status: "enrolled",
@@ -104,7 +104,7 @@ exports.enroll = catchAsync(async (req, res) => {
     throw err;
   }
 
-  sendSuccess(res, { id }, "Enrolled successfully");
+  sendSuccess(res, { id: enrollmentId }, "Enrolled successfully");
 });
 
 // Mark as completed

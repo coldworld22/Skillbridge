@@ -16,6 +16,18 @@ const { getPlanCoveredMethod } = require("../payments/helpers/methods");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 
+const getSubscriptionPaymentMethod = async () => {
+  const method =
+    (await paymentMethodsService.getByType("subscription")) ||
+    (await paymentMethodsService.getByType("free"));
+
+  if (!method) {
+    throw new AppError("Subscription payment method not configured", 400);
+  }
+
+  return method;
+};
+
 const DEFAULT_PLATFORM_CUT = { book: 10 };
 
 exports.createBook = async (data) => {
@@ -274,6 +286,7 @@ exports.checkout = async (studentId) => {
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
   const activePlanId = await getActiveStudentPlanId(studentId);
+  let subscriptionMethod = null;
 
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
@@ -338,7 +351,6 @@ exports.checkout = async (studentId) => {
         }
 
         await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
-
         const [payment] = await trx('payments')
           .insert({
             id: uuidv4(),
@@ -348,15 +360,21 @@ exports.checkout = async (studentId) => {
             item_id: b.id,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
+            method_id: subscriptionMethod.id,
             source: 'subscription',
-          })
-          .returning('*');
+            paid_at: new Date(),
+          },
+          [],
+          trx
+        );
 
         await trx('book_purchases').insert({
           student_id: studentId,
           book_id: b.id,
           price_paid: 0,
         });
+
+        await creditInstructorSubscription('book', b.id, activePlanId, trx);
 
         payments.push(payment);
         continue;

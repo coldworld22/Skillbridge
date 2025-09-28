@@ -63,6 +63,8 @@ const { creditInstructorSubscription } = require('../../../payments/helpers/wall
 const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
+const paymentsService = require('../../../payments/payments.service');
+const paymentMethodsService = require('../../../paymentMethods/paymentMethods.service');
 
 const routes = require('../../class.routes');
 
@@ -143,7 +145,9 @@ describe('Class enrollment routes', () => {
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
+    paymentMethodsService.getByType.mockResolvedValueOnce({ id: 'subscription-method' });
     service.createEnrollment.mockResolvedValue({ id: '1' });
+    recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
@@ -155,15 +159,16 @@ describe('Class enrollment routes', () => {
       expect.anything(),
     );
     expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
-    expect(db.insert).toHaveBeenCalledWith(
+    expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'test-user',
         method_id: 'plan-method',
         item_id: 'abc',
         item_type: 'class',
         source: 'subscription',
-        amount: 0,
       }),
+      [],
+      db,
     );
     expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
   });

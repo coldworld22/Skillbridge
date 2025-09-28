@@ -10,8 +10,8 @@ jest.mock('../src/modules/plans/subscription.helper', () => ({
 }));
 const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
-jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
-  calculateInstructorAmount: jest.fn(),
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditInstructorSubscription: jest.fn(),
 }));
 jest.mock('../src/modules/payments/helpers/methods.js', () => ({
   getPlanCoveredMethod: jest.fn(),
@@ -136,7 +136,10 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
 
   it('enrolls in paid tutorial covered by subscription', async () => {
     const planInsert = jest.fn(() => Promise.resolve());
-    const paymentInsert = jest.fn(() => Promise.resolve());
+    const paymentMethodWhere = jest.fn(() => ({
+      first: jest.fn(() => Promise.resolve({ id: 'subscription-method-id' })),
+    }));
+    const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -162,8 +165,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
           insert: planInsert,
         };
-      if (table === 'payments')
-        return { insert: paymentInsert };
+      if (table === 'payment_methods_config')
+        return { where: paymentMethodWhere, insert: paymentMethodInsert };
     });
 
     getActiveStudentPlanId.mockResolvedValue('plan1');
@@ -187,8 +190,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       tutorialId,
-      expect.anything(),
-      'tutorial'
+      'plan1',
+      expect.anything()
     );
   });
 });

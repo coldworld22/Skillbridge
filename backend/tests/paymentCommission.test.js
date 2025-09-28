@@ -70,7 +70,12 @@ jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service
 }));
 
 jest.mock('../src/modules/classes/class.service', () => ({
-  getClassById: jest.fn().mockResolvedValue({ instructor_id: 'inst1', price: 100 }),
+  getClassById: jest.fn().mockResolvedValue({
+    instructor_id: 'inst1',
+    price: 100,
+    status: 'published',
+    moderation_status: 'Approved',
+  }),
 }));
 
 jest.mock('../src/modules/payouts/wallet.service', () => ({
