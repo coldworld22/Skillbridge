@@ -6,6 +6,19 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const paymentMethodsService = require("../../../paymentMethods/paymentMethods.service");
+
+const getSubscriptionPaymentMethod = async () => {
+  const method =
+    (await paymentMethodsService.getByType("subscription")) ||
+    (await paymentMethodsService.getByType("free"));
+
+  if (!method) {
+    throw new AppError("Subscription payment method not configured", 400);
+  }
+
+  return method;
+};
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -30,6 +43,7 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
+      const subscriptionMethod = await getSubscriptionPaymentMethod();
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
@@ -68,6 +82,7 @@ exports.enroll = catchAsync(async (req, res) => {
         item_type: "tutorial",
         source: "subscription",
         amount: 0,
+        method_id: subscriptionMethod.id,
       });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
