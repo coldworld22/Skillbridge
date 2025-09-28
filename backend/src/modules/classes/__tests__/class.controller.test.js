@@ -59,6 +59,7 @@ const controller = require('../class.controller');
 const service = require('../class.service');
 const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
 const notificationService = require('../../notifications/notifications.service');
+const AppError = require('../../../utils/AppError');
 
 describe('class.controller createClass', () => {
   beforeEach(() => {
@@ -138,6 +139,32 @@ describe('class.controller createClass', () => {
         data: expect.objectContaining({ included_plans: ['plan-student'] })
       })
     );
+  });
+
+  test('rejects malformed tags payload', async () => {
+    const req = {
+      body: { title: 'Test', tags: '{not-json}' },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(service.createClass).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    expect(next.mock.calls[0][0].statusCode).toBe(400);
+    expect(next.mock.calls[0][0].message).toBe('Invalid tags format. Expected an array of strings.');
   });
 
   test('allows creating free access classes when specified', async () => {
@@ -286,6 +313,39 @@ describe('class.controller updateClass', () => {
         data: expect.objectContaining({ instructor_id: 'newInst' }),
       })
     );
+  });
+
+  test('update rejects malformed tags payload', async () => {
+    service.getClassById.mockResolvedValue({
+      id: 'class1',
+      instructor_id: 'admin1',
+      title: 'Title',
+    });
+
+    const req = {
+      params: { id: 'class1' },
+      body: { tags: '{not-json}' },
+      user: { id: 'admin1', role: 'admin', full_name: 'Admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.updateClass(req, res, next);
+    });
+
+    expect(service.updateClass).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    expect(next.mock.calls[0][0].statusCode).toBe(400);
+    expect(next.mock.calls[0][0].message).toBe('Invalid tags format. Expected an array of strings.');
   });
 });
 

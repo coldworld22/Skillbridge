@@ -63,6 +63,8 @@ const { creditInstructorSubscription } = require('../../../payments/helpers/wall
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
+const paymentsService = require('../../../payments/payments.service');
+const paymentMethodsService = require('../../../paymentMethods/paymentMethods.service');
 
 const routes = require('../../class.routes');
 
@@ -73,6 +75,11 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    paymentMethodsService.getByType.mockImplementation((type) => {
+      if (type === 'subscription') return Promise.resolve(null);
+      if (type === 'free') return Promise.resolve({ id: 'free-method' });
+      return Promise.resolve(null);
+    });
   });
 
   test('enroll in class', async () => {
@@ -142,6 +149,7 @@ describe('Class enrollment routes', () => {
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
+    paymentMethodsService.getByType.mockResolvedValueOnce({ id: 'subscription-method' });
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
@@ -163,6 +171,8 @@ describe('Class enrollment routes', () => {
         itemType: 'class',
         source: 'subscription',
       }),
+      [],
+      db,
     );
   });
 

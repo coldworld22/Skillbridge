@@ -31,6 +31,12 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
+      const subscriptionMethod = await paymentMethodsService.getByType(
+        "subscription"
+      );
+      if (!subscriptionMethod) {
+        throw new AppError("Subscription payment method not configured", 500);
+      }
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,

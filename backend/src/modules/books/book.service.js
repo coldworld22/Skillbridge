@@ -15,6 +15,18 @@ const planRevenue = require("../payments/helpers/planRevenue");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 
+const getSubscriptionPaymentMethod = async () => {
+  const method =
+    (await paymentMethodsService.getByType("subscription")) ||
+    (await paymentMethodsService.getByType("free"));
+
+  if (!method) {
+    throw new AppError("Subscription payment method not configured", 400);
+  }
+
+  return method;
+};
+
 const DEFAULT_PLATFORM_CUT = { book: 10 };
 
 exports.createBook = async (data) => {
@@ -273,6 +285,7 @@ exports.checkout = async (studentId) => {
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
   const activePlanId = await getActiveStudentPlanId(studentId);
+  let subscriptionMethod = null;
 
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
@@ -315,6 +328,9 @@ exports.checkout = async (studentId) => {
       const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
 
       if (coveredBySubscription) {
+        if (!subscriptionMethod) {
+          subscriptionMethod = await getSubscriptionPaymentMethod();
+        }
         const usage = await trx('plan_usage_metrics')
           .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
           .first();
@@ -333,17 +349,28 @@ exports.checkout = async (studentId) => {
 
         await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
 
-        const [payment] = await trx('payments')
-          .insert({
+        const subscriptionMethod = await paymentMethodsService.getByType(
+          'subscription'
+        );
+        if (!subscriptionMethod) {
+          throw new AppError('Subscription payment method not configured', 500);
+        }
+
+        const payment = await paymentsService.create(
+          {
             id: uuidv4(),
             user_id: studentId,
             item_type: 'book',
             item_id: b.id,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
+            method_id: subscriptionMethod.id,
             source: 'subscription',
-          })
-          .returning('*');
+            paid_at: new Date(),
+          },
+          [],
+          trx
+        );
 
         await trx('book_purchases').insert({
           student_id: studentId,
