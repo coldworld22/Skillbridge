@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
+const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 const planRevenue = require("../../payments/helpers/planRevenue");
@@ -67,12 +68,12 @@ exports.enroll = catchAsync(async (req, res) => {
         "class"
       );
 
-      await trx("payments").insert({
-        user_id,
-        item_id: classId,
-        item_type: "class",
+      await recordPlanCoveredPayment({
+        trx,
+        userId: user_id,
+        itemId: classId,
+        itemType: "class",
         source: "subscription",
-        amount: 0,
       });
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.

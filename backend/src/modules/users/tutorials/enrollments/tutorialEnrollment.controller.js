@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -62,12 +63,12 @@ exports.enroll = catchAsync(async (req, res) => {
         "tutorial"
       );
 
-      await trx("payments").insert({
-        user_id,
-        item_id: tutorialId,
-        item_type: "tutorial",
+      await recordPlanCoveredPayment({
+        trx,
+        userId: user_id,
+        itemId: tutorialId,
+        itemType: "tutorial",
         source: "subscription",
-        amount: 0,
       });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")

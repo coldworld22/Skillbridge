@@ -47,6 +47,10 @@ jest.mock('../../../payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
+
 jest.mock('../../../../utils/logger.js', () => ({
   log: jest.fn(),
   debug: jest.fn(),
@@ -56,6 +60,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 
@@ -138,6 +143,7 @@ describe('Class enrollment routes', () => {
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
     service.createEnrollment.mockResolvedValue({ id: '1' });
+    recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
@@ -149,13 +155,13 @@ describe('Class enrollment routes', () => {
       expect.anything(),
     );
     expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
-    expect(db.insert).toHaveBeenCalledWith(
+    expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_id: 'test-user',
-        item_id: 'abc',
-        item_type: 'class',
+        trx: expect.any(Function),
+        userId: 'test-user',
+        itemId: 'abc',
+        itemType: 'class',
         source: 'subscription',
-        amount: 0,
       }),
     );
   });
