@@ -6,9 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
-const paymentsService = require("../../../payments/payments.service");
-const paymentMethodsService = require("../../../paymentMethods/paymentMethods.service");
-
+const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -71,20 +69,13 @@ exports.enroll = catchAsync(async (req, res) => {
         "tutorial"
       );
 
-      await paymentsService.create(
-        {
-          user_id,
-          item_id: tutorialId,
-          item_type: "tutorial",
-          amount: 0,
-          status: paymentsService.STATUS.PAID,
-          paid_at: new Date(),
-          method_id: subscriptionMethod.id,
-          source: "subscription",
-        },
-        [],
-        trx
-      );
+      await recordPlanCoveredPayment({
+        trx,
+        userId: user_id,
+        itemId: tutorialId,
+        itemType: "tutorial",
+        source: "subscription",
+      });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })
