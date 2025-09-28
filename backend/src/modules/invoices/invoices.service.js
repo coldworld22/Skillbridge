@@ -41,7 +41,8 @@ exports.generateFromPayment = async (payment, user) => {
 
   const id = uuidv4();
   const fileName = `${id}.pdf`;
-  const filePath = path.join(uploadDir, fileName);
+  const paths = getInvoiceFilePaths(fileName);
+  const filePath = paths.absolutePath;
 
   const doc = new PDFDocument();
   const stream = fs.createWriteStream(filePath);
@@ -68,7 +69,7 @@ exports.generateFromPayment = async (payment, user) => {
     user_id: payment.user_id,
     amount: payment.amount,
     currency: payment.currency,
-    pdf_url: `/uploads/invoices/${fileName}`,
+    pdf_url: paths.publicUrl,
     details: {
       payment: {
         id: payment.id,

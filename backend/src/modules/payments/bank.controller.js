@@ -21,6 +21,23 @@ const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
 
+const resolveInvoiceAttachmentPath = (invoice) => {
+  if (typeof invoiceService.resolveInvoiceAttachmentPath === "function") {
+    const resolved = invoiceService.resolveInvoiceAttachmentPath(invoice);
+    if (resolved) return resolved;
+  }
+
+  if (!invoice?.pdf_url) {
+    return null;
+  }
+
+  return path.join(
+    __dirname,
+    "../../../",
+    invoice.pdf_url.replace(/^\/+/, "")
+  );
+};
+
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
   book: 10,
