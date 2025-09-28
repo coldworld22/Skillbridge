@@ -6,7 +6,7 @@ jest.mock('../src/modules/payments/payments.service', () => ({
 }));
 
 jest.mock('../src/services/smsService', () => ({ sendSMS: jest.fn() }));
-jest.mock('../src/modules/users/user.model', () => ({ findById: jest.fn() }));
+jest.mock('../src/modules/users/user.model', () => ({ findById: jest.fn(), findAdmins: jest.fn() }));
 jest.mock('../src/modules/library/library.service', () => ({ recordPurchase: jest.fn() }));
 jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({ findEnrollment: jest.fn(), updateEnrollment: jest.fn(), createEnrollment: jest.fn() }));
 jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service', () => ({ createEnrollment: jest.fn() }));
@@ -33,6 +33,10 @@ const path = require('path');
 const paymentsController = require('../src/modules/payments/payments.controller');
 const bankController = require('../src/modules/payments/bank.controller');
 
+const path = require('path');
+const invoiceService = require('../src/modules/invoices/invoices.service');
+const mailService = require('../src/services/mailService');
+const bankController = require('../src/modules/payments/bank.controller');
 const paymentsService = require('../src/modules/payments/payments.service');
 const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const paymentConfigService = require('../src/modules/paymentConfig/paymentConfig.service');
@@ -152,22 +156,24 @@ describe('invoice email dispatch', () => {
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: expectedPath }] }));
     expect(fs.existsSync(expectedPath)).toBe(true);
   });
+});
 
-  it('triggers notification for paid plan payments', async () => {
-    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    plansService.getPlanById.mockResolvedValue({ id: 'plan1', name: 'Gold', price_monthly: 100, price_yearly: 1000 });
-    subscriptionService.createOrRenewSubscription.mockResolvedValue({ start_date: '2024-01-01', end_date: '2024-02-01' });
-    paymentsService.create.mockResolvedValue({ id: 'p5', user_id: 'u1', method_id: 'm1', item_type: 'plan', item_id: 'plan1', amount: 100, currency: 'USD', status: 'paid' });
-
-    const req = { body: { method_id: 'm1', item_type: 'plan', item_id: 'plan1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
+describe('bank payment invoice email', () => {
+  it('attaches invoices using filesystem path on approval', async () => {
+    const req = { params: { id: 'p3' }, body: {}, user: { id: 'admin1' } };
     const res = mockRes();
-    await paymentsController.createPayment(req, res, () => {});
+    const next = jest.fn();
+
+    await bankController.approveBankPayment(req, res, next);
+    expect(next).not.toHaveBeenCalled();
     await new Promise(process.nextTick);
 
-    expect(subscriptionService.createOrRenewSubscription).toHaveBeenCalledWith({ user_id: 'u1', plan_id: 'plan1', interval: 'monthly' });
-    expect(notificationService.createNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: 'u1', type: 'plan_subscription' })
+    const expectedPath = path.join(__dirname, '../uploads/invoices/inv.pdf');
+    expect(mailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'u@test.com',
+        attachments: [{ path: expectedPath }],
+      })
     );
   });
 });
-

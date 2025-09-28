@@ -5,6 +5,7 @@ const paypalService = require("../../../services/paypalService");
 const stripeService = require("../../../services/stripeService");
 const couponService = require("../../coupons/coupons.service");
 const classService = require("../../classes/class.service");
+const classEnrollmentService = require("../../classes/enrollments/classEnrollment.service");
 const bookService = require("../../books/book.service");
 const tutorialService = require("../../users/tutorials/tutorial.service");
 const plansService = require("../../plans/plans.service");
@@ -29,19 +30,7 @@ async function validatePaymentData(body, userId) {
 
   let schedules = [];
   let next_due_date = null;
-  let totalInstallments = allow_installments ? installments || 1 : 1;
-  if (allow_installments && totalInstallments > 1) {
-    for (let i = 2; i <= totalInstallments; i++) {
-      const due = new Date();
-      due.setMonth(due.getMonth() + (i - 1));
-      schedules.push({
-        installment_number: i,
-        amount,
-        due_date: due,
-      });
-    }
-    next_due_date = schedules[0]?.due_date || null;
-  }
+  let totalInstallments = allow_installments ? Number(installments) || 1 : 1;
 
   let method;
   if (method_id) {
@@ -134,6 +123,17 @@ async function validatePaymentData(body, userId) {
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
+    if (cls.status !== "published" || cls.moderation_status !== "Approved") {
+      throw new AppError("Class is not available for enrollment", 400);
+    }
+    if (cls.max_students) {
+      const currentEnrollments = await classEnrollmentService.countEnrollments(
+        item_id
+      );
+      if (currentEnrollments >= cls.max_students) {
+        throw new AppError("Class is fully booked", 400);
+      }
+    }
     basePrice = Number(cls.price);
   } else if (item_type === "book") {
     const book = await bookService.getBookById(item_id);
@@ -201,6 +201,19 @@ async function validatePaymentData(body, userId) {
     if (Math.abs(verifiedAmount - expected) >= EPS) {
       throw new AppError("Payment amount does not match item price", 400);
     }
+  }
+
+  if (totalInstallments > 1) {
+    for (let i = 2; i <= totalInstallments; i++) {
+      const due = new Date();
+      due.setMonth(due.getMonth() + (i - 1));
+      schedules.push({
+        installment_number: i,
+        amount,
+        due_date: due,
+      });
+    }
+    next_due_date = schedules[0]?.due_date || null;
   }
 
   return {

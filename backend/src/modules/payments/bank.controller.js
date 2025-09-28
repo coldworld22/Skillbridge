@@ -1,3 +1,4 @@
+const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -20,6 +21,23 @@ const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
 const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
+
+const resolveInvoiceAttachmentPath = (invoice) => {
+  if (typeof invoiceService.resolveInvoiceAttachmentPath === "function") {
+    const resolved = invoiceService.resolveInvoiceAttachmentPath(invoice);
+    if (resolved) return resolved;
+  }
+
+  if (!invoice?.pdf_url) {
+    return null;
+  }
+
+  return path.join(
+    __dirname,
+    "../../../",
+    invoice.pdf_url.replace(/^\/+/, "")
+  );
+};
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,

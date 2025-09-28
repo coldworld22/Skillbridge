@@ -10,10 +10,15 @@ jest.mock('../src/modules/plans/subscription.helper', () => ({
 }));
 const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
-jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
-  calculateInstructorAmount: jest.fn(),
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditInstructorSubscription: jest.fn(),
 }));
-const planRevenue = require('../src/modules/payments/helpers/planRevenue');
+const { creditInstructorSubscription } = require('../src/modules/payments/helpers/wallet');
+
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getByType: jest.fn(),
+}));
+const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -34,6 +39,11 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
+    paymentMethodsService.getByType.mockImplementation((type) => {
+      if (type === 'subscription') return Promise.resolve(null);
+      if (type === 'free') return Promise.resolve({ id: 'free-method' });
+      return Promise.resolve(null);
+    });
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -130,7 +140,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   });
 
   it('enrolls in paid tutorial covered by subscription', async () => {
-    const planInsert = jest.fn(() => Promise.resolve());
     const paymentInsert = jest.fn(() => Promise.resolve());
 
     db.mockImplementation((table) => {
@@ -152,11 +161,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null) }),
           insert: jest.fn(() => Promise.resolve()),
         };
-      if (table === 'plan_usage_metrics')
-        return {
-          where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
-          insert: planInsert,
-        };
       if (table === 'payments')
         return { insert: paymentInsert };
     });
@@ -169,19 +173,19 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
-    expect(planInsert).toHaveBeenCalled();
     expect(paymentInsert).toHaveBeenCalledWith({
       user_id: 'user1',
       item_id: tutorialId,
       item_type: 'tutorial',
       source: 'subscription',
       amount: 0,
+      method_id: 'free-method',
     });
-    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
-      'plan1',
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'tutorial',
       tutorialId,
-      expect.anything(),
-      'tutorial'
+      'plan1',
+      expect.anything()
     );
   });
 });

@@ -1,3 +1,4 @@
+const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -105,28 +106,10 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (subscriptionPlanId && item_type === "book") {
     try {
-      const db = require("../../config/database");
-      const usage = await db("plan_usage_metrics")
-        .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
-        .first();
-      if (usage) {
-        await db("plan_usage_metrics")
-          .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await db("plan_usage_metrics").insert({
-          plan_id: subscriptionPlanId,
-          item_type: "book",
-          item_id,
-          usage_count: 1,
-        });
-      }
-      const planRevenue = require("./helpers/planRevenue");
-      await planRevenue.calculateInstructorAmount(
-        subscriptionPlanId,
+      await walletHelpers.creditInstructorSubscription(
+        "book",
         item_id,
-        null,
-        "book"
+        subscriptionPlanId,
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
@@ -134,8 +117,11 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    const { creditInstructorWallet } = require("./helpers/wallet");
-    await creditInstructorWallet(item_type, item_id, instructor_amount);
+    await walletHelpers.creditInstructorWallet(
+      item_type,
+      item_id,
+      instructor_amount
+    );
     await handleEnrollment(item_type, user_id, item_id);
   }
 
