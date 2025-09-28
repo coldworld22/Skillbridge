@@ -47,8 +47,8 @@ jest.mock('../../../payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
+jest.mock('../../../payments/helpers/methods.js', () => ({
+  getPlanCoveredMethod: jest.fn(),
 }));
 
 jest.mock('../../../../utils/logger.js', () => ({
@@ -60,7 +60,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
-const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
+const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 const paymentsService = require('../../../payments/payments.service');
@@ -75,11 +75,7 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    paymentMethodsService.getByType.mockImplementation((type) => {
-      if (type === 'subscription') return Promise.resolve(null);
-      if (type === 'free') return Promise.resolve({ id: 'free-method' });
-      return Promise.resolve(null);
-    });
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
   });
 
   test('enroll in class', async () => {
@@ -165,15 +161,16 @@ describe('Class enrollment routes', () => {
     expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        trx: expect.any(Function),
-        userId: 'test-user',
-        itemId: 'abc',
-        itemType: 'class',
+        user_id: 'test-user',
+        method_id: 'plan-method',
+        item_id: 'abc',
+        item_type: 'class',
         source: 'subscription',
       }),
       [],
       db,
     );
+    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {

@@ -6,43 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
-const paymentsService = require("../../../payments/payments.service");
-
-const { STATUS: PAYMENT_STATUS } = paymentsService;
-
-const SUBSCRIPTION_METHOD_TYPE = "subscription";
-const SUBSCRIPTION_METHOD_NAME = "Subscription Credit";
-const SUBSCRIPTION_SOURCE = "subscription";
-
-const ensureSubscriptionPaymentMethod = async (trx) => {
-  const existing = await trx("payment_methods_config")
-    .where({ type: SUBSCRIPTION_METHOD_TYPE })
-    .first();
-
-  if (existing) return existing.id;
-
-  const inserted = await trx("payment_methods_config")
-    .insert({
-      id: uuidv4(),
-      name: SUBSCRIPTION_METHOD_NAME,
-      type: SUBSCRIPTION_METHOD_TYPE,
-      icon: null,
-      active: true,
-      settings: {},
-      is_default: false,
-    })
-    .returning("*");
-
-  const row = Array.isArray(inserted) ? inserted[0] : inserted;
-  if (row?.id) return row.id;
-
-  const created = await trx("payment_methods_config")
-    .where({ type: SUBSCRIPTION_METHOD_TYPE })
-    .first();
-  if (created?.id) return created.id;
-
-  throw new AppError("Subscription payment method unavailable", 500);
-};
+const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -67,6 +31,8 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
+      const planMethod = await getPlanCoveredMethod(trx);
+
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
@@ -99,24 +65,14 @@ exports.enroll = catchAsync(async (req, res) => {
         "tutorial"
       );
 
-      const methodId = await ensureSubscriptionPaymentMethod(trx);
-      await paymentsService.create(
-        {
-          id: uuidv4(),
-          user_id,
-          method_id: methodId,
-          item_id: tutorialId,
-          item_type: "tutorial",
-          amount: 0,
-          currency: tutorial.currency || "USD",
-          status: PAYMENT_STATUS.PAID,
-          source: SUBSCRIPTION_SOURCE,
-          platform_fee: 0,
-          instructor_amount: 0,
-        },
-        [],
-        trx,
-      );
+      await trx("payments").insert({
+        user_id,
+        method_id: planMethod.id,
+        item_id: tutorialId,
+        item_type: "tutorial",
+        source: "subscription",
+        amount: 0,
+      });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })

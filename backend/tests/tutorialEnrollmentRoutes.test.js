@@ -13,23 +13,11 @@ const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.he
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
-const { creditInstructorSubscription } = require('../src/modules/payments/helpers/wallet');
-
-jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
-  getByType: jest.fn(),
+jest.mock('../src/modules/payments/helpers/methods.js', () => ({
+  getPlanCoveredMethod: jest.fn(),
 }));
-const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
-
-jest.mock('../src/modules/payments/payments.service', () => ({
-  create: jest.fn(() => Promise.resolve({})),
-  STATUS: {
-    PENDING_PAYMENT: 'pending_payment',
-    AWAITING_APPROVAL: 'awaiting_approval',
-    PAID: 'paid',
-    REJECTED: 'rejected',
-  },
-}));
-const paymentsService = require('../src/modules/payments/payments.service');
+const planRevenue = require('../src/modules/payments/helpers/planRevenue');
+const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -50,7 +38,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
-    paymentsService.create.mockResolvedValue({});
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -190,20 +178,15 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
     expect(planInsert).toHaveBeenCalled();
-    expect(paymentMethodWhere).toHaveBeenCalledWith({ type: 'subscription' });
-    expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user_id: 'user1',
-        item_id: tutorialId,
-        item_type: 'tutorial',
-        method_id: 'subscription-method-id',
-        amount: 0,
-        status: 'paid',
-        source: 'subscription',
-      }),
-      [],
-      expect.anything(),
-    );
+    expect(paymentInsert).toHaveBeenCalledWith({
+      user_id: 'user1',
+      method_id: 'plan-method',
+      item_id: tutorialId,
+      item_type: 'tutorial',
+      source: 'subscription',
+      amount: 0,
+    });
+    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       tutorialId,
