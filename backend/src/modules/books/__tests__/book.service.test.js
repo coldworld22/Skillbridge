@@ -25,8 +25,9 @@ jest.mock('../../../config/database', () => mockDb);
 jest.mock('../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn().mockResolvedValue(null),
 }));
-jest.mock('../../payments/helpers/planRevenue', () => ({
-  calculateInstructorAmount: jest.fn().mockResolvedValue(0),
+jest.mock('../../payments/helpers/wallet', () => ({
+  creditInstructorSubscription: jest.fn().mockResolvedValue(),
+  creditInstructorWallet: jest.fn(),
 }));
 jest.mock('../../payments/payments.service', () => ({
   create: jest.fn(async (data) => ({ ...data, status: 'awaiting_approval' })),

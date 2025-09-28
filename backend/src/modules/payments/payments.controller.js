@@ -19,6 +19,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
+const walletHelpers = require("./helpers/wallet");
 
 const resolveInvoiceAttachmentPath = (invoice) => {
   if (typeof invoiceService.resolveInvoiceAttachmentPath === "function") {
@@ -122,28 +123,10 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (subscriptionPlanId && item_type === "book") {
     try {
-      const db = require("../../config/database");
-      const usage = await db("plan_usage_metrics")
-        .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
-        .first();
-      if (usage) {
-        await db("plan_usage_metrics")
-          .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await db("plan_usage_metrics").insert({
-          plan_id: subscriptionPlanId,
-          item_type: "book",
-          item_id,
-          usage_count: 1,
-        });
-      }
-      const planRevenue = require("./helpers/planRevenue");
-      await planRevenue.calculateInstructorAmount(
-        subscriptionPlanId,
+      await walletHelpers.creditInstructorSubscription(
+        "book",
         item_id,
-        null,
-        "book"
+        subscriptionPlanId,
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
@@ -151,33 +134,12 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    try {
-      await handleEnrollment(item_type, user_id, item_id);
-    } catch (err) {
-      logger.error("Failed to enroll after payment:", err);
-      try {
-        await service.update(payment.id, {
-          status: STATUS.AWAITING_APPROVAL,
-          paid_at: null,
-        });
-      } catch (updateErr) {
-        logger.error(
-          "Failed to revert payment status after enrollment failure:",
-          updateErr
-        );
-      }
-
-      if (err instanceof AppError) {
-        throw err;
-      }
-      throw new AppError(
-        err?.message || "Failed to enroll after payment",
-        400
-      );
-    }
-
-    const { creditInstructorWallet } = require("./helpers/wallet");
-    await creditInstructorWallet(item_type, item_id, instructor_amount);
+    await walletHelpers.creditInstructorWallet(
+      item_type,
+      item_id,
+      instructor_amount
+    );
+    await handleEnrollment(item_type, user_id, item_id);
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {

@@ -5,6 +5,7 @@ jest.mock('../../../../config/database', () => {
   db.insert = jest.fn(() => db);
   db.update = jest.fn(() => db);
   db.select = jest.fn();
+  db.forUpdate = jest.fn(() => db);
   return db;
 });
 
@@ -21,36 +22,61 @@ describe('calculateInstructorAmount', () => {
     jest.clearAllMocks();
   });
 
-  it('uses plan commission rate when available', async () => {
+  it('creates metrics row and returns full net amount on first credit', async () => {
     db.first
-      .mockResolvedValueOnce({ usage_count: 2 })
+      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ price_monthly: 100 });
     db.select.mockResolvedValueOnce([
       { feature_key: 'commission_rate', value: '0.3' },
     ]);
 
     const amt = await calculateInstructorAmount('plan1', 'item1');
-    expect(amt).toBeCloseTo(35);
+
+    expect(db.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan_id: 'plan1',
+        item_type: 'class',
+        item_id: 'item1',
+        usage_count: 0,
+        instructor_amount: 0,
+      })
+    );
+    expect(db.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage_count: 1, instructor_amount: 70 })
+    );
+    expect(amt).toBeCloseTo(70);
     expect(calculatePlatformFee).not.toHaveBeenCalled();
   });
 
-  it('handles different commission rates', async () => {
+  it('returns delta when partial amount already credited', async () => {
     db.first
-      .mockResolvedValueOnce({ usage_count: 4 })
-      .mockResolvedValueOnce({ price_monthly: 200 });
+      .mockResolvedValueOnce({ usage_count: 2, instructor_amount: 20 })
+      .mockResolvedValueOnce({ price_monthly: 100 });
     db.select.mockResolvedValueOnce([
-      { feature_key: 'commission_rate', value: '0.1' },
+      { feature_key: 'commission_rate', value: '0.3' },
     ]);
 
-    const amt = await calculateInstructorAmount('plan2', 'item2');
-    expect(amt).toBeCloseTo(45);
+    const amt = await calculateInstructorAmount('plan1', 'item1');
+
+    expect(amt).toBeCloseTo(50);
+    expect(db.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage_count: 3, instructor_amount: 70 })
+    );
   });
 
-  it('returns 0 when plan not found', async () => {
+  it('falls back to platform fee and returns 0 when fully credited', async () => {
     db.first
-      .mockResolvedValueOnce({ usage_count: 1 })
-      .mockResolvedValueOnce(null);
-    const amt = await calculateInstructorAmount('planX', 'itemX');
+      .mockResolvedValueOnce({ usage_count: 5, instructor_amount: 80 })
+      .mockResolvedValueOnce({ price_monthly: 120 });
+    db.select.mockResolvedValueOnce([]);
+    calculatePlatformFee.mockResolvedValueOnce({ instructor_amount: 80 });
+
+    const amt = await calculateInstructorAmount('plan2', 'item2');
+
+    expect(calculatePlatformFee).toHaveBeenCalledWith('class', 120);
     expect(amt).toBe(0);
+    expect(db.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage_count: 6, instructor_amount: 80 })
+    );
   });
 });

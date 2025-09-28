@@ -9,20 +9,6 @@ const paymentsService = require("../../payments/payments.service");
 const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
-const planRevenue = require("../../payments/helpers/planRevenue");
-const paymentMethodsService = require("../../paymentMethods/paymentMethods.service");
-
-const getSubscriptionPaymentMethod = async () => {
-  const method =
-    (await paymentMethodsService.getByType("subscription")) ||
-    (await paymentMethodsService.getByType("free"));
-
-  if (!method) {
-    throw new AppError("Subscription payment method not configured", 400);
-  }
-
-  return method;
-};
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -57,39 +43,12 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
-      const subscriptionMethod = await getSubscriptionPaymentMethod();
-      const usage = await trx("plan_usage_metrics")
-        .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-        .first();
-
-      if (usage) {
-        await trx("plan_usage_metrics")
-          .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await trx("plan_usage_metrics").insert({
-          plan_id: activePlanId,
-          item_type: "class",
-          item_id: classId,
-          usage_count: 1,
-        });
-      }
-
-      await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        classId,
-        trx,
-        "class"
-      );
-      await recordPlanCoveredPayment({
-        trx,
-        userId: user_id,
-        itemId: classId,
-        itemType: "class",
+      await trx("payments").insert({
+        user_id,
+        item_id: classId,
+        item_type: "class",
         source: "subscription",
       });
-      // Credit the instructor for subscription-based enrollments so that
-      // instructors are compensated when a class is taken via a plan.
       await creditInstructorSubscription("class", classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
