@@ -67,7 +67,18 @@ jest.mock('../../services/subscriptionService', () => ({
   fetchMySubscription: jest.fn(),
 }));
 jest.mock('../../components/payments/forms/CardPaymentForm', () => {
-  return function MockCardForm({ onSubmit, finalPrice, selectedMethodLabel }) {
+  return function MockCardForm({
+    onSubmit,
+    finalPrice,
+    selectedMethodLabel,
+    allowInstallments,
+    installments,
+    perInstallment,
+  }) {
+    const usingInstallments = allowInstallments && installments > 1;
+    const buttonLabel = usingInstallments
+      ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
+      : `Pay $${finalPrice} with ${selectedMethodLabel}`;
     return (
       <form
         onSubmit={(e) => {
@@ -82,7 +93,7 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
         <input placeholder="Expiration Date (MM/YY)" />
         <input placeholder="CVC" />
         <div data-testid="card-element" />
-        <button type="submit">{`Pay $${finalPrice} with ${selectedMethodLabel}`}</button>
+        <button type="submit">{buttonLabel}</button>
       </form>
     );
   };
@@ -189,6 +200,44 @@ test('renders card form without Elements for non-stripe processors', async () =>
   await waitFor(() =>
     expect(createPayment).toHaveBeenCalledWith(
       expect.objectContaining({ token: 'tok_123' })
+    )
+  );
+});
+
+test('submits per-installment amount for multi-installment card payments', async () => {
+  fetchClassDetails.mockResolvedValue({
+    data: {
+      id: 1,
+      title: 'Test Class',
+      instructor: 'Inst',
+      price: 100,
+      cover_image: '',
+      installments: 4,
+    },
+  });
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'Paystack', type: 'paystack' },
+  ]);
+  createPayment.mockResolvedValue({ status: 'paid' });
+
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+
+  const installmentToggle = screen.getByLabelText('Pay in 4 monthly installments');
+  fireEvent.click(installmentToggle);
+
+  const button = await screen.findByRole('button', {
+    name: /Pay \$25\.00 \(1\/4\) with Paystack/i,
+  });
+  fireEvent.click(button);
+
+  await waitFor(() =>
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 25,
+        allow_installments: true,
+        installments: 4,
+      })
     )
   );
 });

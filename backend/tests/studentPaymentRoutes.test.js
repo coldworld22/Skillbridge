@@ -12,6 +12,10 @@ jest.mock('../src/modules/payments/payments.service', () => ({
   getByUser: jest.fn(),
   getById: jest.fn(),
   create: jest.fn(),
+  STATUS: {
+    PAID: 'paid',
+    PENDING_PAYMENT: 'pending_payment',
+  },
 }));
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
@@ -54,11 +58,19 @@ const classService = require('../src/modules/classes/class.service');
 const enrollmentService = require('../src/modules/classes/enrollments/classEnrollment.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const couponService = require('../src/modules/coupons/coupons.service');
+const classService = require('../src/modules/classes/class.service');
+
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
 const routes = require('../src/modules/payments/student.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/payments/student', routes);
+app.use((err, _req, res, _next) => {
+  const status = err.statusCode || err.status || 500;
+  res.status(status).json({ message: err.message });
+});
 
 describe('GET /api/payments/student', () => {
   it('returns student payments', async () => {
@@ -111,6 +123,11 @@ describe('POST /api/payments/student', () => {
   it('creates a payment using authenticated user id', async () => {
     methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
     configService.getSettings.mockResolvedValue({ platformCut: {} });
+    classService.getClassById.mockResolvedValue({
+      id: 'i1',
+      price: 100,
+      allow_installments: true,
+    });
     service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/student').send({

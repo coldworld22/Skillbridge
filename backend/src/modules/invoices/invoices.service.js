@@ -6,15 +6,50 @@ const model = require("./invoice.model");
 
 const uploadDir = path.join(__dirname, "../../../uploads/invoices");
 
+const getInvoiceFilePaths = (value) => {
+  if (!value) {
+    return { publicUrl: null, absolutePath: null, relativePath: null };
+  }
+
+  const sanitized = String(value).replace(/\\/g, "/").replace(/^\/+/, "");
+  const relativePath = sanitized.startsWith("uploads/invoices")
+    ? sanitized
+    : path.posix.join("uploads/invoices", sanitized);
+
+  const publicUrl = `/${relativePath}`;
+  const absolutePath = path.join(__dirname, "../../../", relativePath);
+
+  return { publicUrl, absolutePath, relativePath };
+};
+
+exports.getInvoiceFilePaths = getInvoiceFilePaths;
+
+exports.resolveInvoiceAttachmentPath = (invoice) => {
+  if (!invoice || !invoice.pdf_url) {
+    return null;
+  }
+
+  if (invoice.file_path) {
+    return invoice.file_path;
+  }
+
+  const { absolutePath } = getInvoiceFilePaths(invoice.pdf_url);
+  return absolutePath;
+};
+
 exports.generateFromPayment = async (payment, user) => {
   const existing = await model.findByPayment(payment.id);
-  if (existing) return existing;
+  if (existing) {
+    const paths = getInvoiceFilePaths(existing.pdf_url);
+    return { ...existing, file_path: paths.absolutePath };
+  }
 
   await fs.promises.mkdir(uploadDir, { recursive: true });
 
   const id = uuidv4();
   const fileName = `${id}.pdf`;
-  const filePath = path.join(uploadDir, fileName);
+  const paths = getInvoiceFilePaths(fileName);
+  const filePath = paths.absolutePath;
 
   const doc = new PDFDocument();
   const stream = fs.createWriteStream(filePath);
@@ -41,7 +76,7 @@ exports.generateFromPayment = async (payment, user) => {
     user_id: payment.user_id,
     amount: payment.amount,
     currency: payment.currency,
-    pdf_url: `/uploads/invoices/${fileName}`,
+    pdf_url: paths.publicUrl,
     details: {
       payment: {
         id: payment.id,
@@ -56,7 +91,8 @@ exports.generateFromPayment = async (payment, user) => {
     },
   };
 
-  return model.create(data);
+  const created = await model.create(data);
+  return { ...created, file_path: filePath };
 };
 
 exports.getInvoices = () => model.getAll();

@@ -30,19 +30,7 @@ async function validatePaymentData(body, userId) {
 
   let schedules = [];
   let next_due_date = null;
-  let totalInstallments = allow_installments ? installments || 1 : 1;
-  if (allow_installments && totalInstallments > 1) {
-    for (let i = 2; i <= totalInstallments; i++) {
-      const due = new Date();
-      due.setMonth(due.getMonth() + (i - 1));
-      schedules.push({
-        installment_number: i,
-        amount,
-        due_date: due,
-      });
-    }
-    next_due_date = schedules[0]?.due_date || null;
-  }
+  let totalInstallments = allow_installments ? Number(installments) || 1 : 1;
 
   let method;
   if (method_id) {
@@ -213,6 +201,19 @@ async function validatePaymentData(body, userId) {
     if (Math.abs(verifiedAmount - expected) >= EPS) {
       throw new AppError("Payment amount does not match item price", 400);
     }
+  }
+
+  if (totalInstallments > 1) {
+    for (let i = 2; i <= totalInstallments; i++) {
+      const due = new Date();
+      due.setMonth(due.getMonth() + (i - 1));
+      schedules.push({
+        installment_number: i,
+        amount,
+        due_date: due,
+      });
+    }
+    next_due_date = schedules[0]?.due_date || null;
   }
 
   return {
