@@ -15,6 +15,11 @@ jest.mock('../src/modules/payments/helpers/wallet', () => ({
 }));
 const { creditInstructorSubscription } = require('../src/modules/payments/helpers/wallet');
 
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getByType: jest.fn(),
+}));
+const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -34,6 +39,11 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
+    paymentMethodsService.getByType.mockImplementation((type) => {
+      if (type === 'subscription') return Promise.resolve(null);
+      if (type === 'free') return Promise.resolve({ id: 'free-method' });
+      return Promise.resolve(null);
+    });
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -169,6 +179,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       item_type: 'tutorial',
       source: 'subscription',
       amount: 0,
+      method_id: 'free-method',
     });
     expect(creditInstructorSubscription).toHaveBeenCalledWith(
       'tutorial',

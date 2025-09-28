@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
+const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 
@@ -47,7 +48,6 @@ exports.enroll = catchAsync(async (req, res) => {
         item_id: classId,
         item_type: "class",
         source: "subscription",
-        amount: 0,
       });
       await creditInstructorSubscription("class", classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {

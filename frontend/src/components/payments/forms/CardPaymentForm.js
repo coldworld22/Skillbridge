@@ -7,9 +7,10 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
   const { register, handleSubmit, formState: { errors } } = useForm();
   const stripe = useStripe();
   const elements = useElements();
+  const usingInstallments = allowInstallments && installments > 1;
   const buttonText = processing
     ? 'Processing...'
-    : allowInstallments
+    : usingInstallments
       ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
       : `Pay $${finalPrice} with ${selectedMethodLabel}`;
 

@@ -35,7 +35,6 @@ exports.enroll = catchAsync(async (req, res) => {
         item_id: tutorialId,
         item_type: "tutorial",
         source: "subscription",
-        amount: 0,
       });
 
       await creditInstructorSubscription(
