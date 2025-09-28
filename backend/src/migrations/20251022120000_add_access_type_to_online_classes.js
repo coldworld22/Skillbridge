@@ -4,8 +4,7 @@ exports.up = async function (knex) {
     'access_type'
   );
 
-  let columnInfo = null;
-
+  let columnInfo;
   if (columnExists) {
     columnInfo = await knex('information_schema.columns')
       .select('udt_name', 'data_type')
@@ -14,6 +13,7 @@ exports.up = async function (knex) {
         table_name: 'online_classes',
         column_name: 'access_type',
       })
+      .whereRaw('table_catalog = current_database()')
       .first();
   }
 
@@ -31,9 +31,9 @@ exports.up = async function (knex) {
 
   if (!columnExists) {
     await knex.raw(
-      "ALTER TABLE online_classes ADD COLUMN access_type online_class_access_type NOT NULL DEFAULT 'paid'"
+      "ALTER TABLE online_classes ADD COLUMN IF NOT EXISTS access_type online_class_access_type NOT NULL DEFAULT 'paid'"
     );
-  } else if (columnInfo?.udt_name !== 'online_class_access_type') {
+  } else if (!columnInfo || columnInfo.udt_name !== 'online_class_access_type') {
     await knex.raw(
       "UPDATE online_classes SET access_type = 'paid' WHERE access_type IS NULL OR access_type NOT IN ('paid', 'free')"
     );
@@ -67,6 +67,7 @@ exports.down = async function (knex) {
       table_name: 'online_classes',
       column_name: 'access_type',
     })
+    .whereRaw('table_catalog = current_database()')
     .first();
 
   if (columnInfo) {
