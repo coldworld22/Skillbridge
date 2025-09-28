@@ -18,6 +18,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
+const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -187,12 +188,15 @@ exports.createPayment = catchAsync(async (req, res) => {
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-        await mailService.sendMail({
-          to: user.email,
-          subject: "Payment Invoice",
-          html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
-        });
+        const attachmentPath = resolveInvoicePdfPath(invoice);
+        if (attachmentPath) {
+          await mailService.sendMail({
+            to: user.email,
+            subject: "Payment Invoice",
+            html: `<p>Please find your invoice attached.</p>`,
+            attachments: [{ path: attachmentPath }],
+          });
+        }
       }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
@@ -280,12 +284,15 @@ exports.updatePayment = catchAsync(async (req, res) => {
         try {
           const invoice = await invoiceService.generateFromPayment(payment, user);
           if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-            await mailService.sendMail({
-              to: user.email,
-              subject: "Payment Invoice",
-              html: `<p>Please find your invoice attached.</p>`,
-              attachments: [{ path: invoice.pdf_url }],
-            });
+            const attachmentPath = resolveInvoicePdfPath(invoice);
+            if (attachmentPath) {
+              await mailService.sendMail({
+                to: user.email,
+                subject: "Payment Invoice",
+                html: `<p>Please find your invoice attached.</p>`,
+                attachments: [{ path: attachmentPath }],
+              });
+            }
           }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);

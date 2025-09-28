@@ -19,6 +19,7 @@ const tutorialService = require("../users/tutorials/tutorial.service");
 const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
+const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -336,12 +337,15 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     if (user) {
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
-        await mailService.sendMail({
-          to: user.email,
-          subject: "Payment Invoice",
-          html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
-        });
+        const attachmentPath = resolveInvoicePdfPath(invoice);
+        if (attachmentPath) {
+          await mailService.sendMail({
+            to: user.email,
+            subject: "Payment Invoice",
+            html: `<p>Please find your invoice attached.</p>`,
+            attachments: [{ path: attachmentPath }],
+          });
+        }
       }
     }
   } catch (err) {
