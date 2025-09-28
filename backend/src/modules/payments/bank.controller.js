@@ -8,6 +8,7 @@ const { STATUS } = paymentsService;
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const notificationService = require("../notifications/notifications.service");
+const path = require("path");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
 const walletService = require("../payouts/wallet.service");
