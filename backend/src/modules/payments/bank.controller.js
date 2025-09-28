@@ -7,6 +7,7 @@ const { STATUS } = paymentsService;
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const notificationService = require("../notifications/notifications.service");
+const path = require("path");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
 const walletService = require("../payouts/wallet.service");
@@ -336,11 +337,15 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     if (user) {
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
+        const attachmentPath = path.join(
+          process.cwd(),
+          invoice.pdf_url.replace(/^\/+/, "")
+        );
         await mailService.sendMail({
           to: user.email,
           subject: "Payment Invoice",
           html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
+          attachments: [{ path: attachmentPath }],
         });
       }
     }
