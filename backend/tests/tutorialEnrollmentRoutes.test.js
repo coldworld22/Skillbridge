@@ -13,7 +13,11 @@ const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.he
 jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
 }));
+jest.mock('../src/modules/payments/helpers/methods.js', () => ({
+  getPlanCoveredMethod: jest.fn(),
+}));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
+const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -34,6 +38,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentPlanId.mockResolvedValue(null);
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -172,11 +177,13 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     expect(planInsert).toHaveBeenCalled();
     expect(paymentInsert).toHaveBeenCalledWith({
       user_id: 'user1',
+      method_id: 'plan-method',
       item_id: tutorialId,
       item_type: 'tutorial',
       source: 'subscription',
       amount: 0,
     });
+    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       tutorialId,

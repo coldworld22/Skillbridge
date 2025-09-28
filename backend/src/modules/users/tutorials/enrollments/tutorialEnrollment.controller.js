@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -30,6 +31,8 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
+      const planMethod = await getPlanCoveredMethod(trx);
+
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
@@ -64,6 +67,7 @@ exports.enroll = catchAsync(async (req, res) => {
 
       await trx("payments").insert({
         user_id,
+        method_id: planMethod.id,
         item_id: tutorialId,
         item_type: "tutorial",
         source: "subscription",

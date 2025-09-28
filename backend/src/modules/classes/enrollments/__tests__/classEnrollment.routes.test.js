@@ -47,6 +47,10 @@ jest.mock('../../../payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/methods.js', () => ({
+  getPlanCoveredMethod: jest.fn(),
+}));
+
 jest.mock('../../../../utils/logger.js', () => ({
   log: jest.fn(),
   debug: jest.fn(),
@@ -56,6 +60,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 
@@ -68,6 +73,7 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
   });
 
   test('enroll in class', async () => {
@@ -152,12 +158,14 @@ describe('Class enrollment routes', () => {
     expect(db.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'test-user',
+        method_id: 'plan-method',
         item_id: 'abc',
         item_type: 'class',
         source: 'subscription',
         amount: 0,
       }),
     );
+    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
