@@ -15,7 +15,7 @@ exports.up = async function (knex) {
 
   if (!columnExists) {
     await knex.raw(
-      "ALTER TABLE online_classes ADD COLUMN access_type online_class_access_type NOT NULL DEFAULT 'paid'"
+      "ALTER TABLE online_classes ADD COLUMN IF NOT EXISTS access_type online_class_access_type NOT NULL DEFAULT 'paid'"
     );
     return;
   }
