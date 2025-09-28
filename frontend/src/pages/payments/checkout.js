@@ -288,11 +288,16 @@ export async function handleDefaultPayment({
 }) {
   try {
     setPaymentStatus('processing');
+    const installmentCount = Math.max(Number(installments) || 1, 1);
+    const usingInstallments = allowInstallments && installmentCount > 1;
+    const amount = usingInstallments
+      ? finalPrice / installmentCount
+      : finalPrice;
     const payload = {
       method_id: method?.id,
       item_type: itemType,
       item_id: itemInfo.id,
-      amount: finalPrice,
+      amount,
       allow_installments: allowInstallments,
       installments,
     };
@@ -714,23 +719,26 @@ export default function CheckoutPage() {
     setInstallments(count);
   }, [existingPayment, itemInfo]);
 
-  const perInstallment = useMemo(
-    () => finalPrice / installments,
-    [finalPrice, installments]
-  );
+  const perInstallment = useMemo(() => {
+    const count = Math.max(Number(installments) || 1, 1);
+    if (allowInstallments && count > 1) {
+      return finalPrice / count;
+    }
+    return finalPrice;
+  }, [allowInstallments, finalPrice, installments]);
   const schedule = useMemo(() => {
     if (!allowInstallments) return [];
-    const amount = finalPrice / installments;
-    return Array.from({ length: installments }, (_, i) => {
+    const count = Math.max(Number(installments) || 1, 1);
+    return Array.from({ length: count }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() + i);
       return {
         number: i + 1,
         date: d.toLocaleDateString(),
-        amount: amount.toFixed(2),
+        amount: perInstallment.toFixed(2),
       };
     });
-  }, [finalPrice, allowInstallments, installments]);
+  }, [allowInstallments, installments, perInstallment]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
