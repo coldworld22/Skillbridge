@@ -134,6 +134,9 @@ async function validatePaymentData(body, userId) {
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
+    if (cls.status !== "published" || cls.moderation_status !== "Approved") {
+      throw new AppError("Class is not available for enrollment", 400);
+    }
     basePrice = Number(cls.price);
   } else if (item_type === "book") {
     const book = await bookService.getBookById(item_id);
