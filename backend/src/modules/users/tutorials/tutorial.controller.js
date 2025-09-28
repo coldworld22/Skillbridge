@@ -1,4 +1,4 @@
-const logger = require('../../../utils/logger.js');
+const logger = require("../../../utils/logger.js");
 // 📁 src/modules/users/tutorials/tutorial.controller.js
 const service = require("./tutorial.service");
 const notificationService = require("../../notifications/notifications.service");
@@ -18,6 +18,7 @@ const { getActiveInstructorPlan } = require("../../plans/instructor.helper");
 const planService = require("../../plans/plans.service");
 const { parsePlanFeatures } = require("../../../utils/planFeatures");
 const tutorialValidator = require("./tutorial.validator");
+const { normalizeRole } = require("../../../utils/role");
 
 
 const { sendSuccess } = require("../../../utils/response");
@@ -27,7 +28,7 @@ const { ZodError } = require("zod");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
-  let role = req.user?.role?.toLowerCase() || "other";
+  let role = normalizeRole(req.user?.role) || "other";
   if (["superadmin", "admin"].includes(role)) role = "admin";
   return role;
 };
@@ -40,6 +41,7 @@ const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
+  const userRole = normalizeRole(req.user?.role);
   const { body } = tutorialValidator.create.parse({ body: req.body });
   const {
     title,
@@ -59,10 +61,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const tags = parseTags(rawTags);
 
   let instructor_id;
-  if (
-    ["admin", "superadmin"].includes(req.user.role) &&
-    bodyInstructorId
-  ) {
+  if (["admin", "superadmin"].includes(userRole) && bodyInstructorId) {
     const instructor = await userModel.findById(bodyInstructorId);
     if (!instructor) {
       return res.status(404).json({ message: "Instructor not found" });
@@ -72,7 +71,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id = req.user.id;
   }
 
-  if (req.user.role === "instructor") {
+  if (userRole === "instructor") {
     const plan = await getActiveInstructorPlan(instructor_id);
     if (!plan) {
       throw new AppError("Active plan required", 403);
@@ -169,7 +168,8 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
-  if (req.user.role === "instructor") {
+  const userRole = normalizeRole(req.user?.role);
+  if (userRole === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
 
@@ -229,7 +229,8 @@ exports.restoreTutorial = catchAsync(async (req, res) => {
 
 
 exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
-  if (req.user.role === "instructor") {
+  const userRole = normalizeRole(req.user?.role);
+  if (userRole === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
   await service.permanentlyDeleteTutorial(req.params.id);
@@ -241,7 +242,9 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   const tutorialId = req.params.id;
 
-  if (req.user.role === "instructor") {
+  const userRole = normalizeRole(req.user?.role);
+
+  if (userRole === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
   const existing = await service.getTutorialById(tutorialId);
@@ -272,7 +275,7 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
   const updated = await service.togglePublishStatus(tutorialId);
   const tut = await service.getTutorialById(tutorialId);
   if (
-    req.user.role !== "instructor" &&
+    userRole !== "instructor" &&
     tut.instructor_id &&
     tut.instructor_id !== req.user.id
   ) {

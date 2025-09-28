@@ -47,6 +47,10 @@ jest.mock('../../../payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/methods.js', () => ({
+  getPlanCoveredMethod: jest.fn(),
+}));
+
 jest.mock('../../../../utils/logger.js', () => ({
   log: jest.fn(),
   debug: jest.fn(),
@@ -56,8 +60,11 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
+const paymentsService = require('../../../payments/payments.service');
+const paymentMethodsService = require('../../../paymentMethods/paymentMethods.service');
 
 const routes = require('../../class.routes');
 
@@ -68,6 +75,7 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
   });
 
   test('enroll in class', async () => {
@@ -137,7 +145,9 @@ describe('Class enrollment routes', () => {
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
+    paymentMethodsService.getByType.mockResolvedValueOnce({ id: 'subscription-method' });
     service.createEnrollment.mockResolvedValue({ id: '1' });
+    recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
@@ -149,15 +159,18 @@ describe('Class enrollment routes', () => {
       expect.anything(),
     );
     expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
-    expect(db.insert).toHaveBeenCalledWith(
+    expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'test-user',
+        method_id: 'plan-method',
         item_id: 'abc',
         item_type: 'class',
         source: 'subscription',
-        amount: 0,
       }),
+      [],
+      db,
     );
+    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {

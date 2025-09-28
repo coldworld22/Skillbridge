@@ -6,9 +6,11 @@ const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
+const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 const planRevenue = require("../../payments/helpers/planRevenue");
+const { getPlanCoveredMethod } = require("../../payments/helpers/methods");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -43,6 +45,8 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
+      const planMethod = await getPlanCoveredMethod(trx);
+
       const usage = await trx("plan_usage_metrics")
         .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
         .first();
@@ -66,16 +70,13 @@ exports.enroll = catchAsync(async (req, res) => {
         trx,
         "class"
       );
-
       await trx("payments").insert({
         user_id,
+        method_id: planMethod.id,
         item_id: classId,
         item_type: "class",
         source: "subscription",
-        amount: 0,
       });
-      // Credit the instructor for subscription-based enrollments so that
-      // instructors are compensated when a class is taken via a plan.
       await creditInstructorSubscription("class", classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
