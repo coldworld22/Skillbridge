@@ -53,6 +53,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
 
   if (token) {
     try {
+      let licenseId = null;
       const { data } = await axios.get(`${ENVATO_SALE_URL}?code=${encodeURIComponent(code)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -85,6 +86,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
   }
 
   if (code === 'DEMO-CODE-1234') {
+    let licenseId = null;
     if (shouldPersist) {
       licenseId = await upsertLicense(code, {
         domain: normalisedDomain,
