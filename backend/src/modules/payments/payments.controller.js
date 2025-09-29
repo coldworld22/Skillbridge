@@ -19,6 +19,8 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
+// Attachment paths are resolved within the invoicePath helper, so no local
+// path module import is required here.
 const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
 
 exports.createPayment = catchAsync(async (req, res) => {
