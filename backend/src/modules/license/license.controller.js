@@ -45,6 +45,7 @@ exports.verifyPurchaseCode = async (req, res, next) => {
  */
 exports.activateLicense = async (req, res, next) => {
   const { purchase_code, domain, email, ip } = req.body;
+  const normalisedDomain = normaliseDomain(domain);
   try {
     const result = await validatePurchaseCode(purchase_code, domain, { persist: true });
     if (!result?.valid) {

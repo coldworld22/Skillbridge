@@ -29,7 +29,6 @@ jest.mock('../../src/config/database', () => {
 
   return mockDb;
 });
-
 const db = require('../../src/config/database');
 const { validatePurchaseCode } = require('../../src/services/licenseService');
 
@@ -89,4 +88,4 @@ describe('licenseService.validatePurchaseCode', () => {
       })
     );
   });
-});
+})
