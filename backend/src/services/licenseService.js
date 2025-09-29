@@ -49,6 +49,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
   const normalisedDomain = normaliseDomain(domain);
   const token = process.env.ENVATO_TOKEN;
   const shouldPersist = options.persist ?? (typeof normalisedDomain === 'string' && normalisedDomain.length > 0);
+  let licenseId = null;
 
   if (token) {
     try {
@@ -57,12 +58,12 @@ async function validatePurchaseCode(code, domain, options = {}) {
       });
 
       if (!data || data.error || !data.item) {
-        return { valid: false, message: 'Invalid purchase code' };
+        return { valid: false, message: 'Invalid purchase code', licenseId: null };
       }
 
       const envatoEmail = typeof data?.buyer_email === 'string' ? data.buyer_email : null;
       if (shouldPersist) {
-        await upsertLicense(code, {
+        licenseId = await upsertLicense(code, {
           domain: normalisedDomain,
           email: envatoEmail,
           verifiedAt,
@@ -72,19 +73,20 @@ async function validatePurchaseCode(code, domain, options = {}) {
       return { valid: true, message: 'License verified with Envato', licenseId };
     } catch (error) {
       if (error?.response?.status === 404) {
-        return { valid: false, message: 'Invalid purchase code' };
+        return { valid: false, message: 'Invalid purchase code', licenseId: null };
       }
 
       return {
         valid: false,
         message: 'Unable to verify purchase code with Envato. Please try again later.',
+        licenseId: null,
       };
     }
   }
 
   if (code === 'DEMO-CODE-1234') {
     if (shouldPersist) {
-      await upsertLicense(code, {
+      licenseId = await upsertLicense(code, {
         domain: normalisedDomain,
         email: PLACEHOLDER_EMAIL,
         verifiedAt,
@@ -94,7 +96,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
     return { valid: true, message: 'Demo license accepted', licenseId };
   }
 
-  return { valid: false, message: 'Invalid purchase code' };
+  return { valid: false, message: 'Invalid purchase code', licenseId: null };
 }
 
 module.exports = { validatePurchaseCode };

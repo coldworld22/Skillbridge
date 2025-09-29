@@ -72,6 +72,15 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
 
   const paymentId = uuidv4();
 
+  let backendBaseUrl;
+  try {
+    backendBaseUrl = requireBackendBaseUrl();
+  } catch (error) {
+    const reason = getBackendBaseUrlError() || error.message;
+    logger.error('Failed to resolve backend base URL for PayPal return URL: %s', reason);
+    throw new AppError('Backend base URL is not configured', 500);
+  }
+
   const order = await paypalService.createOrder({
     amount: numericAmount,
     currency: currencyCode,
