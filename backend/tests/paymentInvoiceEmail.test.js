@@ -32,25 +32,20 @@ const path = require('path');
 
 const paymentsController = require('../src/modules/payments/payments.controller');
 const bankController = require('../src/modules/payments/bank.controller');
-
-const path = require('path');
 const invoiceService = require('../src/modules/invoices/invoices.service');
 const mailService = require('../src/services/mailService');
-const bankController = require('../src/modules/payments/bank.controller');
 const paymentsService = require('../src/modules/payments/payments.service');
 const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const paymentConfigService = require('../src/modules/paymentConfig/paymentConfig.service');
 const userModel = require('../src/modules/users/user.model');
 const bookService = require('../src/modules/books/book.service');
-const invoiceService = require('../src/modules/invoices/invoices.service');
-const mailService = require('../src/services/mailService');
 const plansService = require('../src/modules/plans/plans.service');
 const subscriptionService = require('../src/modules/subscriptions/subscription.service');
 const notificationService = require('../src/modules/notifications/notifications.service');
 const { resolveInvoicePdfPath } = require('../src/modules/invoices/helpers/invoicePath');
 const { creditInstructorWallet } = require('../src/modules/payments/helpers/wallet');
 
-const TEST_INVOICE_URL = '/uploads/invoices/test-invoice.pdf';
+const TEST_INVOICE_URL = '/uploads/invoices/inv.pdf';
 
 beforeEach(() => {
   jest.clearAllMocks();
