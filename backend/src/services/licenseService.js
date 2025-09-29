@@ -49,6 +49,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
   const normalisedDomain = normaliseDomain(domain);
   const token = process.env.ENVATO_TOKEN;
   const shouldPersist = options.persist ?? (typeof normalisedDomain === 'string' && normalisedDomain.length > 0);
+  let licenseId = null;
 
   if (token) {
     try {
@@ -62,7 +63,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
 
       const envatoEmail = typeof data?.buyer_email === 'string' ? data.buyer_email : null;
       if (shouldPersist) {
-        await upsertLicense(code, {
+        licenseId = await upsertLicense(code, {
           domain: normalisedDomain,
           email: envatoEmail,
           verifiedAt,
@@ -84,7 +85,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
 
   if (code === 'DEMO-CODE-1234') {
     if (shouldPersist) {
-      await upsertLicense(code, {
+      licenseId = await upsertLicense(code, {
         domain: normalisedDomain,
         email: PLACEHOLDER_EMAIL,
         verifiedAt,
