@@ -11,7 +11,6 @@ const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
-const path = require("path");
 const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
