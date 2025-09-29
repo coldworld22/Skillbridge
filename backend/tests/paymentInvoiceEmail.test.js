@@ -45,7 +45,7 @@ const notificationService = require('../src/modules/notifications/notifications.
 const { resolveInvoicePdfPath } = require('../src/modules/invoices/helpers/invoicePath');
 const { creditInstructorWallet } = require('../src/modules/payments/helpers/wallet');
 
-const TEST_INVOICE_URL = '/uploads/invoices/test-invoice.pdf';
+const TEST_INVOICE_URL = '/uploads/invoices/inv.pdf';
 
 beforeEach(() => {
   jest.clearAllMocks();
