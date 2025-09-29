@@ -62,6 +62,9 @@ ensure_upload_permissions() {
 
   mkdir -p /app/data
   chown -R node:node /app/data
+
+  mkdir -p /app/logs
+  chown -R node:node /app/logs
 }
 
 ensure_critical_migrations() {
