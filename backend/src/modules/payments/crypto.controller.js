@@ -10,6 +10,7 @@ const nowPayments = require('../../services/nowPaymentsService');
 const { v4: uuidv4 } = require('uuid');
 const { grantAccess } = require('./paymentAccess');
 const plansService = require('../plans/plans.service');
+const { buildBackendUrl } = require('../../config/env');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -83,7 +84,7 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     order_id: paymentId,
   };
   if (settings.ipn_secret) {
-    params.ipn_callback_url = `${process.env.BACKEND_URL || ''}/api/payments/crypto/ipn`;
+    params.ipn_callback_url = buildBackendUrl('/api/payments/crypto/ipn');
   }
   if (process.env.FRONTEND_URL) {
     params.success_url = `${process.env.FRONTEND_URL}/payments/success`;

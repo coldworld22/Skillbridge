@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
+const logger = require('../utils/logger');
 
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
@@ -93,6 +94,7 @@ const EnvSchema = z.object({
     .int()
     .positive()
     .default(15),
+  BACKEND_URL: z.string().optional(),
 });
 
 const OPTIONAL_URL_ENV_VARS = [
@@ -100,6 +102,7 @@ const OPTIONAL_URL_ENV_VARS = [
   'PRODUCTION_DATABASE_URL',
   'TEST_DATABASE_URL',
   'REDIS_URL',
+  'BACKEND_URL',
 ];
 
 const normalizeOptionalUrl = (value) => {
@@ -296,6 +299,68 @@ if (!DATABASE_URL) {
 
 const getDatabaseUrl = (targetEnv = env.NODE_ENV) => DATABASE_URLS[targetEnv];
 
+const sanitizeAbsoluteUrl = (value) => {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value.trim());
+    if (!parsed.protocol || !parsed.hostname) {
+      return null;
+    }
+
+    parsed.hash = '';
+    parsed.search = '';
+    const normalizedPath = parsed.pathname.replace(/\/+$/, '');
+    const pathSegment = normalizedPath && normalizedPath !== '/' ? normalizedPath : '';
+    return `${parsed.origin}${pathSegment}`;
+  } catch {
+    return null;
+  }
+};
+
+const ensureTrailingSlash = (value) => (value.endsWith('/') ? value : `${value}/`);
+
+const deriveBackendBaseUrl = () => {
+  const direct = sanitizeAbsoluteUrl(env.BACKEND_URL);
+  if (direct) {
+    return direct;
+  }
+
+  const fromDomain = env.APP_DOMAIN
+    ? sanitizeAbsoluteUrl(`https://${env.APP_DOMAIN}`)
+    : null;
+  if (fromDomain) {
+    return fromDomain;
+  }
+
+  if (env.NODE_ENV !== 'production') {
+    const localhost = sanitizeAbsoluteUrl(`http://localhost:${env.BACKEND_PORT}`);
+    if (localhost) {
+      return localhost;
+    }
+  }
+
+  const message =
+    'Unable to resolve backend base URL. Set BACKEND_URL or APP_DOMAIN to a fully-qualified domain.';
+  logger.error(`[config] ${message}`);
+  throw new Error(message);
+};
+
+const BACKEND_BASE_URL = deriveBackendBaseUrl();
+
+const getBackendBaseUrl = () => BACKEND_BASE_URL;
+
+const buildBackendUrl = (path = '') => {
+  const base = getBackendBaseUrl();
+  if (!path) {
+    return base;
+  }
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  return new URL(normalizedPath, ensureTrailingSlash(base)).toString();
+};
+
 module.exports = {
   NODE_ENV: env.NODE_ENV,
   BACKEND_PORT: env.BACKEND_PORT,
@@ -315,4 +380,7 @@ module.exports = {
   INSTALL_API_ENABLED: env.INSTALL_API_ENABLED,
   RATE_LIMIT_MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MINUTES: env.RATE_LIMIT_WINDOW_MINUTES,
+  BACKEND_BASE_URL,
+  getBackendBaseUrl,
+  buildBackendUrl,
 };

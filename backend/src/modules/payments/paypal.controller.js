@@ -10,6 +10,7 @@ const paypalService = require('../../services/paypalService');
 const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
+const { buildBackendUrl } = require('../../config/env');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -74,7 +75,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   const order = await paypalService.createOrder({
     amount: numericAmount,
     currency: currencyCode,
-    returnUrl: `${process.env.BACKEND_URL || ''}/api/payments/paypal/callback?payment_id=${paymentId}`,
+    returnUrl: buildBackendUrl(`/api/payments/paypal/callback?payment_id=${paymentId}`),
     cancelUrl: process.env.FRONTEND_URL
       ? `${process.env.FRONTEND_URL}/payments/error`
       : undefined,
