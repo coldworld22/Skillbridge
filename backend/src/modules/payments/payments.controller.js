@@ -1,4 +1,3 @@
-const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -175,16 +174,19 @@ exports.createPayment = catchAsync(async (req, res) => {
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-        const attachmentPath = path.join(
-          process.cwd(),
-          invoice.pdf_url.replace(/^\/+/, "")
-        );
-        await mailService.sendMail({
-          to: user.email,
-          subject: "Payment Invoice",
-          html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: attachmentPath }],
-        });
+        const attachmentPath = resolveInvoicePdfPath(invoice);
+        if (attachmentPath) {
+          await mailService.sendMail({
+            to: user.email,
+            subject: "Payment Invoice",
+            html: `<p>Please find your invoice attached.</p>`,
+            attachments: [{ path: attachmentPath }],
+          });
+        } else {
+          logger.warn(
+            "Invoice PDF URL was present but could not be resolved for attachment"
+          );
+        }
       }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
@@ -272,16 +274,19 @@ exports.updatePayment = catchAsync(async (req, res) => {
         try {
           const invoice = await invoiceService.generateFromPayment(payment, user);
           if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-            const attachmentPath = path.join(
-              process.cwd(),
-              invoice.pdf_url.replace(/^\/+/, "")
-            );
-            await mailService.sendMail({
-              to: user.email,
-              subject: "Payment Invoice",
-              html: `<p>Please find your invoice attached.</p>`,
-              attachments: [{ path: attachmentPath }],
-            });
+            const attachmentPath = resolveInvoicePdfPath(invoice);
+            if (attachmentPath) {
+              await mailService.sendMail({
+                to: user.email,
+                subject: "Payment Invoice",
+                html: `<p>Please find your invoice attached.</p>`,
+                attachments: [{ path: attachmentPath }],
+              });
+            } else {
+              logger.warn(
+                "Invoice PDF URL was present but could not be resolved for attachment"
+              );
+            }
           }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
