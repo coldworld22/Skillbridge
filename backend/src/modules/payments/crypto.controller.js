@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const { grantAccess } = require('./paymentAccess');
 const plansService = require('../plans/plans.service');
 const { buildBackendUrl } = require('../../config/env');
+const { requireBackendBaseUrl, getBackendBaseUrlError } = require('../../config/backendUrl');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -84,6 +85,13 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     order_id: paymentId,
   };
   if (settings.ipn_secret) {
+    try {
+      requireBackendBaseUrl();
+    } catch (error) {
+      const reason = getBackendBaseUrlError() || error.message;
+      logger.error('Failed to resolve backend base URL for crypto IPN: %s', reason);
+      throw new AppError('Backend base URL is not configured', 500);
+    }
     params.ipn_callback_url = buildBackendUrl('/api/payments/crypto/ipn');
   }
   if (process.env.FRONTEND_URL) {

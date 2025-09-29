@@ -11,6 +11,7 @@ const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
 const { buildBackendUrl } = require('../../config/env');
+const { requireBackendBaseUrl, getBackendBaseUrlError } = require('../../config/backendUrl');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
