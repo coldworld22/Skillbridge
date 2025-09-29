@@ -57,44 +57,45 @@ async function validatePurchaseCode(code, domain, options = {}) {
       });
 
       if (!data || data.error || !data.item) {
-        return { valid: false, message: 'Invalid purchase code' };
+        return { valid: false, message: 'Invalid purchase code', licenseId: null };
       }
 
       const envatoEmail = typeof data?.buyer_email === 'string' ? data.buyer_email : null;
-      if (shouldPersist) {
-        await upsertLicense(code, {
-          domain: normalisedDomain,
-          email: envatoEmail,
-          verifiedAt,
-        });
-      }
+      const licenseId = shouldPersist
+        ? await upsertLicense(code, {
+            domain: normalisedDomain,
+            email: envatoEmail,
+            verifiedAt,
+          })
+        : null;
 
       return { valid: true, message: 'License verified with Envato', licenseId };
     } catch (error) {
       if (error?.response?.status === 404) {
-        return { valid: false, message: 'Invalid purchase code' };
+        return { valid: false, message: 'Invalid purchase code', licenseId: null };
       }
 
       return {
         valid: false,
         message: 'Unable to verify purchase code with Envato. Please try again later.',
+        licenseId: null,
       };
     }
   }
 
   if (code === 'DEMO-CODE-1234') {
-    if (shouldPersist) {
-      await upsertLicense(code, {
-        domain: normalisedDomain,
-        email: PLACEHOLDER_EMAIL,
-        verifiedAt,
-      });
-    }
+    const licenseId = shouldPersist
+      ? await upsertLicense(code, {
+          domain: normalisedDomain,
+          email: PLACEHOLDER_EMAIL,
+          verifiedAt,
+        })
+      : null;
 
     return { valid: true, message: 'Demo license accepted', licenseId };
   }
 
-  return { valid: false, message: 'Invalid purchase code' };
+  return { valid: false, message: 'Invalid purchase code', licenseId: null };
 }
 
 module.exports = { validatePurchaseCode };
