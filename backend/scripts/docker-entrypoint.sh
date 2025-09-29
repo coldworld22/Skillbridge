@@ -62,6 +62,12 @@ ensure_upload_permissions() {
 
   mkdir -p /app/data
   chown -R node:node /app/data
+
+  log_dir="${LOG_DIR:-/app/logs}"
+  if [ -n "$log_dir" ]; then
+    mkdir -p "$log_dir"
+    chown -R node:node "$log_dir"
+  fi
 }
 
 ensure_critical_migrations() {
