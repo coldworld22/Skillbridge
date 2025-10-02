@@ -221,6 +221,9 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
+          const effectivePage = Number.isFinite(normalizedPage)
+            ? normalizedPage
+            : 1;
 
           if (!isComponentMountedRef.current) {
             return;
@@ -232,7 +235,7 @@ export default function AdminClassesTable() {
             setCurrentPage(normalizedPage);
           }
 
-          const startIndex = (normalizedPage - 1) * safeLimit;
+          const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
             startIndex,
             startIndex + safeLimit
@@ -557,7 +560,14 @@ export default function AdminClassesTable() {
           </select>
           <select
             value={itemsPerPage}
-            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={(e) => {
+              const numericValue = Number(e.target.value);
+              const nextItemsPerPage = Number.isFinite(numericValue)
+                ? numericValue
+                : totalItems || 1;
+              setItemsPerPage(nextItemsPerPage);
+              setCurrentPage(1);
+            }}
             className="border border-gray-300 rounded-xl px-2 py-2 text-sm"
           >
             <option value={5}>5</option>

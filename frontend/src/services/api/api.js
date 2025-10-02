@@ -42,18 +42,17 @@ const ensureAbsoluteUrl = (candidate) => {
   };
 
   if (isBrowser) {
-    const origin = window?.location?.origin;
-    if (origin) {
-      const resolved = tryResolveWithBase(origin);
-      if (resolved) {
-        return resolved;
-      }
-    }
+    const fallbackBrowserBase = [DEFAULT_SERVER_BASE_URL, internalBaseCandidate]
+      .filter((base) => base && /^https?:\/\//i.test(base))
+      .shift();
+
+    const fallback = fallbackBrowserBase || DEFAULT_SERVER_BASE_URL;
 
     logger.warn(
-      `API base "${candidate}" is not absolute. Falling back to the current browser origin.`
+      `API base "${candidate}" is not absolute. Falling back to "${fallback}".`
     );
-    return origin ? tryResolveWithBase(origin) || origin : candidate;
+
+    return fallback;
   }
 
   const appDomain = process.env.APP_DOMAIN;
