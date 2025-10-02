@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const fieldSuccesses = new Map();
   const codecanyonVerification = { key: '', status: 'idle', message: '' };
 
   if (codecanyonInput) {
@@ -626,6 +627,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorEl) {
       errorEl.textContent = '';
       errorEl.classList.add('hidden');
+    }
+  }
+
+  function clearFieldSuccess(name) {
+    if (!configForm) return;
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
     }
   }
 
