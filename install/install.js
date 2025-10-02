@@ -660,6 +660,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function clearFieldSuccess(name) {
+    if (!configForm) return;
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+    }
+  }
+
   function setFieldError(name, message) {
     if (!configForm) return;
     const field = configForm.querySelector(`[name="${name}"]`);
