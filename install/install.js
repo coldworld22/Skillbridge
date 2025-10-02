@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const fieldSuccesses = new Map();
   const codecanyonVerification = { key: '', status: 'idle', message: '' };
 
   if (codecanyonInput) {
@@ -390,6 +391,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = configForm ? configForm.querySelector(`[data-field-success="${name}"]`) : null;
     fieldSuccesses.set(name, el || null);
     return el || null;
+  }
+
+  function clearFieldSuccess(name) {
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+    }
+  }
+
+  function setFieldSuccess(name, message) {
+    const successEl = getFieldSuccessElement(name);
+    if (!successEl) return;
+    if (message) {
+      successEl.textContent = message;
+      successEl.classList.remove('hidden');
+    } else {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+    }
   }
 
   function setProgress(percent) {
@@ -627,6 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
       errorEl.textContent = '';
       errorEl.classList.add('hidden');
     }
+    clearFieldSuccess(name);
   }
 
   function setFieldError(name, message) {
@@ -820,11 +842,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sanitized = sanitize(key);
     if (!sanitized) {
       clearCodecanyonStatus({ resetKey: true });
+      clearFieldSuccess('codecanyonKey');
       return { ok: true, message: '' };
     }
 
     if (!force && codecanyonVerification.status === 'success' && codecanyonVerification.key === sanitized) {
       updateCodecanyonStatus('success', codecanyonVerification.message);
+      setFieldSuccess('codecanyonKey', codecanyonVerification.message);
       return { ok: true, message: codecanyonVerification.message };
     }
 
@@ -884,12 +908,14 @@ document.addEventListener('DOMContentLoaded', () => {
       codecanyonVerification.key = sanitized;
       updateCodecanyonStatus('success', message);
       clearFieldError('codecanyonKey');
+      setFieldSuccess('codecanyonKey', message);
       return { ok: true, message };
     } catch (error) {
       const message = `Unable to verify license: ${error.message}`;
       codecanyonVerification.status = 'error';
       codecanyonVerification.message = message;
       updateCodecanyonStatus('error', message);
+      clearFieldSuccess('codecanyonKey');
       return { ok: false, message };
     }
   }
@@ -1177,15 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     codecanyonInput.addEventListener('input', () => {
       licenseVerificationCache.code = '';
       licenseVerificationCache.result = null;
-      clearFieldSuccess('codecanyonKey');
-      const field = codecanyonInput;
-      field.removeAttribute('aria-invalid');
-      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
-      const errorEl = getFieldErrorElement('codecanyonKey');
-      if (errorEl) {
-        errorEl.textContent = '';
-        errorEl.classList.add('hidden');
-      }
+      clearFieldError('codecanyonKey');
     });
   }
 
