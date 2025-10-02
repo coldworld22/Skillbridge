@@ -111,7 +111,8 @@ export default function AdminClassesTable() {
       try {
         const scheduleFiltering = shouldApplyScheduleFilter(filterStatus);
         const statusQuery = mapStatusFilterToQuery(filterStatus);
-        const safeLimit = Math.max(itemsPerPage, 1);
+        const safeLimit =
+          Number.isFinite(itemsPerPage) && itemsPerPage > 0 ? itemsPerPage : 1;
         const baseParams = {
           limit: safeLimit,
           filter: searchTerm,
@@ -447,7 +448,14 @@ export default function AdminClassesTable() {
           </select>
           <select
             value={itemsPerPage}
-            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={(e) => {
+              const numericValue = Number(e.target.value);
+              const nextItemsPerPage = Number.isFinite(numericValue)
+                ? numericValue
+                : totalItems || 1;
+              setItemsPerPage(nextItemsPerPage);
+              setCurrentPage(1);
+            }}
             className="border border-gray-300 rounded-xl px-2 py-2 text-sm"
           >
             <option value={5}>5</option>
