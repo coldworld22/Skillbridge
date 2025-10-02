@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -33,6 +33,22 @@ import {
 
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
 const MIN_REJECTION_REASON_LENGTH = 3;
+
+const DEFAULT_PAGE_SIZE = 5;
+
+const resolvePositiveInteger = (value, fallback = 1) => {
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue) && numericValue > 0) {
+    return Math.floor(numericValue);
+  }
+
+  const fallbackValue = Number(fallback);
+  if (Number.isFinite(fallbackValue) && fallbackValue > 0) {
+    return Math.floor(fallbackValue);
+  }
+
+  return 1;
+};
 
 export const mapStatusFilterToQuery = (filterStatus) => {
   if (!filterStatus || filterStatus === "All") {
@@ -81,7 +97,7 @@ export default function AdminClassesTable() {
   const [modalType, setModalType] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [pageSizeSetting, setPageSizeSetting] = useState(String(DEFAULT_PAGE_SIZE));
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -99,6 +115,16 @@ export default function AdminClassesTable() {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+  const classCount = classList.length;
+  const normalizedItemsPerPage = useMemo(() => {
+    if (pageSizeSetting === "all") {
+      const totalOrCount = totalItems || classCount || DEFAULT_PAGE_SIZE;
+      return resolvePositiveInteger(totalOrCount, DEFAULT_PAGE_SIZE);
+    }
+
+    return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+  }, [pageSizeSetting, totalItems, classCount]);
+
   useEffect(() => {
     setMounted(true);
     isComponentMountedRef.current = true;
@@ -118,14 +144,14 @@ export default function AdminClassesTable() {
     const requestDetails = {
       signature: JSON.stringify({
         page: currentPage,
-        limit: itemsPerPage,
+        limit: normalizedItemsPerPage,
         searchTerm,
         approval: filterApproval,
         status: filterStatus,
         sortKey,
       }),
       page: currentPage,
-      itemsPerPage,
+      itemsPerPage: normalizedItemsPerPage,
       searchTerm,
       filterApproval,
       filterStatus,
@@ -176,7 +202,7 @@ export default function AdminClassesTable() {
       try {
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
-        const safeLimit = Math.max(limitValue, 1);
+        const safeLimit = resolvePositiveInteger(limitValue);
         const baseParams = {
           limit: safeLimit,
           filter: searchValue,
@@ -217,13 +243,14 @@ export default function AdminClassesTable() {
             1,
             Math.ceil(totalFilteredItems / safeLimit)
           );
-          const normalizedPage = Math.min(
+          const normalizedPageRaw = Math.min(
             Math.max(page, 1),
             totalFilteredPages
           );
-          const effectivePage = Number.isFinite(normalizedPage)
-            ? normalizedPage
+          const normalizedPage = Number.isFinite(normalizedPageRaw)
+            ? normalizedPageRaw
             : 1;
+          const effectivePage = normalizedPage;
 
           if (!isComponentMountedRef.current) {
             return;
@@ -231,7 +258,7 @@ export default function AdminClassesTable() {
 
           setTotalItems(totalFilteredItems);
           setTotalPages(totalFilteredPages);
-          if (normalizedPage !== page) {
+          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
             setCurrentPage(normalizedPage);
           }
 
@@ -291,7 +318,7 @@ export default function AdminClassesTable() {
     executeRequest(requestDetails);
   }, [
     currentPage,
-    itemsPerPage,
+    normalizedItemsPerPage,
     searchTerm,
     filterApproval,
     filterStatus,
@@ -497,8 +524,9 @@ export default function AdminClassesTable() {
     handleDeleteClass(modalClass.id);
   };
 
-  const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-  const handleNext = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const handleNext = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   if (loading) {
     return (
@@ -559,21 +587,28 @@ export default function AdminClassesTable() {
             <option value="instructor">Sort by Instructor</option>
           </select>
           <select
-            value={itemsPerPage}
+            value={pageSizeSetting}
             onChange={(e) => {
-              const numericValue = Number(e.target.value);
-              const nextItemsPerPage = Number.isFinite(numericValue)
-                ? numericValue
-                : totalItems || 1;
-              setItemsPerPage(nextItemsPerPage);
+              const { value } = e.target;
+
+              if (value === "all") {
+                setPageSizeSetting("all");
+              } else {
+                const sanitizedValue = resolvePositiveInteger(
+                  value,
+                  DEFAULT_PAGE_SIZE
+                );
+                setPageSizeSetting(String(sanitizedValue));
+              }
+
               setCurrentPage(1);
             }}
             className="border border-gray-300 rounded-xl px-2 py-2 text-sm"
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={totalItems}>All</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="all">All</option>
           </select>
           <button
             onClick={exportCSV}
@@ -739,7 +774,8 @@ export default function AdminClassesTable() {
       {totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} classes
+            Showing {(currentPage - 1) * normalizedItemsPerPage + 1}–
+            {Math.min(currentPage * normalizedItemsPerPage, totalItems)} of {totalItems} classes
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handlePrev} disabled={currentPage === 1} className="text-sm px-3 py-1 bg-gray-200 hover:bg-yellow-100 rounded disabled:opacity-50">
