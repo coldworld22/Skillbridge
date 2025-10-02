@@ -35,7 +35,6 @@ const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
 const MIN_REJECTION_REASON_LENGTH = 3;
 
 const DEFAULT_PAGE_SIZE = 5;
-
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
