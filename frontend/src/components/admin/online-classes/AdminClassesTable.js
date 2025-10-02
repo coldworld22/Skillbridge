@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -87,6 +87,11 @@ export default function AdminClassesTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [isMounted, setMounted] = useState(false);
+  const lastSuccessfulSignatureRef = useRef(null);
+  const lastFailedSignatureRef = useRef(null);
+  const inFlightRequestRef = useRef(null);
+  const pendingRequestRef = useRef(null);
+  const isComponentMountedRef = useRef(true);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -96,30 +101,90 @@ export default function AdminClassesTable() {
   const refreshMessages = useMessageStore((state) => state.fetch);
   useEffect(() => {
     setMounted(true);
+    isComponentMountedRef.current = true;
+    return () => {
+      isComponentMountedRef.current = false;
+    };
   }, []);
 
-  const sortClasses = (items) =>
-    [...items].sort((a, b) => compareValues(a, b, sortKey));
+  const sortClasses = (items, key = sortKey) =>
+    [...items].sort((a, b) => compareValues(a, b, key));
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+    const requestDetails = {
+      signature: JSON.stringify({
+        page: currentPage,
+        limit: itemsPerPage,
+        searchTerm,
+        approval: filterApproval,
+        status: filterStatus,
+        sortKey,
+      }),
+      page: currentPage,
+      itemsPerPage,
+      searchTerm,
+      filterApproval,
+      filterStatus,
+      sortKey,
+    };
+
+    if (
+      lastFailedSignatureRef.current &&
+      lastFailedSignatureRef.current !== requestDetails.signature
+    ) {
+      lastFailedSignatureRef.current = null;
+    }
+
+    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
+      return;
+    }
+
+    if (lastFailedSignatureRef.current === requestDetails.signature) {
+      return;
+    }
+
+    if (inFlightRequestRef.current) {
+      pendingRequestRef.current = requestDetails;
+      return;
+    }
+
+    const executeRequest = async (details) => {
+      const {
+        signature,
+        page,
+        itemsPerPage: limitValue,
+        searchTerm: searchValue,
+        filterApproval: approvalValue,
+        filterStatus: statusValue,
+        sortKey: sortValue,
+      } = details;
+
+      if (!isComponentMountedRef.current) {
+        return;
+      }
+
+      inFlightRequestRef.current = signature;
+
+      if (isComponentMountedRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const scheduleFiltering = shouldApplyScheduleFilter(filterStatus);
-        const statusQuery = mapStatusFilterToQuery(filterStatus);
-        const safeLimit = Math.max(itemsPerPage, 1);
+        const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
+        const statusQuery = mapStatusFilterToQuery(statusValue);
+        const safeLimit = Math.max(limitValue, 1);
         const baseParams = {
           limit: safeLimit,
-          filter: searchTerm,
-          ...(filterApproval !== "All" ? { approval: filterApproval } : {}),
+          filter: searchValue,
+          ...(approvalValue !== "All" ? { approval: approvalValue } : {}),
           ...(statusQuery ? { status: statusQuery } : {}),
         };
 
-        const initialPage = scheduleFiltering ? 1 : currentPage;
+        const initialPage = scheduleFiltering ? 1 : page;
         const { data, meta } = await fetchAdminClasses({
           ...baseParams,
           page: initialPage,
@@ -144,22 +209,26 @@ export default function AdminClassesTable() {
           const filteredData = aggregatedData.filter(
             (cls) =>
               cls.scheduleStatus?.toLowerCase() ===
-              filterStatus.toLowerCase()
+              statusValue.toLowerCase()
           );
-          const sortedData = sortClasses(filteredData);
+          const sortedData = sortClasses(filteredData, sortValue);
           const totalFilteredItems = sortedData.length;
           const totalFilteredPages = Math.max(
             1,
             Math.ceil(totalFilteredItems / safeLimit)
           );
           const normalizedPage = Math.min(
-            Math.max(currentPage, 1),
+            Math.max(page, 1),
             totalFilteredPages
           );
 
+          if (!isComponentMountedRef.current) {
+            return;
+          }
+
           setTotalItems(totalFilteredItems);
           setTotalPages(totalFilteredPages);
-          if (normalizedPage !== currentPage) {
+          if (normalizedPage !== page) {
             setCurrentPage(normalizedPage);
           }
 
@@ -168,22 +237,63 @@ export default function AdminClassesTable() {
             startIndex,
             startIndex + safeLimit
           );
+
+          if (!isComponentMountedRef.current) {
+            return;
+          }
+
           setClassList(paginatedData);
         } else {
-          const sortedData = sortClasses(data);
+          const sortedData = sortClasses(data, sortValue);
+
+          if (!isComponentMountedRef.current) {
+            return;
+          }
+
           setClassList(sortedData);
           setTotalPages(meta?.totalPages ? Math.max(meta.totalPages, 1) : 1);
           setTotalItems(meta?.total ?? data.length);
         }
+
+        lastSuccessfulSignatureRef.current = signature;
+        lastFailedSignatureRef.current = null;
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load classes");
+        if (isComponentMountedRef.current) {
+          toast.error("Failed to load classes");
+        }
+        lastFailedSignatureRef.current = signature;
       } finally {
-        setLoading(false);
+        if (isComponentMountedRef.current) {
+          setLoading(false);
+        }
+        inFlightRequestRef.current = null;
+
+        const nextRequest = pendingRequestRef.current;
+        if (nextRequest && nextRequest.signature !== signature) {
+          pendingRequestRef.current = null;
+          if (
+            isComponentMountedRef.current &&
+            lastSuccessfulSignatureRef.current !== nextRequest.signature &&
+            lastFailedSignatureRef.current !== nextRequest.signature
+          ) {
+            executeRequest(nextRequest);
+          }
+        } else if (nextRequest && nextRequest.signature === signature) {
+          pendingRequestRef.current = null;
+        }
       }
     };
-    load();
-  }, [currentPage, itemsPerPage, searchTerm, filterApproval, filterStatus, sortKey]);
+
+    executeRequest(requestDetails);
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchTerm,
+    filterApproval,
+    filterStatus,
+    sortKey,
+  ]);
 
   const formatCSVRow = (row) =>
     row
