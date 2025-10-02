@@ -176,7 +176,9 @@ export default function AdminClassesTable() {
       try {
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
-        const safeLimit = Math.max(limitValue, 1);
+        const parsedLimit = Number(limitValue);
+        const safeLimit =
+          Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 1;
         const baseParams = {
           limit: safeLimit,
           filter: searchValue,
@@ -217,13 +219,14 @@ export default function AdminClassesTable() {
             1,
             Math.ceil(totalFilteredItems / safeLimit)
           );
-          const normalizedPage = Math.min(
+          const normalizedPageRaw = Math.min(
             Math.max(page, 1),
             totalFilteredPages
           );
-          const effectivePage = Number.isFinite(normalizedPage)
-            ? normalizedPage
+          const normalizedPage = Number.isFinite(normalizedPageRaw)
+            ? normalizedPageRaw
             : 1;
+          const effectivePage = normalizedPage;
 
           if (!isComponentMountedRef.current) {
             return;
@@ -231,7 +234,7 @@ export default function AdminClassesTable() {
 
           setTotalItems(totalFilteredItems);
           setTotalPages(totalFilteredPages);
-          if (normalizedPage !== page) {
+          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
             setCurrentPage(normalizedPage);
           }
 
