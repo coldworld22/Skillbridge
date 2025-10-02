@@ -352,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sanitized) {
         clearCodecanyonStatus({ resetKey: true });
         clearFieldError('codecanyonKey');
+        clearFieldSuccess('codecanyonKey');
         return;
       }
       if (codecanyonVerification.status === 'success' && codecanyonVerification.key !== sanitized) {
@@ -364,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sanitized) {
         clearCodecanyonStatus({ resetKey: true });
         clearFieldError('codecanyonKey');
+        clearFieldSuccess('codecanyonKey');
         return;
       }
       const result = await verifyCodecanyonLicense(sanitized);
@@ -396,18 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearFieldSuccess(name) {
     const successEl = getFieldSuccessElement(name);
     if (successEl) {
-      successEl.textContent = '';
-      successEl.classList.add('hidden');
-    }
-  }
-
-  function setFieldSuccess(name, message) {
-    const successEl = getFieldSuccessElement(name);
-    if (!successEl) return;
-    if (message) {
-      successEl.textContent = message;
-      successEl.classList.remove('hidden');
-    } else {
       successEl.textContent = '';
       successEl.classList.add('hidden');
     }
@@ -631,8 +621,14 @@ document.addEventListener('DOMContentLoaded', () => {
       el.classList.add('hidden');
     });
     configForm.querySelectorAll('[data-field-success]').forEach((el) => {
-      el.textContent = '';
-      el.classList.add('hidden');
+      const fieldName = el.getAttribute('data-field-success');
+      if (fieldName) {
+        fieldSuccesses.set(fieldName, el);
+        clearFieldSuccess(fieldName);
+      } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+      }
     });
   }
 
@@ -649,6 +645,19 @@ document.addEventListener('DOMContentLoaded', () => {
       errorEl.classList.add('hidden');
     }
     clearFieldSuccess(name);
+  }
+
+  function setFieldSuccess(name, message) {
+    if (!configForm) return;
+    if (!message) {
+      clearFieldSuccess(name);
+      return;
+    }
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = message;
+      successEl.classList.remove('hidden');
+    }
   }
 
   function setFieldError(name, message) {
