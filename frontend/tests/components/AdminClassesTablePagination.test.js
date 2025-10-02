@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 import { fetchAdminClasses } from "@/services/admin/classService";
+import { toast } from "react-toastify";
 
 jest.mock("next/link", () => ({
   __esModule: true,
@@ -68,6 +69,7 @@ describe("AdminClassesTable schedule filtering", () => {
 
   beforeEach(() => {
     mockedFetchAdminClasses.mockReset();
+    toast.error.mockClear();
   });
 
   it("retains access to upcoming classes spread across multiple pages", async () => {
@@ -144,5 +146,30 @@ describe("AdminClassesTable schedule filtering", () => {
     ).toBe(true);
 
     expect(await screen.findByText("Future Class")).toBeInTheDocument();
+  });
+});
+
+describe("AdminClassesTable error handling", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    toast.error.mockClear();
+  });
+
+  it("shows a single toast and avoids duplicate retries when the fetch fails", async () => {
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    mockedFetchAdminClasses.mockRejectedValue(new Error("Network error"));
+
+    render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledWith("Failed to load classes");
+
+    consoleSpy.mockRestore();
   });
 });
