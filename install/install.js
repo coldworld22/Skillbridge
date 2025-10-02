@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const fieldSuccesses = new Map();
   const codecanyonVerification = { key: '', status: 'idle', message: '' };
 
   if (codecanyonInput) {
@@ -351,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sanitized) {
         clearCodecanyonStatus({ resetKey: true });
         clearFieldError('codecanyonKey');
+        clearFieldSuccess('codecanyonKey');
         return;
       }
       if (codecanyonVerification.status === 'success' && codecanyonVerification.key !== sanitized) {
@@ -363,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sanitized) {
         clearCodecanyonStatus({ resetKey: true });
         clearFieldError('codecanyonKey');
+        clearFieldSuccess('codecanyonKey');
         return;
       }
       const result = await verifyCodecanyonLicense(sanitized);
@@ -390,6 +393,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = configForm ? configForm.querySelector(`[data-field-success="${name}"]`) : null;
     fieldSuccesses.set(name, el || null);
     return el || null;
+  }
+
+  function clearFieldSuccess(name) {
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+    }
   }
 
   function setProgress(percent) {
@@ -610,8 +621,14 @@ document.addEventListener('DOMContentLoaded', () => {
       el.classList.add('hidden');
     });
     configForm.querySelectorAll('[data-field-success]').forEach((el) => {
-      el.textContent = '';
-      el.classList.add('hidden');
+      const fieldName = el.getAttribute('data-field-success');
+      if (fieldName) {
+        fieldSuccesses.set(fieldName, el);
+        clearFieldSuccess(fieldName);
+      } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+      }
     });
   }
 
@@ -626,6 +643,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorEl) {
       errorEl.textContent = '';
       errorEl.classList.add('hidden');
+    }
+  }
+
+  function setFieldSuccess(name, message) {
+    if (!configForm) return;
+    if (!message) {
+      clearFieldSuccess(name);
+      return;
+    }
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = message;
+      successEl.classList.remove('hidden');
     }
   }
 
@@ -884,6 +914,7 @@ document.addEventListener('DOMContentLoaded', () => {
       codecanyonVerification.key = sanitized;
       updateCodecanyonStatus('success', message);
       clearFieldError('codecanyonKey');
+      setFieldSuccess('codecanyonKey', message);
       return { ok: true, message };
     } catch (error) {
       const message = `Unable to verify license: ${error.message}`;
