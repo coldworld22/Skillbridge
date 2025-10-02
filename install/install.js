@@ -644,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
       errorEl.textContent = '';
       errorEl.classList.add('hidden');
     }
+    clearFieldSuccess(name);
   }
 
   function setFieldSuccess(name, message) {
@@ -850,11 +851,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sanitized = sanitize(key);
     if (!sanitized) {
       clearCodecanyonStatus({ resetKey: true });
+      clearFieldSuccess('codecanyonKey');
       return { ok: true, message: '' };
     }
 
     if (!force && codecanyonVerification.status === 'success' && codecanyonVerification.key === sanitized) {
       updateCodecanyonStatus('success', codecanyonVerification.message);
+      setFieldSuccess('codecanyonKey', codecanyonVerification.message);
       return { ok: true, message: codecanyonVerification.message };
     }
 
@@ -921,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
       codecanyonVerification.status = 'error';
       codecanyonVerification.message = message;
       updateCodecanyonStatus('error', message);
+      clearFieldSuccess('codecanyonKey');
       return { ok: false, message };
     }
   }
@@ -1208,15 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     codecanyonInput.addEventListener('input', () => {
       licenseVerificationCache.code = '';
       licenseVerificationCache.result = null;
-      clearFieldSuccess('codecanyonKey');
-      const field = codecanyonInput;
-      field.removeAttribute('aria-invalid');
-      field.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
-      const errorEl = getFieldErrorElement('codecanyonKey');
-      if (errorEl) {
-        errorEl.textContent = '';
-        errorEl.classList.add('hidden');
-      }
+      clearFieldError('codecanyonKey');
     });
   }
 
