@@ -111,7 +111,10 @@ export default function AdminClassesTable() {
       try {
         const scheduleFiltering = shouldApplyScheduleFilter(filterStatus);
         const statusQuery = mapStatusFilterToQuery(filterStatus);
-        const safeLimit = Math.max(itemsPerPage, 1);
+        const safeLimit =
+          Number.isFinite(itemsPerPage) && itemsPerPage > 0 ? itemsPerPage : 1;
+        const safePage =
+          Number.isFinite(currentPage) && currentPage > 0 ? currentPage : 1;
         const baseParams = {
           limit: safeLimit,
           filter: searchTerm,
@@ -119,7 +122,7 @@ export default function AdminClassesTable() {
           ...(statusQuery ? { status: statusQuery } : {}),
         };
 
-        const initialPage = scheduleFiltering ? 1 : currentPage;
+        const initialPage = scheduleFiltering ? 1 : safePage;
         const { data, meta } = await fetchAdminClasses({
           ...baseParams,
           page: initialPage,
@@ -153,17 +156,23 @@ export default function AdminClassesTable() {
             Math.ceil(totalFilteredItems / safeLimit)
           );
           const normalizedPage = Math.min(
-            Math.max(currentPage, 1),
+            Math.max(safePage, 1),
             totalFilteredPages
           );
+          const effectivePage = Number.isFinite(normalizedPage)
+            ? normalizedPage
+            : 1;
 
           setTotalItems(totalFilteredItems);
           setTotalPages(totalFilteredPages);
-          if (normalizedPage !== currentPage) {
+          if (
+            Number.isFinite(normalizedPage) &&
+            normalizedPage !== currentPage
+          ) {
             setCurrentPage(normalizedPage);
           }
 
-          const startIndex = (normalizedPage - 1) * safeLimit;
+          const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
             startIndex,
             startIndex + safeLimit
