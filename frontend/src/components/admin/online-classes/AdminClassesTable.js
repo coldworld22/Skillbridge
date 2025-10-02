@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -34,6 +34,7 @@ import {
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
 const MIN_REJECTION_REASON_LENGTH = 3;
 
+const DEFAULT_PAGE_SIZE = 5;
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
@@ -95,8 +96,7 @@ export default function AdminClassesTable() {
   const [modalType, setModalType] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [showAllItems, setShowAllItems] = useState(false);
+  const [pageSizeSetting, setPageSizeSetting] = useState(String(DEFAULT_PAGE_SIZE));
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -114,8 +114,15 @@ export default function AdminClassesTable() {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const normalizedItemsPerPage = resolvePositiveInteger(itemsPerPage);
   const classCount = classList.length;
+  const normalizedItemsPerPage = useMemo(() => {
+    if (pageSizeSetting === "all") {
+      const totalOrCount = totalItems || classCount || DEFAULT_PAGE_SIZE;
+      return resolvePositiveInteger(totalOrCount, DEFAULT_PAGE_SIZE);
+    }
+
+    return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+  }, [pageSizeSetting, totalItems, classCount]);
 
   useEffect(() => {
     setMounted(true);
@@ -310,7 +317,7 @@ export default function AdminClassesTable() {
     executeRequest(requestDetails);
   }, [
     currentPage,
-    itemsPerPage,
+    normalizedItemsPerPage,
     searchTerm,
     filterApproval,
     filterStatus,
@@ -516,27 +523,6 @@ export default function AdminClassesTable() {
     handleDeleteClass(modalClass.id);
   };
 
-  useEffect(() => {
-    if (showAllItems) {
-      const inferredTotal = resolvePositiveInteger(totalItems || classCount, 1);
-
-      if (itemsPerPage !== inferredTotal) {
-        setItemsPerPage(inferredTotal);
-      }
-      return;
-    }
-
-    if (itemsPerPage !== normalizedItemsPerPage) {
-      setItemsPerPage(normalizedItemsPerPage);
-    }
-  }, [
-    showAllItems,
-    totalItems,
-    classCount,
-    itemsPerPage,
-    normalizedItemsPerPage,
-  ]);
-
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
@@ -600,24 +586,18 @@ export default function AdminClassesTable() {
             <option value="instructor">Sort by Instructor</option>
           </select>
           <select
-            value={showAllItems ? "all" : String(normalizedItemsPerPage)}
+            value={pageSizeSetting}
             onChange={(e) => {
               const { value } = e.target;
 
               if (value === "all") {
-                setShowAllItems(true);
-                const inferredTotal = resolvePositiveInteger(
-                  totalItems || classCount,
-                  1
-                );
-                setItemsPerPage(inferredTotal);
+                setPageSizeSetting("all");
               } else {
-                setShowAllItems(false);
                 const sanitizedValue = resolvePositiveInteger(
                   value,
-                  totalItems || classCount || 1
+                  DEFAULT_PAGE_SIZE
                 );
-                setItemsPerPage(sanitizedValue);
+                setPageSizeSetting(String(sanitizedValue));
               }
 
               setCurrentPage(1);
