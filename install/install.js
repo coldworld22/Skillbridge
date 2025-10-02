@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const fieldErrors = new Map();
+  const fieldSuccesses = new Map();
   const codecanyonVerification = { key: '', status: 'idle', message: '' };
 
   if (codecanyonInput) {
@@ -603,7 +604,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!configForm) return;
     configForm.querySelectorAll('[name]').forEach((input) => {
       input.removeAttribute('aria-invalid');
-      input.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-200');
+      input.classList.remove(
+        'border-red-400',
+        'focus:border-red-500',
+        'focus:ring-red-200',
+        'border-green-400',
+        'focus:border-green-500',
+        'focus:ring-green-200'
+      );
     });
     configForm.querySelectorAll('[data-field-error]').forEach((el) => {
       el.textContent = '';
@@ -626,6 +634,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorEl) {
       errorEl.textContent = '';
       errorEl.classList.add('hidden');
+    }
+  }
+
+  function clearFieldSuccess(name) {
+    if (!configForm) return;
+    const field = configForm.querySelector(`[name="${name}"]`);
+    if (field) {
+      field.classList.remove('border-green-400', 'focus:border-green-500', 'focus:ring-green-200');
+    }
+    const successEl = getFieldSuccessElement(name);
+    if (successEl) {
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
     }
   }
 
