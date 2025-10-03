@@ -59,7 +59,7 @@ api.interceptors.response.use(
     const isCanceledRequest =
       error?.code === "ERR_CANCELED" ||
       error?.name === "CanceledError" ||
-      error?.message === "canceled";
+      error?.message?.toLowerCase() === "canceled";
 
     if (isCanceledRequest) {
       return Promise.reject(error);
