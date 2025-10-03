@@ -336,11 +336,11 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
-          const effectivePage = Number.isFinite(normalizedPageRaw)
+          let effectivePage = Number.isFinite(normalizedPageRaw)
             ? normalizedPageRaw
             : 1;
-          const effectivePage = normalizedPage;
           if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+            effectivePage = normalizedPage;
             finalSignature = JSON.stringify({
               page: normalizedPage,
               limit: limitValue,
