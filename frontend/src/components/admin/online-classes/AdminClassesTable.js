@@ -133,6 +133,48 @@ export default function AdminClassesTable() {
     };
   }, []);
 
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    totalItemsRef.current = totalItems;
+  }, [totalItems]);
+
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  const setCurrentPageIfNeeded = (value) => {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    if (currentPageRef.current === value) {
+      return false;
+    }
+    currentPageRef.current = value;
+    setCurrentPage(value);
+    return true;
+  };
+
+  const setTotalItemsIfNeeded = (value) => {
+    if (totalItemsRef.current === value) {
+      return false;
+    }
+    totalItemsRef.current = value;
+    setTotalItems(value);
+    return true;
+  };
+
+  const setTotalPagesIfNeeded = (value) => {
+    if (totalPagesRef.current === value) {
+      return false;
+    }
+    totalPagesRef.current = value;
+    setTotalPages(value);
+    return true;
+  };
+
   const sortClasses = (items, key = sortKey) =>
     [...items].sort((a, b) => compareValues(a, b, key));
 
@@ -198,8 +240,17 @@ export default function AdminClassesTable() {
       return;
     }
 
+    if (inFlightRequestRef.current === requestDetails.signature) {
+      return;
+    }
+
     if (inFlightRequestRef.current) {
-      pendingRequestRef.current = requestDetails;
+      if (
+        !pendingRequestRef.current ||
+        pendingRequestRef.current.signature !== requestDetails.signature
+      ) {
+        pendingRequestRef.current = requestDetails;
+      }
       return;
     }
 
@@ -314,8 +365,10 @@ export default function AdminClassesTable() {
           }
 
           setClassList(sortedData);
-          setTotalPages(meta?.totalPages ? Math.max(meta.totalPages, 1) : 1);
-          setTotalItems(meta?.total ?? data.length);
+          const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
+          const nextTotalItems = meta?.total ?? data.length;
+          setTotalPagesIfNeeded(nextTotalPages);
+          setTotalItemsIfNeeded(nextTotalItems);
         }
 
         lastSuccessfulSignatureRef.current = finalSignature;
