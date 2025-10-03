@@ -72,15 +72,15 @@ function AdminTutorialsPage() {
         next.search = trimmedSearch;
       }
 
-      if (filterCategory && filterCategory !== "All") {
+      if (filterCategory) {
         next.category = filterCategory;
       }
 
-      if (filterStatus && filterStatus !== "All") {
+      if (filterStatus) {
         next.status = filterStatus;
       }
 
-      if (filterApproval && filterApproval !== "All") {
+      if (filterApproval) {
         next.approval = filterApproval;
       }
 

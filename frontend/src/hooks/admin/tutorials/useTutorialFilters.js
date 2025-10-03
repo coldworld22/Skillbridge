@@ -2,9 +2,9 @@ import { useState, useMemo } from "react";
 
 export default function useTutorialFilters(tutorials) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterApproval, setFilterApproval] = useState("All");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterApproval, setFilterApproval] = useState("");
 
   const filteredTutorials = useMemo(() => {
     const normalizedQuery = searchQuery.toLowerCase();
@@ -17,10 +17,10 @@ export default function useTutorialFilters(tutorials) {
         normalizedTitle.includes(normalizedSearch) ||
         normalizedInstructor.includes(normalizedSearch);
       const matchesCategory =
-        filterCategory === "All" || tut.category === filterCategory;
-      const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
+        !filterCategory || tut.category === filterCategory;
+      const matchesStatus = !filterStatus || tut.status === filterStatus;
       const matchesApproval =
-        filterApproval === "All" || tut.approvalStatus === filterApproval;
+        !filterApproval || tut.approvalStatus === filterApproval;
       return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
     });
   }, [tutorials, searchQuery, filterCategory, filterStatus, filterApproval]);
