@@ -348,7 +348,7 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
-          const effectivePage = Number.isFinite(normalizedPageRaw)
+          let effectivePage = Number.isFinite(normalizedPageRaw)
             ? normalizedPageRaw
             : 1;
           const pageForSignature = Number.isFinite(normalizedPage)
