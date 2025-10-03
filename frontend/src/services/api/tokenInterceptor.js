@@ -56,6 +56,15 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
 
+    const isCanceledRequest =
+      error?.code === "ERR_CANCELED" ||
+      error?.name === "CanceledError" ||
+      error?.message === "canceled";
+
+    if (isCanceledRequest) {
+      return Promise.reject(error);
+    }
+
     if (
       (error.code === "ERR_NETWORK" || !error.response) &&
       Date.now() - lastNetworkToast > 5000
