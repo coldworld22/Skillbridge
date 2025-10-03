@@ -64,20 +64,22 @@ test('fetchPages loads page list', async () => {
 
 test('fetch error leaves loaded false and allows retry', async () => {
   fetchSEOConfig.mockRejectedValueOnce(new Error('fail'));
-  const { fetch, retry } = useSEOConfigStore.getState();
+  const { fetch, retryOnError } = useSEOConfigStore.getState();
   await act(async () => {
     await fetch();
   });
   let state = useSEOConfigStore.getState();
   expect(state.loaded).toBe(false);
   expect(state.error).toBe('fail');
+  expect(state.retryPending).toBe(true);
 
   fetchSEOConfig.mockResolvedValueOnce({ metaTags: { '/': { title: 'Retry' } } });
   await act(async () => {
-    await retry();
+    await retryOnError();
   });
   state = useSEOConfigStore.getState();
   expect(state.loaded).toBe(true);
   expect(state.error).toBeNull();
+  expect(state.retryPending).toBe(false);
   expect(state.settings.metaTags['/'].title).toBe('Retry');
 });

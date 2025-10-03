@@ -17,25 +17,32 @@ const useSEOConfigStore = create(
       loaded: false,
       failed: false,
       error: null,
+      retryPending: false,
       fetch: async () => {
         if (get().loading) return;
-        set({ loading: true, error: null, failed: false });
+        set({ loading: true, error: null, failed: false, retryPending: false });
         try {
           const data = await fetchSEOConfig();
-          set({ settings: data || {}, loaded: true, loading: false, failed: false });
+          set({
+            settings: data || {},
+            loaded: true,
+            loading: false,
+            failed: false,
+            retryPending: false,
+          });
         } catch (err) {
           toast.error("Failed to load SEO settings");
-          set({
-            loading: false,
-            loaded: false,
-            failed: true,
-            error: err?.message || "Failed to load SEO settings",
-          });
+          set({ loaded: false, loading: false, error: err.message, retryPending: true });
         }
       },
-      retry: () => {
+      retryOnError: async () => {
+        if (!get().error) return;
+        set({ retryPending: false });
+        return get().fetch();
+      },
+      forceRetry: () => {
         if (get().loading) return;
-        set({ loaded: false, failed: false, error: null });
+        set({ loaded: false, failed: false, retryPending: false });
         return get().fetch();
       },
       update: (newSettings) =>
@@ -71,7 +78,7 @@ const useSEOConfigStore = create(
           set({ pages: [], error: err.message });
         }
       },
-      clear: () => set({ settings: {}, loaded: false, failed: false, error: null })
+      clear: () => set({ settings: {}, loaded: false, failed: false, retryPending: false })
     }),
     { name: "seo-config" }
   )
