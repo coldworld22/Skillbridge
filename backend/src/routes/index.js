@@ -4,6 +4,7 @@ const {
   requireInstallApiEnabled,
   router: installRouter,
 } = require('../modules/install/install.routes');
+const tutorialController = require('../modules/users/tutorials/tutorial.controller');
 
 router.use('/api/csrf-token', require('./csrf.routes'));
 router.use('/api/license', require('./licenseVerify.routes'));
@@ -64,6 +65,9 @@ router.use('/api/search', require('../modules/search/search.routes'));
 router.use('/api/install', requireInstallApiEnabled, installRouter);
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
+
+// Public tutorials shortcuts (used by the marketing site)
+router.get('/api/tutorials/featured', tutorialController.getFeaturedTutorials);
 
 router.get('/', (_req, res) => res.send('🚀 SkillBridge API is live.'));
 
