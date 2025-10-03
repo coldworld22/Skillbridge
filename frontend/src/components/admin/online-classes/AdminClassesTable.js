@@ -107,10 +107,7 @@ export default function AdminClassesTable() {
   const inFlightRequestRef = useRef(null);
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
-  const currentPageRef = useRef(currentPage);
-  const totalPagesRef = useRef(totalPages);
-  const totalItemsRef = useRef(totalItems);
-  const loadingRef = useRef(loading);
+  const lastNormalizedPageRef = useRef(currentPage);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -141,16 +138,42 @@ export default function AdminClassesTable() {
   }, [currentPage]);
 
   useEffect(() => {
-    totalPagesRef.current = totalPages;
-  }, [totalPages]);
-
-  useEffect(() => {
     totalItemsRef.current = totalItems;
   }, [totalItems]);
 
   useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  const setCurrentPageIfNeeded = (value) => {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    if (currentPageRef.current === value) {
+      return false;
+    }
+    currentPageRef.current = value;
+    setCurrentPage(value);
+    return true;
+  };
+
+  const setTotalItemsIfNeeded = (value) => {
+    if (totalItemsRef.current === value) {
+      return false;
+    }
+    totalItemsRef.current = value;
+    setTotalItems(value);
+    return true;
+  };
+
+  const setTotalPagesIfNeeded = (value) => {
+    if (totalPagesRef.current === value) {
+      return false;
+    }
+    totalPagesRef.current = value;
+    setTotalPages(value);
+    return true;
+  };
 
   const sortClasses = (items, key = sortKey) =>
     [...items].sort((a, b) => compareValues(a, b, key));
@@ -159,17 +182,42 @@ export default function AdminClassesTable() {
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
+  const normalizedPage = useMemo(() => {
+    const positiveCurrentPage = resolvePositiveInteger(currentPage, 1);
+    const knownTotalPages = Number.isFinite(totalPages)
+      ? Math.max(totalPages, 1)
+      : 1;
+    const derivedFromItems =
+      Number.isFinite(totalItems) && totalItems > 0 && normalizedItemsPerPage
+        ? Math.ceil(totalItems / normalizedItemsPerPage)
+        : null;
+    const effectiveTotalPages = derivedFromItems
+      ? Math.max(1, derivedFromItems)
+      : knownTotalPages;
+    return Math.min(Math.max(positiveCurrentPage, 1), effectiveTotalPages);
+  }, [currentPage, totalPages, totalItems, normalizedItemsPerPage]);
+
   useEffect(() => {
+    if (normalizedPage !== currentPage) {
+      if (lastNormalizedPageRef.current !== normalizedPage) {
+        lastNormalizedPageRef.current = normalizedPage;
+        setCurrentPage(normalizedPage);
+      }
+      return;
+    }
+
+    lastNormalizedPageRef.current = normalizedPage;
+
     const requestDetails = {
       signature: JSON.stringify({
-        page: currentPage,
+        page: normalizedPage,
         limit: normalizedItemsPerPage,
         searchTerm,
         approval: filterApproval,
         status: filterStatus,
         sortKey,
       }),
-      page: currentPage,
+      page: normalizedPage,
       itemsPerPage: normalizedItemsPerPage,
       searchTerm,
       filterApproval,
@@ -192,8 +240,17 @@ export default function AdminClassesTable() {
       return;
     }
 
+    if (inFlightRequestRef.current === requestDetails.signature) {
+      return;
+    }
+
     if (inFlightRequestRef.current) {
-      pendingRequestRef.current = requestDetails;
+      if (
+        !pendingRequestRef.current ||
+        pendingRequestRef.current.signature !== requestDetails.signature
+      ) {
+        pendingRequestRef.current = requestDetails;
+      }
       return;
     }
 
@@ -231,6 +288,7 @@ export default function AdminClassesTable() {
       }
 
       try {
+        let finalSignature = signature;
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
         const safeLimit = resolvePositiveInteger(limitValue);
@@ -278,30 +336,27 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
-          const normalizedPage = Number.isFinite(normalizedPageRaw)
+          const effectivePage = Number.isFinite(normalizedPageRaw)
             ? normalizedPageRaw
             : 1;
           const effectivePage = normalizedPage;
+          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+            finalSignature = JSON.stringify({
+              page: normalizedPage,
+              limit: limitValue,
+              searchTerm: searchValue,
+              approval: approvalValue,
+              status: statusValue,
+              sortKey: sortValue,
+            });
+          }
 
           if (!isComponentMountedRef.current) {
             return;
           }
 
-          if (totalItemsRef.current !== totalFilteredItems) {
-            totalItemsRef.current = totalFilteredItems;
-            setTotalItems(totalFilteredItems);
-          }
-          if (totalPagesRef.current !== totalFilteredPages) {
-            totalPagesRef.current = totalFilteredPages;
-            setTotalPages(totalFilteredPages);
-          }
-          if (
-            Number.isFinite(normalizedPage) &&
-            currentPageRef.current !== normalizedPage
-          ) {
-            currentPageRef.current = normalizedPage;
-            setCurrentPage(normalizedPage);
-          }
+          setTotalItems(totalFilteredItems);
+          setTotalPages(totalFilteredPages);
 
           const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
@@ -324,28 +379,11 @@ export default function AdminClassesTable() {
           setClassList(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
           const nextTotalItems = meta?.total ?? data.length;
-
-          if (totalPagesRef.current !== nextTotalPages) {
-            totalPagesRef.current = nextTotalPages;
-            setTotalPages(nextTotalPages);
-          }
-
-          if (totalItemsRef.current !== nextTotalItems) {
-            totalItemsRef.current = nextTotalItems;
-            setTotalItems(nextTotalItems);
-          }
-
-          if (
-            nextTotalPages > 0 &&
-            page > nextTotalPages &&
-            currentPageRef.current !== nextTotalPages
-          ) {
-            currentPageRef.current = nextTotalPages;
-            setCurrentPage(nextTotalPages);
-          }
+          setTotalPagesIfNeeded(nextTotalPages);
+          setTotalItemsIfNeeded(nextTotalItems);
         }
 
-        lastSuccessfulSignatureRef.current = signature;
+        lastSuccessfulSignatureRef.current = finalSignature;
         lastFailedSignatureRef.current = null;
       } catch (err) {
         console.error(err);
@@ -378,7 +416,7 @@ export default function AdminClassesTable() {
 
     executeRequest(requestDetails);
   }, [
-    currentPage,
+    normalizedPage,
     normalizedItemsPerPage,
     searchTerm,
     filterApproval,
