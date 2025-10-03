@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
