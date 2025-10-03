@@ -1,11 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchAllTutorials } from "@/services/admin/tutorialService";
 
 export default function useTutorialsData(
   t,
-  { initialPage = 1, initialLimit = 10 } = {},
+  {
+    initialPage = 1,
+    initialLimit = 10,
+    filters = null,
+    page: controlledPage,
+    pageSize: controlledPageSize,
+  } = {},
 ) {
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -103,32 +109,43 @@ export default function useTutorialsData(
   );
 
   useEffect(() => {
+    const nextPage =
+      controlledPage ?? lastRequestRef.current.page ?? initialPage;
+    const nextLimit =
+      controlledPageSize ?? lastRequestRef.current.limit ?? initialLimit;
+
+    if (nextPage == null || nextLimit == null) {
+      return undefined;
+    }
+
     const controller = new AbortController();
-    let active = true;
 
-    const loadCategories = async () => {
-      try {
-        const cats = await fetchAllCategories({}, { signal: controller.signal });
-        if (!active || !isMountedRef.current) return;
-        setCategories(cats?.data || cats || []);
-      } catch (err) {
-        if (err?.name === "AbortError" || err?.name === "CanceledError") {
-          return;
-        }
-        console.error(err);
-        if (isMountedRef.current) {
-          toast.error(t("load_error"));
-        }
+    loadTutorials({
+      page: nextPage,
+      limit: nextLimit,
+      signal: controller.signal,
+      params:
+        normalizedFilters && Object.keys(normalizedFilters).length > 0
+          ? normalizedFilters
+          : undefined,
+    }).catch((err) => {
+      if (err?.name === "AbortError" || err?.name === "CanceledError") {
+        return;
       }
-    };
-
-    loadCategories();
+      console.error(err);
+    });
 
     return () => {
       controller.abort();
-      active = false;
     };
-  }, [page, pageSize, normalizedFilters, t]);
+  }, [
+    controlledPage,
+    controlledPageSize,
+    normalizedFilters,
+    loadTutorials,
+    initialPage,
+    initialLimit,
+  ]);
 
   return {
     tutorials,
