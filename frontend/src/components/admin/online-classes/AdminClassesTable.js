@@ -112,6 +112,10 @@ export default function AdminClassesTable() {
   const totalPagesRef = useRef(totalPages);
   const loadingRef = useRef(false);
   const lastNormalizedPageRef = useRef(currentPage);
+  const currentPageRef = useRef(currentPage);
+  const totalItemsRef = useRef(totalItems);
+  const totalPagesRef = useRef(totalPages);
+  const loadingRef = useRef(false);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -148,6 +152,10 @@ export default function AdminClassesTable() {
   useEffect(() => {
     totalPagesRef.current = totalPages;
   }, [totalPages]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   const setCurrentPageIfNeeded = (value) => {
     if (!Number.isFinite(value)) {
