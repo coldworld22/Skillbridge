@@ -107,6 +107,10 @@ export default function AdminClassesTable() {
   const inFlightRequestRef = useRef(null);
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
+  const currentPageRef = useRef(currentPage);
+  const totalPagesRef = useRef(totalPages);
+  const totalItemsRef = useRef(totalItems);
+  const loadingRef = useRef(loading);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -131,6 +135,22 @@ export default function AdminClassesTable() {
       isComponentMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  useEffect(() => {
+    totalItemsRef.current = totalItems;
+  }, [totalItems]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   const sortClasses = (items, key = sortKey) =>
     [...items].sort((a, b) => compareValues(a, b, key));
@@ -194,8 +214,20 @@ export default function AdminClassesTable() {
 
       inFlightRequestRef.current = signature;
 
-      if (isComponentMountedRef.current) {
+      if (isComponentMountedRef.current && !loadingRef.current) {
+        loadingRef.current = true;
         setLoading(true);
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[AdminClassesTable] executeRequest", signature, {
+          page,
+          itemsPerPage: limitValue,
+          searchTerm: searchValue,
+          filterApproval: approvalValue,
+          filterStatus: statusValue,
+          sortKey: sortValue,
+        });
       }
 
       try {
@@ -255,9 +287,19 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setTotalItems(totalFilteredItems);
-          setTotalPages(totalFilteredPages);
-          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+          if (totalItemsRef.current !== totalFilteredItems) {
+            totalItemsRef.current = totalFilteredItems;
+            setTotalItems(totalFilteredItems);
+          }
+          if (totalPagesRef.current !== totalFilteredPages) {
+            totalPagesRef.current = totalFilteredPages;
+            setTotalPages(totalFilteredPages);
+          }
+          if (
+            Number.isFinite(normalizedPage) &&
+            currentPageRef.current !== normalizedPage
+          ) {
+            currentPageRef.current = normalizedPage;
             setCurrentPage(normalizedPage);
           }
 
@@ -280,8 +322,27 @@ export default function AdminClassesTable() {
           }
 
           setClassList(sortedData);
-          setTotalPages(meta?.totalPages ? Math.max(meta.totalPages, 1) : 1);
-          setTotalItems(meta?.total ?? data.length);
+          const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
+          const nextTotalItems = meta?.total ?? data.length;
+
+          if (totalPagesRef.current !== nextTotalPages) {
+            totalPagesRef.current = nextTotalPages;
+            setTotalPages(nextTotalPages);
+          }
+
+          if (totalItemsRef.current !== nextTotalItems) {
+            totalItemsRef.current = nextTotalItems;
+            setTotalItems(nextTotalItems);
+          }
+
+          if (
+            nextTotalPages > 0 &&
+            page > nextTotalPages &&
+            currentPageRef.current !== nextTotalPages
+          ) {
+            currentPageRef.current = nextTotalPages;
+            setCurrentPage(nextTotalPages);
+          }
         }
 
         lastSuccessfulSignatureRef.current = signature;
@@ -293,7 +354,8 @@ export default function AdminClassesTable() {
         }
         lastFailedSignatureRef.current = signature;
       } finally {
-        if (isComponentMountedRef.current) {
+        if (isComponentMountedRef.current && loadingRef.current) {
+          loadingRef.current = false;
           setLoading(false);
         }
         inFlightRequestRef.current = null;
