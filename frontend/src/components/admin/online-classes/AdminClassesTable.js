@@ -343,10 +343,15 @@ export default function AdminClassesTable() {
           const effectivePage = Number.isFinite(normalizedPageRaw)
             ? normalizedPageRaw
             : 1;
-          const effectivePage = normalizedPage;
-          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+          const pageForSignature = Number.isFinite(normalizedPage)
+            ? normalizedPage
+            : effectivePage;
+          if (
+            Number.isFinite(pageForSignature) &&
+            pageForSignature !== page
+          ) {
             finalSignature = JSON.stringify({
-              page: normalizedPage,
+              page: pageForSignature,
               limit: limitValue,
               searchTerm: searchValue,
               approval: approvalValue,
