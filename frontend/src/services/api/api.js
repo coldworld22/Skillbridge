@@ -77,7 +77,40 @@ const ensureAbsoluteUrl = (candidate) => {
   return fallback;
 };
 
-const baseURL = ensureAbsoluteUrl(pickBaseCandidate());
+const ensureApiSuffix = (candidate) => {
+  if (!candidate) {
+    return candidate;
+  }
+
+  const trimmedCandidate = candidate.trim();
+
+  if (/\/api\/?$/i.test(trimmedCandidate)) {
+    return trimmedCandidate;
+  }
+
+  if (/^https?:\/\//i.test(trimmedCandidate)) {
+    try {
+      const url = new URL(trimmedCandidate);
+      const normalisedPath = url.pathname.replace(/\/+$/, "");
+
+      if (/\/api$/i.test(normalisedPath)) {
+        return url.toString();
+      }
+
+      url.pathname = normalisedPath ? `${normalisedPath}/api` : "/api";
+      return url.toString();
+    } catch (error) {
+      logger.warn(
+        `Failed to append /api to API base URL "${trimmedCandidate}": ${error.message}`
+      );
+      return `${trimmedCandidate.replace(/\/+$/, "")}/api`;
+    }
+  }
+
+  return `${trimmedCandidate.replace(/\/+$/, "")}/api`;
+};
+
+const baseURL = ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate()));
 
 // Warn developers if the default domain URL is used in production
 if (
