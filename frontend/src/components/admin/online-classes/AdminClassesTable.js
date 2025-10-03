@@ -107,9 +107,7 @@ export default function AdminClassesTable() {
   const inFlightRequestRef = useRef(null);
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
-  const currentPageRef = useRef(currentPage);
-  const totalItemsRef = useRef(totalItems);
-  const totalPagesRef = useRef(totalPages);
+  const lastNormalizedPageRef = useRef(currentPage);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -184,17 +182,42 @@ export default function AdminClassesTable() {
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
+  const normalizedPage = useMemo(() => {
+    const positiveCurrentPage = resolvePositiveInteger(currentPage, 1);
+    const knownTotalPages = Number.isFinite(totalPages)
+      ? Math.max(totalPages, 1)
+      : 1;
+    const derivedFromItems =
+      Number.isFinite(totalItems) && totalItems > 0 && normalizedItemsPerPage
+        ? Math.ceil(totalItems / normalizedItemsPerPage)
+        : null;
+    const effectiveTotalPages = derivedFromItems
+      ? Math.max(1, derivedFromItems)
+      : knownTotalPages;
+    return Math.min(Math.max(positiveCurrentPage, 1), effectiveTotalPages);
+  }, [currentPage, totalPages, totalItems, normalizedItemsPerPage]);
+
   useEffect(() => {
+    if (normalizedPage !== currentPage) {
+      if (lastNormalizedPageRef.current !== normalizedPage) {
+        lastNormalizedPageRef.current = normalizedPage;
+        setCurrentPage(normalizedPage);
+      }
+      return;
+    }
+
+    lastNormalizedPageRef.current = normalizedPage;
+
     const requestDetails = {
       signature: JSON.stringify({
-        page: currentPage,
+        page: normalizedPage,
         limit: normalizedItemsPerPage,
         searchTerm,
         approval: filterApproval,
         status: filterStatus,
         sortKey,
       }),
-      page: currentPage,
+      page: normalizedPage,
       itemsPerPage: normalizedItemsPerPage,
       searchTerm,
       filterApproval,
@@ -253,6 +276,7 @@ export default function AdminClassesTable() {
       }
 
       try {
+        let finalSignature = signature;
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
         const safeLimit = resolvePositiveInteger(limitValue);
@@ -300,20 +324,27 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
-          const normalizedPage = Number.isFinite(normalizedPageRaw)
+          const effectivePage = Number.isFinite(normalizedPageRaw)
             ? normalizedPageRaw
             : 1;
           const effectivePage = normalizedPage;
+          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+            finalSignature = JSON.stringify({
+              page: normalizedPage,
+              limit: limitValue,
+              searchTerm: searchValue,
+              approval: approvalValue,
+              status: statusValue,
+              sortKey: sortValue,
+            });
+          }
 
           if (!isComponentMountedRef.current) {
             return;
           }
 
-          setTotalItemsIfNeeded(totalFilteredItems);
-          setTotalPagesIfNeeded(totalFilteredPages);
-          if (Number.isFinite(normalizedPage)) {
-            setCurrentPageIfNeeded(normalizedPage);
-          }
+          setTotalItems(totalFilteredItems);
+          setTotalPages(totalFilteredPages);
 
           const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
@@ -340,7 +371,7 @@ export default function AdminClassesTable() {
           setTotalItemsIfNeeded(nextTotalItems);
         }
 
-        lastSuccessfulSignatureRef.current = signature;
+        lastSuccessfulSignatureRef.current = finalSignature;
         lastFailedSignatureRef.current = null;
       } catch (err) {
         console.error(err);
@@ -372,7 +403,7 @@ export default function AdminClassesTable() {
 
     executeRequest(requestDetails);
   }, [
-    currentPage,
+    normalizedPage,
     normalizedItemsPerPage,
     searchTerm,
     filterApproval,
