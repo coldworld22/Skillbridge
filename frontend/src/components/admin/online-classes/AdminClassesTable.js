@@ -187,6 +187,7 @@ export default function AdminClassesTable() {
     [...items].sort((a, b) => compareValues(a, b, key));
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
+  const authIdentifier = user?.id ?? null;
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
@@ -206,6 +207,13 @@ export default function AdminClassesTable() {
   }, [currentPage, totalPages, totalItems, normalizedItemsPerPage]);
 
   useEffect(() => {
+    if (!hasHydrated || !authIdentifier) {
+      if (lastFailedSignatureRef.current) {
+        lastFailedSignatureRef.current = null;
+      }
+      return;
+    }
+
     if (normalizedPage !== currentPage) {
       if (lastNormalizedPageRef.current !== normalizedPage) {
         lastNormalizedPageRef.current = normalizedPage;
@@ -435,6 +443,8 @@ export default function AdminClassesTable() {
     filterApproval,
     filterStatus,
     sortKey,
+    hasHydrated,
+    authIdentifier,
   ]);
 
   const formatCSVRow = (row) =>
