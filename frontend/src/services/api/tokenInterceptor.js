@@ -3,6 +3,7 @@
 // This file sets up an Axios interceptor to handle token-based authentication
 // 📁 src/services/api/tokenInterceptor.js
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import axios from "axios";
 import api from "./api";
 import { toast } from "react-toastify";
 import Router from "next/router";
@@ -62,6 +63,14 @@ api.interceptors.response.use(
       error?.message?.toLowerCase() === "canceled";
 
     if (isCanceledRequest) {
+      return Promise.reject(error);
+    }
+
+    if (
+      axios.isCancel?.(error) ||
+      error?.code === "ERR_CANCELED" ||
+      error?.name === "CanceledError"
+    ) {
       return Promise.reject(error);
     }
 
