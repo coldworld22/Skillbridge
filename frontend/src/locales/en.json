@@ -27,6 +27,11 @@
   "notifications": {
     "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
   },
+  "seo": {
+    "load_failed": "Unable to load SEO settings.",
+    "retry": "Retry",
+    "retrying": "Retrying…"
+  },
   "tutorials": {
     "list": {
       "loading": "Loading tutorials...",

@@ -6,10 +6,14 @@ import useSEOConfigStore from '@/store/seoConfigStore';
 
 export default function SeoTags() {
   const router = useRouter();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const path = router.asPath.split('?')[0] || '/';
   const fetchConfig = useSEOConfigStore((s) => s.fetch);
   const loaded = useSEOConfigStore((s) => s.loaded);
+  const loading = useSEOConfigStore((s) => s.loading);
+  const failed = useSEOConfigStore((s) => s.failed);
+  const error = useSEOConfigStore((s) => s.error);
+  const retryFetch = useSEOConfigStore((s) => s.retry);
   const settings = useSEOConfigStore((s) => s.settings);
 
   const persist = useMemo(() => useSEOConfigStore.persist, []);
@@ -41,9 +45,9 @@ export default function SeoTags() {
   );
 
   useEffect(() => {
-    if (!hydrated || loaded) return;
+    if (!hydrated || loaded || loading || failed) return;
     fetchConfig();
-  }, [hydrated, loaded, fetchConfig]);
+  }, [hydrated, loaded, loading, failed, fetchConfig]);
 
   useEffect(() => {
     if (!resolvedOrigin && typeof window !== 'undefined') {
@@ -94,32 +98,45 @@ export default function SeoTags() {
   }
 
   return (
-    <Head>
-      {meta.title && <title>{meta.title}</title>}
-      {meta.description && <meta name="description" content={meta.description} />}
-      {meta.keywords && <meta name="keywords" content={meta.keywords} />}
-      {canonical && <link rel="canonical" href={canonical} />}
-      {alternates.map(({ hrefLang, href }) => (
-        <link key={`alt-${hrefLang}`} rel="alternate" hrefLang={hrefLang} href={href} />
-      ))}
-      {defaultAlternate && (
-        <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
+    <>
+      <Head>
+        {meta.title && <title>{meta.title}</title>}
+        {meta.description && <meta name="description" content={meta.description} />}
+        {meta.keywords && <meta name="keywords" content={meta.keywords} />}
+        {canonical && <link rel="canonical" href={canonical} />}
+        {alternates.map(({ hrefLang, href }) => (
+          <link key={`alt-${hrefLang}`} rel="alternate" hrefLang={hrefLang} href={href} />
+        ))}
+        {defaultAlternate && (
+          <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
+        )}
+        {robots && <meta name="robots" content={robots} />}
+        {ogUrl && <meta property="og:url" content={ogUrl} />}
+        {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
+        {Object.entries(og)
+          .filter(([k]) => !["url", "site_name"].includes(k))
+          .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
+        {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
+        {twitter.title && <meta name="twitter:title" content={twitter.title} />}
+        {twitter.description && <meta name="twitter:description" content={twitter.description} />}
+        {twitterImage && <meta name="twitter:image" content={twitterImage} />}
+        {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
+        {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
+        {sanitizedJsonSchema && (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: sanitizedJsonSchema }} />
+        )}
+      </Head>
+
+      {failed && (
+        <div role="alert" className="seo-config-error">
+          <p>{error || t('seo.load_failed', 'Unable to load SEO settings.')}</p>
+          <button type="button" onClick={retryFetch} disabled={loading}>
+            {loading
+              ? t('seo.retrying', 'Retrying…')
+              : t('seo.retry', 'Retry')}
+          </button>
+        </div>
       )}
-      {robots && <meta name="robots" content={robots} />}
-      {ogUrl && <meta property="og:url" content={ogUrl} />}
-      {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
-      {Object.entries(og)
-        .filter(([k]) => !["url", "site_name"].includes(k))
-        .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
-      {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
-      {twitter.title && <meta name="twitter:title" content={twitter.title} />}
-      {twitter.description && <meta name="twitter:description" content={twitter.description} />}
-      {twitterImage && <meta name="twitter:image" content={twitterImage} />}
-      {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
-      {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
-      {sanitizedJsonSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: sanitizedJsonSchema }} />
-      )}
-    </Head>
+    </>
   );
 }
