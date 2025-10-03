@@ -34,6 +34,9 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [serverFilters, setServerFilters] = useState({});
   const {
     tutorials,
     setTutorials,
@@ -41,8 +44,11 @@ function AdminTutorialsPage() {
     loading,
     meta,
     setMeta,
-    loadTutorials,
-  } = useTutorialsData(t);
+  } = useTutorialsData(t, {
+    page: currentPage,
+    pageSize,
+    filters: serverFilters,
+  });
 
   const {
     searchQuery,
@@ -56,24 +62,40 @@ function AdminTutorialsPage() {
     filteredTutorials,
   } = useTutorialFilters(tutorials);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
   useEffect(() => {
-    const controller = new AbortController();
-    loadTutorials({
-      page: currentPage,
-      limit: pageSize,
-      signal: controller.signal,
-    }).catch((err) => {
-      if (err?.name === "AbortError" || err?.name === "CanceledError") {
-        return;
-      }
-      console.error(err);
-    });
+    setServerFilters((prev) => {
+      const next = {};
 
-    return () => controller.abort();
-  }, [currentPage, pageSize, loadTutorials]);
+      const trimmedSearch = searchQuery.trim();
+      if (trimmedSearch) {
+        next.search = trimmedSearch;
+      }
+
+      if (filterCategory && filterCategory !== "All") {
+        next.category = filterCategory;
+      }
+
+      if (filterStatus && filterStatus !== "All") {
+        next.status = filterStatus;
+      }
+
+      if (filterApproval && filterApproval !== "All") {
+        next.approval = filterApproval;
+      }
+
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+
+      if (
+        prevKeys.length === nextKeys.length &&
+        nextKeys.every((key) => prev[key] === next[key])
+      ) {
+        return prev;
+      }
+
+      return next;
+    });
+  }, [searchQuery, filterCategory, filterStatus, filterApproval]);
 
   useEffect(() => {
     if (meta?.per_page && meta.per_page !== pageSize) {
