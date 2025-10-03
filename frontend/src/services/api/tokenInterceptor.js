@@ -3,6 +3,7 @@
 // This file sets up an Axios interceptor to handle token-based authentication
 // 📁 src/services/api/tokenInterceptor.js
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import axios from "axios";
 import api from "./api";
 import { toast } from "react-toastify";
 import Router from "next/router";
@@ -55,6 +56,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
+
+    if (
+      axios.isCancel?.(error) ||
+      error?.code === "ERR_CANCELED" ||
+      error?.name === "CanceledError"
+    ) {
+      return Promise.reject(error);
+    }
 
     if (
       (error.code === "ERR_NETWORK" || !error.response) &&
