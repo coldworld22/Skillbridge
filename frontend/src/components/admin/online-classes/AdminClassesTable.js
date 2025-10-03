@@ -271,8 +271,20 @@ export default function AdminClassesTable() {
 
       inFlightRequestRef.current = signature;
 
-      if (isComponentMountedRef.current) {
+      if (isComponentMountedRef.current && !loadingRef.current) {
+        loadingRef.current = true;
         setLoading(true);
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[AdminClassesTable] executeRequest", signature, {
+          page,
+          itemsPerPage: limitValue,
+          searchTerm: searchValue,
+          filterApproval: approvalValue,
+          filterStatus: statusValue,
+          sortKey: sortValue,
+        });
       }
 
       try {
@@ -380,7 +392,8 @@ export default function AdminClassesTable() {
         }
         lastFailedSignatureRef.current = signature;
       } finally {
-        if (isComponentMountedRef.current) {
+        if (isComponentMountedRef.current && loadingRef.current) {
+          loadingRef.current = false;
           setLoading(false);
         }
         inFlightRequestRef.current = null;
