@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import SeoTags from '@/components/common/SeoTags';
 import useSEOConfigStore from '@/store/seoConfigStore';
 
@@ -7,7 +7,10 @@ jest.mock('next/router', () => ({
 }));
 
 jest.mock('next-i18next', () => ({
-  useTranslation: () => ({ i18n: { options: { locales: ['en'] } } }),
+  useTranslation: () => ({
+    t: (key, fallback) => fallback || key,
+    i18n: { options: { locales: ['en'] } },
+  }),
 }));
 
 jest.mock('next/head', () => ({
@@ -22,7 +25,11 @@ beforeEach(() => {
   }
   useSEOConfigStore.setState({
     fetch: jest.fn(),
+    retry: jest.fn(),
+    loading: false,
+    failed: false,
     loaded: true,
+    error: null,
     settings: { metaTags: {}, openGraph: {}, twitter: {}, jsonSchema: '' },
   }, true);
 });
@@ -73,5 +80,49 @@ test('preserves additional json schema fields and sanitizes output', async () =>
   expect(parsed.description).toBe(schema.description);
   expect(parsed.address.streetAddress).toBe(schema.address.streetAddress);
   expect(parsed.sameAs).toEqual(schema.sameAs);
+});
+
+test('does not fetch again when loading failed', () => {
+  const fetchMock = jest.fn();
+  useSEOConfigStore.setState((s) => ({
+    ...s,
+    fetch: fetchMock,
+    loaded: false,
+    failed: true,
+    loading: false,
+    error: 'Network error',
+  }));
+
+  render(<SeoTags />);
+
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test('renders retry UI when loading fails', () => {
+  const retryMock = jest.fn();
+  useSEOConfigStore.setState((s) => ({
+    ...s,
+    loaded: false,
+    failed: true,
+    loading: false,
+    error: 'Network error',
+    retry: retryMock,
+  }));
+
+  const { getByRole, rerender } = render(<SeoTags />);
+
+  expect(getByRole('alert')).toHaveTextContent('Network error');
+  const button = getByRole('button', { name: /retry/i });
+  expect(button).toBeEnabled();
+
+  fireEvent.click(button);
+  expect(retryMock).toHaveBeenCalled();
+
+  // fallback when error cleared
+  act(() => {
+    useSEOConfigStore.setState((s) => ({ ...s, error: null }));
+  });
+  rerender(<SeoTags />);
+  expect(getByRole('alert')).toHaveTextContent('Unable to load SEO settings.');
 });
 

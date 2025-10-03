@@ -27,6 +27,11 @@
   "notifications": {
     "new_assignment": "Nouveau devoir \"{{title}}\" publié pour le cours \"{{classTitle}}\"."
   },
+  "seo": {
+    "load_failed": "Impossible de charger les paramètres SEO.",
+    "retry": "Réessayer",
+    "retrying": "Nouvelle tentative…"
+  },
   "tutorials": {
     "list": {
       "loading": "Chargement des tutoriels...",
