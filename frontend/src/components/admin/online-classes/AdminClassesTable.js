@@ -108,6 +108,10 @@ export default function AdminClassesTable() {
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
   const lastNormalizedPageRef = useRef(currentPage);
+  const currentPageRef = useRef(currentPage);
+  const totalItemsRef = useRef(totalItems);
+  const totalPagesRef = useRef(totalPages);
+  const loadingRef = useRef(false);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
