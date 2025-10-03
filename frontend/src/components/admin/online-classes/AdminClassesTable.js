@@ -107,6 +107,10 @@ export default function AdminClassesTable() {
   const inFlightRequestRef = useRef(null);
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
+  const currentPageRef = useRef(currentPage);
+  const totalItemsRef = useRef(totalItems);
+  const totalPagesRef = useRef(totalPages);
+  const loadingRef = useRef(false);
   const lastNormalizedPageRef = useRef(currentPage);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
