@@ -528,6 +528,13 @@ export default function AdminClassesTable() {
       return;
     }
     const target = classList.find((c) => c.id === id);
+    if (!target) {
+      toast.warn("Unable to locate the selected class. Please refresh and try again.");
+      setModalClass(null);
+      return;
+    }
+    const targetTitle = target.title ? `"${target.title}"` : "the class";
+    const targetInstructorId = target?.instructor_id;
     try {
 
       if (action === "approve") {
@@ -540,17 +547,17 @@ export default function AdminClassesTable() {
           )
         );
         toast.success("Class approved");
-        const message = `Class "${target.title}" approved.`;
+        const message = `Class ${targetTitle} approved.`;
         await createNotification({ user_id: hydratedUser.id, type: "class_approved", message });
         await sendChatMessage(hydratedUser.id, { text: message });
-        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
+        if (targetInstructorId && targetInstructorId !== hydratedUser.id) {
           await createNotification({
-            user_id: target.instructor_id,
+            user_id: targetInstructorId,
             type: "class_approved",
-            message: `Your class "${target.title}" was approved!`,
+            message: `Your class ${targetTitle} was approved!`,
           });
-          await sendChatMessage(target.instructor_id, {
-            text: `Your class "${target.title}" was approved!`,
+          await sendChatMessage(targetInstructorId, {
+            text: `Your class ${targetTitle} was approved!`,
           });
         }
         refreshNotifications?.();
@@ -563,17 +570,17 @@ export default function AdminClassesTable() {
           )
         );
         toast.success("Class rejected");
-        const message = `Class "${target.title}" was rejected.`;
+        const message = `Class ${targetTitle} was rejected.`;
         await createNotification({ user_id: hydratedUser.id, type: "class_rejected", message });
         await sendChatMessage(hydratedUser.id, { text: `${message} Reason: ${reason}` });
-        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
+        if (targetInstructorId && targetInstructorId !== hydratedUser.id) {
           await createNotification({
-            user_id: target.instructor_id,
+            user_id: targetInstructorId,
             type: "class_rejected",
-            message: `Your class "${target.title}" was rejected.`,
+            message: `Your class ${targetTitle} was rejected.`,
           });
-          await sendChatMessage(target.instructor_id, {
-            text: `Your class "${target.title}" was rejected. Reason: ${reason}`,
+          await sendChatMessage(targetInstructorId, {
+            text: `Your class ${targetTitle} was rejected. Reason: ${reason}`,
           });
         }
         refreshNotifications?.();
@@ -587,17 +594,17 @@ export default function AdminClassesTable() {
           prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
         );
         toast.success("Status updated");
-        const message = `Class "${target.title}" publish status changed to ${updated.publishStatus}.`;
+        const message = `Class ${targetTitle} publish status changed to ${updated.publishStatus}.`;
         await createNotification({ user_id: hydratedUser.id, type: "class_status_changed", message });
         await sendChatMessage(hydratedUser.id, { text: message });
-        if (target.instructor_id && target.instructor_id !== hydratedUser.id) {
+        if (targetInstructorId && targetInstructorId !== hydratedUser.id) {
           await createNotification({
-            user_id: target.instructor_id,
+            user_id: targetInstructorId,
             type: "class_status_changed",
-            message: `Your class "${target.title}" publish status was changed to ${updated.publishStatus}.`,
+            message: `Your class ${targetTitle} publish status was changed to ${updated.publishStatus}.`,
           });
-          await sendChatMessage(target.instructor_id, {
-            text: `Your class "${target.title}" publish status was changed to ${updated.publishStatus}.`,
+          await sendChatMessage(targetInstructorId, {
+            text: `Your class ${targetTitle} publish status was changed to ${updated.publishStatus}.`,
           });
         }
         refreshNotifications?.();
