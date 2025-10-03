@@ -849,16 +849,22 @@ export default function AdminClassesTable() {
                     className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
                     <FaTimes className="w-4 h-4" />
                   </button>
-                  <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} title="Manage Class">
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+                  <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} legacyBehavior>
+                    <a
+                      className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title="Manage Class"
+                    >
                       <FaEdit className="w-4 h-4" />
-                    </button>
+                    </a>
                   </Link>
                   {canManageRules && (
-                    <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} title="Manage Rules">
-                      <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow">
+                    <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} legacyBehavior>
+                      <a
+                        className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow"
+                        title="Manage Rules"
+                      >
                         <FaList className="w-4 h-4" />
-                      </button>
+                      </a>
                     </Link>
                   )}
                   <button title="Delete Class"
@@ -866,23 +872,29 @@ export default function AdminClassesTable() {
                     className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">
                     <FaTrash className="w-4 h-4" />
                   </button>
-                  <Link href={`/dashboard/admin/online-classes/${cls.id}/students`} title="View Enrolled Students">
-                    <button className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow">
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}/students`} legacyBehavior>
+                    <a
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title="View Enrolled Students"
+                    >
                       <FaUserGraduate className="w-4 h-4" />
-                    </button>
+                    </a>
                   </Link>
-                  <Link href={`/dashboard/admin/online-classes/${cls.id}`} title="View Class Details">
-                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow">
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}`} legacyBehavior>
+                    <a
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title="View Class Details"
+                    >
                       <FaCalendarAlt className="w-4 h-4" />
-                    </button>
+                    </a>
                   </Link>
-                  <Link href={`/dashboard/admin/online-classes/${cls.id}/analytics`}>
-                    <button
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}/analytics`} legacyBehavior>
+                    <a
                       title="View Analytics"
                       className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
                     >
                       <FaChartBar className="w-4 h-4" /> Analytics
-                    </button>
+                    </a>
                   </Link>
 
                 </td>
