@@ -114,11 +114,27 @@ export const formatTutorial = (tut) => {
   };
 };
 
-export const fetchFeaturedTutorials = async (config = {}) => {
-  const cfg = Object.keys(config).length ? config : undefined;
-  const res = await api.get("/users/tutorials/featured", cfg);
+const mapTutorialList = (res) => {
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
+};
+
+export const fetchFeaturedTutorials = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+
+  try {
+    const res = await api.get("/users/tutorials/featured", cfg);
+    return mapTutorialList(res);
+  } catch (error) {
+    const status = error?.response?.status;
+
+    if (status === 404 || status === 410 || status === 301) {
+      const res = await api.get("/tutorials/featured", cfg);
+      return mapTutorialList(res);
+    }
+
+    throw error;
+  }
 };
 
 export const fetchPublishedTutorials = async ({ page, limit, ...config } = {}) => {
