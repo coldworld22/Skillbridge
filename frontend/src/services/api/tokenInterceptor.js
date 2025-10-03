@@ -81,12 +81,11 @@ api.interceptors.response.use(
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
 
       if (!hasAuthState) {
-        logger.warn("\u26A0\uFE0F No auth state; redirecting to login");
-        authStore.logout(true);
-        if (typeof window !== "undefined") {
-          Router.push("/auth/login");
+        logger.warn("\u26A0\uFE0F No auth state; treating as guest request");
+        if (authStore.accessToken || authStore.user) {
+          authStore.setToken?.(null);
+          authStore.setUser?.(null);
         }
-        toast.error("Session expired. Please log in again.");
         return Promise.reject(error);
       }
 
