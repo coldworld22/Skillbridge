@@ -35,6 +35,7 @@ with status `204` and no body.
   - `GET /api/users/classes/:id` – view details for a published class
   - `POST /api/users/classes/admin` – create a class (instructor or admin)
   - `PUT /api/users/classes/admin/:id` – update a class
+  - `POST /api/users/classes/admin/bulk-delete` – delete multiple classes in a single request (admin only)
   - `DELETE /api/users/classes/admin/:id` – remove a class
   - `GET /api/users/classes/admin/my` – list classes for the logged in instructor
 - `/admin` – administrator dashboard features

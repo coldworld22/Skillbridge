@@ -93,6 +93,12 @@ router.delete(
   isAdmin,
   controller.deleteClass
 );
+router.post(
+  "/admin/bulk-delete",
+  verifyToken,
+  isAdmin,
+  controller.bulkDeleteClasses
+);
 router.patch(
   "/admin/:id/status",
   verifyToken,
