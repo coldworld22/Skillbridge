@@ -9,10 +9,11 @@ import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
 
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
+  const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
 
   return (
-    <div className="p-6 space-y-6" dir={i18n.dir()}>
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap" dir={i18n.dir()}>
+    <div className="p-6 space-y-6" dir={direction}>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap" dir={direction}>
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaChalkboardTeacher className="w-6 h-6" /> {t('manage_online_classes')}
         </h1>
