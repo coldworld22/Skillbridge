@@ -4,6 +4,7 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
 import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import Filters from "@/components/dashboard/admin/tutorials/Filters";
