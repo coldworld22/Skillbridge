@@ -199,6 +199,7 @@ export default function AdminClassesTable() {
       }
 
       try {
+        let finalSignature = signature;
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
         const safeLimit = resolvePositiveInteger(limitValue);
@@ -250,6 +251,16 @@ export default function AdminClassesTable() {
             ? normalizedPageRaw
             : 1;
           const effectivePage = normalizedPage;
+          if (Number.isFinite(normalizedPage) && normalizedPage !== page) {
+            finalSignature = JSON.stringify({
+              page: normalizedPage,
+              limit: limitValue,
+              searchTerm: searchValue,
+              approval: approvalValue,
+              status: statusValue,
+              sortKey: sortValue,
+            });
+          }
 
           if (!isComponentMountedRef.current) {
             return;
@@ -284,7 +295,7 @@ export default function AdminClassesTable() {
           setTotalItems(meta?.total ?? data.length);
         }
 
-        lastSuccessfulSignatureRef.current = signature;
+        lastSuccessfulSignatureRef.current = finalSignature;
         lastFailedSignatureRef.current = null;
       } catch (err) {
         console.error(err);
