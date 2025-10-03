@@ -393,6 +393,56 @@ exports.deleteClass = catchAsync(async (req, res) => {
   sendSuccess(res, null, "Class deleted");
 });
 
+exports.bulkDeleteClasses = catchAsync(async (req, res) => {
+  const ids = req.body?.ids;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new AppError("ids must be a non-empty array", 400);
+  }
+
+  const invalidIds = ids.filter(
+    (id) => typeof id !== "string" || !id.trim()
+  );
+
+  if (invalidIds.length) {
+    throw new AppError("Each id must be a non-empty string", 400);
+  }
+
+  const normalizedIds = Array.from(new Set(ids.map((id) => id.trim())));
+
+  const classes = await service.bulkDeleteClasses(normalizedIds);
+
+  const notificationPromises = classes
+    .filter((cls) => cls?.instructor_id)
+    .map((cls) =>
+      notificationService
+        .createNotification({
+          user_id: cls.instructor_id,
+          type: "class_deleted",
+          message: `Class "${cls.title}" deleted`,
+        })
+        .catch((err) =>
+          logger.error(
+            "Failed to notify instructor of class deletion:",
+            err.message
+          )
+        )
+    );
+
+  if (notificationPromises.length) {
+    await Promise.allSettled(notificationPromises);
+  }
+
+  sendSuccess(
+    res,
+    {
+      ids: classes.map((cls) => cls.id),
+      count: classes.length,
+    },
+    "Classes deleted"
+  );
+});
+
 exports.getPublishedClasses = catchAsync(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const result = await service.getPublishedClasses({

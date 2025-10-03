@@ -1,6 +1,7 @@
 const db = require("../../config/database");
 const ClassModel = require("./class.model");
 const { parsePagination } = require("../../utils/pagination");
+const AppError = require("../../utils/AppError");
 
 exports.createClass = async (data) => {
   const normalizedAccessType =
@@ -220,6 +221,28 @@ exports.updateClass = async (id, data) => {
 
 exports.deleteClass = async (id) => {
   return ClassModel.remove(id);
+};
+
+exports.bulkDeleteClasses = async (ids) => {
+  return db.transaction(async (trx) => {
+    const classes = await trx("online_classes")
+      .select("id", "title", "instructor_id")
+      .whereIn("id", ids);
+
+    const foundIds = new Set(classes.map((cls) => cls.id));
+    const missingIds = ids.filter((id) => !foundIds.has(id));
+
+    if (missingIds.length) {
+      throw new AppError(
+        `Classes not found: ${missingIds.join(", ")}`,
+        404
+      );
+    }
+
+    await trx("online_classes").whereIn("id", ids).del();
+
+    return classes;
+  });
 };
 
 exports.togglePublishStatus = async (id) => {
