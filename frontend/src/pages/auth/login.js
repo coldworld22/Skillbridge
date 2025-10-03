@@ -66,7 +66,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     if (!hasHydrated) return;
 
     if (!user || !accessToken || isTokenExpired(accessToken)) {
-      logout(true);
+      if (user || accessToken) {
+        logout(true);
+      }
       return;
     }
 
