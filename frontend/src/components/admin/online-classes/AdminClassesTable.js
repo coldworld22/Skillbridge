@@ -574,7 +574,7 @@ export default function AdminClassesTable() {
           throw new Error("Failed to toggle class status");
         }
         setClassList((prev) =>
-          prev.map((c) => (c.id === id ? updated : c))
+          prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
         );
         toast.success("Status updated");
         const message = `Class "${target.title}" publish status changed to ${updated.publishStatus}.`;
