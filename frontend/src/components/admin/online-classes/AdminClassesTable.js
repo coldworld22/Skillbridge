@@ -35,6 +35,7 @@ const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
 const MIN_REJECTION_REASON_LENGTH = 3;
 
 const DEFAULT_PAGE_SIZE = 5;
+const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
@@ -129,11 +130,21 @@ export default function AdminClassesTable() {
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
   }, [pageSizeSetting, totalItems, classCount]);
 
+  const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
+    if (failureRecord?.retryTimer) {
+      clearTimeout(failureRecord.retryTimer);
+    }
+    if (lastFailedSignatureRef.current === failureRecord) {
+      lastFailedSignatureRef.current = null;
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     isComponentMountedRef.current = true;
     return () => {
       isComponentMountedRef.current = false;
+      clearFailedSignature();
     };
   }, []);
 
@@ -209,7 +220,7 @@ export default function AdminClassesTable() {
   useEffect(() => {
     if (!hasHydrated || !authIdentifier) {
       if (lastFailedSignatureRef.current) {
-        lastFailedSignatureRef.current = null;
+        clearFailedSignature();
       }
       return;
     }
@@ -243,17 +254,21 @@ export default function AdminClassesTable() {
 
     if (
       lastFailedSignatureRef.current &&
-      lastFailedSignatureRef.current !== requestDetails.signature
+      lastFailedSignatureRef.current.signature !== requestDetails.signature
     ) {
-      lastFailedSignatureRef.current = null;
+      clearFailedSignature();
     }
 
     if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
       return;
     }
 
-    if (lastFailedSignatureRef.current === requestDetails.signature) {
-      return;
+    if (lastFailedSignatureRef.current?.signature === requestDetails.signature) {
+      const failureAge = Date.now() - (lastFailedSignatureRef.current.timestamp ?? 0);
+      if (!Number.isFinite(failureAge) || failureAge < FAILED_REQUEST_RETRY_DELAY_MS) {
+        return;
+      }
+      clearFailedSignature();
     }
 
     if (inFlightRequestRef.current === requestDetails.signature) {
@@ -405,13 +420,38 @@ export default function AdminClassesTable() {
         }
 
         lastSuccessfulSignatureRef.current = finalSignature;
-        lastFailedSignatureRef.current = null;
+        clearFailedSignature();
       } catch (err) {
         console.error(err);
         if (isComponentMountedRef.current) {
           toast.error("Failed to load classes");
         }
-        lastFailedSignatureRef.current = signature;
+        clearFailedSignature();
+        const failureRecord = {
+          signature,
+          timestamp: Date.now(),
+          retryTimer: null,
+        };
+        failureRecord.retryTimer = setTimeout(() => {
+          if (!isComponentMountedRef.current) {
+            return;
+          }
+          const activeFailure = lastFailedSignatureRef.current;
+          if (!activeFailure || activeFailure.signature !== signature) {
+            return;
+          }
+          clearFailedSignature(activeFailure);
+          if (
+            lastSuccessfulSignatureRef.current === signature ||
+            inFlightRequestRef.current ||
+            (pendingRequestRef.current &&
+              pendingRequestRef.current.signature === signature)
+          ) {
+            return;
+          }
+          executeRequest(details);
+        }, FAILED_REQUEST_RETRY_DELAY_MS);
+        lastFailedSignatureRef.current = failureRecord;
       } finally {
         if (isComponentMountedRef.current && loadingRef.current) {
           loadingRef.current = false;
@@ -425,7 +465,7 @@ export default function AdminClassesTable() {
           if (
             isComponentMountedRef.current &&
             lastSuccessfulSignatureRef.current !== nextRequest.signature &&
-            lastFailedSignatureRef.current !== nextRequest.signature
+            lastFailedSignatureRef.current?.signature !== nextRequest.signature
           ) {
             executeRequest(nextRequest);
           }

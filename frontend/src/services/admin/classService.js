@@ -52,7 +52,9 @@ export const fetchAdminClasses = async ({
   if (approval && approval !== "All") params.set("approval", approval);
   if (status && status !== "All") params.set("status", status);
   if (schedule) params.set("schedule", schedule);
-  const { data } = await api.get(`users/classes/admin?${params.toString()}`);
+  const { data } = await api.get("users/classes/admin", {
+    params: Object.fromEntries(params.entries()),
+  });
   const list = data?.data ?? [];
   return { data: list.map(formatClass), meta: data?.meta || {} };
 };
