@@ -1837,6 +1837,9 @@
     "noLicenseData": "No license data",
     "monthlyRevenue": "Monthly Revenue",
     "monthlySignups": "Monthly Signups",
+    "chartsUnavailableResizeObserver": "Diagramme nicht verfügbar: Browser unterstützt ResizeObserver nicht.",
+    "chartsFailedToLoad": "Diagramme konnten nicht geladen werden.",
+    "loadingCharts": "Diagramme werden geladen...",
     "tutorialsByCategory": "Tutorials by Category",
     "instructorTutorialCount": "Instructor Tutorial Count",
     "noChartData": "Keine Daten verfügbar"
