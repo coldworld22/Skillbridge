@@ -179,16 +179,23 @@ npm --prefix frontend install
    repository also includes [`scripts/run-compose.sh`](scripts/run-compose.sh),
    which automatically prefers the V2 plugin and, when falling back to the
    legacy binary, exports `DOCKER_API_VERSION=1.43` so the command remains
-   compatible with Docker&nbsp;27+. You can simply run:
+   compatible with Docker&nbsp;27+. The compose file now rebuilds the Postgres
+   image from [`database/Dockerfile`](database/Dockerfile) with the classic
+   builder, restoring the legacy metadata that the v1 CLI expects during
+   container recreation. You can simply run:
 
    ```bash
    ./scripts/run-compose.sh up --build
    ```
 
-   If you must invoke the legacy CLI directly, set `DOCKER_API_VERSION=1.43`
-   in your shell beforehand to avoid the compatibility error. Disabling
-   BuildKit by exporting `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0`
-   may also be necessary on very old Compose releases.
+   The repository's root `.env` file exports `DOCKER_API_VERSION=1.43`, so
+   running `docker-compose` from the project directory automatically picks up
+   the compatibility setting along with `DOCKER_BUILDKIT=0` and
+   `COMPOSE_DOCKER_CLI_BUILD=0`. Those flags ensure both the frontend build and
+   the locally wrapped Postgres image are produced with the legacy builder so
+   compose v1 can safely recreate containers. If you must invoke the legacy CLI
+   directly from outside the project root, export the same variables in your
+   shell beforehand to avoid the compatibility error.
 
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
