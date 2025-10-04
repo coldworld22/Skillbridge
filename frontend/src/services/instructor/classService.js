@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
@@ -70,8 +71,12 @@ export const fetchInstructorClassById = async (id) => {
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
+  const csrfToken = await ensureCsrfToken();
+  const headers = { "Content-Type": "multipart/form-data" };
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+
   const { data } = await api.post("/users/classes/instructor", payload, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers,
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
   return data?.data ? formatClass(data.data) : null;
