@@ -73,7 +73,10 @@ export const fetchInstructorClassById = async (id) => {
 export const createInstructorClass = async (payload, onUploadProgress) => {
   await ensureCsrfToken();
   const { data } = await api.post("/users/classes/instructor", payload, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
   return data?.data ? formatClass(data.data) : null;
@@ -82,7 +85,10 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
 export const updateInstructorClass = async (id, payload) => {
   await ensureCsrfToken();
   const { data } = await api.put(`/users/classes/instructor/${id}`, payload, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
   });
   return data?.data ? formatClass(data.data) : null;
 };
