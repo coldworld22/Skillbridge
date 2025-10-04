@@ -1793,6 +1793,9 @@
     "reviewMessages": "مراجعة الرسائل",
     "licenseCheck": "فحص الترخيص",
     "checkingLicense": "جارٍ التحقق من حالة الترخيص...",
+    "chartsUnavailableResizeObserver": "الرسوم البيانية غير متاحة لأن المتصفح لا يدعم ResizeObserver.",
+    "chartsFailedToLoad": "فشل تحميل الرسوم البيانية. يرجى إعادة التحديث للمحاولة مرة أخرى.",
+    "loadingCharts": "جارٍ تحميل الرسوم البيانية...",
     "lastCheck": "آخر فحص: {{value}}",
     "notAvailable": "غير متوفر",
     "unauthorizedInstanceDetected": "تم اكتشاف حالة تثبيت غير مصرح بها واحدة",
@@ -1808,9 +1811,16 @@
     "tutorials": "الدروس التعليمية",
     "classes": "الفصول",
     "monthlyRevenue": "الإيرادات الشهرية",
+    "chartsUnavailableResizeObserver": "لا تتوفر المخططات لأن ميزة مراقب تغيير الحجم (ResizeObserver) غير مدعومة في هذا المتصفح.",
+    "chartsFailedToLoad": "فشل تحميل المخططات. يرجى تحديث الصفحة والمحاولة مرة أخرى.",
+    "loadingCharts": "جارٍ تحميل المخططات...",
     "monthlySignups": "التسجيلات الشهرية",
+    "chartsUnavailableResizeObserver": "المخططات غير متاحة: المتصفح لا يدعم ResizeObserver.",
+    "chartsFailedToLoad": "فشل تحميل المخططات.",
+    "loadingCharts": "جارٍ تحميل المخططات...",
     "tutorialsByCategory": "الدروس حسب الفئة",
-    "instructorTutorialCount": "عدد الدروس لكل مدرب"
+    "instructorTutorialCount": "عدد الدروس لكل مدرب",
+    "noChartData": "لا توجد بيانات متاحة"
   },
   "tutorialViewPage": {
     "loading": "تحميل البرنامج التعليمي ...",

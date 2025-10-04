@@ -1792,6 +1792,9 @@
     "reviewMessages": "评论消息",
     "licenseCheck": "许可证检查",
     "checkingLicense": "正在检查许可证...",
+    "chartsUnavailableResizeObserver": "由于此浏览器不支持 ResizeObserver，图表不可用。",
+    "chartsFailedToLoad": "图表加载失败。请刷新后重试。",
+    "loadingCharts": "正在加载图表…",
     "lastCheck": "上次检查：{{value}}",
     "notAvailable": "暂无",
     "unauthorizedInstanceDetected": "1个未经授权的实例检测到",
@@ -1818,9 +1821,16 @@
     "noUnauthorizedInstances": "✅ 没有未经授权的实例",
     "noLicenseData": "没有许可证数据",
     "monthlyRevenue": "每月收入",
+    "chartsUnavailableResizeObserver": "由于此浏览器不支持 ResizeObserver，无法显示图表。",
+    "chartsFailedToLoad": "图表加载失败。请刷新后重试。",
+    "loadingCharts": "正在加载图表……",
     "monthlySignups": "每月注册",
+    "chartsUnavailableResizeObserver": "图表不可用：浏览器缺少 ResizeObserver 支持。",
+    "chartsFailedToLoad": "图表加载失败。",
+    "loadingCharts": "正在加载图表...",
     "tutorialsByCategory": "按类别划分的教程",
-    "instructorTutorialCount": "讲师教程数量"
+    "instructorTutorialCount": "讲师教程数量",
+    "noChartData": "没有可用数据"
   },
   "tutorialViewPage": {
     "loading": "加载教程...",
