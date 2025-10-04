@@ -28,6 +28,15 @@ jest.mock("@/components/layouts/AdminLayout", () => ({
   default: ({ children }) => <div data-testid="admin-layout">{children}</div>,
 }));
 
+jest.mock("resize-observer-polyfill", () => ({
+  __esModule: true,
+  default: class ResizeObserverPolyfill {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+}));
+
 jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive">{children}</div>,
   PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
@@ -77,5 +86,22 @@ describe("Admin class analytics page", () => {
       .closest("li");
     expect(fullPaymentsRow).not.toBeNull();
     expect(within(fullPaymentsRow).getByText("0")).toBeInTheDocument();
+  });
+
+  it("loads charts using the ResizeObserver polyfill when not supported natively", async () => {
+    const originalResizeObserver = global.ResizeObserver;
+    // Simulate browsers without native ResizeObserver support.
+    delete global.ResizeObserver;
+
+    render(<AnalyticsPage />);
+
+    await waitFor(() => expect(mockFetchAdminClassAnalytics).toHaveBeenCalledWith("123"));
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("responsive").length).toBeGreaterThan(0);
+      expect(global.ResizeObserver).toBeTruthy();
+    });
+
+    global.ResizeObserver = originalResizeObserver;
   });
 });
