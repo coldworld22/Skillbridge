@@ -1835,7 +1835,10 @@
     "monthlyRevenue": "Entrate mensili",
     "monthlySignups": "Iscrizioni mensili",
     "tutorialsByCategory": "Tutorial per categoria",
-    "instructorTutorialCount": "Numero di tutorial per istruttore"
+    "instructorTutorialCount": "Numero di tutorial per istruttore",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "Tutorial di caricamento ...",

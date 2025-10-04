@@ -1810,7 +1810,10 @@
     "monthlyRevenue": "Revenus mensuels",
     "monthlySignups": "Inscriptions mensuelles",
     "tutorialsByCategory": "Tutoriels par catégorie",
-    "instructorTutorialCount": "Nombre de tutoriels par instructeur"
+    "instructorTutorialCount": "Nombre de tutoriels par instructeur",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "Chargement du tutoriel...",

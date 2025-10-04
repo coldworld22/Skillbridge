@@ -1820,7 +1820,10 @@
     "monthlyRevenue": "每月收入",
     "monthlySignups": "每月注册",
     "tutorialsByCategory": "按类别划分的教程",
-    "instructorTutorialCount": "讲师教程数量"
+    "instructorTutorialCount": "讲师教程数量",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "加载教程...",

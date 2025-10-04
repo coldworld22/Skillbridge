@@ -1835,7 +1835,10 @@
     "monthlyRevenue": "Monthly Revenue",
     "monthlySignups": "Monthly Signups",
     "tutorialsByCategory": "Tutorials by Category",
-    "instructorTutorialCount": "Instructor Tutorial Count"
+    "instructorTutorialCount": "Instructor Tutorial Count",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "Loading tutorial...",

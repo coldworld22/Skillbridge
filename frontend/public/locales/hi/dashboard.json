@@ -1821,7 +1821,10 @@
     "monthlyRevenue": "मासिक राजस्व",
     "monthlySignups": "मासिक साइनअप",
     "tutorialsByCategory": "श्रेणी के अनुसार ट्यूटोरियल",
-    "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या"
+    "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "लोडिंग ट्यूटोरियल ...",

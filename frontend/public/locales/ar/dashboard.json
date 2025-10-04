@@ -1810,7 +1810,10 @@
     "monthlyRevenue": "الإيرادات الشهرية",
     "monthlySignups": "التسجيلات الشهرية",
     "tutorialsByCategory": "الدروس حسب الفئة",
-    "instructorTutorialCount": "عدد الدروس لكل مدرب"
+    "instructorTutorialCount": "عدد الدروس لكل مدرب",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…"
   },
   "tutorialViewPage": {
     "loading": "تحميل البرنامج التعليمي ...",
