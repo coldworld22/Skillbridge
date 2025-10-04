@@ -4,6 +4,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { useEffect, useState } from "react";
 import { useTranslation } from "next-i18next";
+import dynamic from "next/dynamic";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { fetchAdminClassAnalytics } from "@/services/admin/classService";
