@@ -16,25 +16,28 @@ export default function CategoryPieChart({ data = [], title }) {
   const Tooltip = chartsLib?.Tooltip;
   const ResponsiveContainer = chartsLib?.ResponsiveContainer;
 
+  const hasData = Array.isArray(data) && data.some(({ value }) => value > 0);
+
   const renderFallbackMessage = () => {
+    if (loading) {
+      return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    }
+
     if (!resizeObserverSupported) {
-      return t(
-        "adminDashboardHome.chartsUnavailableResizeObserver",
-        {
-          defaultValue:
-            "Charts unavailable: browser is missing ResizeObserver support.",
-        }
-      );
+      return t("adminDashboardHome.chartsUnavailableResizeObserver", {
+        defaultValue:
+          "Charts are unavailable because ResizeObserver is not supported in this browser.",
+      });
     }
 
     if (chartsLoadError) {
       return t("adminDashboardHome.chartsFailedToLoad", {
-        defaultValue: "Failed to load charts.",
+        defaultValue: "Charts failed to load. Please refresh to try again.",
       });
     }
 
     return t("adminDashboardHome.loadingCharts", {
-      defaultValue: "Loading charts...",
+      defaultValue: "Loading charts…",
     });
   };
 
@@ -42,6 +45,7 @@ export default function CategoryPieChart({ data = [], title }) {
     !loading &&
     resizeObserverSupported &&
     !chartsLoadError &&
+    hasData &&
     PieChart &&
     Pie &&
     Cell &&

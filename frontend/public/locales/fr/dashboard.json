@@ -1793,6 +1793,9 @@
     "reviewMessages": "Examiner les messages",
     "licenseCheck": "Vérification de licence",
     "checkingLicense": "Vérification du statut de la licence...",
+    "chartsUnavailableResizeObserver": "Les graphiques ne sont pas disponibles car ce navigateur ne prend pas en charge ResizeObserver.",
+    "chartsFailedToLoad": "Échec du chargement des graphiques. Veuillez actualiser pour réessayer.",
+    "loadingCharts": "Chargement des graphiques…",
     "lastCheck": "Dernière vérification : {{value}}",
     "notAvailable": "Non disponible",
     "unauthorizedInstanceDetected": "1 instance non autorisée détectée",
@@ -1813,7 +1816,8 @@
     "chartsFailedToLoad": "Échec du chargement des graphiques.",
     "loadingCharts": "Chargement des graphiques...",
     "tutorialsByCategory": "Tutoriels par catégorie",
-    "instructorTutorialCount": "Nombre de tutoriels par instructeur"
+    "instructorTutorialCount": "Nombre de tutoriels par instructeur",
+    "noChartData": "Aucune donnée disponible"
   },
   "tutorialViewPage": {
     "loading": "Chargement du tutoriel...",
