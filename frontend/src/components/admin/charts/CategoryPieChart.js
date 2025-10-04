@@ -24,27 +24,21 @@ export default function CategoryPieChart({ data = [], title }) {
     }
 
     if (!resizeObserverSupported) {
-      return t(
-        "adminDashboardHome.chartsUnavailableResizeObserver",
-        "Charts are unavailable because ResizeObserver is not supported in this browser."
-      );
+      return t("adminDashboardHome.chartsUnavailableResizeObserver", {
+        defaultValue:
+          "Charts are unavailable because ResizeObserver is not supported in this browser.",
+      });
     }
 
     if (chartsLoadError) {
-      return t(
-        "adminDashboardHome.chartsFailedToLoad",
-        "Charts failed to load. Please refresh to try again."
-      );
+      return t("adminDashboardHome.chartsFailedToLoad", {
+        defaultValue: "Charts failed to load. Please refresh to try again.",
+      });
     }
 
-    if (!hasData) {
-      return t(
-        "adminDashboardHome.noChartData",
-        "No data available"
-      );
-    }
-
-    return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    return t("adminDashboardHome.loadingCharts", {
+      defaultValue: "Loading charts…",
+    });
   };
 
   const shouldRenderChart =
