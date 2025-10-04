@@ -16,6 +16,9 @@ export default function CategoryPieChart({ data = [], title }) {
   const Tooltip = chartsLib?.Tooltip;
   const ResponsiveContainer = chartsLib?.ResponsiveContainer;
 
+  const hasData =
+    Array.isArray(data) && data.some(({ value }) => Number(value) > 0);
+
   const renderFallbackMessage = () => {
     if (!resizeObserverSupported) {
       return t(
@@ -48,23 +51,32 @@ export default function CategoryPieChart({ data = [], title }) {
     <div className="bg-white p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-4">📚 {heading}</h2>
       {shouldRenderChart ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={100}
-              fill="#8884d8"
-              label
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        hasData ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={100}
+                fill="#8884d8"
+                label
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-[300px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            {t(
+              "adminDashboardHome.noTutorialsByCategoryData",
+              "No tutorials by category available"
+            )}
+          </div>
+        )
       ) : (
         <div className="flex h-[300px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
           {renderFallbackMessage()}
