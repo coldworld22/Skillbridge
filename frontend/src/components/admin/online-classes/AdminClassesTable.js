@@ -271,7 +271,7 @@ export default function AdminClassesTable() {
     }
 
     if (lastFailedSignatureRef.current?.signature === requestDetails.signature) {
-      const failureAge = Date.now() - (lastFailedSignatureRef.current.timestamp ?? 0);
+      const failureAge = Date.now() - (lastFailedSignatureRef.current.failedAt ?? 0);
       if (!Number.isFinite(failureAge) || failureAge < FAILED_REQUEST_RETRY_DELAY_MS) {
         return;
       }
@@ -436,7 +436,7 @@ export default function AdminClassesTable() {
         clearFailedSignature();
         const failureRecord = {
           signature,
-          timestamp: Date.now(),
+          failedAt: Date.now(),
           retryTimer: null,
         };
         failureRecord.retryTimer = setTimeout(() => {
