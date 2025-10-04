@@ -180,7 +180,12 @@ export default function Home() {
       <IncompleteAlertModal />
 
       {sections.map(({ component: Component, props }, index) => (
-        <section key={index} ref={sectionRefs.current[index]}>
+        <section
+          key={index}
+          ref={(element) => {
+            sectionRefs.current[index] = element ?? null;
+          }}
+        >
           <Component {...props} />
         </section>
       ))}
