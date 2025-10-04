@@ -44,6 +44,7 @@ function AnalyticsDashboard() {
 
   useEffect(() => {
     if (!id) return;
+    setStats(null);
     fetchAdminClassAnalytics(id)
       .then((data) =>
         setStats({
