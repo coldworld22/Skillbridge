@@ -25,7 +25,7 @@ export const loginUser = async ({
       "🔐 loginUser requesting",
       `${api.defaults.baseURL}/auth/login`
     );
-    const res = await api.post("/auth/login", {
+    const res = await api.post("auth/login", {
       email,
       password,
       recaptchaToken,
@@ -51,7 +51,7 @@ export const loginUser = async ({
  */
 export const registerUser = async (payload) => {
   try {
-    const res = await api.post("/auth/register", payload);
+    const res = await api.post("auth/register", payload);
     return res.data;
   } catch (err) {
     throw normalizeError(err);
@@ -66,7 +66,7 @@ export const registerUser = async (payload) => {
  */
 export const requestPasswordReset = async ({ email, via = "email" }) => {
   try {
-    const res = await api.post("/auth/forgot-password", { email, via });
+    const res = await api.post("auth/forgot-password", { email, via });
     return res.data;
   } catch (err) {
     throw normalizeError(err);
@@ -83,7 +83,7 @@ export const requestPasswordReset = async ({ email, via = "email" }) => {
  */
 export const verifyOtpCode = async ({ email, code }) => {
   try {
-    const res = await api.post("/auth/verify-otp", { email, code });
+    const res = await api.post("auth/verify-otp", { email, code });
     return res.data;
   } catch (err) {
     throw normalizeError(err);
@@ -101,7 +101,7 @@ export const verifyOtpCode = async ({ email, code }) => {
  */
 export const resetPassword = async ({ email, code, new_password }) => {
   try {
-    const res = await api.post("/auth/reset-password", {
+    const res = await api.post("auth/reset-password", {
       email,
       code,
       new_password,
@@ -122,7 +122,7 @@ export const refreshAccessToken = async () => {
   try {
     const csrfToken = getCookie("csrfToken");
     const res = await api.post(
-      "/auth/refresh",
+      "auth/refresh",
       null,
       {
         headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
@@ -142,7 +142,7 @@ export const refreshAccessToken = async () => {
  */
 export const logoutUser = async () => {
   try {
-    const res = await api.post("/auth/logout");
+    const res = await api.post("auth/logout");
     return res.data;
   } catch (err) {
     throw normalizeError(err);
