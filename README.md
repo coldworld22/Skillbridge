@@ -185,10 +185,13 @@ npm --prefix frontend install
    ./scripts/run-compose.sh up --build
    ```
 
-   If you must invoke the legacy CLI directly, set `DOCKER_API_VERSION=1.43`
-   in your shell beforehand to avoid the compatibility error. Disabling
-   BuildKit by exporting `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0`
-   may also be necessary on very old Compose releases.
+   The repository's root `.env` file exports `DOCKER_API_VERSION=1.43`, so
+   running `docker-compose` from the project directory automatically picks up
+   the compatibility setting. If you must invoke the legacy CLI directly from
+   outside the project root, export `DOCKER_API_VERSION=1.43` in your shell
+   beforehand to avoid the compatibility error. Disabling BuildKit by
+   exporting `DOCKER_BUILDKIT=0` and `COMPOSE_DOCKER_CLI_BUILD=0` may also be
+   necessary on very old Compose releases.
 
 4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5002/api`.
 
