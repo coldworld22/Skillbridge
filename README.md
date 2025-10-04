@@ -179,7 +179,10 @@ npm --prefix frontend install
    repository also includes [`scripts/run-compose.sh`](scripts/run-compose.sh),
    which automatically prefers the V2 plugin and, when falling back to the
    legacy binary, exports `DOCKER_API_VERSION=1.43` so the command remains
-   compatible with Docker&nbsp;27+. You can simply run:
+   compatible with Docker&nbsp;27+. The compose file now rebuilds the Postgres
+   image from [`database/Dockerfile`](database/Dockerfile) with the classic
+   builder, restoring the legacy metadata that the v1 CLI expects during
+   container recreation. You can simply run:
 
    ```bash
    ./scripts/run-compose.sh up --build
