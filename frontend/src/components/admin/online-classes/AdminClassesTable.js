@@ -266,16 +266,22 @@ export default function AdminClassesTable() {
       if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
         clearFailedSignature(failedSignature);
       } else {
-        return;
+        const failureTimestamp =
+          typeof failedSignature.failedAt === "number" &&
+          Number.isFinite(failedSignature.failedAt)
+            ? failedSignature.failedAt
+            : failedSignature.timestamp;
+        if (
+          typeof failureTimestamp === "number" &&
+          Number.isFinite(failureTimestamp)
+        ) {
+          const elapsed = Date.now() - failureTimestamp;
+          if (elapsed < FAILED_SIGNATURE_RETRY_DELAY_MS) {
+            return;
+          }
+        }
+        clearFailedSignature(failedSignature);
       }
-    }
-
-    if (lastFailedSignatureRef.current?.signature === requestDetails.signature) {
-      const failureAge = Date.now() - (lastFailedSignatureRef.current.timestamp ?? 0);
-      if (!Number.isFinite(failureAge) || failureAge < FAILED_REQUEST_RETRY_DELAY_MS) {
-        return;
-      }
-      clearFailedSignature();
     }
 
     if (inFlightRequestRef.current === requestDetails.signature) {
@@ -434,9 +440,11 @@ export default function AdminClassesTable() {
           toast.error("Failed to load classes");
         }
         clearFailedSignature();
+        const failureTimestamp = Date.now();
         const failureRecord = {
           signature,
-          timestamp: Date.now(),
+          timestamp: failureTimestamp,
+          failedAt: failureTimestamp,
           retryTimer: null,
         };
         failureRecord.retryTimer = setTimeout(() => {
