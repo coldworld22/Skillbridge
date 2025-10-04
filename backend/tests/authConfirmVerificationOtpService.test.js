@@ -2,6 +2,9 @@ jest.mock('../src/modules/verify/verify.service', () => ({
   verifyOtp: jest.fn(),
 }));
 
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
+
 jest.mock('../src/modules/users/user.model', () => ({
   findById: jest.fn(),
   updateUser: jest.fn(),
@@ -16,12 +19,12 @@ describe('confirmVerificationOtp', () => {
     jest.clearAllMocks();
   });
 
-  it('activates user when both email and phone are verified', async () => {
+  it('activates user immediately after email verification', async () => {
     verificationService.verifyOtp.mockResolvedValue({ alreadyVerified: false });
     userModel.findById.mockResolvedValue({
       id: 1,
       is_email_verified: true,
-      is_phone_verified: true,
+      is_phone_verified: false,
       status: 'pending',
     });
 
@@ -43,5 +46,19 @@ describe('confirmVerificationOtp', () => {
     await authService.confirmVerificationOtp({ user_id: 1, type: 'phone', code: '123456' });
 
     expect(userModel.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('activates user after phone verification when both are verified', async () => {
+    verificationService.verifyOtp.mockResolvedValue({ alreadyVerified: false });
+    userModel.findById.mockResolvedValue({
+      id: 1,
+      is_email_verified: true,
+      is_phone_verified: true,
+      status: 'pending',
+    });
+
+    await authService.confirmVerificationOtp({ user_id: 1, type: 'phone', code: '123456' });
+
+    expect(userModel.updateUser).toHaveBeenCalledWith(1, { status: 'active' });
   });
 });
