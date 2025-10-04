@@ -256,8 +256,14 @@ export default function AdminClassesTable() {
 
     const failedSignature = lastFailedSignatureRef.current;
 
-    if (failedSignature) {
-      if (failedSignature.signature !== requestDetails.signature) {
+    if (
+      failedSignature &&
+      failedSignature.signature !== requestDetails.signature
+    ) {
+      clearFailedSignature(failedSignature);
+    } else if (failedSignature) {
+      const elapsed = Date.now() - failedSignature.timestamp;
+      if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
         clearFailedSignature(failedSignature);
       } else {
         const failureTimestamp =
