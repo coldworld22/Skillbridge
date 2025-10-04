@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 
@@ -126,5 +126,31 @@ describe("AdminClassesTable status toggling", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("Approve")).not.toBeInTheDocument();
     expect(toastSuccessMock).toHaveBeenCalledWith("Status updated");
+  });
+
+  it("retries fetching classes automatically after a failure", async () => {
+    jest.useFakeTimers();
+    try {
+      const networkError = new Error("Network error");
+      fetchAdminClassesMock.mockRejectedValueOnce(networkError);
+
+      render(<AdminClassesTable />);
+
+      await waitFor(() => {
+        expect(fetchAdminClassesMock).toHaveBeenCalledTimes(1);
+      });
+
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to load classes");
+
+      act(() => {
+        jest.runOnlyPendingTimers();
+      });
+
+      await waitFor(() => {
+        expect(fetchAdminClassesMock).toHaveBeenCalledTimes(2);
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
