@@ -8,10 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import ResizeObserver from "resize-observer-polyfill";
-
-if (typeof window !== "undefined" && !window.ResizeObserver) {
-  window.ResizeObserver = ResizeObserver;
-}
 import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
@@ -38,6 +34,9 @@ import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
 
+if (typeof window !== "undefined" && !window.ResizeObserver) {
+  window.ResizeObserver = ResizeObserver;
+}
 
 const langFetcher = () => getLanguages();
 
