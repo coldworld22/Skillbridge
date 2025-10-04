@@ -1813,7 +1813,8 @@
     "monthlyRevenue": "Revenus mensuels",
     "monthlySignups": "Inscriptions mensuelles",
     "tutorialsByCategory": "Tutoriels par catégorie",
-    "instructorTutorialCount": "Nombre de tutoriels par instructeur"
+    "instructorTutorialCount": "Nombre de tutoriels par instructeur",
+    "noChartData": "Aucune donnée disponible"
   },
   "tutorialViewPage": {
     "loading": "Chargement du tutoriel...",

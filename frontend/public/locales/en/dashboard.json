@@ -1830,7 +1830,8 @@
     "monthlyRevenue": "Monthly Revenue",
     "monthlySignups": "Monthly Signups",
     "tutorialsByCategory": "Tutorials by Category",
-    "instructorTutorialCount": "Instructor Tutorial Count"
+    "instructorTutorialCount": "Instructor Tutorial Count",
+    "noChartData": "No data available"
   },
   "tutorialViewPage": {
     "loading": "Loading tutorial...",

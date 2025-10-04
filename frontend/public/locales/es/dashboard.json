@@ -1824,7 +1824,8 @@
     "monthlyRevenue": "Ingresos mensuales",
     "monthlySignups": "Registros mensuales",
     "tutorialsByCategory": "Tutoriales por categoría",
-    "instructorTutorialCount": "Cantidad de tutoriales por instructor"
+    "instructorTutorialCount": "Cantidad de tutoriales por instructor",
+    "noChartData": "No hay datos disponibles"
   },
   "tutorialViewPage": {
     "loading": "Tutorial de carga ...",

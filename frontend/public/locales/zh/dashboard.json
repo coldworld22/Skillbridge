@@ -1823,7 +1823,8 @@
     "monthlyRevenue": "每月收入",
     "monthlySignups": "每月注册",
     "tutorialsByCategory": "按类别划分的教程",
-    "instructorTutorialCount": "讲师教程数量"
+    "instructorTutorialCount": "讲师教程数量",
+    "noChartData": "没有可用数据"
   },
   "tutorialViewPage": {
     "loading": "加载教程...",
