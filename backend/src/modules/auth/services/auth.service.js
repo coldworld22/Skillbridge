@@ -351,7 +351,11 @@ exports.loginUser = async ({ email, password, ip }) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  if (user.status !== "active") {
+  const canLogin =
+    user.status === "active" ||
+    (user.status === "pending" && user.is_email_verified);
+
+  if (!canLogin) {
     throw new AppError(
       "Account pending activation. Please verify your email or contact support.",
       403,
