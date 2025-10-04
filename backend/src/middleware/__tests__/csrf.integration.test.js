@@ -83,9 +83,10 @@ describe('CSRF middleware integration', () => {
     const agent = request.agent(app);
 
     const csrfResponse = await agent.get('/api/csrf-token');
-    expect(csrfResponse.status).toBe(204);
+    expect(csrfResponse.status).toBe(200);
     const initialToken = extractCookie(csrfResponse, 'csrfToken');
     expect(initialToken).toBeDefined();
+    expect(csrfResponse.body?.token).toBe(initialToken);
 
     const loginResponse = await agent
       .post('/api/auth/login')

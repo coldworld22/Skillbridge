@@ -19,11 +19,15 @@ export const ensureCsrfToken = async () => {
       // next POST request fails with a 403. Using a relative path ensures we
       // always call `/api/csrf-token`, allowing the server to issue the
       // expected cookie before we retry the protected request.
-      await api.get("csrf-token");
+      const response = await api.get("csrf-token", {
+        params: { _: Date.now() },
+        headers: { "Cache-Control": "no-cache" },
+      });
+
+      token = response?.data?.token || getCsrfToken();
     } catch (e) {
       // The route may not exist; we only care about the cookie.
     }
-    token = getCsrfToken();
   }
   return token;
 };
