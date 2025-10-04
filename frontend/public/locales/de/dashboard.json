@@ -1807,6 +1807,9 @@
     "reviewMessages": "Review messages",
     "licenseCheck": "License Check",
     "checkingLicense": "Lizenz wird überprüft...",
+    "chartsUnavailableResizeObserver": "Diagramme sind nicht verfügbar, da ResizeObserver von diesem Browser nicht unterstützt wird.",
+    "chartsFailedToLoad": "Diagramme konnten nicht geladen werden. Bitte laden Sie die Seite neu, um es erneut zu versuchen.",
+    "loadingCharts": "Diagramme werden geladen…",
     "lastCheck": "Letzte Prüfung: {{value}}",
     "notAvailable": "Nicht verfügbar",
     "unauthorizedInstanceDetected": "1 unauthorized instance detected",
@@ -1833,10 +1836,16 @@
     "noUnauthorizedInstances": "✅ No unauthorized instances",
     "noLicenseData": "No license data",
     "monthlyRevenue": "Monthly Revenue",
+    "chartsUnavailableResizeObserver": "Diagramme sind nicht verfügbar, da ResizeObserver in diesem Browser nicht unterstützt wird.",
+    "chartsFailedToLoad": "Diagramme konnten nicht geladen werden. Bitte aktualisieren Sie, um es erneut zu versuchen.",
+    "loadingCharts": "Diagramme werden geladen…",
     "monthlySignups": "Monthly Signups",
+    "chartsUnavailableResizeObserver": "Diagramme nicht verfügbar: Browser unterstützt ResizeObserver nicht.",
+    "chartsFailedToLoad": "Diagramme konnten nicht geladen werden.",
+    "loadingCharts": "Diagramme werden geladen...",
     "tutorialsByCategory": "Tutorials by Category",
-    "noCategoryData": "Keine Kategoriedaten verfügbar.",
-    "instructorTutorialCount": "Instructor Tutorial Count"
+    "instructorTutorialCount": "Instructor Tutorial Count",
+    "noChartData": "Keine Daten verfügbar"
   },
   "tutorialViewPage": {
     "loading": "Loading tutorial...",
