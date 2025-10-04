@@ -86,9 +86,8 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
       "Content-Type": "multipart/form-data",
     },
     ...(onUploadProgress ? { onUploadProgress } : {}),
-  };
-  const { data } = await api.post("users/classes/instructor", payload, config);
-  return data?.data ? formatClass(data.data) : null;
+  });
+  return formatClass(response.data?.data);
 };
 
 export const updateInstructorClass = async (id, payload) => {
