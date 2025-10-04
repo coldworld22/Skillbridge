@@ -34,6 +34,8 @@ import {
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
 const MIN_REJECTION_REASON_LENGTH = 3;
 
+export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
+
 const DEFAULT_PAGE_SIZE = 5;
 const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
 const resolvePositiveInteger = (value, fallback = 1) => {
@@ -259,8 +261,17 @@ export default function AdminClassesTable() {
       clearFailedSignature();
     }
 
-    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
-      return;
+    if (failedSignature) {
+      if (failedSignature.signature !== requestDetails.signature) {
+        clearFailedSignature();
+      } else {
+        const elapsed = Date.now() - failedSignature.failedAt;
+        if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
+          clearFailedSignature();
+        } else {
+          return;
+        }
+      }
     }
 
     if (lastFailedSignatureRef.current?.signature === requestDetails.signature) {
