@@ -130,26 +130,22 @@ describe("AdminClassesTable status toggling", () => {
     expect(toastSuccessMock).toHaveBeenCalledWith("Status updated");
   });
 
-  it("automatically retries fetching classes after a failure", async () => {
+  it("retries fetching classes automatically after a failure", async () => {
     jest.useFakeTimers();
-
-    fetchAdminClassesMock
-      .mockRejectedValueOnce(new Error("Network failure"))
-      .mockResolvedValue({
-        data: [baseClass],
-        meta: { totalPages: 1, total: 1 },
-      });
-
     try {
+      const networkError = new Error("Network error");
+      fetchAdminClassesMock.mockRejectedValueOnce(networkError);
+
       render(<AdminClassesTable />);
 
       await waitFor(() => {
         expect(fetchAdminClassesMock).toHaveBeenCalledTimes(1);
       });
 
-      await act(async () => {
-        jest.advanceTimersByTime(FAILED_SIGNATURE_RETRY_DELAY_MS + 1);
-        await Promise.resolve();
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to load classes");
+
+      act(() => {
+        jest.runOnlyPendingTimers();
       });
 
       await waitFor(() => {

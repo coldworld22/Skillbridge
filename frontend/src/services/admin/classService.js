@@ -52,18 +52,20 @@ export const fetchAdminClasses = async ({
   if (approval && approval !== "All") params.set("approval", approval);
   if (status && status !== "All") params.set("status", status);
   if (schedule) params.set("schedule", schedule);
-  const { data } = await api.get(`/users/classes/admin?${params.toString()}`);
+  const { data } = await api.get("users/classes/admin", {
+    params: Object.fromEntries(params.entries()),
+  });
   const list = data?.data ?? [];
   return { data: list.map(formatClass), meta: data?.meta || {} };
 };
 
 export const fetchAdminClassById = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}`);
+  const { data } = await api.get(`users/classes/admin/${id}`);
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const createAdminClass = async (payload, onUploadProgress) => {
-  const { data } = await api.post("/users/classes/admin", payload, {
+  const { data } = await api.post("users/classes/admin", payload, {
     headers: { "Content-Type": "multipart/form-data" },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
@@ -71,57 +73,57 @@ export const createAdminClass = async (payload, onUploadProgress) => {
 };
 
 export const updateAdminClass = async (id, payload) => {
-  const { data } = await api.put(`/users/classes/admin/${id}`, payload, {
+  const { data } = await api.put(`users/classes/admin/${id}`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const deleteAdminClass = async (id) => {
-  await api.delete(`/users/classes/admin/${id}`);
+  await api.delete(`users/classes/admin/${id}`);
   return true;
 };
 
 export const permanentlyDeleteClass = async (id) => {
-  const res = await api.delete(`/users/classes/admin/${id}`);
+  const res = await api.delete(`users/classes/admin/${id}`);
   return res.data;
 };
 
 export const bulkDeleteClasses = async (ids) => {
-  await api.post("/users/classes/admin/bulk-delete", { ids });
+  await api.post("users/classes/admin/bulk-delete", { ids });
   return true;
 };
 
 export const fetchAdminClassAnalytics = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/analytics`);
+  const { data } = await api.get(`users/classes/admin/${id}/analytics`);
   return data?.data ?? {};
 };
 
 export const toggleClassStatus = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/status`);
+  const { data } = await api.patch(`users/classes/admin/${id}/status`);
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const approveAdminClass = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/approve`);
+  const { data } = await api.patch(`users/classes/admin/${id}/approve`);
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const rejectAdminClass = async (id, reason) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/reject`, { reason });
+  const { data } = await api.patch(`users/classes/admin/${id}/reject`, { reason });
   return data?.data;
 };
 
 // Retrieve all students registered for a class
 export const fetchClassStudents = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/students`);
+  const { data } = await api.get(`users/classes/admin/${id}/students`);
   return data?.data ?? [];
 };
 
 // Get enrollment details for a specific student
 export const fetchClassStudent = async (classId, studentId) => {
   const { data } = await api.get(
-    `/users/classes/admin/${classId}/students/${studentId}`
+    `users/classes/admin/${classId}/students/${studentId}`
   );
   return data?.data ?? null;
 };

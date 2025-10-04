@@ -37,6 +37,7 @@ const MIN_REJECTION_REASON_LENGTH = 3;
 export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
 
 const DEFAULT_PAGE_SIZE = 5;
+const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
@@ -131,12 +132,13 @@ export default function AdminClassesTable() {
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
   }, [pageSizeSetting, totalItems, classCount]);
 
-  const clearFailedSignature = () => {
-    const failure = lastFailedSignatureRef.current;
-    if (failure?.retryTimeout) {
-      clearTimeout(failure.retryTimeout);
+  const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
+    if (failureRecord?.retryTimer) {
+      clearTimeout(failureRecord.retryTimer);
     }
-    lastFailedSignatureRef.current = null;
+    if (lastFailedSignatureRef.current === failureRecord) {
+      lastFailedSignatureRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -252,7 +254,12 @@ export default function AdminClassesTable() {
       sortKey,
     };
 
-    const failedSignature = lastFailedSignatureRef.current;
+    if (
+      lastFailedSignatureRef.current &&
+      lastFailedSignatureRef.current.signature !== requestDetails.signature
+    ) {
+      clearFailedSignature();
+    }
 
     if (failedSignature) {
       if (failedSignature.signature !== requestDetails.signature) {
@@ -267,8 +274,12 @@ export default function AdminClassesTable() {
       }
     }
 
-    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
-      return;
+    if (lastFailedSignatureRef.current?.signature === requestDetails.signature) {
+      const failureAge = Date.now() - (lastFailedSignatureRef.current.timestamp ?? 0);
+      if (!Number.isFinite(failureAge) || failureAge < FAILED_REQUEST_RETRY_DELAY_MS) {
+        return;
+      }
+      clearFailedSignature();
     }
 
     if (inFlightRequestRef.current === requestDetails.signature) {
@@ -426,33 +437,32 @@ export default function AdminClassesTable() {
         if (isComponentMountedRef.current) {
           toast.error("Failed to load classes");
         }
-        const scheduleRetry = () => {
+        clearFailedSignature();
+        const failureRecord = {
+          signature,
+          timestamp: Date.now(),
+          retryTimer: null,
+        };
+        failureRecord.retryTimer = setTimeout(() => {
+          if (!isComponentMountedRef.current) {
+            return;
+          }
+          const activeFailure = lastFailedSignatureRef.current;
+          if (!activeFailure || activeFailure.signature !== signature) {
+            return;
+          }
+          clearFailedSignature(activeFailure);
           if (
-            !isComponentMountedRef.current ||
+            lastSuccessfulSignatureRef.current === signature ||
             inFlightRequestRef.current ||
             (pendingRequestRef.current &&
-              pendingRequestRef.current.signature !== signature)
+              pendingRequestRef.current.signature === signature)
           ) {
             return;
           }
-
-          const currentFailure = lastFailedSignatureRef.current;
-          if (currentFailure?.signature === signature) {
-            clearFailedSignature();
-            executeRequest(details);
-          }
-        };
-
-        const retryTimeout = setTimeout(
-          scheduleRetry,
-          FAILED_SIGNATURE_RETRY_DELAY_MS
-        );
-
-        lastFailedSignatureRef.current = {
-          signature,
-          failedAt: Date.now(),
-          retryTimeout,
-        };
+          executeRequest(details);
+        }, FAILED_REQUEST_RETRY_DELAY_MS);
+        lastFailedSignatureRef.current = failureRecord;
       } finally {
         if (isComponentMountedRef.current && loadingRef.current) {
           loadingRef.current = false;
