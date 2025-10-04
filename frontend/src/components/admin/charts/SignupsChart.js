@@ -1,23 +1,69 @@
 // components/admin/charts/SignupsChart.js
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useTranslation } from "next-i18next";
+import useLazyRecharts from "./useLazyRecharts";
 
 export default function SignupsChart({ data = [], title }) {
   const { t } = useTranslation("dashboard");
   const heading = title ?? t("adminDashboardHome.monthlySignups");
+  const { chartsLib, chartsLoadError, resizeObserverSupported, loading } =
+    useLazyRecharts();
+
+  const BarChart = chartsLib?.BarChart;
+  const Bar = chartsLib?.Bar;
+  const XAxis = chartsLib?.XAxis;
+  const YAxis = chartsLib?.YAxis;
+  const Tooltip = chartsLib?.Tooltip;
+  const ResponsiveContainer = chartsLib?.ResponsiveContainer;
+  const CartesianGrid = chartsLib?.CartesianGrid;
+
+  const renderFallbackMessage = () => {
+    if (!resizeObserverSupported) {
+      return t(
+        "adminDashboardHome.chartsUnavailableResizeObserver",
+        "Charts are unavailable because ResizeObserver is not supported in this browser."
+      );
+    }
+
+    if (chartsLoadError) {
+      return t(
+        "adminDashboardHome.chartsFailedToLoad",
+        "Charts failed to load. Please refresh to try again."
+      );
+    }
+
+    return t("adminDashboardHome.loadingCharts", "Loading charts…");
+  };
+
+  const shouldRenderChart =
+    !loading &&
+    resizeObserverSupported &&
+    !chartsLoadError &&
+    BarChart &&
+    Bar &&
+    XAxis &&
+    YAxis &&
+    Tooltip &&
+    ResponsiveContainer &&
+    CartesianGrid;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-4">👥 {heading}</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="users" fill="#60a5fa" />
-        </BarChart>
-      </ResponsiveContainer>
+      {shouldRenderChart ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="users" fill="#60a5fa" />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-[300px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
+          {renderFallbackMessage()}
+        </div>
+      )}
     </div>
   );
 }
