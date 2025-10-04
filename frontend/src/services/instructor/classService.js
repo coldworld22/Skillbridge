@@ -1,6 +1,7 @@
 import api from "@/services/api/api";
 import { ensureCsrfToken } from "@/services/api/csrf";
 import { API_BASE_URL } from "@/config/config";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
