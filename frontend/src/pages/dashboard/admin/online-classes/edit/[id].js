@@ -53,6 +53,42 @@ const normalizeIncludedPlans = (included = [], availablePlans = []) => {
 const arraysEqual = (a = [], b = []) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
 
+const normalizeInstructor = (instructor) => {
+  if (!instructor) return null;
+
+  const rawId =
+    instructor.id ?? instructor._id ?? instructor.user_id ?? instructor.userId;
+  if (rawId === undefined || rawId === null) {
+    return null;
+  }
+
+  const firstName =
+    typeof instructor.first_name === 'string'
+      ? instructor.first_name.trim()
+      : '';
+  const lastName =
+    typeof instructor.last_name === 'string'
+      ? instructor.last_name.trim()
+      : '';
+  const fullNameFromParts = [firstName, lastName].filter(Boolean).join(' ');
+  const providedFullName =
+    typeof instructor.full_name === 'string'
+      ? instructor.full_name.trim()
+      : '';
+  const fallbackName =
+    typeof instructor.name === 'string' ? instructor.name.trim() : '';
+  const email =
+    typeof instructor.email === 'string' ? instructor.email.trim() : '';
+
+  const full_name = fullNameFromParts || providedFullName || fallbackName || email;
+
+  return {
+    id: String(rawId),
+    full_name,
+    email,
+  };
+};
+
 export function EditClassPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -102,7 +138,11 @@ export function EditClassPage() {
             access_type: data.access_type || 'paid',
             included_plans: normalizeIncludedPlans(data.included_plans || [], plans),
           });
-          setInstructorId(data.instructor_id || '');
+          setInstructorId(
+            data.instructor_id !== undefined && data.instructor_id !== null
+              ? String(data.instructor_id)
+              : ''
+          );
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -118,6 +158,50 @@ export function EditClassPage() {
   }, []);
 
   useEffect(() => {
+    let isActive = true;
+
+    const loadInstructors = async () => {
+      try {
+        setLoadingInstructors(true);
+        const { instructors: data } = await fetchAllInstructors(1, 100);
+        if (!isActive) return;
+
+        const normalized = [];
+        const seen = new Set();
+        (Array.isArray(data) ? data : []).forEach((item) => {
+          const normalizedInstructor = normalizeInstructor(item);
+          if (!normalizedInstructor) return;
+          if (seen.has(normalizedInstructor.id)) return;
+          seen.add(normalizedInstructor.id);
+          normalized.push(normalizedInstructor);
+        });
+
+        setInstructors(normalized);
+      } catch (error) {
+        console.error('Failed to load instructors', error);
+        if (isActive) {
+          setInstructors([]);
+          toast.error(
+            t('failed_to_load_instructors', {
+              defaultValue: 'Failed to load instructors. Please try again.',
+            })
+          );
+        }
+      } finally {
+        if (isActive) {
+          setLoadingInstructors(false);
+        }
+      }
+    };
+
+    loadInstructors();
+
+    return () => {
+      isActive = false;
+    };
+  }, [t]);
+
+  useEffect(() => {
     if (!plans.length) return;
     setFormData((prev) => {
       const normalized = normalizeIncludedPlans(prev.included_plans, plans);
@@ -125,6 +209,21 @@ export function EditClassPage() {
       return { ...prev, included_plans: normalized };
     });
   }, [plans]);
+
+  const filteredInstructors = useMemo(() => {
+    const search = instructorSearch.trim().toLowerCase();
+    if (!search) {
+      return instructors;
+    }
+
+    return instructors.filter((inst) => {
+      const name = typeof inst?.full_name === 'string' ? inst.full_name : '';
+      const email = typeof inst?.email === 'string' ? inst.email : '';
+      return (
+        name.toLowerCase().includes(search) || email.toLowerCase().includes(search)
+      );
+    });
+  }, [instructors, instructorSearch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
