@@ -620,9 +620,47 @@ export default function AdminClassesTable() {
   };
 
   const handleDeleteClass = async (id) => {
+    const singleItemOnPage = classList.length === 1;
+    const previousPage = currentPage > 1 ? currentPage - 1 : 1;
+
     try {
       await deleteAdminClass(id);
-      setClassList(prev => prev.filter(cls => cls.id !== id));
+      setClassList((prev) => prev.filter((cls) => cls.id !== id));
+
+      const trackedTotalItems = Number.isFinite(totalItemsRef.current)
+        ? totalItemsRef.current
+        : totalItems;
+      const safeItemsPerPage = resolvePositiveInteger(
+        normalizedItemsPerPage,
+        DEFAULT_PAGE_SIZE
+      );
+
+      let nextTotalItems = trackedTotalItems;
+      if (Number.isFinite(trackedTotalItems)) {
+        nextTotalItems = Math.max(0, trackedTotalItems - 1);
+        setTotalItemsIfNeeded(nextTotalItems);
+      }
+
+      let nextTotalPages = Number.isFinite(totalPagesRef.current)
+        ? totalPagesRef.current
+        : totalPages;
+
+      if (Number.isFinite(safeItemsPerPage) && safeItemsPerPage > 0) {
+        const computedPages =
+          nextTotalItems > 0
+            ? Math.ceil(nextTotalItems / safeItemsPerPage)
+            : 1;
+        nextTotalPages = Math.max(1, computedPages);
+        setTotalPagesIfNeeded(nextTotalPages);
+      }
+
+      if (singleItemOnPage && currentPage > 1) {
+        const targetPage = Math.max(1, Math.min(previousPage, nextTotalPages));
+        if (setCurrentPageIfNeeded(targetPage)) {
+          lastSuccessfulSignatureRef.current = null;
+        }
+      }
+
       toast.success("Class deleted");
     } catch (err) {
       console.error(err);
