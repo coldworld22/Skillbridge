@@ -138,11 +138,16 @@ app.use(
 app.get("/api/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
+const sessionCookieOptions = { ...refreshCookieOptions };
+
 const sessionOptions = {
   secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { ...refreshCookieOptions },
+  // Reuse the same cookie defaults as refresh tokens so domain, secure and
+  // sameSite stay consistent. When COOKIE_DOMAIN is not set the domain remains
+  // undefined which lets browsers scope the cookie to the current host.
+  cookie: sessionCookieOptions,
 };
 
 if (redisClient) {
