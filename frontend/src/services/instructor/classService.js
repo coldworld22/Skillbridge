@@ -54,6 +54,15 @@ const formatClass = (cls) => {
   };
 };
 
+const buildCsrfHeaders = async (headers = {}) => {
+  const csrfToken = await ensureCsrfToken();
+  if (!csrfToken) return headers;
+  return {
+    ...headers,
+    "x-csrf-token": csrfToken,
+  };
+};
+
 export const fetchInstructorClasses = async (instructorId) => {
   // Fetch only classes belonging to the specified instructor
   const requestConfig = instructorId ? { params: { instructorId } } : {};
@@ -77,7 +86,8 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
       "Content-Type": "multipart/form-data",
     },
     ...(onUploadProgress ? { onUploadProgress } : {}),
-  });
+  };
+  const { data } = await api.post("users/classes/instructor", payload, config);
   return data?.data ? formatClass(data.data) : null;
 };
 
