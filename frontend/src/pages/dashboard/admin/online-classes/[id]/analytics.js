@@ -33,20 +33,12 @@ function AnalyticsDashboard() {
   const classId = Array.isArray(id) ? id[0] : id || "";
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
-  const [supportsResizeObserver, setSupportsResizeObserver] = useState(true);
-
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setSupportsResizeObserver(Boolean(window.ResizeObserver));
-  }, []);
-
-  useEffect(() => {
-    if (!classId) return;
-    fetchAdminClassAnalytics(classId)
-      .then((data) =>
+    if (!id) return;
+    setStats(null);
+    fetchAdminClassAnalytics(id)
+      .then((data) => {
+        if (!isMounted) return;
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
@@ -57,13 +49,18 @@ function AnalyticsDashboard() {
           locations: data?.locations ?? EMPTY_STATS.locations,
           devices: data?.devices ?? EMPTY_STATS.devices,
           registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
-        })
-      )
+        });
+      })
       .catch((err) => {
+        if (!isMounted) return;
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
-  }, [classId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   if (!stats) {
     return (
@@ -94,11 +91,6 @@ function AnalyticsDashboard() {
     totalStudents > 0
       ? ((totalCompleted / totalStudents) * 100).toFixed(1)
       : "0";
-
-  const chartsUnavailableMessage = t(
-    "classAnalyticsPage.chartsUnavailableResizeObserver",
-    "Charts are unavailable because ResizeObserver is not supported in this browser."
-  );
 
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
@@ -144,18 +136,11 @@ function AnalyticsDashboard() {
         </div>
       </div>
 
-      {!supportsResizeObserver && (
-        <p className="text-sm text-muted-foreground">
-          {chartsUnavailableMessage}
-        </p>
-      )}
-
       <AnalyticsCharts
         t={t}
         locations={locations}
         devices={devices}
         registrationTrend={registrationTrend}
-        disableResizeObserver={!supportsResizeObserver}
       />
     </div>
   );
