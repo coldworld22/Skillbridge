@@ -436,7 +436,13 @@ export default function AdminClassesTable() {
         clearFailedSignature();
       } catch (err) {
         console.error(err);
-        if (isComponentMountedRef.current) {
+        const previousFailure = lastFailedSignatureRef.current;
+        const toastAlreadyShownForSignature =
+          previousFailure?.signature === signature &&
+          previousFailure?.toastShown;
+        const shouldShowToast =
+          isComponentMountedRef.current && !toastAlreadyShownForSignature;
+        if (shouldShowToast) {
           toast.error("Failed to load classes");
         }
         clearFailedSignature();
@@ -446,6 +452,8 @@ export default function AdminClassesTable() {
           timestamp: failureTimestamp,
           failedAt: failureTimestamp,
           retryTimer: null,
+          toastShown:
+            toastAlreadyShownForSignature || shouldShowToast || false,
         };
         failureRecord.retryTimer = setTimeout(() => {
           if (!isComponentMountedRef.current) {
