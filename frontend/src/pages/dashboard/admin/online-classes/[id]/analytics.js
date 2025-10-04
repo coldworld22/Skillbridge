@@ -44,8 +44,10 @@ function AnalyticsDashboard() {
 
   useEffect(() => {
     if (!id) return;
+    let isMounted = true;
     fetchAdminClassAnalytics(id)
-      .then((data) =>
+      .then((data) => {
+        if (!isMounted) return;
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
@@ -56,12 +58,17 @@ function AnalyticsDashboard() {
           locations: data?.locations ?? EMPTY_STATS.locations,
           devices: data?.devices ?? EMPTY_STATS.devices,
           registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
-        })
-      )
+        });
+      })
       .catch((err) => {
+        if (!isMounted) return;
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (!stats) {
