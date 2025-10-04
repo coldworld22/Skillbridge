@@ -32,25 +32,12 @@ function AnalyticsDashboard() {
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
-  const [supportsResizeObserver, setSupportsResizeObserver] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setSupportsResizeObserver(Boolean(window.ResizeObserver));
-  }, []);
-
   useEffect(() => {
     if (!id) return;
-
-    let isActive = true;
-
+    setStats(null);
     fetchAdminClassAnalytics(id)
       .then((data) => {
-        if (!isActive) return;
-
+        if (!isMounted) return;
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
@@ -64,14 +51,13 @@ function AnalyticsDashboard() {
         });
       })
       .catch((err) => {
-        if (!isActive) return;
-
+        if (!isMounted) return;
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
 
     return () => {
-      isActive = false;
+      isMounted = false;
     };
   }, [id]);
 
@@ -104,11 +90,6 @@ function AnalyticsDashboard() {
     totalStudents > 0
       ? ((totalCompleted / totalStudents) * 100).toFixed(1)
       : "0";
-
-  const chartsUnavailableMessage = t(
-    "classAnalyticsPage.chartsUnavailableResizeObserver",
-    "Charts are unavailable because ResizeObserver is not supported in this browser."
-  );
 
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
@@ -154,18 +135,11 @@ function AnalyticsDashboard() {
         </div>
       </div>
 
-      {!supportsResizeObserver && (
-        <p className="text-sm text-muted-foreground">
-          {chartsUnavailableMessage}
-        </p>
-      )}
-
       <AnalyticsCharts
         t={t}
         locations={locations}
         devices={devices}
         registrationTrend={registrationTrend}
-        disableResizeObserver={!supportsResizeObserver}
       />
     </div>
   );
