@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import { API_BASE_URL } from "@/config/config";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
@@ -70,22 +71,35 @@ export const fetchInstructorClassById = async (id) => {
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
+  const csrfToken = await ensureCsrfToken();
   const { data } = await api.post("/users/classes/instructor", payload, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const updateInstructorClass = async (id, payload) => {
+  const csrfToken = await ensureCsrfToken();
   const { data } = await api.put(`/users/classes/instructor/${id}`, payload, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
   });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const deleteInstructorClass = async (id) => {
-  await api.delete(`/users/classes/instructor/${id}`);
+  const csrfToken = await ensureCsrfToken();
+  await api.delete(`/users/classes/instructor/${id}`, {
+    headers: {
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+  });
   return true;
 };
 
@@ -95,7 +109,12 @@ export const fetchInstructorClassAnalytics = async (id) => {
 };
 
 export const toggleClassStatus = async (id) => {
-  const { data } = await api.patch(`/users/classes/instructor/${id}/status`);
+  const csrfToken = await ensureCsrfToken();
+  const { data } = await api.patch(`/users/classes/instructor/${id}/status`, null, {
+    headers: {
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+  });
   return data?.data;
 };
 
@@ -110,26 +129,59 @@ export const fetchClassManagementData = async (id) => {
 };
 
 export const createClassLesson = async (classId, payload) => {
-  const { data } = await api.post(`/users/classes/lessons/class/${classId}`, payload);
+  const csrfToken = await ensureCsrfToken();
+  const { data } = await api.post(
+    `/users/classes/lessons/class/${classId}`,
+    payload,
+    {
+      headers: {
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      },
+    },
+  );
   return data?.data;
 };
 
 export const updateClassLesson = async (lessonId, payload) => {
-  const { data } = await api.put(`/users/classes/lessons/${lessonId}`, payload);
+  const csrfToken = await ensureCsrfToken();
+  const { data } = await api.put(`/users/classes/lessons/${lessonId}`, payload, {
+    headers: {
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+  });
   return data?.data;
 };
 
 export const deleteClassLesson = async (lessonId) => {
-  await api.delete(`/users/classes/lessons/${lessonId}`);
+  const csrfToken = await ensureCsrfToken();
+  await api.delete(`/users/classes/lessons/${lessonId}`, {
+    headers: {
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+  });
 };
 
 export const createClassAssignment = async (classId, payload) => {
-  const { data } = await api.post(`/users/classes/assignments/class/${classId}`, payload);
+  const csrfToken = await ensureCsrfToken();
+  const { data } = await api.post(
+    `/users/classes/assignments/class/${classId}`,
+    payload,
+    {
+      headers: {
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      },
+    },
+  );
   return data?.data;
 };
 
 export const deleteClassAssignment = async (assignmentId) => {
-  await api.delete(`/users/classes/assignments/${assignmentId}`);
+  const csrfToken = await ensureCsrfToken();
+  await api.delete(`/users/classes/assignments/${assignmentId}`, {
+    headers: {
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+  });
 };
 
 // Fetch upcoming schedule events for the current instructor
