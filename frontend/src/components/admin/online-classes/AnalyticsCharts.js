@@ -2,13 +2,28 @@ import React, { useEffect, useState } from "react";
 
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#f87171"];
 
-export default function AnalyticsCharts({ t, locations, devices, registrationTrend }) {
+export default function AnalyticsCharts({
+  t,
+  locations,
+  devices,
+  registrationTrend,
+  disableResizeObserver = false,
+}) {
   const [chartsLib, setChartsLib] = useState(null);
   const [chartsLoadError, setChartsLoadError] = useState(false);
   const [resizeObserverSupported, setResizeObserverSupported] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
+
+    if (disableResizeObserver) {
+      setChartsLib(null);
+      setChartsLoadError(false);
+      setResizeObserverSupported(false);
+      return () => {
+        isMounted = false;
+      };
+    }
 
     const ensureResizeObserver = async () => {
       if (typeof window === "undefined") {
@@ -70,7 +85,7 @@ export default function AnalyticsCharts({ t, locations, devices, registrationTre
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [disableResizeObserver]);
 
   const ResponsiveContainer = chartsLib?.ResponsiveContainer;
   const PieChart = chartsLib?.PieChart;
