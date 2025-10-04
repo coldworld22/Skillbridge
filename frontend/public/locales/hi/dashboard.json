@@ -1793,6 +1793,9 @@
     "reviewMessages": "संदेशों की समीक्षा करें",
     "licenseCheck": "लाइसेंस चेक",
     "checkingLicense": "लाइसेंस की जांच हो रही है...",
+    "chartsUnavailableResizeObserver": "चार्ट उपलब्ध नहीं हैं क्योंकि यह ब्राउज़र ResizeObserver का समर्थन नहीं करता।",
+    "chartsFailedToLoad": "चार्ट लोड नहीं हो पाए। कृपया पुनः प्रयास करने के लिए रिफ्रेश करें।",
+    "loadingCharts": "चार्ट लोड हो रहे हैं...",
     "lastCheck": "अंतिम जांच: {{value}}",
     "notAvailable": "उपलब्ध नहीं",
     "unauthorizedInstanceDetected": "1 अनधिकृत उदाहरण का पता चला",
@@ -1819,10 +1822,16 @@
     "noUnauthorizedInstances": "✅ कोई अनधिकृत इंस्टेंस नहीं",
     "noLicenseData": "लाइसेंस डेटा उपलब्ध नहीं",
     "monthlyRevenue": "मासिक राजस्व",
+    "chartsUnavailableResizeObserver": "चार्ट उपलब्ध नहीं हैं क्योंकि इस ब्राउज़र में ResizeObserver समर्थित नहीं है।",
+    "chartsFailedToLoad": "चार्ट लोड नहीं हो पाए। दोबारा प्रयास करने के लिए कृपया रिफ्रेश करें।",
+    "loadingCharts": "चार्ट लोड हो रहे हैं…",
     "monthlySignups": "मासिक साइनअप",
+    "chartsUnavailableResizeObserver": "चार्ट उपलब्ध नहीं हैं: ब्राउज़र में ResizeObserver समर्थन नहीं है।",
+    "chartsFailedToLoad": "चार्ट लोड करने में विफल।",
+    "loadingCharts": "चार्ट लोड हो रहे हैं...",
     "tutorialsByCategory": "श्रेणी के अनुसार ट्यूटोरियल",
-    "noTutorialsByCategoryData": "श्रेणी के अनुसार कोई ट्यूटोरियल उपलब्ध नहीं है",
-    "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या"
+    "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या",
+    "noChartData": "कोई डेटा उपलब्ध नहीं है"
   },
   "tutorialViewPage": {
     "loading": "लोडिंग ट्यूटोरियल ...",
