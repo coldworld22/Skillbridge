@@ -81,6 +81,7 @@
     "react-swipeable": "^7.0.2",
     "react-syntax-highlighter": "^15.6.6",
     "react-toastify": "^11.0.5",
+    "resize-observer-polyfill": "^1.5.1",
     "recharts": "^2.15.2",
     "remark-gfm": "^4.0.1",
     "simple-peer": "^9.11.1",

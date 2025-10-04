@@ -10,6 +10,12 @@ From the `frontend` directory install dependencies:
 npm install
 ```
 
+### Browser Support
+
+- The admin analytics dashboard relies on `ResizeObserver` for responsive charts. We bootstrap a shared
+  [`resize-observer-polyfill`](https://github.com/que-etc/resize-observer-polyfill) in `_app.js` so older
+  browsers without a native implementation can still render the charts.
+
 ## Environment Variables
 
 The production build reads configuration from `.env.production`. Define the following keys before building:
