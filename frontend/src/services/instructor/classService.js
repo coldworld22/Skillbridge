@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import { API_BASE_URL } from "@/config/config";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
@@ -70,6 +71,7 @@ export const fetchInstructorClassById = async (id) => {
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
+  await ensureCsrfToken();
   const { data } = await api.post("/users/classes/instructor", payload, {
     headers: { "Content-Type": "multipart/form-data" },
     ...(onUploadProgress ? { onUploadProgress } : {}),
@@ -78,6 +80,7 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
 };
 
 export const updateInstructorClass = async (id, payload) => {
+  await ensureCsrfToken();
   const { data } = await api.put(`/users/classes/instructor/${id}`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
@@ -85,6 +88,7 @@ export const updateInstructorClass = async (id, payload) => {
 };
 
 export const deleteInstructorClass = async (id) => {
+  await ensureCsrfToken();
   await api.delete(`/users/classes/instructor/${id}`);
   return true;
 };
@@ -95,6 +99,7 @@ export const fetchInstructorClassAnalytics = async (id) => {
 };
 
 export const toggleClassStatus = async (id) => {
+  await ensureCsrfToken();
   const { data } = await api.patch(`/users/classes/instructor/${id}/status`);
   return data?.data;
 };
@@ -110,25 +115,30 @@ export const fetchClassManagementData = async (id) => {
 };
 
 export const createClassLesson = async (classId, payload) => {
+  await ensureCsrfToken();
   const { data } = await api.post(`/users/classes/lessons/class/${classId}`, payload);
   return data?.data;
 };
 
 export const updateClassLesson = async (lessonId, payload) => {
+  await ensureCsrfToken();
   const { data } = await api.put(`/users/classes/lessons/${lessonId}`, payload);
   return data?.data;
 };
 
 export const deleteClassLesson = async (lessonId) => {
+  await ensureCsrfToken();
   await api.delete(`/users/classes/lessons/${lessonId}`);
 };
 
 export const createClassAssignment = async (classId, payload) => {
+  await ensureCsrfToken();
   const { data } = await api.post(`/users/classes/assignments/class/${classId}`, payload);
   return data?.data;
 };
 
 export const deleteClassAssignment = async (assignmentId) => {
+  await ensureCsrfToken();
   await api.delete(`/users/classes/assignments/${assignmentId}`);
 };
 
