@@ -11,11 +11,10 @@
 const { REFRESH_TOKEN_MAX_AGE } = require("../config/tokens");
 const { COOKIE_DOMAIN, NODE_ENV } = require("../config/env");
 
-// Use the provided cookie domain or fall back to the production domain so
-// browsers store the csrfToken cookie when deployed.
-const domain =
-  COOKIE_DOMAIN ||
-  (NODE_ENV === "production" ? ".eduskillbridge.net" : undefined);
+// Use the provided cookie domain when available. Leaving it undefined allows
+// browsers to scope the cookie to the current host which works for local
+// development and custom deployments without additional configuration.
+const domain = COOKIE_DOMAIN ? COOKIE_DOMAIN.trim() || undefined : undefined;
 
 const refreshCookieOptions = {
   httpOnly: true,

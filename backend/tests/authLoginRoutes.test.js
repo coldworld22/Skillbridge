@@ -129,7 +129,7 @@ describe('POST /api/auth/login', () => {
       expect.not.arrayContaining([expect.stringMatching(/^csrfToken=/)]),
     );
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to generate CSRF token during login: csrf failure'),
+      expect.stringContaining('Failed to issue CSRF cookie on login: csrf failure'),
     );
   });
 });
