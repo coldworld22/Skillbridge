@@ -262,7 +262,7 @@ export default function AdminClassesTable() {
     ) {
       clearFailedSignature(failedSignature);
     } else if (failedSignature) {
-      const elapsed = Date.now() - failedSignature.failedAt;
+      const elapsed = Date.now() - failedSignature.timestamp;
       if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
         clearFailedSignature(failedSignature);
       } else {
