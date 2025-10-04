@@ -1,7 +1,9 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
+import AdminClassesTable, {
+  FAILED_SIGNATURE_RETRY_DELAY_MS,
+} from "@/components/admin/online-classes/AdminClassesTable";
 
 const fetchAdminClassesMock = jest.fn();
 const toggleClassStatusMock = jest.fn();
@@ -126,5 +128,35 @@ describe("AdminClassesTable status toggling", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("Approve")).not.toBeInTheDocument();
     expect(toastSuccessMock).toHaveBeenCalledWith("Status updated");
+  });
+
+  it("automatically retries fetching classes after a failure", async () => {
+    jest.useFakeTimers();
+
+    fetchAdminClassesMock
+      .mockRejectedValueOnce(new Error("Network failure"))
+      .mockResolvedValue({
+        data: [baseClass],
+        meta: { totalPages: 1, total: 1 },
+      });
+
+    try {
+      render(<AdminClassesTable />);
+
+      await waitFor(() => {
+        expect(fetchAdminClassesMock).toHaveBeenCalledTimes(1);
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(FAILED_SIGNATURE_RETRY_DELAY_MS + 1);
+        await Promise.resolve();
+      });
+
+      await waitFor(() => {
+        expect(fetchAdminClassesMock).toHaveBeenCalledTimes(2);
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
