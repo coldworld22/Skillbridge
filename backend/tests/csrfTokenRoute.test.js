@@ -22,12 +22,16 @@ function createApp() {
 }
 
 describe('GET /api/csrf-token', () => {
-  it('sets csrfToken cookie and returns 204', async () => {
+  it('sets csrfToken cookie and returns the token payload', async () => {
     const app = createApp();
     const res = await request(app).get('/api/csrf-token');
-    expect(res.status).toBe(204);
+    expect(res.status).toBe(200);
     expect(res.headers['set-cookie']).toEqual(
       expect.arrayContaining([expect.stringContaining('csrfToken=')])
+    );
+    expect(res.body).toHaveProperty('token');
+    expect(typeof res.body.token === 'string' && res.body.token.length > 0).toBe(
+      true
     );
   });
 });

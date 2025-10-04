@@ -110,7 +110,29 @@ const ensureApiSuffix = (candidate) => {
   return `${trimmedCandidate.replace(/\/+$/, "")}/api`;
 };
 
-const baseURL = ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate()));
+const ensureTrailingSlash = (candidate) => {
+  if (!candidate) {
+    return candidate;
+  }
+
+  if (/^https?:\/\//i.test(candidate)) {
+    try {
+      const url = new URL(candidate);
+      url.pathname = `${url.pathname.replace(/\/+$/, "")}/`;
+      return url.toString();
+    } catch (error) {
+      logger.warn(
+        `Failed to normalise API base URL trailing slash for "${candidate}": ${error.message}`,
+      );
+    }
+  }
+
+  return `${candidate.replace(/\/+$/, "")}/`;
+};
+
+const baseURL = ensureTrailingSlash(
+  ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate())),
+);
 
 // Warn developers if the default domain URL is used in production
 if (
