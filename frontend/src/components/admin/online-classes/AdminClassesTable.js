@@ -620,6 +620,9 @@ export default function AdminClassesTable() {
   };
 
   const handleDeleteClass = async (id) => {
+    const singleItemOnPage = classList.length === 1;
+    const previousPage = currentPage > 1 ? currentPage - 1 : 1;
+
     try {
       await deleteAdminClass(id);
 
