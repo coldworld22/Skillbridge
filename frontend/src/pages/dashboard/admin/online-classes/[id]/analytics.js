@@ -30,6 +30,7 @@ const EMPTY_STATS = {
 function AnalyticsDashboard() {
   const router = useRouter();
   const { id } = router.query;
+  const classId = Array.isArray(id) ? id[0] : id || "";
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
   useEffect(() => {
@@ -94,7 +95,7 @@ function AnalyticsDashboard() {
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
       <h1 className="text-2xl font-bold text-gray-800">
-        📊 {t('classAnalyticsPage.title')} - {t('classAnalyticsPage.class_id')} {id}
+        📊 {t('classAnalyticsPage.title')} - {t('classAnalyticsPage.class_id')} {classId}
       </h1>
 
       <div className="grid md:grid-cols-3 gap-6">
