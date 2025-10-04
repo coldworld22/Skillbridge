@@ -20,18 +20,22 @@ export default function InstructorActivityChart({ data = [], title }) {
     if (!resizeObserverSupported) {
       return t(
         "adminDashboardHome.chartsUnavailableResizeObserver",
-        "Charts are unavailable because ResizeObserver is not supported in this browser."
+        {
+          defaultValue:
+            "Charts unavailable: browser is missing ResizeObserver support.",
+        }
       );
     }
 
     if (chartsLoadError) {
-      return t(
-        "adminDashboardHome.chartsFailedToLoad",
-        "Charts failed to load. Please refresh to try again."
-      );
+      return t("adminDashboardHome.chartsFailedToLoad", {
+        defaultValue: "Failed to load charts.",
+      });
     }
 
-    return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    return t("adminDashboardHome.loadingCharts", {
+      defaultValue: "Loading charts...",
+    });
   };
 
   const shouldRenderChart =

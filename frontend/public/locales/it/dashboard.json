@@ -1834,6 +1834,9 @@
     "noLicenseData": "Nessun dato di licenza",
     "monthlyRevenue": "Entrate mensili",
     "monthlySignups": "Iscrizioni mensili",
+    "chartsUnavailableResizeObserver": "Grafici non disponibili: il browser non supporta ResizeObserver.",
+    "chartsFailedToLoad": "Impossibile caricare i grafici.",
+    "loadingCharts": "Caricamento dei grafici...",
     "tutorialsByCategory": "Tutorial per categoria",
     "instructorTutorialCount": "Numero di tutorial per istruttore"
   },

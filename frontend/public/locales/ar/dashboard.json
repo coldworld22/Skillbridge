@@ -1809,6 +1809,9 @@
     "classes": "الفصول",
     "monthlyRevenue": "الإيرادات الشهرية",
     "monthlySignups": "التسجيلات الشهرية",
+    "chartsUnavailableResizeObserver": "المخططات غير متاحة: المتصفح لا يدعم ResizeObserver.",
+    "chartsFailedToLoad": "فشل تحميل المخططات.",
+    "loadingCharts": "جارٍ تحميل المخططات...",
     "tutorialsByCategory": "الدروس حسب الفئة",
     "instructorTutorialCount": "عدد الدروس لكل مدرب"
   },

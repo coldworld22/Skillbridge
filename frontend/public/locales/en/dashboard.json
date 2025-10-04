@@ -1826,6 +1826,9 @@
     "classes": "Classes",
     "monthlyRevenue": "Monthly Revenue",
     "monthlySignups": "Monthly Signups",
+    "chartsUnavailableResizeObserver": "Charts unavailable: browser is missing ResizeObserver support.",
+    "chartsFailedToLoad": "Failed to load charts.",
+    "loadingCharts": "Loading charts...",
     "tutorialsByCategory": "Tutorials by Category",
     "instructorTutorialCount": "Instructor Tutorial Count"
   },

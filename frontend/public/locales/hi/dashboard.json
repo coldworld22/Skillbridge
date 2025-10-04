@@ -1820,6 +1820,9 @@
     "noLicenseData": "लाइसेंस डेटा उपलब्ध नहीं",
     "monthlyRevenue": "मासिक राजस्व",
     "monthlySignups": "मासिक साइनअप",
+    "chartsUnavailableResizeObserver": "चार्ट उपलब्ध नहीं हैं: ब्राउज़र में ResizeObserver समर्थन नहीं है।",
+    "chartsFailedToLoad": "चार्ट लोड करने में विफल।",
+    "loadingCharts": "चार्ट लोड हो रहे हैं...",
     "tutorialsByCategory": "श्रेणी के अनुसार ट्यूटोरियल",
     "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या"
   },
