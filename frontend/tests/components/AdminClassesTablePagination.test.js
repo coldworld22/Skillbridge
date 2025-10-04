@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
-import { fetchAdminClasses } from "@/services/admin/classService";
+import { fetchAdminClasses, deleteAdminClass } from "@/services/admin/classService";
 import { toast } from "react-toastify";
 
 jest.mock("next/link", () => ({
@@ -70,6 +70,7 @@ describe("AdminClassesTable schedule filtering", () => {
   beforeEach(() => {
     mockedFetchAdminClasses.mockReset();
     toast.error.mockClear();
+    toast.success.mockClear();
   });
 
   it("retains access to upcoming classes spread across multiple pages", async () => {
@@ -155,6 +156,7 @@ describe("AdminClassesTable error handling", () => {
   beforeEach(() => {
     mockedFetchAdminClasses.mockReset();
     toast.error.mockClear();
+    toast.success.mockClear();
   });
 
   it("shows a single toast and avoids duplicate retries when the fetch fails", async () => {
@@ -171,5 +173,87 @@ describe("AdminClassesTable error handling", () => {
     expect(toast.error).toHaveBeenCalledWith("Failed to load classes");
 
     consoleSpy.mockRestore();
+  });
+});
+
+describe("AdminClassesTable deletion navigation", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+  const mockedDeleteAdminClass = deleteAdminClass;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    mockedDeleteAdminClass.mockReset();
+    toast.error.mockClear();
+    toast.success.mockClear();
+  });
+
+  it("returns to a valid page and updates totals after deleting the last class on a page", async () => {
+    const pageSize = 5;
+    const createClass = (index) => ({
+      id: `class-${index}`,
+      title: `Class ${index}`,
+      instructor: `Instructor ${index}`,
+      start_date: `2024-0${index}-01`,
+      end_date: `2024-0${index}-02`,
+      category: "Category",
+      publishStatus: "draft",
+      approvalStatus: "Approved",
+      scheduleStatus: "Upcoming",
+      price: 0,
+    });
+
+    const firstPageData = Array.from({ length: pageSize }, (_, idx) =>
+      createClass(idx + 1)
+    );
+    const lastPageItem = createClass(pageSize + 1);
+
+    mockedFetchAdminClasses
+      .mockResolvedValueOnce({
+        data: firstPageData,
+        meta: { totalPages: 2, total: pageSize + 1 },
+      })
+      .mockResolvedValueOnce({
+        data: [lastPageItem],
+        meta: { totalPages: 2, total: pageSize + 1 },
+      })
+      .mockResolvedValueOnce({
+        data: firstPageData,
+        meta: { totalPages: 1, total: pageSize },
+      });
+
+    mockedDeleteAdminClass.mockResolvedValue();
+
+    render(<AdminClassesTable />);
+
+    await screen.findByText("Class 1");
+
+    fireEvent.click(screen.getByRole("button", { name: "2" }));
+
+    await screen.findByText(lastPageItem.title);
+
+    fireEvent.click(screen.getByTitle("Delete Class"));
+
+    const confirmButton = await screen.findByRole("button", {
+      name: "Yes, Delete",
+    });
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(mockedDeleteAdminClass).toHaveBeenCalledWith(lastPageItem.id);
+    });
+
+    await waitFor(() => {
+      expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(3);
+    });
+
+    expect(mockedFetchAdminClasses.mock.calls[2][0]).toMatchObject({ page: 1 });
+
+    await screen.findByText("Class 1");
+    await waitFor(() => {
+      expect(screen.getAllByRole("row")).toHaveLength(pageSize + 1);
+    });
+    expect(screen.queryByText(lastPageItem.title)).not.toBeInTheDocument();
+
+    expect(toast.success).toHaveBeenCalledWith("Class deleted");
   });
 });
