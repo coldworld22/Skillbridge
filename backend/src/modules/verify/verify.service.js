@@ -113,11 +113,9 @@ exports.verifyOtp = async (userId, type, code) => {
 
   const userAfter = await db("users").where({ id: userId }).first();
 
-  if (
-    userAfter.status === "pending" &&
-    userAfter.is_email_verified &&
-    userAfter.is_phone_verified
-  ) {
+  const verificationComplete = Boolean(userAfter[updateField]);
+
+  if (userAfter.status === "pending" && verificationComplete) {
     await db("users").where({ id: userId }).update({ status: "active" });
 
     await notificationService.createNotification({
