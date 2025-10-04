@@ -228,14 +228,12 @@ export default function AdminClassesTable() {
     }
 
     if (normalizedPage !== currentPage) {
-      if (lastNormalizedPageRef.current !== normalizedPage) {
-        lastNormalizedPageRef.current = normalizedPage;
-        setCurrentPage(normalizedPage);
-      }
-      return;
+      setCurrentPageIfNeeded(normalizedPage);
     }
 
-    lastNormalizedPageRef.current = normalizedPage;
+    if (lastNormalizedPageRef.current !== normalizedPage) {
+      lastNormalizedPageRef.current = normalizedPage;
+    }
 
     const requestDetails = {
       signature: JSON.stringify({
