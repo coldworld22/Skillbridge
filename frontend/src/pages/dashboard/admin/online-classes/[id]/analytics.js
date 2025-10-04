@@ -44,7 +44,7 @@ function AnalyticsDashboard() {
 
   useEffect(() => {
     if (!id) return;
-    let isMounted = true;
+    setStats(null);
     fetchAdminClassAnalytics(id)
       .then((data) => {
         if (!isMounted) return;
