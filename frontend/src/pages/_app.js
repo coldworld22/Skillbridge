@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
+import "resize-observer-polyfill";
 import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";

@@ -622,7 +622,41 @@ export default function AdminClassesTable() {
   const handleDeleteClass = async (id) => {
     try {
       await deleteAdminClass(id);
-      setClassList(prev => prev.filter(cls => cls.id !== id));
+
+      const updatedList = classList.filter((cls) => cls.id !== id);
+      const nextTotalItems = Math.max(
+        totalItemsRef.current - 1,
+        updatedList.length,
+        0
+      );
+      const derivedItemsPerPage =
+        pageSizeSetting === "all"
+          ? resolvePositiveInteger(
+              Math.max(nextTotalItems, updatedList.length, 1),
+              DEFAULT_PAGE_SIZE
+            )
+          : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+      const nextTotalPages = Math.max(
+        1,
+        Math.ceil(
+          nextTotalItems > 0
+            ? nextTotalItems / derivedItemsPerPage
+            : 0
+        )
+      );
+
+      setClassList(updatedList);
+      setTotalItemsIfNeeded(nextTotalItems);
+      setTotalPagesIfNeeded(nextTotalPages);
+
+      if (updatedList.length === 0 && currentPageRef.current > 1) {
+        const candidatePage = Math.min(
+          currentPageRef.current - 1,
+          nextTotalPages
+        );
+        setCurrentPageIfNeeded(candidatePage);
+      }
+
       toast.success("Class deleted");
     } catch (err) {
       console.error(err);

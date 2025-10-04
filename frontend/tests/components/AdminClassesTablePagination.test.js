@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
-import { fetchAdminClasses } from "@/services/admin/classService";
+import { fetchAdminClasses, deleteAdminClass } from "@/services/admin/classService";
 import { toast } from "react-toastify";
 
 jest.mock("next/link", () => ({
@@ -70,6 +70,7 @@ describe("AdminClassesTable schedule filtering", () => {
   beforeEach(() => {
     mockedFetchAdminClasses.mockReset();
     toast.error.mockClear();
+    toast.success.mockClear();
   });
 
   it("retains access to upcoming classes spread across multiple pages", async () => {
@@ -149,12 +150,104 @@ describe("AdminClassesTable schedule filtering", () => {
   });
 });
 
+describe("AdminClassesTable page size control", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    toast.error.mockClear();
+  });
+
+  it("fetches and renders every available class when 'All' is selected", async () => {
+    const initialData = [
+      {
+        id: "1",
+        title: "Algebra 101",
+        instructor: "Teacher A",
+        start_date: "2024-01-01",
+        end_date: "2024-01-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+      {
+        id: "2",
+        title: "Geometry Basics",
+        instructor: "Teacher B",
+        start_date: "2024-02-01",
+        end_date: "2024-02-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+    ];
+
+    const fullData = [
+      ...initialData,
+      {
+        id: "3",
+        title: "Trigonometry Essentials",
+        instructor: "Teacher C",
+        start_date: "2024-03-01",
+        end_date: "2024-03-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+    ];
+
+    mockedFetchAdminClasses.mockResolvedValue({
+      data: fullData,
+      meta: { totalPages: 1, total: fullData.length },
+    });
+    mockedFetchAdminClasses
+      .mockResolvedValueOnce({
+        data: initialData,
+        meta: { totalPages: 1, total: fullData.length },
+      })
+      .mockResolvedValueOnce({
+        data: fullData,
+        meta: { totalPages: 1, total: fullData.length },
+      });
+
+    render(<AdminClassesTable />);
+
+    await screen.findByText("Algebra 101");
+
+    const pageSizeSelect = screen.getByDisplayValue("5");
+    fireEvent.change(pageSizeSelect, { target: { value: "all" } });
+
+    await waitFor(() => {
+      expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(2);
+    });
+
+    const [, secondCallArgs] = mockedFetchAdminClasses.mock.calls;
+    expect(secondCallArgs[0]).toMatchObject({ limit: fullData.length });
+
+    await waitFor(() => {
+      const rows = screen.getAllByRole("row");
+      expect(rows).toHaveLength(fullData.length + 1);
+    });
+
+    for (const cls of fullData) {
+      expect(await screen.findByText(cls.title)).toBeInTheDocument();
+    }
+  });
+});
+
 describe("AdminClassesTable error handling", () => {
   const mockedFetchAdminClasses = fetchAdminClasses;
 
   beforeEach(() => {
     mockedFetchAdminClasses.mockReset();
     toast.error.mockClear();
+    toast.success.mockClear();
   });
 
   it("shows a single toast and avoids duplicate retries when the fetch fails", async () => {
@@ -171,5 +264,87 @@ describe("AdminClassesTable error handling", () => {
     expect(toast.error).toHaveBeenCalledWith("Failed to load classes");
 
     consoleSpy.mockRestore();
+  });
+});
+
+describe("AdminClassesTable deletion navigation", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+  const mockedDeleteAdminClass = deleteAdminClass;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    mockedDeleteAdminClass.mockReset();
+    toast.error.mockClear();
+    toast.success.mockClear();
+  });
+
+  it("returns to a valid page and updates totals after deleting the last class on a page", async () => {
+    const pageSize = 5;
+    const createClass = (index) => ({
+      id: `class-${index}`,
+      title: `Class ${index}`,
+      instructor: `Instructor ${index}`,
+      start_date: `2024-0${index}-01`,
+      end_date: `2024-0${index}-02`,
+      category: "Category",
+      publishStatus: "draft",
+      approvalStatus: "Approved",
+      scheduleStatus: "Upcoming",
+      price: 0,
+    });
+
+    const firstPageData = Array.from({ length: pageSize }, (_, idx) =>
+      createClass(idx + 1)
+    );
+    const lastPageItem = createClass(pageSize + 1);
+
+    mockedFetchAdminClasses
+      .mockResolvedValueOnce({
+        data: firstPageData,
+        meta: { totalPages: 2, total: pageSize + 1 },
+      })
+      .mockResolvedValueOnce({
+        data: [lastPageItem],
+        meta: { totalPages: 2, total: pageSize + 1 },
+      })
+      .mockResolvedValueOnce({
+        data: firstPageData,
+        meta: { totalPages: 1, total: pageSize },
+      });
+
+    mockedDeleteAdminClass.mockResolvedValue();
+
+    render(<AdminClassesTable />);
+
+    await screen.findByText("Class 1");
+
+    fireEvent.click(screen.getByRole("button", { name: "2" }));
+
+    await screen.findByText(lastPageItem.title);
+
+    fireEvent.click(screen.getByTitle("Delete Class"));
+
+    const confirmButton = await screen.findByRole("button", {
+      name: "Yes, Delete",
+    });
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(mockedDeleteAdminClass).toHaveBeenCalledWith(lastPageItem.id);
+    });
+
+    await waitFor(() => {
+      expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(3);
+    });
+
+    expect(mockedFetchAdminClasses.mock.calls[2][0]).toMatchObject({ page: 1 });
+
+    await screen.findByText("Class 1");
+    await waitFor(() => {
+      expect(screen.getAllByRole("row")).toHaveLength(pageSize + 1);
+    });
+    expect(screen.queryByText(lastPageItem.title)).not.toBeInTheDocument();
+
+    expect(toast.success).toHaveBeenCalledWith("Class deleted");
   });
 });

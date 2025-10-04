@@ -102,6 +102,7 @@ ClassStudentsPage.getLayout = function getLayout(page) {
 };
 
 const ProtectedClassStudentsPage = withAuthProtection(ClassStudentsPage, {
+  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 
