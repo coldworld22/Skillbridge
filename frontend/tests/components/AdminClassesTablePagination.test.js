@@ -149,6 +149,97 @@ describe("AdminClassesTable schedule filtering", () => {
   });
 });
 
+describe("AdminClassesTable page size control", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    toast.error.mockClear();
+  });
+
+  it("fetches and renders every available class when 'All' is selected", async () => {
+    const initialData = [
+      {
+        id: "1",
+        title: "Algebra 101",
+        instructor: "Teacher A",
+        start_date: "2024-01-01",
+        end_date: "2024-01-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+      {
+        id: "2",
+        title: "Geometry Basics",
+        instructor: "Teacher B",
+        start_date: "2024-02-01",
+        end_date: "2024-02-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+    ];
+
+    const fullData = [
+      ...initialData,
+      {
+        id: "3",
+        title: "Trigonometry Essentials",
+        instructor: "Teacher C",
+        start_date: "2024-03-01",
+        end_date: "2024-03-05",
+        category: "Math",
+        publishStatus: "draft",
+        approvalStatus: "Approved",
+        scheduleStatus: "Upcoming",
+        price: 0,
+      },
+    ];
+
+    mockedFetchAdminClasses.mockResolvedValue({
+      data: fullData,
+      meta: { totalPages: 1, total: fullData.length },
+    });
+    mockedFetchAdminClasses
+      .mockResolvedValueOnce({
+        data: initialData,
+        meta: { totalPages: 1, total: fullData.length },
+      })
+      .mockResolvedValueOnce({
+        data: fullData,
+        meta: { totalPages: 1, total: fullData.length },
+      });
+
+    render(<AdminClassesTable />);
+
+    await screen.findByText("Algebra 101");
+
+    const pageSizeSelect = screen.getByDisplayValue("5");
+    fireEvent.change(pageSizeSelect, { target: { value: "all" } });
+
+    await waitFor(() => {
+      expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(2);
+    });
+
+    const [, secondCallArgs] = mockedFetchAdminClasses.mock.calls;
+    expect(secondCallArgs[0]).toMatchObject({ limit: fullData.length });
+
+    await waitFor(() => {
+      const rows = screen.getAllByRole("row");
+      expect(rows).toHaveLength(fullData.length + 1);
+    });
+
+    for (const cls of fullData) {
+      expect(await screen.findByText(cls.title)).toBeInTheDocument();
+    }
+  });
+});
+
 describe("AdminClassesTable error handling", () => {
   const mockedFetchAdminClasses = fetchAdminClasses;
 
