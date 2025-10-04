@@ -1810,6 +1810,9 @@
     "reviewMessages": "Review messages",
     "licenseCheck": "License Check",
     "checkingLicense": "Checking license status...",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…",
     "lastCheck": "Last check: {{value}}",
     "notAvailable": "Not available",
     "unauthorizedInstanceDetected": "1 unauthorized instance detected",
@@ -1825,9 +1828,16 @@
     "tutorials": "Tutorials",
     "classes": "Classes",
     "monthlyRevenue": "Monthly Revenue",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…",
     "monthlySignups": "Monthly Signups",
+    "chartsUnavailableResizeObserver": "Charts unavailable: browser is missing ResizeObserver support.",
+    "chartsFailedToLoad": "Failed to load charts.",
+    "loadingCharts": "Loading charts...",
     "tutorialsByCategory": "Tutorials by Category",
-    "instructorTutorialCount": "Instructor Tutorial Count"
+    "instructorTutorialCount": "Instructor Tutorial Count",
+    "noChartData": "No data available"
   },
   "tutorialViewPage": {
     "loading": "Loading tutorial...",

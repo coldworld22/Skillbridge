@@ -48,7 +48,11 @@ function InstructorClassRoom() {
                 (a, b) => new Date(a.start_time) - new Date(b.start_time)
               )[0];
             setCurrentLessonId(
-              upcoming ? upcoming.id : data.lessons[0]?.id || null
+              upcoming
+                ? String(upcoming.id)
+                : data.lessons[0]?.id != null
+                ? String(data.lessons[0].id)
+                : null
             );
           }
         }
@@ -124,7 +128,7 @@ function InstructorClassRoom() {
             <select
               className="mb-3 w-full bg-gray-700 text-white p-2 rounded"
               value={currentLessonId || ""}
-              onChange={(e) => setCurrentLessonId(Number(e.target.value))}
+              onChange={(e) => setCurrentLessonId(e.target.value)}
             >
               {lessons.map((lesson) => (
                 <option key={lesson.id} value={lesson.id}>

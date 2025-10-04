@@ -93,7 +93,12 @@ function InstructorClassDetailPage() {
                   {publishStatusLabel}
                 </span>
               </p>
-              {details?.price && <p><strong>💵 Price:</strong> ${details.price}</p>}
+              {details?.price !== undefined && details?.price !== null && (
+                <p>
+                  <strong>💵 Price:</strong>{" "}
+                  {details.price === 0 ? "Free" : `$${details.price}`}
+                </p>
+              )}
               <p><strong>👁️ Views:</strong> {details?.views ?? 0}</p>
             </div>
           </div>

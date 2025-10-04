@@ -1793,6 +1793,9 @@
     "reviewMessages": "Mensajes de revisión",
     "licenseCheck": "Cheque de licencia",
     "checkingLicense": "Comprobando licencia...",
+    "chartsUnavailableResizeObserver": "Los gráficos no están disponibles porque este navegador no admite ResizeObserver.",
+    "chartsFailedToLoad": "No se pudieron cargar los gráficos. Actualiza la página para intentarlo de nuevo.",
+    "loadingCharts": "Cargando gráficos…",
     "lastCheck": "Última verificación: {{value}}",
     "notAvailable": "No disponible",
     "unauthorizedInstanceDetected": "1 instancia no autorizada detectada",
@@ -1819,9 +1822,16 @@
     "noUnauthorizedInstances": "✅ No hay instancias no autorizadas",
     "noLicenseData": "No hay datos de licencia",
     "monthlyRevenue": "Ingresos mensuales",
+    "chartsUnavailableResizeObserver": "Los gráficos no están disponibles porque ResizeObserver no es compatible con este navegador.",
+    "chartsFailedToLoad": "No se pudieron cargar los gráficos. Actualiza para intentarlo de nuevo.",
+    "loadingCharts": "Cargando gráficos…",
     "monthlySignups": "Registros mensuales",
+    "chartsUnavailableResizeObserver": "Gráficos no disponibles: el navegador no admite ResizeObserver.",
+    "chartsFailedToLoad": "No se pudieron cargar los gráficos.",
+    "loadingCharts": "Cargando gráficos...",
     "tutorialsByCategory": "Tutoriales por categoría",
-    "instructorTutorialCount": "Cantidad de tutoriales por instructor"
+    "instructorTutorialCount": "Cantidad de tutoriales por instructor",
+    "noChartData": "No hay datos disponibles"
   },
   "tutorialViewPage": {
     "loading": "Tutorial de carga ...",
