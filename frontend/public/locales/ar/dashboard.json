@@ -1808,6 +1808,9 @@
     "tutorials": "الدروس التعليمية",
     "classes": "الفصول",
     "monthlyRevenue": "الإيرادات الشهرية",
+    "chartsUnavailableResizeObserver": "لا تتوفر المخططات لأن ميزة مراقب تغيير الحجم (ResizeObserver) غير مدعومة في هذا المتصفح.",
+    "chartsFailedToLoad": "فشل تحميل المخططات. يرجى تحديث الصفحة والمحاولة مرة أخرى.",
+    "loadingCharts": "جارٍ تحميل المخططات...",
     "monthlySignups": "التسجيلات الشهرية",
     "tutorialsByCategory": "الدروس حسب الفئة",
     "instructorTutorialCount": "عدد الدروس لكل مدرب"

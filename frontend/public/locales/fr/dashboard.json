@@ -1808,6 +1808,9 @@
     "tutorials": "Tutoriels",
     "classes": "Cours",
     "monthlyRevenue": "Revenus mensuels",
+    "chartsUnavailableResizeObserver": "Les graphiques ne sont pas disponibles, car ResizeObserver n’est pas pris en charge par ce navigateur.",
+    "chartsFailedToLoad": "Échec du chargement des graphiques. Veuillez actualiser pour réessayer.",
+    "loadingCharts": "Chargement des graphiques…",
     "monthlySignups": "Inscriptions mensuelles",
     "tutorialsByCategory": "Tutoriels par catégorie",
     "instructorTutorialCount": "Nombre de tutoriels par instructeur"

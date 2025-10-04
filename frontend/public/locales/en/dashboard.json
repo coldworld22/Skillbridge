@@ -1825,6 +1825,9 @@
     "tutorials": "Tutorials",
     "classes": "Classes",
     "monthlyRevenue": "Monthly Revenue",
+    "chartsUnavailableResizeObserver": "Charts are unavailable because ResizeObserver is not supported in this browser.",
+    "chartsFailedToLoad": "Charts failed to load. Please refresh to try again.",
+    "loadingCharts": "Loading charts…",
     "monthlySignups": "Monthly Signups",
     "tutorialsByCategory": "Tutorials by Category",
     "instructorTutorialCount": "Instructor Tutorial Count"
