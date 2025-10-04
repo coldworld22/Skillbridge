@@ -44,8 +44,13 @@ function AnalyticsDashboard() {
 
   useEffect(() => {
     if (!id) return;
+
+    let isActive = true;
+
     fetchAdminClassAnalytics(id)
-      .then((data) =>
+      .then((data) => {
+        if (!isActive) return;
+
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
@@ -56,12 +61,18 @@ function AnalyticsDashboard() {
           locations: data?.locations ?? EMPTY_STATS.locations,
           devices: data?.devices ?? EMPTY_STATS.devices,
           registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
-        })
-      )
+        });
+      })
       .catch((err) => {
+        if (!isActive) return;
+
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
+
+    return () => {
+      isActive = false;
+    };
   }, [id]);
 
   if (!stats) {
