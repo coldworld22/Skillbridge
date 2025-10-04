@@ -12,7 +12,7 @@ import {
   updateClassRule,
   deleteClassRule,
 } from "@/services/admin/classRuleService";
-import withAdminGuard from "@/hooks/withAdminGuard";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
 function ClassRulesPage() {
   const router = useRouter();
@@ -93,6 +93,8 @@ export async function getServerSideProps({ locale }) {
   };
 }
 
-const ProtectedClassRulesPage = withAdminGuard(ClassRulesPage);
+const ProtectedClassRulesPage = withAuthProtection(ClassRulesPage, {
+  permissions: ['ADD_ONLINE_CLASS_RULE'],
+});
 ProtectedClassRulesPage.getLayout = ClassRulesPage.getLayout;
 export default ProtectedClassRulesPage;
