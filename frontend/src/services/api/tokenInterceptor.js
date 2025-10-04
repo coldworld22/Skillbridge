@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { getCookie } from "@/utils/cookies";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import logger from "@/utils/logger";
 
 let isRefreshing = false;
@@ -28,7 +29,9 @@ const processQueue = (error, token = null) => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    config.headers = config.headers ?? {};
+
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -36,7 +39,18 @@ api.interceptors.request.use(
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
-      const csrfToken = getCookie("csrfToken");
+      let csrfToken = getCookie("csrfToken");
+
+      if (!csrfToken) {
+        try {
+          csrfToken = await ensureCsrfToken();
+        } catch (error) {
+          logger.warn(
+            `Failed to refresh CSRF token before ${method?.toUpperCase()} ${config?.url}: ${error?.message || error}`
+          );
+        }
+      }
+
       if (csrfToken) {
         config.headers["x-csrf-token"] = csrfToken;
       }
