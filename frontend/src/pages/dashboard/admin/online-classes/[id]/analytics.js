@@ -32,20 +32,12 @@ function AnalyticsDashboard() {
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setIsClient(true);
-  }, []);
-
   useEffect(() => {
     if (!id) return;
+    setStats(null);
     fetchAdminClassAnalytics(id)
-      .then((data) =>
+      .then((data) => {
+        if (!isMounted) return;
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
@@ -56,12 +48,17 @@ function AnalyticsDashboard() {
           locations: data?.locations ?? EMPTY_STATS.locations,
           devices: data?.devices ?? EMPTY_STATS.devices,
           registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
-        })
-      )
+        });
+      })
       .catch((err) => {
+        if (!isMounted) return;
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (!stats) {
@@ -143,7 +140,6 @@ function AnalyticsDashboard() {
         locations={locations}
         devices={devices}
         registrationTrend={registrationTrend}
-        disableResizeObserver={!isClient}
       />
     </div>
   );
