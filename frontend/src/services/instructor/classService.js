@@ -80,9 +80,11 @@ export const fetchInstructorClassById = async (id) => {
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
-  const headers = await buildCsrfHeaders();
-  const config = {
-    headers,
+  await ensureCsrfToken();
+  const { data } = await api.post("users/classes/instructor", payload, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   };
   const { data } = await api.post("users/classes/instructor", payload, config);
@@ -90,18 +92,18 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
 };
 
 export const updateInstructorClass = async (id, payload) => {
-  const headers = await buildCsrfHeaders();
-  const { data } = await api.put(
-    `users/classes/instructor/${id}`,
-    payload,
-    { headers },
-  );
+  await ensureCsrfToken();
+  const { data } = await api.put(`users/classes/instructor/${id}`, payload, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const deleteInstructorClass = async (id) => {
-  const headers = await buildCsrfHeaders();
-  await api.delete(`users/classes/instructor/${id}`, { headers });
+  await ensureCsrfToken();
+  await api.delete(`users/classes/instructor/${id}`);
   return true;
 };
 
@@ -111,12 +113,8 @@ export const fetchInstructorClassAnalytics = async (id) => {
 };
 
 export const toggleClassStatus = async (id) => {
-  const headers = await buildCsrfHeaders();
-  const { data } = await api.patch(
-    `users/classes/instructor/${id}/status`,
-    undefined,
-    { headers },
-  );
+  await ensureCsrfToken();
+  const { data } = await api.patch(`users/classes/instructor/${id}/status`);
   return data?.data;
 };
 
@@ -131,43 +129,31 @@ export const fetchClassManagementData = async (id) => {
 };
 
 export const createClassLesson = async (classId, payload) => {
-  const headers = await buildCsrfHeaders();
-  const { data } = await api.post(
-    `users/classes/lessons/class/${classId}`,
-    payload,
-    { headers },
-  );
+  await ensureCsrfToken();
+  const { data } = await api.post(`users/classes/lessons/class/${classId}`, payload);
   return data?.data;
 };
 
 export const updateClassLesson = async (lessonId, payload) => {
-  const headers = await buildCsrfHeaders();
-  const { data } = await api.put(
-    `users/classes/lessons/${lessonId}`,
-    payload,
-    { headers },
-  );
+  await ensureCsrfToken();
+  const { data } = await api.put(`users/classes/lessons/${lessonId}`, payload);
   return data?.data;
 };
 
 export const deleteClassLesson = async (lessonId) => {
-  const headers = await buildCsrfHeaders();
-  await api.delete(`users/classes/lessons/${lessonId}`, { headers });
+  await ensureCsrfToken();
+  await api.delete(`users/classes/lessons/${lessonId}`);
 };
 
 export const createClassAssignment = async (classId, payload) => {
-  const headers = await buildCsrfHeaders();
-  const { data } = await api.post(
-    `users/classes/assignments/class/${classId}`,
-    payload,
-    { headers },
-  );
+  await ensureCsrfToken();
+  const { data } = await api.post(`users/classes/assignments/class/${classId}`, payload);
   return data?.data;
 };
 
 export const deleteClassAssignment = async (assignmentId) => {
-  const headers = await buildCsrfHeaders();
-  await api.delete(`users/classes/assignments/${assignmentId}`, { headers });
+  await ensureCsrfToken();
+  await api.delete(`users/classes/assignments/${assignmentId}`);
 };
 
 // Fetch upcoming schedule events for the current instructor

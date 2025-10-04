@@ -1,6 +1,5 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
-import AnalyticsCharts from "../../pages/dashboard/admin/online-classes/[id]/AnalyticsCharts";
+import AnalyticsCharts from "@/components/admin/online-classes/AnalyticsCharts";
 
 jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }) => (
@@ -62,7 +61,7 @@ describe("AnalyticsCharts", () => {
     }
     delete global.ResizeObserver;
 
-    render(<AnalyticsCharts {...defaultProps} />);
+    render(<AnalyticsCharts {...defaultProps} disableResizeObserver />);
 
     const fallbacks = await screen.findAllByText(
       "Charts are unavailable because ResizeObserver is not supported in this browser."
