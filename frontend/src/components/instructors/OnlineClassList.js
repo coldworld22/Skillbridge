@@ -22,9 +22,13 @@ export default function OnlineClassList() {
   };
 
   useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+
     const load = async () => {
+      setLoading(true);
       try {
-        if (!user?.id) return;
         const data = await fetchInstructorClasses(user.id);
         setClasses(data || []);
       } catch (err) {

@@ -10,34 +10,43 @@ export default function CategoryPieChart({ data = [], title }) {
   const { chartsLib, chartsLoadError, resizeObserverSupported, loading } =
     useLazyRecharts();
 
+  const hasData = Array.isArray(data) && data.length > 0;
   const PieChart = chartsLib?.PieChart;
   const Pie = chartsLib?.Pie;
   const Cell = chartsLib?.Cell;
   const Tooltip = chartsLib?.Tooltip;
   const ResponsiveContainer = chartsLib?.ResponsiveContainer;
 
+  const hasData = Array.isArray(data) && data.some(({ value }) => value > 0);
+
   const renderFallbackMessage = () => {
+    if (loading) {
+      return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    }
+
     if (!resizeObserverSupported) {
-      return t(
-        "adminDashboardHome.chartsUnavailableResizeObserver",
-        "Charts are unavailable because ResizeObserver is not supported in this browser."
-      );
+      return t("adminDashboardHome.chartsUnavailableResizeObserver", {
+        defaultValue:
+          "Charts are unavailable because ResizeObserver is not supported in this browser.",
+      });
     }
 
     if (chartsLoadError) {
-      return t(
-        "adminDashboardHome.chartsFailedToLoad",
-        "Charts failed to load. Please refresh to try again."
-      );
+      return t("adminDashboardHome.chartsFailedToLoad", {
+        defaultValue: "Charts failed to load. Please refresh to try again.",
+      });
     }
 
-    return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    return t("adminDashboardHome.loadingCharts", {
+      defaultValue: "Loading charts…",
+    });
   };
 
   const shouldRenderChart =
     !loading &&
     resizeObserverSupported &&
     !chartsLoadError &&
+    hasData &&
     PieChart &&
     Pie &&
     Cell &&
@@ -48,23 +57,32 @@ export default function CategoryPieChart({ data = [], title }) {
     <div className="bg-white p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-4">📚 {heading}</h2>
       {shouldRenderChart ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={100}
-              fill="#8884d8"
-              label
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        hasData ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={100}
+                fill="#8884d8"
+                label
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-[300px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            {t(
+              "adminDashboardHome.noTutorialsByCategoryData",
+              "No tutorials by category available"
+            )}
+          </div>
+        )
       ) : (
         <div className="flex h-[300px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
           {renderFallbackMessage()}
