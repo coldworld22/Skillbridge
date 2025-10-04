@@ -10,6 +10,7 @@ export default function CategoryPieChart({ data = [], title }) {
   const { chartsLib, chartsLoadError, resizeObserverSupported, loading } =
     useLazyRecharts();
 
+  const hasData = Array.isArray(data) && data.length > 0;
   const PieChart = chartsLib?.PieChart;
   const Pie = chartsLib?.Pie;
   const Cell = chartsLib?.Cell;
@@ -31,6 +32,17 @@ export default function CategoryPieChart({ data = [], title }) {
       );
     }
 
+    if (loading) {
+      return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    }
+
+    if (!hasData) {
+      return t(
+        "adminDashboardHome.noCategoryData",
+        "No category data available."
+      );
+    }
+
     return t("adminDashboardHome.loadingCharts", "Loading charts…");
   };
 
@@ -38,6 +50,7 @@ export default function CategoryPieChart({ data = [], title }) {
     !loading &&
     resizeObserverSupported &&
     !chartsLoadError &&
+    hasData &&
     PieChart &&
     Pie &&
     Cell &&

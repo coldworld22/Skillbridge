@@ -1835,6 +1835,7 @@
     "monthlyRevenue": "Monthly Revenue",
     "monthlySignups": "Monthly Signups",
     "tutorialsByCategory": "Tutorials by Category",
+    "noCategoryData": "Keine Kategoriedaten verfügbar.",
     "instructorTutorialCount": "Instructor Tutorial Count"
   },
   "tutorialViewPage": {

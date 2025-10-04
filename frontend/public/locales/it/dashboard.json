@@ -1835,6 +1835,7 @@
     "monthlyRevenue": "Entrate mensili",
     "monthlySignups": "Iscrizioni mensili",
     "tutorialsByCategory": "Tutorial per categoria",
+    "noCategoryData": "Nessun dato di categoria disponibile.",
     "instructorTutorialCount": "Numero di tutorial per istruttore"
   },
   "tutorialViewPage": {

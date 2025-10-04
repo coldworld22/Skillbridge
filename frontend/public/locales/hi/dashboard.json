@@ -1821,6 +1821,7 @@
     "monthlyRevenue": "मासिक राजस्व",
     "monthlySignups": "मासिक साइनअप",
     "tutorialsByCategory": "श्रेणी के अनुसार ट्यूटोरियल",
+    "noCategoryData": "कोई श्रेणी डेटा उपलब्ध नहीं है।",
     "instructorTutorialCount": "प्रत्येक प्रशिक्षक के ट्यूटोरियल संख्या"
   },
   "tutorialViewPage": {
