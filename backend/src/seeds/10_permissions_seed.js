@@ -35,6 +35,10 @@ exports.seed = async function (knex) {
     { code: 'manage_third_party_config', description: 'Permission to manage third-party configuration' },
     { code: 'view_online_classes', description: 'Permission to view online classes' },
     { code: 'manage_online_classes', description: 'Permission to manage online classes' },
+    {
+      code: 'ADD_ONLINE_CLASS_RULE',
+      description: 'Permission to add or manage online class rules',
+    },
   ];
 
   await knex('permissions')

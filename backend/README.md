@@ -40,6 +40,15 @@ Tune these values in `backend/.env` (and the production variant) to align with
 your deployment's traffic patterns. The health check endpoint remains exempt so
 load balancers and uptime monitors are unaffected.
 
+### Pagination defaults
+
+List endpoints share a pagination helper that now caps `limit` values at
+10,000. This higher ceiling allows the admin "All" option to truly fetch every
+matching record—useful for exports—while still providing a hard stop against
+unbounded queries. If your datasets grow beyond this size, raise the value in
+`src/utils/pagination.js` in tandem with any frontend controls that surface an
+"All" selection.
+
 The `/api/system-errors` route reads the latest lines from `logs/error.log` and is used by the admin alerts page. Only authenticated admins can access it.
 
 ### Rate limiting

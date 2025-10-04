@@ -625,40 +625,39 @@ export default function AdminClassesTable() {
 
     try {
       await deleteAdminClass(id);
-      setClassList((prev) => prev.filter((cls) => cls.id !== id));
 
-      const trackedTotalItems = Number.isFinite(totalItemsRef.current)
-        ? totalItemsRef.current
-        : totalItems;
-      const safeItemsPerPage = resolvePositiveInteger(
-        normalizedItemsPerPage,
-        DEFAULT_PAGE_SIZE
+      const updatedList = classList.filter((cls) => cls.id !== id);
+      const nextTotalItems = Math.max(
+        totalItemsRef.current - 1,
+        updatedList.length,
+        0
+      );
+      const derivedItemsPerPage =
+        pageSizeSetting === "all"
+          ? resolvePositiveInteger(
+              Math.max(nextTotalItems, updatedList.length, 1),
+              DEFAULT_PAGE_SIZE
+            )
+          : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+      const nextTotalPages = Math.max(
+        1,
+        Math.ceil(
+          nextTotalItems > 0
+            ? nextTotalItems / derivedItemsPerPage
+            : 0
+        )
       );
 
-      let nextTotalItems = trackedTotalItems;
-      if (Number.isFinite(trackedTotalItems)) {
-        nextTotalItems = Math.max(0, trackedTotalItems - 1);
-        setTotalItemsIfNeeded(nextTotalItems);
-      }
+      setClassList(updatedList);
+      setTotalItemsIfNeeded(nextTotalItems);
+      setTotalPagesIfNeeded(nextTotalPages);
 
-      let nextTotalPages = Number.isFinite(totalPagesRef.current)
-        ? totalPagesRef.current
-        : totalPages;
-
-      if (Number.isFinite(safeItemsPerPage) && safeItemsPerPage > 0) {
-        const computedPages =
-          nextTotalItems > 0
-            ? Math.ceil(nextTotalItems / safeItemsPerPage)
-            : 1;
-        nextTotalPages = Math.max(1, computedPages);
-        setTotalPagesIfNeeded(nextTotalPages);
-      }
-
-      if (singleItemOnPage && currentPage > 1) {
-        const targetPage = Math.max(1, Math.min(previousPage, nextTotalPages));
-        if (setCurrentPageIfNeeded(targetPage)) {
-          lastSuccessfulSignatureRef.current = null;
-        }
+      if (updatedList.length === 0 && currentPageRef.current > 1) {
+        const candidatePage = Math.min(
+          currentPageRef.current - 1,
+          nextTotalPages
+        );
+        setCurrentPageIfNeeded(candidatePage);
       }
 
       toast.success("Class deleted");
