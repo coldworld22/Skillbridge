@@ -1171,6 +1171,7 @@ CreateOnlineClass.getLayout = function getLayout(page) {
 };
 
 const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, {
+  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;

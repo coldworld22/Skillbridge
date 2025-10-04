@@ -254,6 +254,7 @@ AdminClassDetailPage.getLayout = function getLayout(page) {
 };
 
 const ProtectedAdminClassDetailPage = withAuthProtection(AdminClassDetailPage, {
+  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedAdminClassDetailPage.getLayout = AdminClassDetailPage.getLayout;

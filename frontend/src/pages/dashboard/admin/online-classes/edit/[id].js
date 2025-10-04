@@ -336,6 +336,7 @@ EditClassPage.getLayout = function getLayout(page) {
 };
 
 const ProtectedEditClassPage = withAuthProtection(EditClassPage, {
+  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedEditClassPage.getLayout = EditClassPage.getLayout;

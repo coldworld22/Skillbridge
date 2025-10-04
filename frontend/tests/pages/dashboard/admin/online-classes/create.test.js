@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-import { CreateOnlineClass } from '@/pages/dashboard/admin/online-classes/create';
+import ProtectedCreateOnlineClass, {
+  CreateOnlineClass,
+} from '@/pages/dashboard/admin/online-classes/create';
 
 const pushMock = jest.fn();
+const replaceMock = jest.fn();
 const addEventsMock = jest.fn();
 const fetchNotificationsMock = jest.fn();
 const fetchMessagesMock = jest.fn();
@@ -14,12 +17,39 @@ const mockUser = {
   full_name: 'Test Instructor',
   role: 'instructor',
 };
+const adminUser = {
+  id: 'admin-1',
+  full_name: 'Admin User',
+  role: 'admin',
+  permissions: ['manage_online_classes'],
+};
+const createLessonResultsProxy = () =>
+  new Proxy(
+    {},
+    {
+      get: () => ({ status: 'fulfilled', value: {} }),
+    }
+  );
+const createSuccessfulLessonsProxy = () =>
+  new Proxy(
+    {},
+    {
+      get: () => true,
+    }
+  );
+const validTestToken = 'a.eyJleHAiOjk5OTk5OTk5OTl9.c';
+const authState = {
+  user: { ...mockUser },
+  accessToken: validTestToken,
+  logout: jest.fn(),
+  hasHydrated: true,
+};
 
 jest.mock('next/router', () => ({
   useRouter: () => ({
     push: pushMock,
     prefetch: jest.fn(),
-    replace: jest.fn(),
+    replace: replaceMock,
     query: {},
   }),
 }));
@@ -82,9 +112,7 @@ jest.mock('@/services/instructor/classService', () => ({
 
 jest.mock('@/store/auth/authStore', () => ({
   __esModule: true,
-  default: () => ({
-    user: mockUser,
-  }),
+  default: (selector) => (selector ? selector(authState) : authState),
 }));
 
 jest.mock('@/store/schedule/scheduleStore', () => ({
@@ -107,8 +135,15 @@ const { toast } = require('react-toastify');
 describe('CreateOnlineClass date validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    authState.user = { ...mockUser };
+    authState.accessToken = validTestToken;
+    authState.hasHydrated = true;
+    authState.logout = jest.fn();
+    replaceMock.mockReset();
     mockCreateAdminClass.mockReset();
     mockCreateClassLesson.mockReset();
+    global.lessonResults = createLessonResultsProxy();
+    global.successfulLessons = createSuccessfulLessonsProxy();
 
     mockCreateAdminClass.mockResolvedValue({
       id: 'class-1',
@@ -237,5 +272,37 @@ describe('CreateOnlineClass date validation', () => {
     const retryCall = mockCreateClassLesson.mock.calls[2];
     expect(retryCall[0]).toBe('class-1');
     expect(retryCall[1].get('title')).toBe('Lesson 2 updated');
+  });
+});
+
+describe('ProtectedCreateOnlineClass access control', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    authState.user = { ...adminUser };
+    authState.accessToken = validTestToken;
+    authState.hasHydrated = true;
+    authState.logout = jest.fn();
+    replaceMock.mockReset();
+    mockCreateAdminClass.mockReset();
+    mockCreateClassLesson.mockReset();
+    global.lessonResults = createLessonResultsProxy();
+    global.successfulLessons = createSuccessfulLessonsProxy();
+  });
+
+  it('redirects non-admin roles before loading the form', async () => {
+    authState.user = {
+      id: 'user-2',
+      full_name: 'Student User',
+      role: 'student',
+      permissions: [],
+    };
+
+    render(<ProtectedCreateOnlineClass />);
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith('/error/403');
+    });
+
+    expect(mockCreateAdminClass).not.toHaveBeenCalled();
   });
 });

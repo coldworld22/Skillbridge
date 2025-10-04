@@ -273,6 +273,7 @@ AnalyticsDashboard.getLayout = function getLayout(page) {
 };
 
 const ProtectedAnalyticsDashboard = withAuthProtection(AnalyticsDashboard, {
+  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedAnalyticsDashboard.getLayout = AnalyticsDashboard.getLayout;
