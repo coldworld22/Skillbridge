@@ -261,6 +261,7 @@ export default function AdminClassesTable() {
       clearFailedSignature();
     }
 
+    const failedSignature = lastFailedSignatureRef.current;
     if (failedSignature) {
       if (failedSignature.signature !== requestDetails.signature) {
         clearFailedSignature();
