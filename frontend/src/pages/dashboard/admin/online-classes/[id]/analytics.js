@@ -32,16 +32,6 @@ function AnalyticsDashboard() {
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
-  const [supportsResizeObserver, setSupportsResizeObserver] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setSupportsResizeObserver(Boolean(window.ResizeObserver));
-  }, []);
-
   useEffect(() => {
     if (!id) return;
     fetchAdminClassAnalytics(id)
@@ -94,11 +84,6 @@ function AnalyticsDashboard() {
       ? ((totalCompleted / totalStudents) * 100).toFixed(1)
       : "0";
 
-  const chartsUnavailableMessage = t(
-    "classAnalyticsPage.chartsUnavailableResizeObserver",
-    "Charts are unavailable because ResizeObserver is not supported in this browser."
-  );
-
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
       <h1 className="text-2xl font-bold text-gray-800">
@@ -143,18 +128,11 @@ function AnalyticsDashboard() {
         </div>
       </div>
 
-      {!supportsResizeObserver && (
-        <p className="text-sm text-muted-foreground">
-          {chartsUnavailableMessage}
-        </p>
-      )}
-
       <AnalyticsCharts
         t={t}
         locations={locations}
         devices={devices}
         registrationTrend={registrationTrend}
-        disableResizeObserver={!supportsResizeObserver}
       />
     </div>
   );
