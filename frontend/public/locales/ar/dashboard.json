@@ -1810,7 +1810,8 @@
     "monthlyRevenue": "الإيرادات الشهرية",
     "monthlySignups": "التسجيلات الشهرية",
     "tutorialsByCategory": "الدروس حسب الفئة",
-    "instructorTutorialCount": "عدد الدروس لكل مدرب"
+    "instructorTutorialCount": "عدد الدروس لكل مدرب",
+    "noChartData": "لا توجد بيانات متاحة"
   },
   "tutorialViewPage": {
     "loading": "تحميل البرنامج التعليمي ...",

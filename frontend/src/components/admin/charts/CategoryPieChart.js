@@ -16,7 +16,13 @@ export default function CategoryPieChart({ data = [], title }) {
   const Tooltip = chartsLib?.Tooltip;
   const ResponsiveContainer = chartsLib?.ResponsiveContainer;
 
+  const hasData = Array.isArray(data) && data.some(({ value }) => value > 0);
+
   const renderFallbackMessage = () => {
+    if (loading) {
+      return t("adminDashboardHome.loadingCharts", "Loading charts…");
+    }
+
     if (!resizeObserverSupported) {
       return t(
         "adminDashboardHome.chartsUnavailableResizeObserver",
@@ -31,6 +37,13 @@ export default function CategoryPieChart({ data = [], title }) {
       );
     }
 
+    if (!hasData) {
+      return t(
+        "adminDashboardHome.noChartData",
+        "No data available"
+      );
+    }
+
     return t("adminDashboardHome.loadingCharts", "Loading charts…");
   };
 
@@ -38,6 +51,7 @@ export default function CategoryPieChart({ data = [], title }) {
     !loading &&
     resizeObserverSupported &&
     !chartsLoadError &&
+    hasData &&
     PieChart &&
     Pie &&
     Cell &&
