@@ -47,8 +47,41 @@ jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentSubscription: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
+
+jest.mock('../../class.controller', () => ({
+  createClass: jest.fn(),
+  getAllClasses: jest.fn(),
+  getMyClasses: jest.fn(),
+  getClassById: jest.fn(),
+  getManagementData: jest.fn(),
+  getClassAnalytics: jest.fn(),
+  toggleClassStatus: jest.fn(),
+  approveClass: jest.fn(),
+  rejectClass: jest.fn(),
+  deleteClass: jest.fn(),
+  bulkDeleteClasses: jest.fn(),
+  updateClass: jest.fn(),
+  getPublishedClasses: jest.fn(),
+  getPublicClassDetails: jest.fn(),
+}));
+jest.mock('../../classTag.controller', () => ({
+  listTags: jest.fn(),
+  createTag: jest.fn(),
+}));
+jest.mock('../../class.validator', () => ({}));
+jest.mock('../../classUploadMiddleware', () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/validate', () => () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/auth/verifyClassOwnership', () => (_req, _res, next) => next());
+
 jest.mock('../../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
+}));
+
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
 }));
 
 jest.mock('../../../payouts/wallet.service', () => ({
@@ -61,21 +94,39 @@ jest.mock('../../../payments/helpers/planPayments', () => ({
 jest.mock('../../class.service', () => ({
   getClassById: jest.fn(),
 }));
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
+jest.mock('../../class.controller', () => {
+  const noop = jest.fn();
+  return new Proxy(
+    {},
+    {
+      get: () => noop,
+    },
+  );
+});
+
 jest.mock('../../class.controller', () => ({
-  createClass: jest.fn((_req, res) => res.status(201).json({})),
-  getAllClasses: jest.fn((_req, res) => res.json({})),
-  getMyClasses: jest.fn((_req, res) => res.json({})),
-  getClassById: jest.fn((_req, res) => res.json({})),
-  getManagementData: jest.fn((_req, res) => res.json({})),
-  getClassAnalytics: jest.fn((_req, res) => res.json({})),
-  updateClass: jest.fn((_req, res) => res.json({})),
-  deleteClass: jest.fn((_req, res) => res.status(204).end()),
-  bulkDeleteClasses: jest.fn((_req, res) => res.status(204).end()),
-  toggleClassStatus: jest.fn((_req, res) => res.json({})),
-  approveClass: jest.fn((_req, res) => res.json({})),
-  rejectClass: jest.fn((_req, res) => res.json({})),
-  getPublishedClasses: jest.fn((_req, res) => res.json({})),
-  getPublicClassDetails: jest.fn((_req, res) => res.json({})),
+  createClass: jest.fn(),
+  getAllClasses: jest.fn(),
+  getMyClasses: jest.fn(),
+  getClassById: jest.fn(),
+  getManagementData: jest.fn(),
+  getClassAnalytics: jest.fn(),
+  updateClass: jest.fn(),
+  deleteClass: jest.fn(),
+  bulkDeleteClasses: jest.fn(),
+  toggleClassStatus: jest.fn(),
+  approveClass: jest.fn(),
+  rejectClass: jest.fn(),
+  getPublishedClasses: jest.fn(),
+  getPublicClassDetails: jest.fn(),
+}));
+
+jest.mock('../../classTag.controller', () => ({
+  listTags: jest.fn(),
+  createTag: jest.fn(),
 }));
 
 jest.mock('../../../../utils/logger.js', () => ({
@@ -90,6 +141,7 @@ const {
   getActiveStudentSubscription,
 } = require('../../../plans/subscription.helper');
 const { calculateInstructorAmount } = require('../../../payments/helpers/planRevenue');
+const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const walletService = require('../../../payouts/wallet.service');
 const classService = require('../../class.service');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
@@ -104,8 +156,13 @@ describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     calculateInstructorAmount.mockReset();
+    creditInstructorSubscription.mockReset();
+    creditInstructorSubscription.mockResolvedValue(undefined);
     walletService.increment.mockReset();
     classService.getClassById.mockReset();
+    recordPlanCoveredPayment.mockReset();
+    getActiveStudentSubscription.mockReset();
+    getActiveStudentPlanId.mockReset();
     db.first.mockReset();
     db.first.mockImplementation(() => Promise.resolve(null));
   });
@@ -188,19 +245,22 @@ describe('Class enrollment routes', () => {
         moderation_status: 'Approved',
         price: 50,
         included_plans: ['plan1'],
+        currency: 'USD',
       })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'plan1', price_monthly: 0 });
+      .mockResolvedValueOnce(null);
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
+    service.createEnrollment.mockResolvedValue({ id: 'enrollment-id' });
     getActiveStudentSubscription.mockResolvedValue({
       id: 'sub1',
       plan_id: 'plan1',
     });
-    service.createEnrollment.mockResolvedValue({ id: '1' });
+    calculateInstructorAmount.mockResolvedValue(0);
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
+
     expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe('Enrolled successfully');
     expect(service.createEnrollment).toHaveBeenCalled();
     expect(calculateInstructorAmount).toHaveBeenCalledTimes(1);
     expect(calculateInstructorAmount).toHaveBeenCalledWith(
@@ -209,14 +269,15 @@ describe('Class enrollment routes', () => {
       'abc',
       expect.anything(),
       'class',
-      undefined
+      {}
     );
     expect(usageTracker.count).toBe(1);
     expect(db.update).toHaveBeenCalledWith(
       expect.objectContaining({ usage_count: 1, instructor_amount: 5 })
     );
+    expect(walletService.increment).toHaveBeenCalledTimes(1);
     expect(walletService.increment).toHaveBeenCalledWith(
-      'instructor-42',
+      'inst-1',
       5,
       expect.anything()
     );
@@ -227,13 +288,21 @@ describe('Class enrollment routes', () => {
     expect(usageUpdates[0][0].usage_count).toBe(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        trx: db,
+        trx: expect.any(Function),
         userId: 'test-user',
         itemId: 'abc',
         itemType: 'class',
         amount: 0,
         currency: 'USD',
       }),
+    );
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'class',
+      'abc',
+      'plan1',
+      'sub1',
+      expect.anything(),
     );
   });
 

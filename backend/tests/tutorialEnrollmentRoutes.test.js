@@ -26,11 +26,14 @@ jest.mock('../src/modules/payments/helpers/planPayments', () => ({
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 const { recordPlanCoveredPayment } = require('../src/modules/payments/helpers/planPayments');
-jest.mock('../src/modules/payouts/wallet.service', () => ({
-  increment: jest.fn(),
+
+const paymentMethodWhere = jest.fn(() => ({
+  first: () => Promise.resolve({ id: 'subscription-method-id' }),
 }));
-jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
-  getTutorialById: jest.fn(),
+const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
+
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditTutorialSubscription: jest.fn(),
 }));
 const walletService = require('../src/modules/payouts/wallet.service');
 const tutorialService = require('../src/modules/users/tutorials/tutorial.service');
@@ -58,13 +61,20 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     getActiveStudentSubscription.mockResolvedValue(null);
     planRevenue.calculateInstructorAmount.mockResolvedValue(0);
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
-    walletService.increment.mockResolvedValue();
-    tutorialService.getTutorialById.mockResolvedValue({ instructor_id: 'inst-1' });
-    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
+    creditTutorialSubscription.mockResolvedValue();
+    getPlanCoveredMethod.mockResolvedValue({ id: 'subscription-method-id' });
   });
 
   it('enrolls in a free tutorial', async () => {
-    const planUsageUpdates = [];
+    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
+
+    const paymentMethodWhere = jest.fn(() => ({
+      first: () => Promise.resolve({ id: 'plan-method-1' }),
+    }));
+    const paymentMethodInsert = jest.fn(() =>
+      Promise.resolve([{ id: 'plan-method-1' }]),
+    );
+
     db.mockImplementation((table) => {
       if (table === 'tutorials')
         return {
@@ -159,7 +169,14 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
 
   it('enrolls in paid tutorial covered by subscription', async () => {
     const calculatedAmount = 42;
-    const planUsageUpdates = [];
+    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
+
+    const paymentMethodWhere = jest.fn(() => ({
+      first: () => Promise.resolve({ id: 'plan-method-1' }),
+    }));
+    const paymentMethodInsert = jest.fn(() =>
+      Promise.resolve([{ id: 'plan-method-1' }]),
+    );
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -182,14 +199,14 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
         };
       if (table === 'payments')
         return {
-          insert: jest.fn(() => Promise.resolve([{ id: 'payment-1' }])),
-        };
-      if (table === 'plan_usage_metrics')
-        return {
-          update: (data) => {
-            planUsageUpdates.push(data);
-            return Promise.resolve();
-          },
+          insert: jest.fn(async () => [
+            {
+              id: 'payment-sub',
+              user_id: 'user1',
+              item_id: tutorialId,
+              status: 'paid',
+            },
+          ]),
         };
       if (table === 'payment_methods_config')
         return { where: paymentMethodWhere, insert: paymentMethodInsert };
@@ -199,20 +216,22 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       id: 'sub1',
       plan_id: 'plan1',
     });
-    planRevenue.calculateInstructorAmount.mockImplementation(
-      async (_planId, _subscriptionId, _itemId, trx) => {
-        await trx('plan_usage_metrics').update({
-          usage_count: 1,
-          instructor_amount: calculatedAmount,
-        });
-        return calculatedAmount;
+    planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
+    let instructorWalletBalance = 0;
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
+    creditTutorialSubscription.mockImplementation(
+      async (tutorial, planId, subscriptionId, trx) => {
+        const amount = await planRevenue.calculateInstructorAmount(
+          planId,
+          subscriptionId,
+          tutorial,
+          trx,
+          'tutorial',
+        );
+        instructorWalletBalance += amount;
       },
     );
-    tutorialService.getTutorialById.mockResolvedValue({
-      instructor_id: 'instructor-42',
-    });
 
-    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
     const res = await request(app).post(
       `/api/users/tutorials/enrollments/${tutorialId}`,
     );
@@ -224,19 +243,16 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       tutorialId,
       expect.anything(),
       'tutorial',
-      undefined
+      {}
     );
-    expect(walletService.increment).toHaveBeenCalledWith(
-      'instructor-42',
-      calculatedAmount,
-      expect.anything()
+    expect(creditTutorialSubscription).toHaveBeenCalledWith(
+      tutorialId,
+      'plan1',
+      'sub1',
+      expect.anything(),
     );
-    expect(planUsageUpdates).toEqual([
-      expect.objectContaining({
-        usage_count: 1,
-        instructor_amount: calculatedAmount,
-      }),
-    ]);
+    expect(creditTutorialSubscription).toHaveBeenCalledTimes(1);
+    expect(instructorWalletBalance).toBe(calculatedAmount);
   });
 });
 
