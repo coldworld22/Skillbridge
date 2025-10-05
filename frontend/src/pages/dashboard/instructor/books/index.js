@@ -410,12 +410,13 @@ function InstructorBooksPage() {
                     {tag}
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setFilters({
                           ...filters,
                           tags: filters.tags.filter((t) => t !== tag),
-                        })
-                      }
+                        });
+                        setPage(1);
+                      }}
                       className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       &times;
@@ -433,6 +434,7 @@ function InstructorBooksPage() {
                       e.preventDefault();
                       if (tagInput && !filters.tags.includes(tagInput)) {
                         setFilters({ ...filters, tags: [...filters.tags, tagInput] });
+                        setPage(1);
                       }
                       setTagInput("");
                     }
@@ -448,6 +450,7 @@ function InstructorBooksPage() {
                         onClick={() => {
                           if (!filters.tags.includes(tg.name)) {
                             setFilters({ ...filters, tags: [...filters.tags, tg.name] });
+                            setPage(1);
                           }
                           setTagInput("");
                         }}
