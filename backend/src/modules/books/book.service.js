@@ -284,7 +284,9 @@ exports.checkout = async (studentId) => {
   const bankMethod = await paymentMethodsService.getByType('bank');
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
-  const activePlanId = await getActiveStudentPlanId(studentId);
+  const activeSubscription = await getActiveStudentSubscription(studentId);
+  const activePlanId = activeSubscription?.plan_id;
+  const activeSubscriptionId = activeSubscription?.id;
   let subscriptionMethod = null;
 
   return db.transaction(async (trx) => {
@@ -355,7 +357,14 @@ exports.checkout = async (studentId) => {
           price_paid: 0,
         });
 
-        await creditInstructorSubscription('book', b.id, activePlanId, trx);
+        await creditInstructorSubscription(
+          'book',
+          b.id,
+          activePlanId,
+          activeSubscriptionId,
+          trx,
+          instructorShare
+        );
 
         payments.push(payment);
         continue;

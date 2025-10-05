@@ -24,9 +24,12 @@ const mockDb = knex({
 jest.mock('../../../config/database', () => mockDb);
 jest.mock('../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn().mockResolvedValue(null),
+  getActiveStudentSubscription: jest.fn().mockResolvedValue(null),
 }));
 jest.mock('../../payments/helpers/wallet', () => ({
-  creditInstructorSubscription: jest.fn().mockResolvedValue(),
+  creditInstructorSubscription: jest
+    .fn()
+    .mockImplementation(() => Promise.resolve()),
   creditInstructorWallet: jest.fn(),
 }));
 jest.mock('../../payments/payments.service', () => ({

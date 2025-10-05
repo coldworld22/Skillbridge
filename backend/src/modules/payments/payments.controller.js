@@ -61,6 +61,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     next_due_date,
     totalInstallments,
     subscriptionPlanId,
+    subscriptionId,
   } = validation;
 
   let statusToUse = finalStatus;
@@ -133,6 +134,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         "book",
         item_id,
         subscriptionPlanId,
+        subscriptionId,
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);

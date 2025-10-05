@@ -26,6 +26,7 @@ jest.mock('../../../../../middleware/auth/authMiddleware', () => ({
 
 jest.mock('../../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
+  getActiveStudentSubscription: jest.fn(),
 }));
 
 jest.mock('../../../../payments/helpers/planRevenue', () => ({
@@ -37,7 +38,10 @@ jest.mock('../../../../payments/helpers/planPayments', () => ({
 }));
 
 const db = require('../../../../../config/database');
-const { getActiveStudentPlanId } = require('../../../../plans/subscription.helper');
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require('../../../../plans/subscription.helper');
 const { recordPlanCoveredPayment } = require('../../../../payments/helpers/planPayments');
 
 const routes = require('../../tutorial.routes');
@@ -49,6 +53,7 @@ app.use('/tutorials', routes);
 describe('Tutorial enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveStudentSubscription.mockResolvedValue(null);
   });
 
   test('enrolls tutorial via subscription without payment method requirement', async () => {
@@ -62,7 +67,10 @@ describe('Tutorial enrollment routes', () => {
     db.first
       .mockResolvedValueOnce(tutorial)
       .mockResolvedValueOnce(null);
-    getActiveStudentPlanId.mockResolvedValue('plan-1');
+    getActiveStudentSubscription.mockResolvedValue({
+      id: 'sub-1',
+      plan_id: 'plan-1',
+    });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
 
     const res = await request(app).post('/tutorials/enroll/abc-tutorial');

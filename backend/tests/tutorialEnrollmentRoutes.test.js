@@ -7,8 +7,12 @@ const db = require('../src/config/database');
 
 jest.mock('../src/modules/plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
+  getActiveStudentSubscription: jest.fn(),
 }));
-const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require('../src/modules/plans/subscription.helper');
 
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
@@ -16,8 +20,15 @@ jest.mock('../src/modules/payments/helpers/wallet', () => ({
 jest.mock('../src/modules/payments/helpers/methods.js', () => ({
   getPlanCoveredMethod: jest.fn(),
 }));
+jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
+}));
+jest.mock('../src/modules/payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
+const { recordPlanCoveredPayment } = require('../src/modules/payments/helpers/planPayments');
 
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditTutorialSubscription: jest.fn(),
@@ -42,8 +53,9 @@ app.use(errorHandler);
 describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getActiveStudentPlanId.mockResolvedValue(null);
+    getActiveStudentSubscription.mockResolvedValue(null);
     planRevenue.calculateInstructorAmount.mockResolvedValue(0);
+    recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     creditTutorialSubscription.mockResolvedValue();
   });
 
@@ -141,8 +153,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   });
 
   it('enrolls in paid tutorial covered by subscription', async () => {
-    const planInsert = jest.fn(() => Promise.resolve());
-    const paymentInsert = jest.fn(() => Promise.resolve());
     const calculatedAmount = 42;
 
     db.mockImplementation((table) => {
@@ -164,16 +174,14 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null) }),
           insert: jest.fn(() => Promise.resolve()),
         };
-      if (table === 'plan_usage_metrics')
-        return {
-          where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
-          insert: planInsert,
-        };
       if (table === 'payment_methods_config')
         return { where: paymentMethodWhere, insert: paymentMethodInsert };
     });
 
-    getActiveStudentPlanId.mockResolvedValue('plan1');
+    getActiveStudentSubscription.mockResolvedValue({
+      id: 'sub1',
+      plan_id: 'plan1',
+    });
     planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
     let instructorWalletBalance = 0;
     creditTutorialSubscription.mockImplementation(async () => {
@@ -186,26 +194,27 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
-    expect(planInsert).toHaveBeenCalled();
-    expect(paymentInsert).toHaveBeenCalledWith({
-      user_id: 'user1',
-      method_id: 'plan-method',
-      item_id: tutorialId,
-      item_type: 'tutorial',
-      source: 'subscription',
-      amount: 0,
-    });
-    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
+    expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user1',
+        itemId: tutorialId,
+        itemType: 'tutorial',
+        source: 'subscription',
+      })
+    );
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
+      'sub1',
       tutorialId,
-      'plan1',
-      expect.anything()
+      expect.anything(),
+      'tutorial'
     );
     expect(creditTutorialSubscription).toHaveBeenCalledWith(
       tutorialId,
       'plan1',
+      'sub1',
       expect.anything(),
+      calculatedAmount,
     );
     expect(instructorWalletBalance).toBe(calculatedAmount);
   });

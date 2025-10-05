@@ -89,8 +89,21 @@ async function creditInstructorSubscription(
   }
 }
 
-async function creditTutorialSubscription(tutorialId, planId, trx) {
-  return creditInstructorSubscription("tutorial", tutorialId, planId, trx);
+async function creditTutorialSubscription(
+  tutorialId,
+  planId,
+  subscriptionId,
+  trx,
+  precomputedAmount
+) {
+  return creditInstructorSubscription(
+    "tutorial",
+    tutorialId,
+    planId,
+    subscriptionId,
+    trx,
+    precomputedAmount
+  );
 }
 
 module.exports = {
