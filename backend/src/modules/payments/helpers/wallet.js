@@ -50,14 +50,18 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-async function creditInstructorSubscription(item_type, item_id, planId, trx) {
+async function creditInstructorSubscription(
+  item_type,
+  item_id,
+  planId,
+  trx,
+  delta,
+) {
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    const amount =
+      typeof delta === "number"
+        ? delta
+        : await calculateInstructorAmount(planId, item_id, trx, item_type);
     if (amount <= 0) return;
 
     let instructorId;
