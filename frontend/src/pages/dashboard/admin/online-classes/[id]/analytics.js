@@ -43,7 +43,7 @@ function AnalyticsDashboard() {
     }
 
     setStats(null);
-    fetchAdminClassAnalytics(classId)
+    fetchAdminClassAnalytics(id)
       .then((data) => {
         if (!isMounted) return;
         setStats({
