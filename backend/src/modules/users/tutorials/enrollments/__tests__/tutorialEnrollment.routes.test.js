@@ -28,6 +28,10 @@ jest.mock('../../../../plans/subscription.helper', () => ({
   getActiveStudentSubscription: jest.fn(),
 }));
 
+jest.mock('../../../../payments/helpers/methods', () => ({
+  getPlanCoveredMethod: jest.fn(() => Promise.resolve({ id: 'plan-method-1' })),
+}));
+
 jest.mock('../../../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(() => Promise.resolve(0)),
 }));
@@ -50,6 +54,7 @@ describe('Tutorial enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentSubscription.mockResolvedValue(null);
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
   });
 
   test('enrolls tutorial via subscription without payment method requirement', async () => {
@@ -72,6 +77,7 @@ describe('Tutorial enrollment routes', () => {
     const res = await request(app).post('/tutorials/enroll/abc-tutorial');
 
     expect(res.statusCode).toBe(200);
+    expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         trx: expect.any(Function),
