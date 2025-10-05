@@ -2,7 +2,16 @@ import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useForm } from 'react-hook-form';
 
-export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
+export default function CardPaymentForm({
+  onSubmit,
+  processing,
+  allowInstallments,
+  installments,
+  perInstallment,
+  finalPrice,
+  selectedMethodLabel,
+  requireStripeTokenization = true,
+}) {
   const [error, setError] = useState(null);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const stripe = useStripe();

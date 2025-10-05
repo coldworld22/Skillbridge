@@ -930,6 +930,7 @@ export default function CheckoutPage() {
                 perInstallment={perInstallment}
                 finalPrice={finalPrice}
                 selectedMethodLabel={selectedMethodLabel}
+                requireStripeTokenization
               />
             </Elements>
           ) : (
@@ -941,6 +942,7 @@ export default function CheckoutPage() {
               perInstallment={perInstallment}
               finalPrice={finalPrice}
               selectedMethodLabel={selectedMethodLabel}
+              requireStripeTokenization={false}
             />
           )}
         </div>
