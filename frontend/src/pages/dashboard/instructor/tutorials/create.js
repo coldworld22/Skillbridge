@@ -16,48 +16,24 @@ import useTutorialCreation from "@/hooks/useTutorialCreation";
 export default function CreateTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "tutorials"]);
-  const defaultTutorial = {
-    title: "",
-    shortDescription: "",
-    category: "",
-    categoryName: "",
-    level: "",
-    language: "",
-    lessonCount: 1,
-    tags: [],
-    chapters: [],
-    thumbnail: null,
-    preview: null,
-    price: "",
-    currency: "",
-    isFree: false,
-  };
-  const [tutorialData, setTutorialData] = useState(() =>
-    loadDraft("tutorialDraft", defaultTutorial)
-  );
 
-  const [categories, setCategories] = useState([]);
-
-  useEffect(() => {
-    loadCategories(fetchAllCategories)
-      .then((res) => setCategories(res?.data || res || []))
-      .catch((err) => {
-        console.error(
-          t('tutorialCreatePage.load_categories_failed', { ns: 'dashboard' }),
-          err
-        );
-      });
-  }, [t]);
-
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
+  const {
+    step,
+    setStep,
+    nextStep,
+    prevStep,
+    tutorialData,
+    setTutorialData,
+    categories,
+    buildFormData,
+  } = useTutorialCreation({ fetchCategories: fetchAllCategories });
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
       toast.error(t("dashboard:tutorialCreatePage.upload_video_each_lesson"));
       return;
     }
-    const formData = buildTutorialFormData(tutorialData, status);
+    const formData = buildFormData(status);
     try {
       await createTutorial(formData);
       toast.success(
