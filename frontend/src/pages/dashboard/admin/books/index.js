@@ -800,6 +800,7 @@ function AdminBooksPage() {
                                     const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
 
                                     setBooks(remaining);
+                                    setSelectedBooks((prev) => prev.filter((id) => id !== book.id));
                                     setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
                                     toast.success(t("Book deleted"));
 
