@@ -74,6 +74,7 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
     allowInstallments,
     installments,
     perInstallment,
+    requireStripeTokenization = true,
   }) {
     const usingInstallments = allowInstallments && installments > 1;
     const buttonLabel = usingInstallments
@@ -83,8 +84,12 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          global.mockStripeCreateToken();
-          onSubmit({ token: 'tok_123', name: 'John Doe', email: 'john@example.com' });
+          if (requireStripeTokenization) {
+            global.mockStripeCreateToken();
+            onSubmit({ token: 'tok_123', name: 'John Doe', email: 'john@example.com' });
+            return;
+          }
+          onSubmit({ name: 'John Doe', email: 'john@example.com' });
         }}
       >
         <input placeholder="Full Name" />
@@ -197,11 +202,8 @@ test('renders card form without Elements for non-stripe processors', async () =>
   fireEvent.click(
     screen.getByRole('button', { name: /Pay \$100 with Paystack/i })
   );
-  await waitFor(() =>
-    expect(createPayment).toHaveBeenCalledWith(
-      expect.objectContaining({ token: 'tok_123' })
-    )
-  );
+  await waitFor(() => expect(createPayment).toHaveBeenCalledTimes(1));
+  expect(global.mockStripeCreateToken).not.toHaveBeenCalled();
 });
 
 test('submits per-installment amount for multi-installment card payments', async () => {

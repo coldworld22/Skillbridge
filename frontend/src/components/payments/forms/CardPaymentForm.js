@@ -2,7 +2,16 @@ import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useForm } from 'react-hook-form';
 
-export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
+export default function CardPaymentForm({
+  onSubmit,
+  processing,
+  allowInstallments,
+  installments,
+  perInstallment,
+  finalPrice,
+  selectedMethodLabel,
+  requireStripeTokenization = true,
+}) {
   const [error, setError] = useState(null);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const stripe = useStripe();
@@ -15,8 +24,18 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
       : `Pay $${finalPrice} with ${selectedMethodLabel}`;
 
   const submit = async (data) => {
-    if (!stripe || !elements) return;
     setError(null);
+
+    if (!requireStripeTokenization) {
+      onSubmit(data);
+      return;
+    }
+
+    if (!stripe || !elements) {
+      setError('Payment service unavailable. Please try again later.');
+      return;
+    }
+
     const cardElement = elements.getElement(CardElement);
     const { error: stripeError, token } = await stripe.createToken(cardElement);
     if (stripeError) {
@@ -49,7 +68,7 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
       <button
         type="submit"
-        disabled={processing || !stripe}
+        disabled={processing || (requireStripeTokenization && !stripe)}
         className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all"
       >
         {buttonText}
