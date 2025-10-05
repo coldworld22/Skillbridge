@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ShieldCheck, PlusCircle, PenSquare, Trash2 } from "lucide-react";
 import useAuthStore from "@/store/auth/authStore";
 import PermissionAssignment from "./PermissionAssignment";
@@ -16,10 +16,12 @@ import {
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editRole, setEditRole] = useState(null);
   const { user } = useAuthStore();
   const canManage = user?.permissions?.includes("manage_roles");
+  const latestRequestedRoleId = useRef(null);
 
   useEffect(() => {
     const loadRoles = async () => {
@@ -27,8 +29,22 @@ export default function RoleManagement() {
         const data = await fetchAllRoles();
         setRoles(data);
         if (data.length) {
-          const firstRole = await fetchRoleById(data[0].id);
-          setSelectedRole(firstRole);
+          const firstRoleId = data[0].id;
+          latestRequestedRoleId.current = firstRoleId;
+          setIsRoleLoading(true);
+          try {
+            const firstRole = await fetchRoleById(firstRoleId);
+            if (latestRequestedRoleId.current === firstRoleId) {
+              setSelectedRole(firstRole);
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("Failed to load role details");
+          } finally {
+            if (latestRequestedRoleId.current === firstRoleId) {
+              setIsRoleLoading(false);
+            }
+          }
         }
         toast.success("Roles loaded");
       } catch (error) {
