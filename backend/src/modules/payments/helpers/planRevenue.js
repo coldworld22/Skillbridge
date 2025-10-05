@@ -15,7 +15,7 @@ exports.calculateInstructorAmount = async (
   itemType = "class",
   options = {}
 ) => {
-  const { incrementUsage = true } = options || {};
+  const { incrementUsage = true, precomputedAmount } = options || {};
   const query = trx || db;
   try {
     const key = {
@@ -51,27 +51,32 @@ exports.calculateInstructorAmount = async (
       : [];
     const features = parsePlanFeatures({ features: featureRows });
 
-    const price = Number(plan?.price_monthly || 0);
-    let net = 0;
-    if (plan) {
-      if (features.commission_rate != null) {
-        const commissionRate = Number(features.commission_rate);
-        net = price - price * commissionRate;
-      } else {
-        ({ instructor_amount: net } = await calculatePlatformFee(itemType, price));
-      }
-    }
-
     const roundCurrency = (value) =>
       Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+    let payout;
+    if (precomputedAmount != null) {
+      payout = roundCurrency(precomputedAmount);
+    } else {
+      const price = Number(plan?.price_monthly || 0);
+      let net = 0;
+      if (plan) {
+        if (features.commission_rate != null) {
+          const commissionRate = Number(features.commission_rate);
+          net = price - price * commissionRate;
+        } else {
+          ({ instructor_amount: net } = await calculatePlatformFee(itemType, price));
+        }
+      }
+      payout = roundCurrency(net);
+    }
 
-    const payout = roundCurrency(net);
+    const usageCountIncrement = incrementUsage ? 1 : 0;
     const newTotal = roundCurrency(Number(row.instructor_amount || 0) + payout);
 
     await query("plan_usage_metrics")
       .where(key)
       .update({
-        usage_count: Number(row.usage_count || 0) + 1,
+        usage_count: Number(row.usage_count || 0) + usageCountIncrement,
         instructor_amount: newTotal,
       });
 

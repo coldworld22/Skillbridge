@@ -85,10 +85,9 @@ exports.createClass = catchAsync(async (req, res) => {
     ...body
   } = req.body;
   const roles = req.user?.roles || req.user?.role;
-  const adminCaller = isAdminRole(roles);
-  const isAdminUser = adminCaller;
+  const isAdminUser = isAdminRole(roles);
   const normalizedStatus = status === "published" ? "published" : "draft";
-  const shouldAutoApprove = adminCaller && normalizedStatus === "published";
+  const shouldAutoApprove = isAdminUser && normalizedStatus === "published";
   const data = {
     ...body,
     id: uuidv4(),

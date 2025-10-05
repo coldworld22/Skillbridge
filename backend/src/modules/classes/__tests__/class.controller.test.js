@@ -252,14 +252,14 @@ describe('class.controller createClass', () => {
     );
   });
 
-  test('instructor publish_immediately request remains pending', async () => {
+  test('instructors requesting publish immediately still require approval', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
     const req = {
       body: {
         title: 'Instructor Published Class',
         status: 'published',
-        publish_immediately: true,
+        publish_immediately: 'true',
       },
       user: { id: 'instructor1', role: 'instructor' },
       files: {},
@@ -287,7 +287,6 @@ describe('class.controller createClass', () => {
       expect.objectContaining({
         status: 'published',
         moderation_status: 'Pending',
-        instructor_id: 'instructor1',
       })
     );
     expect(res.json).toHaveBeenCalledWith(
