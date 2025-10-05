@@ -48,16 +48,23 @@ const mockVerifyClassOwnership = jest.fn((req, _res, next) => next());
 jest.mock('../../../middleware/auth/verifyClassOwnership', () => mockVerifyClassOwnership);
 jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next());
 // Mock auth middleware to bypass authentication
-jest.mock('../../../middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
-    req.user = { id: 'test-user', role: 'instructor' };
-    next();
-  },
-  isStudent: (_req, _res, next) => next(),
-  isInstructorOrAdmin: (_req, _res, next) => next(),
-  isAdmin: (_req, _res, next) => next(),
-  isInstructor: (_req, _res, next) => next(),
-}));
+jest.mock('../../../middleware/auth/authMiddleware', () => {
+  const mockUser = { id: 'test-user', role: 'instructor', roles: ['instructor'] };
+  return {
+    verifyToken: (req, _res, next) => {
+      req.user = { ...mockUser };
+      next();
+    },
+    isStudent: (_req, _res, next) => next(),
+    isInstructorOrAdmin: (_req, _res, next) => next(),
+    isAdmin: (_req, _res, next) => next(),
+    isInstructor: (_req, _res, next) => next(),
+    setMockUser: (user) => {
+      Object.keys(mockUser).forEach((key) => delete mockUser[key]);
+      Object.assign(mockUser, user);
+    },
+  };
+});
 
 const routes = require('../class.routes');
 jest.mock('../../plans/instructor.helper', () => ({
@@ -66,6 +73,8 @@ jest.mock('../../plans/instructor.helper', () => ({
 const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
 jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
+
+const authMiddleware = require('../../../middleware/auth/authMiddleware');
 
 const app = express();
 app.use(express.json());
@@ -77,6 +86,7 @@ app.use((err, _req, res, _next) => {
 describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    authMiddleware.setMockUser({ id: 'test-user', role: 'instructor', roles: ['instructor'] });
     getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
@@ -154,6 +164,35 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(list);
     expect(res.body.meta).toEqual(result.meta);
     expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 1, limit: 5 });
+  });
+
+  test('instructor cannot override instructorId when fetching my classes', async () => {
+    const result = {
+      data: [{ id: '1', instructor_id: 'test-user', title: 'Mine' }],
+      meta: { page: 2, limit: 10, total: 1, totalPages: 1 },
+    };
+    service.getClassesByInstructor.mockResolvedValue(result);
+
+    const res = await request(app).get('/classes/instructor/my?page=2&instructorId=other-user');
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(result.data);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 2, limit: 10 });
+  });
+
+  test('admin can override instructorId when fetching classes', async () => {
+    authMiddleware.setMockUser({ id: 'admin-user', role: 'admin', roles: ['admin'] });
+    const result = {
+      data: [{ id: '1', instructor_id: 'target-instructor', title: 'Managed' }],
+      meta: { page: 3, limit: 5, total: 1, totalPages: 1 },
+    };
+    service.getClassesByInstructor.mockResolvedValue(result);
+
+    const res = await request(app).get('/classes/admin/my?page=3&limit=5&instructorId=target-instructor');
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(result.data);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('target-instructor', { page: 3, limit: 5 });
   });
 
   test('get published classes', async () => {
