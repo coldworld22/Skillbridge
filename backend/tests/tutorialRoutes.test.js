@@ -1,6 +1,18 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.routes', () =>
+  require('express').Router()
+);
+
+jest.mock('../src/modules/users/tutorials/tutorialUploadMiddleware', () => (
+  _req,
+  _res,
+  next
+) => next());
+
+jest.mock('../src/middleware/validate', () => jest.fn(() => (_req, _res, next) => next()));
+
 jest.mock('../src/config/database', () => ({
   raw: jest.fn(() => Promise.resolve()),
 }));
@@ -10,6 +22,7 @@ jest.mock('../src/services/analyticsService', () => ({
 }));
 
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
+  getAllTutorials: jest.fn(),
   getTutorialsByCategory: jest.fn(),
   getTutorialAnalytics: jest.fn(),
   getTutorialById: jest.fn(),
@@ -112,6 +125,23 @@ describe('GET /api/users/tutorials/admin/:id/analytics', () => {
     expect(res.status).toBe(200);
     expect(service.getTutorialAnalytics).toHaveBeenCalledWith('1');
     expect(res.body.data).toEqual(analytics);
+  });
+});
+
+describe('GET /api/users/tutorials/admin', () => {
+  it('applies status and moderation filters when provided', async () => {
+    const result = { data: [], meta: {} };
+    service.getAllTutorials.mockResolvedValue(result);
+
+    const res = await request(app)
+      .get('/api/users/tutorials/admin')
+      .query({ status: 'published', approval: 'Approved', page: '2', limit: '5' });
+
+    expect(res.status).toBe(200);
+    expect(service.getAllTutorials).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'published', approval: 'Approved', page: '2', limit: '5' })
+    );
+    expect(res.body.data).toEqual(result.data);
   });
 });
 
