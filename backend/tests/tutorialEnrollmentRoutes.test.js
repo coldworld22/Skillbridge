@@ -245,7 +245,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       'sub1',
       tutorialId,
       expect.anything(),
-      'tutorial'
+      'tutorial',
+      {}
     );
     expect(creditTutorialSubscription).toHaveBeenCalledWith(
       tutorialId,

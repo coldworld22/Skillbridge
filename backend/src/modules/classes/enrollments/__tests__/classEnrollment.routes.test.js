@@ -215,7 +215,8 @@ describe('Class enrollment routes', () => {
       'sub1',
       'abc',
       expect.anything(),
-      'class'
+      'class',
+      {}
     );
     expect(usageTracker.count).toBe(1);
     expect(db.update).toHaveBeenCalledWith(
@@ -223,7 +224,7 @@ describe('Class enrollment routes', () => {
     );
     expect(walletService.increment).toHaveBeenCalledTimes(1);
     expect(walletService.increment).toHaveBeenCalledWith(
-      'instructor-42',
+      'inst-1',
       5,
       expect.anything()
     );
