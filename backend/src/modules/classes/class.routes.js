@@ -14,6 +14,11 @@ const {
   isInstructor,
 } = require("../../middleware/auth/authMiddleware");
 
+const enforceInstructorScope = (req, _res, next) => {
+  req.query.instructorId = req.user.id;
+  next();
+};
+
 // Student enrollments
 router.use("/enroll", require("./enrollments/classEnrollment.routes"));
 // Class lessons and assignments
@@ -132,6 +137,7 @@ router.get(
   "/instructor/my",
   verifyToken,
   isInstructor,
+  enforceInstructorScope,
   controller.getMyClasses
 );
 router.get(

@@ -248,8 +248,8 @@ exports.getClassById = catchAsync(async (req, res) => {
 exports.getMyClasses = catchAsync(async (req, res) => {
   const { page = 1, limit = 10, instructorId } = req.query;
   const roles = req.user?.roles || req.user?.role;
-  const targetId =
-    isAdminRole(roles) && instructorId ? instructorId : req.user.id;
+  const canOverrideInstructor = isAdminRole(roles);
+  const targetId = canOverrideInstructor && instructorId ? instructorId : req.user.id;
   const result = await service.getClassesByInstructor(targetId, {
     page: Number(page),
     limit: Number(limit),
@@ -509,7 +509,10 @@ exports.approveClass = catchAsync(async (req, res) => {
   if (!existing) throw new AppError("Class not found", 404);
   const plan = await getActiveInstructorPlan(existing.instructor_id);
   if (!plan) {
-    throw new AppError("Course limit reached for your plan", 403);
+    throw new AppError(
+      "Active instructor plan required to approve classes",
+      403
+    );
   }
   if (plan.max_courses) {
     const count = await service.countPublishedClasses(existing.instructor_id);

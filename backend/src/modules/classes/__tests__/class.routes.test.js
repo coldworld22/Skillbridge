@@ -1,6 +1,8 @@
 const request = require('supertest');
 const express = require('express');
 
+let mockUser = { id: 'test-user', role: 'instructor' };
+
 // Mock database to avoid connection attempts
 jest.mock('../../../config/database', () => {
   const db = jest.fn(() => db);
@@ -48,23 +50,16 @@ const mockVerifyClassOwnership = jest.fn((req, _res, next) => next());
 jest.mock('../../../middleware/auth/verifyClassOwnership', () => mockVerifyClassOwnership);
 jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next());
 // Mock auth middleware to bypass authentication
-jest.mock('../../../middleware/auth/authMiddleware', () => {
-  const mockUser = { id: 'test-user', role: 'instructor', roles: ['instructor'] };
-  return {
-    verifyToken: (req, _res, next) => {
-      req.user = { ...mockUser };
-      next();
-    },
-    isStudent: (_req, _res, next) => next(),
-    isInstructorOrAdmin: (_req, _res, next) => next(),
-    isAdmin: (_req, _res, next) => next(),
-    isInstructor: (_req, _res, next) => next(),
-    setMockUser: (user) => {
-      Object.keys(mockUser).forEach((key) => delete mockUser[key]);
-      Object.assign(mockUser, user);
-    },
-  };
-});
+jest.mock('../../../middleware/auth/authMiddleware', () => ({
+  verifyToken: (req, _res, next) => {
+    req.user = { ...mockUser };
+    next();
+  },
+  isStudent: (_req, _res, next) => next(),
+  isInstructorOrAdmin: (_req, _res, next) => next(),
+  isAdmin: (_req, _res, next) => next(),
+  isInstructor: (_req, _res, next) => next(),
+}));
 
 const routes = require('../class.routes');
 jest.mock('../../plans/instructor.helper', () => ({
@@ -86,7 +81,7 @@ app.use((err, _req, res, _next) => {
 describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    authMiddleware.setMockUser({ id: 'test-user', role: 'instructor', roles: ['instructor'] });
+    mockUser = { id: 'test-user', role: 'instructor' };
     getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
@@ -166,33 +161,48 @@ describe('Class routes', () => {
     expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 1, limit: 5 });
   });
 
-  test('instructor cannot override instructorId when fetching my classes', async () => {
+  test('instructor cannot override instructorId when fetching own classes', async () => {
+    mockUser = { id: 'instructor-123', role: 'instructor' };
+    const list = [{ id: '1', instructor_id: 'instructor-123', title: 'Mine' }];
     const result = {
-      data: [{ id: '1', instructor_id: 'test-user', title: 'Mine' }],
-      meta: { page: 2, limit: 10, total: 1, totalPages: 1 },
+      data: list,
+      meta: { page: 1, limit: 3, total: 1, totalPages: 1 },
     };
     service.getClassesByInstructor.mockResolvedValue(result);
 
-    const res = await request(app).get('/classes/instructor/my?page=2&instructorId=other-user');
+    const res = await request(app).get(
+      '/classes/instructor/my?instructorId=other-instructor&limit=3'
+    );
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data).toEqual(result.data);
-    expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 2, limit: 10 });
+    expect(res.body.data).toEqual(list);
+    expect(res.body.meta).toEqual(result.meta);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('instructor-123', {
+      page: 1,
+      limit: 3,
+    });
   });
 
-  test('admin can override instructorId when fetching classes', async () => {
-    authMiddleware.setMockUser({ id: 'admin-user', role: 'admin', roles: ['admin'] });
+  test('admin can override instructorId when fetching instructor classes', async () => {
+    mockUser = { id: 'admin-user', role: 'admin' };
+    const list = [{ id: '1', instructor_id: 'target-instructor', title: 'Other' }];
     const result = {
-      data: [{ id: '1', instructor_id: 'target-instructor', title: 'Managed' }],
-      meta: { page: 3, limit: 5, total: 1, totalPages: 1 },
+      data: list,
+      meta: { page: 2, limit: 2, total: 1, totalPages: 1 },
     };
     service.getClassesByInstructor.mockResolvedValue(result);
 
-    const res = await request(app).get('/classes/admin/my?page=3&limit=5&instructorId=target-instructor');
+    const res = await request(app).get(
+      '/classes/admin/my?instructorId=target-instructor&page=2&limit=2'
+    );
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data).toEqual(result.data);
-    expect(service.getClassesByInstructor).toHaveBeenCalledWith('target-instructor', { page: 3, limit: 5 });
+    expect(res.body.data).toEqual(list);
+    expect(res.body.meta).toEqual(result.meta);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('target-instructor', {
+      page: 2,
+      limit: 2,
+    });
   });
 
   test('get published classes', async () => {
@@ -222,6 +232,29 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(service.updateModeration).toHaveBeenCalledWith('1', 'Approved');
     expect(res.body.data).toEqual(approved);
+  });
+
+  test('approve class fails without active plan', async () => {
+    getActiveInstructorPlan.mockResolvedValueOnce(null);
+
+    const res = await request(app).patch('/classes/admin/1/approve');
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe(
+      'Active instructor plan required to approve classes'
+    );
+    expect(service.updateModeration).not.toHaveBeenCalled();
+  });
+
+  test('approve class fails when max courses reached', async () => {
+    getActiveInstructorPlan.mockResolvedValueOnce({ id: 'plan1', max_courses: 1 });
+    service.countPublishedClasses.mockResolvedValueOnce(1);
+
+    const res = await request(app).patch('/classes/admin/1/approve');
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe('Course limit reached for your plan');
+    expect(service.updateModeration).not.toHaveBeenCalled();
   });
 
   test('instructor can create class within plan limit', async () => {
