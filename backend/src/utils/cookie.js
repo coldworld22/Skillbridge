@@ -9,17 +9,43 @@
 // ---------------------------------------------------------------------------
 
 const { REFRESH_TOKEN_MAX_AGE } = require("../config/tokens");
-const { COOKIE_DOMAIN, NODE_ENV } = require("../config/env");
+const {
+  COOKIE_DOMAIN,
+  COOKIE_SECURE,
+  COOKIE_SAMESITE,
+  NODE_ENV,
+} = require("../config/env");
 
 // Use the provided cookie domain when available. Leaving it undefined allows
 // browsers to scope the cookie to the current host which works for local
 // development and custom deployments without additional configuration.
 const domain = COOKIE_DOMAIN ? COOKIE_DOMAIN.trim() || undefined : undefined;
 
+const secure =
+  COOKIE_SECURE !== undefined ? COOKIE_SECURE : NODE_ENV === "production";
+
+const resolveSameSite = () => {
+  if (COOKIE_SAMESITE) {
+    if (COOKIE_SAMESITE === "none") {
+      return "None";
+    }
+    if (COOKIE_SAMESITE === "lax") {
+      return "Lax";
+    }
+    if (COOKIE_SAMESITE === "strict") {
+      return "Strict";
+    }
+  }
+
+  return NODE_ENV === "production" ? "None" : "Lax";
+};
+
+const sameSite = resolveSameSite();
+
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: NODE_ENV === 'production',
-  sameSite: NODE_ENV === 'production' ? 'None' : 'Lax',
+  secure,
+  sameSite,
   maxAge: REFRESH_TOKEN_MAX_AGE,
 };
 
@@ -28,8 +54,8 @@ const refreshCookieOptions = {
 // token to ensure it is available across subdomains in production.
 const csrfCookieOptions = {
   httpOnly: false,
-  secure: NODE_ENV === 'production',
-  sameSite: NODE_ENV === 'production' ? 'None' : 'Lax',
+  secure,
+  sameSite,
 };
 
 if (domain) {
