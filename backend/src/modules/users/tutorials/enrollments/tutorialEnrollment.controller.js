@@ -8,7 +8,6 @@ const {
   getActiveStudentPlanId,
   getActiveStudentSubscription,
 } = require("../../../plans/subscription.helper");
-const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
