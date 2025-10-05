@@ -144,9 +144,7 @@ exports.createClass = catchAsync(async (req, res) => {
     }
   }
   const canAutoApprove =
-    data.status === "published" &&
-    publishImmediately &&
-    (isAdminUser || !req.user);
+    data.status === "published" && publishImmediately && isAdminUser;
   if (canAutoApprove) {
     if (!data.instructor_id) {
       throw new AppError("Instructor information required to publish immediately", 400);
