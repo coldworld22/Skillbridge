@@ -59,12 +59,12 @@ function AdminViewBookPage() {
         setLoading(false);
       } catch (err) {
         console.error("Failed to load book", err);
-        setError(t("errors.bookLoad"));
+        setError(t("errors:bookLoad"));
         setLoading(false);
       }
     };
     load();
-  }, [id]);
+  }, [id, t]);
 
   const handleDelete = () => {
     openConfirmModal({

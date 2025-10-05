@@ -59,8 +59,8 @@ function AdminEditBookPage() {
         setCoverPreview(bookData?.cover_image_url || null);
       } catch (err) {
         console.error("Failed to load book", err);
-        setError(t("errors.bookLoad"));
-        toast.error(t("errors.bookLoad"));
+        setError(t("errors:bookLoad"));
+        toast.error(t("errors:bookLoad"));
       } finally {
         setIsLoading(false);
       }
