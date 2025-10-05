@@ -34,6 +34,7 @@ function AnalyticsDashboard() {
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
   useEffect(() => {
+    let isMounted = true;
     if (!id) return;
     setStats(null);
     let isMounted = true;
