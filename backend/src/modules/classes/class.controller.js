@@ -509,7 +509,10 @@ exports.approveClass = catchAsync(async (req, res) => {
   if (!existing) throw new AppError("Class not found", 404);
   const plan = await getActiveInstructorPlan(existing.instructor_id);
   if (!plan) {
-    throw new AppError("Course limit reached for your plan", 403);
+    throw new AppError(
+      "Active instructor plan required to approve classes",
+      403
+    );
   }
   if (plan.max_courses) {
     const count = await service.countPublishedClasses(existing.instructor_id);
