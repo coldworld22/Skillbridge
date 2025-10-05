@@ -10,7 +10,6 @@ export default function CategoryPieChart({ data = [], title }) {
   const { chartsLib, chartsLoadError, resizeObserverSupported, loading } =
     useLazyRecharts();
 
-  const hasData = Array.isArray(data) && data.length > 0;
   const PieChart = chartsLib?.PieChart;
   const Pie = chartsLib?.Pie;
   const Cell = chartsLib?.Cell;
