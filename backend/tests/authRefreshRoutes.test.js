@@ -74,6 +74,53 @@ describe('POST /api/auth/refresh', () => {
     return { sessionCookie, csrfCookie, csrfToken };
   };
 
+  const createAppWithEnvOverrides = (overrides = {}) => {
+    const originalEnv = { ...process.env };
+    Object.entries(overrides).forEach(([key, value]) => {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
+
+    let result;
+
+    jest.isolateModules(() => {
+      const isolatedExpress = require('express');
+      const isolatedCookieParser = require('cookie-parser');
+      const isolatedSession = require('express-session');
+      const isolatedCsrf = require('../src/middleware/csrf');
+      const isolatedRoutes = require('../src/routes/auth');
+      const isolatedErrorHandler = require('../src/middleware/errorHandler');
+      const isolatedAuthService = require('../src/modules/auth/services/auth.service');
+
+      const isolatedApp = isolatedExpress();
+      isolatedApp.use(isolatedCookieParser());
+      isolatedApp.use(
+        isolatedSession({ secret: 'test', resave: false, saveUninitialized: true })
+      );
+      isolatedApp.use(isolatedExpress.json());
+      isolatedApp.use(isolatedCsrf);
+      isolatedApp.use(isolatedRoutes);
+      isolatedApp.use(isolatedErrorHandler);
+
+      result = { app: isolatedApp, authService: isolatedAuthService };
+    });
+
+    Object.keys(process.env).forEach((key) => {
+      if (!Object.prototype.hasOwnProperty.call(originalEnv, key)) {
+        delete process.env[key];
+      }
+    });
+
+    Object.entries(originalEnv).forEach(([key, value]) => {
+      process.env[key] = value;
+    });
+
+    return result;
+  };
+
   it('refreshes token with refresh cookie', async () => {
     authService.rotateRefreshToken.mockResolvedValue({
       decoded: { id: 1, role: 'User' },
@@ -154,5 +201,33 @@ describe('POST /api/auth/refresh', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringMatching(/CSRF token helper missing on refresh request.*skipping csrfToken cookie/i)
     );
+  });
+
+  it('allows refresh over HTTP when COOKIE_SECURE=false', async () => {
+    const { app: insecureApp, authService: insecureAuthService } =
+      createAppWithEnvOverrides({ COOKIE_SECURE: 'false' });
+
+    insecureAuthService.rotateRefreshToken.mockResolvedValue({
+      decoded: { id: 1, role: 'User' },
+      refreshToken: 'newR',
+    });
+    insecureAuthService.generateAccessToken.mockReturnValue('newA');
+
+    const csrfRes = await request(insecureApp).get('/api/auth/refresh');
+    const cookies = csrfRes.headers['set-cookie'] || [];
+    const sessionCookie = cookies.find((c) => c.startsWith('connect.sid'));
+    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0].split('=')[1];
+
+    expect(csrfCookie).toBeDefined();
+    expect(csrfCookie).not.toContain('Secure');
+
+    const refreshRes = await request(insecureApp)
+      .post('/api/auth/refresh')
+      .set('Cookie', [`refreshToken=r`, sessionCookie, csrfCookie])
+      .set('x-csrf-token', csrfToken);
+
+    expect(refreshRes.status).toBe(200);
+    expect(insecureAuthService.rotateRefreshToken).toHaveBeenCalledWith('r');
   });
 });

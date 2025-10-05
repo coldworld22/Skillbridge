@@ -1,7 +1,7 @@
 // 📁 src/services/auth/authService.js
 import api from "@/services/api/api";
 import logger from "@/utils/logger";
-import { ensureCsrfToken } from "@/services/api/csrf";
+import { ensureCsrfToken, clearCachedCsrfToken } from "@/services/api/csrf";
 import { getCookie } from "@/utils/cookies";
 import { normalizeError } from "@/utils/error";
 
@@ -120,11 +120,8 @@ export const resetPassword = async ({ email, code, new_password }) => {
  */
 export const refreshAccessToken = async () => {
   try {
-    const existingToken = getCookie("csrfToken");
-    const csrfToken = await ensureCsrfToken({
-      forceRefresh: !existingToken,
-    });
-
+    await ensureCsrfToken({ forceRefresh: true });
+    const csrfToken = getCookie("csrfToken");
     const res = await api.post(
       "auth/refresh",
       null,
@@ -132,10 +129,9 @@ export const refreshAccessToken = async () => {
         headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       }
     );
-
-    await ensureCsrfToken();
     return res.data;
   } catch (err) {
+    clearCachedCsrfToken();
     throw normalizeError(err);
   }
 };
