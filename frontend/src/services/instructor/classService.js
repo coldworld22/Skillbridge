@@ -80,6 +80,7 @@ export const fetchInstructorClassById = async (id) => {
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
+  await ensureCsrfToken();
   const headers = await buildCsrfHeaders({
     "Content-Type": "multipart/form-data",
   });
