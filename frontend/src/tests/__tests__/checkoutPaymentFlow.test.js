@@ -156,7 +156,12 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
       id: 3,
       name: 'Bank',
       type: 'bank',
-      config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' },
+      settings: {
+        bank_name: 'Test Bank',
+        account_holder_name: 'John',
+        account_number: '123',
+        swift_code: 'ABCDEF',
+      },
     },
   ]);
   initiateBankPayment.mockResolvedValue({ id: 42 });

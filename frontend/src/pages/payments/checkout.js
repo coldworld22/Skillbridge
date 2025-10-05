@@ -873,7 +873,11 @@ export default function CheckoutPage() {
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
-              bankDetails={selectedMethodObj?.config || selectedMethodObj}
+              bankDetails={
+                selectedMethodObj?.settings ||
+                selectedMethodObj?.config ||
+                selectedMethodObj
+              }
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
