@@ -362,6 +362,10 @@ exports.checkout = async (studentId) => {
           trx
         );
 
+        const payment = await trx('payments')
+          .where({ id: paymentId })
+          .first();
+
         await trx('book_purchases').insert({
           student_id: studentId,
           book_id: b.id,
