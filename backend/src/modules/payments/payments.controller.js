@@ -135,6 +135,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         item_id,
         subscriptionPlanId,
         subscriptionId,
+        null
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
@@ -142,12 +143,25 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    await walletHelpers.creditInstructorWallet(
-      item_type,
-      item_id,
-      instructor_amount
-    );
-    await handleEnrollment(item_type, user_id, item_id);
+    try {
+      await handleEnrollment(item_type, user_id, item_id);
+      await walletHelpers.creditInstructorWallet(
+        item_type,
+        item_id,
+        instructor_amount
+      );
+    } catch (err) {
+      await service.update(payment.id, {
+        status: STATUS.AWAITING_APPROVAL,
+        paid_at: null,
+      });
+
+      if (err instanceof AppError) {
+        throw err;
+      }
+
+      throw new AppError(err.message || "Enrollment failed", 400);
+    }
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {

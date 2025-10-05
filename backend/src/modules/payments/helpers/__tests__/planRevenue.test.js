@@ -81,6 +81,23 @@ describe('calculateInstructorAmount', () => {
     );
   });
 
+  it('uses a precomputed instructor amount when provided', async () => {
+    db.first
+      .mockResolvedValueOnce({ usage_count: 1, instructor_amount: 55 })
+      .mockResolvedValueOnce({ price_monthly: 200 });
+    db.select.mockResolvedValueOnce([{ feature_key: 'commission_rate', value: '0.25' }]);
+
+    const amt = await calculateInstructorAmount('plan4', 'sub4', 'item4', undefined, 'book', {
+      precomputedAmount: 12.5,
+    });
+
+    expect(amt).toBeCloseTo(12.5);
+    expect(calculatePlatformFee).not.toHaveBeenCalled();
+    expect(db.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage_count: 2, instructor_amount: 67.5 })
+    );
+  });
+
   it('isolates payouts per subscription for the same plan', async () => {
     db.first
       .mockResolvedValueOnce(null)

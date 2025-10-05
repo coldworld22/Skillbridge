@@ -104,7 +104,10 @@ jest.mock('../../paymentMethods/paymentMethods.service', () => ({
 const { validatePaymentData } = require('../helpers/validation');
 const { calculatePlatformFee } = require('../helpers/platformFee');
 const enrollmentService = require('../../classes/enrollments/classEnrollment.service');
-const { creditInstructorWallet } = require('../helpers/wallet');
+const {
+  creditInstructorWallet,
+  creditInstructorSubscription,
+} = require('../helpers/wallet');
 const service = require('../payments.service');
 const AppError = require('../../../utils/AppError');
 const studentRoutes = require('../student.routes');
@@ -223,5 +226,53 @@ describe('Payments controller - enrollment failures', () => {
       paid_at: null,
     });
     expect(creditInstructorWallet).not.toHaveBeenCalled();
+  });
+
+  test('credits instructor subscription once for plan-covered book payment', async () => {
+    validatePaymentData.mockResolvedValue({
+      method: { type: 'card', id: 'method-1' },
+      verifiedAmount: 0,
+      verifiedCurrency: 'USD',
+      finalStatus: STATUS.PAID,
+      verifiedReference: 'ref-plan',
+      planInterval: null,
+      schedules: [],
+      next_due_date: null,
+      totalInstallments: 1,
+      subscriptionPlanId: 'plan-1',
+      subscriptionId: 'sub-1',
+    });
+
+    calculatePlatformFee.mockResolvedValue({
+      platform_fee: 0,
+      instructor_amount: 0,
+    });
+
+    service.create.mockResolvedValue({
+      id: 'payment-plan',
+      user_id: 'student-1',
+      item_type: 'book',
+      item_id: 'book-1',
+      status: STATUS.PAID,
+      reference_id: 'ref-plan',
+    });
+
+    const response = await request(app)
+      .post('/payments')
+      .send({
+        method_id: 'method-1',
+        item_type: 'book',
+        item_id: 'book-1',
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'book',
+      'book-1',
+      'plan-1',
+      'sub-1',
+      null,
+    );
   });
 });
