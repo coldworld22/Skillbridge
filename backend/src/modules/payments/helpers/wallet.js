@@ -50,7 +50,13 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-async function creditInstructorSubscription(item_type, item_id, planId, trx) {
+async function creditInstructorSubscription(
+  item_type,
+  item_id,
+  planId,
+  trx,
+  delta,
+) {
   try {
     const amount = await calculateInstructorAmount(
       planId,
@@ -58,9 +64,7 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
       trx,
       item_type
     );
-    if (amount <= 0) {
-      return 0;
-    }
+    if (amount <= 0) return amount;
 
     let instructorId;
     if (item_type === "class") {
@@ -78,7 +82,7 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
       await walletService.increment(instructorId, amount, trx);
       return amount;
     }
-    return 0;
+    return amount;
   } catch (err) {
     logger.error("Failed to credit instructor wallet from subscription:", err);
     return 0;

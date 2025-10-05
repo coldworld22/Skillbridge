@@ -23,6 +23,10 @@ jest.mock("@/hooks/withAuthProtection", () => ({
   default: (Component) => Component,
 }));
 
+jest.mock("@/utils/currency", () => ({
+  formatCurrency: (value) => `$${Number(value ?? 0).toFixed(2)}`,
+}));
+
 jest.mock("@/components/layouts/AdminLayout", () => ({
   __esModule: true,
   default: ({ children }) => <div data-testid="admin-layout">{children}</div>,
@@ -70,10 +74,11 @@ describe("Admin class analytics page", () => {
     await waitFor(() => expect(mockFetchAdminClassAnalytics).toHaveBeenCalledWith("123"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText((content) => content.includes("classAnalyticsPage.total_revenue"))
-      ).toBeInTheDocument();
-      expect(screen.getByText("$0")).toBeInTheDocument();
+      const totalRevenueCard = screen
+        .getByText((content) => content.includes("classAnalyticsPage.total_revenue"))
+        .closest("div");
+      expect(totalRevenueCard).not.toBeNull();
+      expect(within(totalRevenueCard).getByText("$0.00")).toBeInTheDocument();
     });
 
     const totalStudentsValue = screen.getByText(
@@ -85,7 +90,20 @@ describe("Admin class analytics page", () => {
       .getByText((content) => content.includes("classAnalyticsPage.full_payments"))
       .closest("li");
     expect(fullPaymentsRow).not.toBeNull();
-    expect(within(fullPaymentsRow).getByText("0")).toBeInTheDocument();
+    expect(fullPaymentsRow.textContent).toContain("$0.00");
+    expect(fullPaymentsRow.textContent).toContain("classAnalyticsPage.students_label");
+
+    const subscriptionRow = screen
+      .getByText((content) => content.includes("classAnalyticsPage.subscription_seats"))
+      .closest("li");
+    expect(subscriptionRow).not.toBeNull();
+    expect(subscriptionRow.textContent).toContain("$0.00");
+
+    const freeRow = screen
+      .getByText((content) => content.includes("classAnalyticsPage.free_seats"))
+      .closest("li");
+    expect(freeRow).not.toBeNull();
+    expect(freeRow.textContent).toContain("classAnalyticsPage.students_label");
   });
 
   it("loads charts using the ResizeObserver polyfill when not supported natively", async () => {

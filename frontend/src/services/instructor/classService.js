@@ -150,9 +150,27 @@ export const deleteClassLesson = async (lessonId) => {
   await api.delete(`users/classes/lessons/${lessonId}`);
 };
 
-export const createClassAssignment = async (classId, payload) => {
+export const createClassAssignment = async (classId, payload, options = {}) => {
   await ensureCsrfToken();
-  const { data } = await api.post(`users/classes/assignments/class/${classId}`, payload);
+  const detectedFormData =
+    typeof FormData !== "undefined" && payload instanceof FormData;
+
+  const { headers: optionHeaders, ...restOptions } = options;
+  const headers = await buildCsrfHeaders({
+    ...(detectedFormData ? {} : { "Content-Type": "application/json" }),
+    ...(optionHeaders || {}),
+  });
+
+  const config = {
+    ...restOptions,
+    headers,
+  };
+
+  const { data } = await api.post(
+    `users/classes/assignments/class/${classId}`,
+    payload,
+    config
+  );
   return data?.data;
 };
 

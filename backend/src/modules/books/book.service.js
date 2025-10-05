@@ -11,7 +11,6 @@ const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
 const { getActiveStudentPlanId } = require("../plans/subscription.helper");
-const planRevenue = require("../payments/helpers/planRevenue");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
@@ -333,24 +332,6 @@ exports.checkout = async (studentId) => {
         if (!planMethodRecord) {
           planMethodRecord = await getPlanCoveredMethod(trx);
         }
-
-        const usage = await trx('plan_usage_metrics')
-          .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
-          .first();
-        if (usage) {
-          await trx('plan_usage_metrics')
-            .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
-            .update({ usage_count: usage.usage_count + 1 });
-        } else {
-          await trx('plan_usage_metrics').insert({
-            plan_id: activePlanId,
-            item_type: 'book',
-            item_id: b.id,
-            usage_count: 1,
-          });
-        }
-
-        await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
         const [payment] = await trx('payments')
           .insert({
             id: uuidv4(),
