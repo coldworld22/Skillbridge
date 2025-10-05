@@ -87,6 +87,9 @@ jest.mock('../../../payments/helpers/planPayments', () => ({
 jest.mock('../../../payouts/wallet.service', () => ({
   increment: jest.fn(),
 }));
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
 
 jest.mock('../../class.service', () => ({
   getClassById: jest.fn(),

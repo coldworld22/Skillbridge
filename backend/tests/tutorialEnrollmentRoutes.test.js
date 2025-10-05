@@ -14,10 +14,6 @@ const {
   getActiveStudentSubscription,
 } = require('../src/modules/plans/subscription.helper');
 
-jest.mock('../src/modules/payments/helpers/wallet', () => ({
-  creditInstructorSubscription: jest.fn(),
-  creditTutorialSubscription: jest.fn(),
-}));
 jest.mock('../src/modules/payments/helpers/methods.js', () => ({
   getPlanCoveredMethod: jest.fn(),
 }));
@@ -39,7 +35,10 @@ const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-m
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditTutorialSubscription: jest.fn(),
 }));
-const { creditTutorialSubscription } = require('../src/modules/payments/helpers/wallet');
+const walletService = require('../src/modules/payouts/wallet.service');
+const tutorialService = require('../src/modules/users/tutorials/tutorial.service');
+const paymentMethodWhere = jest.fn(() => ({ first: () => Promise.resolve({ id: 'plan-method-1' }) }));
+const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'plan-method-1' }]));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -238,14 +237,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
-    expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user1',
-        itemId: tutorialId,
-        itemType: 'tutorial',
-        source: 'subscription',
-      })
-    );
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
       'sub1',

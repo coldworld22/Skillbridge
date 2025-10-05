@@ -99,7 +99,8 @@ async function creditTutorialSubscription(
   planId,
   subscriptionId,
   trx,
-  precomputedAmount
+  precomputedAmount,
+  options,
 ) {
   return creditInstructorSubscription(
     "tutorial",
