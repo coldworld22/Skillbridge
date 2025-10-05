@@ -8,7 +8,6 @@ import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCoinbasePayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import { createPayment, fetchPayment } from '@/services/student/paymentService';
-import { subscribeToPlan } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -236,14 +235,31 @@ export async function handleBankPayment({
 }) {
   try {
     setPaymentStatus('processing');
-    const payload = new FormData();
-    payload.append('item_id', itemInfo.id);
-    payload.append('item_type', itemType);
-    payload.append('amount', finalPrice);
-    if (couponId) payload.append('coupon_id', couponId);
-    if (itemType === 'plan') payload.append('interval', interval);
-    if (formData.reference) payload.append('reference', formData.reference);
-    if (formData.receipt) payload.append('receipt', formData.receipt);
+    const payload = {
+      item_id: itemInfo.id,
+      item_type: itemType,
+      amount: finalPrice,
+    };
+    if (couponId) payload.coupon_id = couponId;
+    if (itemType === 'plan') payload.interval = interval;
+    if (formData.reference) payload.reference = formData.reference;
+
+    if (formData.receipt) {
+      try {
+        const uploaded = await uploadReceipt(formData.receipt);
+        const uploadedUrl =
+          uploaded?.url || uploaded?.receipt_url || uploaded || null;
+        if (uploadedUrl) {
+          payload.receipt_url = uploadedUrl;
+        }
+      } catch (uploadErr) {
+        console.error('Failed to upload bank receipt', uploadErr);
+        toast.error(t('payment_bank_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+    }
+
     const payment = await initiateBankPayment(payload);
     router.push(
       `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
@@ -358,10 +374,27 @@ export async function handleDefaultPayment({
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const response = await createPayment(payload);
-    if (response?.status === 'paid') {
-      await completePayment(response);
-    } else {
-      throw new Error('Payment not confirmed');
+
+    if (!response || typeof response !== 'object') {
+      throw new Error('Invalid payment response');
+    }
+
+    await completePayment(response);
+
+    const status =
+      typeof response.status === 'string' ? response.status.toLowerCase() : '';
+
+    if (!status) {
+      throw new Error('Payment status missing');
+    }
+
+    const failureIndicators = ['fail', 'cancel', 'declin', 'error'];
+    const isFailureStatus = failureIndicators.some((indicator) =>
+      status.includes(indicator)
+    );
+
+    if (isFailureStatus) {
+      throw new Error(`Payment ${status}`);
     }
   } catch (err) {
     console.error('Failed to process payment', err);
@@ -626,14 +659,6 @@ export default function CheckoutPage() {
     }
 
     if (itemType === 'plan') {
-      try {
-        await subscribeToPlan(itemInfo.id, interval, payment?.id);
-      } catch (err) {
-        console.error('Failed to subscribe to plan', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
       setPaymentStatus('success');
       setTimeout(() => {
         const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
