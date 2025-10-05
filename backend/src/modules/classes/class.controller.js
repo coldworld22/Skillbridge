@@ -76,20 +76,17 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const {
-    tags: rawTags,
-    status,
-    included_plans,
-    access_type,
-    publish_immediately,
-    ...body
-  } = req.body;
+  const { tags: rawTags, status, included_plans, access_type, ...body } = req.body;
+  const roles = req.user?.roles || req.user?.role;
+  const adminCaller = isAdminRole(roles);
+  const normalizedStatus = status === "published" ? "published" : "draft";
+  const shouldAutoApprove = adminCaller && normalizedStatus === "published";
   const data = {
     ...body,
     id: uuidv4(),
     slug,
-    status: status === "published" ? "published" : "draft",
-    moderation_status: "Pending",
+    status: normalizedStatus,
+    moderation_status: shouldAutoApprove ? "Approved" : "Pending",
     access_type: "paid",
   };
   const roles = req.user?.roles || req.user?.role;

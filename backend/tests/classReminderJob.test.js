@@ -2,8 +2,8 @@ jest.mock('../src/modules/classes/class.service', () => ({
   getClassesStartingBetween: jest.fn(),
 }));
 
-jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
-  getByClass: jest.fn(),
+jest.mock('../src/modules/classes/notifications/classNotification.service', () => ({
+  getSubscribedStudentsByClass: jest.fn(),
 }));
 
 jest.mock('../src/services/smsService', () => ({
@@ -15,7 +15,7 @@ jest.mock('../src/utils/email', () => ({
 }));
 
 const classService = require('../src/modules/classes/class.service');
-const enrollmentService = require('../src/modules/classes/enrollments/classEnrollment.service');
+const notificationService = require('../src/modules/classes/notifications/classNotification.service');
 const smsService = require('../src/services/smsService');
 const { sendClassReminderEmail } = require('../src/utils/email');
 const startClassReminderJob = require('../src/jobs/classReminderJob');
@@ -33,17 +33,17 @@ describe('classReminderJob', () => {
     global.setInterval.mockRestore();
   });
 
-  test('dispatches email and sms to enrolled students', async () => {
+  test('dispatches email and sms only to subscribed students', async () => {
     const cls = { id: 1, title: 'Math', start_date: '2023-01-01T00:00:00Z' };
-    const student = { email: 's@example.com', phone: '123', locale: 'en-US' };
+    const subscribedStudent = { email: 's@example.com', phone: '123', locale: 'en-US' };
     classService.getClassesStartingBetween.mockResolvedValue([cls]);
-    enrollmentService.getByClass.mockResolvedValue([student]);
+    notificationService.getSubscribedStudentsByClass.mockResolvedValue([subscribedStudent]);
 
     startClassReminderJob();
     await new Promise(setImmediate);
 
     expect(classService.getClassesStartingBetween).toHaveBeenCalled();
-    expect(enrollmentService.getByClass).toHaveBeenCalledWith(cls.id);
+    expect(notificationService.getSubscribedStudentsByClass).toHaveBeenCalledWith(cls.id);
     expect(smsService.sendSMS).toHaveBeenCalledWith({
       to: '123',
       text: expect.stringContaining('Reminder'),
@@ -54,6 +54,18 @@ describe('classReminderJob', () => {
       cls.start_date,
       'en-US'
     );
+  });
+
+  test('skips sending reminders when no students are subscribed', async () => {
+    const cls = { id: 1, title: 'Math', start_date: '2023-01-01T00:00:00Z' };
+    classService.getClassesStartingBetween.mockResolvedValue([cls]);
+    notificationService.getSubscribedStudentsByClass.mockResolvedValue([]);
+
+    startClassReminderJob();
+    await new Promise(setImmediate);
+
+    expect(smsService.sendSMS).not.toHaveBeenCalled();
+    expect(sendClassReminderEmail).not.toHaveBeenCalled();
   });
 });
 

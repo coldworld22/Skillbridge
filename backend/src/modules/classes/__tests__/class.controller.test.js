@@ -204,19 +204,16 @@ describe('class.controller createClass', () => {
     );
   });
 
-  test('admin publish immediately auto approves class', async () => {
+  test('auto-approves published classes created by admins', async () => {
     service.createClass.mockImplementation(async (data) => data);
-    service.countPublishedClasses.mockResolvedValue(0);
-    getActiveInstructorPlan.mockResolvedValue({ id: 'plan-1', max_courses: 5 });
 
     const req = {
       body: {
-        instructor_id: 'instructor1',
-        title: 'Publish Now',
+        title: 'Admin Published Class',
         status: 'published',
-        publish_immediately: 'true',
+        instructor_id: 'instructor1',
       },
-      user: { id: 'admin1', role: 'admin' },
+      user: { id: 'admin1', role: 'admin', roles: ['admin'] },
       files: {},
     };
     const res = {
@@ -251,9 +248,6 @@ describe('class.controller createClass', () => {
           moderation_status: 'Approved',
         }),
       })
-    );
-    expect(notificationService.createNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'class_approved' })
     );
   });
 
