@@ -59,21 +59,17 @@ async function creditInstructorSubscription(
   precomputedAmount,
 ) {
   try {
-    const hasPrecomputed = Number.isFinite(precomputedAmount);
-    const computedAmount = hasPrecomputed
-      ? Number(precomputedAmount)
-      : await calculateInstructorAmount(
-          planId,
-          subscriptionId,
-          item_id,
-          trx,
-          item_type,
-        );
-    const amount = Number.isFinite(computedAmount) ? computedAmount : 0;
-
-    if (amount <= 0) {
-      return amount;
-    }
+    const rawAmount =
+      precomputedAmount ??
+      (await calculateInstructorAmount(
+        planId,
+        subscriptionId,
+        item_id,
+        trx,
+        item_type
+      ));
+    const amount = Number.isFinite(rawAmount) ? rawAmount : 0;
+    if (amount <= 0) return amount;
 
     let instructorId;
     if (item_type === "class") {
@@ -111,7 +107,7 @@ async function creditTutorialSubscription(
     planId,
     subscriptionId,
     trx,
-    precomputedAmount
+    { precomputedAmount }
   );
 }
 

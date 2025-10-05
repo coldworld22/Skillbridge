@@ -74,6 +74,7 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
     allowInstallments,
     installments,
     perInstallment,
+    requireStripeTokenization = true,
   }) {
     const usingInstallments = allowInstallments && installments > 1;
     const buttonLabel = usingInstallments
@@ -83,8 +84,12 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          global.mockStripeCreateToken();
-          onSubmit({ token: 'tok_123', name: 'John Doe', email: 'john@example.com' });
+          if (requireStripeTokenization) {
+            global.mockStripeCreateToken();
+            onSubmit({ token: 'tok_123', name: 'John Doe', email: 'john@example.com' });
+            return;
+          }
+          onSubmit({ name: 'John Doe', email: 'john@example.com' });
         }}
       >
         <input placeholder="Full Name" />
@@ -156,7 +161,12 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
       id: 3,
       name: 'Bank',
       type: 'bank',
-      config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' },
+      settings: {
+        bank_name: 'Test Bank',
+        account_holder_name: 'John',
+        account_number: '123',
+        swift_code: 'ABCDEF',
+      },
     },
   ]);
   initiateBankPayment.mockResolvedValue({ id: 42 });
@@ -166,6 +176,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.getByDisplayValue('Test Bank')).toBeInTheDocument();
+  expect(screen.getByDisplayValue('123 Finance St')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText(/Reference/), { target: { value: 'ref' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
@@ -180,28 +191,21 @@ test.skip('completes payment for unhandled methods on success', async () => {
   /* Skipped: requires card processing setup */
 });
 
-test('renders card form without Elements for non-stripe processors', async () => {
+test('submits payment for non-stripe card processors without Stripe tokenization', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Paystack', type: 'paystack' },
   ]);
   createPayment.mockResolvedValue({ status: 'paid' });
+  global.mockStripeCreateToken.mockClear();
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.queryByTestId('elements-wrapper')).toBeNull();
-  fireEvent.change(screen.getByPlaceholderText('Full Name'), {
-    target: { value: 'John Doe' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('Email Address'), {
-    target: { value: 'john@example.com' },
-  });
-  fireEvent.click(
-    screen.getByRole('button', { name: /Pay \$100 with Paystack/i })
-  );
-  await waitFor(() =>
-    expect(createPayment).toHaveBeenCalledWith(
-      expect.objectContaining({ token: 'tok_123' })
-    )
-  );
+  const button = screen.getByRole('button', { name: /Pay \$100 with Paystack/i });
+  fireEvent.click(button);
+  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  const payload = createPayment.mock.calls[0][0];
+  expect(payload.token).toBeUndefined();
+  expect(global.mockStripeCreateToken).not.toHaveBeenCalled();
 });
 
 test('submits per-installment amount for multi-installment card payments', async () => {
@@ -301,7 +305,7 @@ test('shows available payment methods for plans', async () => {
   expect(await screen.findByText('USDT')).toBeInTheDocument();
 });
 
-test.skip('enrolls in free plan without payment', async () => {
+test('enrolls in free plan through zero-amount payment', async () => {
   jest.useFakeTimers();
   const push = jest.fn();
   mockUseRouter.mockReturnValue({
@@ -310,25 +314,38 @@ test.skip('enrolls in free plan without payment', async () => {
     push,
   });
   fetchPlanDetails.mockResolvedValue({
-    data: { id: 1, name: 'Free Plan', price_monthly: 0 },
+    data: { id: 1, name: 'Free Plan', price_monthly: 0, price_yearly: 0 },
   });
   fetchPaymentMethods.mockResolvedValue([]);
+  createPayment.mockResolvedValue({ id: 101, status: 'paid' });
 
   render(<CheckoutPage />);
+  await screen.findByText('Checkout');
   await waitFor(() => expect(fetchPlanDetails).toHaveBeenCalled());
-  await act(async () => {});
   const button = await screen.findByRole('button', {
     name: /enroll_for_free/i,
   });
   fireEvent.click(button);
   await waitFor(() =>
-    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly')
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item_type: 'plan',
+        item_id: 1,
+        amount: 0,
+        status: 'paid',
+        interval: 'monthly',
+      })
+    )
+  );
+  await waitFor(() =>
+    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly', 101)
   );
   jest.runAllTimers();
   await waitFor(() =>
-    expect(push).toHaveBeenCalledWith('/payments/success?itemType=plan&itemId=1')
+    expect(push).toHaveBeenCalledWith(
+      '/payments/success?itemType=plan&itemId=1&payment_id=101'
+    )
   );
-  expect(createPayment).not.toHaveBeenCalled();
   jest.useRealTimers();
 });
 

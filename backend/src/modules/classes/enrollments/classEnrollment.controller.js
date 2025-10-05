@@ -68,9 +68,10 @@ exports.enroll = catchAsync(async (req, res) => {
         classId,
         activePlanId,
         activeSubscriptionId,
-        trx,
-        instructorDelta,
+        trx
       );
+      // Intentionally ignoring the returned amount; the helper records
+      // instructor credits internally.
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({
