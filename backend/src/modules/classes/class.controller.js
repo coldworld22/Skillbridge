@@ -11,6 +11,7 @@ const { getActiveInstructorPlan } = require("../plans/instructor.helper");
 const planService = require("../plans/plans.service");
 const AppError = require("../../utils/AppError");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
+const { isAdminRole } = require("../../utils/role");
 
 const slugify = require("slugify");
 const db = require("../../config/database");
@@ -246,7 +247,9 @@ exports.getClassById = catchAsync(async (req, res) => {
 
 exports.getMyClasses = catchAsync(async (req, res) => {
   const { page = 1, limit = 10, instructorId } = req.query;
-  const targetId = instructorId || req.user.id;
+  const roles = req.user?.roles || req.user?.role;
+  const canOverrideInstructor = isAdminRole(roles);
+  const targetId = canOverrideInstructor && instructorId ? instructorId : req.user.id;
   const result = await service.getClassesByInstructor(targetId, {
     page: Number(page),
     limit: Number(limit),
