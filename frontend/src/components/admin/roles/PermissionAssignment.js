@@ -73,15 +73,29 @@ export default function PermissionAssignment({ role, canManage }) {
   };
 
   const handleAddNewPermission = async () => {
-    if (!canAddPermission || !canViewPermissions || !newPermission) return;
-    if (permissions.some((p) => p.code === newPermission)) {
+    if (!canAddPermission) return;
+    const code = newPermission.trim();
+    if (!code) {
+      toast.error("Permission code cannot be empty");
+      return;
+    }
+
+    const normalisedCode = code.toLowerCase();
+    if (
+      permissions.some(
+        (p) => typeof p.code === "string" && p.code.toLowerCase() === normalisedCode
+      )
+    ) {
       toast.error("Permission already exists");
       return;
     }
     try {
-      const created = await createPermission({ code: newPermission });
-      setPermissions([...permissions, created]);
-      setAssignedPermissions([...assignedPermissions, created.code]);
+      const created = await createPermission({ code });
+      const createdCode =
+        typeof created?.code === "string" ? created.code.trim() : code;
+      const createdPermission = { ...created, code: createdCode };
+      setPermissions([...permissions, createdPermission]);
+      setAssignedPermissions([...assignedPermissions, createdCode]);
       setNewPermission("");
       setShowAddModal(false);
       toast.success("Permission created");
