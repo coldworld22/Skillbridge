@@ -365,13 +365,41 @@ exports.getClassAnalytics = async (classId) => {
     .groupByRaw("DATE(enrolled_at)")
     .orderBy("date");
 
-  const [revenueRow] = await db("payments")
+  const paymentRows = await db("payments")
     .where({ item_type: "class", item_id: classId, status: "paid" })
-    .sum({ revenue: "amount" });
+    .select("source")
+    .countDistinct({ student_count: "user_id" })
+    .sum({ revenue: "amount" })
+    .groupBy("source");
 
-  const [paidStudentsRow] = await db("payments")
-    .where({ item_type: "class", item_id: classId, status: "paid" })
-    .countDistinct({ count: "user_id" });
+  let totalRevenue = 0;
+  let totalPaidStudents = 0;
+
+  const directBreakdown = { count: 0, revenue: 0 };
+  const subscriptionBreakdown = { count: 0, revenue: 0 };
+
+  const subscriptionSources = new Set([
+    "subscription",
+    "plan",
+    "plan_subscription",
+  ]);
+
+  for (const row of paymentRows) {
+    const source = (row.source || "direct").toLowerCase();
+    const students = parseInt(row.student_count, 10) || 0;
+    const revenue = Number(row.revenue) || 0;
+
+    totalPaidStudents += students;
+    totalRevenue += revenue;
+
+    if (subscriptionSources.has(source)) {
+      subscriptionBreakdown.count += students;
+      subscriptionBreakdown.revenue += revenue;
+    } else {
+      directBreakdown.count += students;
+      directBreakdown.revenue += revenue;
+    }
+  }
 
   const [attendanceRow] = await db("class_attendance")
     .where({ class_id: classId, attended: true })
@@ -391,17 +419,26 @@ exports.getClassAnalytics = async (classId) => {
   }
 
   const totalStudents = parseInt(totalRow.count, 10) || 0;
-  const paidStudents = parseInt(paidStudentsRow.count, 10) || 0;
+  const freeStudents = Math.max(0, totalStudents - totalPaidStudents);
 
   return {
     totalStudents,
-    totalRevenue: parseFloat(revenueRow.revenue) || 0,
+    totalRevenue,
     totalAttendance: parseInt(attendanceRow.count, 10) || 0,
     completed: parseInt(completedRow.count, 10) || 0,
     revenueBreakdown: {
-      full: paidStudents,
-      installments: 0,
-      free: Math.max(0, totalStudents - paidStudents),
+      full: {
+        count: directBreakdown.count,
+        revenue: directBreakdown.revenue,
+      },
+      subscription: {
+        count: subscriptionBreakdown.count,
+        revenue: subscriptionBreakdown.revenue,
+      },
+      free: {
+        count: freeStudents,
+        revenue: 0,
+      },
     },
     locations: [],
     devices: Object.entries(deviceCounts).map(([name, value]) => ({ name, value })),

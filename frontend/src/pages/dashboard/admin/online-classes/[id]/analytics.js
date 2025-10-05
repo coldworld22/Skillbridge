@@ -8,23 +8,58 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { fetchAdminClassAnalytics } from "@/services/admin/classService";
 import AnalyticsCharts from "@/components/admin/online-classes/AnalyticsCharts";
+import { formatCurrency } from "@/utils/currency";
 
 // ─────────────────────
 // Fallback analytics when API fails
 // ─────────────────────
+const EMPTY_BREAKDOWN_BUCKET = Object.freeze({ count: 0, revenue: 0 });
+
 const EMPTY_STATS = {
   totalStudents: 0,
   totalRevenue: 0,
   totalAttendance: 0,
   completed: 0,
   revenueBreakdown: {
-    full: 0,
-    installments: 0,
-    free: 0,
+    full: EMPTY_BREAKDOWN_BUCKET,
+    subscription: EMPTY_BREAKDOWN_BUCKET,
+    free: EMPTY_BREAKDOWN_BUCKET,
   },
   locations: [],
   devices: [],
   registrationTrend: [],
+};
+
+const normalizeBreakdownBucket = (bucket) => {
+  if (!bucket || typeof bucket !== "object" || Array.isArray(bucket)) {
+    const count = Number(bucket ?? 0) || 0;
+    return { count, revenue: 0 };
+  }
+
+  return {
+    count: Number(bucket.count ?? 0) || 0,
+    revenue: Number(bucket.revenue ?? 0) || 0,
+  };
+};
+
+const normalizeBreakdown = (breakdown) => {
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) {
+    return {
+      full: normalizeBreakdownBucket(),
+      subscription: normalizeBreakdownBucket(),
+      free: normalizeBreakdownBucket(),
+    };
+  }
+
+  const normalized = {
+    full: normalizeBreakdownBucket(breakdown.full),
+    subscription: normalizeBreakdownBucket(breakdown.subscription),
+    free: normalizeBreakdownBucket(breakdown.free),
+  };
+
+  normalized.free.revenue = 0;
+
+  return normalized;
 };
 
 function AnalyticsDashboard() {
@@ -49,10 +84,7 @@ function AnalyticsDashboard() {
         setStats({
           ...EMPTY_STATS,
           ...(data ?? {}),
-          revenueBreakdown: {
-            ...EMPTY_STATS.revenueBreakdown,
-            ...(data?.revenueBreakdown ?? {}),
-          },
+          revenueBreakdown: normalizeBreakdown(data?.revenueBreakdown),
           locations: data?.locations ?? EMPTY_STATS.locations,
           devices: data?.devices ?? EMPTY_STATS.devices,
           registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
@@ -86,10 +118,9 @@ function AnalyticsDashboard() {
   const devices = stats.devices ?? EMPTY_STATS.devices;
   const registrationTrend = stats.registrationTrend ?? EMPTY_STATS.registrationTrend;
 
-  const avgRevenue =
-    totalStudents > 0
-      ? (totalRevenue / totalStudents).toFixed(2)
-      : "0";
+  const avgRevenue = formatCurrency(
+    totalStudents > 0 ? totalRevenue / totalStudents : 0
+  );
   const attendanceRate =
     totalStudents > 0
       ? ((totalAttendance / totalStudents) * 100).toFixed(1)
@@ -113,15 +144,24 @@ function AnalyticsDashboard() {
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 {t('classAnalyticsPage.total_revenue')}</h2>
-          <p className="text-3xl font-bold text-indigo-600">${totalRevenue}</p>
+          <p className="text-3xl font-bold text-indigo-600">{formatCurrency(totalRevenue)}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 {t('classAnalyticsPage.revenue_breakdown')}</h2>
           <ul className="text-gray-700 space-y-1">
-            <li><strong>{t('classAnalyticsPage.full_payments')}:</strong> {revenueBreakdown?.full ?? 0}</li>
-            <li><strong>{t('classAnalyticsPage.installments')}:</strong> {revenueBreakdown?.installments ?? 0}</li>
-            <li><strong>{t('classAnalyticsPage.free_seats')}:</strong> {revenueBreakdown?.free ?? 0}</li>
+            <li>
+              <strong>{t('classAnalyticsPage.full_payments')}:</strong>{' '}
+              {revenueBreakdown.full.count} {t('classAnalyticsPage.students_label', 'students')} – {formatCurrency(revenueBreakdown.full.revenue)} {t('classAnalyticsPage.revenue_label', 'revenue')}
+            </li>
+            <li>
+              <strong>{t('classAnalyticsPage.subscription_seats')}:</strong>{' '}
+              {revenueBreakdown.subscription.count} {t('classAnalyticsPage.students_label', 'students')} – {formatCurrency(revenueBreakdown.subscription.revenue)} {t('classAnalyticsPage.revenue_label', 'revenue')}
+            </li>
+            <li>
+              <strong>{t('classAnalyticsPage.free_seats')}:</strong>{' '}
+              {revenueBreakdown.free.count} {t('classAnalyticsPage.students_label', 'students')}
+            </li>
           </ul>
         </div>
       </div>
@@ -129,7 +169,7 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">📊 {t('classAnalyticsPage.avg_revenue_per_student')}</h2>
-          <p className="text-3xl font-bold text-yellow-600">${avgRevenue}</p>
+          <p className="text-3xl font-bold text-yellow-600">{avgRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
