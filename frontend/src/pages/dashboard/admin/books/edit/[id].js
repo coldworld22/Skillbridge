@@ -69,7 +69,7 @@ function AdminEditBookPage() {
   }, [id, t]);
 
   const handleSubmit = async (formData, setProgress) => {
-    if (fileInputRef.current?.files?.[0]) {
+    if (!fileError && fileInputRef.current?.files?.[0]) {
       formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {
