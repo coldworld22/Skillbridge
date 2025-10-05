@@ -101,6 +101,7 @@ export default function AdminClassesTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeSetting, setPageSizeSetting] = useState(String(DEFAULT_PAGE_SIZE));
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -110,6 +111,7 @@ export default function AdminClassesTable() {
   const inFlightRequestRef = useRef(null);
   const pendingRequestRef = useRef(null);
   const isComponentMountedRef = useRef(true);
+  const authFailureRef = useRef(false);
   const lastNormalizedPageRef = useRef(currentPage);
   const currentPageRef = useRef(currentPage);
   const totalItemsRef = useRef(totalItems);
@@ -224,6 +226,16 @@ export default function AdminClassesTable() {
       if (lastFailedSignatureRef.current) {
         clearFailedSignature();
       }
+      if (authFailureRef.current) {
+        authFailureRef.current = false;
+      }
+      if (authError) {
+        setAuthError(false);
+      }
+      return;
+    }
+
+    if (authFailureRef.current || lastFailedSignatureRef.current?.isAuthFailure) {
       return;
     }
 
@@ -431,6 +443,10 @@ export default function AdminClassesTable() {
         }
 
         lastSuccessfulSignatureRef.current = finalSignature;
+        authFailureRef.current = false;
+        if (isComponentMountedRef.current && authError) {
+          setAuthError(false);
+        }
         clearFailedSignature();
       } catch (err) {
         console.error(err);
@@ -440,7 +456,18 @@ export default function AdminClassesTable() {
           previousFailure?.toastShown;
         const shouldShowToast =
           isComponentMountedRef.current && !toastAlreadyShownForSignature;
-        if (shouldShowToast) {
+        const statusCode = err?.response?.status;
+        const isAuthFailure = statusCode === 401 || statusCode === 403;
+        if (isAuthFailure) {
+          authFailureRef.current = true;
+          if (isComponentMountedRef.current) {
+            setAuthError(true);
+            setClassList([]);
+            setTotalItemsIfNeeded(0);
+            setTotalPagesIfNeeded(1);
+          }
+        }
+        if (shouldShowToast && !isAuthFailure) {
           toast.error("Failed to load classes");
         }
         clearFailedSignature();
@@ -452,26 +479,29 @@ export default function AdminClassesTable() {
           retryTimer: null,
           toastShown:
             toastAlreadyShownForSignature || shouldShowToast || false,
+          isAuthFailure,
         };
-        failureRecord.retryTimer = setTimeout(() => {
-          if (!isComponentMountedRef.current) {
-            return;
-          }
-          const activeFailure = lastFailedSignatureRef.current;
-          if (!activeFailure || activeFailure.signature !== signature) {
-            return;
-          }
-          clearFailedSignature(activeFailure);
-          if (
-            lastSuccessfulSignatureRef.current === signature ||
-            inFlightRequestRef.current ||
-            (pendingRequestRef.current &&
-              pendingRequestRef.current.signature === signature)
-          ) {
-            return;
-          }
-          executeRequest(details);
-        }, FAILED_REQUEST_RETRY_DELAY_MS);
+        if (!isAuthFailure) {
+          failureRecord.retryTimer = setTimeout(() => {
+            if (!isComponentMountedRef.current || authFailureRef.current) {
+              return;
+            }
+            const activeFailure = lastFailedSignatureRef.current;
+            if (!activeFailure || activeFailure.signature !== signature) {
+              return;
+            }
+            clearFailedSignature(activeFailure);
+            if (
+              lastSuccessfulSignatureRef.current === signature ||
+              inFlightRequestRef.current ||
+              (pendingRequestRef.current &&
+                pendingRequestRef.current.signature === signature)
+            ) {
+              return;
+            }
+            executeRequest(details);
+          }, FAILED_REQUEST_RETRY_DELAY_MS);
+        }
         lastFailedSignatureRef.current = failureRecord;
       } finally {
         if (isComponentMountedRef.current && loadingRef.current) {
@@ -485,6 +515,7 @@ export default function AdminClassesTable() {
           pendingRequestRef.current = null;
           if (
             isComponentMountedRef.current &&
+            !authFailureRef.current &&
             lastSuccessfulSignatureRef.current !== nextRequest.signature &&
             lastFailedSignatureRef.current?.signature !== nextRequest.signature
           ) {
@@ -754,6 +785,14 @@ export default function AdminClassesTable() {
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+  if (authError) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        Unable to load classes. Please sign in again to continue.
+      </div>
+    );
+  }
 
   if (loading) {
     return (
