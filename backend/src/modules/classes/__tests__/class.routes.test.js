@@ -69,6 +69,8 @@ const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
 jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
 
+const authMiddleware = require('../../../middleware/auth/authMiddleware');
+
 const app = express();
 app.use(express.json());
 app.use('/classes', routes);
