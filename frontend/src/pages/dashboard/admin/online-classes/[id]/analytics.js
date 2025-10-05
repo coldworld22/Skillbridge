@@ -35,10 +35,15 @@ function AnalyticsDashboard() {
   const [stats, setStats] = useState(null);
   useEffect(() => {
     let isMounted = true;
-    if (!id) return;
+
+    if (!classId) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
     setStats(null);
-    let isMounted = true;
-    fetchAdminClassAnalytics(id)
+    fetchAdminClassAnalytics(classId)
       .then((data) => {
         if (!isMounted) return;
         setStats({
@@ -62,7 +67,7 @@ function AnalyticsDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [classId]);
 
   if (!stats) {
     return (
