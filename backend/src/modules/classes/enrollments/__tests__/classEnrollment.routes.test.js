@@ -51,6 +51,15 @@ jest.mock('../../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/wallet', () => {
+  const creditInstructorSubscription = jest
+    .fn()
+    .mockResolvedValue(undefined);
+  creditInstructorSubscription.getCredits = () =>
+    creditInstructorSubscription.mock.calls.length;
+  return { creditInstructorSubscription };
+});
+
 jest.mock('../../../payouts/wallet.service', () => ({
   increment: jest.fn(),
 }));
@@ -68,6 +77,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { calculateInstructorAmount } = require('../../../payments/helpers/planRevenue');
+const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const walletService = require('../../../payouts/wallet.service');
 const classService = require('../../class.service');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
@@ -82,6 +92,8 @@ describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     calculateInstructorAmount.mockReset();
+    creditInstructorSubscription.mockReset();
+    creditInstructorSubscription.mockResolvedValue(undefined);
     walletService.increment.mockReset();
     classService.getClassById.mockReset();
     db.first.mockReset();
@@ -145,30 +157,15 @@ describe('Class enrollment routes', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('allow enrollment when class covered by subscription', async () => {
-    const usageTracker = { count: 0 };
-    calculateInstructorAmount.mockImplementation(
-      async (_planId, _itemId, trx, _itemType) => {
-        usageTracker.count += 1;
-        await trx('plan_usage_metrics').update({
-          usage_count: usageTracker.count,
-          instructor_amount: 5,
-        });
-        return 5;
-      }
-    );
-    classService.getClassById.mockResolvedValue({ instructor_id: 'instructor-42' });
-    walletService.increment.mockResolvedValue({});
-
-    db.first
-      .mockResolvedValueOnce({
-        status: 'published',
-        moderation_status: 'Approved',
-        price: 50,
-        included_plans: ['plan1'],
-      })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'plan1', price_monthly: 0 });
+  test('allow enrollment when class is covered by an active subscription plan', async () => {
+    db.first.mockResolvedValueOnce({
+      id: 'abc',
+      status: 'published',
+      moderation_status: 'Approved',
+      price: 50,
+      currency: 'USD',
+      included_plans: ['plan1'],
+    });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentSubscription.mockResolvedValue({
@@ -177,34 +174,14 @@ describe('Class enrollment routes', () => {
     });
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
-    classService.getClassById.mockResolvedValue({ instructor_id: 'inst-1' });
-    planRevenue.calculateInstructorAmount.mockResolvedValue(7.5);
+
     const res = await request(app).post('/classes/enroll/abc');
+
     expect(res.statusCode).toBe(200);
-    expect(service.createEnrollment).toHaveBeenCalled();
-    expect(calculateInstructorAmount).toHaveBeenCalledTimes(1);
-    expect(calculateInstructorAmount).toHaveBeenCalledWith(
-      'plan1',
-      'abc',
+    expect(service.createEnrollment).toHaveBeenCalledWith(
+      expect.objectContaining({ class_id: 'abc', user_id: 'test-user' }),
       expect.anything(),
-      'class'
     );
-    expect(usageTracker.count).toBe(1);
-    expect(db.update).toHaveBeenCalledWith(
-      expect.objectContaining({ usage_count: 1, instructor_amount: 5 })
-    );
-    expect(walletService.increment).toHaveBeenCalledWith(
-      'instructor-42',
-      5,
-      expect.anything()
-    );
-    expect(planRevenue.calculateInstructorAmount.getUsageCount()).toBe(1);
-    const usageUpdates = db.update.mock.calls.filter(([data]) =>
-      data && Object.prototype.hasOwnProperty.call(data, 'usage_count'),
-    );
-    expect(usageUpdates).toHaveLength(1);
-    expect(usageUpdates[0][0].usage_count).toBe(1);
-    expect(creditInstructorSubscription.getCredits()).toBe(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         trx: db,
@@ -214,6 +191,14 @@ describe('Class enrollment routes', () => {
         amount: 0,
         currency: 'USD',
       }),
+    );
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'class',
+      'abc',
+      'plan1',
+      'sub1',
+      expect.anything(),
     );
   });
 

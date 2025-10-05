@@ -54,16 +54,21 @@ async function creditInstructorSubscription(
   item_type,
   item_id,
   planId,
+  subscriptionId,
   trx,
   delta,
 ) {
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    const amount =
+      typeof delta === "number"
+        ? delta
+        : await calculateInstructorAmount(
+            planId,
+            subscriptionId,
+            item_id,
+            trx,
+            item_type
+          );
     if (amount <= 0) return amount;
 
     let instructorId;
