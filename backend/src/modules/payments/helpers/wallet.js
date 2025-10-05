@@ -107,7 +107,7 @@ async function creditTutorialSubscription(
   precomputedAmount,
   options,
 ) {
-  return creditInstructorSubscription(
+  const args = [
     "tutorial",
     tutorialId,
     planId,
