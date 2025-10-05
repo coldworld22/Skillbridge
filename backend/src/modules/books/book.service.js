@@ -380,7 +380,7 @@ exports.checkout = async (studentId) => {
           trx
         );
 
-        payments.push(payment);
+        payments.push(paymentRecord);
         continue;
       }
 
