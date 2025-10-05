@@ -604,51 +604,27 @@ export default function CheckoutPage() {
   };
 
 
-  const completePayment = async (existingPayment) => {
-    let payment = existingPayment;
-    if (itemType === 'plan' && finalPrice <= Number.EPSILON) {
-      setPaymentStatus('processing');
-      try {
-        await subscribeToPlan(itemInfo.id, interval);
-      } catch (err) {
-        console.error('Failed to subscribe to plan', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
-      setPaymentStatus('success');
-      setTimeout(() => {
-        router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`);
-      }, 1500);
+  const buildBasePaymentPayload = ({ amount }) => {
+    const payload = {
+      item_type: itemType,
+      item_id: itemInfo.id,
+      amount,
+    };
+    if (itemType === 'plan') payload.interval = interval;
+    if (couponId) payload.coupon_id = couponId;
+    return payload;
+  };
+
+  const completePayment = async (paymentOverride) => {
+    const payment = paymentOverride || existingPayment;
+    const status = payment?.status;
+
+    if (payment && status && status !== 'paid') {
+      toast.error(t('payment_pending_confirmation'));
+      setPaymentStatus(status);
       return;
     }
-    if (itemType === 'plan' && !payment) {
-      setPaymentStatus('processing');
-      const eligible = filterEligibleMethods(methods);
-      if (eligible.length === 0) {
-        toast.error(t('no_payment_methods_plan'));
-        setPaymentStatus('idle');
-        return;
-      }
-      const defaultMethod = eligible[0];
-      try {
-        const payload = {
-          item_type: itemType,
-          item_id: itemInfo.id,
-          amount: finalPrice,
-          status: 'paid',
-          interval,
-        };
-        if (defaultMethod?.id) payload.method_id = defaultMethod.id;
-        if (couponId) payload.coupon_id = couponId;
-        payment = await createPayment(payload);
-      } catch (err) {
-        console.error('Failed to create payment', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
-    }
+
     if (itemType === 'plan') {
       try {
         await subscribeToPlan(itemInfo.id, interval, payment?.id);
@@ -667,47 +643,42 @@ export default function CheckoutPage() {
       }, 1500);
       return;
     }
-    const storageKey =
-      itemType === 'tutorial'
-        ? 'enrolledTutorials'
-        : itemType === 'book'
-        ? 'purchasedBooks'
-        : 'enrolledClasses';
-    let enrolled = [];
+
+    setPaymentStatus('success');
+
     if (typeof window !== 'undefined') {
+      const storageKey =
+        itemType === 'tutorial'
+          ? 'enrolledTutorials'
+          : itemType === 'book'
+          ? 'purchasedBooks'
+          : 'enrolledClasses';
       try {
-        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      } catch {
-        enrolled = [];
-      }
-    }
-    const newItem =
-      itemType === 'book'
-        ? {
-            id: itemInfo.id,
-            title: itemInfo.title,
-            author: itemInfo.author,
-            purchaseDate: new Date().toISOString(),
-          }
-        : {
-            id: itemInfo.id,
-            title: itemInfo.title,
-            instructor: itemInfo.instructor,
-            startDate: new Date().toISOString(),
-            status: 'Live',
-            joined: true,
-          };
-    if (typeof window !== 'undefined') {
-      try {
-        enrolled.push(newItem);
-        localStorage.setItem(storageKey, JSON.stringify(enrolled));
+        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const newItem =
+          itemType === 'book'
+            ? {
+                id: itemInfo.id,
+                title: itemInfo.title,
+                author: itemInfo.author,
+                purchaseDate: new Date().toISOString(),
+              }
+            : {
+                id: itemInfo.id,
+                title: itemInfo.title,
+                instructor: itemInfo.instructor,
+                startDate: new Date().toISOString(),
+                status: 'Live',
+                joined: true,
+              };
+        const updated = Array.isArray(existing) ? [...existing, newItem] : [newItem];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
         await Promise.resolve(removeItem(itemInfo.id));
       } catch (err) {
-        console.error('Failed to persist enrollment', err);
-        toast.error(t('payment_generic_failure'));
+        console.warn('Failed to update local enrollment cache', err);
       }
     }
-    setPaymentStatus('success');
+
     setTimeout(() => {
       const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
       router.push(
@@ -718,7 +689,16 @@ export default function CheckoutPage() {
 
   const handlePayment = async (_formData = {}) => {
     if (finalPrice <= Number.EPSILON) {
-      await completePayment();
+      try {
+        setPaymentStatus('processing');
+        const payload = { ...buildBasePaymentPayload({ amount: finalPrice }), status: 'paid' };
+        const payment = await createPayment(payload);
+        await completePayment(payment);
+      } catch (err) {
+        console.error('Failed to finalize free payment', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+      }
       return;
     }
     const method = filteredMethods.find(
@@ -899,7 +879,7 @@ export default function CheckoutPage() {
           {isFree ? (
             <div className="text-center">
               <p className="mb-4">{t('free_item_notice')}</p>
-              <button onClick={() => completePayment()} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
+              <button onClick={() => handlePayment()} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
                 {t('enroll_for_free')}
               </button>
             </div>

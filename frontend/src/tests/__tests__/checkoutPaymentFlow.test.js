@@ -299,7 +299,7 @@ test('shows available payment methods for plans', async () => {
   expect(await screen.findByText('USDT')).toBeInTheDocument();
 });
 
-test.skip('enrolls in free plan without payment', async () => {
+test('enrolls in free plan through zero-amount payment', async () => {
   jest.useFakeTimers();
   const push = jest.fn();
   mockUseRouter.mockReturnValue({
@@ -308,25 +308,38 @@ test.skip('enrolls in free plan without payment', async () => {
     push,
   });
   fetchPlanDetails.mockResolvedValue({
-    data: { id: 1, name: 'Free Plan', price_monthly: 0 },
+    data: { id: 1, name: 'Free Plan', price_monthly: 0, price_yearly: 0 },
   });
   fetchPaymentMethods.mockResolvedValue([]);
+  createPayment.mockResolvedValue({ id: 101, status: 'paid' });
 
   render(<CheckoutPage />);
+  await screen.findByText('Checkout');
   await waitFor(() => expect(fetchPlanDetails).toHaveBeenCalled());
-  await act(async () => {});
   const button = await screen.findByRole('button', {
     name: /enroll_for_free/i,
   });
   fireEvent.click(button);
   await waitFor(() =>
-    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly')
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item_type: 'plan',
+        item_id: 1,
+        amount: 0,
+        status: 'paid',
+        interval: 'monthly',
+      })
+    )
+  );
+  await waitFor(() =>
+    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly', 101)
   );
   jest.runAllTimers();
   await waitFor(() =>
-    expect(push).toHaveBeenCalledWith('/payments/success?itemType=plan&itemId=1')
+    expect(push).toHaveBeenCalledWith(
+      '/payments/success?itemType=plan&itemId=1&payment_id=101'
+    )
   );
-  expect(createPayment).not.toHaveBeenCalled();
   jest.useRealTimers();
 });
 
