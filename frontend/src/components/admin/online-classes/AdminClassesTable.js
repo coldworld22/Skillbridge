@@ -121,6 +121,8 @@ export default function AdminClassesTable() {
     user: state.user,
     hasHydrated: state.hasHydrated,
   }));
+  const authIdentifier = user?.id ?? null;
+  const authIdentifierRef = useRef(authIdentifier);
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
@@ -168,6 +170,10 @@ export default function AdminClassesTable() {
     loadingRef.current = loading;
   }, [loading]);
 
+  useEffect(() => {
+    authIdentifierRef.current = authIdentifier;
+  }, [authIdentifier]);
+
   const setCurrentPageIfNeeded = (value) => {
     if (!Number.isFinite(value)) {
       return false;
@@ -202,7 +208,6 @@ export default function AdminClassesTable() {
     [...items].sort((a, b) => compareValues(a, b, key));
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
-  const authIdentifier = user?.id ?? null;
   const canManageRules =
     isMounted && hasHydrated && user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
@@ -319,7 +324,7 @@ export default function AdminClassesTable() {
         sortKey: sortValue,
       } = details;
 
-      if (!isComponentMountedRef.current) {
+      if (!isComponentMountedRef.current || !authIdentifierRef.current) {
         return;
       }
 
@@ -471,7 +476,15 @@ export default function AdminClassesTable() {
           toast.error("Failed to load classes");
         }
         clearFailedSignature();
+        const statusCode =
+          err?.response?.status ?? err?.status ?? err?.statusCode ?? null;
+        const isAuthorizationError = statusCode === 401 || statusCode === 403;
+        const hasValidAuth = Boolean(authIdentifierRef.current);
         const failureTimestamp = Date.now();
+        if (!hasValidAuth || isAuthorizationError) {
+          lastFailedSignatureRef.current = null;
+          return;
+        }
         const failureRecord = {
           signature,
           timestamp: failureTimestamp,
