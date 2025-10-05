@@ -25,7 +25,6 @@ jest.mock('../../../../../middleware/auth/authMiddleware', () => ({
 }));
 
 jest.mock('../../../../plans/subscription.helper', () => ({
-  getActiveStudentPlanId: jest.fn(),
   getActiveStudentSubscription: jest.fn(),
 }));
 
@@ -38,10 +37,7 @@ jest.mock('../../../../payments/helpers/planPayments', () => ({
 }));
 
 const db = require('../../../../../config/database');
-const {
-  getActiveStudentPlanId,
-  getActiveStudentSubscription,
-} = require('../../../../plans/subscription.helper');
+const { getActiveStudentSubscription } = require('../../../../plans/subscription.helper');
 const { recordPlanCoveredPayment } = require('../../../../payments/helpers/planPayments');
 
 const routes = require('../../tutorial.routes');
