@@ -180,28 +180,21 @@ test.skip('completes payment for unhandled methods on success', async () => {
   /* Skipped: requires card processing setup */
 });
 
-test('renders card form without Elements for non-stripe processors', async () => {
+test('submits payment for non-stripe card processors without Stripe tokenization', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Paystack', type: 'paystack' },
   ]);
   createPayment.mockResolvedValue({ status: 'paid' });
+  global.mockStripeCreateToken.mockClear();
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.queryByTestId('elements-wrapper')).toBeNull();
-  fireEvent.change(screen.getByPlaceholderText('Full Name'), {
-    target: { value: 'John Doe' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('Email Address'), {
-    target: { value: 'john@example.com' },
-  });
-  fireEvent.click(
-    screen.getByRole('button', { name: /Pay \$100 with Paystack/i })
-  );
-  await waitFor(() =>
-    expect(createPayment).toHaveBeenCalledWith(
-      expect.objectContaining({ token: 'tok_123' })
-    )
-  );
+  const button = screen.getByRole('button', { name: /Pay \$100 with Paystack/i });
+  fireEvent.click(button);
+  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  const payload = createPayment.mock.calls[0][0];
+  expect(payload.token).toBeUndefined();
+  expect(global.mockStripeCreateToken).not.toHaveBeenCalled();
 });
 
 test('submits per-installment amount for multi-installment card payments', async () => {
