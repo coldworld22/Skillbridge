@@ -155,6 +155,24 @@ function getMethodIdentifier(method) {
   return '';
 }
 
+function normalizePaymentMethod(method) {
+  if (!method || typeof method !== 'object') return method;
+  const identifier = getMethodIdentifier(method).toLowerCase();
+  if (identifier !== 'bank') return method;
+
+  const settings =
+    method.settings && typeof method.settings === 'object' && !Array.isArray(method.settings)
+      ? method.settings
+      : {};
+  const mergedConfig = { ...(method.config || {}), ...settings };
+
+  return {
+    ...method,
+    config: mergedConfig,
+    bankSettings: settings,
+  };
+}
+
 const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase', 'nowpayments'];
 
 function isCryptoMethod(methodOrIdentifier) {
@@ -526,7 +544,7 @@ export default function CheckoutPage() {
         try {
           const data = await fetchPaymentMethods();
           if (!active) return;
-          const methodsList = Array.isArray(data) ? data : [];
+          const methodsList = Array.isArray(data) ? data.map(normalizePaymentMethod) : [];
           setMethods(methodsList);
           const eligibleMethods = filterEligibleMethods(methodsList);
           if (eligibleMethods.length > 0) {
