@@ -193,7 +193,7 @@ describe('listBooks', () => {
   });
 });
 
-describe.skip('checkout', () => {
+describe('checkout', () => {
   const studentId = 'student1';
 
   beforeEach(async () => {
