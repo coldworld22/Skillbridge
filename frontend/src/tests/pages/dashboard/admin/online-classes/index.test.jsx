@@ -97,6 +97,55 @@ describe("AdminClassesTable status toggling", () => {
     });
   });
 
+  it("approves a class without showing an error toast", async () => {
+    approveAdminClassMock.mockResolvedValue({ publishStatus: "published" });
+
+    render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "Approve" })[0]).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Approve" })[0]);
+
+    await waitFor(() => {
+      expect(approveAdminClassMock).toHaveBeenCalledWith("class-1");
+    });
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith("Class approved");
+    });
+
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a class without showing an error toast", async () => {
+    rejectAdminClassMock.mockResolvedValue(undefined);
+
+    render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "Reject" })[0]).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Reject" })[0]);
+
+    const reasonField = await screen.findByPlaceholderText("Enter rejection reason");
+    fireEvent.change(reasonField, { target: { value: "Not a good fit" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Yes, Reject" }));
+
+    await waitFor(() => {
+      expect(rejectAdminClassMock).toHaveBeenCalledWith("class-1", "Not a good fit");
+    });
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith("Class rejected");
+    });
+
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
   it("replaces the entire row with the refreshed class after toggling publish status", async () => {
     const refreshedClass = {
       ...baseClass,
