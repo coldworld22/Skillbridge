@@ -245,7 +245,9 @@ export default function AdminClassesTable() {
     }
 
     if (normalizedPage !== currentPage) {
-      setCurrentPageIfNeeded(normalizedPage);
+      if (setCurrentPageIfNeeded(normalizedPage)) {
+        return;
+      }
     }
 
     if (lastNormalizedPageRef.current !== normalizedPage) {
