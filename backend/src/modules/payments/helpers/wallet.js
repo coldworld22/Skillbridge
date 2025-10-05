@@ -80,10 +80,12 @@ async function creditInstructorSubscription(
 
     if (instructorId) {
       await walletService.increment(instructorId, amount, trx);
+      return amount;
     }
     return amount;
   } catch (err) {
     logger.error("Failed to credit instructor wallet from subscription:", err);
+    return 0;
   }
 }
 
