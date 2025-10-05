@@ -8,7 +8,6 @@ const {
   getActiveStudentPlanId,
   getActiveStudentSubscription,
 } = require("../../../plans/subscription.helper");
-const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
@@ -45,16 +44,6 @@ exports.enroll = catchAsync(async (req, res) => {
         method_id: planMethod.id,
         item_id: tutorialId,
         item_type: "tutorial",
-        amount: 0,
-        currency: tutorial.currency || "USD",
-        source: "subscription",
-      });
-
-      await recordPlanCoveredPayment({
-        trx,
-        userId: user_id,
-        itemId: tutorialId,
-        itemType: "tutorial",
         amount: 0,
         currency: tutorial.currency || "USD",
         source: "subscription",
