@@ -97,6 +97,7 @@ const {
   getActiveStudentSubscription,
 } = require('../../../plans/subscription.helper');
 const { calculateInstructorAmount } = require('../../../payments/helpers/planRevenue');
+const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const walletService = require('../../../payouts/wallet.service');
 const classService = require('../../class.service');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
@@ -111,6 +112,8 @@ describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     calculateInstructorAmount.mockReset();
+    creditInstructorSubscription.mockReset();
+    creditInstructorSubscription.mockResolvedValue(undefined);
     walletService.increment.mockReset();
     classService.getClassById.mockReset();
     db.first.mockReset();
@@ -207,6 +210,7 @@ describe('Class enrollment routes', () => {
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
+
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
     expect(calculateInstructorAmount).toHaveBeenCalledTimes(1);
@@ -242,6 +246,14 @@ describe('Class enrollment routes', () => {
         amount: 0,
         currency: 'USD',
       }),
+    );
+    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'class',
+      'abc',
+      'plan1',
+      'sub1',
+      expect.anything(),
     );
   });
 
