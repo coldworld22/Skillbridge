@@ -56,21 +56,14 @@ export default function RoleManagement() {
   }, []);
 
   const handleSelect = async (role) => {
-    latestRequestedRoleId.current = role.id;
-    setIsRoleLoading(true);
-    setSelectedRole(null);
+    const previousRole = selectedRole;
     try {
       const detailed = await fetchRoleById(role.id);
-      if (latestRequestedRoleId.current === role.id) {
-        setSelectedRole(detailed);
-      }
+      setSelectedRole(detailed);
     } catch (error) {
       console.error(error);
+      setSelectedRole(previousRole);
       toast.error("Failed to load role details");
-    } finally {
-      if (latestRequestedRoleId.current === role.id) {
-        setIsRoleLoading(false);
-      }
     }
   };
 
@@ -111,6 +104,16 @@ export default function RoleManagement() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete role");
+    }
+  };
+
+  const handleRolePermissionsUpdated = (updatedRole) => {
+    if (!updatedRole) return;
+    setRoles((prev) =>
+      prev.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role))
+    );
+    if (selectedRole?.id === updatedRole.id) {
+      setSelectedRole(updatedRole);
     }
   };
 
@@ -166,13 +169,12 @@ export default function RoleManagement() {
       </div>
 
       <div className="w-3/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-        {isRoleLoading && (
-          <div className="flex justify-center items-center h-full text-gray-500">
-            Loading role details...
-          </div>
-        )}
-        {!isRoleLoading && selectedRole && (
-          <PermissionAssignment role={selectedRole} canManage={canManage} />
+        {selectedRole && (
+          <PermissionAssignment
+            role={selectedRole}
+            canManage={canManage}
+            onRolePermissionsUpdated={handleRolePermissionsUpdated}
+          />
         )}
       </div>
       {showAdd && canManage && (
