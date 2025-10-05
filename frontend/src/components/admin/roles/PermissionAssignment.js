@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { CheckCircle, CheckSquare, PlusCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
+import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 import {
   fetchAllPermissions,
   updateRolePermissions,
@@ -20,8 +21,14 @@ export default function PermissionAssignment({
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
   const { user } = useAuthStore();
-  const canAddPermission = user?.permissions?.includes("manage_permissions");
-  const canViewPermissions = user?.permissions?.includes("view_permissions");
+  const normalizedRoles = getNormalizedRoles(user);
+  const hasAdminRole = normalizedRoles.some((role) =>
+    ["admin", "superadmin"].includes(role)
+  );
+  const canAddPermission =
+    hasAdminRole || user?.permissions?.includes("manage_permissions");
+  const canViewPermissions =
+    hasAdminRole || user?.permissions?.includes("view_permissions");
 
   useEffect(() => {
     const loadPermissions = async () => {
