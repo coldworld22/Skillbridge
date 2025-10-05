@@ -10,6 +10,13 @@ export default function useCoverImageUpload(t) {
   const [fileError, setFileError] = useState(null);
   const fileInputRef = useRef(null);
 
+  const resetFileSelection = useCallback(() => {
+    setCoverPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
   const handleFileChange = useCallback(
     (e) => {
       const file = e.target.files[0];
@@ -18,11 +25,13 @@ export default function useCoverImageUpload(t) {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         setFileError(t('validation.invalidFileType'));
+        resetFileSelection();
         return;
       }
 
       if (file.size > MAX_IMAGE_SIZE) {
         setFileError(t('validation.fileTooLarge', { size: `${MAX_IMAGE_SIZE_MB}MB` }));
+        resetFileSelection();
         return;
       }
 
@@ -33,14 +42,13 @@ export default function useCoverImageUpload(t) {
       };
       reader.readAsDataURL(file);
     },
-    [t]
+    [resetFileSelection, t]
   );
 
   const handleRemoveImage = useCallback(() => {
-    setCoverPreview(null);
     setFileError(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, []);
+    resetFileSelection();
+  }, [resetFileSelection]);
 
   return {
     coverPreview,
