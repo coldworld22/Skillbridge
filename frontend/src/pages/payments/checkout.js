@@ -105,6 +105,42 @@ export function resolveIconElement(method) {
   );
 }
 
+function DirectGatewayPayment({
+  onSubmit,
+  processing,
+  allowInstallments,
+  installments,
+  perInstallment,
+  finalPrice,
+  selectedMethodLabel,
+}) {
+  const usingInstallments = allowInstallments && installments > 1;
+  const buttonText = processing
+    ? 'Processing...'
+    : usingInstallments
+    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
+    : `Pay $${finalPrice} with ${selectedMethodLabel}`;
+
+  return (
+    <div className="space-y-4 text-center">
+      <p className="text-sm text-gray-300">
+        Complete your payment using {selectedMethodLabel}.
+      </p>
+      <button
+        type="button"
+        onClick={() => onSubmit({})}
+        disabled={processing}
+        className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {buttonText}
+      </button>
+      <p className="text-sm text-gray-500">
+        You&apos;ll be redirected after successful payment.
+      </p>
+    </div>
+  );
+}
+
 function getMethodIdentifier(method) {
   const type = method?.type;
   if (type !== undefined && type !== null) {
@@ -156,7 +192,6 @@ export function filterEligibleMethods(methods) {
   return Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  return active;
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -891,7 +926,11 @@ export default function CheckoutPage() {
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
-              bankDetails={selectedMethodObj?.config || selectedMethodObj}
+              bankDetails={
+                selectedMethodObj?.settings ||
+                selectedMethodObj?.config ||
+                selectedMethodObj
+              }
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
@@ -914,7 +953,7 @@ export default function CheckoutPage() {
               />
             </Elements>
           ) : (
-            <CardPaymentForm
+            <DirectGatewayPayment
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
               allowInstallments={allowInstallments}
