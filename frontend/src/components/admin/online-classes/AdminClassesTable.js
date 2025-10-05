@@ -730,7 +730,11 @@ export default function AdminClassesTable() {
 
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update class");
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update class";
+      toast.error(errorMessage);
     } finally {
       setModalClass(null);
     }

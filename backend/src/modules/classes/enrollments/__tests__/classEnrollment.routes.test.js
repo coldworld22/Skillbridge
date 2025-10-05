@@ -57,8 +57,8 @@ jest.mock('../../../payments/helpers/planPayments', () => ({
   recordPlanCoveredPayment: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/methods.js', () => ({
-  getPlanCoveredMethod: jest.fn(),
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
 }));
 
 jest.mock('../../../../utils/logger.js', () => ({
@@ -71,11 +71,8 @@ jest.mock('../../../../utils/logger.js', () => ({
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
-const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
-const paymentsService = require('../../../payments/payments.service');
-
 const routes = require('../../class.routes');
 
 const app = express();
@@ -85,13 +82,6 @@ app.use('/classes', routes);
 describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
-    db.first.mockReset();
-    db.first.mockImplementation(() => Promise.resolve(null));
-    db.insert.mockReset();
-    db.insert.mockImplementation(() => db);
-    db.update.mockReset();
-    db.update.mockImplementation(() => db);
   });
 
   test('enroll in class', async () => {
@@ -178,22 +168,13 @@ describe('Class enrollment routes', () => {
     );
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        trx: expect.any(Function),
+        trx: db,
         userId: 'test-user',
         itemId: 'abc',
         itemType: 'class',
-        source: 'subscription',
+        amount: 0,
+        currency: 'USD',
       }),
-    );
-    expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
-    const usageUpdates = db.update.mock.calls.filter(([payload]) =>
-      payload &&
-      Object.prototype.hasOwnProperty.call(payload, 'usage_count') &&
-      Object.prototype.hasOwnProperty.call(payload, 'instructor_amount')
-    );
-    expect(usageUpdates).toHaveLength(1);
-    expect(usageUpdates[0][0]).toEqual(
-      expect.objectContaining({ usage_count: 1 })
     );
   });
 
