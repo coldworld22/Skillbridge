@@ -42,6 +42,8 @@ function AnalyticsDashboard() {
       };
     }
 
+    let isMounted = true;
+
     setStats(null);
     fetchAdminClassAnalytics(classId)
       .then((data) => {
