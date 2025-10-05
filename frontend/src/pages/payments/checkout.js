@@ -7,8 +7,7 @@ import { fetchBook } from '@/services/bookService';
 import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCoinbasePayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
-import { createPayment, fetchPayment, uploadReceipt } from '@/services/student/paymentService';
-import { subscribeToPlan } from '@/services/subscriptionService';
+import { createPayment, fetchPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -643,14 +642,6 @@ export default function CheckoutPage() {
     }
 
     if (itemType === 'plan') {
-      try {
-        await subscribeToPlan(itemInfo.id, interval, payment?.id);
-      } catch (err) {
-        console.error('Failed to subscribe to plan', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
       setPaymentStatus('success');
       setTimeout(() => {
         const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
