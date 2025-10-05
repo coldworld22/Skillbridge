@@ -14,9 +14,6 @@ const {
   getActiveStudentSubscription,
 } = require('../src/modules/plans/subscription.helper');
 
-jest.mock('../src/modules/payments/helpers/methods.js', () => ({
-  getPlanCoveredMethod: jest.fn(),
-}));
 jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
 }));
@@ -24,21 +21,12 @@ jest.mock('../src/modules/payments/helpers/planPayments', () => ({
   recordPlanCoveredPayment: jest.fn(),
 }));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
-const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 const { recordPlanCoveredPayment } = require('../src/modules/payments/helpers/planPayments');
-
-const paymentMethodWhere = jest.fn(() => ({
-  first: () => Promise.resolve({ id: 'subscription-method-id' }),
-}));
-const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
 
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditTutorialSubscription: jest.fn(),
 }));
-const walletService = require('../src/modules/payouts/wallet.service');
-const tutorialService = require('../src/modules/users/tutorials/tutorial.service');
-const paymentMethodWhere = jest.fn(() => ({ first: () => Promise.resolve({ id: 'plan-method-1' }) }));
-const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'plan-method-1' }]));
+const { creditTutorialSubscription } = require('../src/modules/payments/helpers/wallet');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -62,7 +50,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     planRevenue.calculateInstructorAmount.mockResolvedValue(0);
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     creditTutorialSubscription.mockResolvedValue();
-    getPlanCoveredMethod.mockResolvedValue({ id: 'subscription-method-id' });
   });
 
   it('enrolls in a free tutorial', async () => {
@@ -218,7 +205,6 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     });
     planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
     let instructorWalletBalance = 0;
-    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
     creditTutorialSubscription.mockImplementation(
       async (tutorial, planId, subscriptionId, trx) => {
         const amount = await planRevenue.calculateInstructorAmount(
@@ -242,9 +228,9 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
       'sub1',
       tutorialId,
       expect.anything(),
-      'tutorial',
-      {}
+      'tutorial'
     );
+    expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
     expect(creditTutorialSubscription).toHaveBeenCalledWith(
       tutorialId,
       'plan1',
