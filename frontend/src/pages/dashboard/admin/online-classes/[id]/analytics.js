@@ -37,7 +37,6 @@ function AnalyticsDashboard() {
     let isMounted = true;
     if (!id) return;
     setStats(null);
-    let isMounted = true;
     fetchAdminClassAnalytics(id)
       .then((data) => {
         if (!isMounted) return;
