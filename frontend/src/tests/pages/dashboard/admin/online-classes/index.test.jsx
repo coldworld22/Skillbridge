@@ -204,4 +204,65 @@ describe("AdminClassesTable status toggling", () => {
       jest.useRealTimers();
     }
   });
+
+  it("resets to a valid page when total pages shrink without looping", async () => {
+    const pageOneClass = { ...baseClass, id: "class-page-1", title: "Page 1 Class" };
+    const adjustedPageClass = {
+      ...baseClass,
+      id: "class-adjusted",
+      title: "Adjusted Page Class",
+    };
+    let callCount = 0;
+    fetchAdminClassesMock.mockImplementation(({ page }) => {
+      callCount += 1;
+      if (callCount === 1) {
+        expect(page).toBe(1);
+        return Promise.resolve({
+          data: [pageOneClass],
+          meta: { totalPages: 3, total: 15 },
+        });
+      }
+
+      if (callCount === 2) {
+        expect(page).toBe(3);
+        return Promise.resolve({
+          data: [adjustedPageClass],
+          meta: { totalPages: 2, total: 10 },
+        });
+      }
+
+      throw new Error(`Unexpected additional fetch call: ${callCount} (page=${page})`);
+    });
+
+    render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(fetchAdminClassesMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(await screen.findByText("Page 1 Class")).toBeInTheDocument();
+
+    const pageThreeButton = await screen.findByRole("button", { name: "3" });
+    await act(async () => {
+      fireEvent.click(pageThreeButton);
+    });
+
+    await waitFor(() => {
+      expect(fetchAdminClassesMock).toHaveBeenCalledTimes(2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Adjusted Page Class")).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "2" })).toHaveClass("bg-yellow-500");
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(fetchAdminClassesMock).toHaveBeenCalledTimes(2);
+  });
 });
