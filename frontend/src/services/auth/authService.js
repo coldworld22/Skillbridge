@@ -120,7 +120,11 @@ export const resetPassword = async ({ email, code, new_password }) => {
  */
 export const refreshAccessToken = async () => {
   try {
-    const csrfToken = getCookie("csrfToken");
+    const existingToken = getCookie("csrfToken");
+    const csrfToken = await ensureCsrfToken({
+      forceRefresh: !existingToken,
+    });
+
     const res = await api.post(
       "auth/refresh",
       null,
@@ -128,6 +132,7 @@ export const refreshAccessToken = async () => {
         headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       }
     );
+
     await ensureCsrfToken();
     return res.data;
   } catch (err) {
