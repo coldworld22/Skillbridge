@@ -2,28 +2,12 @@ jest.mock('../../../payouts/wallet.service', () => ({
   increment: jest.fn(),
 }));
 
-jest.mock('../planRevenue', () => ({
-  calculateInstructorAmount: jest.fn(),
-}));
-
-jest.mock('../../../books/book.service', () => ({
-  getBookById: jest.fn(),
-}));
-
-jest.mock('../../../classes/class.service', () => ({
-  getClassById: jest.fn(),
-}));
-
 jest.mock('../../../users/tutorials/tutorial.service', () => ({
   getTutorialById: jest.fn(),
 }));
 
-jest.mock('../../../../utils/logger.js', () => ({
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  log: jest.fn(),
-  debug: jest.fn(),
+jest.mock('../planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
 }));
 
 const walletService = require('../../../payouts/wallet.service');
@@ -35,34 +19,27 @@ const {
 const classService = require('../../../classes/class.service');
 const tutorialService = require('../../../users/tutorials/tutorial.service');
 
-describe('creditInstructorSubscription', () => {
+describe('wallet helpers - creditTutorialSubscription', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('credits instructor wallet using subscription metrics', async () => {
-    const trx = { trx: true };
-    planRevenue.calculateInstructorAmount.mockResolvedValue(12.34);
-    classService.getClassById.mockResolvedValue({ instructor_id: 'inst-7' });
+  it('credits the instructor with the provided subscription amount', async () => {
+    tutorialService.getTutorialById.mockResolvedValue({ instructor_id: 'instructor-42' });
 
-    await expect(
-      creditInstructorSubscription('class', 'class-1', 'plan-9', 'sub-3', trx)
-    ).resolves.toBe(12.34);
-
-    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
-      'plan-9',
-      'sub-3',
-      'class-1',
-      trx,
-      'class',
-      {}
+    const amount = await creditTutorialSubscription(
+      'tutorial-1',
+      'plan-1',
+      'subscription-1',
+      null,
+      25,
     );
     expect(walletService.increment).toHaveBeenCalledWith('inst-7', 12.34, trx);
   });
 
   it('uses precomputed amount when provided without querying plan revenue', async () => {
     const trx = { trx: true };
-    planRevenue.calculateInstructorAmount.mockResolvedValue(0);
+    planRevenue.calculateInstructorAmount.mockResolvedValue(8.75);
     classService.getClassById.mockResolvedValue({ instructor_id: 'inst-8' });
 
     await expect(
@@ -72,11 +49,18 @@ describe('creditInstructorSubscription', () => {
         'plan-10',
         'sub-4',
         trx,
-        { precomputedAmount: 8.75 }
+        8.75
       )
     ).resolves.toBe(8.75);
 
-    expect(planRevenue.calculateInstructorAmount).not.toHaveBeenCalled();
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
+      'plan-10',
+      'sub-4',
+      'class-2',
+      trx,
+      'class',
+      { precomputedAmount: 8.75 }
+    );
     expect(walletService.increment).toHaveBeenCalledWith('inst-8', 8.75, trx);
   });
 });
@@ -86,14 +70,14 @@ describe('creditTutorialSubscription', () => {
     jest.clearAllMocks();
   });
 
-  it('credits tutorial instructor wallet for subscription enrollments', async () => {
+  it('credits the tutorial instructor wallet for plan-covered enrollment payouts', async () => {
     const trx = { trx: true };
-    planRevenue.calculateInstructorAmount.mockResolvedValue(4.56);
+    planRevenue.calculateInstructorAmount.mockResolvedValue(5.25);
     tutorialService.getTutorialById.mockResolvedValue({ instructor_id: 'inst-9' });
 
     await expect(
       creditTutorialSubscription('tutorial-1', 'plan-11', 'sub-5', trx)
-    ).resolves.toBe(4.56);
+    ).resolves.toBe(5.25);
 
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan-11',
@@ -103,6 +87,6 @@ describe('creditTutorialSubscription', () => {
       'tutorial',
       {}
     );
-    expect(walletService.increment).toHaveBeenCalledWith('inst-9', 4.56, trx);
+    expect(walletService.increment).toHaveBeenCalledWith('inst-9', 5.25, trx);
   });
 });
