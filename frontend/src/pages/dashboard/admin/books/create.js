@@ -42,8 +42,8 @@ function AdminCreateBookPage() {
         setCategories(result?.data || result || []);
       } catch (err) {
         console.error("Failed to load categories", err);
-        setError(t("errors.categoryLoad"));
-        toast.error(t("errors.categoryLoad"));
+        setError(t("errors:categoryLoad"));
+        toast.error(t("errors:categoryLoad"));
       } finally {
         setIsLoading(false);
       }
