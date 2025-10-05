@@ -1779,6 +1779,74 @@
     "update_success": "تم تحديث الإعلان بنجاح!",
     "update_failed": "فشل في تحديث الإعلان"
   },
+  "adminBooks": {
+    "heading": "الكتب",
+    "listingSummary": "عرض {{range}} من أصل {{total}} كتاب",
+    "actions": {
+      "addBook": "إضافة كتاب",
+      "edit": "تعديل",
+      "view": "عرض",
+      "delete": "حذف"
+    },
+    "filters": {
+      "toggle": "عوامل التصفية",
+      "searchLabel": "بحث",
+      "searchPlaceholder": "ابحث بالعنوان أو المؤلف...",
+      "clear": "مسح عوامل التصفية",
+      "categoryLabel": "الفئة",
+      "allCategories": "جميع الفئات",
+      "statusLabel": "الحالة",
+      "allStatuses": "كل الحالات",
+      "maxPrice": "أقصى سعر: ${{price}}",
+      "languageLabel": "اللغة",
+      "allLanguages": "جميع اللغات",
+      "tagsLabel": "الوسوم",
+      "addTagPlaceholder": "أضف وسمًا واضغط إدخال",
+      "sortByLabel": "ترتيب حسب",
+      "sortOptions": {
+        "newest": "الأحدث أولاً",
+        "oldest": "الأقدم أولاً",
+        "title": "العنوان أ-ي",
+        "priceHigh": "السعر (من الأعلى إلى الأدنى)",
+        "priceLow": "السعر (من الأدنى إلى الأعلى)"
+      },
+      "clearAll": "مسح جميع عوامل التصفية"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "pending": "قيد الانتظار",
+      "approved": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "bulkActions": {
+      "selectedCount": "تم تحديد {{count}}",
+      "changeStatus": "تغيير الحالة",
+      "apply": "تطبيق",
+      "deleteSelected": "حذف المحدد"
+    },
+    "confirmations": {
+      "deleteTitle": "تأكيد الحذف",
+      "deleteSelectedMessage": "هل أنت متأكد أنك تريد حذف الكتب المحددة؟",
+      "deleteSingleMessage": "هل أنت متأكد أنك تريد حذف هذا الكتاب؟",
+      "statusChangeTitle": "تأكيد تغيير الحالة",
+      "statusChangeMessage": "تغيير حالة الكتب المحددة؟"
+    },
+    "notifications": {
+      "loadFailed": "فشل تحميل البيانات",
+      "deleteSuccess": "تم حذف الكتب بنجاح",
+      "deletePartialError": "تعذر حذف بعض الكتب",
+      "statusUpdated": "تم تحديث الحالة",
+      "statusUpdateFailed": "فشل تحديث الحالة",
+      "bookDeleted": "تم حذف الكتاب",
+      "bookDeleteFailed": "فشل الحذف"
+    },
+    "empty": {
+      "title": "لا توجد كتب",
+      "adjustFilters": "جرّب تعديل البحث أو معايير التصفية",
+      "noBooks": "لا توجد كتب في النظام حاليًا"
+    }
+  },
   "adminDashboardHome": {
     "recentAlerts": "التنبيهات الأخيرة",
     "unauthorizedUsageDetected": "استخدم الاستخدام غير المصرح به",

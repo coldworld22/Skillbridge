@@ -1779,6 +1779,74 @@
     "update_success": "विज्ञापन सफलतापूर्वक अपडेट किया गया!",
     "update_failed": "विज्ञापन अपडेट करने में विफल"
   },
+  "adminBooks": {
+    "heading": "Books",
+    "listingSummary": "Showing {{range}} of {{total}} books",
+    "actions": {
+      "addBook": "Add Book",
+      "edit": "Edit",
+      "view": "View",
+      "delete": "Delete"
+    },
+    "filters": {
+      "toggle": "Filters",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search by title, author...",
+      "clear": "Clear filters",
+      "categoryLabel": "Category",
+      "allCategories": "All Categories",
+      "statusLabel": "Status",
+      "allStatuses": "All Statuses",
+      "maxPrice": "Max Price: ${{price}}",
+      "languageLabel": "Language",
+      "allLanguages": "All Languages",
+      "tagsLabel": "Tags",
+      "addTagPlaceholder": "Add tag and press Enter",
+      "sortByLabel": "Sort By",
+      "sortOptions": {
+        "newest": "Newest First",
+        "oldest": "Oldest First",
+        "title": "Title A-Z",
+        "priceHigh": "Price (High-Low)",
+        "priceLow": "Price (Low-High)"
+      },
+      "clearAll": "Clear all filters"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "bulkActions": {
+      "selectedCount": "{{count}} selected",
+      "changeStatus": "Change Status",
+      "apply": "Apply",
+      "deleteSelected": "Delete Selected"
+    },
+    "confirmations": {
+      "deleteTitle": "Confirm Deletion",
+      "deleteSelectedMessage": "Are you sure you want to delete selected books?",
+      "deleteSingleMessage": "Are you sure you want to delete this book?",
+      "statusChangeTitle": "Confirm Status Change",
+      "statusChangeMessage": "Change status of selected books?"
+    },
+    "notifications": {
+      "loadFailed": "Failed to load data",
+      "deleteSuccess": "Books deleted successfully",
+      "deletePartialError": "Failed to delete some books",
+      "statusUpdated": "Status updated",
+      "statusUpdateFailed": "Failed to update status",
+      "bookDeleted": "Book deleted",
+      "bookDeleteFailed": "Failed to delete"
+    },
+    "empty": {
+      "title": "No books found",
+      "adjustFilters": "Try adjusting your search or filter criteria",
+      "noBooks": "There are currently no books in the system"
+    }
+  },
   "adminDashboardHome": {
     "recentAlerts": "हाल के अलर्ट",
     "unauthorizedUsageDetected": "अनधिकृत उपयोग का पता चला",
