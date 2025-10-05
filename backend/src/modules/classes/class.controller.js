@@ -47,6 +47,23 @@ const normalizeTagsInput = (input, { defaultValue = [] } = {}) => {
   throw new AppError(TAGS_FORMAT_ERROR, 400);
 };
 
+const parseBoolean = (value) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+
+    return ["true", "1", "yes", "on"].includes(normalized);
+  }
+
+  return false;
+};
+
 const generateUniqueSlug = async (title) => {
   const base = slugify(title, { lower: true, strict: true });
   let slug = base;
@@ -60,14 +77,21 @@ const generateUniqueSlug = async (title) => {
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
   const { tags: rawTags, status, included_plans, access_type, ...body } = req.body;
+  const roles = req.user?.roles || req.user?.role;
+  const adminCaller = isAdminRole(roles);
+  const normalizedStatus = status === "published" ? "published" : "draft";
+  const shouldAutoApprove = adminCaller && normalizedStatus === "published";
   const data = {
     ...body,
     id: uuidv4(),
     slug,
-    status: status === "published" ? "published" : "draft",
-    moderation_status: "Pending",
+    status: normalizedStatus,
+    moderation_status: shouldAutoApprove ? "Approved" : "Pending",
     access_type: "paid",
   };
+  const roles = req.user?.roles || req.user?.role;
+  const isAdminUser = isAdminRole(roles);
+  const publishImmediately = parseBoolean(publish_immediately);
   if (included_plans) {
     let plansList = included_plans;
     if (typeof plansList === "string") {
@@ -114,6 +138,29 @@ exports.createClass = catchAsync(async (req, res) => {
       }
     }
   }
+  const canAutoApprove =
+    data.status === "published" &&
+    publishImmediately &&
+    (isAdminUser || !req.user);
+  if (canAutoApprove) {
+    if (!data.instructor_id) {
+      throw new AppError("Instructor information required to publish immediately", 400);
+    }
+    const plan = await getActiveInstructorPlan(data.instructor_id);
+    if (!plan) {
+      throw new AppError(
+        "Active instructor plan required to approve classes",
+        403
+      );
+    }
+    if (plan.max_courses) {
+      const count = await service.countPublishedClasses(data.instructor_id);
+      if (count >= plan.max_courses) {
+        throw new AppError("Course limit reached for your plan", 403);
+      }
+    }
+    data.moderation_status = "Approved";
+  }
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
   }
@@ -137,83 +184,99 @@ exports.createClass = catchAsync(async (req, res) => {
     await service.addClassTags(cls.id, tagIds);
     cls.tags = await service.getClassTags(cls.id);
   }
+  const approvedImmediately = cls.moderation_status === "Approved";
+
   notificationService
     .createNotification({
       user_id: cls.instructor_id,
-      type: "class_created",
-      message:
-        "Your class was created successfully and is now pending review. We'll notify you once it's published.",
+      type: approvedImmediately ? "class_approved" : "class_created",
+      message: approvedImmediately
+        ? `Class "${cls.title}" approved. You can now start teaching`
+        :
+            "Your class was created successfully and is now pending review. We'll notify you once it's published.",
     })
     .catch((err) =>
       logger.error("Failed to notify instructor of new class:", err.message)
     );
 
-  const admins = await userModel.findAdmins();
-  const instructor = await userModel.findById(cls.instructor_id);
+  let admins = [];
+  let adminNotificationPromises = [];
+  let adminMessagePromises = [];
 
-  const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
-    cls.start_date ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}` : ""
-  } that is awaiting your review.`;
-  const adminNotificationPromises = admins.map((admin) =>
-    notificationService.createNotification({
-      user_id: admin.id,
-      type: "new_class",
-      message: adminMessage,
-    })
-  );
+  if (!approvedImmediately) {
+    admins = await userModel.findAdmins();
+    const instructor = await userModel.findById(cls.instructor_id);
 
-  const instructorMessage =
-    `Your class "${cls.title}" was created successfully and is pending admin approval. It will appear on your dashboard once published.`;
-
-  const sender = admins[0];
-  if (sender) {
-    messageService
-      .createMessage({
-        sender_id: sender.id,
-        receiver_id: cls.instructor_id,
-        message: instructorMessage,
+    const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
+      cls.start_date
+        ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}`
+        : ""
+    } that is awaiting your review.`;
+    adminNotificationPromises = admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_class",
+        message: adminMessage,
       })
-      .catch((err) =>
-        logger.error(
-          "Failed to send instructor class message:",
-          err.message
-        )
-      );
-  }
+    );
 
-  const adminMessagePromises = admins.map((admin) =>
-    messageService.createMessage({
-      sender_id: instructor.id,
-      receiver_id: admin.id,
-      message: adminMessage,
-    })
-  );
+    const instructorMessage =
+      `Your class "${cls.title}" was created successfully and is pending admin approval. It will appear on your dashboard once published.`;
+
+    const sender = admins[0];
+    if (sender) {
+      messageService
+        .createMessage({
+          sender_id: sender.id,
+          receiver_id: cls.instructor_id,
+          message: instructorMessage,
+        })
+        .catch((err) =>
+          logger.error(
+            "Failed to send instructor class message:",
+            err.message
+          )
+        );
+    }
+
+    adminMessagePromises = admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: instructor.id,
+        receiver_id: admin.id,
+        message: adminMessage,
+      })
+    );
+  }
 
   sendSuccess(res, cls, "Class created");
 
-  Promise.allSettled(adminNotificationPromises).then((results) => {
-    results.forEach((result, idx) => {
-      if (result.status === "rejected") {
-        logger.error(
-          "Failed to notify admin",
-          admins[idx].id,
-          result.reason?.message || result.reason
-        );
-      }
+  if (adminNotificationPromises.length) {
+    Promise.allSettled(adminNotificationPromises).then((results) => {
+      results.forEach((result, idx) => {
+        if (result.status === "rejected") {
+          logger.error(
+            "Failed to notify admin",
+            admins[idx].id,
+            result.reason?.message || result.reason
+          );
+        }
+      });
     });
-  });
+  }
 
-  Promise.allSettled(adminMessagePromises).then((results) => {
-    results.forEach((result, idx) => {
-      if (result.status === "rejected") {
-        logger.error(
-          "Failed to send admin message",
-          admins[idx].id,
-          result.reason?.message || result.reason
-        );
-      }
+  if (adminMessagePromises.length) {
+    Promise.allSettled(adminMessagePromises).then((results) => {
+      results.forEach((result, idx) => {
+        if (result.status === "rejected") {
+          logger.error(
+            "Failed to send admin message",
+            admins[idx].id,
+            result.reason?.message || result.reason
+          );
+        }
+      });
     });
-  });
+  }
 
 });
 

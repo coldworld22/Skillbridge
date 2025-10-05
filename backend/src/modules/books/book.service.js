@@ -10,8 +10,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
-const { getActiveStudentSubscription } = require("../plans/subscription.helper");
-const planRevenue = require("../payments/helpers/planRevenue");
+const { getActiveStudentPlanId } = require("../plans/subscription.helper");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
@@ -335,14 +334,6 @@ exports.checkout = async (studentId) => {
         if (!planMethodRecord) {
           planMethodRecord = await getPlanCoveredMethod(trx);
         }
-
-        const instructorShare = await planRevenue.calculateInstructorAmount(
-          activePlanId,
-          activeSubscriptionId,
-          b.id,
-          trx,
-          'book'
-        );
         const [payment] = await trx('payments')
           .insert({
             id: uuidv4(),

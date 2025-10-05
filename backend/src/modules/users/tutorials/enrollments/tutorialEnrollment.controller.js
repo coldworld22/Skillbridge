@@ -4,9 +4,7 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const { getActiveStudentSubscription } = require("../../../plans/subscription.helper");
-const planRevenue = require("../../../payments/helpers/planRevenue");
-const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
+const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
@@ -34,19 +32,14 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      const instructorShare = await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        activeSubscriptionId,
-        tutorialId,
-        trx,
-        "tutorial"
-      );
+      const planMethod = await getPlanCoveredMethod(trx);
 
-      await recordPlanCoveredPayment({
-        trx,
-        userId: user_id,
-        itemId: tutorialId,
-        itemType: "tutorial",
+      await trx("payments").insert({
+        user_id,
+        method_id: planMethod.id,
+        item_id: tutorialId,
+        item_type: "tutorial",
+        source: "subscription",
         amount: 0,
         currency: tutorial.currency || "USD",
         source: "subscription",

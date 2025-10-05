@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchInstructorClasses, createClassAssignment } from '@/services/instructor/classService';
+import { prepareAssignmentPayload } from '@/utils/assignments/payload';
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -62,12 +63,19 @@ export default function CreateAssignmentPage() {
       return;
     }
 
-    const payload = {
+    const { payload } = prepareAssignmentPayload({
       title,
       description,
-      due_date: dueDate,
-      time_to_finish: timeToFinish || null,
-    };
+      dueDate,
+      timeToFinish,
+      type,
+      questions,
+      language,
+      starterCode,
+      allowLate,
+      gradingRubric,
+      resourceFile,
+    });
 
     try {
       await createClassAssignment(classId, payload);
@@ -192,15 +200,22 @@ export default function CreateAssignmentPage() {
             </div>
           )}
 
-          {/* File Upload or Text Answer */}
-          {type === 'text' && (
-            <textarea
-              placeholder="Grading Rubric (optional)"
-              value={gradingRubric}
-              onChange={(e) => setGradingRubric(e.target.value)}
-              className="w-full p-3 h-24 bg-gray-100 rounded-md"
-            />
+          {type === 'file' && (
+            <div className="space-y-4">
+              <input
+                type="file"
+                onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
+                className="w-full p-3 bg-gray-100 rounded-md"
+              />
+            </div>
           )}
+
+          <textarea
+            placeholder="Grading Rubric (optional)"
+            value={gradingRubric}
+            onChange={(e) => setGradingRubric(e.target.value)}
+            className="w-full p-3 h-24 bg-gray-100 rounded-md"
+          />
 
           {/* Late Submission Option */}
           <div className="flex items-center gap-2">
