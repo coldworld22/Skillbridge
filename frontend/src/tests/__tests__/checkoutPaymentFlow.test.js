@@ -233,7 +233,7 @@ test('submits payment for non-stripe card processors without Stripe tokenization
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Paystack', type: 'paystack' },
   ]);
-  createPayment.mockResolvedValue({ status: 'paid' });
+  createPayment.mockResolvedValue({ status: 'pending_payment' });
   global.mockStripeCreateToken.mockClear();
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
@@ -244,6 +244,14 @@ test('submits payment for non-stripe card processors without Stripe tokenization
   const payload = createPayment.mock.calls[0][0];
   expect(payload.token).toBeUndefined();
   expect(global.mockStripeCreateToken).not.toHaveBeenCalled();
+  await waitFor(() =>
+    expect(require('react-toastify').toast.error).toHaveBeenCalledWith(
+      'payment_pending_confirmation'
+    )
+  );
+  expect(require('react-toastify').toast.error).not.toHaveBeenCalledWith(
+    'payment_generic_failure'
+  );
 });
 
 test('submits per-installment amount for multi-installment card payments', async () => {

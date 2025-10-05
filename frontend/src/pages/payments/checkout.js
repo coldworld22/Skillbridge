@@ -374,10 +374,27 @@ export async function handleDefaultPayment({
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const response = await createPayment(payload);
-    if (response?.status === 'paid') {
-      await completePayment(response);
-    } else {
-      throw new Error('Payment not confirmed');
+
+    if (!response || typeof response !== 'object') {
+      throw new Error('Invalid payment response');
+    }
+
+    await completePayment(response);
+
+    const status =
+      typeof response.status === 'string' ? response.status.toLowerCase() : '';
+
+    if (!status) {
+      throw new Error('Payment status missing');
+    }
+
+    const failureIndicators = ['fail', 'cancel', 'declin', 'error'];
+    const isFailureStatus = failureIndicators.some((indicator) =>
+      status.includes(indicator)
+    );
+
+    if (isFailureStatus) {
+      throw new Error(`Payment ${status}`);
     }
   } catch (err) {
     console.error('Failed to process payment', err);
