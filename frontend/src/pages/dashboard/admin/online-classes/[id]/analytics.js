@@ -36,14 +36,14 @@ function AnalyticsDashboard() {
   useEffect(() => {
     let isMounted = true;
 
-    if (!classId) {
+    if (!classId || !classId.trim()) {
       return () => {
         isMounted = false;
       };
     }
 
     setStats(null);
-    fetchAdminClassAnalytics(id)
+    fetchAdminClassAnalytics(classId)
       .then((data) => {
         if (!isMounted) return;
         setStats({
