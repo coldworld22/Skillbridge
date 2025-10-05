@@ -362,8 +362,7 @@ exports.checkout = async (studentId) => {
           b.id,
           activePlanId,
           activeSubscriptionId,
-          trx,
-          instructorShare
+          trx
         );
 
         payments.push(payment);

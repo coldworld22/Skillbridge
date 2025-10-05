@@ -4,7 +4,7 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
+const { getActiveStudentSubscription } = require("../../../plans/subscription.helper");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
@@ -50,8 +50,7 @@ exports.enroll = catchAsync(async (req, res) => {
         tutorialId,
         activePlanId,
         activeSubscriptionId,
-        trx,
-        instructorShare
+        trx
       );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
