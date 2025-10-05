@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 import { fetchAdminClasses, deleteAdminClass } from "@/services/admin/classService";
 import { toast } from "react-toastify";
@@ -250,6 +250,11 @@ describe("AdminClassesTable error handling", () => {
     toast.success.mockClear();
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+    mockAuthState.user = { id: 1, permissions: [] };
+  });
+
   it("shows a single toast and avoids duplicate retries when the fetch fails", async () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     mockedFetchAdminClasses.mockRejectedValue(new Error("Network error"));
@@ -262,6 +267,33 @@ describe("AdminClassesTable error handling", () => {
 
     expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledWith("Failed to load classes");
+
+    consoleSpy.mockRestore();
+  });
+
+  it("stops retrying after consecutive authorization failures", async () => {
+    jest.useFakeTimers();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const forbiddenError = new Error("Forbidden");
+    forbiddenError.response = { status: 403 };
+    mockedFetchAdminClasses.mockRejectedValue(forbiddenError);
+
+    const { rerender } = render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
+
+    mockAuthState.user = null;
+    rerender(<AdminClassesTable />);
+
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
 
     consoleSpy.mockRestore();
   });
