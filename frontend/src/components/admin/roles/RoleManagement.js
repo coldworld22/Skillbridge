@@ -40,8 +40,15 @@ export default function RoleManagement() {
   }, []);
 
   const handleSelect = async (role) => {
-    const detailed = await fetchRoleById(role.id);
-    setSelectedRole(detailed);
+    const previousRole = selectedRole;
+    try {
+      const detailed = await fetchRoleById(role.id);
+      setSelectedRole(detailed);
+    } catch (error) {
+      console.error(error);
+      setSelectedRole(previousRole);
+      toast.error("Failed to load role details");
+    }
   };
 
   const handleAddRole = async (payload) => {
