@@ -29,21 +29,18 @@ const EMPTY_STATS = {
 
 function AnalyticsDashboard() {
   const router = useRouter();
-  const { id } = router.query;
-  const classId = Array.isArray(id) ? id[0] : id || "";
+  const rawId = router.query?.id;
+  const classId = Array.isArray(rawId) ? rawId[0] : rawId ?? "";
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
   useEffect(() => {
-    let isMounted = true;
-
     if (!classId) {
-      return () => {
-        isMounted = false;
-      };
+      return;
     }
 
+    let isMounted = true;
     setStats(null);
-    fetchAdminClassAnalytics(id)
+    fetchAdminClassAnalytics(classId)
       .then((data) => {
         if (!isMounted) return;
         setStats({
