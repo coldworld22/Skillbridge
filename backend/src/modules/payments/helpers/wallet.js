@@ -102,14 +102,19 @@ async function creditTutorialSubscription(
   precomputedAmount,
   options,
 ) {
-  return creditInstructorSubscription(
+  const args = [
     "tutorial",
     tutorialId,
     planId,
     subscriptionId,
     trx,
-    { precomputedAmount }
-  );
+  ];
+
+  if (typeof precomputedAmount !== "undefined") {
+    args.push(precomputedAmount);
+  }
+
+  return creditInstructorSubscription(...args);
 }
 
 module.exports = {
