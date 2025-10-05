@@ -8,8 +8,7 @@ import api from "./api";
 import { toast } from "react-toastify";
 import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
-import { getCookie } from "@/utils/cookies";
-import { ensureCsrfToken } from "@/services/api/csrf";
+import { ensureCsrfToken, clearCachedCsrfToken } from "@/services/api/csrf";
 import logger from "@/utils/logger";
 
 let isRefreshing = false;
@@ -39,20 +38,15 @@ api.interceptors.request.use(
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
-      let csrfToken = getCookie("csrfToken");
-
-      if (!csrfToken) {
-        try {
-          csrfToken = await ensureCsrfToken();
-        } catch (error) {
-          logger.warn(
-            `Failed to refresh CSRF token before ${method?.toUpperCase()} ${config?.url}: ${error?.message || error}`
-          );
+      try {
+        const csrfToken = await ensureCsrfToken();
+        if (csrfToken) {
+          config.headers["x-csrf-token"] = csrfToken;
         }
-      }
-
-      if (csrfToken) {
-        config.headers["x-csrf-token"] = csrfToken;
+      } catch (error) {
+        logger.warn(
+          `Failed to refresh CSRF token before ${method?.toUpperCase()} ${config?.url}: ${error?.message || error}`
+        );
       }
     }
 
@@ -133,10 +127,19 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      try {
-        logger.log("\uD83D\uDD04 Attempting token refresh...");
-        const csrfToken = getCookie("csrfToken");
-        const { data } = await api.post(
+      const performRefreshRequest = async (forceCsrfRefresh = false) => {
+        let csrfToken;
+        try {
+          csrfToken = await ensureCsrfToken(
+            forceCsrfRefresh ? { forceRefresh: true } : undefined
+          );
+        } catch (csrfError) {
+          logger.warn(
+            `Failed to ensure CSRF token before refresh: ${csrfError?.message || csrfError}`
+          );
+        }
+
+        return api.post(
           "/auth/refresh",
           null,
           {
@@ -144,22 +147,49 @@ api.interceptors.response.use(
             headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
           }
         );
+      };
+
+      const handleRefreshSuccess = async (data) => {
         logger.log("\u2705 Token refresh successful");
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
-      } catch (refreshErr) {
-        logger.error("\u274C Refresh token request failed:", refreshErr);
-        processQueue(refreshErr, null);
+      };
+
+      const handleRefreshFailure = async (failureError) => {
+        logger.error("\u274C Refresh token request failed:", failureError);
+        processQueue(failureError, null);
         authStore.logout(true);
         toast.info("You have been logged out.");
         toast.error("Session expired. Please log in again.");
         if (typeof window !== "undefined") {
           Router.push("/auth/login");
         }
-        return Promise.reject(refreshErr);
+        return Promise.reject(failureError);
+      };
+
+      try {
+        logger.log("\uD83D\uDD04 Attempting token refresh...");
+        const { data } = await performRefreshRequest();
+        return handleRefreshSuccess(data);
+      } catch (refreshErr) {
+        const refreshStatus = refreshErr?.response?.status;
+        if (refreshStatus === 401 || refreshStatus === 403) {
+          logger.warn(
+            `\u26A0\uFE0F Refresh token request returned ${refreshStatus}. Forcing CSRF refresh and retrying once.`
+          );
+          try {
+            clearCachedCsrfToken();
+            const { data } = await performRefreshRequest(true);
+            return handleRefreshSuccess(data);
+          } catch (retryError) {
+            return handleRefreshFailure(retryError);
+          }
+        }
+
+        return handleRefreshFailure(refreshErr);
       } finally {
         isRefreshing = false;
       }
