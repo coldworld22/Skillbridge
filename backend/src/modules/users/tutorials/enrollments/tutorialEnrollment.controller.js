@@ -4,8 +4,9 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
+const { getActiveStudentSubscription } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
+const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
@@ -20,7 +21,9 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
-  const activePlanId = await getActiveStudentPlanId(user_id);
+  const activeSubscription = await getActiveStudentSubscription(user_id);
+  const activePlanId = activeSubscription?.plan_id;
+  const activeSubscriptionId = activeSubscription?.id;
   const includedPlans = Array.isArray(tutorial.included_plans)
     ? tutorial.included_plans
     : [];
@@ -31,50 +34,31 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      const planMethod = await getPlanCoveredMethod(trx);
-
-      const usage = await trx("plan_usage_metrics")
-        .where({
-          plan_id: activePlanId,
-          item_type: "tutorial",
-          item_id: tutorialId,
-        })
-        .first();
-
-      if (usage) {
-        await trx("plan_usage_metrics")
-          .where({
-            plan_id: activePlanId,
-            item_type: "tutorial",
-            item_id: tutorialId,
-          })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await trx("plan_usage_metrics").insert({
-          plan_id: activePlanId,
-          item_type: "tutorial",
-          item_id: tutorialId,
-          usage_count: 1,
-        });
-      }
-
-      await planRevenue.calculateInstructorAmount(
+      const instructorShare = await planRevenue.calculateInstructorAmount(
         activePlanId,
+        activeSubscriptionId,
         tutorialId,
         trx,
         "tutorial"
       );
 
-      await trx("payments").insert({
-        user_id,
-        method_id: planMethod.id,
-        item_id: tutorialId,
-        item_type: "tutorial",
-        source: "subscription",
+      await recordPlanCoveredPayment({
+        trx,
+        userId: user_id,
+        itemId: tutorialId,
+        itemType: "tutorial",
         amount: 0,
+        currency: tutorial.currency || "USD",
+        source: "subscription",
       });
 
-      await creditTutorialSubscription(tutorialId, activePlanId, trx);
+      await creditTutorialSubscription(
+        tutorialId,
+        activePlanId,
+        activeSubscriptionId,
+        trx,
+        instructorShare
+      );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })

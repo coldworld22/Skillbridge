@@ -50,14 +50,25 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-async function creditInstructorSubscription(item_type, item_id, planId, trx) {
+async function creditInstructorSubscription(
+  item_type,
+  item_id,
+  planId,
+  subscriptionId,
+  trx,
+  precomputedAmount
+) {
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    const amount =
+      precomputedAmount != null
+        ? precomputedAmount
+        : await calculateInstructorAmount(
+            planId,
+            subscriptionId,
+            item_id,
+            trx,
+            item_type
+          );
     if (amount <= 0) return;
 
     let instructorId;
@@ -80,8 +91,21 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
   }
 }
 
-async function creditTutorialSubscription(tutorialId, planId, trx) {
-  return creditInstructorSubscription("tutorial", tutorialId, planId, trx);
+async function creditTutorialSubscription(
+  tutorialId,
+  planId,
+  subscriptionId,
+  trx,
+  precomputedAmount
+) {
+  return creditInstructorSubscription(
+    "tutorial",
+    tutorialId,
+    planId,
+    subscriptionId,
+    trx,
+    precomputedAmount
+  );
 }
 
 module.exports = {

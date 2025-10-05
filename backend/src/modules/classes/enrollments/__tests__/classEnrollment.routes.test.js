@@ -41,15 +41,18 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
 
 jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
+  getActiveStudentSubscription: jest.fn(),
 }));
 
 jest.mock('../../../payments/helpers/wallet', () => {
-  const creditInstructorSubscription = jest.fn(async (_type, _id, _planId, trx) => {
-    await trx('plan_usage_metrics').update({
-      usage_count: 1,
-      instructor_amount: 5,
-    });
-  });
+  const creditInstructorSubscription = jest.fn(
+    async (_type, _id, _planId, _subscriptionId, trx, amount) => {
+      await trx('plan_usage_metrics').update({
+        usage_count: 1,
+        instructor_amount: amount ?? 5,
+      });
+    }
+  );
   return { creditInstructorSubscription };
 });
 
@@ -68,7 +71,10 @@ jest.mock('../../../../utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
-const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const logger = require('../../../../utils/logger.js');
@@ -136,7 +142,7 @@ describe('Class enrollment routes', () => {
       .mockResolvedValueOnce(null); // payment check
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    getActiveStudentPlanId.mockResolvedValue(null);
+    getActiveStudentSubscription.mockResolvedValue(null);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
   });
@@ -153,7 +159,10 @@ describe('Class enrollment routes', () => {
       .mockResolvedValueOnce({ id: 'plan1', price_monthly: 0 });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    getActiveStudentPlanId.mockResolvedValue('plan1');
+    getActiveStudentSubscription.mockResolvedValue({
+      id: 'sub1',
+      plan_id: 'plan1',
+    });
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
@@ -164,7 +173,9 @@ describe('Class enrollment routes', () => {
       'class',
       'abc',
       'plan1',
+      'sub1',
       expect.anything(),
+      expect.any(Number),
     );
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -189,7 +200,10 @@ describe('Class enrollment routes', () => {
       .mockResolvedValueOnce(null); // payment check
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    getActiveStudentPlanId.mockResolvedValue('plan1');
+    getActiveStudentSubscription.mockResolvedValue({
+      id: 'sub1',
+      plan_id: 'plan1',
+    });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
   });
