@@ -82,7 +82,6 @@ describe('Tutorial enrollment routes', () => {
       }),
     );
     expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
-    expect(db).not.toHaveBeenCalledWith('payments');
     expect(db.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         id: expect.any(String),

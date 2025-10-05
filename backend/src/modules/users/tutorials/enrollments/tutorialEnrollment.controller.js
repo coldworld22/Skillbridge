@@ -4,8 +4,10 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const { getActiveStudentSubscription } = require("../../../plans/subscription.helper");
-const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require("../../../plans/subscription.helper");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
