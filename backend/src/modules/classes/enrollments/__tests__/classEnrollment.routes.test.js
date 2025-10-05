@@ -51,6 +51,10 @@ jest.mock('../../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
+
 jest.mock('../../../payouts/wallet.service', () => ({
   increment: jest.fn(),
 }));
@@ -81,10 +85,6 @@ jest.mock('../../classTag.controller', () => ({
   createTag: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
-}));
-
 jest.mock('../../../../utils/logger.js', () => ({
   log: jest.fn(),
   debug: jest.fn(),
@@ -96,10 +96,7 @@ const {
   getActiveStudentPlanId,
   getActiveStudentSubscription,
 } = require('../../../plans/subscription.helper');
-const planRevenue = require('../../../payments/helpers/planRevenue');
-planRevenue.calculateInstructorAmount.getUsageCount = () =>
-  planRevenue.calculateInstructorAmount.mock.calls.length;
-const { calculateInstructorAmount } = planRevenue;
+const { calculateInstructorAmount } = require('../../../payments/helpers/planRevenue');
 const walletService = require('../../../payouts/wallet.service');
 const classService = require('../../class.service');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
@@ -209,7 +206,6 @@ describe('Class enrollment routes', () => {
     });
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
-    classService.getClassById.mockResolvedValue({ instructor_id: 'inst-1' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
@@ -226,12 +222,12 @@ describe('Class enrollment routes', () => {
     expect(db.update).toHaveBeenCalledWith(
       expect.objectContaining({ usage_count: 1, instructor_amount: 5 })
     );
+    expect(walletService.increment).toHaveBeenCalledTimes(1);
     expect(walletService.increment).toHaveBeenCalledWith(
       'inst-1',
       5,
       expect.anything()
     );
-    expect(planRevenue.calculateInstructorAmount.getUsageCount()).toBe(1);
     const usageUpdates = db.update.mock.calls.filter(([data]) =>
       data && Object.prototype.hasOwnProperty.call(data, 'usage_count'),
     );

@@ -56,21 +56,19 @@ async function creditInstructorSubscription(
   planId,
   subscriptionId,
   trx,
-  options = {},
+  precomputedAmount,
 ) {
   try {
-    const { precomputedAmount, ...calculationOptions } = options || {};
-    const amount =
-      precomputedAmount != null
-        ? precomputedAmount
-        : await calculateInstructorAmount(
-            planId,
-            subscriptionId,
-            item_id,
-            trx,
-            item_type,
-            calculationOptions
-          );
+    const rawAmount =
+      precomputedAmount ??
+      (await calculateInstructorAmount(
+        planId,
+        subscriptionId,
+        item_id,
+        trx,
+        item_type
+      ));
+    const amount = Number.isFinite(rawAmount) ? rawAmount : 0;
     if (amount <= 0) return amount;
 
     let instructorId;
