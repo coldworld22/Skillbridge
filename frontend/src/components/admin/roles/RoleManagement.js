@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ShieldCheck, PlusCircle, PenSquare, Trash2 } from "lucide-react";
 import useAuthStore from "@/store/auth/authStore";
 import PermissionAssignment from "./PermissionAssignment";
@@ -16,10 +16,12 @@ import {
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editRole, setEditRole] = useState(null);
   const { user } = useAuthStore();
   const canManage = user?.permissions?.includes("manage_roles");
+  const latestRequestedRoleId = useRef(null);
 
   useEffect(() => {
     const loadRoles = async () => {
@@ -27,8 +29,22 @@ export default function RoleManagement() {
         const data = await fetchAllRoles();
         setRoles(data);
         if (data.length) {
-          const firstRole = await fetchRoleById(data[0].id);
-          setSelectedRole(firstRole);
+          const firstRoleId = data[0].id;
+          latestRequestedRoleId.current = firstRoleId;
+          setIsRoleLoading(true);
+          try {
+            const firstRole = await fetchRoleById(firstRoleId);
+            if (latestRequestedRoleId.current === firstRoleId) {
+              setSelectedRole(firstRole);
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("Failed to load role details");
+          } finally {
+            if (latestRequestedRoleId.current === firstRoleId) {
+              setIsRoleLoading(false);
+            }
+          }
         }
         toast.success("Roles loaded");
       } catch (error) {
@@ -40,12 +56,14 @@ export default function RoleManagement() {
   }, []);
 
   const handleSelect = async (role) => {
+    const previousRole = selectedRole;
     try {
       const detailed = await fetchRoleById(role.id);
       setSelectedRole(detailed);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load role");
+      setSelectedRole(previousRole);
+      toast.error("Failed to load role details");
     }
   };
 
@@ -86,6 +104,16 @@ export default function RoleManagement() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete role");
+    }
+  };
+
+  const handleRolePermissionsUpdated = (updatedRole) => {
+    if (!updatedRole) return;
+    setRoles((prev) =>
+      prev.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role))
+    );
+    if (selectedRole?.id === updatedRole.id) {
+      setSelectedRole(updatedRole);
     }
   };
 
@@ -141,7 +169,13 @@ export default function RoleManagement() {
       </div>
 
       <div className="w-3/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-        {selectedRole && <PermissionAssignment role={selectedRole} canManage={canManage} />}
+        {selectedRole && (
+          <PermissionAssignment
+            role={selectedRole}
+            canManage={canManage}
+            onRolePermissionsUpdated={handleRolePermissionsUpdated}
+          />
+        )}
       </div>
       {showAdd && canManage && (
         <AddRoleModal
