@@ -9,7 +9,11 @@ import {
   createPermission,
 } from "@/services/admin/roleService";
 
-export default function PermissionAssignment({ role, canManage }) {
+export default function PermissionAssignment({
+  role,
+  canManage,
+  onRolePermissionsUpdated,
+}) {
   const [assignedPermissions, setAssignedPermissions] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -81,12 +85,31 @@ export default function PermissionAssignment({ role, canManage }) {
 
   const handleSave = async () => {
     if (!canManage) return;
-    const ids = assignedPermissions
+    const requestedCodes = [...assignedPermissions];
+    const ids = requestedCodes
       .map((code) => permissions.find((p) => p.code === code)?.id)
       .filter(Boolean);
     try {
-      await updateRolePermissions(role.id, ids);
-      toast.success("Permissions saved");
+      const updatedRole = await updateRolePermissions(role.id, ids);
+      const updatedPermissions = updatedRole?.permissions ?? [];
+      setAssignedPermissions(updatedPermissions);
+      if (onRolePermissionsUpdated) {
+        onRolePermissionsUpdated(updatedRole);
+      }
+
+      const backendAdded = updatedPermissions.filter(
+        (code) => !requestedCodes.includes(code)
+      );
+
+      if (backendAdded.length) {
+        toast.success(
+          `Permissions saved. Additional permissions applied by the system: ${backendAdded.join(
+            ", "
+          )}`
+        );
+      } else {
+        toast.success("Permissions saved");
+      }
     } catch (err) {
       toast.error("Failed to save permissions");
     }

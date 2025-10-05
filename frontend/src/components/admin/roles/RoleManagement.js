@@ -84,6 +84,16 @@ export default function RoleManagement() {
     }
   };
 
+  const handleRolePermissionsUpdated = (updatedRole) => {
+    if (!updatedRole) return;
+    setRoles((prev) =>
+      prev.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role))
+    );
+    if (selectedRole?.id === updatedRole.id) {
+      setSelectedRole(updatedRole);
+    }
+  };
+
   return (
     <div className="flex space-x-8">
       <div className="w-1/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
@@ -136,7 +146,13 @@ export default function RoleManagement() {
       </div>
 
       <div className="w-3/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-        {selectedRole && <PermissionAssignment role={selectedRole} canManage={canManage} />}
+        {selectedRole && (
+          <PermissionAssignment
+            role={selectedRole}
+            canManage={canManage}
+            onRolePermissionsUpdated={handleRolePermissionsUpdated}
+          />
+        )}
       </div>
       {showAdd && canManage && (
         <AddRoleModal
