@@ -126,15 +126,16 @@ export default function AdminClassesTable() {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const classCount = classList.length;
   const normalizedItemsPerPage = useMemo(() => {
     if (pageSizeSetting === "all") {
-      const totalOrCount = totalItems || classCount || DEFAULT_PAGE_SIZE;
-      return resolvePositiveInteger(totalOrCount, DEFAULT_PAGE_SIZE);
+      return resolvePositiveInteger(
+        totalItemsRef.current,
+        DEFAULT_PAGE_SIZE
+      );
     }
 
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-  }, [pageSizeSetting, totalItems, classCount]);
+  }, [pageSizeSetting]);
 
   const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
     if (failureRecord?.retryTimer) {
@@ -202,6 +203,21 @@ export default function AdminClassesTable() {
     totalPagesRef.current = value;
     setTotalPages(value);
     return true;
+  };
+
+  const updateClassListIfChanged = (nextList) => {
+    setClassList((previous) => {
+      if (previous.length === nextList.length) {
+        const previousFirstId = previous[0]?.id ?? null;
+        const nextFirstId = nextList[0]?.id ?? null;
+
+        if (previousFirstId === nextFirstId) {
+          return previous;
+        }
+      }
+
+      return nextList;
+    });
   };
 
   const sortClasses = (items, key = sortKey) =>
@@ -431,8 +447,8 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setTotalItems(totalFilteredItems);
-          setTotalPages(totalFilteredPages);
+          setTotalItemsIfNeeded(totalFilteredItems);
+          setTotalPagesIfNeeded(totalFilteredPages);
 
           const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
@@ -444,7 +460,7 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setClassList(paginatedData);
+          updateClassListIfChanged(paginatedData);
         } else {
           const sortedData = sortClasses(data, sortValue);
 
@@ -452,7 +468,7 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setClassList(sortedData);
+          updateClassListIfChanged(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
           const nextTotalItems = meta?.total ?? data.length;
           setTotalPagesIfNeeded(nextTotalPages);
