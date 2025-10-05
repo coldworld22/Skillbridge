@@ -9,7 +9,6 @@ const paymentsService = require("../../payments/payments.service");
 const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
-const planRevenue = require("../../payments/helpers/planRevenue");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -44,12 +43,6 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
-      const instructorDelta = await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        classId,
-        trx,
-        "class"
-      );
       await recordPlanCoveredPayment({
         trx,
         userId: user_id,

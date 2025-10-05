@@ -204,6 +204,53 @@ describe('class.controller createClass', () => {
     );
   });
 
+  test('auto-approves published classes created by admins', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: {
+        title: 'Admin Published Class',
+        status: 'published',
+        instructor_id: 'instructor1',
+      },
+      user: { id: 'admin1', role: 'admin', roles: ['admin'] },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'published',
+        moderation_status: 'Approved',
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'published',
+          moderation_status: 'Approved',
+        }),
+      })
+    );
+  });
+
   test('rejects non-student plan', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
