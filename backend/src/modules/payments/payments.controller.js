@@ -134,7 +134,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         "book",
         item_id,
         subscriptionPlanId,
-        subscriptionId,
+        subscriptionId
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);

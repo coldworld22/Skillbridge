@@ -54,16 +54,23 @@ async function creditInstructorSubscription(
   item_type,
   item_id,
   planId,
+  subscriptionId,
   trx,
-  delta,
+  options = {},
 ) {
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    const { precomputedAmount, ...calculationOptions } = options || {};
+    const amount =
+      precomputedAmount != null
+        ? precomputedAmount
+        : await calculateInstructorAmount(
+            planId,
+            subscriptionId,
+            item_id,
+            trx,
+            item_type,
+            calculationOptions
+          );
     if (amount <= 0) return amount;
 
     let instructorId;
@@ -102,7 +109,7 @@ async function creditTutorialSubscription(
     planId,
     subscriptionId,
     trx,
-    precomputedAmount
+    { precomputedAmount }
   );
 }
 
