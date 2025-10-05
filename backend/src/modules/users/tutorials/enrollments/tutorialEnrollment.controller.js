@@ -43,6 +43,7 @@ exports.enroll = catchAsync(async (req, res) => {
         amount: 0,
         currency: tutorial.currency || "USD",
         source: "subscription",
+        methodId: planMethod?.id ?? null,
       });
 
       await creditTutorialSubscription(

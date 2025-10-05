@@ -51,8 +51,12 @@ async function recordPlanCoveredPayment({
   source = "subscription",
   amount = 0,
   currency = "USD",
+  methodId: explicitMethodId,
 }) {
-  const methodId = await resolvePlanPaymentMethod(trx);
+  const methodId =
+    explicitMethodId === undefined
+      ? await resolvePlanPaymentMethod(trx)
+      : explicitMethodId;
 
   const data = {
     user_id: userId,
