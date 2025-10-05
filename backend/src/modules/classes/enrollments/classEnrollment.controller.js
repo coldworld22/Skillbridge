@@ -7,6 +7,7 @@ const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
 const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
+const { calculateInstructorAmount } = require("../../payments/helpers/planRevenue");
 const { getActiveStudentSubscription } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 
@@ -53,12 +54,22 @@ exports.enroll = catchAsync(async (req, res) => {
         amount: 0,
         currency: cls.currency || "USD",
       });
+      const instructorDelta =
+        (await calculateInstructorAmount(
+          activePlanId,
+          activeSubscriptionId,
+          classId,
+          trx,
+          "class",
+        )) ?? 0;
+
       await creditInstructorSubscription(
         "class",
         classId,
         activePlanId,
+        activeSubscriptionId,
         trx,
-        instructorDelta
+        instructorDelta,
       );
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
