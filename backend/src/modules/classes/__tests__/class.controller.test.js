@@ -204,6 +204,59 @@ describe('class.controller createClass', () => {
     );
   });
 
+  test('admin publish immediately auto approves class', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+    service.countPublishedClasses.mockResolvedValue(0);
+    getActiveInstructorPlan.mockResolvedValue({ id: 'plan-1', max_courses: 5 });
+
+    const req = {
+      body: {
+        instructor_id: 'instructor1',
+        title: 'Publish Now',
+        status: 'published',
+        publish_immediately: 'true',
+      },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'published',
+        moderation_status: 'Approved',
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'published',
+          moderation_status: 'Approved',
+        }),
+      })
+    );
+    expect(notificationService.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'class_approved' })
+    );
+  });
+
   test('rejects non-student plan', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
