@@ -9,7 +9,6 @@ const paymentsService = require("../../payments/payments.service");
 const { recordPlanCoveredPayment } = require("../../payments/helpers/planPayments");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
-const planRevenue = require("../../payments/helpers/planRevenue");
 const { getPlanCoveredMethod } = require("../../payments/helpers/methods");
 
 exports.enroll = catchAsync(async (req, res) => {
@@ -45,36 +44,13 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
-      const planMethod = await getPlanCoveredMethod(trx);
+      await getPlanCoveredMethod(trx);
 
-      const usage = await trx("plan_usage_metrics")
-        .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-        .first();
-
-      if (usage) {
-        await trx("plan_usage_metrics")
-          .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await trx("plan_usage_metrics").insert({
-          plan_id: activePlanId,
-          item_type: "class",
-          item_id: classId,
-          usage_count: 1,
-        });
-      }
-
-      await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        classId,
+      await recordPlanCoveredPayment({
         trx,
-        "class"
-      );
-      await trx("payments").insert({
-        user_id,
-        method_id: planMethod.id,
-        item_id: classId,
-        item_type: "class",
+        userId: user_id,
+        itemId: classId,
+        itemType: "class",
         source: "subscription",
       });
       await creditInstructorSubscription("class", classId, activePlanId, trx);

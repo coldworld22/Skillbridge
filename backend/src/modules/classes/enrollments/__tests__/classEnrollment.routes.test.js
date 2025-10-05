@@ -43,8 +43,18 @@ jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/wallet', () => ({
-  creditInstructorSubscription: jest.fn(),
+jest.mock('../../../payments/helpers/wallet', () => {
+  const creditInstructorSubscription = jest.fn(async (_type, _id, _planId, trx) => {
+    await trx('plan_usage_metrics').update({
+      usage_count: 1,
+      instructor_amount: 5,
+    });
+  });
+  return { creditInstructorSubscription };
+});
+
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
 }));
 
 jest.mock('../../../payments/helpers/methods.js', () => ({
@@ -60,11 +70,11 @@ jest.mock('../../../../utils/logger.js', () => ({
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const { getPlanCoveredMethod } = require('../../../payments/helpers/methods.js');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
 const paymentsService = require('../../../payments/payments.service');
-const paymentMethodsService = require('../../../paymentMethods/paymentMethods.service');
 
 const routes = require('../../class.routes');
 
@@ -76,6 +86,12 @@ describe('Class enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method' });
+    db.first.mockReset();
+    db.first.mockImplementation(() => Promise.resolve(null));
+    db.insert.mockReset();
+    db.insert.mockImplementation(() => db);
+    db.update.mockReset();
+    db.update.mockImplementation(() => db);
   });
 
   test('enroll in class', async () => {
@@ -136,16 +152,18 @@ describe('Class enrollment routes', () => {
   });
 
   test('allow enrollment when class covered by subscription', async () => {
-    db.first.mockResolvedValueOnce({
-      status: 'published',
-      moderation_status: 'Approved',
-      price: 50,
-      included_plans: ['plan1'],
-    });
+    db.first
+      .mockResolvedValueOnce({
+        status: 'published',
+        moderation_status: 'Approved',
+        price: 50,
+        included_plans: ['plan1'],
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'plan1', price_monthly: 0 });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
-    paymentMethodsService.getByType.mockResolvedValueOnce({ id: 'subscription-method' });
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     const res = await request(app).post('/classes/enroll/abc');
@@ -158,19 +176,25 @@ describe('Class enrollment routes', () => {
       'plan1',
       expect.anything(),
     );
-    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_id: 'test-user',
-        method_id: 'plan-method',
-        item_id: 'abc',
-        item_type: 'class',
+        trx: expect.any(Function),
+        userId: 'test-user',
+        itemId: 'abc',
+        itemType: 'class',
         source: 'subscription',
       }),
-      [],
-      db,
     );
     expect(getPlanCoveredMethod).toHaveBeenCalledTimes(1);
+    const usageUpdates = db.update.mock.calls.filter(([payload]) =>
+      payload &&
+      Object.prototype.hasOwnProperty.call(payload, 'usage_count') &&
+      Object.prototype.hasOwnProperty.call(payload, 'instructor_amount')
+    );
+    expect(usageUpdates).toHaveLength(1);
+    expect(usageUpdates[0][0]).toEqual(
+      expect.objectContaining({ usage_count: 1 })
+    );
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
