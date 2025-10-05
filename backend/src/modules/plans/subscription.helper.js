@@ -11,7 +11,7 @@ exports.hasActiveStudentSubscription = async (userId) => {
   return true;
 };
 
-exports.getActiveStudentPlanId = async (userId) => {
+const getActiveStudentSubscription = async (userId) => {
   const sub = await db("user_subscriptions as us")
     .join("plans as p", "us.plan_id", "p.id")
     .where({ "us.user_id": userId, "us.status": "active" })
@@ -19,7 +19,14 @@ exports.getActiveStudentPlanId = async (userId) => {
     .first();
   if (!sub) return null;
   if (sub.end_date && new Date(sub.end_date) < new Date()) return null;
-  return sub.plan_id;
+  return sub;
+};
+
+exports.getActiveStudentSubscription = getActiveStudentSubscription;
+
+exports.getActiveStudentPlanId = async (userId) => {
+  const sub = await getActiveStudentSubscription(userId);
+  return sub ? sub.plan_id : null;
 };
 
 exports.hasActiveInstructorSubscription = async (userId) => {

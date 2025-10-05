@@ -120,6 +120,7 @@ async function validatePaymentData(body, userId) {
   let basePrice;
 
   let subscriptionPlanId = null;
+  let subscriptionId = null;
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
@@ -139,11 +140,13 @@ async function validatePaymentData(body, userId) {
     const book = await bookService.getBookById(item_id);
     if (!book) throw new AppError("Book not found", 404);
     basePrice = Number(book.price);
+    let activeSubscription = null;
     let activePlanId = null;
     if (userId) {
       try {
-        const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
-        activePlanId = await getActiveStudentPlanId(userId);
+        const { getActiveStudentSubscription } = require("../../plans/subscription.helper");
+        activeSubscription = await getActiveStudentSubscription(userId);
+        activePlanId = activeSubscription?.plan_id || null;
       } catch (_) {
         activePlanId = null;
       }
@@ -161,6 +164,7 @@ async function validatePaymentData(body, userId) {
         );
       }
       subscriptionPlanId = activePlanId;
+      subscriptionId = activeSubscription?.id || null;
       verifiedAmount = 0;
       finalStatus = STATUS.PAID;
       basePrice = null;
@@ -228,6 +232,7 @@ async function validatePaymentData(body, userId) {
     next_due_date,
     totalInstallments,
     subscriptionPlanId,
+    subscriptionId,
   };
 }
 

@@ -5,8 +5,11 @@ const { parsePlanFeatures } = require("../../../utils/planFeatures");
 // Calculate instructor share for a subscription-covered enrollment
 // Uses plan usage metrics and the plan's commission rate to determine the
 // instructor's payout for the given plan and item.
+const FALLBACK_SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000";
+
 exports.calculateInstructorAmount = async (
   planId,
+  subscriptionId,
   itemId,
   trx,
   itemType = "class",
@@ -15,11 +18,14 @@ exports.calculateInstructorAmount = async (
   const { incrementUsage = true } = options || {};
   const query = trx || db;
   try {
-    let usageQuery = query("plan_usage_metrics").where({
+    const key = {
       plan_id: planId,
+      subscription_id: subscriptionId || FALLBACK_SUBSCRIPTION_ID,
       item_type: itemType,
       item_id: itemId,
-    });
+    };
+
+    let usageQuery = query("plan_usage_metrics").where(key);
 
     if (trx && typeof usageQuery.forUpdate === "function") {
       usageQuery = usageQuery.forUpdate();
@@ -28,15 +34,11 @@ exports.calculateInstructorAmount = async (
     let row = await usageQuery.first();
 
     if (!row) {
-      if (incrementUsage) {
-        await query("plan_usage_metrics").insert({
-          plan_id: planId,
-          item_type: itemType,
-          item_id: itemId,
-          usage_count: 0,
-          instructor_amount: 0,
-        });
-      }
+      await query("plan_usage_metrics").insert({
+        ...key,
+        usage_count: 0,
+        instructor_amount: 0,
+      });
       row = { usage_count: 0, instructor_amount: 0 };
     }
 
@@ -63,20 +65,17 @@ exports.calculateInstructorAmount = async (
     const roundCurrency = (value) =>
       Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
 
-    const previousTotal = roundCurrency(Number(row.instructor_amount || 0));
-    const targetTotal = roundCurrency(net);
-    const delta = targetTotal > previousTotal ? targetTotal - previousTotal : 0;
-    if (incrementUsage) {
-      const newTotal = roundCurrency(previousTotal + delta);
-      await query("plan_usage_metrics")
-        .where({ plan_id: planId, item_type: itemType, item_id: itemId })
-        .update({
-          usage_count: Number(row.usage_count || 0) + 1,
-          instructor_amount: newTotal,
-        });
-    }
+    const payout = roundCurrency(net);
+    const newTotal = roundCurrency(Number(row.instructor_amount || 0) + payout);
 
-    return roundCurrency(delta);
+    await query("plan_usage_metrics")
+      .where(key)
+      .update({
+        usage_count: Number(row.usage_count || 0) + 1,
+        instructor_amount: newTotal,
+      });
+
+    return payout;
   } catch (err) {
     // If metrics table missing or query fails, do not block enrollment
     return 0;

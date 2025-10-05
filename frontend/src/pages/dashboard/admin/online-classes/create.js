@@ -494,6 +494,7 @@ function CreateOnlineClass() {
           if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
           payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
           payload.append('status', formData.isApproved ? 'published' : 'draft');
+          payload.append('publish_immediately', formData.isApproved ? 'true' : 'false');
           if (formData.category) payload.append('category_id', formData.category);
           if (formData.image) payload.append('cover_image', formData.image);
           if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);

@@ -5,7 +5,6 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
-const planRevenue = require("../../../payments/helpers/planRevenue");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
@@ -21,7 +20,9 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
-  const activePlanId = await getActiveStudentPlanId(user_id);
+  const activeSubscription = await getActiveStudentSubscription(user_id);
+  const activePlanId = activeSubscription?.plan_id;
+  const activeSubscriptionId = activeSubscription?.id;
   const includedPlans = Array.isArray(tutorial.included_plans)
     ? tutorial.included_plans
     : [];
@@ -34,13 +35,6 @@ exports.enroll = catchAsync(async (req, res) => {
     if (coveredBySubscription) {
       const planMethod = await getPlanCoveredMethod(trx);
 
-      const instructorAmountDelta = await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        tutorialId,
-        trx,
-        "tutorial"
-      );
-
       await trx("payments").insert({
         user_id,
         method_id: planMethod.id,
@@ -48,13 +42,16 @@ exports.enroll = catchAsync(async (req, res) => {
         item_type: "tutorial",
         source: "subscription",
         amount: 0,
+        currency: tutorial.currency || "USD",
+        source: "subscription",
       });
 
       await creditTutorialSubscription(
         tutorialId,
         activePlanId,
+        activeSubscriptionId,
         trx,
-        instructorAmountDelta
+        instructorShare
       );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")

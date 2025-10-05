@@ -234,7 +234,8 @@ function MyEnrolledClassesPage() {
                 >
                   <FaClipboardList className="inline mr-1" /> {t('studentOnlineClassesPage.view_assignments')}
                 </Link>
-                {cls.scheduleStatus === 'Ongoing' && cls.joined ? (
+                {cls.scheduleStatus === 'Ongoing' &&
+                  cls.enrollmentStatus?.toLowerCase() === 'enrolled' ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"

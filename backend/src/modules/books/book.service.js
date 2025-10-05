@@ -11,7 +11,6 @@ const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
 const { getActiveStudentPlanId } = require("../plans/subscription.helper");
-const planRevenue = require("../payments/helpers/planRevenue");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
@@ -285,7 +284,9 @@ exports.checkout = async (studentId) => {
   const bankMethod = await paymentMethodsService.getByType('bank');
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
-  const activePlanId = await getActiveStudentPlanId(studentId);
+  const activeSubscription = await getActiveStudentSubscription(studentId);
+  const activePlanId = activeSubscription?.plan_id;
+  const activeSubscriptionId = activeSubscription?.id;
   let subscriptionMethod = null;
 
   return db.transaction(async (trx) => {
@@ -333,13 +334,6 @@ exports.checkout = async (studentId) => {
         if (!planMethodRecord) {
           planMethodRecord = await getPlanCoveredMethod(trx);
         }
-
-        const instructorAmountDelta = await planRevenue.calculateInstructorAmount(
-          activePlanId,
-          b.id,
-          trx,
-          'book'
-        );
         const [payment] = await trx('payments')
           .insert({
             id: uuidv4(),
@@ -367,8 +361,9 @@ exports.checkout = async (studentId) => {
           'book',
           b.id,
           activePlanId,
+          activeSubscriptionId,
           trx,
-          instructorAmountDelta
+          instructorShare
         );
 
         payments.push(payment);
