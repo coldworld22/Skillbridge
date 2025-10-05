@@ -4,10 +4,11 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const { getActiveStudentSubscription } = require("../../../plans/subscription.helper");
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require("../../../plans/subscription.helper");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
-const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
-const { recordPlanCoveredPayment } = require("../../../payments/helpers/planPayments");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -34,8 +35,6 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      const planMethod = await getPlanCoveredMethod(trx);
-
       await recordPlanCoveredPayment({
         trx,
         userId: user_id,
