@@ -25,6 +25,7 @@ const { sendSuccess } = require("../../../utils/response");
 const { parseTags, parseChapters } = require("./tutorial.helpers");
 const { sendCreationNotifications } = require("./tutorial.notifications");
 const { ZodError } = require("zod");
+const slugify = require("slugify");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -95,6 +96,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
+  const baseSlug = slugify(title, { lower: true, strict: true });
+
   const tutorialData = {
     id,
     title,
@@ -114,6 +117,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     preview_video: previewFile
       ? `/uploads/tutorials/${roleDir}/${previewFile.filename}`
       : null,
+    slug: baseSlug || id,
   };
 
   try {
