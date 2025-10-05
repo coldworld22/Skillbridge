@@ -51,7 +51,13 @@ exports.enroll = catchAsync(async (req, res) => {
         amount: 0,
         currency: cls.currency || "USD",
       });
-      await creditInstructorSubscription("class", classId, activePlanId, trx);
+      await creditInstructorSubscription(
+        "class",
+        classId,
+        activePlanId,
+        trx,
+        instructorDelta
+      );
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({

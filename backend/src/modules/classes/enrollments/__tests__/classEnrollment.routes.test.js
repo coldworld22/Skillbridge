@@ -196,6 +196,13 @@ describe('Class enrollment routes', () => {
       5,
       expect.anything()
     );
+    expect(planRevenue.calculateInstructorAmount.getUsageCount()).toBe(1);
+    const usageUpdates = db.update.mock.calls.filter(([data]) =>
+      data && Object.prototype.hasOwnProperty.call(data, 'usage_count'),
+    );
+    expect(usageUpdates).toHaveLength(1);
+    expect(usageUpdates[0][0].usage_count).toBe(1);
+    expect(creditInstructorSubscription.getCredits()).toBe(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         trx: db,
@@ -209,14 +216,15 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
-    db.first
-      .mockResolvedValueOnce({
+    db.first.mockImplementationOnce(() =>
+      Promise.resolve({
         status: 'published',
         moderation_status: 'Approved',
         price: 50,
         included_plans: ['plan2'],
-      })
-      .mockResolvedValueOnce(null); // payment check
+      }),
+    );
+    db.first.mockImplementationOnce(() => Promise.resolve(null)); // payment check
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
