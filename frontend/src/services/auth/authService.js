@@ -120,7 +120,10 @@ export const resetPassword = async ({ email, code, new_password }) => {
  */
 export const refreshAccessToken = async () => {
   try {
-    const csrfToken = getCookie("csrfToken");
+    const csrfCookie = getCookie("csrfToken");
+    const csrfToken = await ensureCsrfToken(
+      csrfCookie ? undefined : { forceRefresh: true }
+    );
     const res = await api.post(
       "auth/refresh",
       null,
