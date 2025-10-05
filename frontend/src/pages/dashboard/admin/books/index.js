@@ -93,7 +93,7 @@ function AdminBooksPage() {
         setCategories(cats);
         setLanguages(langs);
       } catch (err) {
-        toast.error(t("Failed to load data"));
+        toast.error(t("adminBooks.notifications.loadFailed"));
       }
     };
     loadCategories();
@@ -169,7 +169,7 @@ function AdminBooksPage() {
         setMeta(meta);
       } catch (err) {
         if (err.name !== "CanceledError" && err.name !== "AbortError") {
-          toast.error(t("Failed to load data"));
+          toast.error(t("adminBooks.notifications.loadFailed"));
           console.error("Error loading:", err);
         }
       } finally {
@@ -188,8 +188,8 @@ function AdminBooksPage() {
 
   const handleBulkDelete = async () => {
     openConfirmModal({
-      title: t("Confirm Deletion"),
-      message: t("Are you sure you want to delete selected books?"),
+      title: t("adminBooks.confirmations.deleteTitle"),
+      message: t("adminBooks.confirmations.deleteSelectedMessage"),
       onConfirm: async () => {
         try {
           const deletePromises = selectedBooks.map(id => deleteBook(id));
@@ -202,7 +202,7 @@ function AdminBooksPage() {
           setBooks(remaining);
           setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
           setSelectedBooks([]);
-          toast.success(t("Books deleted successfully"));
+          toast.success(t("adminBooks.notifications.deleteSuccess"));
           await Promise.all([fetchNotifications(), fetchMessages()]);
 
           if (remaining.length === 0 && page > 1) {
@@ -211,7 +211,7 @@ function AdminBooksPage() {
             await loadBooks();
           }
         } catch (err) {
-          toast.error(t("Failed to delete some books"));
+          toast.error(t("adminBooks.notifications.deletePartialError"));
         }
       }
     });
@@ -220,8 +220,8 @@ function AdminBooksPage() {
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatus) return;
     openConfirmModal({
-      title: t("Confirm Status Change"),
-      message: t("Change status of selected books?"),
+      title: t("adminBooks.confirmations.statusChangeTitle"),
+      message: t("adminBooks.confirmations.statusChangeMessage"),
       onConfirm: async () => {
         try {
           const updatePromises = selectedBooks.map(id => updateBookStatus(id, bulkStatus));
@@ -231,12 +231,12 @@ function AdminBooksPage() {
               selectedBooks.includes(b.id) ? { ...b, status: bulkStatus } : b
             )
           );
-          toast.success(t("Status updated"));
+          toast.success(t("adminBooks.notifications.statusUpdated"));
           setSelectedBooks([]);
           setBulkStatus("");
           await Promise.all([fetchNotifications(), fetchMessages()]);
         } catch (err) {
-          toast.error(t("Failed to update status"));
+          toast.error(t("adminBooks.notifications.statusUpdateFailed"));
         }
       }
     });
@@ -250,10 +250,10 @@ function AdminBooksPage() {
       setBooks(prev =>
         prev.map(book => (book.id === bookId ? updated : book))
       );
-      toast.success(t("Status updated"));
+      toast.success(t("adminBooks.notifications.statusUpdated"));
       await Promise.all([fetchNotifications(), fetchMessages()]);
     } catch (err) {
-      toast.error(t("Failed to update status"));
+      toast.error(t("adminBooks.notifications.statusUpdateFailed"));
     }
   };
 
@@ -263,9 +263,12 @@ function AdminBooksPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("Books")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("adminBooks.heading")}</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              {t("Showing")} {books.length ? `${startIndex}-${endIndex}` : 0} {t("of")} {meta.total ?? 0} {t("books")}
+              {t("adminBooks.listingSummary", {
+                range: books.length ? `${startIndex}-${endIndex}` : 0,
+                total: meta.total ?? 0,
+              })}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -274,14 +277,14 @@ function AdminBooksPage() {
               className="sm:hidden flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               <FiFilter className="text-lg" />
-              <span>{t("Filters")}</span>
+              <span>{t("adminBooks.filters.toggle")}</span>
             </button>
             <Link
               href="/dashboard/admin/books/create"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
             >
               <FiPlus className="text-lg" />
-              <span>{t("Add Book")}</span>
+              <span>{t("adminBooks.actions.addBook")}</span>
             </Link>
           </div>
         </div>
@@ -291,14 +294,14 @@ function AdminBooksPage() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="relative flex-1 min-w-[200px]">
               <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("Search")}</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("adminBooks.filters.searchLabel")}</label>
                 {hasActiveFilters && (
                   <button 
                     onClick={resetFilters}
                     className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                   >
                     <FiX size={14} />
-                    {t("Clear filters")}
+                    {t("adminBooks.filters.clear")}
                   </button>
                 )}
               </div>
@@ -306,7 +309,7 @@ function AdminBooksPage() {
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
-                  placeholder={t("Search by title, author...")}
+                  placeholder={t("adminBooks.filters.searchPlaceholder")}
                   value={filters.search}
                   onChange={(e) => {
                     setFilters({ ...filters, search: e.target.value });
@@ -318,7 +321,7 @@ function AdminBooksPage() {
             </div>
             
             <div className="min-w-[160px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Category")}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.categoryLabel")}</label>
               <select
                 value={filters.category}
                 onChange={(e) => {
@@ -327,7 +330,7 @@ function AdminBooksPage() {
                 }}
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
-                <option value="">{t("All Categories")}</option>
+                <option value="">{t("adminBooks.filters.allCategories")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -337,7 +340,7 @@ function AdminBooksPage() {
             </div>
 
             <div className="min-w-[160px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Status")}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.statusLabel")}</label>
               <select
                 value={filters.status}
                 onChange={(e) => {
@@ -346,18 +349,18 @@ function AdminBooksPage() {
                 }}
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
-                <option value="">{t("All Statuses")}</option>
-                <option value="active">{t("Active")}</option>
-                <option value="inactive">{t("Inactive")}</option>
-                <option value="pending">{t("Pending")}</option>
-                <option value="approved">{t("Approved")}</option>
-                <option value="rejected">{t("Rejected")}</option>
+                <option value="">{t("adminBooks.filters.allStatuses")}</option>
+                <option value="active">{t("adminBooks.status.active")}</option>
+                <option value="inactive">{t("adminBooks.status.inactive")}</option>
+                <option value="pending">{t("adminBooks.status.pending")}</option>
+                <option value="approved">{t("adminBooks.status.approved")}</option>
+                <option value="rejected">{t("adminBooks.status.rejected")}</option>
               </select>
             </div>
 
             <div className="min-w-[180px]">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("Max Price")}: ${filters.priceRange ?? 0}
+                {t("adminBooks.filters.maxPrice", { price: filters.priceRange ?? 0 })}
               </label>
               <input
                 type="range"
@@ -376,7 +379,7 @@ function AdminBooksPage() {
 
           <div className="flex flex-wrap gap-4 mt-4 items-end">
             <div className="min-w-[160px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Language")}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.languageLabel")}</label>
               <select
                 value={filters.language}
                 onChange={(e) => {
@@ -385,7 +388,7 @@ function AdminBooksPage() {
                 }}
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
-                <option value="">{t("All Languages")}</option>
+                <option value="">{t("adminBooks.filters.allLanguages")}</option>
                 {languages.map((l) => (
                   <option key={l.id || l.code} value={l.code}>
                     {l.name}
@@ -395,7 +398,7 @@ function AdminBooksPage() {
             </div>
 
             <div className="flex-1 min-w-[240px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Tags")}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.tagsLabel")}</label>
               <div className="flex flex-wrap gap-1 mb-1">
                 {filters.tags.map((tag) => (
                   <span
@@ -432,7 +435,7 @@ function AdminBooksPage() {
                       setTagInput("");
                     }
                   }}
-                  placeholder={t("Add tag and press Enter")}
+                  placeholder={t("adminBooks.filters.addTagPlaceholder")}
                   className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                 />
                 {tagSuggestions.length > 0 && tagInput && (
@@ -457,7 +460,7 @@ function AdminBooksPage() {
             </div>
             
             <div className="min-w-[160px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Sort By")}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.sortByLabel")}</label>
               <select
                 value={sortBy}
                 onChange={(e) => {
@@ -466,11 +469,11 @@ function AdminBooksPage() {
                 }}
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
-                <option value="newest">{t("Newest First")}</option>
-                <option value="oldest">{t("Oldest First")}</option>
-                <option value="title">{t("Title A-Z")}</option>
-                <option value="price-high">{t("Price (High-Low)")}</option>
-                <option value="price-low">{t("Price (Low-High)")}</option>
+                <option value="newest">{t("adminBooks.filters.sortOptions.newest")}</option>
+                <option value="oldest">{t("adminBooks.filters.sortOptions.oldest")}</option>
+                <option value="title">{t("adminBooks.filters.sortOptions.title")}</option>
+                <option value="price-high">{t("adminBooks.filters.sortOptions.priceHigh")}</option>
+                <option value="price-low">{t("adminBooks.filters.sortOptions.priceLow")}</option>
               </select>
             </div>
           </div>
@@ -480,7 +483,7 @@ function AdminBooksPage() {
         {showMobileFilters && (
           <div className="sm:hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medium text-gray-700 dark:text-gray-300">{t("Filters")}</h3>
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">{t("adminBooks.filters.toggle")}</h3>
               <button 
                 onClick={() => setShowMobileFilters(false)}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -490,12 +493,12 @@ function AdminBooksPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Search")}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.searchLabel")}</label>
                 <div className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
-                    placeholder={t("Search by title, author...")}
+                    placeholder={t("adminBooks.filters.searchPlaceholder")}
                     value={filters.search}
                     onChange={(e) => {
                       setFilters({ ...filters, search: e.target.value });
@@ -508,7 +511,7 @@ function AdminBooksPage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Category")}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.categoryLabel")}</label>
                   <select
                     value={filters.category}
                     onChange={(e) => {
@@ -517,7 +520,7 @@ function AdminBooksPage() {
                     }}
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   >
-                    <option value="">{t("All Categories")}</option>
+                    <option value="">{t("adminBooks.filters.allCategories")}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -527,7 +530,7 @@ function AdminBooksPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Status")}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.statusLabel")}</label>
                   <select
                     value={filters.status}
                     onChange={(e) => {
@@ -536,19 +539,19 @@ function AdminBooksPage() {
                     }}
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   >
-                    <option value="">{t("All Statuses")}</option>
-                    <option value="active">{t("Active")}</option>
-                    <option value="inactive">{t("Inactive")}</option>
-                    <option value="pending">{t("Pending")}</option>
-                    <option value="approved">{t("Approved")}</option>
-                    <option value="rejected">{t("Rejected")}</option>
+                    <option value="">{t("adminBooks.filters.allStatuses")}</option>
+                    <option value="active">{t("adminBooks.status.active")}</option>
+                    <option value="inactive">{t("adminBooks.status.inactive")}</option>
+                    <option value="pending">{t("adminBooks.status.pending")}</option>
+                    <option value="approved">{t("adminBooks.status.approved")}</option>
+                    <option value="rejected">{t("adminBooks.status.rejected")}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t("Max Price")}: ${filters.priceRange ?? 0}
+                  {t("adminBooks.filters.maxPrice", { price: filters.priceRange ?? 0 })}
                 </label>
                 <input
                   type="range"
@@ -565,7 +568,7 @@ function AdminBooksPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Language")}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.languageLabel")}</label>
                 <select
                   value={filters.language}
                   onChange={(e) => {
@@ -574,7 +577,7 @@ function AdminBooksPage() {
                   }}
                   className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                 >
-                  <option value="">{t("All Languages")}</option>
+                  <option value="">{t("adminBooks.filters.allLanguages")}</option>
                   {languages.map((l) => (
                     <option key={l.id || l.code} value={l.code}>
                       {l.name}
@@ -584,7 +587,7 @@ function AdminBooksPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Sort By")}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.filters.sortByLabel")}</label>
                 <select
                   value={sortBy}
                   onChange={(e) => {
@@ -593,11 +596,11 @@ function AdminBooksPage() {
                   }}
                   className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                 >
-                  <option value="newest">{t("Newest First")}</option>
-                  <option value="oldest">{t("Oldest First")}</option>
-                  <option value="title">{t("Title A-Z")}</option>
-                  <option value="price-high">{t("Price (High-Low)")}</option>
-                  <option value="price-low">{t("Price (Low-High)")}</option>
+                  <option value="newest">{t("adminBooks.filters.sortOptions.newest")}</option>
+                  <option value="oldest">{t("adminBooks.filters.sortOptions.oldest")}</option>
+                  <option value="title">{t("adminBooks.filters.sortOptions.title")}</option>
+                  <option value="price-high">{t("adminBooks.filters.sortOptions.priceHigh")}</option>
+                  <option value="price-low">{t("adminBooks.filters.sortOptions.priceLow")}</option>
                 </select>
               </div>
 
@@ -607,7 +610,7 @@ function AdminBooksPage() {
                   className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1"
                 >
                   <FiX size={16} />
-                  {t("Clear all filters")}
+                  {t("adminBooks.filters.clearAll")}
                 </button>
               )}
             </div>
@@ -625,7 +628,7 @@ function AdminBooksPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {selectedBooks.length} {t("selected")}
+                {t("adminBooks.bulkActions.selectedCount", { count: selectedBooks.length })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -634,25 +637,25 @@ function AdminBooksPage() {
                 onChange={(e) => setBulkStatus(e.target.value)}
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
               >
-                <option value="">{t("Change Status")}</option>
-                <option value="active">{t("Active")}</option>
-                <option value="inactive">{t("Inactive")}</option>
-                <option value="approved">{t("Approved")}</option>
-                <option value="pending">{t("Pending")}</option>
-                <option value="rejected">{t("Rejected")}</option>
+                <option value="">{t("adminBooks.bulkActions.changeStatus")}</option>
+                <option value="active">{t("adminBooks.status.active")}</option>
+                <option value="inactive">{t("adminBooks.status.inactive")}</option>
+                <option value="approved">{t("adminBooks.status.approved")}</option>
+                <option value="pending">{t("adminBooks.status.pending")}</option>
+                <option value="rejected">{t("adminBooks.status.rejected")}</option>
               </select>
               <button
                 onClick={handleBulkStatusUpdate}
                 className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
               >
-                {t("Apply")}
+                {t("adminBooks.bulkActions.apply")}
               </button>
               <button
                 onClick={handleBulkDelete}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors shadow-sm"
               >
                 <FiTrash2 className="text-sm" />
-                <span>{t("Delete Selected")}</span>
+                <span>{t("adminBooks.bulkActions.deleteSelected")}</span>
               </button>
             </div>
           </div>
@@ -670,18 +673,18 @@ function AdminBooksPage() {
             <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
               <FiSearch className="text-3xl text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">{t("No books found")}</h3>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">{t("adminBooks.empty.title")}</h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
               {filters.search || filters.category || filters.status 
-                ? t("Try adjusting your search or filter criteria")
-                : t("There are currently no books in the system")}
+                ? t("adminBooks.empty.adjustFilters")
+                : t("adminBooks.empty.noBooks")}
             </p>
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
                 className="mt-4 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                {t("Clear all filters")}
+                {t("adminBooks.filters.clearAll")}
               </button>
             )}
           </div>
@@ -768,29 +771,29 @@ function AdminBooksPage() {
                               : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                           }`}
                         >
-                          {t(book.status)}
+                          {t(`adminBooks.status.${book.status}`)}
                         </span>
 
                         <div className="flex gap-2">
                           <Link
                             href={`/dashboard/admin/books/edit/${book.id}`}
                             className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                            title={t("Edit")}
+                            title={t("adminBooks.actions.edit")}
                           >
                             <FiEdit className="text-lg" />
                           </Link>
                           <Link
                             href={`/dashboard/admin/books/view/${book.id}`}
                             className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                            title={t("View")}
+                            title={t("adminBooks.actions.view")}
                           >
                             <FiEye className="text-lg" />
                           </Link>
                           <button
                             onClick={() =>
                             openConfirmModal({
-                                title: t("Confirm Deletion"),
-                                message: t("Are you sure you want to delete this book?"),
+                                title: t("adminBooks.confirmations.deleteTitle"),
+                                message: t("adminBooks.confirmations.deleteSingleMessage"),
                                 onConfirm: async () => {
                                   try {
                                     await deleteBook(book.id);
@@ -801,7 +804,7 @@ function AdminBooksPage() {
 
                                     setBooks(remaining);
                                     setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
-                                    toast.success(t("Book deleted"));
+                                    toast.success(t("adminBooks.notifications.bookDeleted"));
 
                                     if (remaining.length === 0 && page > 1) {
                                       setPage((p) => p - 1);
@@ -809,13 +812,13 @@ function AdminBooksPage() {
                                       await loadBooks();
                                     }
                                   } catch {
-                                    toast.error(t("Failed to delete"));
+                                    toast.error(t("adminBooks.notifications.bookDeleteFailed"));
                                   }
                                 },
                               })
                             }
                             className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
-                            title={t("Delete")}
+                            title={t("adminBooks.actions.delete")}
                           >
                             <FiTrash2 className="text-lg" />
                           </button>
