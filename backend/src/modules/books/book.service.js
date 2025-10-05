@@ -10,8 +10,12 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
-const { getActiveStudentPlanId } = require("../plans/subscription.helper");
+const {
+  getActiveStudentPlanId,
+  getActiveStudentSubscription,
+} = require("../plans/subscription.helper");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
+const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 
@@ -287,7 +291,6 @@ exports.checkout = async (studentId) => {
   const activeSubscription = await getActiveStudentSubscription(studentId);
   const activePlanId = activeSubscription?.plan_id;
   const activeSubscriptionId = activeSubscription?.id;
-  let subscriptionMethod = null;
 
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
@@ -327,8 +330,19 @@ exports.checkout = async (studentId) => {
     const payments = [];
     let planMethodRecord = null;
     for (const b of books) {
-      const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
-      const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
+      let includedPlans = [];
+      if (Array.isArray(b.included_plans)) {
+        includedPlans = b.included_plans;
+      } else if (typeof b.included_plans === 'string') {
+        try {
+          includedPlans = JSON.parse(b.included_plans);
+          if (!Array.isArray(includedPlans)) includedPlans = [];
+        } catch (err) {
+          includedPlans = [];
+        }
+      }
+      const coveredBySubscription =
+        activePlanId && includedPlans.includes(activePlanId);
 
       if (coveredBySubscription) {
         if (!planMethodRecord) {
@@ -343,7 +357,6 @@ exports.checkout = async (studentId) => {
             item_id: b.id,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
-            method_id: subscriptionMethod.id,
             source: 'subscription',
             paid_at: new Date(),
           },

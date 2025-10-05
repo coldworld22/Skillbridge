@@ -54,6 +54,10 @@ jest.mock('../../payments/payments.service', () => ({
   approveBankPayment: jest.fn(async (id, data) => ({ id, ...data, status: 'paid' })),
 }));
 
+jest.mock('../../paymentConfig/paymentConfig.service', () => ({
+  getSettings: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('../../payments/paymentAccess', () => ({
   grantAccess: jest.fn(() => Promise.resolve()),
 }));
@@ -62,6 +66,12 @@ const db = require('../../../config/database');
 const { listBooks, checkout, updateBook } = require('../book.service');
 const paymentsService = require('../../payments/payments.service');
 const { grantAccess } = require('../../payments/paymentAccess');
+const {
+  getActiveStudentSubscription,
+} = require('../../plans/subscription.helper');
+const { creditInstructorSubscription } = require('../../payments/helpers/wallet');
+
+const SUBSCRIPTION_METHOD_ID = 'subscription-method-1';
 
 beforeAll(async () => {
   await db.schema.createTable('books', (table) => {
@@ -109,6 +119,12 @@ beforeAll(async () => {
     active: 1,
     name: 'Bank',
   });
+  await db('payment_methods_config').insert({
+    id: SUBSCRIPTION_METHOD_ID,
+    type: 'subscription',
+    active: 1,
+    name: 'Subscription',
+  });
 
   await db.schema.createTable('payments', (table) => {
     table.uuid('id').primary();
@@ -121,6 +137,7 @@ beforeAll(async () => {
     table.string('status');
     table.decimal('platform_fee', 10, 2).defaultTo(0);
     table.decimal('instructor_amount', 10, 2).defaultTo(0);
+    table.string('source');
     table.timestamp('paid_at');
   });
 
@@ -190,6 +207,63 @@ describe('listBooks', () => {
     const result = await listBooks({ search: 'DetailedMatch' });
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe(3);
+  });
+});
+
+describe('checkout - subscription coverage', () => {
+  const studentId = 'student-sub';
+  const planId = 'plan-123';
+  const subscriptionId = 'sub-456';
+
+  beforeEach(async () => {
+    await db('book_cart').del();
+    await db('book_purchases').del();
+    await db('payments').del();
+    getActiveStudentSubscription.mockResolvedValue(null);
+    creditInstructorSubscription.mockClear();
+    await db('books')
+      .where({ id: 1 })
+      .update({ included_plans: JSON.stringify([]) });
+  });
+
+  test('marks payment as paid when covered by active subscription', async () => {
+    await db('books')
+      .where({ id: 1 })
+      .update({ included_plans: JSON.stringify([planId]) });
+
+    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
+
+    getActiveStudentSubscription.mockResolvedValue({
+      id: subscriptionId,
+      plan_id: planId,
+    });
+
+    const payments = await checkout(studentId);
+
+    expect(payments).toHaveLength(1);
+
+    const paymentRecord = await db('payments')
+      .where({ user_id: studentId, item_id: 1 })
+      .first();
+    expect(paymentRecord).toMatchObject({
+      amount: 0,
+      method_id: SUBSCRIPTION_METHOD_ID,
+      status: 'paid',
+      source: 'subscription',
+    });
+
+    const purchaseRecord = await db('book_purchases')
+      .where({ student_id: studentId, book_id: 1 })
+      .first();
+    expect(Number(purchaseRecord.price_paid)).toBe(0);
+
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'book',
+      1,
+      planId,
+      subscriptionId,
+      expect.anything()
+    );
   });
 });
 
