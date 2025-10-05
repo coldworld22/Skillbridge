@@ -44,6 +44,26 @@ const parseBooleanFromEnv = (value, defaultValue = false) => {
 
 const booleanLike = z.union([z.boolean(), z.string(), z.number()]).optional();
 
+const normalizeSameSite = (value) => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return undefined;
+  }
+
+  const normalized = stringValue.toLowerCase();
+  if (!['lax', 'strict', 'none'].includes(normalized)) {
+    throw new Error(
+      `Invalid COOKIE_SAMESITE value: ${value}. Expected one of: lax, strict, none.`
+    );
+  }
+
+  return normalized;
+};
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BACKEND_PORT: z.coerce.number().default(5002),
@@ -82,6 +102,8 @@ const EnvSchema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   APP_DOMAIN: z.string().optional(),
   COOKIE_DOMAIN: z.string().optional(),
+  COOKIE_SECURE: booleanLike,
+  COOKIE_SAMESITE: z.string().optional(),
   ENABLE_INSTALL: booleanLike,
   INSTALL_API_ENABLED: booleanLike,
   RATE_LIMIT_MAX_REQUESTS: z
@@ -136,6 +158,23 @@ const createValidatedEnv = () => {
       : sanitizedEnv[key];
     sanitizedEnv[key] = parseBooleanFromEnv(rawValue, defaultValue);
   });
+
+  if (Object.prototype.hasOwnProperty.call(modifiedEnv, 'COOKIE_SECURE')) {
+    sanitizedEnv.COOKIE_SECURE = parseBooleanFromEnv(
+      modifiedEnv.COOKIE_SECURE,
+      undefined
+    );
+  } else {
+    sanitizedEnv.COOKIE_SECURE = undefined;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(modifiedEnv, 'COOKIE_SAMESITE')) {
+    sanitizedEnv.COOKIE_SAMESITE = normalizeSameSite(
+      modifiedEnv.COOKIE_SAMESITE
+    );
+  } else {
+    sanitizedEnv.COOKIE_SAMESITE = undefined;
+  }
 
   return sanitizedEnv;
 };
@@ -376,6 +415,8 @@ module.exports = {
   FRONTEND_ORIGINS,
   APP_DOMAIN: env.APP_DOMAIN,
   COOKIE_DOMAIN: env.COOKIE_DOMAIN,
+  COOKIE_SECURE: env.COOKIE_SECURE,
+  COOKIE_SAMESITE: env.COOKIE_SAMESITE,
   ENABLE_INSTALL: env.ENABLE_INSTALL,
   INSTALL_API_ENABLED: env.INSTALL_API_ENABLED,
   RATE_LIMIT_MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,

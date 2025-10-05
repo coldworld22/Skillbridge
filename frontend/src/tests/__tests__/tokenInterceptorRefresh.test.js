@@ -193,19 +193,24 @@ describe("tokenInterceptor refresh logic", () => {
   });
 });
 
-describe("refreshAccessToken", () => {
+describe("refreshAccessToken auth service", () => {
   beforeEach(() => {
     ensureCsrfTokenMock.mockReset();
+    clearCachedCsrfTokenMock.mockReset();
     getCookieMock.mockReset();
     apiPostMock.mockReset();
+    apiMockInstance.mockClear();
   });
 
-  it("fetches a CSRF token before refreshing when no cookie exists", async () => {
-    getCookieMock.mockReturnValueOnce(undefined);
+  it("fetches a CSRF token before refreshing when no cookie is present", async () => {
+    getCookieMock.mockReturnValueOnce(null);
     ensureCsrfTokenMock
-      .mockResolvedValueOnce("fetched-token")
-      .mockResolvedValueOnce("post-refresh-token");
-    apiPostMock.mockResolvedValueOnce({ data: { accessToken: "new-access" } });
+      .mockResolvedValueOnce("fetched-csrf")
+      .mockResolvedValueOnce("rotated-csrf");
+
+    apiPostMock.mockResolvedValueOnce({
+      data: { accessToken: "new-access" },
+    });
 
     let refreshAccessToken;
     jest.isolateModules(() => {
@@ -214,21 +219,25 @@ describe("refreshAccessToken", () => {
 
     const result = await refreshAccessToken();
 
+    expect(result).toEqual({ accessToken: "new-access" });
+
+    expect(getCookieMock).toHaveBeenCalledWith("csrfToken");
     expect(ensureCsrfTokenMock).toHaveBeenCalledTimes(2);
-    expect(ensureCsrfTokenMock).toHaveBeenNthCalledWith(1, { forceRefresh: true });
-    expect(ensureCsrfTokenMock).toHaveBeenNthCalledWith(2);
-    expect(ensureCsrfTokenMock.mock.invocationCallOrder[0]).toBeLessThan(
-      apiPostMock.mock.invocationCallOrder[0]
-    );
+    expect(ensureCsrfTokenMock).toHaveBeenNthCalledWith(1, {
+      forceRefresh: true,
+    });
+    expect(ensureCsrfTokenMock.mock.calls[1]).toEqual([]);
+
+    expect(
+      ensureCsrfTokenMock.mock.invocationCallOrder[0]
+    ).toBeLessThan(apiPostMock.mock.invocationCallOrder[0]);
 
     expect(apiPostMock).toHaveBeenCalledWith(
       "auth/refresh",
       null,
       expect.objectContaining({
-        headers: { "x-csrf-token": "fetched-token" },
+        headers: { "x-csrf-token": "fetched-csrf" },
       })
     );
-
-    expect(result).toEqual({ accessToken: "new-access" });
   });
 });

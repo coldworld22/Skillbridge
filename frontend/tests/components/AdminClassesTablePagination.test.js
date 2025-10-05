@@ -150,6 +150,52 @@ describe("AdminClassesTable schedule filtering", () => {
   });
 });
 
+describe("AdminClassesTable request deduplication", () => {
+  const mockedFetchAdminClasses = fetchAdminClasses;
+
+  beforeEach(() => {
+    mockedFetchAdminClasses.mockReset();
+    toast.error.mockClear();
+    toast.success.mockClear();
+  });
+
+  it("does not queue duplicate fetches after a successful load", async () => {
+    mockedFetchAdminClasses.mockResolvedValue({
+      data: [
+        {
+          id: "solo",
+          title: "Solo Class",
+          instructor: "Only Instructor",
+          start_date: "2024-01-01",
+          end_date: "2024-01-02",
+          category: "Category",
+          publishStatus: "draft",
+          approvalStatus: "Approved",
+          scheduleStatus: "Upcoming",
+          price: 0,
+        },
+      ],
+      meta: { totalPages: 1, total: 1 },
+    });
+
+    const { rerender } = render(<AdminClassesTable />);
+
+    expect(await screen.findByText("Solo Class")).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(<AdminClassesTable />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockedFetchAdminClasses).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("AdminClassesTable page size control", () => {
   const mockedFetchAdminClasses = fetchAdminClasses;
 
