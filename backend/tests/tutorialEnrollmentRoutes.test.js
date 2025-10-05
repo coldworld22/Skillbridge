@@ -16,6 +16,7 @@ const {
 
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditInstructorSubscription: jest.fn(),
+  creditTutorialSubscription: jest.fn(),
 }));
 jest.mock('../src/modules/payments/helpers/methods.js', () => ({
   getPlanCoveredMethod: jest.fn(),
@@ -184,8 +185,13 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     });
     planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
     let instructorWalletBalance = 0;
-    creditTutorialSubscription.mockImplementation(async () => {
-      instructorWalletBalance += calculatedAmount;
+    creditTutorialSubscription.mockImplementation(async (
+      _tutorialId,
+      _planId,
+      _trx,
+      amountDelta,
+    ) => {
+      instructorWalletBalance += amountDelta;
     });
 
     const tutorialId = '123e4567-e89b-12d3-a456-426614174003';

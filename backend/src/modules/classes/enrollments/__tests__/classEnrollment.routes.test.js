@@ -59,10 +59,6 @@ jest.mock('../../class.service', () => ({
   getClassById: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
-}));
-
 jest.mock('../../../../utils/logger.js', () => ({
   log: jest.fn(),
   debug: jest.fn(),

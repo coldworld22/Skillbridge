@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
+const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {

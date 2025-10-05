@@ -12,8 +12,10 @@ exports.calculateInstructorAmount = async (
   subscriptionId,
   itemId,
   trx,
-  itemType = "class"
+  itemType = "class",
+  options = {}
 ) => {
+  const { incrementUsage = true } = options || {};
   const query = trx || db;
   try {
     const key = {
