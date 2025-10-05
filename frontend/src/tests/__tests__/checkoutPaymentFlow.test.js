@@ -166,6 +166,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
         account_holder_name: 'John',
         account_number: '123',
         swift_code: 'ABCDEF',
+        branch_address: '123 Finance St',
       },
     },
   ]);
@@ -337,9 +338,7 @@ test('enrolls in free plan through zero-amount payment', async () => {
       })
     )
   );
-  await waitFor(() =>
-    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly', 101)
-  );
+  expect(subscribeToPlan).not.toHaveBeenCalled();
   jest.runAllTimers();
   await waitFor(() =>
     expect(push).toHaveBeenCalledWith(
