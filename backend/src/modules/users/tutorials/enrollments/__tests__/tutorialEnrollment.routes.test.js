@@ -25,8 +25,11 @@ jest.mock('../../../../../middleware/auth/authMiddleware', () => ({
 }));
 
 jest.mock('../../../../plans/subscription.helper', () => ({
-  getActiveStudentPlanId: jest.fn(),
   getActiveStudentSubscription: jest.fn(),
+}));
+
+jest.mock('../../../../payments/helpers/methods', () => ({
+  getPlanCoveredMethod: jest.fn(() => Promise.resolve({ id: 'plan-method-1' })),
 }));
 
 jest.mock('../../../../payments/helpers/planRevenue', () => ({
@@ -38,10 +41,7 @@ jest.mock('../../../../payments/helpers/planPayments', () => ({
 }));
 
 const db = require('../../../../../config/database');
-const {
-  getActiveStudentPlanId,
-  getActiveStudentSubscription,
-} = require('../../../../plans/subscription.helper');
+const { getActiveStudentSubscription } = require('../../../../plans/subscription.helper');
 const { recordPlanCoveredPayment } = require('../../../../payments/helpers/planPayments');
 
 const routes = require('../../tutorial.routes');
@@ -54,6 +54,7 @@ describe('Tutorial enrollment routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveStudentSubscription.mockResolvedValue(null);
+    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
   });
 
   test('enrolls tutorial via subscription without payment method requirement', async () => {
@@ -76,6 +77,7 @@ describe('Tutorial enrollment routes', () => {
     const res = await request(app).post('/tutorials/enroll/abc-tutorial');
 
     expect(res.statusCode).toBe(200);
+    expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         trx: expect.any(Function),
@@ -85,6 +87,7 @@ describe('Tutorial enrollment routes', () => {
         source: 'subscription',
       }),
     );
+    expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
     expect(db.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         id: expect.any(String),

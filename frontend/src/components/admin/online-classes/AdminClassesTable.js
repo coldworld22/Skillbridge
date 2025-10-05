@@ -89,6 +89,31 @@ export function compareValues(a, b, key) {
   return 0;
 }
 
+const computeListSignature = (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return "";
+  }
+
+  return items
+    .map((item) => {
+      if (item && typeof item === "object") {
+        if ("id" in item) {
+          return String(item.id);
+        }
+        if ("_id" in item) {
+          return String(item._id);
+        }
+      }
+
+      try {
+        return JSON.stringify(item);
+      } catch (err) {
+        return String(item);
+      }
+    })
+    .join("|");
+};
+
 export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -117,6 +142,8 @@ export default function AdminClassesTable() {
   const totalItemsRef = useRef(totalItems);
   const totalPagesRef = useRef(totalPages);
   const loadingRef = useRef(false);
+  const classListLengthRef = useRef(0);
+  const classListSignatureRef = useRef("");
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
@@ -126,15 +153,16 @@ export default function AdminClassesTable() {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const classCount = classList.length;
   const normalizedItemsPerPage = useMemo(() => {
     if (pageSizeSetting === "all") {
-      const totalOrCount = totalItems || classCount || DEFAULT_PAGE_SIZE;
-      return resolvePositiveInteger(totalOrCount, DEFAULT_PAGE_SIZE);
+      return resolvePositiveInteger(
+        totalItemsRef.current,
+        DEFAULT_PAGE_SIZE
+      );
     }
 
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-  }, [pageSizeSetting, totalItems, classCount]);
+  }, [pageSizeSetting]);
 
   const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
     if (failureRecord?.retryTimer) {
@@ -174,6 +202,13 @@ export default function AdminClassesTable() {
     authIdentifierRef.current = authIdentifier;
   }, [authIdentifier]);
 
+  useEffect(() => {
+    classListLengthRef.current = Array.isArray(classList)
+      ? classList.length
+      : 0;
+    classListSignatureRef.current = computeListSignature(classList);
+  }, [classList]);
+
   const setCurrentPageIfNeeded = (value) => {
     if (!Number.isFinite(value)) {
       return false;
@@ -202,6 +237,21 @@ export default function AdminClassesTable() {
     totalPagesRef.current = value;
     setTotalPages(value);
     return true;
+  };
+
+  const updateClassListIfChanged = (nextList) => {
+    setClassList((previous) => {
+      if (previous.length === nextList.length) {
+        const previousFirstId = previous[0]?.id ?? null;
+        const nextFirstId = nextList[0]?.id ?? null;
+
+        if (previousFirstId === nextFirstId) {
+          return previous;
+        }
+      }
+
+      return nextList;
+    });
   };
 
   const sortClasses = (items, key = sortKey) =>
@@ -245,7 +295,9 @@ export default function AdminClassesTable() {
     }
 
     if (normalizedPage !== currentPage) {
-      setCurrentPageIfNeeded(normalizedPage);
+      if (setCurrentPageIfNeeded(normalizedPage)) {
+        return;
+      }
     }
 
     if (lastNormalizedPageRef.current !== normalizedPage) {
@@ -429,8 +481,8 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setTotalItems(totalFilteredItems);
-          setTotalPages(totalFilteredPages);
+          setTotalItemsIfNeeded(totalFilteredItems);
+          setTotalPagesIfNeeded(totalFilteredPages);
 
           const startIndex = (effectivePage - 1) * safeLimit;
           const paginatedData = sortedData.slice(
@@ -442,7 +494,7 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setClassList(paginatedData);
+          updateClassListIfChanged(paginatedData);
         } else {
           const sortedData = sortClasses(data, sortValue);
 
@@ -450,7 +502,7 @@ export default function AdminClassesTable() {
             return;
           }
 
-          setClassList(sortedData);
+          updateClassListIfChanged(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
           const nextTotalItems = meta?.total ?? data.length;
           setTotalPagesIfNeeded(nextTotalPages);
@@ -479,7 +531,7 @@ export default function AdminClassesTable() {
           authFailureRef.current = true;
           if (isComponentMountedRef.current) {
             setAuthError(true);
-            setClassList([]);
+            updateClassList([]);
             setTotalItemsIfNeeded(0);
             setTotalPagesIfNeeded(1);
           }
@@ -656,7 +708,7 @@ export default function AdminClassesTable() {
 
       if (action === "approve") {
         const updated = await approveAdminClass(id);
-        setClassList((prev) =>
+        updateClassList((prev) =>
           prev.map((c) =>
             c.id === id
               ? { ...c, approvalStatus: "Approved", publishStatus: updated?.publishStatus }
@@ -681,7 +733,7 @@ export default function AdminClassesTable() {
         refreshMessages?.();
       } else if (action === "reject") {
         await rejectAdminClass(id, reason);
-        setClassList((prev) =>
+        updateClassList((prev) =>
           prev.map((c) =>
             c.id === id ? { ...c, approvalStatus: "Rejected" } : c
           )
@@ -707,7 +759,7 @@ export default function AdminClassesTable() {
         if (!updated) {
           throw new Error("Failed to toggle class status");
         }
-        setClassList((prev) =>
+        updateClassList((prev) =>
           prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
         );
         toast.success("Status updated");
@@ -769,7 +821,7 @@ export default function AdminClassesTable() {
         )
       );
 
-      setClassList(updatedList);
+      updateClassList(updatedList);
       setTotalItemsIfNeeded(nextTotalItems);
       setTotalPagesIfNeeded(nextTotalPages);
 

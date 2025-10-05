@@ -8,11 +8,41 @@ const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 const { TUTORIAL_STATUS } = require("../../../../shared/tutorialStatus");
 
+const isUniqueSlugError = (error) => {
+  if (!error || error.code !== "23505") return false;
+  const constraint = String(error.constraint || "").toLowerCase();
+  if (constraint.includes("slug")) return true;
+  const detail = String(error.detail || "").toLowerCase();
+  if (detail.includes("(slug)") || detail.includes("slug")) return true;
+  const message = String(error.message || "").toLowerCase();
+  return message.includes("slug");
+};
+
 exports.createTutorial = async (data, trx = db) => {
   const insertData = { included_plans: [], ...data };
   if (!insertData.included_plans) insertData.included_plans = [];
-  const [tutorial] = await trx("tutorials").insert(insertData).returning("*");
-  return tutorial;
+
+  const fallbackSlug = slugify(insertData.title || uuidv4(), {
+    lower: true,
+    strict: true,
+  });
+  const baseSlug = (insertData.slug || "").trim() || fallbackSlug || uuidv4();
+
+  let attempt = 0;
+  while (attempt < 50) {
+    const slugCandidate = attempt === 0 ? baseSlug : `${baseSlug}-${attempt}`;
+    try {
+      const [tutorial] = await trx("tutorials")
+        .insert({ ...insertData, slug: slugCandidate })
+        .returning("*");
+      return tutorial;
+    } catch (error) {
+      if (!isUniqueSlugError(error)) throw error;
+      attempt += 1;
+    }
+  }
+
+  throw new Error("Unable to generate a unique slug for tutorial");
 };
 
 exports.createTutorialWithRelations = async (
@@ -130,7 +160,7 @@ exports.getTutorialAggregates = async (tutorialId) => {
 const { parsePagination } = require("../../../utils/pagination");
 
 exports.getAllTutorials = async (filters = {}) => {
-  const { status, category, search } = filters;
+  const { status, category, search, approval } = filters;
   const { page, limit, offset } = parsePagination(filters);
 
   const baseQuery = db("tutorials as t")
@@ -140,6 +170,17 @@ exports.getAllTutorials = async (filters = {}) => {
     .modify((query) => {
       if (status) query.andWhere("t.status", status);
       if (category) query.andWhere("t.category_id", category);
+      if (approval) {
+        query.andWhere(function () {
+          if (approval === "Pending") {
+            this.where("t.moderation_status", approval).orWhereNull(
+              "t.moderation_status"
+            );
+          } else {
+            this.where("t.moderation_status", approval);
+          }
+        });
+      }
       if (search) {
         query.andWhere(function () {
           this.whereILike("t.title", `%${search}%`);

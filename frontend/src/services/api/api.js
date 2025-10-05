@@ -9,9 +9,28 @@ import axios from "axios";
 import logger from "@/utils/logger";
 
 const isBrowser = typeof window !== "undefined";
-const DEFAULT_SERVER_BASE_URL = "http://localhost:5002/api";
 const publicBaseCandidate = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 const internalBaseCandidate = process.env.INTERNAL_API_BASE_URL;
+
+const resolveBrowserDerivedBase = (candidate) => {
+  if (!isBrowser) {
+    return null;
+  }
+
+  try {
+    const origin = window?.location?.origin;
+    if (!origin) {
+      return null;
+    }
+
+    return new URL(candidate, origin).toString();
+  } catch (error) {
+    logger.warn(
+      `Failed to resolve API base URL from "${candidate}" against window.location.origin: ${error.message}`
+    );
+    return null;
+  }
+};
 
 const pickBaseCandidate = () => {
   if (!isBrowser && internalBaseCandidate) {
@@ -42,29 +61,30 @@ const ensureAbsoluteUrl = (candidate) => {
   };
 
   if (isBrowser) {
-    const browserOrigin = typeof window !== "undefined" ? window.location?.origin : null;
-
-    if (browserOrigin) {
-      const resolvedFromOrigin = tryResolveWithBase(browserOrigin);
-      if (resolvedFromOrigin) {
-        logger.warn(
-          `API base "${candidate}" is not absolute. Using current origin fallback "${resolvedFromOrigin}".`
-        );
-        return resolvedFromOrigin;
-      }
+    const derivedFromOrigin = resolveBrowserDerivedBase(candidate);
+    if (derivedFromOrigin) {
+      logger.warn(
+        `API base "${candidate}" is not absolute. Deriving fallback from window.location.origin: "${derivedFromOrigin}".`
+      );
+      return derivedFromOrigin;
     }
 
-    const resolvedFallback = [internalBaseCandidate, DEFAULT_SERVER_BASE_URL]
-      .map((base) => (base && /^https?:\/\//i.test(base) ? tryResolveWithBase(base) : null))
-      .find(Boolean);
+    const fallbackBrowserBase = [internalBaseCandidate]
+      .filter((base) => base && /^https?:\/\//i.test(base))
+      .shift();
 
-    const fallback = resolvedFallback || DEFAULT_SERVER_BASE_URL;
+    if (fallbackBrowserBase) {
+      logger.warn(
+        `API base "${candidate}" is not absolute. Falling back to "${fallbackBrowserBase}".`
+      );
+      return fallbackBrowserBase;
+    }
 
     logger.warn(
-      `API base "${candidate}" is not absolute. Falling back to "${fallback}".`
+      `API base "${candidate}" is not absolute and no fallback could be resolved. Using "${candidate}" as-is.`
     );
 
-    return fallback;
+    return candidate;
   }
 
   const appDomain = process.env.APP_DOMAIN;
@@ -80,7 +100,7 @@ const ensureAbsoluteUrl = (candidate) => {
 
   const fallback = internalBaseCandidate && /^https?:\/\//i.test(internalBaseCandidate)
     ? internalBaseCandidate
-    : DEFAULT_SERVER_BASE_URL;
+    : candidate;
 
   logger.warn(
     `API base "${candidate}" is not absolute and could not be resolved. Falling back to "${fallback}".`
@@ -153,7 +173,7 @@ if (
   window.location.hostname !== "localhost"
 ) {
   logger.warn(
-    `NEXT_PUBLIC_API_BASE_URL is not set. Using the current origin (${window.location.origin}) for API requests. Set this variable in frontend/.env.local to avoid unexpected network errors.`
+    `NEXT_PUBLIC_API_BASE_URL is not set. Falling back to "${baseURL}" derived from the current origin. Set this variable in frontend/.env.local to avoid unexpected network errors.`
   );
 }
 
