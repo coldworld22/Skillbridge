@@ -1,6 +1,8 @@
 const request = require('supertest');
 const express = require('express');
 
+let mockUser = { id: 'test-user', role: 'instructor' };
+
 // Mock database to avoid connection attempts
 jest.mock('../../../config/database', () => {
   const db = jest.fn(() => db);
@@ -50,7 +52,7 @@ jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next(
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'test-user', role: 'instructor' };
+    req.user = { ...mockUser };
     next();
   },
   isStudent: (_req, _res, next) => next(),
@@ -77,6 +79,7 @@ app.use((err, _req, res, _next) => {
 describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUser = { id: 'test-user', role: 'instructor' };
     getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
@@ -154,6 +157,50 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(list);
     expect(res.body.meta).toEqual(result.meta);
     expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 1, limit: 5 });
+  });
+
+  test('instructor cannot override instructorId when fetching own classes', async () => {
+    mockUser = { id: 'instructor-123', role: 'instructor' };
+    const list = [{ id: '1', instructor_id: 'instructor-123', title: 'Mine' }];
+    const result = {
+      data: list,
+      meta: { page: 1, limit: 3, total: 1, totalPages: 1 },
+    };
+    service.getClassesByInstructor.mockResolvedValue(result);
+
+    const res = await request(app).get(
+      '/classes/instructor/my?instructorId=other-instructor&limit=3'
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(list);
+    expect(res.body.meta).toEqual(result.meta);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('instructor-123', {
+      page: 1,
+      limit: 3,
+    });
+  });
+
+  test('admin can override instructorId when fetching instructor classes', async () => {
+    mockUser = { id: 'admin-user', role: 'admin' };
+    const list = [{ id: '1', instructor_id: 'target-instructor', title: 'Other' }];
+    const result = {
+      data: list,
+      meta: { page: 2, limit: 2, total: 1, totalPages: 1 },
+    };
+    service.getClassesByInstructor.mockResolvedValue(result);
+
+    const res = await request(app).get(
+      '/classes/admin/my?instructorId=target-instructor&page=2&limit=2'
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(list);
+    expect(res.body.meta).toEqual(result.meta);
+    expect(service.getClassesByInstructor).toHaveBeenCalledWith('target-instructor', {
+      page: 2,
+      limit: 2,
+    });
   });
 
   test('get published classes', async () => {
