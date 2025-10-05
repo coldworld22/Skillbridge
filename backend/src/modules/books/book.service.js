@@ -13,6 +13,7 @@ const { v4: uuidv4 } = require("uuid");
 const { getActiveStudentSubscription } = require("../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
+const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 
@@ -327,8 +328,19 @@ exports.checkout = async (studentId) => {
     const payments = [];
     let planMethodRecord = null;
     for (const b of books) {
-      const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
-      const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
+      let includedPlans = [];
+      if (Array.isArray(b.included_plans)) {
+        includedPlans = b.included_plans;
+      } else if (typeof b.included_plans === 'string') {
+        try {
+          includedPlans = JSON.parse(b.included_plans);
+          if (!Array.isArray(includedPlans)) includedPlans = [];
+        } catch (err) {
+          includedPlans = [];
+        }
+      }
+      const coveredBySubscription =
+        activePlanId && includedPlans.includes(activePlanId);
 
       if (coveredBySubscription) {
         if (!planMethodRecord) {
