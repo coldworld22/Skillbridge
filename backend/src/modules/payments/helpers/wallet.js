@@ -57,17 +57,22 @@ async function creditInstructorSubscription(
   subscriptionId,
   trx,
   precomputedAmount,
+  options = {}
 ) {
   try {
-    const rawAmount =
-      precomputedAmount ??
-      (await calculateInstructorAmount(
-        planId,
-        subscriptionId,
-        item_id,
-        trx,
-        item_type
-      ));
+    const calculateOptions =
+      precomputedAmount !== undefined
+        ? { ...(options || {}), precomputedAmount }
+        : options || {};
+
+    const rawAmount = await calculateInstructorAmount(
+      planId,
+      subscriptionId,
+      item_id,
+      trx,
+      item_type,
+      calculateOptions
+    );
     const amount = Number.isFinite(rawAmount) ? rawAmount : 0;
     if (amount <= 0) return amount;
 
@@ -108,13 +113,9 @@ async function creditTutorialSubscription(
     planId,
     subscriptionId,
     trx,
-  ];
-
-  if (typeof precomputedAmount !== "undefined") {
-    args.push(precomputedAmount);
-  }
-
-  return creditInstructorSubscription(...args);
+    precomputedAmount,
+    options
+  );
 }
 
 module.exports = {
