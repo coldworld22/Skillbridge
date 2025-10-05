@@ -20,6 +20,26 @@ const mockDb = knex({
   useNullAsDefault: true,
 });
 
+const normalizeRow = (row) => {
+  if (row && typeof row === 'object' && !Array.isArray(row)) {
+    if (typeof row.included_plans === 'string') {
+      try {
+        row.included_plans = JSON.parse(row.included_plans);
+      } catch (_) {
+        row.included_plans = [];
+      }
+    }
+  }
+  return row;
+};
+
+mockDb.client.config.postProcessResponse = (result) => {
+  if (Array.isArray(result)) {
+    return result.map((row) => normalizeRow(row));
+  }
+  return normalizeRow(result);
+};
+
 // Mock the database module used in the service
 jest.mock('../../../config/database', () => mockDb);
 jest.mock('../../plans/subscription.helper', () => ({
@@ -109,6 +129,12 @@ beforeAll(async () => {
     active: 1,
     name: 'Bank',
   });
+  await db('payment_methods_config').insert({
+    id: 'sub-method-1',
+    type: 'subscription',
+    active: 1,
+    name: 'Subscription',
+  });
 
   await db.schema.createTable('payments', (table) => {
     table.uuid('id').primary();
@@ -119,6 +145,7 @@ beforeAll(async () => {
     table.decimal('amount', 10, 2);
     table.string('currency');
     table.string('status');
+    table.string('source');
     table.decimal('platform_fee', 10, 2).defaultTo(0);
     table.decimal('instructor_amount', 10, 2).defaultTo(0);
     table.timestamp('paid_at');
@@ -193,7 +220,7 @@ describe('listBooks', () => {
   });
 });
 
-describe.skip('checkout', () => {
+describe('checkout', () => {
   const studentId = 'student1';
 
   beforeEach(async () => {
