@@ -77,6 +77,8 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     branch_address,
     extra_instructions,
     coupon_id,
+    reference,
+    receipt_url,
   } = req.body;
   const user_id = req.user?.id;
 
@@ -183,6 +185,14 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     extra_instructions,
   };
 
+  if (reference) {
+    bank_details.reference = reference;
+  }
+
+  if (receipt_url) {
+    bank_details.receipt_url = receipt_url;
+  }
+
   const paymentData = {
     id: uuidv4(),
     user_id,
@@ -196,6 +206,14 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     instructor_amount,
     bank_details,
   };
+
+  if (reference) {
+    paymentData.reference_id = reference;
+  }
+
+  if (receipt_url) {
+    paymentData.receipt_url = receipt_url;
+  }
 
   const payment = await paymentsService.create(paymentData);
 

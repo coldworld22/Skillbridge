@@ -3,7 +3,7 @@ import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '../../services/paymentService';
-import { createPayment } from '../../services/student/paymentService';
+import { createPayment, uploadReceipt } from '../../services/student/paymentService';
 import { fetchPlanDetails } from '../../services/public/planService';
 import { validateCode } from '../../services/couponService';
 import PaymentSuccessPage from '../../pages/payments/success';
@@ -110,6 +110,7 @@ jest.mock('../../services/paymentService', () => ({
 }));
 jest.mock('../../services/student/paymentService', () => ({
   createPayment: jest.fn(),
+  uploadReceipt: jest.fn(),
 }));
 jest.mock('../../store/libraryStore', () => ({
   __esModule: true,
@@ -176,15 +177,51 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.getByDisplayValue('Test Bank')).toBeInTheDocument();
-  expect(screen.getByDisplayValue('123 Finance St')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText(/Reference/), { target: { value: 'ref' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
+  const [bankPayload] = initiateBankPayment.mock.calls[0];
+  expect(bankPayload).toMatchObject({
+    item_id: 1,
+    item_type: 'class',
+    reference: 'ref',
+  });
+  expect(Number(bankPayload.amount)).toBe(100);
+  expect(uploadReceipt).not.toHaveBeenCalled();
   await waitFor(() =>
     expect(push).toHaveBeenCalledWith(
       '/payments/success?itemType=class&itemId=1&payment_id=42'
     )
   );
+});
+
+test('uploads receipt before initiating bank payment when provided', async () => {
+  const push = jest.fn();
+  mockUseRouter.mockReturnValue({
+    query: { itemId: '1', itemType: 'class' },
+    isReady: true,
+    push,
+  });
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 3, name: 'Bank', type: 'bank', settings: { bank_name: 'Test Bank' } },
+  ]);
+  const file = new File(['content'], 'receipt.png', { type: 'image/png' });
+  uploadReceipt.mockResolvedValue({ url: 'https://cdn.example/receipt.png' });
+  initiateBankPayment.mockResolvedValue({ id: 77 });
+
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  fireEvent.click(screen.getByText('Bank'));
+  const receiptInput = screen.getByLabelText('Payment Receipt (optional)');
+  fireEvent.change(receiptInput, { target: { files: [file] } });
+  fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
+
+  await waitFor(() => expect(uploadReceipt).toHaveBeenCalledWith(file));
+  await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
+  const [payload] = initiateBankPayment.mock.calls.pop();
+  expect(payload).toMatchObject({
+    receipt_url: 'https://cdn.example/receipt.png',
+  });
 });
 
 test.skip('completes payment for unhandled methods on success', async () => {

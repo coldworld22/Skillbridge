@@ -7,7 +7,7 @@ import { fetchBook } from '@/services/bookService';
 import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCoinbasePayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
-import { createPayment, fetchPayment } from '@/services/student/paymentService';
+import { createPayment, fetchPayment, uploadReceipt } from '@/services/student/paymentService';
 import { subscribeToPlan } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -236,14 +236,31 @@ export async function handleBankPayment({
 }) {
   try {
     setPaymentStatus('processing');
-    const payload = new FormData();
-    payload.append('item_id', itemInfo.id);
-    payload.append('item_type', itemType);
-    payload.append('amount', finalPrice);
-    if (couponId) payload.append('coupon_id', couponId);
-    if (itemType === 'plan') payload.append('interval', interval);
-    if (formData.reference) payload.append('reference', formData.reference);
-    if (formData.receipt) payload.append('receipt', formData.receipt);
+    const payload = {
+      item_id: itemInfo.id,
+      item_type: itemType,
+      amount: finalPrice,
+    };
+    if (couponId) payload.coupon_id = couponId;
+    if (itemType === 'plan') payload.interval = interval;
+    if (formData.reference) payload.reference = formData.reference;
+
+    if (formData.receipt) {
+      try {
+        const uploaded = await uploadReceipt(formData.receipt);
+        const uploadedUrl =
+          uploaded?.url || uploaded?.receipt_url || uploaded || null;
+        if (uploadedUrl) {
+          payload.receipt_url = uploadedUrl;
+        }
+      } catch (uploadErr) {
+        console.error('Failed to upload bank receipt', uploadErr);
+        toast.error(t('payment_bank_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+    }
+
     const payment = await initiateBankPayment(payload);
     router.push(
       `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
