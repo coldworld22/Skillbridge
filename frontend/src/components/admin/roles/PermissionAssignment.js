@@ -16,6 +16,7 @@ export default function PermissionAssignment({
 }) {
   const [assignedPermissions, setAssignedPermissions] = useState([]);
   const [permissions, setPermissions] = useState([]);
+  const [catalogueUnavailable, setCatalogueUnavailable] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
   const { user } = useAuthStore();
@@ -30,9 +31,18 @@ export default function PermissionAssignment({
       }
       try {
         const all = await fetchAllPermissions();
+        if (!all?.length) {
+          setPermissions([]);
+          setCatalogueUnavailable(true);
+          toast.error("Failed to load permissions catalogue");
+          return;
+        }
         setPermissions(all);
+        setCatalogueUnavailable(false);
       } catch (err) {
-        toast.error("Failed to load permissions");
+        setPermissions([]);
+        setCatalogueUnavailable(true);
+        toast.error("Failed to load permissions catalogue");
       }
     };
     loadPermissions();
@@ -194,6 +204,12 @@ export default function PermissionAssignment({
             </label>
           ))}
         </div>
+      )}
+
+      {catalogueUnavailable && (
+        <p className="mt-4 text-sm text-gray-500">
+          Saving changes is disabled until the permissions catalogue can be retrieved.
+        </p>
       )}
 
       {canManage && (
