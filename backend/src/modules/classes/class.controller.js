@@ -247,8 +247,9 @@ exports.getClassById = catchAsync(async (req, res) => {
 
 exports.getMyClasses = catchAsync(async (req, res) => {
   const { page = 1, limit = 10, instructorId } = req.query;
-  const isAdmin = isAdminRole(req.user?.roles || req.user?.role);
-  const targetId = isAdmin && instructorId ? instructorId : req.user.id;
+  const roles = req.user?.roles || req.user?.role;
+  const canOverrideInstructor = isAdminRole(roles);
+  const targetId = canOverrideInstructor && instructorId ? instructorId : req.user.id;
   const result = await service.getClassesByInstructor(targetId, {
     page: Number(page),
     limit: Number(limit),
