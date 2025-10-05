@@ -43,18 +43,16 @@ jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
 }));
 
-jest.mock('../../../payments/helpers/wallet', () => {
-  const creditInstructorSubscription = jest.fn(async (_type, _id, _planId, trx) => {
-    await trx('plan_usage_metrics').update({
-      usage_count: 1,
-      instructor_amount: 5,
-    });
-  });
-  return { creditInstructorSubscription };
-});
+jest.mock('../../../payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
+}));
 
-jest.mock('../../../payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
+jest.mock('../../../payouts/wallet.service', () => ({
+  increment: jest.fn(),
+}));
+
+jest.mock('../../class.service', () => ({
+  getClassById: jest.fn(),
 }));
 
 jest.mock('../../../payments/helpers/planPayments', () => ({
@@ -69,7 +67,11 @@ jest.mock('../../../../utils/logger.js', () => ({
 }));
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
-const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
+const planRevenue = require('../../../payments/helpers/planRevenue');
+const walletService = require('../../../payouts/wallet.service');
+const classService = require('../../class.service');
+const walletHelpers = require('../../../payments/helpers/wallet');
+jest.spyOn(walletHelpers, 'creditInstructorSubscription');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const logger = require('../../../../utils/logger.js');
 const db = require('../../../../config/database');
@@ -156,14 +158,29 @@ describe('Class enrollment routes', () => {
     getActiveStudentPlanId.mockResolvedValue('plan1');
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
+    classService.getClassById.mockResolvedValue({ instructor_id: 'inst-1' });
+    planRevenue.calculateInstructorAmount.mockResolvedValue(7.5);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
-    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
-    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+    expect(walletHelpers.creditInstructorSubscription).toHaveBeenCalledTimes(1);
+    expect(walletHelpers.creditInstructorSubscription).toHaveBeenCalledWith(
       'class',
       'abc',
       'plan1',
+      expect.anything(),
+    );
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledTimes(1);
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
+      'plan1',
+      'abc',
+      expect.anything(),
+      'class',
+    );
+    expect(walletService.increment).toHaveBeenCalledTimes(1);
+    expect(walletService.increment).toHaveBeenCalledWith(
+      'inst-1',
+      7.5,
       expect.anything(),
     );
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
@@ -179,27 +196,46 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
-    db.first
+    const trx = jest.fn(() => trx);
+    trx.where = jest.fn(() => trx);
+    trx.whereNot = jest.fn(() => trx);
+    trx.forUpdate = jest.fn(() => trx);
+    trx.insert = jest.fn(() => trx);
+    trx.update = jest.fn(() => trx);
+    trx.first = jest
+      .fn()
       .mockResolvedValueOnce({
         status: 'published',
         moderation_status: 'Approved',
         price: 50,
         included_plans: ['plan2'],
       })
-      .mockResolvedValueOnce(null); // payment check
+      .mockResolvedValue(null);
+    db.transaction.mockImplementationOnce(async (fn) => fn(trx));
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
     const res = await request(app).post('/classes/enroll/abc');
+    expect(trx.first).toHaveBeenCalledTimes(2);
     expect(res.statusCode).toBe(400);
   });
 
   test('reactivate cancelled enrollment when capacity available', async () => {
-    db.first.mockResolvedValueOnce({
-      status: 'published',
-      moderation_status: 'Approved',
-      max_students: 1,
-    });
+    const trx = jest.fn(() => trx);
+    trx.where = jest.fn(() => trx);
+    trx.whereNot = jest.fn(() => trx);
+    trx.forUpdate = jest.fn(() => trx);
+    trx.insert = jest.fn(() => trx);
+    trx.update = jest.fn(() => trx);
+    trx.first = jest
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'published',
+        moderation_status: 'Approved',
+        max_students: 1,
+      })
+      .mockResolvedValue(null);
+    db.transaction.mockImplementationOnce(async (fn) => fn(trx));
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue({
       user_id: 'test-user',
@@ -208,6 +244,7 @@ describe('Class enrollment routes', () => {
     });
     service.updateEnrollment.mockResolvedValue(1);
     const res = await request(app).post('/classes/enroll/abc');
+    expect(trx.first).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(200);
     expect(service.updateEnrollment).toHaveBeenCalledWith(
       'test-user',
@@ -219,11 +256,21 @@ describe('Class enrollment routes', () => {
   });
 
   test('prevent re-enrollment if class full after cancellation', async () => {
-    db.first.mockResolvedValueOnce({
-      status: 'published',
-      moderation_status: 'Approved',
-      max_students: 1,
-    });
+    const trx = jest.fn(() => trx);
+    trx.where = jest.fn(() => trx);
+    trx.whereNot = jest.fn(() => trx);
+    trx.forUpdate = jest.fn(() => trx);
+    trx.insert = jest.fn(() => trx);
+    trx.update = jest.fn(() => trx);
+    trx.first = jest
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'published',
+        moderation_status: 'Approved',
+        max_students: 1,
+      })
+      .mockResolvedValue(null);
+    db.transaction.mockImplementationOnce(async (fn) => fn(trx));
     service.countEnrollments.mockResolvedValue(1);
     service.findEnrollment.mockResolvedValue({
       user_id: 'test-user',
@@ -231,6 +278,7 @@ describe('Class enrollment routes', () => {
       status: 'cancelled',
     });
     const res = await request(app).post('/classes/enroll/abc');
+    expect(trx.first).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(400);
     expect(service.updateEnrollment).not.toHaveBeenCalled();
   });
