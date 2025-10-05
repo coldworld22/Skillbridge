@@ -5,6 +5,7 @@ import PermissionAssignment from "./PermissionAssignment";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
 import { toast } from "react-toastify";
+import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 import {
   fetchAllRoles,
   fetchRoleById,
@@ -20,7 +21,12 @@ export default function RoleManagement() {
   const [showAdd, setShowAdd] = useState(false);
   const [editRole, setEditRole] = useState(null);
   const { user } = useAuthStore();
-  const canManage = user?.permissions?.includes("manage_roles");
+  const normalizedRoles = getNormalizedRoles(user);
+  const hasAdminRole = normalizedRoles.some((role) =>
+    ["admin", "superadmin"].includes(role)
+  );
+  const canManage =
+    hasAdminRole || user?.permissions?.includes("manage_roles");
   const latestRequestedRoleId = useRef(null);
 
   useEffect(() => {
