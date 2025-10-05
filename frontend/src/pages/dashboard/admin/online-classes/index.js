@@ -38,7 +38,7 @@ const ProtectedAdminOnlineClassesPage = withAuthProtection(
   AdminOnlineClassesPage,
   {
     roles: ["admin", "superadmin"],
-    permissions: ["view_online_classes"],
+    permissions: ["manage_online_classes"],
   }
 );
 

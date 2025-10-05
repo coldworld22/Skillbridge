@@ -42,7 +42,7 @@ describe('withAuthProtection permissions', () => {
         id: 'admin-1',
         role: 'Admin',
         roles: ['Admin'],
-        permissions: ['view_online_classes'],
+        permissions: [],
       },
       accessToken: 'valid.token.value',
       hasHydrated: true,
@@ -57,7 +57,7 @@ describe('withAuthProtection permissions', () => {
   });
 
   it('allows admins with manage_online_classes permission to continue', async () => {
-    storeState.user.permissions.push('manage_online_classes');
+    storeState.user.permissions = ['manage_online_classes'];
 
     const ProtectedComponent = withAuthProtection(TestComponent, {
       permissions: ['manage_online_classes'],
