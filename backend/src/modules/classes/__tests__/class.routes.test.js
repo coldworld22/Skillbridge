@@ -185,6 +185,29 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(approved);
   });
 
+  test('approve class fails without active plan', async () => {
+    getActiveInstructorPlan.mockResolvedValueOnce(null);
+
+    const res = await request(app).patch('/classes/admin/1/approve');
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe(
+      'Active instructor plan required to approve classes'
+    );
+    expect(service.updateModeration).not.toHaveBeenCalled();
+  });
+
+  test('approve class fails when max courses reached', async () => {
+    getActiveInstructorPlan.mockResolvedValueOnce({ id: 'plan1', max_courses: 1 });
+    service.countPublishedClasses.mockResolvedValueOnce(1);
+
+    const res = await request(app).patch('/classes/admin/1/approve');
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe('Course limit reached for your plan');
+    expect(service.updateModeration).not.toHaveBeenCalled();
+  });
+
   test('instructor can create class within plan limit', async () => {
     const data = {
       id: '1',
