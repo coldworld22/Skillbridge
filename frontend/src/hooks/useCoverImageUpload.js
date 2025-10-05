@@ -13,16 +13,27 @@ export default function useCoverImageUpload(t) {
   const handleFileChange = useCallback(
     (e) => {
       const file = e.target.files[0];
-      if (!file) return;
+      if (!file) {
+        setFileError(null);
+        return;
+      }
+
+      const handleInvalidFile = (errorKey, options = {}) => {
+        setFileError(t(errorKey, options));
+        setCoverPreview(null);
+        e.target.value = '';
+      };
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        setFileError(t('validation.invalidFileType'));
+        handleInvalidFile('validation.invalidFileType');
         return;
       }
 
       if (file.size > MAX_IMAGE_SIZE) {
-        setFileError(t('validation.fileTooLarge', { size: `${MAX_IMAGE_SIZE_MB}MB` }));
+        handleInvalidFile('validation.fileTooLarge', {
+          size: `${MAX_IMAGE_SIZE_MB}MB`,
+        });
         return;
       }
 
