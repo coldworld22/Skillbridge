@@ -299,6 +299,16 @@ export default function AdminClassesTable() {
       }
     }
 
+    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
+      if (
+        pendingRequestRef.current &&
+        pendingRequestRef.current.signature === requestDetails.signature
+      ) {
+        pendingRequestRef.current = null;
+      }
+      return;
+    }
+
     if (inFlightRequestRef.current === requestDetails.signature) {
       return;
     }
@@ -461,8 +471,10 @@ export default function AdminClassesTable() {
           previousFailure?.toastShown;
         const shouldShowToast =
           isComponentMountedRef.current && !toastAlreadyShownForSignature;
-        const statusCode = err?.response?.status;
-        const isAuthFailure = statusCode === 401 || statusCode === 403;
+        const responseStatusCode = err?.response?.status;
+        const hadAuthFailure = authFailureRef.current;
+        const isAuthFailure =
+          responseStatusCode === 401 || responseStatusCode === 403;
         if (isAuthFailure) {
           authFailureRef.current = true;
           if (isComponentMountedRef.current) {
@@ -472,7 +484,7 @@ export default function AdminClassesTable() {
             setTotalPagesIfNeeded(1);
           }
         }
-        if (shouldShowToast && !isAuthFailure) {
+        if (shouldShowToast && (!isAuthFailure || !hadAuthFailure)) {
           toast.error("Failed to load classes");
         }
         clearFailedSignature();
