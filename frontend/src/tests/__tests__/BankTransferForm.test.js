@@ -42,4 +42,27 @@ describe('BankTransferForm', () => {
     });
     fireEvent.submit(screen.getByRole('button', { name: /Pay \$100 with Bank/i }).closest('form'));
   });
+
+  it('supports nested bank settings structures', () => {
+    const handleSubmit = jest.fn();
+    const bank = {
+      bank: {
+        bank_name: 'Nested Bank',
+        account_holder_name: 'Nested Holder',
+        account_number: '987654',
+        swift_code: 'ZXCVBN',
+        branch_address: '456 Nested Ave',
+      },
+    };
+    render(
+      <BankTransferForm
+        onSubmit={handleSubmit}
+        processing={false}
+        finalPrice={200}
+        bankDetails={bank}
+      />
+    );
+    expect(screen.getByDisplayValue('Nested Bank')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('456 Nested Ave')).toBeInTheDocument();
+  });
 });

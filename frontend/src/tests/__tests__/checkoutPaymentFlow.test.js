@@ -156,7 +156,13 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
       id: 3,
       name: 'Bank',
       type: 'bank',
-      config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' },
+      settings: {
+        bank_name: 'Test Bank',
+        account_holder_name: 'John',
+        account_number: '123',
+        swift_code: 'ABCDEF',
+        branch_address: '123 Finance St',
+      },
     },
   ]);
   initiateBankPayment.mockResolvedValue({ id: 42 });
@@ -166,6 +172,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.getByDisplayValue('Test Bank')).toBeInTheDocument();
+  expect(screen.getByDisplayValue('123 Finance St')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText(/Reference/), { target: { value: 'ref' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
