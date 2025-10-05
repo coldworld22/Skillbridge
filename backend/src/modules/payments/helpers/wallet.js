@@ -56,18 +56,31 @@ async function creditInstructorSubscription(
   planId,
   subscriptionId,
   trx,
-  precomputedAmount,
+  overrideOrOptions,
 ) {
   try {
-    const rawAmount =
-      precomputedAmount ??
-      (await calculateInstructorAmount(
-        planId,
-        subscriptionId,
-        item_id,
-        trx,
-        item_type
-      ));
+    const options =
+      typeof overrideOrOptions === "number" || overrideOrOptions == null
+        ? {}
+        : overrideOrOptions;
+
+    const overrideAmount =
+      typeof overrideOrOptions === "number"
+        ? overrideOrOptions
+        : options?.precomputedAmount;
+
+    const useOverride = overrideAmount != null;
+
+    const rawAmount = useOverride
+      ? overrideAmount
+      : await calculateInstructorAmount(
+          planId,
+          subscriptionId,
+          item_id,
+          trx,
+          item_type,
+          options
+        );
     const amount = Number.isFinite(rawAmount) ? rawAmount : 0;
     if (amount <= 0) return amount;
 
@@ -99,16 +112,28 @@ async function creditTutorialSubscription(
   planId,
   subscriptionId,
   trx,
-  precomputedAmount,
-  options,
+  overrideOrOptions,
+  legacyOptions,
 ) {
+  let forwardArg;
+  if (typeof overrideOrOptions === "number") {
+    forwardArg = overrideOrOptions;
+  } else if (
+    overrideOrOptions &&
+    typeof overrideOrOptions === "object"
+  ) {
+    forwardArg = overrideOrOptions;
+  } else if (legacyOptions && typeof legacyOptions === "object") {
+    forwardArg = legacyOptions;
+  }
+
   return creditInstructorSubscription(
     "tutorial",
     tutorialId,
     planId,
     subscriptionId,
     trx,
-    { precomputedAmount }
+    forwardArg
   );
 }
 
