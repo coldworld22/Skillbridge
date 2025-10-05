@@ -31,6 +31,11 @@ const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 const { getPlanCoveredMethod } = require('../src/modules/payments/helpers/methods.js');
 const { recordPlanCoveredPayment } = require('../src/modules/payments/helpers/planPayments');
 
+const paymentMethodWhere = jest.fn(() => ({
+  first: () => Promise.resolve({ id: 'subscription-method-id' }),
+}));
+const paymentMethodInsert = jest.fn(() => Promise.resolve([{ id: 'subscription-method-id' }]));
+
 jest.mock('../src/modules/payments/helpers/wallet', () => ({
   creditTutorialSubscription: jest.fn(),
 }));
@@ -58,6 +63,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
     planRevenue.calculateInstructorAmount.mockResolvedValue(0);
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
     creditTutorialSubscription.mockResolvedValue();
+    getPlanCoveredMethod.mockResolvedValue({ id: 'subscription-method-id' });
   });
 
   it('enrolls in a free tutorial', async () => {

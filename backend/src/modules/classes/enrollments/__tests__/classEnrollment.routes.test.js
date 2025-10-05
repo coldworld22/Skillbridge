@@ -62,6 +62,18 @@ jest.mock('../../../payouts/wallet.service', () => ({
 jest.mock('../../class.service', () => ({
   getClassById: jest.fn(),
 }));
+jest.mock('../../../payments/helpers/planPayments', () => ({
+  recordPlanCoveredPayment: jest.fn(),
+}));
+jest.mock('../../class.controller', () => {
+  const noop = jest.fn();
+  return new Proxy(
+    {},
+    {
+      get: () => noop,
+    },
+  );
+});
 
 jest.mock('../../class.controller', () => ({
   createClass: jest.fn(),
