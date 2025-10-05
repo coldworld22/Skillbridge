@@ -25,6 +25,7 @@ import {
 } from "@/services/messageService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
+import { ensureCsrfToken } from "@/services/api/csrf";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
 import Script from "next/script";
@@ -88,6 +89,7 @@ function MyApp({ Component, pageProps, router }) {
 
     const init = async () => {
       try {
+        await ensureCsrfToken({ forceRefresh: true });
         const { accessToken } = await authService.refreshAccessToken();
         useAuthStore.setState({ accessToken });
         const res = await getFullProfile();
