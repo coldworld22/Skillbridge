@@ -138,11 +138,12 @@ exports.createTutorial = catchAsync(async (req, res) => {
 
 
 exports.getAllTutorials = async (req, res) => {
-  const { status, category, search, page = 1, limit = 10 } = req.query;
+  const { status, category, search, approval, page = 1, limit = 10 } = req.query;
   const result = await service.getAllTutorials({
     status,
     category,
     search,
+    approval,
     page,
     limit,
   });
