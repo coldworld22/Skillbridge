@@ -47,6 +47,9 @@ jest.mock('../../library/library.service', () => ({
 jest.mock('../../payments/paymentAccess', () => ({
   grantAccess: jest.fn(() => Promise.resolve()),
 }));
+jest.mock('../../paymentConfig/paymentConfig.service', () => ({
+  getSettings: jest.fn().mockResolvedValue(null),
+}));
 
 jest.mock('../../payments/payments.service', () => ({
   STATUS: { PAID: 'paid', AWAITING_APPROVAL: 'awaiting_approval' },
@@ -190,6 +193,30 @@ describe('listBooks', () => {
     const result = await listBooks({ search: 'DetailedMatch' });
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe(3);
+  });
+});
+
+describe('checkout (smoke)', () => {
+  const studentId = 'student-smoke';
+
+  beforeEach(async () => {
+    await db('book_cart').del();
+    await db('book_purchases').del();
+    await db('payments').del();
+  });
+
+  test('processes checkout without subscription coverage', async () => {
+    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
+
+    const payments = await checkout(studentId);
+
+    expect(payments).toHaveLength(1);
+    expect(payments[0]).toMatchObject({
+      user_id: studentId,
+      item_type: 'book',
+      item_id: 1,
+      amount: 10,
+    });
   });
 });
 
