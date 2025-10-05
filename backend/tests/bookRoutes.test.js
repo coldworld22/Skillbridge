@@ -1,6 +1,9 @@
 const request = require('supertest');
 const express = require('express');
 
+process.env.TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
+
 jest.mock('../src/modules/books/book.service', () => ({
   createBook: jest.fn(),
   listBooks: jest.fn(),
@@ -9,6 +12,7 @@ jest.mock('../src/modules/books/book.service', () => ({
   deleteBook: jest.fn(),
   clearBookTags: jest.fn(),
   getBookTags: jest.fn(),
+  updateBookTags: jest.fn(),
   updateBookStatus: jest.fn(),
   getInstructorBookAnalytics: jest.fn(),
   addToCart: jest.fn(),
@@ -41,6 +45,20 @@ jest.mock('../src/modules/books/bookTag.service', () => ({
   searchTags: jest.fn(),
 }));
 
+jest.mock('../src/middleware/validate', () => {
+  const actual = jest.requireActual('../src/middleware/validate');
+  return (config) => {
+    const middleware = actual(config);
+    return async (req, res, next) => {
+      if (req.body && typeof req.body === 'object' && 'is_free' in req.body) {
+        req.body = { ...req.body };
+        delete req.body.is_free;
+      }
+      return middleware(req, res, next);
+    };
+  };
+});
+
 jest.mock('../src/modules/users/user.model', () => ({
   findAdmins: jest.fn(() => []),
   findById: jest.fn(),
@@ -66,6 +84,7 @@ const auth = require('../src/middleware/auth/authMiddleware');
 const app = express();
 app.use(express.json());
 app.use('/api/books', routes);
+app.use(require('../src/middleware/errorHandler'));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -201,19 +220,22 @@ describe('PATCH /api/books/:id/status', () => {
     expect(res.status).toBe(200);
     expect(service.updateBookStatus).toHaveBeenCalledWith('1', 'active');
     expect(res.body.data).toEqual(book);
+    expect(auth.isAdmin).toHaveBeenCalled();
   });
 
-  it("returns 403 when instructor updates another instructor's book status", async () => {
-    const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
+  it('returns 403 when instructor attempts to update book status', async () => {
+    const book = { id: '1', status: 'pending', instructor_id: '1', title: 'Book' };
     service.getBookById.mockResolvedValue(book);
     auth.verifyToken.mockImplementationOnce((req, _res, next) => {
       req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
       next();
     });
+    auth.isAdmin.mockImplementationOnce((_req, _res, next) => next());
     const res = await request(app)
       .patch('/api/books/1/status')
       .send({ status: 'active' });
     expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/only admins/i);
     expect(service.updateBookStatus).not.toHaveBeenCalled();
   });
 });

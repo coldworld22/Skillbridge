@@ -30,6 +30,9 @@ jest.mock('../paymentAccess', () => ({
 jest.mock('../../plans/plans.service', () => ({
   getPlanById: jest.fn(),
 }));
+jest.mock('../../coupons/coupons.service', () => ({
+  getCouponById: jest.fn(),
+}));
 jest.mock('../../../utils/response', () => ({
   sendSuccess: jest.fn(),
 }));
@@ -65,6 +68,8 @@ describe('payment controller URLs', () => {
   let paymentMethodsService;
   let paymentsService;
   let backendUrl;
+  let plansService;
+  let couponService;
 
   beforeEach(() => {
     jest.resetModules();
@@ -74,6 +79,8 @@ describe('payment controller URLs', () => {
     paypalService = require('../../../services/paypalService');
     paymentMethodsService = require('../../paymentMethods/paymentMethods.service');
     paymentsService = require('../payments.service');
+    plansService = require('../../plans/plans.service');
+    couponService = require('../../coupons/coupons.service');
     backendUrl = require('../../../config/backendUrl');
     backendUrl.requireBackendBaseUrl.mockReturnValue('https://api.example.com/base');
     backendUrl.getBackendBaseUrlError.mockReturnValue(undefined);
@@ -171,6 +178,75 @@ describe('payment controller URLs', () => {
 
     await expect(cryptoController.initiateCryptoPayment(req, createResponseMock())).rejects.toThrow(
       'Backend base URL is not configured',
+    );
+  });
+
+  it('accepts discounted plan payments for PayPal using coupons', async () => {
+    plansService.getPlanById.mockResolvedValue({
+      id: 'plan-1',
+      price_monthly: '100.00',
+      price_yearly: '1000.00',
+    });
+    couponService.getCouponById.mockResolvedValue({
+      id: 'coupon-1',
+      discount_percent: 10,
+      applies_to: 'plan',
+      applies_to_id: null,
+      starts_at: null,
+      expires_at: null,
+      usage_limit: null,
+      times_used: 0,
+    });
+
+    const req = {
+      body: {
+        item_type: 'plan',
+        item_id: 'plan-1',
+        amount: 90,
+        coupon_id: 'coupon-1',
+      },
+      user: { id: 'user-1' },
+    };
+
+    await paypalController.createPayPalPayment(req, createResponseMock());
+
+    expect(paymentsService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 90 }),
+    );
+  });
+
+  it('accepts discounted plan payments for crypto using coupons', async () => {
+    plansService.getPlanById.mockResolvedValue({
+      id: 'plan-1',
+      price_monthly: '50.00',
+      price_yearly: '500.00',
+    });
+    couponService.getCouponById.mockResolvedValue({
+      id: 'coupon-1',
+      discount_percent: 20,
+      applies_to: 'plan',
+      applies_to_id: null,
+      starts_at: null,
+      expires_at: null,
+      usage_limit: null,
+      times_used: 0,
+    });
+
+    const req = {
+      body: {
+        item_type: 'plan',
+        item_id: 'plan-1',
+        amount: 40,
+        method_type: 'crypto',
+        coupon_id: 'coupon-1',
+      },
+      user: { id: 'user-1' },
+    };
+
+    await cryptoController.initiateCryptoPayment(req, createResponseMock());
+
+    expect(paymentsService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 40 }),
     );
   });
 });

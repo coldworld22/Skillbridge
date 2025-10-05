@@ -10,6 +10,7 @@ const paypalService = require('../../services/paypalService');
 const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
+const couponService = require('../coupons/coupons.service');
 const { buildBackendUrl } = require('../../config/env');
 const { requireBackendBaseUrl, getBackendBaseUrlError } = require('../../config/backendUrl');
 
@@ -25,7 +26,7 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 exports.createPayPalPayment = catchAsync(async (req, res) => {
-  const { item_type, item_id, amount, currency } = req.body;
+  const { item_type, item_id, amount, currency, coupon_id } = req.body;
   const user_id = req.user?.id;
   if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError('Missing required fields', 400);
@@ -42,13 +43,38 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     throw new AppError('Unsupported currency', 400);
   }
 
+  let coupon = null;
+  if (coupon_id) {
+    coupon = await couponService.getCouponById(coupon_id);
+    if (!coupon) throw new AppError('Invalid coupon', 400);
+    if (coupon.applies_to && coupon.applies_to !== item_type) {
+      throw new AppError('Coupon not valid for this item type', 400);
+    }
+    if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
+      throw new AppError('Coupon not valid for this item', 400);
+    }
+    if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
+      throw new AppError('Coupon not active', 400);
+    }
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      throw new AppError('Coupon expired', 400);
+    }
+    if (coupon.usage_limit !== null && coupon.times_used >= coupon.usage_limit) {
+      throw new AppError('Coupon usage limit reached', 400);
+    }
+  }
+
   // For plan subscriptions, ensure the payment amount matches one of the
   // published plan prices. This mirrors the validation applied to other
   // purchasable items like classes or books.
   if (item_type === 'plan') {
     const plan = await plansService.getPlanById(item_id);
     if (!plan) throw new AppError('Plan not found', 404);
-    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
+    let prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
+    prices = prices.filter((p) => Number.isFinite(p) && p > 0);
+    if (coupon) {
+      prices = prices.map((p) => +(p * (1 - coupon.discount_percent / 100)).toFixed(2));
+    }
     const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
     if (!matched) {
       throw new AppError('Payment amount does not match plan price', 400);
