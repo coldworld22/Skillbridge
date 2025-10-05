@@ -54,15 +54,22 @@ async function creditInstructorSubscription(
   item_type,
   item_id,
   planId,
+  subscriptionId,
   trx,
   delta,
 ) {
   try {
+    const options = {};
+    if (delta != null) {
+      options.precomputedAmount = delta;
+    }
     const amount = await calculateInstructorAmount(
       planId,
+      subscriptionId,
       item_id,
       trx,
-      item_type
+      item_type,
+      Object.keys(options).length ? options : undefined
     );
     if (amount <= 0) return amount;
 

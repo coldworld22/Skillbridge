@@ -57,8 +57,8 @@ exports.enroll = catchAsync(async (req, res) => {
         "class",
         classId,
         activePlanId,
-        trx,
-        instructorDelta
+        activeSubscriptionId,
+        trx
       );
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
