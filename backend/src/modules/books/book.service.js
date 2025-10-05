@@ -350,7 +350,7 @@ exports.checkout = async (studentId) => {
           {
             id: uuidv4(),
             user_id: studentId,
-            method_id: planMethodRecord.id,
+            method_id: subscriptionMethod.id,
             item_type: 'book',
             item_id: b.id,
             amount: 0,

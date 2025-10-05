@@ -166,6 +166,7 @@ beforeAll(async () => {
     table.decimal('amount', 10, 2);
     table.string('currency');
     table.string('status');
+    table.string('source');
     table.decimal('platform_fee', 10, 2).defaultTo(0);
     table.decimal('instructor_amount', 10, 2).defaultTo(0);
     table.string('source');
