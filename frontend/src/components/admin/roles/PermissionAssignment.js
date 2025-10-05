@@ -127,7 +127,8 @@ export default function PermissionAssignment({
 
   const handleSave = async () => {
     if (!canManage || !canViewPermissions) return;
-    const ids = assignedPermissions
+    const requestedCodes = [...assignedPermissions];
+    const ids = requestedCodes
       .map((code) => permissions.find((p) => p.code === code)?.id)
       .filter(Boolean);
     try {
