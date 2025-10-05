@@ -12,18 +12,29 @@ import {
 export default function PermissionAssignment({ role, canManage }) {
   const [assignedPermissions, setAssignedPermissions] = useState([]);
   const [permissions, setPermissions] = useState([]);
+  const [catalogueUnavailable, setCatalogueUnavailable] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
   const { user } = useAuthStore();
-  const canAddPermission = user?.permissions?.includes("manage_permissions");
+  const canAddPermission =
+    user?.permissions?.includes("manage_permissions") && !catalogueUnavailable;
 
   useEffect(() => {
     const loadPermissions = async () => {
       try {
         const all = await fetchAllPermissions();
+        if (!all?.length) {
+          setPermissions([]);
+          setCatalogueUnavailable(true);
+          toast.error("Failed to load permissions catalogue");
+          return;
+        }
         setPermissions(all);
+        setCatalogueUnavailable(false);
       } catch (err) {
-        toast.error("Failed to load permissions");
+        setPermissions([]);
+        setCatalogueUnavailable(true);
+        toast.error("Failed to load permissions catalogue");
       }
     };
     loadPermissions();
@@ -44,7 +55,7 @@ export default function PermissionAssignment({ role, canManage }) {
   }, [role]);
 
   const handleTogglePermission = (code) => {
-    if (!canManage) return;
+    if (!canManage || !permissions.length) return;
     setAssignedPermissions((current) =>
       current.includes(code)
         ? current.filter((p) => p !== code)
@@ -53,7 +64,7 @@ export default function PermissionAssignment({ role, canManage }) {
   };
 
   const handleCheckAll = () => {
-    if (!canManage) return;
+    if (!canManage || !permissions.length) return;
     setAssignedPermissions((prev) =>
       prev.length === permissions.length
         ? []
@@ -81,6 +92,10 @@ export default function PermissionAssignment({ role, canManage }) {
 
   const handleSave = async () => {
     if (!canManage) return;
+    if (!permissions.length) {
+      toast.warn("Cannot save permissions without a catalogue");
+      return;
+    }
     const ids = assignedPermissions
       .map((code) => permissions.find((p) => p.code === code)?.id)
       .filter(Boolean);
@@ -100,7 +115,7 @@ export default function PermissionAssignment({ role, canManage }) {
           Permissions for <span className="ml-2 text-blue-500">{role.name}</span>
         </h3>
         <div className="flex gap-2">
-          {canManage && (
+          {canManage && permissions.length > 0 && (
             <button
               className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 rounded-xl py-2 px-4"
               onClick={handleCheckAll}
@@ -122,31 +137,67 @@ export default function PermissionAssignment({ role, canManage }) {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {permissions.map((perm) => (
-          <label
-            key={perm.id || perm.code}
-            className={`flex items-center p-3 border rounded-xl cursor-pointer transition ${
-              assignedPermissions.includes(perm.code)
-                ? "bg-yellow-50 border-yellow-400 text-yellow-700"
-                : "hover:bg-gray-50 border-gray-200"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={assignedPermissions.includes(perm.code)}
-              onChange={() => handleTogglePermission(perm.code)}
-              className="mr-3 accent-yellow-500"
-              disabled={!canManage}
-            />
-            <span className="capitalize">{perm.code.replace(/_/g, " ")}</span>
-          </label>
-        ))}
+        {catalogueUnavailable ? (
+          <div className="col-span-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6">
+            <p className="font-medium text-gray-700">
+              Permissions catalogue is currently unavailable.
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Existing assignments for this role are read-only until the catalogue is restored.
+            </p>
+            <ul className="mt-4 space-y-2" data-testid="assigned-permissions-readonly">
+              {assignedPermissions.length ? (
+                assignedPermissions.map((code) => (
+                  <li
+                    key={code}
+                    className="flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                  >
+                    {code.replace(/_/g, " ")}
+                  </li>
+                ))
+              ) : (
+                <li className="rounded-lg bg-white px-3 py-2 text-sm text-gray-500">
+                  No permissions are currently assigned to this role.
+                </li>
+              )}
+            </ul>
+          </div>
+        ) : (
+          permissions.map((perm) => (
+            <label
+              key={perm.id || perm.code}
+              className={`flex items-center p-3 border rounded-xl cursor-pointer transition ${
+                assignedPermissions.includes(perm.code)
+                  ? "bg-yellow-50 border-yellow-400 text-yellow-700"
+                  : "hover:bg-gray-50 border-gray-200"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={assignedPermissions.includes(perm.code)}
+                onChange={() => handleTogglePermission(perm.code)}
+                className="mr-3 accent-yellow-500"
+                disabled={!canManage}
+              />
+              <span className="capitalize">{perm.code.replace(/_/g, " ")}</span>
+            </label>
+          ))
+        )}
       </div>
+
+      {catalogueUnavailable && (
+        <p className="mt-4 text-sm text-gray-500">
+          Saving changes is disabled until the permissions catalogue can be retrieved.
+        </p>
+      )}
 
       {canManage && (
         <button
-          className="mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200"
+          className={`mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200 ${
+            !permissions.length ? "opacity-60" : ""
+          }`}
           onClick={handleSave}
+          aria-disabled={!permissions.length}
         >
           Save Changes
         </button>
