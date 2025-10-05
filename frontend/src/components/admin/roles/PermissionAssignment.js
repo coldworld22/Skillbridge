@@ -20,9 +20,14 @@ export default function PermissionAssignment({
   const [newPermission, setNewPermission] = useState("");
   const { user } = useAuthStore();
   const canAddPermission = user?.permissions?.includes("manage_permissions");
+  const canViewPermissions = user?.permissions?.includes("view_permissions");
 
   useEffect(() => {
     const loadPermissions = async () => {
+      if (!canViewPermissions) {
+        setPermissions([]);
+        return;
+      }
       try {
         const all = await fetchAllPermissions();
         setPermissions(all);
@@ -31,7 +36,13 @@ export default function PermissionAssignment({
       }
     };
     loadPermissions();
-  }, []);
+  }, [canViewPermissions]);
+
+  useEffect(() => {
+    if (!canViewPermissions) {
+      setShowAddModal(false);
+    }
+  }, [canViewPermissions]);
 
   useEffect(() => {
     if (role) {
@@ -48,7 +59,7 @@ export default function PermissionAssignment({
   }, [role]);
 
   const handleTogglePermission = (code) => {
-    if (!canManage) return;
+    if (!canManage || !canViewPermissions) return;
     setAssignedPermissions((current) =>
       current.includes(code)
         ? current.filter((p) => p !== code)
@@ -57,7 +68,7 @@ export default function PermissionAssignment({
   };
 
   const handleCheckAll = () => {
-    if (!canManage) return;
+    if (!canManage || !canViewPermissions) return;
     setAssignedPermissions((prev) =>
       prev.length === permissions.length
         ? []
@@ -66,15 +77,29 @@ export default function PermissionAssignment({
   };
 
   const handleAddNewPermission = async () => {
-    if (!canAddPermission || !newPermission) return;
-    if (permissions.some((p) => p.code === newPermission)) {
+    if (!canAddPermission) return;
+    const code = newPermission.trim();
+    if (!code) {
+      toast.error("Permission code cannot be empty");
+      return;
+    }
+
+    const normalisedCode = code.toLowerCase();
+    if (
+      permissions.some(
+        (p) => typeof p.code === "string" && p.code.toLowerCase() === normalisedCode
+      )
+    ) {
       toast.error("Permission already exists");
       return;
     }
     try {
-      const created = await createPermission({ code: newPermission });
-      setPermissions([...permissions, created]);
-      setAssignedPermissions([...assignedPermissions, created.code]);
+      const created = await createPermission({ code });
+      const createdCode =
+        typeof created?.code === "string" ? created.code.trim() : code;
+      const createdPermission = { ...created, code: createdCode };
+      setPermissions([...permissions, createdPermission]);
+      setAssignedPermissions([...assignedPermissions, createdCode]);
       setNewPermission("");
       setShowAddModal(false);
       toast.success("Permission created");
@@ -84,9 +109,8 @@ export default function PermissionAssignment({
   };
 
   const handleSave = async () => {
-    if (!canManage) return;
-    const requestedCodes = [...assignedPermissions];
-    const ids = requestedCodes
+    if (!canManage || !canViewPermissions) return;
+    const ids = assignedPermissions
       .map((code) => permissions.find((p) => p.code === code)?.id)
       .filter(Boolean);
     try {
@@ -123,7 +147,7 @@ export default function PermissionAssignment({
           Permissions for <span className="ml-2 text-blue-500">{role.name}</span>
         </h3>
         <div className="flex gap-2">
-          {canManage && (
+          {canManage && canViewPermissions && (
             <button
               className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 rounded-xl py-2 px-4"
               onClick={handleCheckAll}
@@ -132,7 +156,7 @@ export default function PermissionAssignment({
               {assignedPermissions.length === permissions.length ? "Uncheck All" : "Check All"}
             </button>
           )}
-          {canAddPermission && (
+          {canAddPermission && canViewPermissions && (
             <button
               className="flex items-center text-sm bg-yellow-100 hover:bg-yellow-200 rounded-xl py-2 px-4"
               onClick={() => setShowAddModal(true)}
@@ -144,38 +168,45 @@ export default function PermissionAssignment({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {permissions.map((perm) => (
-          <label
-            key={perm.id || perm.code}
-            className={`flex items-center p-3 border rounded-xl cursor-pointer transition ${
-              assignedPermissions.includes(perm.code)
-                ? "bg-yellow-50 border-yellow-400 text-yellow-700"
-                : "hover:bg-gray-50 border-gray-200"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={assignedPermissions.includes(perm.code)}
-              onChange={() => handleTogglePermission(perm.code)}
-              className="mr-3 accent-yellow-500"
-              disabled={!canManage}
-            />
-            <span className="capitalize">{perm.code.replace(/_/g, " ")}</span>
-          </label>
-        ))}
-      </div>
+      {!canViewPermissions ? (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-700">
+          Additional permission required to view available permissions.
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-4">
+          {permissions.map((perm) => (
+            <label
+              key={perm.id || perm.code}
+              className={`flex items-center p-3 border rounded-xl cursor-pointer transition ${
+                assignedPermissions.includes(perm.code)
+                  ? "bg-yellow-50 border-yellow-400 text-yellow-700"
+                  : "hover:bg-gray-50 border-gray-200"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={assignedPermissions.includes(perm.code)}
+                onChange={() => handleTogglePermission(perm.code)}
+                className="mr-3 accent-yellow-500"
+                disabled={!canManage}
+              />
+              <span className="capitalize">{perm.code.replace(/_/g, " ")}</span>
+            </label>
+          ))}
+        </div>
+      )}
 
       {canManage && (
         <button
-          className="mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200"
+          className="mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={handleSave}
+          disabled={!canViewPermissions}
         >
           Save Changes
         </button>
       )}
 
-      {showAddModal && canAddPermission && (
+      {showAddModal && canAddPermission && canViewPermissions && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Add New Permission</h3>
