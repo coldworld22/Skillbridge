@@ -6,15 +6,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
   const { register, handleSubmit } = useForm();
 
   const resolvedDetails =
-    bankDetails?.bank ||
-    bankDetails?.bank_details ||
-    bankDetails?.details ||
-    bankDetails || {};
-
-  const getDetail = (key) =>
-    resolvedDetails?.[key] ?? bankDetails?.[key] ?? '';
-
-  const branchAddress = getDetail('branch_address');
+    (bankDetails && (bankDetails.settings || bankDetails.config)) || bankDetails || {};
 
   const submit = (data) => {
     onSubmit({
@@ -30,7 +22,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={getDetail('bank_name')}
+          value={resolvedDetails.bank_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -39,7 +31,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={getDetail('account_holder_name')}
+          value={resolvedDetails.account_holder_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -48,7 +40,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={getDetail('account_number')}
+          value={resolvedDetails.account_number || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -57,17 +49,17 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={getDetail('swift_code')}
+          value={resolvedDetails.swift_code || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
-      {branchAddress && (
+      {resolvedDetails.branch_address && (
         <label className="block">
           <span className="text-sm">{t('branch_address')}</span>
           <input
             type="text"
             readOnly
-            value={branchAddress}
+            value={resolvedDetails.branch_address}
             className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
           />
         </label>
