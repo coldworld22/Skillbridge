@@ -34,13 +34,11 @@ function AnalyticsDashboard() {
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
   useEffect(() => {
-    let isMounted = true;
-
     if (!classId) {
-      return () => {
-        isMounted = false;
-      };
+      return;
     }
+
+    let isMounted = true;
 
     setStats(null);
     fetchAdminClassAnalytics(id)
