@@ -130,7 +130,7 @@ exports.getTutorialAggregates = async (tutorialId) => {
 const { parsePagination } = require("../../../utils/pagination");
 
 exports.getAllTutorials = async (filters = {}) => {
-  const { status, category, search } = filters;
+  const { status, category, search, approval } = filters;
   const { page, limit, offset } = parsePagination(filters);
 
   const baseQuery = db("tutorials as t")
@@ -140,6 +140,17 @@ exports.getAllTutorials = async (filters = {}) => {
     .modify((query) => {
       if (status) query.andWhere("t.status", status);
       if (category) query.andWhere("t.category_id", category);
+      if (approval) {
+        query.andWhere(function () {
+          if (approval === "Pending") {
+            this.where("t.moderation_status", approval).orWhereNull(
+              "t.moderation_status"
+            );
+          } else {
+            this.where("t.moderation_status", approval);
+          }
+        });
+      }
       if (search) {
         query.andWhere(function () {
           this.whereILike("t.title", `%${search}%`);
