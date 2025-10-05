@@ -9,8 +9,10 @@ exports.calculateInstructorAmount = async (
   planId,
   itemId,
   trx,
-  itemType = "class"
+  itemType = "class",
+  options = {}
 ) => {
+  const { incrementUsage = true } = options || {};
   const query = trx || db;
   try {
     let usageQuery = query("plan_usage_metrics").where({
@@ -26,13 +28,15 @@ exports.calculateInstructorAmount = async (
     let row = await usageQuery.first();
 
     if (!row) {
-      await query("plan_usage_metrics").insert({
-        plan_id: planId,
-        item_type: itemType,
-        item_id: itemId,
-        usage_count: 0,
-        instructor_amount: 0,
-      });
+      if (incrementUsage) {
+        await query("plan_usage_metrics").insert({
+          plan_id: planId,
+          item_type: itemType,
+          item_id: itemId,
+          usage_count: 0,
+          instructor_amount: 0,
+        });
+      }
       row = { usage_count: 0, instructor_amount: 0 };
     }
 
@@ -62,14 +66,15 @@ exports.calculateInstructorAmount = async (
     const previousTotal = roundCurrency(Number(row.instructor_amount || 0));
     const targetTotal = roundCurrency(net);
     const delta = targetTotal > previousTotal ? targetTotal - previousTotal : 0;
-    const newTotal = roundCurrency(previousTotal + delta);
-
-    await query("plan_usage_metrics")
-      .where({ plan_id: planId, item_type: itemType, item_id: itemId })
-      .update({
-        usage_count: Number(row.usage_count || 0) + 1,
-        instructor_amount: newTotal,
-      });
+    if (incrementUsage) {
+      const newTotal = roundCurrency(previousTotal + delta);
+      await query("plan_usage_metrics")
+        .where({ plan_id: planId, item_type: itemType, item_id: itemId })
+        .update({
+          usage_count: Number(row.usage_count || 0) + 1,
+          instructor_amount: newTotal,
+        });
+    }
 
     return roundCurrency(delta);
   } catch (err) {

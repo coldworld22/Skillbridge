@@ -50,14 +50,25 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-async function creditInstructorSubscription(item_type, item_id, planId, trx) {
+async function creditInstructorSubscription(
+  item_type,
+  item_id,
+  planId,
+  trx,
+  instructorAmountDelta = 0
+) {
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    let amount = Number(instructorAmountDelta);
+    if (!Number.isFinite(amount)) {
+      amount = await calculateInstructorAmount(
+        planId,
+        item_id,
+        trx,
+        item_type,
+        { incrementUsage: false }
+      );
+    }
+    amount = Number(amount) || 0;
     if (amount <= 0) return;
 
     let instructorId;
@@ -80,8 +91,19 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
   }
 }
 
-async function creditTutorialSubscription(tutorialId, planId, trx) {
-  return creditInstructorSubscription("tutorial", tutorialId, planId, trx);
+async function creditTutorialSubscription(
+  tutorialId,
+  planId,
+  trx,
+  instructorAmountDelta
+) {
+  return creditInstructorSubscription(
+    "tutorial",
+    tutorialId,
+    planId,
+    trx,
+    instructorAmountDelta
+  );
 }
 
 module.exports = {

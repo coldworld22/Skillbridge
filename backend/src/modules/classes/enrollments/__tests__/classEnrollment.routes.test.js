@@ -43,19 +43,14 @@ jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
+}));
+
 jest.mock('../../../payments/helpers/wallet', () => {
-  const creditInstructorSubscription = jest.fn(async (_type, _id, _planId, trx) => {
-    await trx('plan_usage_metrics').update({
-      usage_count: 1,
-      instructor_amount: 5,
-    });
-  });
+  const creditInstructorSubscription = jest.fn();
   return { creditInstructorSubscription };
 });
-
-jest.mock('../../../payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
-}));
 
 jest.mock('../../../payments/helpers/planPayments', () => ({
   recordPlanCoveredPayment: jest.fn(),
@@ -69,6 +64,7 @@ jest.mock('../../../../utils/logger.js', () => ({
 }));
 
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
+const planRevenue = require('../../../payments/helpers/planRevenue');
 const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const { recordPlanCoveredPayment } = require('../../../payments/helpers/planPayments');
 const logger = require('../../../../utils/logger.js');
@@ -156,15 +152,24 @@ describe('Class enrollment routes', () => {
     getActiveStudentPlanId.mockResolvedValue('plan1');
     service.createEnrollment.mockResolvedValue({ id: '1' });
     recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
+    planRevenue.calculateInstructorAmount.mockResolvedValue(7.5);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledTimes(1);
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
+      'plan1',
+      'abc',
+      expect.anything(),
+      'class'
+    );
     expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
     expect(creditInstructorSubscription).toHaveBeenCalledWith(
       'class',
       'abc',
       'plan1',
       expect.anything(),
+      7.5,
     );
     expect(recordPlanCoveredPayment).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -179,7 +184,11 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
-    db.first
+    const builder = {};
+    builder.where = jest.fn(() => builder);
+    builder.forUpdate = jest.fn(() => builder);
+    builder.first = jest
+      .fn()
       .mockResolvedValueOnce({
         status: 'published',
         moderation_status: 'Approved',
@@ -187,6 +196,15 @@ describe('Class enrollment routes', () => {
         included_plans: ['plan2'],
       })
       .mockResolvedValueOnce(null); // payment check
+
+    const trx = jest.fn((table) => {
+      if (table === 'online_classes') {
+        return builder;
+      }
+      return db(table);
+    });
+
+    db.transaction.mockImplementationOnce(async (fn) => fn(trx));
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
@@ -195,11 +213,25 @@ describe('Class enrollment routes', () => {
   });
 
   test('reactivate cancelled enrollment when capacity available', async () => {
-    db.first.mockResolvedValueOnce({
-      status: 'published',
-      moderation_status: 'Approved',
-      max_students: 1,
+    const builder = {};
+    builder.where = jest.fn(() => builder);
+    builder.forUpdate = jest.fn(() => builder);
+    builder.first = jest.fn(() =>
+      Promise.resolve({
+        status: 'published',
+        moderation_status: 'Approved',
+        max_students: 1,
+      }),
+    );
+
+    const trx = jest.fn((table) => {
+      if (table === 'online_classes') {
+        return builder;
+      }
+      return db(table);
     });
+
+    db.transaction.mockImplementationOnce(async (fn) => fn(trx));
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue({
       user_id: 'test-user',

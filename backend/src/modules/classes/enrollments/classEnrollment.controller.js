@@ -44,24 +44,7 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
-      const usage = await trx("plan_usage_metrics")
-        .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-        .first();
-
-      if (usage) {
-        await trx("plan_usage_metrics")
-          .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await trx("plan_usage_metrics").insert({
-          plan_id: activePlanId,
-          item_type: "class",
-          item_id: classId,
-          usage_count: 1,
-        });
-      }
-
-      await planRevenue.calculateInstructorAmount(
+      const instructorAmountDelta = await planRevenue.calculateInstructorAmount(
         activePlanId,
         classId,
         trx,
@@ -75,7 +58,13 @@ exports.enroll = catchAsync(async (req, res) => {
         amount: 0,
         currency: cls.currency || "USD",
       });
-      await creditInstructorSubscription("class", classId, activePlanId, trx);
+      await creditInstructorSubscription(
+        "class",
+        classId,
+        activePlanId,
+        trx,
+        instructorAmountDelta
+      );
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({

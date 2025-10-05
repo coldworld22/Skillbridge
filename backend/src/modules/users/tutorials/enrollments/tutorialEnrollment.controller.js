@@ -7,6 +7,7 @@ const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
 const planRevenue = require("../../../payments/helpers/planRevenue");
 const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
+const { getPlanCoveredMethod } = require("../../../payments/helpers/methods");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -33,32 +34,7 @@ exports.enroll = catchAsync(async (req, res) => {
     if (coveredBySubscription) {
       const planMethod = await getPlanCoveredMethod(trx);
 
-      const usage = await trx("plan_usage_metrics")
-        .where({
-          plan_id: activePlanId,
-          item_type: "tutorial",
-          item_id: tutorialId,
-        })
-        .first();
-
-      if (usage) {
-        await trx("plan_usage_metrics")
-          .where({
-            plan_id: activePlanId,
-            item_type: "tutorial",
-            item_id: tutorialId,
-          })
-          .update({ usage_count: usage.usage_count + 1 });
-      } else {
-        await trx("plan_usage_metrics").insert({
-          plan_id: activePlanId,
-          item_type: "tutorial",
-          item_id: tutorialId,
-          usage_count: 1,
-        });
-      }
-
-      await planRevenue.calculateInstructorAmount(
+      const instructorAmountDelta = await planRevenue.calculateInstructorAmount(
         activePlanId,
         tutorialId,
         trx,
@@ -74,7 +50,12 @@ exports.enroll = catchAsync(async (req, res) => {
         amount: 0,
       });
 
-      await creditTutorialSubscription(tutorialId, activePlanId, trx);
+      await creditTutorialSubscription(
+        tutorialId,
+        activePlanId,
+        trx,
+        instructorAmountDelta
+      );
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })

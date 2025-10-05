@@ -334,23 +334,12 @@ exports.checkout = async (studentId) => {
           planMethodRecord = await getPlanCoveredMethod(trx);
         }
 
-        const usage = await trx('plan_usage_metrics')
-          .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
-          .first();
-        if (usage) {
-          await trx('plan_usage_metrics')
-            .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
-            .update({ usage_count: usage.usage_count + 1 });
-        } else {
-          await trx('plan_usage_metrics').insert({
-            plan_id: activePlanId,
-            item_type: 'book',
-            item_id: b.id,
-            usage_count: 1,
-          });
-        }
-
-        await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
+        const instructorAmountDelta = await planRevenue.calculateInstructorAmount(
+          activePlanId,
+          b.id,
+          trx,
+          'book'
+        );
         const [payment] = await trx('payments')
           .insert({
             id: uuidv4(),
@@ -374,7 +363,13 @@ exports.checkout = async (studentId) => {
           price_paid: 0,
         });
 
-        await creditInstructorSubscription('book', b.id, activePlanId, trx);
+        await creditInstructorSubscription(
+          'book',
+          b.id,
+          activePlanId,
+          trx,
+          instructorAmountDelta
+        );
 
         payments.push(payment);
         continue;
