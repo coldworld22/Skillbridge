@@ -212,6 +212,7 @@ describe('class.controller createClass', () => {
         title: 'Admin Published Class',
         status: 'published',
         instructor_id: 'instructor1',
+        publish_immediately: 'true',
       },
       user: { id: 'admin1', role: 'admin', roles: ['admin'] },
       files: {},
@@ -246,6 +247,54 @@ describe('class.controller createClass', () => {
         data: expect.objectContaining({
           status: 'published',
           moderation_status: 'Approved',
+        }),
+      })
+    );
+  });
+
+  test('instructor publish_immediately request remains pending', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: {
+        title: 'Instructor Published Class',
+        status: 'published',
+        publish_immediately: true,
+      },
+      user: { id: 'instructor1', role: 'instructor' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'published',
+        moderation_status: 'Pending',
+        instructor_id: 'instructor1',
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'published',
+          moderation_status: 'Pending',
         }),
       })
     );
