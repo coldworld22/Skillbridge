@@ -655,7 +655,9 @@
     "loading": "Caricamento dei dettagli della classe ...",
     "views_label": "Viste",
     "view_students": "Visualizza gli studenti",
-    "view_analytics": "Visualizza l'analisi"
+    "view_analytics": "Visualizza l'analisi",
+    "not_found": "Classe non trovata.",
+    "error_loading": "Impossibile caricare questa classe. Riprova più tardi."
   },
   "popupAnnouncementsPage": {
     "title": "Annunci popup",
