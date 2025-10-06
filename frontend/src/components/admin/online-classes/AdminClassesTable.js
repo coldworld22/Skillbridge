@@ -309,8 +309,18 @@ export default function AdminClassesTable() {
     });
   };
 
-  const sortClasses = (items, key = sortKey) =>
-    [...items].sort((a, b) => compareValues(a, b, key));
+  const sortClasses = (items, key = sortKey) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return [];
+    }
+
+    const sanitizedItems = sanitizeClassEntries(items) ?? [];
+    if (sanitizedItems.length === 0) {
+      return [];
+    }
+
+    return [...sanitizedItems].sort((a, b) => compareValues(a, b, key));
+  };
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
@@ -468,6 +478,7 @@ export default function AdminClassesTable() {
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
         const normalizedScheduleFilter = normalizeStatusValue(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
+        const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
         const safeLimit = resolvePositiveInteger(limitValue);
         const baseParams = {
           limit: safeLimit,
@@ -484,7 +495,7 @@ export default function AdminClassesTable() {
 
         if (scheduleFiltering && normalizedScheduleFilter) {
           const totalPagesFromMeta = meta?.totalPages ?? 1;
-          let aggregatedData = data;
+          let aggregatedData = sanitizeList(data);
 
           if (totalPagesFromMeta > 1) {
             const subsequentPages = await Promise.all(
@@ -492,7 +503,7 @@ export default function AdminClassesTable() {
                 fetchAdminClasses({
                   ...baseParams,
                   page: index + 2,
-                }).then((res) => res.data)
+                }).then((res) => sanitizeList(res.data))
               )
             );
             aggregatedData = aggregatedData.concat(...subsequentPages);
@@ -565,7 +576,7 @@ export default function AdminClassesTable() {
 
           updateClassListIfChanged(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
-          const nextTotalItems = meta?.total ?? data.length;
+          const nextTotalItems = meta?.total ?? sortedData.length;
           setTotalPagesIfNeeded(nextTotalPages);
           setTotalItemsIfNeeded(nextTotalItems);
         }
@@ -689,6 +700,7 @@ export default function AdminClassesTable() {
       const limit = 100;
       let page = 1;
       let allClasses = [];
+      const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
       // Fetch every page of classes that match the current filters
       while (true) {
         const { data, meta } = await fetchAdminClasses({
@@ -698,7 +710,7 @@ export default function AdminClassesTable() {
           approval: filterApproval !== "All" ? filterApproval : undefined,
           status: statusQuery,
         });
-        allClasses = allClasses.concat(data);
+        allClasses = allClasses.concat(sanitizeList(data));
         const metaTotalPages =
           meta?.totalPages || meta?.total_pages || meta?.totalpages;
         if ((metaTotalPages && page >= metaTotalPages) || data.length < limit) {
