@@ -1,3 +1,5 @@
+const path = require("path");
+
 const db = require("../../config/database");
 const AppError = require("../../utils/AppError");
 
@@ -164,6 +166,49 @@ exports.addAttachment = async ({ message_id, file_url, file_name }) => {
  */
 exports.getAttachmentsByMessage = (message_id) =>
   db("support_attachments").where({ message_id });
+
+/**
+ * Upload and persist an attachment for a support message
+ * @param {Object} params
+ * @param {string} params.messageId - Target support message ID
+ * @param {Object} params.file - Multer file object
+ * @param {Object} params.user - Requesting user context
+ */
+exports.uploadAttachment = async ({ messageId, file, user }) => {
+  const messageQuery = db("support_messages");
+  const message = await messageQuery.where({ id: messageId }).first();
+
+  if (!message) {
+    throw new AppError("Support message not found", 404);
+  }
+
+  const ticketQuery = db("support_tickets");
+  const ticket = await ticketQuery.where({ id: message.ticket_id }).first();
+
+  if (!ticket) {
+    throw new AppError("Support ticket not found", 404);
+  }
+
+  const hasAccess =
+    (user?.id &&
+      (ticket.user_id === user.id || message.sender_id === user.id)) ||
+    isAdminRole(user?.roles || user?.role);
+
+  if (!hasAccess) {
+    throw new AppError("Access denied", 403);
+  }
+
+  const fileUrl = path.posix.join(
+    "/uploads/support_attachments",
+    file.filename
+  );
+
+  return exports.addAttachment({
+    message_id: messageId,
+    file_url: fileUrl,
+    file_name: file.originalname || file.filename,
+  });
+};
 
 
 exports.updateStatus = async (id, status) => {
