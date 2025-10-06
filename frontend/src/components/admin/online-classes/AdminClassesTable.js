@@ -264,6 +264,20 @@ export default function AdminClassesTable() {
     });
   };
 
+  const updateClassList = (updater) => {
+    if (typeof updater === "function") {
+      setClassList((previous) => {
+        const nextValue = updater(previous);
+        return Array.isArray(nextValue) ? nextValue : previous;
+      });
+      return;
+    }
+
+    if (Array.isArray(updater)) {
+      setClassList(updater);
+    }
+  };
+
   const sortClasses = (items, key = sortKey) =>
     [...items].sort((a, b) => compareValues(a, b, key));
 
