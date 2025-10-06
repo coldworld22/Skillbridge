@@ -95,6 +95,7 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
+  const [lessonSubmissionResults, setLessonSubmissionResults] = useState({});
   const [createdClass, setCreatedClass] = useState(null);
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
@@ -217,6 +218,24 @@ function CreateOnlineClass() {
     }
   }, [user]);
 
+  useEffect(() => {
+    setLessonSubmissionResults((prev) => {
+      if (!prev || typeof prev !== 'object') {
+        return prev;
+      }
+      const activeLessonIds = new Set(
+        formData.lessons.map((lesson) => lesson?.id).filter(Boolean)
+      );
+      const filteredEntries = Object.entries(prev).filter(([id]) =>
+        activeLessonIds.has(id)
+      );
+      if (filteredEntries.length === Object.keys(prev).length) {
+        return prev;
+      }
+      return Object.fromEntries(filteredEntries);
+    });
+  }, [formData.lessons]);
+
   const filteredInstructors = useMemo(() => {
     const lower = instructorSearch.trim().toLowerCase();
     if (!lower) {
@@ -315,6 +334,15 @@ function CreateOnlineClass() {
         .filter((idx) => idx !== index)
         .map((idx) => (idx > index ? idx - 1 : idx))
     );
+    if (lessonToRemove?.id) {
+      setLessonSubmissionResults((prev) => {
+        if (!prev[lessonToRemove.id]) {
+          return prev;
+        }
+        const { [lessonToRemove.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const addTag = (tag) => {
@@ -354,6 +382,19 @@ function CreateOnlineClass() {
         ? prev.includedPlans.filter((s) => s !== slug)
         : [...prev.includedPlans, slug],
     }));
+  };
+
+  const extractErrorMessage = (error) => {
+    if (!error) return null;
+    if (typeof error === 'string') return error;
+    const apiMessage = error?.response?.data?.message;
+    if (typeof apiMessage === 'string' && apiMessage.trim()) {
+      return apiMessage;
+    }
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message;
+    }
+    return null;
   };
 
   const handleSubmit = async (e) => {
@@ -541,9 +582,23 @@ function CreateOnlineClass() {
 
         const indexToStatus = new Map();
         const failedIndices = [];
+        const submissionSummaries = {};
 
         lessonResults.forEach((result, idx) => {
           const { index } = lessonsToSubmit[idx];
+          const { lesson } = lessonsToSubmit[idx];
+          if (lesson?.id) {
+            submissionSummaries[lesson.id] = {
+              status: result.status,
+              skipped:
+                result.status === 'fulfilled' &&
+                Boolean(result.value?.skipped),
+              message:
+                result.status === 'rejected'
+                  ? extractErrorMessage(result.reason)
+                  : null,
+            };
+          }
           if (result.status === 'fulfilled') {
             indexToStatus.set(index, 'succeeded');
           } else {
@@ -551,6 +606,22 @@ function CreateOnlineClass() {
             failedIndices.push(index);
           }
         });
+
+        if (Object.keys(submissionSummaries).length) {
+          setLessonSubmissionResults((prev) => {
+            const merged = { ...prev, ...submissionSummaries };
+            const activeLessonIds = new Set(
+              (formData.lessons || []).map((lesson) => lesson.id)
+            );
+            const filteredEntries = Object.entries(merged).filter(([id]) =>
+              activeLessonIds.has(id)
+            );
+            if (filteredEntries.length === Object.keys(merged).length) {
+              return merged;
+            }
+            return Object.fromEntries(filteredEntries);
+          });
+        }
 
         if (indexToStatus.size) {
           setFormData((prev) => ({
@@ -1007,11 +1078,10 @@ function CreateOnlineClass() {
                       </p>
                     ) : (
                       formData.lessons.map((lesson, index) => {
-                        const result = lessonResults[lesson.id];
-                        const wasSkipped = Boolean(result?.value?.skipped);
-                        const wasSuccessful =
-                          result?.status === 'fulfilled' &&
-                          (wasSkipped || Boolean(successfulLessons[lesson.id]));
+                        const submissionResult = lessonSubmissionResults[lesson.id];
+                        const wasSkipped = Boolean(submissionResult?.skipped);
+                        const wasSuccessful = lesson.status === 'succeeded';
+                        const errorMessage = submissionResult?.message;
                         return (
                         <div
                           key={lesson.id}
@@ -1096,19 +1166,25 @@ function CreateOnlineClass() {
 
                           {failedLessonIndices.includes(index) && (
                             <p className="text-sm text-red-600">
-                              {t('lesson_requires_attention', {
-                                defaultValue:
-                                  'We could not save this lesson. Please review its details and try again.',
-                              })}
+                              {errorMessage ||
+                                t('lesson_requires_attention', {
+                                  defaultValue:
+                                    'We could not save this lesson. Please review its details and try again.',
+                                })}
                             </p>
                           )}
 
                           {!failedLessonIndices.includes(index) && wasSuccessful && (
                             <p className="text-sm text-green-600">
-                              {t('lesson_already_uploaded', {
-                                defaultValue:
-                                  'This lesson was uploaded successfully and will be skipped on retry.',
-                              })}
+                              {wasSkipped
+                                ? t('lesson_already_uploaded', {
+                                    defaultValue:
+                                      'This lesson was uploaded successfully and will be skipped on retry.',
+                                  })
+                                : t('lesson_uploaded_successfully', {
+                                    defaultValue:
+                                      'This lesson was uploaded successfully.',
+                                  })}
                             </p>
                           )}
                         </div>
