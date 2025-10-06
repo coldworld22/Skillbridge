@@ -280,9 +280,14 @@ export default function AdminClassesTable() {
       return;
     }
 
+    const sanitizedNext = sanitizeClassEntries(nextList);
+    if (!Array.isArray(sanitizedNext)) {
+      return;
+    }
+
     setClassList((previous) => {
-      if (classListLengthRef.current === nextList.length) {
-        const nextSignature = computeListSignature(nextList);
+      if (classListLengthRef.current === sanitizedNext.length) {
+        const nextSignature = computeListSignature(sanitizedNext);
         if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
