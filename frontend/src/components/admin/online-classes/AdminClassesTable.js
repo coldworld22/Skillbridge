@@ -4,7 +4,6 @@ import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import {
-  updateAdminClass,
   deleteAdminClass,
   approveAdminClass,
   rejectAdminClass,
@@ -237,16 +236,6 @@ export default function AdminClassesTable() {
     totalPagesRef.current = value;
     setTotalPages(value);
     return true;
-  };
-
-  const updateClassList = (updater) => {
-    setClassList((previous) => {
-      if (typeof updater === "function") {
-        return updater(previous);
-      }
-
-      return Array.isArray(updater) ? updater : previous;
-    });
   };
 
   const updateClassListIfChanged = (nextList) => {
