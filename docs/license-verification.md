@@ -4,6 +4,8 @@ This guide explains how to validate purchases of your CodeCanyon product to ensu
 
 ## Prerequisites
 - **Envato personal token** with permission to view sales (stored in `ENVATO_TOKEN`).
+- **(Optional) Development bypass flag** – set `LICENSE_DEMO_BYPASS=true` only in non-production environments to accept the demo
+  code `DEMO-CODE-1234` for local testing. The flag is ignored when `NODE_ENV=production`.
 - **Backend endpoint** capable of making HTTPS requests.
 - **Database table** for tracking `purchase_code`, `domain`, `email`, `ip`, `status`, `activated_at`, `last_check`, and `logs`.
 
@@ -25,6 +27,8 @@ This guide explains how to validate purchases of your CodeCanyon product to ensu
 
 ## Security & Logging Tips
 - Keep `ENVATO_TOKEN` on the server; never expose it client-side.
+- Avoid enabling `LICENSE_DEMO_BYPASS` in packaged or production builds. Because the flag is ignored in production mode, leave it
+  unset in distributed environment files to prevent accidental activation.
 - Sanitize and validate all user input before contacting Envato.
 - Rate-limit activation attempts and hash sensitive data where possible.
 - Log activations, validations and domain mismatches for audit trails.
