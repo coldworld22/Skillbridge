@@ -280,9 +280,11 @@ export default function AdminClassesTable() {
       return;
     }
 
+    const sanitizedNext = sanitizeClassEntries(nextList) ?? [];
+
     setClassList((previous) => {
-      if (classListLengthRef.current === nextList.length) {
-        const nextSignature = computeListSignature(nextList);
+      if (classListLengthRef.current === sanitizedNext.length) {
+        const nextSignature = computeListSignature(sanitizedNext);
         if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
@@ -568,10 +570,16 @@ export default function AdminClassesTable() {
         if (isAuthFailure) {
           authFailureRef.current = true;
           if (isComponentMountedRef.current) {
-            setAuthError(true);
-            updateClassList([]);
-            setTotalItemsIfNeeded(0);
-            setTotalPagesIfNeeded(1);
+            if (!authError) {
+              setAuthError(true);
+            }
+            updateClassListIfChanged([]);
+            if (totalItemsRef.current !== 0) {
+              setTotalItemsIfNeeded(0);
+            }
+            if (totalPagesRef.current !== 1) {
+              setTotalPagesIfNeeded(1);
+            }
           }
         }
         if (shouldShowToast && (!isAuthFailure || !hadAuthFailure)) {

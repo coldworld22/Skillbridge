@@ -5,6 +5,10 @@ import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
 const formatClass = (cls) => {
+  if (!cls || typeof cls !== "object") {
+    return null;
+  }
+
   const { status, schedule_status, ...rest } = cls;
   return {
     ...rest,
@@ -63,7 +67,17 @@ export const fetchAdminClasses = async ({
     ? Object.values(rawList)
     : [];
 
-  return { data: list.map(formatClass), meta: data?.meta || {} };
+  const formattedList = [];
+
+  for (const entry of list) {
+    const formatted = formatClass(entry);
+
+    if (formatted) {
+      formattedList.push(formatted);
+    }
+  }
+
+  return { data: formattedList, meta: data?.meta || {} };
 };
 
 export const fetchAdminClassById = async (id) => {
