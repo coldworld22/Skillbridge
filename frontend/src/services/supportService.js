@@ -11,6 +11,13 @@ const formatUrl = (url) => {
   return `${apiBase}${url}`;
 };
 
+const attachCustomerName = ({ user_name, user, ...rest }) => ({
+  ...rest,
+  user_name,
+  user,
+  customerName: user_name || user || rest.customerName || null,
+});
+
 // ─────────────────────
 // 📨 Create a support ticket
 // ─────────────────────
@@ -23,21 +30,25 @@ export const fetchMyTickets = async (config = {}) => {
   const cfg = Object.keys(config).length ? config : undefined;
   const { data } = await api.get("support/my-tickets", cfg);
   const list = data?.data ?? [];
-  return list.map(({ created_at, user_avatar, ...rest }) => ({
-    ...rest,
-    createdAt: created_at,
-    user_avatar: formatUrl(user_avatar),
-  }));
+  return list.map(({ created_at, user_avatar, ...rest }) =>
+    attachCustomerName({
+      ...rest,
+      createdAt: created_at,
+      user_avatar: formatUrl(user_avatar),
+    })
+  );
 };
 
 export const fetchAllTickets = async (filters = {}) => {
   const { data } = await api.get("support/admin/tickets", { params: filters });
   const list = data?.data ?? [];
-  return list.map(({ created_at, user_avatar, ...rest }) => ({
-    ...rest,
-    createdAt: created_at,
-    user_avatar: formatUrl(user_avatar),
-  }));
+  return list.map(({ created_at, user_avatar, ...rest }) =>
+    attachCustomerName({
+      ...rest,
+      createdAt: created_at,
+      user_avatar: formatUrl(user_avatar),
+    })
+  );
 };
 
 export const fetchTicketById = async (id) => {
@@ -46,7 +57,7 @@ export const fetchTicketById = async (id) => {
   if (!ticket) return null;
   const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
-    ...rest,
+    ...attachCustomerName(rest),
     createdAt: created_at,
     user_avatar: formatUrl(user_avatar),
     messages: messages.map(

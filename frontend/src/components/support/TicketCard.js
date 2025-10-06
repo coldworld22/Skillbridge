@@ -33,7 +33,9 @@ export default function TicketCard({ ticket, onClick }) {
           <Image
             src={ticket.user_avatar || '/images/default-avatar.png'}
             alt={
-              ticket.user_name
+              ticket.customerName
+                ? `${ticket.customerName}'s avatar`
+                : ticket.user_name
                 ? `${ticket.user_name}'s avatar`
                 : ticket.user
                 ? `${ticket.user}'s avatar`
@@ -43,7 +45,7 @@ export default function TicketCard({ ticket, onClick }) {
             height={16}
             className="w-4 h-4 rounded-full object-cover"
           />
-          {ticket.user_name || ticket.user || 'Unknown'}
+          {ticket.customerName || ticket.user_name || ticket.user || 'Unknown'}
         </span>
         <span className="flex items-center gap-1">
           <FiClock className="text-gray-400" />
