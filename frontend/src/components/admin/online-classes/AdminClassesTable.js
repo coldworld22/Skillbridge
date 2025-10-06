@@ -24,6 +24,7 @@ import {
   FaEdit,
   FaList,
   FaSearch,
+  FaSyncAlt,
   FaTimes,
   FaTrash,
   FaUserGraduate,
@@ -186,6 +187,7 @@ export default function AdminClassesTable() {
   const [classList, setClassList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeSetting, setPageSizeSetting] = useState(String(DEFAULT_PAGE_SIZE));
   const [totalItems, setTotalItems] = useState(0);
@@ -273,6 +275,7 @@ export default function AdminClassesTable() {
 
       setLoading(true);
       setAuthError(false);
+      setFetchError(null);
 
       const scheduleParam = mapScheduleFilterToParam(filterSchedule);
       const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
@@ -366,9 +369,15 @@ export default function AdminClassesTable() {
           setClassList([]);
           setTotalItems(0);
           setTotalPages(1);
+          setFetchError(null);
         } else {
           console.error(error);
-          toast.error("Failed to load classes");
+          const message = translate(
+            "admin_classes_fetch_error",
+            "We were unable to load classes. Please try again."
+          );
+          toast.error(message);
+          setFetchError(message);
           if (!retryTimeoutRef.current) {
             retryTimeoutRef.current = setTimeout(() => {
               retryTimeoutRef.current = null;
@@ -573,6 +582,21 @@ export default function AdminClassesTable() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
+  const handleRetryNow = () => {
+    setRetryToken((token) => token + 1);
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setFilterSchedule("All");
+    setFilterApproval("All");
+    setSortKey("start_date");
+    setPageSizeSetting(String(DEFAULT_PAGE_SIZE));
+    setCurrentPage(1);
+    setFetchError(null);
+    setRetryToken((token) => token + 1);
+  };
+
   if (authError) {
     return (
       <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
@@ -592,6 +616,53 @@ export default function AdminClassesTable() {
     );
   }
 
+  if (fetchError && !loading && !classList.length) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center space-y-4">
+        <p className="text-gray-600">{fetchError}</p>
+        <button
+          type="button"
+          onClick={handleRetryNow}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-xl shadow hover:bg-yellow-600"
+        >
+          <FaSyncAlt className="w-4 h-4" />
+          {translate("retry_loading_classes", "Try again")}
+        </button>
+      </div>
+    );
+  }
+
+  if (!loading && !classList.length) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center space-y-4">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
+          <FaList className="h-5 w-5" />
+        </div>
+        <p className="text-gray-700 font-semibold">
+          {translate(
+            "admin_classes_empty_state_title",
+            "No classes match your current filters"
+          )}
+        </p>
+        <p className="text-gray-500">
+          {translate(
+            "admin_classes_empty_state_message",
+            "Adjust your filters or create a new class to get started."
+          )}
+        </p>
+        <div className="flex justify-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="px-4 py-2 text-sm font-semibold text-yellow-600 bg-yellow-100 rounded-xl hover:bg-yellow-200"
+          >
+            {translate("reset_filters_button", "Reset filters")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
@@ -605,6 +676,10 @@ export default function AdminClassesTable() {
             )}
             className="border border-gray-300 rounded-xl px-4 py-2 w-full text-sm focus:ring-2 focus:ring-yellow-500"
             value={searchTerm}
+            aria-label={translate(
+              "search_classes_placeholder",
+              "Search by title or instructor"
+            )}
             onChange={(event) => {
               setSearchTerm(event.target.value);
               setCurrentPage(1);
