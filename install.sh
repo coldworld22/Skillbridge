@@ -132,6 +132,10 @@ ensure_env_file() {
   if [[ -f "$example_file" && ! -f "$target_file" ]]; then
     echo "Creating $(basename "$target_file") from example file."
     cp "$example_file" "$target_file"
+
+    if [[ "$target_file" == */frontend/.env.local ]]; then
+      echo "Update frontend/.env.local so NEXT_PUBLIC_API_BASE_URL points at your API before starting the frontend."
+    fi
   fi
 }
 
