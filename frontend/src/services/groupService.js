@@ -49,18 +49,18 @@ const formatGroup = (g) => {
 
 const groupService = {
   getMyGroups: async () => {
-    const { data } = await api.get("/groups/my");
+    const { data } = await api.get("groups/my");
     const list = data?.data ?? [];
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
   getTags: async () => {
-    const { data } = await api.get("/groups/tags");
+    const { data } = await api.get("groups/tags");
     return data?.data ?? [];
   },
 
   getPublicGroups: async (search) => {
-    const { data } = await api.get("/groups", {
+    const { data } = await api.get("groups", {
       params: { search, status: "active" },
     });
     const list = data?.data ?? [];
@@ -69,28 +69,28 @@ const groupService = {
   },
 
   getAllGroups: async (search, status) => {
-    const { data } = await api.get("/groups", { params: { search, status } });
+    const { data } = await api.get("groups", { params: { search, status } });
     const list = data?.data ?? [];
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
   getGroupById: async (id, opts = {}) => {
-    const { data } = await api.get(`/groups/${id}`, opts);
+    const { data } = await api.get(`groups/${id}`, opts);
     return data?.data ? formatGroup(data.data) : null;
   },
 
   joinGroup: async (groupId) => {
-    const { data } = await api.post(`/groups/${groupId}/join`);
+    const { data } = await api.post(`groups/${groupId}/join`);
     return data?.data;
   },
 
   cancelJoinRequest: async (groupId) => {
-    await api.delete(`/groups/${groupId}/join`);
+    await api.delete(`groups/${groupId}/join`);
     return true;
   },
 
   createGroup: async (payload) => {
-    const { data } = await api.post("/groups", payload, {
+    const { data } = await api.post("groups", payload, {
       headers:
         payload instanceof FormData
           ? { "Content-Type": "multipart/form-data" }
@@ -100,7 +100,7 @@ const groupService = {
   },
 
   getGroupMembers: async (groupId, opts = {}) => {
-    const { data } = await api.get(`/groups/${groupId}/members`, opts);
+    const { data } = await api.get(`groups/${groupId}/members`, opts);
     const list = data?.data ?? [];
 
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -122,14 +122,14 @@ const groupService = {
 
   manageMember: async (groupId, memberId, action) => {
     const { data } = await api.post(
-      `/groups/${groupId}/members/${memberId}/manage`,
+      `groups/${groupId}/members/${memberId}/manage`,
       { action },
     );
     return data?.data;
   },
 
   getGroupMessages: async (groupId, opts = {}) => {
-    const { data } = await api.get(`/groups/${groupId}/messages`, opts);
+    const { data } = await api.get(`groups/${groupId}/messages`, opts);
     const list = data?.data ?? [];
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return list.map((m) => ({
@@ -173,44 +173,44 @@ const groupService = {
     if (audio) form.append("audio", audio);
     if (sendEmail) form.append("sendEmail", "true");
     if (sendWhatsapp) form.append("sendWhatsapp", "true");
-    const { data } = await api.post(`/groups/${groupId}/messages`, form, {
+    const { data } = await api.post(`groups/${groupId}/messages`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data?.data;
   },
 
   deleteGroupMessage: async (messageId) => {
-    const { data } = await api.delete(`/groups/messages/${messageId}`);
+    const { data } = await api.delete(`groups/messages/${messageId}`);
     return data?.data ?? data;
   },
 
   setTypingStatus: async (groupId, typing) => {
-    await api.post(`/groups/${groupId}/typing`, { typing });
+    await api.post(`groups/${groupId}/typing`, { typing });
     return true;
   },
 
   getTypingStatus: async (groupId, opts = {}) => {
-    const { data } = await api.get(`/groups/${groupId}/typing`, opts);
+    const { data } = await api.get(`groups/${groupId}/typing`, opts);
     return data?.data ?? [];
   },
 
   startGroupVideoCall: async (groupId) => {
-    const { data } = await api.post(`/groups/${groupId}/video-call`);
+    const { data } = await api.post(`groups/${groupId}/video-call`);
     return data?.data;
   },
 
   deleteGroup: async (id) => {
-    await api.delete(`/groups/${id}`);
+    await api.delete(`groups/${id}`);
     return true;
   },
 
   updateGroup: async (id, payload) => {
-    const { data } = await api.patch(`/groups/${id}`, payload);
+    const { data } = await api.patch(`groups/${id}`, payload);
     return data?.data ? formatGroup(data.data) : null;
   },
 
   getJoinRequestsForGroup: async (groupId, opts = {}) => {
-    const { data } = await api.get(`/groups/${groupId}/requests`, opts);
+    const { data } = await api.get(`groups/${groupId}/requests`, opts);
     const list = data?.data ?? [];
     return Array.isArray(list)
       ? list.map((r) => ({
@@ -224,22 +224,22 @@ const groupService = {
   },
 
   approveRequest: async (requestId) => {
-    await api.post(`/groups/requests/${requestId}`, { action: "approve" });
+    await api.post(`groups/requests/${requestId}`, { action: "approve" });
     return true;
   },
 
   rejectRequest: async (requestId) => {
-    await api.post(`/groups/requests/${requestId}`, { action: "reject" });
+    await api.post(`groups/requests/${requestId}`, { action: "reject" });
     return true;
   },
 
   getGroupPermissions: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/permissions`);
+    const { data } = await api.get(`groups/${groupId}/permissions`);
     return data?.data ?? {};
   },
 
   updateGroupPermissions: async (groupId, payload) => {
-    const { data } = await api.put(`/groups/${groupId}/permissions`, payload);
+    const { data } = await api.put(`groups/${groupId}/permissions`, payload);
     return data?.data;
   },
 };

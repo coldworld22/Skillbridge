@@ -6,12 +6,12 @@ export const createAd = async (payload, config = {}) => {
   const headers = {};
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
-  const { data } = await api.post("/ads/admin", payload, { headers });
+  const { data } = await api.post("ads/admin", payload, { headers });
   return data?.data;
 };
 
 export const checkAdTitle = async (title) => {
-  const { data } = await api.get("/ads/admin/check-title", { params: { title } });
+  const { data } = await api.get("ads/admin/check-title", { params: { title } });
   return data?.data?.exists;
 };
 
@@ -33,7 +33,7 @@ export const fetchAds = async ({
       ...(search ? { search } : {}),
     };
     const config = Object.keys(params).length ? { params } : undefined;
-    const { data } = await api.get("/ads/admin", config);
+    const { data } = await api.get("ads/admin", config);
 
     const ads = data?.data ?? [];
     const mapped = ads.map(mapApiAdToClient);
@@ -48,7 +48,7 @@ export const fetchAds = async ({
 
 export const fetchAdById = async (id, headers = {}) => {
   try {
-    const { data } = await api.get(`/ads/${id}`, { headers });
+    const { data } = await api.get(`ads/${id}`, { headers });
     const ad = data?.data;
     if (!ad) return null;
     return mapApiAdToClient(ad);
@@ -65,7 +65,7 @@ export const updateAd = async (id, payload, config = {}) => {
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
   try {
-    const { data } = await api.put(`/ads/${id}`, payload, { headers, ...config });
+    const { data } = await api.put(`ads/${id}`, payload, { headers, ...config });
     return data?.data;
   } catch (err) {
     if (err.response && err.response.status === 403) {
@@ -80,7 +80,7 @@ export const deleteAd = async (id) => {
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
   try {
-    await api.delete(`/ads/${id}`, { headers });
+    await api.delete(`ads/${id}`, { headers });
     return true;
   } catch (err) {
     if (err.response && err.response.status === 403) {
@@ -95,7 +95,7 @@ export const purchaseAd = async (id) => {
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
   try {
-    const { data } = await api.post(`/ads/${id}/purchase`, null, { headers });
+    const { data } = await api.post(`ads/${id}/purchase`, null, { headers });
     return data?.data;
   } catch (err) {
     if (err.response && err.response.status === 403) {
@@ -106,7 +106,7 @@ export const purchaseAd = async (id) => {
 };
 
 export const fetchAdAnalytics = async (id, headers = {}) => {
-  const { data } = await api.get(`/ads/${id}/analytics`, { headers });
+  const { data } = await api.get(`ads/${id}/analytics`, { headers });
   const res = data?.data || {};
   return {
     views: res.views ?? 0,

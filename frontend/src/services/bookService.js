@@ -50,7 +50,7 @@ export const fetchBooks = async ({
   if (!admin && params.status === undefined) {
     params.status = "active";
   }
-  const endpoint = admin ? "/books/admin" : "/books";
+  const endpoint = admin ? "books/admin" : "books";
   const { data } = await api.get(endpoint, { params, ...config });
   const list = data?.data ? data.data.map(formatBook) : [];
   return {
@@ -60,7 +60,7 @@ export const fetchBooks = async ({
 };
 
 export const fetchBook = async (id, { admin = false, ...config } = {}) => {
-  const endpoint = admin ? `/books/admin/${id}` : `/books/${id}`;
+  const endpoint = admin ? `books/admin/${id}` : `books/${id}`;
   const hasConfig = Object.keys(config).length > 0;
   try {
     const { data } = hasConfig
@@ -73,8 +73,8 @@ export const fetchBook = async (id, { admin = false, ...config } = {}) => {
 
     if (admin && err.name !== "CanceledError" && err.name !== "AbortError") {
       const { data } = hasConfig
-        ? await api.get(`/books/${id}`, config)
-        : await api.get(`/books/${id}`);
+        ? await api.get(`books/${id}`, config)
+        : await api.get(`books/${id}`);
       return data?.data ? formatBook(data.data) : null;
     }
     throw err;
@@ -82,12 +82,12 @@ export const fetchBook = async (id, { admin = false, ...config } = {}) => {
 };
 
 export const deleteBook = async (id) => {
-  await api.delete(`/books/${id}`);
+  await api.delete(`books/${id}`);
   return true;
 };
 
 export const createBook = async (formData, onUploadProgress) => {
-  const { data } = await api.post("/books", formData, {
+  const { data } = await api.post("books", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
@@ -95,7 +95,7 @@ export const createBook = async (formData, onUploadProgress) => {
 };
 
 export const updateBook = async (id, formData, onUploadProgress) => {
-  const { data } = await api.put(`/books/${id}`, formData, {
+  const { data } = await api.put(`books/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
@@ -103,7 +103,7 @@ export const updateBook = async (id, formData, onUploadProgress) => {
 };
 
 export const updateBookStatus = async (id, status) => {
-  const { data } = await api.patch(`/books/${id}/status`, { status });
+  const { data } = await api.patch(`books/${id}/status`, { status });
   return data?.data ? formatBook(data.data) : null;
 };
 

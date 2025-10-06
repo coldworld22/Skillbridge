@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 
 export const fetchTutorialTags = async (search, signal) => {
-  const { data } = await api.get("/users/tutorials/tags", {
+  const { data } = await api.get("users/tutorials/tags", {
     params: search ? { search } : {},
     signal,
   });
@@ -9,6 +9,6 @@ export const fetchTutorialTags = async (search, signal) => {
 };
 
 export const createTutorialTag = async (payload) => {
-  const { data } = await api.post("/users/tutorials/tags", payload);
+  const { data } = await api.post("users/tutorials/tags", payload);
   return data?.data;
 };

@@ -4,6 +4,6 @@ export { fetchContactConfig } from "@/services/admin/contactConfigService";
 import api from "@/services/api/api";
 
 export const sendContactMessage = async ({ name, email, message }) => {
-  const { data } = await api.post("/contact", { name, email, message });
+  const { data } = await api.post("contact", { name, email, message });
   return data;
 };
