@@ -1,9 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import AdminClassesTable, {
-  FAILED_SIGNATURE_RETRY_DELAY_MS,
-} from "@/components/admin/online-classes/AdminClassesTable";
+import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 
 const fetchAdminClassesMock = jest.fn();
 const toggleClassStatusMock = jest.fn();

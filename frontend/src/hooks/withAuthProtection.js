@@ -16,6 +16,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
     const isRedirectingRef = useRef(false);
+    const logoutInProgressRef = useRef(false);
 
     useEffect(() => {
       setHydrated(true);
@@ -55,9 +56,19 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
 
       const normalizedRoles = getNormalizedRoles(user);
       if (!user) {
+        logoutInProgressRef.current = false;
         attemptRedirect("/auth/login");
       } else if (!accessToken || isTokenExpired(accessToken)) {
-        logout();
+        if (!logoutInProgressRef.current) {
+          logoutInProgressRef.current = true;
+          Promise.resolve(logout())
+            .catch(() => {
+              // ignore errors from logout, we'll still redirect below
+            })
+            .finally(() => {
+              logoutInProgressRef.current = false;
+            });
+        }
         attemptRedirect("/auth/login");
       } else if (
         (allowedRoles.length &&
