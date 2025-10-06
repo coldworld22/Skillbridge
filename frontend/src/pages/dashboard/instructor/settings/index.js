@@ -18,7 +18,7 @@ export default function InstructorSettingsPage() {
     setLoadingInvoices(true);
     setInvoiceError(null);
     try {
-      const { data } = await api.get("/invoices/instructor");
+      const { data } = await api.get("invoices/instructor");
       setInvoices(data?.data || []);
     } catch (err) {
       console.error("Failed to fetch invoices", err);
@@ -37,7 +37,7 @@ export default function InstructorSettingsPage() {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      await api.post("/user-subscriptions/upgrade");
+      await api.post("user-subscriptions/upgrade");
       await fetchSubscription();
       toast.success("Subscription upgraded");
     } catch (err) {
@@ -51,7 +51,7 @@ export default function InstructorSettingsPage() {
   const handleCancel = async () => {
     setCanceling(true);
     try {
-      await api.post("/user-subscriptions/cancel");
+      await api.post("user-subscriptions/cancel");
       await fetchSubscription();
       toast.success("Subscription cancelled");
     } catch (err) {

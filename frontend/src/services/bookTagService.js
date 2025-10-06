@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 
 export const fetchBookTags = async (search, config = {}) => {
-  const { data } = await api.get("/books/tags", {
+  const { data } = await api.get("books/tags", {
     params: search ? { search } : {},
     ...config,
   });
@@ -9,7 +9,7 @@ export const fetchBookTags = async (search, config = {}) => {
 };
 
 export const createBookTag = async (payload, config = {}) => {
-  const { data } = await api.post("/books/tags", payload, config);
+  const { data } = await api.post("books/tags", payload, config);
   return data?.data;
 };
 

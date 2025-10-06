@@ -3,14 +3,6 @@ const path = require("path");
 const db = require("../../config/database");
 const AppError = require("../../utils/AppError");
 
-const isAdminRole = (roles = []) => {
-  const arr = Array.isArray(roles) ? roles : roles ? [roles] : [];
-  return arr
-    .filter((role) => typeof role === "string")
-    .map((r) => r.toLowerCase().replace(/\s+/g, ""))
-    .some((r) => ["admin", "superadmin"].includes(r));
-};
-
 /**
  * Create a new support ticket and initial message
  * @param {Object} params
@@ -19,32 +11,46 @@ const isAdminRole = (roles = []) => {
  * @param {string} params.message - Initial message content
  */
 exports.createTicket = async ({ user_id, subject, message }) => {
-  // ─────────────────────
-  // 🔢 Generate unique ticket number
-  // ─────────────────────
-  let ticketNumber;
-  do {
-    ticketNumber = Math.floor(100000 + Math.random() * 900000).toString();
-  } while (
-    await db("support_tickets")
-      .where({ ticket_number: ticketNumber })
-      .first()
-  );
+  const normalizedSubject =
+    typeof subject === "string" ? subject.trim() : "";
+  if (!normalizedSubject) {
+    throw new AppError("Subject is required", 400);
+  }
 
-  // ─────────────────────
-  // 💾 Save the ticket
-  // ─────────────────────
-  const [ticket] = await db("support_tickets")
-    .insert({ user_id, subject, ticket_number: ticketNumber })
-    .returning("*");
+  const normalizedMessage =
+    typeof message === "string" ? message.trim() : "";
+  if (!normalizedMessage) {
+    throw new AppError("Message is required", 400);
+  }
 
-  await db("support_messages").insert({
-    ticket_id: ticket.id,
-    sender_id: user_id,
-    message,
+  return db.transaction(async (trx) => {
+    // ─────────────────────
+    // 🔢 Generate unique ticket number
+    // ─────────────────────
+    let ticketNumber;
+    do {
+      ticketNumber = Math.floor(100000 + Math.random() * 900000).toString();
+    } while (
+      await trx("support_tickets")
+        .where({ ticket_number: ticketNumber })
+        .first()
+    );
+
+    // ─────────────────────
+    // 💾 Save the ticket
+    // ─────────────────────
+    const [ticket] = await trx("support_tickets")
+      .insert({ user_id, subject: normalizedSubject, ticket_number: ticketNumber })
+      .returning("*");
+
+    await trx("support_messages").insert({
+      ticket_id: ticket.id,
+      sender_id: user_id,
+      message: normalizedMessage,
+    });
+
+    return ticket;
   });
-
-  return ticket;
 };
 
 exports.listUserTickets = (user_id) => {

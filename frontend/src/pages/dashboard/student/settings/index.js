@@ -25,7 +25,7 @@ export default function StudentSettingsPage() {
     setLoadingInvoices(true);
     setInvoiceError(null);
     try {
-      const { data } = await api.get("/invoices/student");
+      const { data } = await api.get("invoices/student");
       setInvoices(data?.data || []);
     } catch (err) {
       console.error("Failed to fetch invoices", err);
@@ -44,7 +44,7 @@ export default function StudentSettingsPage() {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      await api.post("/user-subscriptions/upgrade");
+      await api.post("user-subscriptions/upgrade");
       await fetchSubscription("student");
       toast.success("Subscription upgraded");
     } catch (err) {
@@ -58,7 +58,7 @@ export default function StudentSettingsPage() {
   const handleCancel = async () => {
     setCanceling(true);
     try {
-      await api.post("/user-subscriptions/cancel");
+      await api.post("user-subscriptions/cancel");
       await fetchSubscription("student");
       toast.success("Subscription cancelled");
     } catch (err) {

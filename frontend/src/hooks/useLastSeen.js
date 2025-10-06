@@ -13,7 +13,7 @@ const useLastSeen = (userId) => {
     let isMounted = true;
     const fetchStatus = async () => {
       try {
-        const { data } = await api.get(`/users/usersmanagement/${userId}`, {
+        const { data } = await api.get(`users/usersmanagement/${userId}`, {
           signal: controller.signal,
         });
         if (!isMounted) return;

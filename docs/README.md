@@ -271,8 +271,9 @@ disable the API when setup is complete.
 
 Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` before running
 seed scripts if you want to control the passwords for the seeded Admin and
-SuperAdmin accounts. When left unset, the seed process generates secure random
-passwords and prints them to the console.
+SuperAdmin accounts. If you omit `SUPERADMIN_INITIAL_PASSWORD`, the SuperAdmin
+seed generates a secure random password the first time it creates the account
+and logs it once—capture the output so operators can sign in later.
 
 #### Frontend (optional)
 

@@ -9,7 +9,7 @@ import { ensureCsrfToken } from "@/services/api/csrf";
  */
 export const getAdminProfile = async (config = {}) => {
   const cfg = Object.keys(config).length ? config : undefined;
-  const res = await api.get("/users/admin/profile", cfg);
+  const res = await api.get("users/admin/profile", cfg);
   return res.data;
 };
 
@@ -25,7 +25,7 @@ export const updateAdminProfile = async (profileData) => {
   const csrfToken = await ensureCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
 
-  const res = await api.put("/users/admin/profile", profileData, { headers });
+  const res = await api.put("users/admin/profile", profileData, { headers });
   return res.data;
 };
 
@@ -47,7 +47,7 @@ export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const formData = new FormData();
   formData.append("avatar", avatarFile);
 
-  const res = await api.patch(`/users/admin/${adminId}/avatar`, formData, {
+  const res = await api.patch(`users/admin/${adminId}/avatar`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -62,7 +62,7 @@ export const uploadAdminAvatar = async (adminId, avatarFile) => {
  */
 export const deleteAdminAvatar = async (adminId) => {
   await ensureCsrfToken();
-  const res = await api.delete(`/users/admin/${adminId}/avatar`);
+  const res = await api.delete(`users/admin/${adminId}/avatar`);
   return res.data;
 };
 
@@ -83,7 +83,7 @@ export const uploadAdminIdentity = async (file) => {
   const csrfToken = await ensureCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
 
-  const res = await api.post("/users/admin/profile/identity", formData, {
+  const res = await api.post("users/admin/profile/identity", formData, {
     headers,
     withCredentials: true, // rely on default cookie-based auth
   });
@@ -104,7 +104,7 @@ export const uploadAdminIdentity = async (file) => {
  * @returns {Promise<{ message: string }>} Server response
  */
 export const changeAdminPassword = async (adminId, newPassword) => {
-  const res = await api.post(`/users/admin/reset-password/${adminId}`, {
+  const res = await api.post(`users/admin/reset-password/${adminId}`, {
     newPassword,
   });
   return res.data;
@@ -115,7 +115,7 @@ export const changeAdminPassword = async (adminId, newPassword) => {
  */
 export const fetchAdminDashboardStats = async () => {
   try {
-    const res = await api.get("/users/admin/dashboard-stats");
+    const res = await api.get("users/admin/dashboard-stats");
     // The API nests the actual stats under `data`
     return res.data?.data;
   } catch (err) {

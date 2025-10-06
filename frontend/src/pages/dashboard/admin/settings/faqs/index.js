@@ -23,7 +23,7 @@ function AdminFaqsPage() {
       return;
     }
     try {
-      await api.post("/faqs", newFaq);
+      await api.post("faqs", newFaq);
       mutate();
       setNewFaq({ question: "", answer: "" });
       toast.success(t("add_success"));
@@ -35,7 +35,7 @@ function AdminFaqsPage() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/faqs/${id}`);
+      await api.delete(`faqs/${id}`);
       mutate();
       toast.success(t("delete_success"));
     } catch (err) {
@@ -56,7 +56,7 @@ function AdminFaqsPage() {
 
   const handleSave = async () => {
     try {
-      await api.put(`/faqs/${editId}`, newFaq);
+      await api.put(`faqs/${editId}`, newFaq);
       mutate();
       setEditId(null);
       setNewFaq({ question: "", answer: "" });

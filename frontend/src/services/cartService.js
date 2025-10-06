@@ -2,7 +2,7 @@ import api from "@/services/api/api";
 
 export const getCartItems = async () => {
   try {
-    const res = await api.get("/cart");
+    const res = await api.get("cart");
     return res.data?.data ?? res.data;
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -12,7 +12,7 @@ export const getCartItems = async () => {
 
 export const addToCart = async (item) => {
   try {
-    const { data } = await api.post('/cart/add', item);
+    const { data } = await api.post('cart/add', item);
     return data;
   } catch (error) {
     console.error('Error adding item to cart:', error);
@@ -22,7 +22,7 @@ export const addToCart = async (item) => {
 
 export const updateCartItem = async (id, quantity) => {
   try {
-    const { data } = await api.put(`/cart/update/${id}`, { quantity });
+    const { data } = await api.put(`cart/update/${id}`, { quantity });
     return data;
   } catch (error) {
     console.error('Error updating cart item:', error);
@@ -32,7 +32,7 @@ export const updateCartItem = async (id, quantity) => {
 
 export const removeCartItem = async (id) => {
   try {
-    const { data } = await api.delete(`/cart/remove/${id}`);
+    const { data } = await api.delete(`cart/remove/${id}`);
     return data;
   } catch (error) {
     console.error('Error removing item from cart:', error);

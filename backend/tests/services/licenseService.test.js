@@ -33,10 +33,18 @@ const db = require('../../src/config/database');
 const { validatePurchaseCode } = require('../../src/services/licenseService');
 
 describe('licenseService.validatePurchaseCode', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
   beforeEach(() => {
     jest.clearAllMocks();
     db.__reset();
     delete process.env.ENVATO_TOKEN;
+    delete process.env.LICENSE_DEMO_BYPASS;
+    process.env.NODE_ENV = 'test';
+  });
+
+  afterAll(() => {
+    process.env.NODE_ENV = originalNodeEnv;
   });
 
   it('returns Envato verification payload including persisted licenseId', async () => {
@@ -69,7 +77,8 @@ describe('licenseService.validatePurchaseCode', () => {
     );
   });
 
-  it('returns demo license payload including persisted licenseId', async () => {
+  it('returns demo license payload including persisted licenseId when bypass enabled', async () => {
+    process.env.LICENSE_DEMO_BYPASS = 'true';
     db.__setFirstQueue([null, { id: 456 }]);
 
     const result = await validatePurchaseCode('DEMO-CODE-1234', 'demo.example', { persist: true });
@@ -88,4 +97,31 @@ describe('licenseService.validatePurchaseCode', () => {
       })
     );
   });
-})
+
+  it('rejects demo codes when bypass flag is disabled', async () => {
+    const result = await validatePurchaseCode('DEMO-CODE-1234', 'demo.example', { persist: true });
+
+    expect(result).toEqual({ valid: false, message: 'Invalid purchase code', licenseId: null });
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(db.__getInsertMock()).not.toHaveBeenCalled();
+  });
+
+  it('rejects demo codes in production even when bypass flag is enabled', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.LICENSE_DEMO_BYPASS = 'true';
+
+    const result = await validatePurchaseCode('DEMO-CODE-1234', 'demo.example', { persist: true });
+
+    expect(result).toEqual({ valid: false, message: 'Invalid purchase code', licenseId: null });
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(db.__getInsertMock()).not.toHaveBeenCalled();
+  });
+
+  it('returns invalid when Envato verification is unavailable and no bypass exists', async () => {
+    const result = await validatePurchaseCode('CODE-789', 'invalid.example', { persist: true });
+
+    expect(result).toEqual({ valid: false, message: 'Invalid purchase code', licenseId: null });
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(db.__getInsertMock()).not.toHaveBeenCalled();
+  });
+});
