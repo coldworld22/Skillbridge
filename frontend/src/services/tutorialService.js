@@ -123,13 +123,13 @@ export const fetchFeaturedTutorials = async (config = {}) => {
   const cfg = Object.keys(config).length ? config : undefined;
 
   try {
-    const res = await api.get("/users/tutorials/featured", cfg);
+    const res = await api.get("users/tutorials/featured", cfg);
     return mapTutorialList(res);
   } catch (error) {
     const status = error?.response?.status;
 
     if (status === 404 || status === 410 || status === 301) {
-      const res = await api.get("/tutorials/featured", cfg);
+      const res = await api.get("tutorials/featured", cfg);
       return mapTutorialList(res);
     }
 
@@ -142,26 +142,26 @@ export const fetchPublishedTutorials = async ({ page, limit, ...config } = {}) =
   if (page != null) params.page = page;
   if (limit != null) params.limit = limit;
 
-  const res = await api.get("/users/tutorials", { ...config, params });
+  const res = await api.get("users/tutorials", { ...config, params });
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
 export const fetchTutorialDetails = async (id) => {
-  const res = await api.get(`/users/tutorials/${id}`);
+  const res = await api.get(`users/tutorials/${id}`);
   const tut = res.data?.data ?? res.data;
   return tut ? formatTutorial(tut) : tut;
 };
 
 export const enrollInTutorial = async (tutorialId) => {
-  const { data } = await api.post(`/users/tutorials/enroll/${tutorialId}`);
+  const { data } = await api.post(`users/tutorials/enroll/${tutorialId}`);
   return data;
 };
 
 export const getMyEnrolledTutorials = async (config = {}) => {
   try {
     const cfg = Object.keys(config).length ? config : undefined;
-    const res = await api.get('/users/tutorials/enroll/my', cfg);
+    const res = await api.get('users/tutorials/enroll/my', cfg);
     const list = extractData(res);
     return list.map(formatTutorial);
   } catch (err) {
@@ -175,7 +175,7 @@ export const getMyEnrolledTutorials = async (config = {}) => {
 export const saveTutorialProgress = async (tutorialId, progress) => {
   try {
     const { data } = await api.patch(
-      `/users/tutorials/enroll/${tutorialId}/progress`,
+      `users/tutorials/enroll/${tutorialId}/progress`,
       { progress },
     );
     return data?.data ?? data;
@@ -189,60 +189,60 @@ export const saveTutorialProgress = async (tutorialId, progress) => {
 };
 
 export const addTutorialToWishlist = async (id) => {
-  const { data } = await api.post(`/users/tutorials/wishlist/${id}`);
+  const { data } = await api.post(`users/tutorials/wishlist/${id}`);
   return data;
 };
 
 export const removeTutorialFromWishlist = async (id) => {
-  const { data } = await api.delete(`/users/tutorials/wishlist/${id}`);
+  const { data } = await api.delete(`users/tutorials/wishlist/${id}`);
   return data;
 };
 
 export const getMyTutorialWishlist = async (config = {}) => {
   const cfg = Object.keys(config).length ? config : undefined;
-  const res = await api.get('/users/tutorials/wishlist/my', cfg);
+  const res = await api.get('users/tutorials/wishlist/my', cfg);
   return extractData(res);
 };
 
 export const addTutorialToFavorites = async (id) => {
-  const { data } = await api.post(`/users/tutorials/favorites/${id}`);
+  const { data } = await api.post(`users/tutorials/favorites/${id}`);
   return data;
 };
 
 export const removeTutorialFromFavorites = async (id) => {
-  const { data } = await api.delete(`/users/tutorials/favorites/${id}`);
+  const { data } = await api.delete(`users/tutorials/favorites/${id}`);
   return data;
 };
 
 export const getMyTutorialFavorites = async (config = {}) => {
   const cfg = Object.keys(config).length ? config : undefined;
-  const res = await api.get('/users/tutorials/favorites/my', cfg);
+  const res = await api.get('users/tutorials/favorites/my', cfg);
   return extractData(res);
 };
 
 export const fetchTutorialReviews = async (tutorialId) => {
-  const res = await api.get(`/users/tutorials/reviews/${tutorialId}`);
+  const res = await api.get(`users/tutorials/reviews/${tutorialId}`);
   return extractData(res);
 };
 
 export const submitTutorialReview = async (tutorialId, payload) => {
-  const { data } = await api.post(`/users/tutorials/reviews/${tutorialId}`, payload);
+  const { data } = await api.post(`users/tutorials/reviews/${tutorialId}`, payload);
   return data;
 };
 
 export const fetchTutorialComments = async (tutorialId) => {
-  const res = await api.get(`/users/tutorials/comments/${tutorialId}`);
+  const res = await api.get(`users/tutorials/comments/${tutorialId}`);
   return extractData(res);
 };
 
 export const postTutorialComment = async (tutorialId, payload) => {
-  const { data } = await api.post(`/users/tutorials/comments/${tutorialId}`, payload);
+  const { data } = await api.post(`users/tutorials/comments/${tutorialId}`, payload);
   return data;
 };
 
 // Fetch assignments linked to a tutorial
 export const fetchTutorialAssignments = async (tutorialId) => {
-  const res = await api.get(`/users/tutorials/assignments/${tutorialId}`);
+  const res = await api.get(`users/tutorials/assignments/${tutorialId}`);
   return extractData(res);
 };
 
@@ -250,7 +250,7 @@ export const fetchTutorialAssignments = async (tutorialId) => {
 export const fetchTutorialProgress = async (tutorialId) => {
   try {
     const { data } = await api.get(
-      `/users/tutorials/enroll/${tutorialId}/status`,
+      `users/tutorials/enroll/${tutorialId}/status`,
     );
     return data?.data ?? data ?? null;
   } catch (err) {
@@ -266,7 +266,7 @@ export const fetchTutorialProgress = async (tutorialId) => {
 export const fetchTutorialProgressBatch = async (tutorialIds) => {
   try {
     const { data } = await api.post(
-      '/users/tutorials/enroll/status/batch',
+      'users/tutorials/enroll/status/batch',
       { tutorialIds },
     );
     return data?.data ?? data ?? null;

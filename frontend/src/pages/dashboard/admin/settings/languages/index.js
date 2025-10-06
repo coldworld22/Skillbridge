@@ -30,7 +30,7 @@ function LanguagesPage() {
     mutate(updated, false);
 
     try {
-      await api.put(`/languages/${lang.id}`, { ...lang, is_active: !lang.is_active });
+      await api.put(`languages/${lang.id}`, { ...lang, is_active: !lang.is_active });
       mutate();
       mutateGlobal("/app-config");
       toast.success(t('language_updated'));
@@ -50,7 +50,7 @@ function LanguagesPage() {
     mutate(updated, false);
 
     try {
-      await api.put(`/languages/${lang.id}`, { ...lang, is_default: true });
+      await api.put(`languages/${lang.id}`, { ...lang, is_default: true });
       mutate();
       mutateGlobal("/app-config");
       toast.success(t('language_updated'));
@@ -67,7 +67,7 @@ function LanguagesPage() {
       mutate(updated, false);
 
       try {
-        await api.delete(`/languages/${id}`);
+        await api.delete(`languages/${id}`);
         mutate();
         mutateGlobal("/app-config");
         toast.success(t('language_updated'));

@@ -464,9 +464,11 @@ After you finish the installation or automation tasks, immediately disable the A
 
 Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in
 `backend/.env` before running the seed scripts if you want to control the
-passwords for the seeded Admin and SuperAdmin accounts. When left unset, the
-seed process will generate secure random passwords and print them to the
-console.
+passwords for the seeded Admin and SuperAdmin accounts. When
+`SUPERADMIN_INITIAL_PASSWORD` is omitted, the SuperAdmin seed generates a
+secure random password the first time it creates the account and logs the value
+once—capture it from the seeding output so operators can sign in. Subsequent
+runs leave existing credentials unchanged.
 
 ### Frontend (optional)
 

@@ -15,7 +15,7 @@ export const getMessages = async (chatId) => {
 };
 
 export const logModerationEvent = async ({ message, matchedWords }) => {
-  const res = await api.post("/chat/moderation", { message, matchedWords });
+  const res = await api.post("chat/moderation", { message, matchedWords });
   return res.data.data || res.data;
 };
   

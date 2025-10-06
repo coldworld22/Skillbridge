@@ -1,13 +1,13 @@
 import api from "@/services/api/api";
 
 export const fetchSocialLoginConfig = async () => {
-  const { data } = await api.get("/social-login/config", {
+  const { data } = await api.get("social-login/config", {
     params: { includeSecrets: true },
   });
   return data?.data ?? null;
 };
 
 export const updateSocialLoginConfig = async (payload) => {
-  const { data } = await api.put("/social-login/config", payload);
+  const { data } = await api.put("social-login/config", payload);
   return data?.data;
 };

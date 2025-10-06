@@ -20,6 +20,49 @@ describe('license.controller', () => {
     jest.clearAllMocks();
   });
 
+  describe('verifyPurchaseCode', () => {
+    it('returns 400 when purchase code is missing', async () => {
+      const req = httpMocks.createRequest({ method: 'POST', body: {} });
+      const res = httpMocks.createResponse();
+      const next = jest.fn();
+
+      await controller.verifyPurchaseCode(req, res, next);
+
+      expect(res.statusCode).toBe(400);
+      expect(res._getJSONData()).toEqual({ error: 'Purchase code required' });
+      expect(validatePurchaseCode).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('delegates to Envato validation service and logs on success', async () => {
+      validatePurchaseCode.mockResolvedValue({
+        valid: true,
+        message: 'Verified successfully',
+        licenseId: 5,
+      });
+
+      const req = httpMocks.createRequest({
+        method: 'POST',
+        body: { purchase_code: 'CODE-123', domain: 'example.com' },
+        ip: '127.0.0.1',
+      });
+      const res = httpMocks.createResponse();
+      const next = jest.fn();
+
+      await controller.verifyPurchaseCode(req, res, next);
+
+      expect(validatePurchaseCode).toHaveBeenCalledWith('CODE-123', 'example.com');
+      expect(service.logAction).toHaveBeenCalledWith(
+        5,
+        'verify',
+        expect.objectContaining({ status: 'success', domain: 'example.com', ip: '127.0.0.1' })
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res._getJSONData()).toEqual({ success: true, message: 'Verified successfully' });
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
   describe('activateLicense', () => {
     const body = {
       purchase_code: 'CODE-123',

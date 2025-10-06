@@ -30,7 +30,7 @@ export default function AIVoiceTutor() {
   };
 
   const fetchAIResponse = async (query) => {
-    const { data } = await api.post("/ai-voice-tutor", { query });
+    const { data } = await api.post("ai-voice-tutor", { query });
     setAiResponse(data.response);
     speakResponse(data.response);
   };

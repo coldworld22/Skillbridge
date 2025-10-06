@@ -20,7 +20,7 @@ describe("admin adService", () => {
       type: "promotion",
       search: "hello",
     });
-    expect(api.get).toHaveBeenCalledWith("/ads/admin", {
+    expect(api.get).toHaveBeenCalledWith("ads/admin", {
       params: {
         limit: 5,
         offset: 10,
