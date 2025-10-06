@@ -218,6 +218,24 @@ function CreateOnlineClass() {
     }
   }, [user]);
 
+  useEffect(() => {
+    setLessonSubmissionResults((prev) => {
+      if (!prev || typeof prev !== 'object') {
+        return prev;
+      }
+      const activeLessonIds = new Set(
+        formData.lessons.map((lesson) => lesson?.id).filter(Boolean)
+      );
+      const filteredEntries = Object.entries(prev).filter(([id]) =>
+        activeLessonIds.has(id)
+      );
+      if (filteredEntries.length === Object.keys(prev).length) {
+        return prev;
+      }
+      return Object.fromEntries(filteredEntries);
+    });
+  }, [formData.lessons]);
+
   const filteredInstructors = useMemo(() => {
     const lower = instructorSearch.trim().toLowerCase();
     if (!lower) {
@@ -382,6 +400,19 @@ function CreateOnlineClass() {
         ? prev.includedPlans.filter((s) => s !== slug)
         : [...prev.includedPlans, slug],
     }));
+  };
+
+  const extractErrorMessage = (error) => {
+    if (!error) return null;
+    if (typeof error === 'string') return error;
+    const apiMessage = error?.response?.data?.message;
+    if (typeof apiMessage === 'string' && apiMessage.trim()) {
+      return apiMessage;
+    }
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message;
+    }
+    return null;
   };
 
   const handleSubmit = async (e) => {
@@ -1164,10 +1195,11 @@ function CreateOnlineClass() {
 
                           {failedLessonIndices.includes(index) && (
                             <p className="text-sm text-red-600">
-                              {t('lesson_requires_attention', {
-                                defaultValue:
-                                  'We could not save this lesson. Please review its details and try again.',
-                              })}
+                              {errorMessage ||
+                                t('lesson_requires_attention', {
+                                  defaultValue:
+                                    'We could not save this lesson. Please review its details and try again.',
+                                })}
                             </p>
                           )}
 
@@ -1186,10 +1218,15 @@ function CreateOnlineClass() {
 
                           {!failedLessonIndices.includes(index) && wasSuccessful && (
                             <p className="text-sm text-green-600">
-                              {t('lesson_already_uploaded', {
-                                defaultValue:
-                                  'This lesson was uploaded successfully and will be skipped on retry.',
-                              })}
+                              {wasSkipped
+                                ? t('lesson_already_uploaded', {
+                                    defaultValue:
+                                      'This lesson was uploaded successfully and will be skipped on retry.',
+                                  })
+                                : t('lesson_uploaded_successfully', {
+                                    defaultValue:
+                                      'This lesson was uploaded successfully.',
+                                  })}
                             </p>
                           )}
                         </div>
