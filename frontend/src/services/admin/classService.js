@@ -55,7 +55,14 @@ export const fetchAdminClasses = async ({
   const { data } = await api.get("users/classes/admin", {
     params: Object.fromEntries(params.entries()),
   });
-  const list = data?.data ?? [];
+
+  const rawList = data?.data;
+  const list = Array.isArray(rawList)
+    ? rawList
+    : rawList
+    ? [rawList]
+    : [];
+
   return { data: list.map(formatClass), meta: data?.meta || {} };
 };
 
