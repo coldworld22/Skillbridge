@@ -227,6 +227,29 @@ const api = axios.create({
   xsrfHeaderName: "x-csrf-token", // and sends it in this header automatically
 });
 
+const normaliseRequestUrl = (config) => {
+  if (!config || typeof config.url !== "string") {
+    return config;
+  }
+
+  const trimmedUrl = config.url.trim();
+
+  if (!trimmedUrl) {
+    config.url = trimmedUrl;
+    return config;
+  }
+
+  if (/^https?:\/\//i.test(trimmedUrl)) {
+    config.url = trimmedUrl;
+    return config;
+  }
+
+  config.url = trimmedUrl.replace(/^\/+/, "");
+  return config;
+};
+
+api.interceptors.request.use(normaliseRequestUrl);
+
 // Attach a response interceptor so we can inspect status codes centrally.
 api.interceptors.response.use(
   (response) => response,
@@ -242,3 +265,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { normaliseRequestUrl };
