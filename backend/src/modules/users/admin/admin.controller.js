@@ -12,16 +12,7 @@ const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 const { adminProfileSchema } = require("./admin.validator");
 
-// Allowed social platforms for links
-const allowedPlatforms = [
-  "linkedin",
-  "github",
-  "twitter",
-  "youtube",
-  "facebook",
-  "instagram",
-  "website",
-];
+const { allowedPlatforms } = require("../common/socialPlatforms");
 
 /**
  * @desc Get full admin profile (user data + admin-specific + social links)
@@ -149,11 +140,21 @@ exports.updateProfile = async (req, res) => {
     await trx("user_social_links").where({ user_id: userId }).del();
 
     for (const link of social_links) {
-      if (link.url?.trim() && allowedPlatforms.includes(link.platform)) {
+      const sanitizedPlatform =
+        typeof link.platform === "string"
+          ? link.platform.trim().toLowerCase()
+          : "";
+      const sanitizedUrl =
+        typeof link.url === "string" ? link.url.trim() : "";
+      if (
+        sanitizedUrl &&
+        sanitizedPlatform &&
+        allowedPlatforms.includes(sanitizedPlatform)
+      ) {
         await trx("user_social_links").insert({
           user_id: userId,
-          platform: link.platform,
-          url: link.url,
+          platform: sanitizedPlatform,
+          url: sanitizedUrl,
           created_at: new Date(),
         });
       }

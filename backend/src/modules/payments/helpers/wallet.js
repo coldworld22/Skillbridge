@@ -113,7 +113,7 @@ async function creditTutorialSubscription(
   if (typeof overrideOrOptions === "number") {
     precomputedAmount = overrideOrOptions;
     options = legacyOptions;
-  } else if (overrideOrOptions && typeof overrideOrOptions === "object") {
+  } else {
     options = overrideOrOptions;
   }
 
