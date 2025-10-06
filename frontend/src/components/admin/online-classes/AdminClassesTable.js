@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -43,8 +43,6 @@ const normalizeStatusValue = (value) => {
   return String(value).trim().toLowerCase();
 };
 const MIN_REJECTION_REASON_LENGTH = 3;
-
-export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
 
 const DEFAULT_PAGE_SIZE = 5;
 const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
@@ -170,54 +168,44 @@ export default function AdminClassesTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [isMounted, setMounted] = useState(false);
-  const lastSuccessfulSignatureRef = useRef(null);
-  const lastFailedSignatureRef = useRef(null);
-  const inFlightRequestRef = useRef(null);
-  const pendingRequestRef = useRef(null);
-  const isComponentMountedRef = useRef(true);
-  const authFailureRef = useRef(false);
-  const lastNormalizedPageRef = useRef(currentPage);
   const currentPageRef = useRef(currentPage);
   const totalItemsRef = useRef(totalItems);
   const totalPagesRef = useRef(totalPages);
-  const loadingRef = useRef(false);
   const classListLengthRef = useRef(0);
   const classListSignatureRef = useRef("");
+  const activeRequestRef = useRef(0);
+  const retryTimeoutRef = useRef(null);
+  const skipNextFetchRef = useRef(false);
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
   }));
   const authIdentifier = user?.id ?? null;
-  const authIdentifierRef = useRef(authIdentifier);
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
   const normalizedItemsPerPage = useMemo(() => {
     if (pageSizeSetting === "all") {
       return resolvePositiveInteger(
-        totalItemsRef.current,
+        totalItems > 0 ? totalItems : DEFAULT_PAGE_SIZE,
         DEFAULT_PAGE_SIZE
       );
     }
 
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-  }, [pageSizeSetting]);
+  }, [pageSizeSetting, totalItems]);
 
-  const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
-    if (failureRecord?.retryTimer) {
-      clearTimeout(failureRecord.retryTimer);
-    }
-    if (lastFailedSignatureRef.current === failureRecord) {
-      lastFailedSignatureRef.current = null;
-    }
-  };
+  useEffect(() => {
+    setAuthError(false);
+  }, [authIdentifier]);
 
   useEffect(() => {
     setMounted(true);
-    isComponentMountedRef.current = true;
     return () => {
-      isComponentMountedRef.current = false;
-      clearFailedSignature();
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -232,14 +220,6 @@ export default function AdminClassesTable() {
   useEffect(() => {
     totalPagesRef.current = totalPages;
   }, [totalPages]);
-
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
-
-  useEffect(() => {
-    authIdentifierRef.current = authIdentifier;
-  }, [authIdentifier]);
 
   useEffect(() => {
     classListLengthRef.current = Array.isArray(classList)
@@ -345,136 +325,35 @@ export default function AdminClassesTable() {
   }, [currentPage, totalPages, totalItems, normalizedItemsPerPage]);
 
   useEffect(() => {
-    if (!hasHydrated || !authIdentifier) {
-      if (lastFailedSignatureRef.current) {
-        clearFailedSignature();
-      }
-      if (authFailureRef.current) {
-        authFailureRef.current = false;
-      }
-      if (authError) {
-        setAuthError(false);
-      }
+    if (!hasHydrated) {
       return;
     }
 
-    if (authFailureRef.current || lastFailedSignatureRef.current?.isAuthFailure) {
+    if (!authIdentifier) {
+      updateClassList([]);
+      setTotalItemsIfNeeded(0);
+      setTotalPagesIfNeeded(1);
+      setAuthError(false);
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+      activeRequestRef.current = 0;
+      setLoading(false);
       return;
     }
 
-    if (normalizedPage !== currentPage) {
-      if (setCurrentPageIfNeeded(normalizedPage)) {
-        return;
-      }
-    }
-
-    if (lastNormalizedPageRef.current !== normalizedPage) {
-      lastNormalizedPageRef.current = normalizedPage;
-    }
-
-    const requestDetails = {
-      signature: JSON.stringify({
-        page: normalizedPage,
-        limit: normalizedItemsPerPage,
-        searchTerm,
-        approval: filterApproval,
-        status: filterStatus,
-        sortKey,
-      }),
-      page: normalizedPage,
-      itemsPerPage: normalizedItemsPerPage,
-      searchTerm,
-      filterApproval,
-      filterStatus,
-      sortKey,
-    };
-
-    const failedSignature = lastFailedSignatureRef.current;
-
-    if (
-      failedSignature &&
-      failedSignature.signature !== requestDetails.signature
-    ) {
-      clearFailedSignature(failedSignature);
-    } else if (failedSignature) {
-      const elapsed = Date.now() - failedSignature.timestamp;
-      if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
-        clearFailedSignature(failedSignature);
-      } else {
-        const failureTimestamp =
-          typeof failedSignature.failedAt === "number" &&
-          Number.isFinite(failedSignature.failedAt)
-            ? failedSignature.failedAt
-            : failedSignature.timestamp;
-        if (
-          typeof failureTimestamp === "number" &&
-          Number.isFinite(failureTimestamp)
-        ) {
-          const elapsed = Date.now() - failureTimestamp;
-          if (elapsed < FAILED_SIGNATURE_RETRY_DELAY_MS) {
-            return;
-          }
-        }
-        clearFailedSignature(failedSignature);
-      }
-    }
-
-    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
-      if (
-        pendingRequestRef.current &&
-        pendingRequestRef.current.signature === requestDetails.signature
-      ) {
-        pendingRequestRef.current = null;
-      }
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
       return;
     }
 
-    if (inFlightRequestRef.current === requestDetails.signature) {
-      return;
-    }
+    let cancelled = false;
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
 
-    if (inFlightRequestRef.current) {
-      if (
-        !pendingRequestRef.current ||
-        pendingRequestRef.current.signature !== requestDetails.signature
-      ) {
-        pendingRequestRef.current = requestDetails;
-      }
-      return;
-    }
-
-    const executeRequest = async (details) => {
-      const {
-        signature,
-        page,
-        itemsPerPage: limitValue,
-        searchTerm: searchValue,
-        filterApproval: approvalValue,
-        filterStatus: statusValue,
-        sortKey: sortValue,
-      } = details;
-
-      if (!isComponentMountedRef.current || !authIdentifierRef.current) {
-        return;
-      }
-
-      inFlightRequestRef.current = signature;
-
-      if (isComponentMountedRef.current && !loadingRef.current) {
-        loadingRef.current = true;
-        setLoading(true);
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[AdminClassesTable] executeRequest", signature, {
-          page,
-          itemsPerPage: limitValue,
-          searchTerm: searchValue,
-          filterApproval: approvalValue,
-          filterStatus: statusValue,
-          sortKey: sortValue,
-        });
-      }
+    const loadClasses = async () => {
+      setLoading(true);
 
       try {
         let finalSignature = signature;
@@ -484,17 +363,29 @@ export default function AdminClassesTable() {
         const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
         const safeLimit = resolvePositiveInteger(limitValue);
         const baseParams = {
-          limit: safeLimit,
-          filter: searchValue,
-          ...(approvalValue !== "All" ? { approval: approvalValue } : {}),
+          page: scheduleFiltering ? 1 : normalizedPage,
+          limit,
+          filter: trimmedSearch,
+          ...(filterApproval !== "All" ? { approval: filterApproval } : {}),
           ...(statusQuery ? { status: statusQuery } : {}),
         };
 
-        const initialPage = scheduleFiltering ? 1 : page;
-        const { data, meta } = await fetchAdminClasses({
-          ...baseParams,
-          page: initialPage,
-        });
+        const { data: firstPageData, meta } = await fetchAdminClasses(baseParams);
+        let aggregatedData = sanitizeClassEntries(firstPageData) ?? [];
+        const metaTotalPages =
+          meta?.totalPages ?? meta?.total_pages ?? meta?.totalpages ?? 1;
+        const needsAllPages =
+          scheduleFiltering || pageSizeSetting === "all";
+
+        if (needsAllPages && metaTotalPages > 1) {
+          const subsequentPages = await Promise.all(
+            Array.from({ length: metaTotalPages - 1 }, (_, index) =>
+              fetchAdminClasses({
+                ...baseParams,
+                page: index + 2,
+              }).then((response) => sanitizeClassEntries(response.data) ?? [])
+            )
+          );
 
         if (scheduleFiltering && normalizedScheduleFilter) {
           const totalPagesFromMeta = meta?.totalPages ?? 1;
@@ -532,50 +423,39 @@ export default function AdminClassesTable() {
             Math.max(page, 1),
             totalFilteredPages
           );
-          let effectivePage = Number.isFinite(normalizedPageRaw)
-            ? normalizedPageRaw
-            : 1;
-          const pageForSignature = Number.isFinite(normalizedPage)
-            ? normalizedPage
-            : effectivePage;
-          if (
-            Number.isFinite(pageForSignature) &&
-            pageForSignature !== page
-          ) {
-            finalSignature = JSON.stringify({
-              page: pageForSignature,
-              limit: limitValue,
-              searchTerm: searchValue,
-              approval: approvalValue,
-              status: statusValue,
-              sortKey: sortValue,
-            });
-          }
+        }
 
-          if (!isComponentMountedRef.current) {
-            return;
-          }
+        const sortedData = sortClasses(aggregatedData, sortKey);
+        let nextTotalItems = needsAllPages
+          ? sortedData.length
+          : meta?.total ?? meta?.totalItems ?? meta?.total_items ?? meta?.totalCount;
 
-          setTotalItemsIfNeeded(totalFilteredItems);
-          setTotalPagesIfNeeded(totalFilteredPages);
+        if (!Number.isFinite(nextTotalItems)) {
+          const numericTotal = Number(nextTotalItems);
+          nextTotalItems = Number.isFinite(numericTotal)
+            ? numericTotal
+            : sortedData.length;
+        }
 
-          const startIndex = (effectivePage - 1) * safeLimit;
-          const paginatedData = sortedData.slice(
-            startIndex,
-            startIndex + safeLimit
-          );
+        let effectiveLimit =
+          pageSizeSetting === "all"
+            ? Math.max(sortedData.length || limit, 1)
+            : limit;
 
-          if (!isComponentMountedRef.current) {
-            return;
-          }
+        if (!Number.isFinite(effectiveLimit) || effectiveLimit <= 0) {
+          effectiveLimit = DEFAULT_PAGE_SIZE;
+        }
 
-          updateClassListIfChanged(paginatedData);
-        } else {
-          const sortedData = sortClasses(data, sortValue);
+        let nextTotalPages = needsAllPages
+          ? Math.max(1, Math.ceil((sortedData.length || 1) / effectiveLimit))
+          : meta?.totalPages
+          ? Math.max(Number(meta.totalPages) || 0, 1)
+          : Math.max(1, Math.ceil((nextTotalItems || 0) / effectiveLimit));
 
-          if (!isComponentMountedRef.current) {
-            return;
-          }
+        const safePage = Math.min(
+          Math.max(normalizedPage, 1),
+          Math.max(nextTotalPages, 1)
+        );
 
           updateClassListIfChanged(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
@@ -584,111 +464,77 @@ export default function AdminClassesTable() {
           setTotalItemsIfNeeded(nextTotalItems);
         }
 
-        lastSuccessfulSignatureRef.current = finalSignature;
-        authFailureRef.current = false;
-        if (isComponentMountedRef.current && authError) {
-          setAuthError(false);
+        if (safePage !== currentPage) {
+          setCurrentPageIfNeeded(safePage);
+          skipNextFetchRef.current = true;
         }
-        clearFailedSignature();
+
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
+
+        updateClassListIfChanged(visibleData);
+        setTotalItemsIfNeeded(nextTotalItems);
+        setTotalPagesIfNeeded(nextTotalPages);
+        setAuthError(false);
       } catch (err) {
-        console.error(err);
-        const previousFailure = lastFailedSignatureRef.current;
-        const toastAlreadyShownForSignature =
-          previousFailure?.signature === signature &&
-          previousFailure?.toastShown;
-        const shouldShowToast =
-          isComponentMountedRef.current && !toastAlreadyShownForSignature;
-        const responseStatusCode = err?.response?.status;
-        const hadAuthFailure = authFailureRef.current;
-        const isAuthFailure =
-          responseStatusCode === 401 || responseStatusCode === 403;
-        if (isAuthFailure) {
-          authFailureRef.current = true;
-          if (isComponentMountedRef.current) {
-            setAuthError(true);
-            updateClassList([]);
-            setTotalItemsIfNeeded(0);
-            setTotalPagesIfNeeded(1);
-          }
-        }
-        if (shouldShowToast && (!isAuthFailure || !hadAuthFailure)) {
-          toast.error("Failed to load classes");
-        }
-        clearFailedSignature();
-        const statusCode =
-          err?.response?.status ?? err?.status ?? err?.statusCode ?? null;
-        const isAuthorizationError = statusCode === 401 || statusCode === 403;
-        const hasValidAuth = Boolean(authIdentifierRef.current);
-        const failureTimestamp = Date.now();
-        if (!hasValidAuth || isAuthorizationError) {
-          lastFailedSignatureRef.current = null;
+        if (cancelled || activeRequestRef.current !== requestId) {
           return;
         }
-        const failureRecord = {
-          signature,
-          timestamp: failureTimestamp,
-          failedAt: failureTimestamp,
-          retryTimer: null,
-          toastShown:
-            toastAlreadyShownForSignature || shouldShowToast || false,
-          isAuthFailure,
-        };
-        if (!isAuthFailure) {
-          failureRecord.retryTimer = setTimeout(() => {
-            if (!isComponentMountedRef.current || authFailureRef.current) {
+
+        console.error(err);
+        const statusCode =
+          err?.response?.status ?? err?.status ?? err?.statusCode ?? null;
+
+        if (statusCode === 401 || statusCode === 403) {
+          setAuthError(true);
+          updateClassList([]);
+          setTotalItemsIfNeeded(0);
+          setTotalPagesIfNeeded(1);
+        } else {
+          toast.error("Failed to load classes");
+          if (retryTimeoutRef.current) {
+            clearTimeout(retryTimeoutRef.current);
+          }
+          retryTimeoutRef.current = setTimeout(() => {
+            retryTimeoutRef.current = null;
+            if (cancelled) {
               return;
             }
-            const activeFailure = lastFailedSignatureRef.current;
-            if (!activeFailure || activeFailure.signature !== signature) {
-              return;
-            }
-            clearFailedSignature(activeFailure);
-            if (
-              lastSuccessfulSignatureRef.current === signature ||
-              inFlightRequestRef.current ||
-              (pendingRequestRef.current &&
-                pendingRequestRef.current.signature === signature)
-            ) {
-              return;
-            }
-            executeRequest(details);
+            activeRequestRef.current = requestId;
+            loadClasses();
           }, FAILED_REQUEST_RETRY_DELAY_MS);
         }
-        lastFailedSignatureRef.current = failureRecord;
       } finally {
-        if (isComponentMountedRef.current && loadingRef.current) {
-          loadingRef.current = false;
+        if (!cancelled && activeRequestRef.current === requestId) {
+          activeRequestRef.current = 0;
           setLoading(false);
-        }
-        inFlightRequestRef.current = null;
-
-        const nextRequest = pendingRequestRef.current;
-        if (nextRequest && nextRequest.signature !== signature) {
-          pendingRequestRef.current = null;
-          if (
-            isComponentMountedRef.current &&
-            !authFailureRef.current &&
-            lastSuccessfulSignatureRef.current !== nextRequest.signature &&
-            lastFailedSignatureRef.current?.signature !== nextRequest.signature
-          ) {
-            executeRequest(nextRequest);
-          }
-        } else if (nextRequest && nextRequest.signature === signature) {
-          pendingRequestRef.current = null;
         }
       }
     };
 
-    executeRequest(requestDetails);
+    loadClasses();
+
+    return () => {
+      cancelled = true;
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
   }, [
+    hasHydrated,
+    authIdentifier,
     normalizedPage,
     normalizedItemsPerPage,
     searchTerm,
     filterApproval,
     filterStatus,
     sortKey,
-    hasHydrated,
-    authIdentifier,
+    pageSizeSetting,
+    currentPage,
+    sortClasses,
   ]);
 
   const formatCSVRow = (row) =>
