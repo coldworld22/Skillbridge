@@ -9,6 +9,8 @@ import {
   rejectAdminClass,
   toggleClassStatus,
 } from "@/services/admin/classService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -54,9 +56,8 @@ const resolvePositiveInteger = (value, fallback = 1) => {
     return Math.floor(fallbackNumeric);
   }
 
-  if (typeof valueA === "string" && typeof valueB === "string") {
-    return valueA.localeCompare(valueB);
-  }
+  return 1;
+};
 
 const compareValues = (a, b, key) => {
   const valueA = a?.[key];
@@ -65,12 +66,11 @@ const compareValues = (a, b, key) => {
   if (valueA === valueB) {
     return 0;
   }
-  return fallback;
-};
 
   if (key === "start_date" || key === "end_date") {
     const timeA = valueA ? Date.parse(valueA) : NaN;
     const timeB = valueB ? Date.parse(valueB) : NaN;
+
     if (Number.isFinite(timeA) && Number.isFinite(timeB)) {
       return timeA - timeB;
     }
@@ -119,6 +119,7 @@ const extractInstructorId = (cls) => {
     if (cls.instructor.id != null) {
       return cls.instructor.id;
     }
+
     if (cls.instructor.user_id != null) {
       return cls.instructor.user_id;
     }
@@ -128,7 +129,8 @@ const extractInstructorId = (cls) => {
 };
 
 const formatCurrency = (value) => {
-  if (!Number.isFinite(Number(value)) || Number(value) <= 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
     return "$0.00";
   }
 
@@ -136,7 +138,7 @@ const formatCurrency = (value) => {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
-  }).format(Number(value));
+  }).format(numeric);
 };
 
 const downloadCSV = (rows, headers) => {
@@ -151,6 +153,7 @@ const downloadCSV = (rows, headers) => {
           if (cell == null) {
             return "";
           }
+
           const normalized = String(cell).replace(/"/g, '""');
           return `"${normalized}"`;
         })
@@ -203,6 +206,7 @@ export default function AdminClassesTable() {
     if (translated === key) {
       return defaultValue ?? key;
     }
+
     return translated;
   };
 
@@ -244,6 +248,11 @@ export default function AdminClassesTable() {
     }
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     if (!user?.id) {
       setClassList([]);
       setTotalItems(0);
@@ -260,6 +269,7 @@ export default function AdminClassesTable() {
         skipNextFetchRef.current = false;
         return;
       }
+
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
@@ -299,7 +309,11 @@ export default function AdminClassesTable() {
           meta?.totalPages ?? meta?.total_pages ?? aggregated.length
         );
 
-        if (pageSizeSetting === "all" && Number.isFinite(totalPagesFromMeta) && totalPagesFromMeta > 1) {
+        if (
+          pageSizeSetting === "all" &&
+          Number.isFinite(totalPagesFromMeta) &&
+          totalPagesFromMeta > 1
+        ) {
           const additionalPages = [];
           for (let page = 2; page <= totalPagesFromMeta; page += 1) {
             additionalPages.push(
@@ -370,18 +384,7 @@ export default function AdminClassesTable() {
           setLoading(false);
         }
       }
-    },
-    [
-      hasHydrated,
-      user?.id,
-      searchTerm,
-      filterStatus,
-      filterApproval,
-      pageSizeSetting,
-      currentPage,
-      totalItems,
-    ]
-  );
+    };
 
     fetchClasses();
 
@@ -475,39 +478,34 @@ export default function AdminClassesTable() {
       toast.error(errorMessage);
     } finally {
       setModalClass(null);
+      setModalType(null);
     }
   };
 
   const handleDeleteClass = async (id) => {
     try {
       await deleteAdminClass(id);
+      const nextTotalItems = Math.max(totalItems - 1, 0);
       setClassList((prev) => prev.filter((cls) => cls.id !== id));
-      setTotalItems((prev) => Math.max(prev - 1, 0));
+      setTotalItems(nextTotalItems);
+
       if (pageSizeSetting === "all") {
         setTotalPages(1);
         setCurrentPage(1);
       } else {
-        setTotalPages((prev) => {
-          const nextTotal = Math.max(totalItems - 1, 0);
-          const pageSize = resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-          return Math.max(1, Math.ceil(nextTotal / pageSize));
-        });
-        setCurrentPage((prevPage) => {
-          const pageSize = resolvePositiveInteger(
-            pageSizeSetting,
-            DEFAULT_PAGE_SIZE
-          );
-          const nextTotal = Math.max(totalItems - 1, 0);
-          const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
-          return Math.min(prevPage, nextTotalPages);
-        });
+        const pageSize = resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+        const nextTotalPages = Math.max(1, Math.ceil(nextTotalItems / pageSize));
+        setTotalPages(nextTotalPages);
+        setCurrentPage((prevPage) => Math.min(prevPage, nextTotalPages));
       }
+
       toast.success("Class deleted");
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete class");
     } finally {
       setModalClass(null);
+      setModalType(null);
     }
   };
 
@@ -561,8 +559,13 @@ export default function AdminClassesTable() {
         toast.error("Please provide a rejection reason");
         return;
       }
+
       handleStatusChange(modalClass.id, "reject", trimmedRejectionReason);
       return;
+    }
+
+    if (modalType === "delete") {
+      handleDeleteClass(modalClass.id);
     }
   };
 
@@ -573,6 +576,24 @@ export default function AdminClassesTable() {
   const handleNext = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
+
+  if (authError) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        <p className="text-gray-700">
+          Unable to load classes. Please sign in again to continue.
+        </p>
+      </div>
+    );
+  }
+
+  if (loading && !classList.length) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        {translate("loading_classes_label", "Loading classes...")}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -592,13 +613,28 @@ export default function AdminClassesTable() {
             />
           </div>
 
-  if (loading && !classList.length) {
-    return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-        Loading classes...
-      </div>
-    );
-  }
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600" htmlFor="schedule-filter">
+              {translate("schedule", "Schedule")}
+            </label>
+            <select
+              id="schedule-filter"
+              value={filterSchedule}
+              onChange={(event) => {
+                setFilterSchedule(event.target.value);
+                setCurrentPage(1);
+              }}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              {SCHEDULE_FILTER_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option === "All"
+                    ? translate("all_schedule_option", "All Schedule")
+                    : option}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600" htmlFor="approval-filter">
@@ -613,74 +649,30 @@ export default function AdminClassesTable() {
               }}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
             >
-              {APPROVAL_OPTIONS.map((option) => (
+              {APPROVAL_FILTER_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
           </div>
-
-  return (
-    <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-2 w-full sm:w-1/2">
-          <FaSearch className="text-gray-400" />
-          <input
-            type="text"
-            placeholder={translate(
-              "search_classes_placeholder",
-              "Search by title or instructor"
-            )}
-            className="border border-gray-300 rounded-xl px-4 py-2 w-full text-sm focus:ring-2 focus:ring-yellow-500"
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setCurrentPage(1);
-            }}
-          />
         </div>
-        <div className="flex gap-2 w-full sm:w-1/2 justify-end items-center flex-wrap">
-          <select
-            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
-            value={filterSchedule}
-            onChange={(event) => {
-              setFilterSchedule(event.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            {SCHEDULE_FILTER_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option === "All"
-                  ? translate("all_schedule_option", "All Schedule")
-                  : option}
-              </option>
-            ))}
-          </select>
-          <select
-            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
-            value={filterApproval}
-            onChange={(event) => {
-              setFilterApproval(event.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            {APPROVAL_FILTER_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option === "All"
-                  ? translate("all_approval_option", "All Approval")
-                  : option}
-              </option>
-            ))}
-          </select>
+
+        <div className="flex gap-2 items-center">
           <select
             className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
             value={sortKey}
             onChange={(event) => setSortKey(event.target.value)}
           >
-            <option value="start_date">{translate("sort_by_start_date", "Sort by Start Date")}</option>
-            <option value="title">{translate("sort_by_title", "Sort by Title")}</option>
-            <option value="instructor">{translate("sort_by_instructor", "Sort by Instructor")}</option>
+            <option value="start_date">
+              {translate("sort_by_start_date", "Sort by Start Date")}
+            </option>
+            <option value="title">
+              {translate("sort_by_title", "Sort by Title")}
+            </option>
+            <option value="instructor">
+              {translate("sort_by_instructor", "Sort by Instructor")}
+            </option>
           </select>
           <select
             value={pageSizeSetting}
@@ -734,184 +726,218 @@ export default function AdminClassesTable() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-700 text-sm uppercase">
             <tr>
-              <th className="px-6 py-3 text-left">{translate("image_header", "Image")}</th>
-              <th className="px-6 py-3 text-left">{translate("title_header", "Title")}</th>
-              <th className="px-6 py-3 text-left">{translate("instructor_header", "Instructor")}</th>
-              <th className="px-6 py-3 text-left">{translate("start_date_header", "Start Date")}</th>
-              <th className="px-6 py-3 text-left">{translate("end_date_header", "End Date")}</th>
-              <th className="px-6 py-3 text-left">{translate("category_header", "Category")}</th>
-              <th className="px-6 py-3 text-left">{translate("price_header", "Price")}</th>
-              <th className="px-6 py-3 text-left">{translate("schedule_header", "Schedule")}</th>
-              <th className="px-6 py-3 text-left">{translate("publish_header", "Publish")}</th>
-              <th className="px-6 py-3 text-left">{translate("approval_header", "Approval")}</th>
-              <th className="px-6 py-3 text-right">{translate("actions_header", "Actions")}</th>
+              <th className="px-6 py-3 text-left">
+                {translate("image_header", "Image")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("title_header", "Title")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("instructor_header", "Instructor")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("start_date_header", "Start Date")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("end_date_header", "End Date")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("category_header", "Category")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("price_header", "Price")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("schedule_header", "Schedule")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("publish_header", "Publish")}
+              </th>
+              <th className="px-6 py-3 text-left">
+                {translate("approval_header", "Approval")}
+              </th>
+              <th className="px-6 py-3 text-right">
+                {translate("actions_header", "Actions")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {classList.map((cls) => (
-              <tr key={cls.id} className="hover:bg-yellow-50">
-                <td className="px-6 py-4">
-                  {cls.cover_image ? (
-                    <img
-                      src={cls.cover_image}
-                      alt={cls.title}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded" />
-                  )}
+            {classList.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="px-6 py-10 text-center text-gray-500">
+                  {translate("no_classes_found", "No classes found for the selected filters.")}
                 </td>
-                <td className="px-6 py-4 font-semibold">{cls.title}</td>
-                <td className="px-6 py-4">{cls.instructor}</td>
-                <td className="px-6 py-4">{cls.start_date}</td>
-                <td className="px-6 py-4">{cls.end_date || "-"}</td>
-                <td className="px-6 py-4">{cls.category || "-"}</td>
-                <td className="px-6 py-4">
-                  {cls.price > 0
-                    ? formatCurrency(cls.price)
-                    : translate("free_label", "Free")}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      {
-                        Upcoming: "bg-green-100 text-green-800",
-                        Ongoing: "bg-blue-100 text-blue-800",
-                        Completed: "bg-gray-300 text-gray-800",
-                      }[cls.scheduleStatus] || "bg-gray-200 text-gray-800"
-                    }`}
-                  >
-                    {cls.scheduleStatus}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => handleStatusChange(cls.id, "toggle")}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                      cls.publishStatus === "published"
-                        ? "bg-green-100 text-green-800 hover:bg-green-200"
-                        : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                    }`}
-                  >
-                    {cls.publishStatus === "published"
-                      ? translate("published_label", "Published")
-                      : translate("draft_label", "Draft")}
-                  </button>
-                </td>
-                <td className="px-6 py-4">
-                  {cls.approvalStatus === "Pending" ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleStatusChange(cls.id, "approve")}
-                        className="bg-green-100 hover:bg-green-200 text-green-700 text-xs px-3 py-1 rounded-full"
-                      >
-                        {translate("approve_button", "Approve")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setModalClass(cls);
-                          setModalType("reject");
-                          setRejectionReason("");
-                        }}
-                        className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1 rounded-full"
-                      >
-                        {translate("reject_button", "Reject")}
-                      </button>
-                    </div>
-                  ) : (
+              </tr>
+            ) : (
+              classList.map((cls) => (
+                <tr key={cls.id} className="hover:bg-yellow-50">
+                  <td className="px-6 py-4">
+                    {cls.cover_image ? (
+                      <img
+                        src={cls.cover_image}
+                        alt={cls.title}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded" />
+                    )}
+                  </td>
+                  <td className="px-6 py-4 font-semibold">{cls.title}</td>
+                  <td className="px-6 py-4">{cls.instructor}</td>
+                  <td className="px-6 py-4">{cls.start_date}</td>
+                  <td className="px-6 py-4">{cls.end_date || "-"}</td>
+                  <td className="px-6 py-4">{cls.category || "-"}</td>
+                  <td className="px-6 py-4">
+                    {cls.price > 0
+                      ? formatCurrency(cls.price)
+                      : translate("free_label", "Free")}
+                  </td>
+                  <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
                         {
-                          Approved: "bg-green-100 text-green-800",
-                          Rejected: "bg-red-100 text-red-700",
-                        }[cls.approvalStatus] || "bg-yellow-100 text-yellow-700"
+                          Upcoming: "bg-green-100 text-green-800",
+                          Ongoing: "bg-blue-100 text-blue-800",
+                          Completed: "bg-gray-300 text-gray-800",
+                        }[cls.scheduleStatus] || "bg-gray-200 text-gray-800"
                       }`}
                     >
-                      {cls.approvalStatus}
+                      {cls.scheduleStatus}
                     </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right space-x-1 space-y-1">
-                  <button
-                    title={translate("approve_button", "Approve Class")}
-                    onClick={() => handleStatusChange(cls.id, "approve")}
-                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow"
-                  >
-                    <FaCheck className="w-4 h-4" />
-                  </button>
-                  <button
-                    title={translate("reject_button", "Reject Class")}
-                    onClick={() => {
-                      setModalClass(cls);
-                      setModalType("reject");
-                      setRejectionReason("");
-                    }}
-                    className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow"
-                  >
-                    <FaTimes className="w-4 h-4" />
-                  </button>
-                  <Link
-                    href={`/dashboard/admin/online-classes/edit/${cls.id}`}
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow"
-                    title={translate("manage_class_tooltip", "Manage Class")}
-                  >
-                    <FaEdit className="w-4 h-4" />
-                  </Link>
-                  {canManageRules && (
-                    <Link
-                      href={`/dashboard/admin/online-classes/${cls.id}/rules`}
-                      className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow"
-                      title={translate("manage_rules_tooltip", "Manage Rules")}
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleStatusChange(cls.id, "toggle")}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                        cls.publishStatus === "published"
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                      }`}
                     >
-                      <FaList className="w-4 h-4" />
+                      {cls.publishStatus === "published"
+                        ? translate("published_label", "Published")
+                        : translate("draft_label", "Draft")}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    {cls.approvalStatus === "Pending" ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleStatusChange(cls.id, "approve")}
+                          className="bg-green-100 hover:bg-green-200 text-green-700 text-xs px-3 py-1 rounded-full"
+                        >
+                          {translate("approve_button", "Approve")}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setModalClass(cls);
+                            setModalType("reject");
+                            setRejectionReason("");
+                          }}
+                          className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1 rounded-full"
+                        >
+                          {translate("reject_button", "Reject")}
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          {
+                            Approved: "bg-green-100 text-green-800",
+                            Rejected: "bg-red-100 text-red-700",
+                          }[cls.approvalStatus] || "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {cls.approvalStatus}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right space-x-1 space-y-1">
+                    <button
+                      title={translate("approve_button", "Approve Class")}
+                      onClick={() => handleStatusChange(cls.id, "approve")}
+                      className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow"
+                    >
+                      <FaCheck className="w-4 h-4" />
+                    </button>
+                    <button
+                      title={translate("reject_button", "Reject Class")}
+                      onClick={() => {
+                        setModalClass(cls);
+                        setModalType("reject");
+                        setRejectionReason("");
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow"
+                    >
+                      <FaTimes className="w-4 h-4" />
+                    </button>
+                    <Link
+                      href={`/dashboard/admin/online-classes/edit/${cls.id}`}
+                      className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title={translate("manage_class_tooltip", "Manage Class")}
+                    >
+                      <FaEdit className="w-4 h-4" />
                     </Link>
-                  )}
-                  <button
-                    title={translate("delete_class_tooltip", "Delete Class")}
-                    onClick={() => {
-                      setModalClass(cls);
-                      setModalType("delete");
-                    }}
-                    className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow"
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </button>
-                  <Link
-                    href={`/dashboard/admin/online-classes/${cls.id}/students`}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow"
-                    title={translate(
-                      "view_students_tooltip",
-                      "View Enrolled Students"
+                    {canManageRules && (
+                      <Link
+                        href={`/dashboard/admin/online-classes/${cls.id}/rules`}
+                        className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow"
+                        title={translate("manage_rules_tooltip", "Manage Rules")}
+                      >
+                        <FaList className="w-4 h-4" />
+                      </Link>
                     )}
-                  >
-                    <FaUserGraduate className="w-4 h-4" />
-                  </Link>
-                  <Link
-                    href={`/dashboard/admin/online-classes/${cls.id}`}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
-                    title={translate(
-                      "view_class_details_tooltip",
-                      "View Class Details"
-                    )}
-                  >
-                    <FaCalendarAlt className="w-4 h-4" />
-                  </Link>
-                  <Link
-                    href={`/dashboard/admin/online-classes/${cls.id}/analytics`}
-                    title={translate("view_analytics_tooltip", "View Analytics")}
-                    className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
-                  >
-                    <FaChartBar className="w-4 h-4" />
-                  </Link>
-                </td>
-              </tr>
+                    <button
+                      title={translate("delete_class_tooltip", "Delete Class")}
+                      onClick={() => {
+                        setModalClass(cls);
+                        setModalType("delete");
+                      }}
+                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                    <Link
+                      href={`/dashboard/admin/online-classes/${cls.id}/students`}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title={translate(
+                        "view_students_tooltip",
+                        "View Enrolled Students"
+                      )}
+                    >
+                      <FaUserGraduate className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      href={`/dashboard/admin/online-classes/${cls.id}`}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
+                      title={translate(
+                        "view_class_details_tooltip",
+                        "View Class Details"
+                      )}
+                    >
+                      <FaCalendarAlt className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      href={`/dashboard/admin/online-classes/${cls.id}/analytics`}
+                      title={translate("view_analytics_tooltip", "View Analytics")}
+                      className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
+                    >
+                      <FaChartBar className="w-4 h-4" />
+                    </Link>
+                  </td>
+                </tr>
+              ))
             )}
+          </tbody>
+        </table>
+      </div>
 
       {totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 px-6 pb-6">
           <div className="text-sm text-gray-500">
-            {translate("pagination_summary", "Showing")} {(currentPage - 1) * normalizedItemsPerPage + 1}
-            –{Math.min(currentPage * normalizedItemsPerPage, totalItems)} {translate("pagination_of", "of")} {totalItems} {translate("pagination_classes", "classes")}
+            {translate("pagination_summary", "Showing")} {(currentPage - 1) * normalizedItemsPerPage + 1}–
+            {Math.min(currentPage * normalizedItemsPerPage, totalItems)} {translate("pagination_of", "of")} {totalItems}{" "}
+            {translate("pagination_classes", "classes")}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -942,7 +968,6 @@ export default function AdminClassesTable() {
               <FaChevronRight />
             </button>
           </div>
-
           <button
             type="button"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
@@ -953,7 +978,7 @@ export default function AdminClassesTable() {
             <FaChevronRight className="ml-1" />
           </button>
         </div>
-      </div>
+      )}
 
       {modalClass && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -973,12 +998,18 @@ export default function AdminClassesTable() {
                 value={rejectionReason}
                 onChange={(event) => setRejectionReason(event.target.value)}
                 className="w-full border border-gray-300 rounded-md p-2 mb-4"
-                placeholder={translate("rejection_reason_placeholder", "Enter rejection reason")}
+                placeholder={translate(
+                  "rejection_reason_placeholder",
+                  "Enter rejection reason"
+                )}
               />
             )}
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => setModalClass(null)}
+                onClick={() => {
+                  setModalClass(null);
+                  setModalType(null);
+                }}
                 className="bg-gray-200 px-4 py-2 rounded"
               >
                 {translate("cancel_button", "Cancel")}
