@@ -2,6 +2,7 @@ const path = require("path");
 
 const db = require("../../config/database");
 const AppError = require("../../utils/AppError");
+const { isAdminRole } = require("../../utils/role");
 
 /**
  * Create a new support ticket and initial message
