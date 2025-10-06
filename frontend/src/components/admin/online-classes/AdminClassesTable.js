@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -136,6 +136,9 @@ const sanitizeClassEntries = (items) => {
   return sanitized;
 };
 
+const sortClassesByKey = (items, key) =>
+  [...items].sort((a, b) => compareValues(a, b, key));
+
 export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -153,147 +156,74 @@ export default function AdminClassesTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [isMounted, setMounted] = useState(false);
-  const lastSuccessfulSignatureRef = useRef(null);
-  const lastFailedSignatureRef = useRef(null);
-  const inFlightRequestRef = useRef(null);
-  const pendingRequestRef = useRef(null);
-  const isComponentMountedRef = useRef(true);
-  const authFailureRef = useRef(false);
-  const lastNormalizedPageRef = useRef(currentPage);
-  const currentPageRef = useRef(currentPage);
-  const totalItemsRef = useRef(totalItems);
-  const totalPagesRef = useRef(totalPages);
-  const loadingRef = useRef(false);
-  const classListLengthRef = useRef(0);
-  const classListSignatureRef = useRef("");
   const { user, hasHydrated } = useAuthStore((state) => ({
     user: state.user,
     hasHydrated: state.hasHydrated,
   }));
   const authIdentifier = user?.id ?? null;
-  const authIdentifierRef = useRef(authIdentifier);
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
   const normalizedItemsPerPage = useMemo(() => {
     if (pageSizeSetting === "all") {
       return resolvePositiveInteger(
-        totalItemsRef.current,
+        totalItems || DEFAULT_PAGE_SIZE,
         DEFAULT_PAGE_SIZE
       );
     }
 
     return resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-  }, [pageSizeSetting]);
+  }, [pageSizeSetting, totalItems]);
 
-  const clearFailedSignature = (failureRecord = lastFailedSignatureRef.current) => {
-    if (failureRecord?.retryTimer) {
-      clearTimeout(failureRecord.retryTimer);
+  const normalizeNonNegativeInteger = (value, fallback = 0) => {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue) && numericValue >= 0) {
+      return Math.floor(numericValue);
     }
-    if (lastFailedSignatureRef.current === failureRecord) {
-      lastFailedSignatureRef.current = null;
-    }
+
+    return fallback;
   };
 
-  useEffect(() => {
-    setMounted(true);
-    isComponentMountedRef.current = true;
-    return () => {
-      isComponentMountedRef.current = false;
-      clearFailedSignature();
-    };
-  }, []);
-
-  useEffect(() => {
-    currentPageRef.current = currentPage;
-  }, [currentPage]);
-
-  useEffect(() => {
-    totalItemsRef.current = totalItems;
-  }, [totalItems]);
-
-  useEffect(() => {
-    totalPagesRef.current = totalPages;
-  }, [totalPages]);
-
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
-
-  useEffect(() => {
-    authIdentifierRef.current = authIdentifier;
-  }, [authIdentifier]);
-
-  useEffect(() => {
-    classListLengthRef.current = Array.isArray(classList)
-      ? classList.length
-      : 0;
-    classListSignatureRef.current = computeListSignature(classList);
-  }, [classList]);
-
-  const setCurrentPageIfNeeded = (value) => {
-    if (!Number.isFinite(value)) {
-      return false;
-    }
-    if (currentPageRef.current === value) {
-      return false;
-    }
-    currentPageRef.current = value;
-    setCurrentPage(value);
-    return true;
-  };
-
-  const setTotalItemsIfNeeded = (value) => {
-    if (totalItemsRef.current === value) {
-      return false;
-    }
-    totalItemsRef.current = value;
-    setTotalItems(value);
-    return true;
-  };
-
-  const setTotalPagesIfNeeded = (value) => {
-    if (totalPagesRef.current === value) {
-      return false;
-    }
-    totalPagesRef.current = value;
-    setTotalPages(value);
-    return true;
-  };
-
-  const updateClassList = (updater) => {
+  const updateClassList = useCallback((updater) => {
     setClassList((previousRaw) => {
-      const previous = sanitizeClassEntries(previousRaw) ?? [];
+      const previousList = sanitizeClassEntries(previousRaw) ?? [];
+      const nextRaw =
+        typeof updater === "function" ? updater(previousList) : updater;
+      const nextList = sanitizeClassEntries(nextRaw) ?? [];
 
-      if (typeof updater === "function") {
-        const nextValue = updater(previous);
-        return Array.isArray(nextValue) ? nextValue : previous;
+      if (
+        previousList.length === nextList.length &&
+        computeListSignature(previousList) === computeListSignature(nextList)
+      ) {
+        return previousRaw;
       }
 
-      const sanitizedNext = sanitizeClassEntries(updater);
-      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
+      return nextList;
     });
-  };
+  }, []);
 
-  const updateClassListIfChanged = (nextList) => {
-    if (!Array.isArray(nextList)) {
+  const setTotalItemsIfNeeded = useCallback((value) => {
+    const normalized = normalizeNonNegativeInteger(value, 0);
+    setTotalItems((previous) => (previous === normalized ? previous : normalized));
+  }, []);
+
+  const setTotalPagesIfNeeded = useCallback((value) => {
+    const normalized = resolvePositiveInteger(value, 1);
+    setTotalPages((previous) => (previous === normalized ? previous : normalized));
+  }, []);
+
+  const setCurrentPageIfNeeded = useCallback((value) => {
+    if (!Number.isFinite(value) || value <= 0) {
       return;
     }
 
-    setClassList((previous) => {
-      if (classListLengthRef.current === nextList.length) {
-        const nextSignature = computeListSignature(nextList);
-        if (classListSignatureRef.current === nextSignature) {
-          return previous;
-        }
-      }
+    const normalized = Math.floor(value);
+    setCurrentPage((previous) => (previous === normalized ? previous : normalized));
+  }, []);
 
-      return sanitizedNext;
-    });
-  };
-
-  const sortClasses = (items, key = sortKey) =>
-    [...items].sort((a, b) => compareValues(a, b, key));
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
@@ -316,333 +246,158 @@ export default function AdminClassesTable() {
 
   useEffect(() => {
     if (!hasHydrated || !authIdentifier) {
-      if (lastFailedSignatureRef.current) {
-        clearFailedSignature();
-      }
-      if (authFailureRef.current) {
-        authFailureRef.current = false;
-      }
-      if (authError) {
-        setAuthError(false);
-      }
+      setAuthError(false);
+      updateClassList([]);
+      setTotalItemsIfNeeded(0);
+      setTotalPagesIfNeeded(1);
+      setLoading(false);
       return;
     }
 
-    if (authFailureRef.current || lastFailedSignatureRef.current?.isAuthFailure) {
-      return;
-    }
+    let cancelled = false;
 
-    if (normalizedPage !== currentPage) {
-      if (setCurrentPageIfNeeded(normalizedPage)) {
-        return;
-      }
-    }
+    const fetchClasses = async () => {
+      setLoading(true);
 
-    if (lastNormalizedPageRef.current !== normalizedPage) {
-      lastNormalizedPageRef.current = normalizedPage;
-    }
-
-    const requestDetails = {
-      signature: JSON.stringify({
-        page: normalizedPage,
-        limit: normalizedItemsPerPage,
-        searchTerm,
-        approval: filterApproval,
-        status: filterStatus,
-        sortKey,
-      }),
-      page: normalizedPage,
-      itemsPerPage: normalizedItemsPerPage,
-      searchTerm,
-      filterApproval,
-      filterStatus,
-      sortKey,
-    };
-
-    const failedSignature = lastFailedSignatureRef.current;
-
-    if (
-      failedSignature &&
-      failedSignature.signature !== requestDetails.signature
-    ) {
-      clearFailedSignature(failedSignature);
-    } else if (failedSignature) {
-      const elapsed = Date.now() - failedSignature.timestamp;
-      if (elapsed >= FAILED_SIGNATURE_RETRY_DELAY_MS) {
-        clearFailedSignature(failedSignature);
-      } else {
-        const failureTimestamp =
-          typeof failedSignature.failedAt === "number" &&
-          Number.isFinite(failedSignature.failedAt)
-            ? failedSignature.failedAt
-            : failedSignature.timestamp;
-        if (
-          typeof failureTimestamp === "number" &&
-          Number.isFinite(failureTimestamp)
-        ) {
-          const elapsed = Date.now() - failureTimestamp;
-          if (elapsed < FAILED_SIGNATURE_RETRY_DELAY_MS) {
-            return;
-          }
-        }
-        clearFailedSignature(failedSignature);
-      }
-    }
-
-    if (lastSuccessfulSignatureRef.current === requestDetails.signature) {
-      if (
-        pendingRequestRef.current &&
-        pendingRequestRef.current.signature === requestDetails.signature
-      ) {
-        pendingRequestRef.current = null;
-      }
-      return;
-    }
-
-    if (inFlightRequestRef.current === requestDetails.signature) {
-      return;
-    }
-
-    if (inFlightRequestRef.current) {
-      if (
-        !pendingRequestRef.current ||
-        pendingRequestRef.current.signature !== requestDetails.signature
-      ) {
-        pendingRequestRef.current = requestDetails;
-      }
-      return;
-    }
-
-    const executeRequest = async (details) => {
-      const {
-        signature,
-        page,
-        itemsPerPage: limitValue,
-        searchTerm: searchValue,
-        filterApproval: approvalValue,
-        filterStatus: statusValue,
-        sortKey: sortValue,
-      } = details;
-
-      if (!isComponentMountedRef.current || !authIdentifierRef.current) {
-        return;
-      }
-
-      inFlightRequestRef.current = signature;
-
-      if (isComponentMountedRef.current && !loadingRef.current) {
-        loadingRef.current = true;
-        setLoading(true);
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[AdminClassesTable] executeRequest", signature, {
-          page,
-          itemsPerPage: limitValue,
-          searchTerm: searchValue,
-          filterApproval: approvalValue,
-          filterStatus: statusValue,
-          sortKey: sortValue,
-        });
-      }
+      const safeLimit = resolvePositiveInteger(
+        normalizedItemsPerPage,
+        DEFAULT_PAGE_SIZE
+      );
+      const scheduleFiltering = shouldApplyScheduleFilter(filterStatus);
+      const statusQuery = mapStatusFilterToQuery(filterStatus);
+      const approvalFilter =
+        filterApproval !== "All" ? filterApproval : undefined;
 
       try {
-        let finalSignature = signature;
-        const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
-        const statusQuery = mapStatusFilterToQuery(statusValue);
-        const safeLimit = resolvePositiveInteger(limitValue);
         const baseParams = {
           limit: safeLimit,
-          filter: searchValue,
-          ...(approvalValue !== "All" ? { approval: approvalValue } : {}),
+          filter: searchTerm,
+          ...(approvalFilter ? { approval: approvalFilter } : {}),
           ...(statusQuery ? { status: statusQuery } : {}),
         };
 
-        const initialPage = scheduleFiltering ? 1 : page;
+        const initialPage = scheduleFiltering ? 1 : normalizedPage;
         const { data, meta } = await fetchAdminClasses({
           ...baseParams,
           page: initialPage,
         });
 
-        if (scheduleFiltering) {
-          const totalPagesFromMeta = meta?.totalPages ?? 1;
-          let aggregatedData = data;
+        if (cancelled) {
+          return;
+        }
 
-          if (totalPagesFromMeta > 1) {
-            const subsequentPages = await Promise.all(
-              Array.from({ length: totalPagesFromMeta - 1 }, (_, index) =>
-                fetchAdminClasses({
-                  ...baseParams,
-                  page: index + 2,
-                }).then((res) => res.data)
-              )
-            );
-            aggregatedData = aggregatedData.concat(...subsequentPages);
-          }
+        let aggregated = Array.isArray(data) ? data : [];
+        let metaTotalItems = normalizeNonNegativeInteger(
+          meta?.total,
+          aggregated.length
+        );
+        let metaTotalPages = normalizeNonNegativeInteger(
+          meta?.totalPages ?? meta?.total_pages ?? meta?.totalpages,
+          null
+        );
 
-          const filteredData = aggregatedData.filter(
-            (cls) =>
-              cls.scheduleStatus?.toLowerCase() ===
-              statusValue.toLowerCase()
-          );
-          const sortedData = sortClasses(filteredData, sortValue);
-          const totalFilteredItems = sortedData.length;
-          const totalFilteredPages = Math.max(
+        if (!metaTotalPages) {
+          metaTotalPages = Math.max(
             1,
-            Math.ceil(totalFilteredItems / safeLimit)
+            Math.ceil((metaTotalItems || 0) / safeLimit)
           );
-          const normalizedPageRaw = Math.min(
-            Math.max(page, 1),
-            totalFilteredPages
-          );
-          let effectivePage = Number.isFinite(normalizedPageRaw)
-            ? normalizedPageRaw
-            : 1;
-          const pageForSignature = Number.isFinite(normalizedPage)
-            ? normalizedPage
-            : effectivePage;
-          if (
-            Number.isFinite(pageForSignature) &&
-            pageForSignature !== page
-          ) {
-            finalSignature = JSON.stringify({
-              page: pageForSignature,
-              limit: limitValue,
-              searchTerm: searchValue,
-              approval: approvalValue,
-              status: statusValue,
-              sortKey: sortValue,
+        }
+
+        if (scheduleFiltering && metaTotalPages > 1) {
+          for (let page = 2; page <= metaTotalPages; page += 1) {
+            const pageResult = await fetchAdminClasses({
+              ...baseParams,
+              page,
             });
+
+            if (cancelled) {
+              return;
+            }
+
+            if (Array.isArray(pageResult?.data)) {
+              aggregated = aggregated.concat(pageResult.data);
+            }
           }
 
-          if (!isComponentMountedRef.current) {
-            return;
-          }
+          metaTotalItems = aggregated.length;
+        }
 
-          setTotalItemsIfNeeded(totalFilteredItems);
-          setTotalPagesIfNeeded(totalFilteredPages);
+        const filtered = scheduleFiltering
+          ? aggregated.filter(
+              (cls) =>
+                typeof cls?.scheduleStatus === "string" &&
+                cls.scheduleStatus.toLowerCase() ===
+                  filterStatus.toLowerCase()
+            )
+          : aggregated;
 
-          const startIndex = (effectivePage - 1) * safeLimit;
-          const paginatedData = sortedData.slice(
+        const sorted = sortClassesByKey(filtered, sortKey);
+
+        const effectiveTotalItems = scheduleFiltering
+          ? sorted.length
+          : metaTotalItems;
+        const effectiveTotalPages = scheduleFiltering
+          ? Math.max(1, Math.ceil((sorted.length || 0) / safeLimit))
+          : metaTotalPages || Math.max(1, Math.ceil((sorted.length || 0) / safeLimit));
+
+        setTotalItemsIfNeeded(effectiveTotalItems);
+        setTotalPagesIfNeeded(effectiveTotalPages);
+
+        const safePage = Math.min(
+          Math.max(normalizedPage, 1),
+          effectiveTotalPages
+        );
+
+        if (!scheduleFiltering && safePage !== normalizedPage) {
+          setCurrentPageIfNeeded(safePage);
+          return;
+        }
+
+        if (scheduleFiltering && safePage !== normalizedPage) {
+          setCurrentPageIfNeeded(safePage);
+        }
+
+        if (scheduleFiltering) {
+          const startIndex = (safePage - 1) * safeLimit;
+          const paginated = sorted.slice(
             startIndex,
             startIndex + safeLimit
           );
-
-          if (!isComponentMountedRef.current) {
-            return;
-          }
-
-          updateClassListIfChanged(paginatedData);
+          updateClassList(paginated);
         } else {
-          const sortedData = sortClasses(data, sortValue);
-
-          if (!isComponentMountedRef.current) {
-            return;
-          }
-
-          updateClassListIfChanged(sortedData);
-          const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
-          const nextTotalItems = meta?.total ?? data.length;
-          setTotalPagesIfNeeded(nextTotalPages);
-          setTotalItemsIfNeeded(nextTotalItems);
+          updateClassList(sorted);
         }
 
-        lastSuccessfulSignatureRef.current = finalSignature;
-        authFailureRef.current = false;
-        if (isComponentMountedRef.current && authError) {
-          setAuthError(false);
-        }
-        clearFailedSignature();
+        setAuthError(false);
       } catch (err) {
         console.error(err);
-        const previousFailure = lastFailedSignatureRef.current;
-        const toastAlreadyShownForSignature =
-          previousFailure?.signature === signature &&
-          previousFailure?.toastShown;
-        const shouldShowToast =
-          isComponentMountedRef.current && !toastAlreadyShownForSignature;
-        const responseStatusCode = err?.response?.status;
-        const hadAuthFailure = authFailureRef.current;
-        const isAuthFailure =
-          responseStatusCode === 401 || responseStatusCode === 403;
-        if (isAuthFailure) {
-          authFailureRef.current = true;
-          if (isComponentMountedRef.current) {
-            setAuthError(true);
-            updateClassList([]);
-            setTotalItemsIfNeeded(0);
-            setTotalPagesIfNeeded(1);
-          }
-        }
-        if (shouldShowToast && (!isAuthFailure || !hadAuthFailure)) {
-          toast.error("Failed to load classes");
-        }
-        clearFailedSignature();
-        const statusCode =
-          err?.response?.status ?? err?.status ?? err?.statusCode ?? null;
-        const isAuthorizationError = statusCode === 401 || statusCode === 403;
-        const hasValidAuth = Boolean(authIdentifierRef.current);
-        const failureTimestamp = Date.now();
-        if (!hasValidAuth || isAuthorizationError) {
-          lastFailedSignatureRef.current = null;
+        if (cancelled) {
           return;
         }
-        const failureRecord = {
-          signature,
-          timestamp: failureTimestamp,
-          failedAt: failureTimestamp,
-          retryTimer: null,
-          toastShown:
-            toastAlreadyShownForSignature || shouldShowToast || false,
-          isAuthFailure,
-        };
-        if (!isAuthFailure) {
-          failureRecord.retryTimer = setTimeout(() => {
-            if (!isComponentMountedRef.current || authFailureRef.current) {
-              return;
-            }
-            const activeFailure = lastFailedSignatureRef.current;
-            if (!activeFailure || activeFailure.signature !== signature) {
-              return;
-            }
-            clearFailedSignature(activeFailure);
-            if (
-              lastSuccessfulSignatureRef.current === signature ||
-              inFlightRequestRef.current ||
-              (pendingRequestRef.current &&
-                pendingRequestRef.current.signature === signature)
-            ) {
-              return;
-            }
-            executeRequest(details);
-          }, FAILED_REQUEST_RETRY_DELAY_MS);
-        }
-        lastFailedSignatureRef.current = failureRecord;
-      } finally {
-        if (isComponentMountedRef.current && loadingRef.current) {
-          loadingRef.current = false;
-          setLoading(false);
-        }
-        inFlightRequestRef.current = null;
 
-        const nextRequest = pendingRequestRef.current;
-        if (nextRequest && nextRequest.signature !== signature) {
-          pendingRequestRef.current = null;
-          if (
-            isComponentMountedRef.current &&
-            !authFailureRef.current &&
-            lastSuccessfulSignatureRef.current !== nextRequest.signature &&
-            lastFailedSignatureRef.current?.signature !== nextRequest.signature
-          ) {
-            executeRequest(nextRequest);
-          }
-        } else if (nextRequest && nextRequest.signature === signature) {
-          pendingRequestRef.current = null;
+        const statusCode =
+          err?.response?.status ?? err?.status ?? err?.statusCode ?? null;
+
+        if (statusCode === 401 || statusCode === 403) {
+          setAuthError(true);
+          updateClassList([]);
+          setTotalItemsIfNeeded(0);
+          setTotalPagesIfNeeded(1);
+        } else {
+          toast.error("Failed to load classes");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
       }
     };
 
-    executeRequest(requestDetails);
+    fetchClasses();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     normalizedPage,
     normalizedItemsPerPage,
@@ -652,6 +407,10 @@ export default function AdminClassesTable() {
     sortKey,
     hasHydrated,
     authIdentifier,
+    updateClassList,
+    setTotalItemsIfNeeded,
+    setTotalPagesIfNeeded,
+    setCurrentPageIfNeeded,
   ]);
 
   const formatCSVRow = (row) =>
@@ -831,18 +590,12 @@ export default function AdminClassesTable() {
   };
 
   const handleDeleteClass = async (id) => {
-    const singleItemOnPage = classList.length === 1;
-    const previousPage = currentPage > 1 ? currentPage - 1 : 1;
 
     try {
       await deleteAdminClass(id);
 
       const updatedList = classList.filter((cls) => cls.id !== id);
-      const nextTotalItems = Math.max(
-        totalItemsRef.current - 1,
-        updatedList.length,
-        0
-      );
+      const nextTotalItems = Math.max(totalItems - 1, updatedList.length, 0);
       const derivedItemsPerPage =
         pageSizeSetting === "all"
           ? resolvePositiveInteger(
@@ -863,11 +616,8 @@ export default function AdminClassesTable() {
       setTotalItemsIfNeeded(nextTotalItems);
       setTotalPagesIfNeeded(nextTotalPages);
 
-      if (updatedList.length === 0 && currentPageRef.current > 1) {
-        const candidatePage = Math.min(
-          currentPageRef.current - 1,
-          nextTotalPages
-        );
+      if (updatedList.length === 0 && currentPage > 1) {
+        const candidatePage = Math.min(currentPage - 1, nextTotalPages);
         setCurrentPageIfNeeded(candidatePage);
       }
 
