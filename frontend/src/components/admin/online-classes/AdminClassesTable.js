@@ -114,6 +114,29 @@ const computeListSignature = (items) => {
     .join("|");
 };
 
+const sanitizeClassEntries = (items) => {
+  if (!Array.isArray(items)) {
+    return null;
+  }
+
+  let encounteredInvalid = false;
+  const sanitized = [];
+
+  for (const item of items) {
+    if (item && typeof item === "object") {
+      sanitized.push(item);
+    } else {
+      encounteredInvalid = true;
+    }
+  }
+
+  if (!encounteredInvalid) {
+    return items;
+  }
+
+  return sanitized;
+};
+
 export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -240,46 +263,46 @@ export default function AdminClassesTable() {
   };
 
   const updateClassList = (updater) => {
-    setClassList((previous) => {
+    setClassList((previousRaw) => {
+      const previous = sanitizeClassEntries(previousRaw) ?? [];
+
       if (typeof updater === "function") {
-        return updater(previous);
+        const nextValue = updater(previous);
+        const sanitizedNext = sanitizeClassEntries(nextValue);
+        return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
       }
 
-      return Array.isArray(updater) ? updater : previous;
+      const sanitizedNext = sanitizeClassEntries(updater);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
   const updateClassListIfChanged = (nextList) => {
-    setClassList((previous) => {
-      if (previous.length === nextList.length) {
-        const previousFirstId = previous[0]?.id ?? null;
-        const nextFirstId = nextList[0]?.id ?? null;
+    const sanitizedNext = sanitizeClassEntries(nextList);
 
-        if (previousFirstId === nextFirstId) {
+    if (!Array.isArray(sanitizedNext)) {
+      return;
+    }
+
+    setClassList((previous) => {
+      if (classListLengthRef.current === sanitizedNext.length) {
+        const nextSignature = computeListSignature(sanitizedNext);
+        if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
       }
 
-      return nextList;
+      return sanitizedNext;
     });
   };
 
-  const updateClassList = (updater) => {
-    if (typeof updater === "function") {
-      setClassList((previous) => {
-        const nextValue = updater(previous);
-        return Array.isArray(nextValue) ? nextValue : previous;
-      });
-      return;
+  const sortClasses = (items, key = sortKey) => {
+    if (!Array.isArray(items)) {
+      return [];
     }
 
-    if (Array.isArray(updater)) {
-      setClassList(updater);
-    }
+    return [...items].sort((a, b) => compareValues(a, b, key));
   };
-
-  const sortClasses = (items, key = sortKey) =>
-    [...items].sort((a, b) => compareValues(a, b, key));
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
