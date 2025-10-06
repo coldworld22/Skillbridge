@@ -290,7 +290,8 @@ export default function AdminClassesTable() {
         }
       }
 
-      return sanitizedNext;
+      const sanitizedNext = sanitizeClassEntries(nextList);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
