@@ -242,7 +242,8 @@ export default function AdminClassesTable() {
   const updateClassList = (updater) => {
     setClassList((previous) => {
       if (typeof updater === "function") {
-        return updater(previous);
+        const nextValue = updater(previous);
+        return Array.isArray(nextValue) ? nextValue : previous;
       }
 
       return Array.isArray(updater) ? updater : previous;
@@ -250,32 +251,20 @@ export default function AdminClassesTable() {
   };
 
   const updateClassListIfChanged = (nextList) => {
-    setClassList((previous) => {
-      if (previous.length === nextList.length) {
-        const previousFirstId = previous[0]?.id ?? null;
-        const nextFirstId = nextList[0]?.id ?? null;
+    if (!Array.isArray(nextList)) {
+      return;
+    }
 
-        if (previousFirstId === nextFirstId) {
+    setClassList((previous) => {
+      if (classListLengthRef.current === nextList.length) {
+        const nextSignature = computeListSignature(nextList);
+        if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
       }
 
       return nextList;
     });
-  };
-
-  const updateClassList = (updater) => {
-    if (typeof updater === "function") {
-      setClassList((previous) => {
-        const nextValue = updater(previous);
-        return Array.isArray(nextValue) ? nextValue : previous;
-      });
-      return;
-    }
-
-    if (Array.isArray(updater)) {
-      setClassList(updater);
-    }
   };
 
   const sortClasses = (items, key = sortKey) =>
