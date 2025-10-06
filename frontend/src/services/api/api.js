@@ -176,69 +176,38 @@ const ensureTrailingSlash = (candidate) => {
   return `${candidate.replace(/\/+$/, "")}/`;
 };
 
-const deriveBrowserApiBase = () => {
-  if (!isBrowser) {
-    return null;
-  }
+let baseURL = ensureTrailingSlash(
+  ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate())),
+);
 
+if (isBrowser) {
   try {
-    const origin = window?.location?.origin;
-    if (!origin) {
-      return null;
-    }
-
-    return new URL("/api", origin).toString();
-  } catch (error) {
-    logger.warn(
-      `Failed to derive API base from window.location.origin: ${error?.message || error}`
-    );
-    return null;
-  }
-};
-
-const maybeReplaceLocalhostForBrowser = (candidate) => {
-  if (!isBrowser || !candidate) {
-    return candidate;
-  }
-
-  try {
-    const candidateUrl = new URL(candidate);
-    const candidateHost = candidateUrl.hostname;
-    const browserHost = window?.location?.hostname;
+    const currentHost = window?.location?.hostname;
+    const baseHost = baseURL ? new URL(baseURL).hostname : null;
+    const isLocalHostName = (host) =>
+      ["localhost", "127.0.0.1", "0.0.0.0"].includes(host);
 
     if (
-      isLocalHostname(candidateHost) &&
-      browserHost &&
-      !isLocalHostname(browserHost)
+      baseHost &&
+      currentHost &&
+      baseHost !== currentHost &&
+      isLocalHostName(baseHost) &&
+      !isLocalHostName(currentHost)
     ) {
-      const derived = deriveBrowserApiBase();
-      if (derived) {
-        logger.warn(
-          `API base "${candidate}" targets localhost but the site is served from "${browserHost}". Falling back to "${derived}".`
-        );
-        return derived;
-      }
-
-      logger.warn(
-        `API base "${candidate}" targets localhost but the site is served from "${browserHost}". Falling back to browser origin.`
+      const fallbackBase = ensureTrailingSlash(
+        new URL("/api/", window.location.origin).toString(),
       );
+      logger.warn(
+        `Configured API base "${baseURL}" points to ${baseHost}, but the application is running on "${currentHost}". Falling back to same-origin API base "${fallbackBase}" to avoid cross-origin failures.`,
+      );
+      baseURL = fallbackBase;
     }
   } catch (error) {
     logger.warn(
-      `Failed to inspect API base URL "${candidate}": ${error?.message || error}`
+      `Unable to reconcile API base URL "${baseURL}": ${error?.message || error}`,
     );
   }
-
-  return candidate;
-};
-
-const selectedCandidate = ensureApiSuffix(pickBaseCandidate());
-const absoluteCandidate = ensureAbsoluteUrl(selectedCandidate);
-const browserSafeCandidate = maybeReplaceLocalhostForBrowser(absoluteCandidate);
-
-const baseURL = ensureTrailingSlash(
-  browserSafeCandidate || absoluteCandidate || selectedCandidate,
-);
+}
 
 // Warn developers if the default domain URL is used in production
 if (
