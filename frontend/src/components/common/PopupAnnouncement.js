@@ -21,7 +21,7 @@ export default function PopupAnnouncement() {
           ? "instructor"
           : "logged-in";
 
-        const { data } = await api.get("/popup-announcements/active", {
+        const { data } = await api.get("popup-announcements/active", {
           params: { audience, page: router.pathname },
         });
         const [ann] = data?.data || [];

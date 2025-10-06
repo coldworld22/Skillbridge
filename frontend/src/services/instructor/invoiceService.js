@@ -1,12 +1,12 @@
 import api from "@/services/api/api";
 
 export const fetchInvoiceByPaymentId = async (paymentId) => {
-  const { data } = await api.get(`/invoices/instructor/payment/${paymentId}`);
+  const { data } = await api.get(`invoices/instructor/payment/${paymentId}`);
   return data?.data || null;
 };
 
 export const downloadInvoice = async (invoiceId) => {
-  const res = await api.get(`/invoices/instructor/${invoiceId}/download`, {
+  const res = await api.get(`invoices/instructor/${invoiceId}/download`, {
     responseType: "blob",
   });
   const url = window.URL.createObjectURL(new Blob([res.data]));

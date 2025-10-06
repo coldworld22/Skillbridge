@@ -11,7 +11,7 @@ export const askAI = async (provider, question, model) => {
   // Use the backend AI assistance endpoint which reads API keys from
   // the third party configuration settings. Older code pointed to `/ai`
   // but the server exposes `/api/ai-assistance`.
-  const { data } = await api.post("/ai-assistance", {
+  const { data } = await api.post("ai-assistance", {
     provider,
     question,
     model,

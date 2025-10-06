@@ -25,7 +25,7 @@ describe("instructor bookService", () => {
     const meta = { page: 1 };
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchInstructorBooks();
-    expect(api.get).toHaveBeenCalledWith("/instructor/books");
+    expect(api.get).toHaveBeenCalledWith("instructor/books");
     expect(res).toEqual({
       books: [{ ...apiData[0], cover_image_url: null }],
       meta,
@@ -39,7 +39,7 @@ describe("instructor bookService", () => {
     const cb = jest.fn();
     const res = await createBook(formData, cb);
     expect(api.post).toHaveBeenCalledWith(
-      "/books",
+      "books",
       formData,
       expect.objectContaining({
         headers: { "Content-Type": "multipart/form-data" },
@@ -56,7 +56,7 @@ describe("instructor bookService", () => {
     const cb = jest.fn();
     const res = await updateBook(1, formData, cb);
     expect(api.put).toHaveBeenCalledWith(
-      "/books/1",
+      "books/1",
       formData,
       expect.objectContaining({
         headers: { "Content-Type": "multipart/form-data" },
@@ -69,7 +69,7 @@ describe("instructor bookService", () => {
   it("deletes a book", async () => {
     api.delete.mockResolvedValueOnce({});
     const res = await deleteBook(1);
-    expect(api.delete).toHaveBeenCalledWith("/books/1");
+    expect(api.delete).toHaveBeenCalledWith("books/1");
     expect(res).toBe(true);
   });
 
@@ -77,7 +77,7 @@ describe("instructor bookService", () => {
     const apiData = { id: 1 };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const res = await fetchBook(1);
-    expect(api.get).toHaveBeenCalledWith("/books/1");
+    expect(api.get).toHaveBeenCalledWith("books/1");
     expect(res).toEqual({ ...apiData, cover_image_url: null });
   });
 
@@ -86,7 +86,7 @@ describe("instructor bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const params = { year: 2023 };
     const res = await fetchBookAnalytics(params);
-    expect(api.get).toHaveBeenCalledWith("/instructor/books/analytics", { params });
+    expect(api.get).toHaveBeenCalledWith("instructor/books/analytics", { params });
     expect(res).toEqual(apiData);
   });
 });

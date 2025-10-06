@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 
 export const fetchBlogPosts = async () => {
-  const { data } = await api.get("/blog");
+  const { data } = await api.get("blog");
   const posts = data?.data ?? [];
   return posts.map((p) => ({
     ...p,
@@ -12,7 +12,7 @@ export const fetchBlogPosts = async () => {
 };
 
 export const fetchBlogPost = async (slug) => {
-  const { data } = await api.get(`/blog/slug/${slug}`);
+  const { data } = await api.get(`blog/slug/${slug}`);
   const p = data?.data;
   if (!p) return null;
   return {

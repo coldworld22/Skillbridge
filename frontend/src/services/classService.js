@@ -43,31 +43,31 @@ export const formatClass = (cls) => {
 };
 
 export const fetchPublishedClasses = async () => {
-  const res = await api.get("/users/classes");
+  const res = await api.get("users/classes");
   const list = extractData(res);
   const formatted = list.map(formatClass);
   return { ...res.data, data: formatted };
 };
 
 export const fetchClassDetails = async (id, signal) => {
-  const res = await api.get(`/users/classes/${id}`, { signal });
+  const res = await api.get(`users/classes/${id}`, { signal });
   const cls = res.data?.data ?? res.data;
   return cls ? formatClass(cls) : cls;
 };
 
 export const enrollInClass = async (id) => {
-  const { data } = await api.post(`/users/classes/enroll/${id}`);
+  const { data } = await api.post(`users/classes/enroll/${id}`);
   return data;
 };
 
 export const markClassCompleted = async (id) => {
-  const { data } = await api.post(`/users/classes/enroll/${id}/complete`);
+  const { data } = await api.post(`users/classes/enroll/${id}/complete`);
   return data;
 };
 
 export const fetchMyEnrolledClasses = async () => {
   try {
-    const res = await api.get("/users/classes/enroll/my");
+    const res = await api.get("users/classes/enroll/my");
     const list = extractData(res);
     return list.map(formatEnrolledClass);
   } catch (err) {
@@ -79,7 +79,7 @@ export const fetchMyEnrolledClasses = async () => {
 };
 
 export const fetchClassLessons = async (classId, signal) => {
-  const res = await api.get(`/users/classes/lessons/class/${classId}`, { signal });
+  const res = await api.get(`users/classes/lessons/class/${classId}`, { signal });
   return extractData(res);
 };
 
@@ -90,7 +90,7 @@ const formatAssignment = (assignment) => ({
 });
 
 export const fetchClassAssignments = async (classId, signal) => {
-  const res = await api.get(`/users/classes/assignments/class/${classId}`, { signal });
+  const res = await api.get(`users/classes/assignments/class/${classId}`, { signal });
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatAssignment) : [];
 };
@@ -121,18 +121,18 @@ export const fetchMyClassAssignments = async () => {
 };
 
 export const addClassToWishlist = async (id) => {
-  const { data } = await api.post(`/users/classes/wishlist/${id}`);
+  const { data } = await api.post(`users/classes/wishlist/${id}`);
   return data;
 };
 
 export const removeClassFromWishlist = async (id) => {
-  const { data } = await api.delete(`/users/classes/wishlist/${id}`);
+  const { data } = await api.delete(`users/classes/wishlist/${id}`);
   return data;
 };
 
 export const getMyClassWishlist = async () => {
   try {
-    const res = await api.get('/users/classes/wishlist/my');
+    const res = await api.get('users/classes/wishlist/my');
     return extractData(res);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
@@ -143,18 +143,18 @@ export const getMyClassWishlist = async () => {
 };
 
 export const likeClass = async (id) => {
-  const { data } = await api.post(`/users/classes/likes/${id}`);
+  const { data } = await api.post(`users/classes/likes/${id}`);
   return data;
 };
 
 export const unlikeClass = async (id) => {
-  const { data } = await api.delete(`/users/classes/likes/${id}`);
+  const { data } = await api.delete(`users/classes/likes/${id}`);
   return data;
 };
 
 export const getMyLikedClasses = async () => {
   try {
-    const res = await api.get('/users/classes/likes/my');
+    const res = await api.get('users/classes/likes/my');
     return extractData(res);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
@@ -165,26 +165,26 @@ export const getMyLikedClasses = async () => {
 };
 
 export const fetchClassReviews = async (classId) => {
-  const res = await api.get(`/users/classes/reviews/${classId}`);
+  const res = await api.get(`users/classes/reviews/${classId}`);
   return extractData(res);
 };
 
 export const submitClassReview = async (classId, payload) => {
-  const { data } = await api.post(`/users/classes/reviews/${classId}`, payload);
+  const { data } = await api.post(`users/classes/reviews/${classId}`, payload);
   return data;
 };
 
 export const fetchClassComments = async (classId) => {
-  const res = await api.get(`/users/classes/comments/${classId}`);
+  const res = await api.get(`users/classes/comments/${classId}`);
   return extractData(res);
 };
 
 export const postClassComment = async (classId, payload) => {
-  const { data } = await api.post(`/users/classes/comments/${classId}`, payload);
+  const { data } = await api.post(`users/classes/comments/${classId}`, payload);
   return data;
 };
 
 export const subscribeToClassReminder = async (classId) => {
-  const { data } = await api.post(`/users/classes/notifications/${classId}`);
+  const { data } = await api.post(`users/classes/notifications/${classId}`);
   return data;
 };

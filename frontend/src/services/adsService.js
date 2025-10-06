@@ -12,7 +12,7 @@ export const fetchAds = async ({ role, limit, offset } = {}, config = {}) => {
     const hasParams = Object.keys(params).length > 0;
     const hasConfig = Object.keys(config).length > 0;
     const reqConfig = hasParams || hasConfig ? { ...config, ...(hasParams ? { params } : {}) } : undefined;
-    const { data } = await api.get("/ads", reqConfig);
+    const { data } = await api.get("ads", reqConfig);
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
 
@@ -56,7 +56,7 @@ export const fetchAds = async ({ role, limit, offset } = {}, config = {}) => {
 // Notify backend that an ad has been viewed
 export const recordAdView = async (id) => {
   try {
-    await api.post(`/ads/${id}/view`);
+    await api.post(`ads/${id}/view`);
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.error("Failed to record ad view", error);
@@ -70,7 +70,7 @@ export const recordAdView = async (id) => {
  */
 export const recordAdClick = async (id) => {
   try {
-    await api.post(`/ads/${id}/click`);
+    await api.post(`ads/${id}/click`);
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.error("Failed to record ad click", error);

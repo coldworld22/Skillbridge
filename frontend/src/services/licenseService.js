@@ -5,6 +5,6 @@ export async function verifyLicense(purchaseCode, domain) {
     purchase_code: purchaseCode,
     ...(domain ? { domain } : {}),
   };
-  const { data } = await api.post("/license/verify", payload);
+  const { data } = await api.post("license/verify", payload);
   return data;
 }

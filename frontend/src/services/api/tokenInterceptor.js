@@ -140,7 +140,7 @@ api.interceptors.response.use(
         }
 
         return api.post(
-          "/auth/refresh",
+          "auth/refresh",
           null,
           {
             withCredentials: true,

@@ -26,7 +26,7 @@ const mapStatus = (tut) =>
     : "Pending";
 
 export const fetchInstructorTutorials = async (config = {}) => {
-  const { data } = await api.get("/users/tutorials/admin/my", config);
+  const { data } = await api.get("users/tutorials/admin/my", config);
   const list = data?.data ?? [];
   return list.map((t) => ({
     ...formatBase(t),
@@ -48,18 +48,18 @@ export const fetchInstructorTutorials = async (config = {}) => {
  * @returns {Promise<object>} Newly created tutorial data
  */
 export const createTutorial = async (formData) => {
-  const { data } = await api.post("/users/tutorials/admin", formData, {
+  const { data } = await api.post("users/tutorials/admin", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 export const fetchInstructorTutorialById = async (id) => {
-  const { data } = await api.get(`/users/tutorials/admin/${id}`);
+  const { data } = await api.get(`users/tutorials/admin/${id}`);
   const tut = data?.data;
   if (!tut) return null;
   const { data: chData } = await api.get(
-    `/users/tutorials/chapters/tutorial/${id}`
+    `users/tutorials/chapters/tutorial/${id}`
   );
   const chapters = chData?.data || [];
   return {
@@ -79,25 +79,25 @@ export const fetchInstructorTutorialById = async (id) => {
 };
 
 export const updateTutorial = async (id, formData) => {
-  const { data } = await api.put(`/users/tutorials/admin/${id}`, formData, {
+  const { data } = await api.put(`users/tutorials/admin/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 export const submitTutorialForReview = async (id) => {
-  const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
+  const { data } = await api.patch(`users/tutorials/admin/${id}/status`);
   return data?.data;
 };
 
 export const fetchInstructorTutorialAnalytics = async (id) => {
-  const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
+  const { data } = await api.get(`users/tutorials/admin/${id}/analytics`);
   return data?.data ?? {};
 };
 
 // Permanently delete one of the instructor's tutorials
 // Used from the instructor dashboard tutorials list
 export const deleteInstructorTutorial = async (id) => {
-  const { data } = await api.delete(`/users/tutorials/admin/${id}`);
+  const { data } = await api.delete(`users/tutorials/admin/${id}`);
   return data?.data ?? null;
 };
