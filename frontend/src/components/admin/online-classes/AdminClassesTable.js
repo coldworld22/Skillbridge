@@ -31,6 +31,17 @@ import {
 } from "react-icons/fa";
 
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
+const normalizeStatusValue = (value) => {
+  if (typeof value === "string") {
+    return value.trim().toLowerCase();
+  }
+
+  if (value == null) {
+    return "";
+  }
+
+  return String(value).trim().toLowerCase();
+};
 const MIN_REJECTION_REASON_LENGTH = 3;
 
 export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
@@ -55,20 +66,23 @@ const resolvePositiveInteger = (value, fallback = 1) => {
 };
 
 export const mapStatusFilterToQuery = (filterStatus) => {
-  if (!filterStatus || filterStatus === "All") {
+  const normalized = normalizeStatusValue(filterStatus);
+
+  if (!normalized || normalized === "all") {
     return undefined;
   }
 
-  const normalized = normalizeStatusValue(filterStatus);
   return BACKEND_STATUSES.has(normalized) ? normalized : undefined;
 };
 
 const shouldApplyScheduleFilter = (filterStatus) => {
-  if (!filterStatus || filterStatus === "All") {
+  const normalized = normalizeStatusValue(filterStatus);
+
+  if (!normalized || normalized === "all") {
     return false;
   }
 
-  return !BACKEND_STATUSES.has(normalizeStatusValue(filterStatus));
+  return !BACKEND_STATUSES.has(normalized);
 };
 
 export function compareValues(a, b, key) {
@@ -293,12 +307,23 @@ export default function AdminClassesTable() {
         }
       }
 
-      return sanitizedNext;
+      const sanitizedNext = sanitizeClassEntries(nextList);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
-  const sortClasses = (items, key = sortKey) =>
-    [...items].sort((a, b) => compareValues(a, b, key));
+  const sortClasses = (items, key = sortKey) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return [];
+    }
+
+    const sanitizedItems = sanitizeClassEntries(items) ?? [];
+    if (sanitizedItems.length === 0) {
+      return [];
+    }
+
+    return [...sanitizedItems].sort((a, b) => compareValues(a, b, key));
+  };
 
   const hydratedUser = isMounted && hasHydrated ? user : null;
   const canManageRules =
@@ -454,7 +479,9 @@ export default function AdminClassesTable() {
       try {
         let finalSignature = signature;
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
+        const normalizedScheduleFilter = normalizeStatusValue(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
+        const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
         const safeLimit = resolvePositiveInteger(limitValue);
         const baseParams = {
           limit: safeLimit,
@@ -469,9 +496,9 @@ export default function AdminClassesTable() {
           page: initialPage,
         });
 
-        if (scheduleFiltering) {
+        if (scheduleFiltering && normalizedScheduleFilter) {
           const totalPagesFromMeta = meta?.totalPages ?? 1;
-          let aggregatedData = data;
+          let aggregatedData = sanitizeList(data);
 
           if (totalPagesFromMeta > 1) {
             const subsequentPages = await Promise.all(
@@ -479,16 +506,22 @@ export default function AdminClassesTable() {
                 fetchAdminClasses({
                   ...baseParams,
                   page: index + 2,
-                }).then((res) => res.data)
+                }).then((res) => sanitizeList(res.data))
               )
             );
             aggregatedData = aggregatedData.concat(...subsequentPages);
           }
 
-          const targetStatus = normalizeStatusValue(statusValue);
-          const filteredData = aggregatedData.filter((cls) =>
-            normalizeStatusValue(cls?.scheduleStatus) === targetStatus
-          );
+          const filteredData = aggregatedData.filter((cls) => {
+            const normalizedClassStatus = normalizeStatusValue(
+              cls?.scheduleStatus
+            );
+
+            return (
+              normalizedClassStatus &&
+              normalizedClassStatus === normalizedScheduleFilter
+            );
+          });
           const sortedData = sortClasses(filteredData, sortValue);
           const totalFilteredItems = sortedData.length;
           const totalFilteredPages = Math.max(
@@ -546,7 +579,7 @@ export default function AdminClassesTable() {
 
           updateClassListIfChanged(sortedData);
           const nextTotalPages = meta?.totalPages ? Math.max(meta.totalPages, 1) : 1;
-          const nextTotalItems = meta?.total ?? data.length;
+          const nextTotalItems = meta?.total ?? sortedData.length;
           setTotalPagesIfNeeded(nextTotalPages);
           setTotalItemsIfNeeded(nextTotalItems);
         }
@@ -670,6 +703,7 @@ export default function AdminClassesTable() {
       const limit = 100;
       let page = 1;
       let allClasses = [];
+      const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
       // Fetch every page of classes that match the current filters
       while (true) {
         const { data, meta } = await fetchAdminClasses({
@@ -679,7 +713,7 @@ export default function AdminClassesTable() {
           approval: filterApproval !== "All" ? filterApproval : undefined,
           status: statusQuery,
         });
-        allClasses = allClasses.concat(data);
+        allClasses = allClasses.concat(sanitizeList(data));
         const metaTotalPages =
           meta?.totalPages || meta?.total_pages || meta?.totalpages;
         if ((metaTotalPages && page >= metaTotalPages) || data.length < limit) {
@@ -688,13 +722,15 @@ export default function AdminClassesTable() {
         page += 1;
       }
 
-      const filteredClasses = shouldApplyScheduleFilter(filterStatus)
-        ? allClasses.filter(
-            (cls) =>
-              normalizeStatusValue(cls?.scheduleStatus) ===
-              normalizeStatusValue(filterStatus)
-          )
-        : allClasses;
+      const normalizedScheduleFilter = normalizeStatusValue(filterStatus);
+      const filteredClasses =
+        shouldApplyScheduleFilter(filterStatus) && normalizedScheduleFilter
+          ? allClasses.filter(
+              (cls) =>
+                normalizeStatusValue(cls?.scheduleStatus) ===
+                normalizedScheduleFilter
+            )
+          : allClasses;
       const sortedClasses = [...filteredClasses].sort((a, b) =>
         a[sortKey] > b[sortKey] ? 1 : -1
       );
