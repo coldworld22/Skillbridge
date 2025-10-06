@@ -280,10 +280,7 @@ export default function AdminClassesTable() {
       return;
     }
 
-    const sanitizedNext = sanitizeClassEntries(nextList);
-    if (!Array.isArray(sanitizedNext)) {
-      return;
-    }
+    const sanitizedNext = sanitizeClassEntries(nextList) ?? [];
 
     setClassList((previous) => {
       if (classListLengthRef.current === sanitizedNext.length) {
@@ -293,7 +290,8 @@ export default function AdminClassesTable() {
         }
       }
 
-      return sanitizedNext;
+      const sanitizedNext = sanitizeClassEntries(nextList);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
