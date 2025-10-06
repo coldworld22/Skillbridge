@@ -1,9 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import AdminClassesTable, {
-  FAILED_SIGNATURE_RETRY_DELAY_MS,
-} from "@/components/admin/online-classes/AdminClassesTable";
+import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 
 const fetchAdminClassesMock = jest.fn();
 const toggleClassStatusMock = jest.fn();
@@ -203,6 +201,25 @@ describe("AdminClassesTable status toggling", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("stops retrying and surfaces an auth error when the server returns 403", async () => {
+    const forbiddenError = Object.assign(new Error("Forbidden"), {
+      response: { status: 403 },
+    });
+    fetchAdminClassesMock.mockRejectedValue(forbiddenError);
+
+    render(<AdminClassesTable />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Unable to load classes. Please sign in again to continue."
+        )
+      ).toBeInTheDocument();
+    });
+
+    expect(fetchAdminClassesMock).toHaveBeenCalledTimes(1);
   });
 
   it("resets to a valid page when total pages shrink without looping", async () => {
