@@ -96,6 +96,7 @@ function CreateOnlineClass() {
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
   const [lessonSubmissionSummary, setLessonSubmissionSummary] = useState({});
+  const [submissionError, setSubmissionError] = useState(null);
   const [createdClass, setCreatedClass] = useState(null);
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
@@ -219,7 +220,7 @@ function CreateOnlineClass() {
   }, [user]);
 
   useEffect(() => {
-    setLessonSubmissionResults((prev) => {
+    setLessonSubmissionSummary((prev) => {
       if (!prev || typeof prev !== 'object') {
         return prev;
       }
@@ -417,6 +418,7 @@ function CreateOnlineClass() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmissionError(null);
     const parseDate = (value) => {
       if (!value) return null;
       const parsed = new Date(value);
@@ -508,6 +510,7 @@ function CreateOnlineClass() {
         setUploadProgress(0);
         setFailedLessonIndices([]);
         const finalizeCreation = (classRecord) => {
+          setSubmissionError(null);
           const events = [
             {
               id: `class-${classRecord.id}`,
@@ -568,6 +571,12 @@ function CreateOnlineClass() {
 
           if (!newClass?.id) {
             console.error('createAdminClass returned an unexpected payload', newClass);
+            setSubmissionError(
+              t('class_creation_failed', {
+                defaultValue:
+                  'We could not confirm the new class details. Please try again in a moment.',
+              })
+            );
             toast.error(
               t('class_creation_failed', {
                 defaultValue:
@@ -657,6 +666,12 @@ function CreateOnlineClass() {
         if (failedIndices.length) {
           const sortedFailed = [...failedIndices].sort((a, b) => a - b);
           setFailedLessonIndices(sortedFailed);
+          setSubmissionError(
+            t('lesson_requires_attention', {
+              defaultValue:
+                'We could not save this lesson. Please review its details and try again.',
+            })
+          );
           toast.error(
             t('lesson_creation_failed', {
               count: sortedFailed.length,
@@ -673,7 +688,11 @@ function CreateOnlineClass() {
         finalizeCreation(classRecord);
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
+        const message =
+          extractErrorMessage(error) ||
+          t('upload_failed', { defaultValue: 'Upload failed. Please try again.' });
+        setSubmissionError(message);
+        toast.error(message);
       } finally {
         setIsSubmitting(false);
         setIsServerUploading(false);
@@ -1195,7 +1214,7 @@ function CreateOnlineClass() {
 
                           {failedLessonIndices.includes(index) && (
                             <p className="text-sm text-red-600">
-                              {errorMessage ||
+                              {submissionError ||
                                 t('lesson_requires_attention', {
                                   defaultValue:
                                     'We could not save this lesson. Please review its details and try again.',
