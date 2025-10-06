@@ -9,8 +9,6 @@ import {
   rejectAdminClass,
   toggleClassStatus,
 } from "@/services/admin/classService";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -56,8 +54,9 @@ const resolvePositiveInteger = (value, fallback = 1) => {
     return Math.floor(fallbackNumeric);
   }
 
-  return 1;
-};
+  if (typeof valueA === "string" && typeof valueB === "string") {
+    return valueA.localeCompare(valueB);
+  }
 
 const compareValues = (a, b, key) => {
   const valueA = a?.[key];
@@ -66,6 +65,8 @@ const compareValues = (a, b, key) => {
   if (valueA === valueB) {
     return 0;
   }
+  return fallback;
+};
 
   if (key === "start_date" || key === "end_date") {
     const timeA = valueA ? Date.parse(valueA) : NaN;
@@ -238,9 +239,10 @@ export default function AdminClassesTable() {
   }, [pageSizeSetting, currentPage]);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
     }
+  }, [currentPage, totalPages]);
 
     if (!user?.id) {
       setClassList([]);
@@ -264,6 +266,7 @@ export default function AdminClassesTable() {
       }
 
       setLoading(true);
+      setAuthError(false);
 
       const scheduleParam = mapScheduleFilterToParam(filterSchedule);
       const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
@@ -367,7 +370,18 @@ export default function AdminClassesTable() {
           setLoading(false);
         }
       }
-    };
+    },
+    [
+      hasHydrated,
+      user?.id,
+      searchTerm,
+      filterStatus,
+      filterApproval,
+      pageSizeSetting,
+      currentPage,
+      totalItems,
+    ]
+  );
 
     fetchClasses();
 
@@ -550,8 +564,6 @@ export default function AdminClassesTable() {
       handleStatusChange(modalClass.id, "reject", trimmedRejectionReason);
       return;
     }
-
-    handleDeleteClass(modalClass.id);
   };
 
   const handlePrev = () => {
@@ -562,13 +574,23 @@ export default function AdminClassesTable() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
-  if (authError) {
-    return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-        Unable to load classes. Please sign in again to continue.
-      </div>
-    );
-  }
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="flex-1 flex items-center gap-3 flex-wrap">
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder={translate("search_classes_placeholder", "Search classes...")}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 w-72"
+            />
+          </div>
 
   if (loading && !classList.length) {
     return (
@@ -578,13 +600,26 @@ export default function AdminClassesTable() {
     );
   }
 
-  if (!classList.length) {
-    return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-        No classes found.
-      </div>
-    );
-  }
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600" htmlFor="approval-filter">
+              {translate("approval", "Approval")}
+            </label>
+            <select
+              id="approval-filter"
+              value={filterApproval}
+              onChange={(event) => {
+                setFilterApproval(event.target.value);
+                setCurrentPage(1);
+              }}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              {APPROVAL_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
@@ -870,10 +905,7 @@ export default function AdminClassesTable() {
                   </Link>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            )}
 
       {totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -910,8 +942,18 @@ export default function AdminClassesTable() {
               <FaChevronRight />
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage >= totalPages}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
+          >
+            {translate("next", "Next")}
+            <FaChevronRight className="ml-1" />
+          </button>
         </div>
-      )}
+      </div>
 
       {modalClass && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
