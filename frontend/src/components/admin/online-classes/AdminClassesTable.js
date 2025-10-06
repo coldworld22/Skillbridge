@@ -113,6 +113,29 @@ const computeListSignature = (items) => {
     .join("|");
 };
 
+const sanitizeClassEntries = (items) => {
+  if (!Array.isArray(items)) {
+    return null;
+  }
+
+  let encounteredInvalid = false;
+  const sanitized = [];
+
+  for (const item of items) {
+    if (item && typeof item === "object") {
+      sanitized.push(item);
+    } else {
+      encounteredInvalid = true;
+    }
+  }
+
+  if (!encounteredInvalid) {
+    return items;
+  }
+
+  return sanitized;
+};
+
 export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -239,13 +262,16 @@ export default function AdminClassesTable() {
   };
 
   const updateClassList = (updater) => {
-    setClassList((previous) => {
+    setClassList((previousRaw) => {
+      const previous = sanitizeClassEntries(previousRaw) ?? [];
+
       if (typeof updater === "function") {
         const nextValue = updater(previous);
         return Array.isArray(nextValue) ? nextValue : previous;
       }
 
-      return Array.isArray(updater) ? updater : previous;
+      const sanitizedNext = sanitizeClassEntries(updater);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
@@ -262,7 +288,7 @@ export default function AdminClassesTable() {
         }
       }
 
-      return nextList;
+      return sanitizedNext;
     });
   };
 
