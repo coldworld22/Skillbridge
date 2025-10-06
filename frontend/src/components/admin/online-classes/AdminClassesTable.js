@@ -9,6 +9,8 @@ import {
   rejectAdminClass,
   toggleClassStatus,
 } from "@/services/admin/classService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -43,7 +45,7 @@ const sanitizeClassEntries = (value) => {
   return value.filter((item) => item && typeof item === "object");
 };
 
-const resolvePositiveInteger = (value, fallback = 1) => {
+const resolvePositiveInteger = (value, fallback = DEFAULT_PAGE_SIZE) => {
   const numeric = Number(value);
   if (Number.isFinite(numeric) && numeric > 0) {
     return Math.floor(numeric);
@@ -54,9 +56,8 @@ const resolvePositiveInteger = (value, fallback = 1) => {
     return Math.floor(fallbackNumeric);
   }
 
-  if (typeof valueA === "string" && typeof valueB === "string") {
-    return valueA.localeCompare(valueB);
-  }
+  return DEFAULT_PAGE_SIZE;
+};
 
 const compareValues = (a, b, key) => {
   const valueA = a?.[key];
@@ -65,8 +66,6 @@ const compareValues = (a, b, key) => {
   if (valueA === valueB) {
     return 0;
   }
-  return fallback;
-};
 
   if (key === "start_date" || key === "end_date") {
     const timeA = valueA ? Date.parse(valueA) : NaN;
@@ -128,7 +127,8 @@ const extractInstructorId = (cls) => {
 };
 
 const formatCurrency = (value) => {
-  if (!Number.isFinite(Number(value)) || Number(value) <= 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
     return "$0.00";
   }
 
@@ -136,7 +136,7 @@ const formatCurrency = (value) => {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
-  }).format(Number(value));
+  }).format(numeric);
 };
 
 const downloadCSV = (rows, headers) => {
@@ -244,6 +244,11 @@ export default function AdminClassesTable() {
     }
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     if (!user?.id) {
       setClassList([]);
       setTotalItems(0);
@@ -260,6 +265,7 @@ export default function AdminClassesTable() {
         skipNextFetchRef.current = false;
         return;
       }
+
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
@@ -271,7 +277,7 @@ export default function AdminClassesTable() {
       const scheduleParam = mapScheduleFilterToParam(filterSchedule);
       const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
       const sanitizedSearch = debouncedSearch.trim();
-      const pageSize =
+      const perPage =
         pageSizeSetting === "all"
           ? DEFAULT_PAGE_SIZE
           : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
@@ -280,8 +286,8 @@ export default function AdminClassesTable() {
       try {
         const baseParams = {
           page: requestedPage,
-          limit: pageSize,
-          filter: sanitizedSearch,
+          limit: perPage,
+          filter: sanitizedSearch || undefined,
           approval: approvalParam,
           schedule: scheduleParam,
         };
@@ -296,14 +302,19 @@ export default function AdminClassesTable() {
             aggregated.length
         );
         let totalPagesFromMeta = Number(
-          meta?.totalPages ?? meta?.total_pages ?? aggregated.length
+          meta?.totalPages ??
+            meta?.total_pages ??
+            (perPage > 0 ? Math.ceil(totalFromMeta / perPage) : 1)
         );
+        if (!Number.isFinite(totalPagesFromMeta) || totalPagesFromMeta <= 0) {
+          totalPagesFromMeta = 1;
+        }
 
         if (pageSizeSetting === "all" && Number.isFinite(totalPagesFromMeta) && totalPagesFromMeta > 1) {
           const additionalPages = [];
           for (let page = 2; page <= totalPagesFromMeta; page += 1) {
             additionalPages.push(
-              fetchAdminClasses({ ...baseParams, page, limit: pageSize }).then((response) =>
+              fetchAdminClasses({ ...baseParams, page, limit: perPage }).then((response) =>
                 sanitizeClassEntries(response.data)
               )
             );
@@ -332,8 +343,8 @@ export default function AdminClassesTable() {
           }
         } else {
           const safeTotalPages = Number.isFinite(totalPagesFromMeta)
-            ? Math.max(1, Math.ceil(totalFromMeta / pageSize))
-            : Math.max(1, Math.ceil(totalFromMeta / pageSize));
+            ? Math.max(1, totalPagesFromMeta)
+            : Math.max(1, Math.ceil(totalFromMeta / perPage));
           setTotalPages(safeTotalPages);
           if (requestedPage > safeTotalPages) {
             skipNextFetchRef.current = true;
@@ -370,18 +381,7 @@ export default function AdminClassesTable() {
           setLoading(false);
         }
       }
-    },
-    [
-      hasHydrated,
-      user?.id,
-      searchTerm,
-      filterStatus,
-      filterApproval,
-      pageSizeSetting,
-      currentPage,
-      totalItems,
-    ]
-  );
+    };
 
     fetchClasses();
 
@@ -411,9 +411,7 @@ export default function AdminClassesTable() {
         const updated = await approveAdminClass(id);
         setClassList((prev) =>
           prev.map((cls) =>
-            cls.id === id
-              ? { ...cls, ...updated, approvalStatus: "Approved" }
-              : cls
+            cls.id === id ? { ...cls, ...updated, approvalStatus: "Approved" } : cls
           )
         );
         toast.success("Class approved");
@@ -493,10 +491,7 @@ export default function AdminClassesTable() {
           return Math.max(1, Math.ceil(nextTotal / pageSize));
         });
         setCurrentPage((prevPage) => {
-          const pageSize = resolvePositiveInteger(
-            pageSizeSetting,
-            DEFAULT_PAGE_SIZE
-          );
+          const pageSize = resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
           const nextTotal = Math.max(totalItems - 1, 0);
           const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
           return Math.min(prevPage, nextTotalPages);
@@ -564,6 +559,10 @@ export default function AdminClassesTable() {
       handleStatusChange(modalClass.id, "reject", trimmedRejectionReason);
       return;
     }
+
+    if (modalType === "delete") {
+      handleDeleteClass(modalClass.id);
+    }
   };
 
   const handlePrev = () => {
@@ -574,52 +573,24 @@ export default function AdminClassesTable() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-      <div className="p-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-1 flex items-center gap-3 flex-wrap">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder={translate("search_classes_placeholder", "Search classes...")}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 w-72"
-            />
-          </div>
-
-  if (loading && !classList.length) {
+  if (authError) {
     return (
       <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
-        Loading classes...
+        {translate(
+          "admin_classes_auth_error",
+          "Unable to load classes. Please sign in again to continue."
+        )}
       </div>
     );
   }
 
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600" htmlFor="approval-filter">
-              {translate("approval", "Approval")}
-            </label>
-            <select
-              id="approval-filter"
-              value={filterApproval}
-              onChange={(event) => {
-                setFilterApproval(event.target.value);
-                setCurrentPage(1);
-              }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            >
-              {APPROVAL_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+  if (loading && !classList.length) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        {translate("loading_classes", "Loading classes...")}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
@@ -722,7 +693,6 @@ export default function AdminClassesTable() {
             disabled={exporting}
           >
             <FaDownload />
-            {" "}
             {exporting
               ? translate("exporting_label", "Exporting...")
               : translate("export_button_label", "Export")}
@@ -899,13 +869,16 @@ export default function AdminClassesTable() {
                   <Link
                     href={`/dashboard/admin/online-classes/${cls.id}/analytics`}
                     title={translate("view_analytics_tooltip", "View Analytics")}
-                    className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
+                    className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-2 py-1 rounded shadow"
                   >
                     <FaChartBar className="w-4 h-4" />
                   </Link>
                 </td>
               </tr>
-            )}
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -953,7 +926,7 @@ export default function AdminClassesTable() {
             <FaChevronRight className="ml-1" />
           </button>
         </div>
-      </div>
+      )}
 
       {modalClass && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
