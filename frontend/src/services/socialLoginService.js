@@ -10,6 +10,6 @@ const publicApi = axios.create({
 });
 
 export const fetchSocialLoginConfig = async () => {
-  const { data } = await publicApi.get("/social-login/config");
+  const { data } = await publicApi.get("social-login/config");
   return data?.data ?? null;
 };
