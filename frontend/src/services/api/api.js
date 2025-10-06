@@ -11,6 +11,12 @@ import logger from "@/utils/logger";
 const isBrowser = typeof window !== "undefined";
 const publicBaseCandidate = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 const internalBaseCandidate = process.env.INTERNAL_API_BASE_URL;
+const LOCALHOST_HOSTNAMES = new Set([
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "::1",
+]);
 
 const resolveBrowserDerivedBase = (candidate) => {
   if (!isBrowser) {
@@ -38,6 +44,14 @@ const pickBaseCandidate = () => {
   }
 
   return publicBaseCandidate;
+};
+
+const isLocalHostname = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  return LOCALHOST_HOSTNAMES.has(String(value).toLowerCase());
 };
 
 const ensureAbsoluteUrl = (candidate) => {
