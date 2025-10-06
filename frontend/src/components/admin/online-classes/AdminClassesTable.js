@@ -4,7 +4,6 @@ import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import {
-  updateAdminClass,
   deleteAdminClass,
   approveAdminClass,
   rejectAdminClass,
