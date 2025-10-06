@@ -48,6 +48,9 @@ export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
 
 const DEFAULT_PAGE_SIZE = 5;
 const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
+
+const normalizeStatusValue = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
