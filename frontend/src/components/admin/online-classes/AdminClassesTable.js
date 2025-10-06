@@ -31,6 +31,17 @@ import {
 } from "react-icons/fa";
 
 const BACKEND_STATUSES = new Set(["draft", "published", "archived"]);
+const normalizeStatusValue = (value) => {
+  if (typeof value === "string") {
+    return value.trim().toLowerCase();
+  }
+
+  if (value == null) {
+    return "";
+  }
+
+  return String(value).trim().toLowerCase();
+};
 const MIN_REJECTION_REASON_LENGTH = 3;
 
 export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
@@ -52,20 +63,23 @@ const resolvePositiveInteger = (value, fallback = 1) => {
 };
 
 export const mapStatusFilterToQuery = (filterStatus) => {
-  if (!filterStatus || filterStatus === "All") {
+  const normalized = normalizeStatusValue(filterStatus);
+
+  if (!normalized || normalized === "all") {
     return undefined;
   }
 
-  const normalized = filterStatus.toLowerCase();
   return BACKEND_STATUSES.has(normalized) ? normalized : undefined;
 };
 
 const shouldApplyScheduleFilter = (filterStatus) => {
-  if (!filterStatus || filterStatus === "All") {
+  const normalized = normalizeStatusValue(filterStatus);
+
+  if (!normalized || normalized === "all") {
     return false;
   }
 
-  return !BACKEND_STATUSES.has(filterStatus.toLowerCase());
+  return !BACKEND_STATUSES.has(normalized);
 };
 
 export function compareValues(a, b, key) {
@@ -290,7 +304,8 @@ export default function AdminClassesTable() {
         }
       }
 
-      return sanitizedNext;
+      const sanitizedNext = sanitizeClassEntries(nextList);
+      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
     });
   };
 
@@ -461,6 +476,7 @@ export default function AdminClassesTable() {
       try {
         let finalSignature = signature;
         const scheduleFiltering = shouldApplyScheduleFilter(statusValue);
+        const normalizedScheduleFilter = normalizeStatusValue(statusValue);
         const statusQuery = mapStatusFilterToQuery(statusValue);
         const sanitizeList = (list) => sanitizeClassEntries(list) ?? [];
         const safeLimit = resolvePositiveInteger(limitValue);
@@ -477,7 +493,7 @@ export default function AdminClassesTable() {
           page: initialPage,
         });
 
-        if (scheduleFiltering) {
+        if (scheduleFiltering && normalizedScheduleFilter) {
           const totalPagesFromMeta = meta?.totalPages ?? 1;
           let aggregatedData = sanitizeList(data);
 
@@ -494,10 +510,13 @@ export default function AdminClassesTable() {
           }
 
           const filteredData = aggregatedData.filter((cls) => {
-            const scheduleStatus = cls?.scheduleStatus;
+            const normalizedClassStatus = normalizeStatusValue(
+              cls?.scheduleStatus
+            );
+
             return (
-              typeof scheduleStatus === "string" &&
-              scheduleStatus.toLowerCase() === statusValue.toLowerCase()
+              normalizedClassStatus &&
+              normalizedClassStatus === normalizedScheduleFilter
             );
           });
           const sortedData = sortClasses(filteredData, sortValue);
@@ -700,16 +719,18 @@ export default function AdminClassesTable() {
         page += 1;
       }
 
-      const filteredClasses = shouldApplyScheduleFilter(filterStatus)
-        ? allClasses.filter((cls) => {
-            const scheduleStatus = cls?.scheduleStatus;
-            return (
-              typeof scheduleStatus === "string" &&
-              scheduleStatus.toLowerCase() === filterStatus.toLowerCase()
-            );
-          })
-        : allClasses;
-      const sortedClasses = sortClasses(filteredClasses, sortKey);
+      const normalizedScheduleFilter = normalizeStatusValue(filterStatus);
+      const filteredClasses =
+        shouldApplyScheduleFilter(filterStatus) && normalizedScheduleFilter
+          ? allClasses.filter(
+              (cls) =>
+                normalizeStatusValue(cls?.scheduleStatus) ===
+                normalizedScheduleFilter
+            )
+          : allClasses;
+      const sortedClasses = [...filteredClasses].sort((a, b) =>
+        a[sortKey] > b[sortKey] ? 1 : -1
+      );
       const headers = [
         "Title",
         "Instructor",
