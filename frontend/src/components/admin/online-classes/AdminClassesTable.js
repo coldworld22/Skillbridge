@@ -37,6 +37,9 @@ export const FAILED_SIGNATURE_RETRY_DELAY_MS = 5000;
 
 const DEFAULT_PAGE_SIZE = 5;
 const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
+
+const normalizeStatusValue = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
 const resolvePositiveInteger = (value, fallback = 1) => {
   const numericValue = Number(value);
   if (Number.isFinite(numericValue) && numericValue > 0) {
@@ -56,7 +59,7 @@ export const mapStatusFilterToQuery = (filterStatus) => {
     return undefined;
   }
 
-  const normalized = filterStatus.toLowerCase();
+  const normalized = normalizeStatusValue(filterStatus);
   return BACKEND_STATUSES.has(normalized) ? normalized : undefined;
 };
 
@@ -65,7 +68,7 @@ const shouldApplyScheduleFilter = (filterStatus) => {
     return false;
   }
 
-  return !BACKEND_STATUSES.has(filterStatus.toLowerCase());
+  return !BACKEND_STATUSES.has(normalizeStatusValue(filterStatus));
 };
 
 export function compareValues(a, b, key) {
@@ -280,9 +283,11 @@ export default function AdminClassesTable() {
       return;
     }
 
+    const sanitizedNext = sanitizeClassEntries(nextList) ?? [];
+
     setClassList((previous) => {
-      if (classListLengthRef.current === nextList.length) {
-        const nextSignature = computeListSignature(nextList);
+      if (classListLengthRef.current === sanitizedNext.length) {
+        const nextSignature = computeListSignature(sanitizedNext);
         if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
@@ -480,10 +485,9 @@ export default function AdminClassesTable() {
             aggregatedData = aggregatedData.concat(...subsequentPages);
           }
 
-          const filteredData = aggregatedData.filter(
-            (cls) =>
-              cls.scheduleStatus?.toLowerCase() ===
-              statusValue.toLowerCase()
+          const targetStatus = normalizeStatusValue(statusValue);
+          const filteredData = aggregatedData.filter((cls) =>
+            normalizeStatusValue(cls?.scheduleStatus) === targetStatus
           );
           const sortedData = sortClasses(filteredData, sortValue);
           const totalFilteredItems = sortedData.length;
@@ -687,7 +691,8 @@ export default function AdminClassesTable() {
       const filteredClasses = shouldApplyScheduleFilter(filterStatus)
         ? allClasses.filter(
             (cls) =>
-              cls.scheduleStatus?.toLowerCase() === filterStatus.toLowerCase()
+              normalizeStatusValue(cls?.scheduleStatus) ===
+              normalizeStatusValue(filterStatus)
           )
         : allClasses;
       const sortedClasses = [...filteredClasses].sort((a, b) =>
