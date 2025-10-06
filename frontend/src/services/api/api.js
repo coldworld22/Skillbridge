@@ -11,6 +11,12 @@ import logger from "@/utils/logger";
 const isBrowser = typeof window !== "undefined";
 const publicBaseCandidate = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 const internalBaseCandidate = process.env.INTERNAL_API_BASE_URL;
+const LOCALHOST_HOSTNAMES = new Set([
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "::1",
+]);
 
 const resolveBrowserDerivedBase = (candidate) => {
   if (!isBrowser) {
@@ -38,6 +44,14 @@ const pickBaseCandidate = () => {
   }
 
   return publicBaseCandidate;
+};
+
+const isLocalHostname = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  return LOCALHOST_HOSTNAMES.has(String(value).toLowerCase());
 };
 
 const ensureAbsoluteUrl = (candidate) => {
@@ -162,8 +176,68 @@ const ensureTrailingSlash = (candidate) => {
   return `${candidate.replace(/\/+$/, "")}/`;
 };
 
+const deriveBrowserApiBase = () => {
+  if (!isBrowser) {
+    return null;
+  }
+
+  try {
+    const origin = window?.location?.origin;
+    if (!origin) {
+      return null;
+    }
+
+    return new URL("/api", origin).toString();
+  } catch (error) {
+    logger.warn(
+      `Failed to derive API base from window.location.origin: ${error?.message || error}`
+    );
+    return null;
+  }
+};
+
+const maybeReplaceLocalhostForBrowser = (candidate) => {
+  if (!isBrowser || !candidate) {
+    return candidate;
+  }
+
+  try {
+    const candidateUrl = new URL(candidate);
+    const candidateHost = candidateUrl.hostname;
+    const browserHost = window?.location?.hostname;
+
+    if (
+      isLocalHostname(candidateHost) &&
+      browserHost &&
+      !isLocalHostname(browserHost)
+    ) {
+      const derived = deriveBrowserApiBase();
+      if (derived) {
+        logger.warn(
+          `API base "${candidate}" targets localhost but the site is served from "${browserHost}". Falling back to "${derived}".`
+        );
+        return derived;
+      }
+
+      logger.warn(
+        `API base "${candidate}" targets localhost but the site is served from "${browserHost}". Falling back to browser origin.`
+      );
+    }
+  } catch (error) {
+    logger.warn(
+      `Failed to inspect API base URL "${candidate}": ${error?.message || error}`
+    );
+  }
+
+  return candidate;
+};
+
+const selectedCandidate = ensureApiSuffix(pickBaseCandidate());
+const absoluteCandidate = ensureAbsoluteUrl(selectedCandidate);
+const browserSafeCandidate = maybeReplaceLocalhostForBrowser(absoluteCandidate);
+
 const baseURL = ensureTrailingSlash(
-  ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate())),
+  browserSafeCandidate || absoluteCandidate || selectedCandidate,
 );
 
 // Warn developers if the default domain URL is used in production
