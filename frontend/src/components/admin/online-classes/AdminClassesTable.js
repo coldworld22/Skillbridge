@@ -239,6 +239,16 @@ export default function AdminClassesTable() {
     return true;
   };
 
+  const updateClassList = (updater) => {
+    setClassList((previous) => {
+      if (typeof updater === "function") {
+        return updater(previous);
+      }
+
+      return Array.isArray(updater) ? updater : previous;
+    });
+  };
+
   const updateClassListIfChanged = (nextList) => {
     setClassList((previous) => {
       if (previous.length === nextList.length) {
