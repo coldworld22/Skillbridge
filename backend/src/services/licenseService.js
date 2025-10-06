@@ -4,6 +4,22 @@ const db = require('../config/database');
 const ENVATO_SALE_URL = 'https://api.envato.com/v3/market/author/sale';
 const PLACEHOLDER_EMAIL = 'license@placeholder.invalid';
 
+const parseTruthy = (value) => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+};
+
+const isDemoBypassEnabled = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
+  return parseTruthy(process.env.LICENSE_DEMO_BYPASS);
+};
+
 const normaliseDomain = (domain) => {
   if (typeof domain !== 'string') {
     return domain === undefined ? undefined : null;
@@ -85,7 +101,7 @@ async function validatePurchaseCode(code, domain, options = {}) {
     }
   }
 
-  if (code === 'DEMO-CODE-1234') {
+  if (code === 'DEMO-CODE-1234' && isDemoBypassEnabled()) {
     let licenseId = null;
     if (shouldPersist) {
       licenseId = await upsertLicense(code, {

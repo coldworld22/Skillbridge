@@ -158,6 +158,7 @@
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li><strong>Envato personal token</strong> with permission to view sales (stored in <code>ENVATO_TOKEN</code>).</li>
+<li><strong>(Optional) Development bypass flag</strong> – set <code>LICENSE_DEMO_BYPASS=true</code> only in non-production environments to accept the demo code <code>DEMO-CODE-1234</code>. The flag is ignored when <code>NODE_ENV=production</code>.</li>
 <li><strong>Backend endpoint</strong> capable of making HTTPS requests.</li>
 <li><strong>Database table</strong> for tracking <code>purchase_code</code>, <code>domain</code>, <code>email</code>, <code>ip</code>, <code>status</code>, <code>activated_at</code>, <code>last_check</code>, and <code>logs</code>.</li>
 </ul>
@@ -181,6 +182,7 @@
 <h2 id="security-logging-tips">Security &amp; Logging Tips</h2>
 <ul>
 <li>Keep <code>ENVATO_TOKEN</code> on the server; never expose it client-side.</li>
+<li>Avoid enabling <code>LICENSE_DEMO_BYPASS</code> in packaged or production builds. Because the flag is ignored in production mode, leave it unset in distributed environment files to prevent accidental activation.</li>
 <li>Sanitize and validate all user input before contacting Envato.</li>
 <li>Rate-limit activation attempts and hash sensitive data where possible.</li>
 <li>Log activations, validations and domain mismatches for audit trails.</li>
