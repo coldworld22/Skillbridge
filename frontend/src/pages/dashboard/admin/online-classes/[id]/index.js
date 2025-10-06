@@ -1,6 +1,6 @@
 // pages/dashboard/admin/online-classes/[id]/index.js
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import Link from "next/link";
@@ -14,28 +14,44 @@ import DOMPurify from 'isomorphic-dompurify';
 function AdminClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { t, i18n } = useTranslation('dashboard');
+  const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
 
   useEffect(() => {
     if (!id) return;
     const load = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await fetchAdminClassById(id);
+        if (!data) {
+          setError(t('adminClassDetailPage.not_found'));
+          setDetails(null);
+          return;
+        }
+
         setDetails(data);
+        setError(null);
       } catch (err) {
         console.error("Failed to load class", err);
+        setError(t('adminClassDetailPage.error_loading'));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [id]);
+  }, [id, t]);
+
+  const sanitizedDescription = useMemo(
+    () => DOMPurify.sanitize(details?.description || ""),
+    [details?.description]
+  );
 
   return (
-    <div className="p-6 space-y-8" dir={i18n.dir()}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" dir={i18n.dir()}>
+    <div className="p-6 space-y-8" dir={direction}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" dir={direction}>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('adminClassDetailPage.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">ID: {id}</p>
@@ -58,8 +74,16 @@ function AdminClassDetailPage() {
           </div>
           <p className="mt-3 text-gray-600">{t('adminClassDetailPage.loading')}</p>
         </div>
+      ) : error ? (
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-100 text-center">
+          <p className="text-gray-700">{error}</p>
+        </div>
+      ) : !details ? (
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-100 text-center">
+          <p className="text-gray-700">{t('adminClassDetailPage.not_found')}</p>
+        </div>
       ) : (
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         {/* Media section */}
         <div className="p-6 md:p-8 space-y-6">
           {/* Cover image and video */}
@@ -208,7 +232,7 @@ function AdminClassDetailPage() {
             <h3 className="text-lg font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">{t('description_label')}</h3>
             <div
               className="prose max-w-none text-gray-600"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(details?.description || "") }}
+              dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
             />
           </div>
 
@@ -264,7 +288,7 @@ export default ProtectedAdminClassDetailPage;
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
     },
   };
 }

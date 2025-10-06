@@ -641,7 +641,9 @@
     "loading": "جارٍ تحميل تفاصيل الصف...",
     "views_label": "المشاهدات",
     "view_students": "عرض الطلاب",
-    "view_analytics": "عرض التحليلات"
+    "view_analytics": "عرض التحليلات",
+    "not_found": "لم يتم العثور على الصف.",
+    "error_loading": "تعذر تحميل هذا الصف. يرجى المحاولة لاحقًا."
   },
   "popupAnnouncementsPage": {
     "title": "الإعلانات المنبثقة",

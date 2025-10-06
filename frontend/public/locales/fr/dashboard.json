@@ -641,7 +641,9 @@
     "loading": "Chargement des détails du cours...",
     "views_label": "Vues",
     "view_students": "Voir les étudiants",
-    "view_analytics": "Voir les analyses"
+    "view_analytics": "Voir les analyses",
+    "not_found": "Cours introuvable.",
+    "error_loading": "Impossible de charger ce cours. Veuillez réessayer plus tard."
   },
   "popupAnnouncementsPage": {
     "title": "Annonces pop-up",
