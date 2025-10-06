@@ -219,7 +219,7 @@ function CreateOnlineClass() {
   }, [user]);
 
   useEffect(() => {
-    setLessonSubmissionResults((prev) => {
+    setLessonSubmissionSummary((prev) => {
       if (!prev || typeof prev !== 'object') {
         return prev;
       }
@@ -1195,7 +1195,7 @@ function CreateOnlineClass() {
 
                           {failedLessonIndices.includes(index) && (
                             <p className="text-sm text-red-600">
-                              {errorMessage ||
+                              {failureMessage ||
                                 t('lesson_requires_attention', {
                                   defaultValue:
                                     'We could not save this lesson. Please review its details and try again.',
