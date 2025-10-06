@@ -13,7 +13,6 @@ const { v4: uuidv4 } = require("uuid");
 const { getActiveStudentSubscription } = require("../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 const { getPlanCoveredMethod } = require("../payments/helpers/methods");
-const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 

@@ -105,9 +105,19 @@ async function creditTutorialSubscription(
   subscriptionId,
   trx,
   overrideOrOptions,
-  legacyOptions,
+  legacyOptions
 ) {
-  const args = [
+  let precomputedAmount;
+  let options;
+
+  if (typeof overrideOrOptions === "number") {
+    precomputedAmount = overrideOrOptions;
+    options = legacyOptions;
+  } else {
+    options = overrideOrOptions;
+  }
+
+  return creditInstructorSubscription(
     "tutorial",
     tutorialId,
     planId,
