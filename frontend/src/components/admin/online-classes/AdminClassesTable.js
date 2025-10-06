@@ -151,6 +151,9 @@ const sanitizeClassEntries = (items) => {
   return sanitized;
 };
 
+const sortClassesByKey = (items, key) =>
+  [...items].sort((a, b) => compareValues(a, b, key));
+
 export default function AdminClassesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -244,36 +247,40 @@ export default function AdminClassesTable() {
     if (totalItemsRef.current === value) {
       return false;
     }
-    totalItemsRef.current = value;
-    setTotalItems(value);
-    return true;
+
+    return fallback;
   };
 
-  const setTotalPagesIfNeeded = (value) => {
-    if (totalPagesRef.current === value) {
-      return false;
-    }
-    totalPagesRef.current = value;
-    setTotalPages(value);
-    return true;
-  };
-
-  const updateClassList = (updater) => {
+  const updateClassList = useCallback((updater) => {
     setClassList((previousRaw) => {
-      const previous = sanitizeClassEntries(previousRaw) ?? [];
+      const previousList = sanitizeClassEntries(previousRaw) ?? [];
+      const nextRaw =
+        typeof updater === "function" ? updater(previousList) : updater;
+      const nextList = sanitizeClassEntries(nextRaw) ?? [];
 
-      if (typeof updater === "function") {
-        const nextValue = updater(previous);
-        return Array.isArray(nextValue) ? nextValue : previous;
+      if (
+        previousList.length === nextList.length &&
+        computeListSignature(previousList) === computeListSignature(nextList)
+      ) {
+        return previousRaw;
       }
 
-      const sanitizedNext = sanitizeClassEntries(updater);
-      return Array.isArray(sanitizedNext) ? sanitizedNext : previous;
+      return nextList;
     });
-  };
+  }, []);
 
-  const updateClassListIfChanged = (nextList) => {
-    if (!Array.isArray(nextList)) {
+  const setTotalItemsIfNeeded = useCallback((value) => {
+    const normalized = normalizeNonNegativeInteger(value, 0);
+    setTotalItems((previous) => (previous === normalized ? previous : normalized));
+  }, []);
+
+  const setTotalPagesIfNeeded = useCallback((value) => {
+    const normalized = resolvePositiveInteger(value, 1);
+    setTotalPages((previous) => (previous === normalized ? previous : normalized));
+  }, []);
+
+  const setCurrentPageIfNeeded = useCallback((value) => {
+    if (!Number.isFinite(value) || value <= 0) {
       return;
     }
 
@@ -417,7 +424,7 @@ export default function AdminClassesTable() {
           const totalFilteredItems = sortedData.length;
           const totalFilteredPages = Math.max(
             1,
-            Math.ceil(totalFilteredItems / safeLimit)
+            Math.ceil((metaTotalItems || 0) / safeLimit)
           );
           const normalizedPageRaw = Math.min(
             Math.max(page, 1),
@@ -718,18 +725,12 @@ export default function AdminClassesTable() {
   };
 
   const handleDeleteClass = async (id) => {
-    const singleItemOnPage = classList.length === 1;
-    const previousPage = currentPage > 1 ? currentPage - 1 : 1;
 
     try {
       await deleteAdminClass(id);
 
       const updatedList = classList.filter((cls) => cls.id !== id);
-      const nextTotalItems = Math.max(
-        totalItemsRef.current - 1,
-        updatedList.length,
-        0
-      );
+      const nextTotalItems = Math.max(totalItems - 1, updatedList.length, 0);
       const derivedItemsPerPage =
         pageSizeSetting === "all"
           ? resolvePositiveInteger(
@@ -750,11 +751,8 @@ export default function AdminClassesTable() {
       setTotalItemsIfNeeded(nextTotalItems);
       setTotalPagesIfNeeded(nextTotalPages);
 
-      if (updatedList.length === 0 && currentPageRef.current > 1) {
-        const candidatePage = Math.min(
-          currentPageRef.current - 1,
-          nextTotalPages
-        );
+      if (updatedList.length === 0 && currentPage > 1) {
+        const candidatePage = Math.min(currentPage - 1, nextTotalPages);
         setCurrentPageIfNeeded(candidatePage);
       }
 
