@@ -239,33 +239,32 @@ export default function AdminClassesTable() {
     return true;
   };
 
-  const updateClassListIfChanged = (nextList) => {
+  const updateClassList = (updater) => {
     setClassList((previous) => {
-      if (previous.length === nextList.length) {
-        const previousFirstId = previous[0]?.id ?? null;
-        const nextFirstId = nextList[0]?.id ?? null;
+      if (typeof updater === "function") {
+        const nextValue = updater(previous);
+        return Array.isArray(nextValue) ? nextValue : previous;
+      }
 
-        if (previousFirstId === nextFirstId) {
+      return Array.isArray(updater) ? updater : previous;
+    });
+  };
+
+  const updateClassListIfChanged = (nextList) => {
+    if (!Array.isArray(nextList)) {
+      return;
+    }
+
+    setClassList((previous) => {
+      if (classListLengthRef.current === nextList.length) {
+        const nextSignature = computeListSignature(nextList);
+        if (classListSignatureRef.current === nextSignature) {
           return previous;
         }
       }
 
       return nextList;
     });
-  };
-
-  const updateClassList = (updater) => {
-    if (typeof updater === "function") {
-      setClassList((previous) => {
-        const nextValue = updater(previous);
-        return Array.isArray(nextValue) ? nextValue : previous;
-      });
-      return;
-    }
-
-    if (Array.isArray(updater)) {
-      setClassList(updater);
-    }
   };
 
   const sortClasses = (items, key = sortKey) =>
