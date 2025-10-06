@@ -86,13 +86,16 @@ const useAuthStore = create(
           const msgStop = useMessageStore.getState().stopPolling;
           notifStop?.();
           msgStop?.();
-          localStorage.removeItem("auth");
+          authStoreApi?.persist?.clearStorage?.();
           set({ accessToken: null, user: null });
         },
       };
     },
     {
       name: "auth",
+      partialize: (state) => ({
+        user: state.user,
+      }),
       onRehydrateStorage: () => {
         return (state) => {
           logger.log("🔥 Zustand hydrated");
