@@ -1214,7 +1214,7 @@ function CreateOnlineClass() {
 
                           {failedLessonIndices.includes(index) && (
                             <p className="text-sm text-red-600">
-                              {submissionError ||
+                              {failureMessage ||
                                 t('lesson_requires_attention', {
                                   defaultValue:
                                     'We could not save this lesson. Please review its details and try again.',

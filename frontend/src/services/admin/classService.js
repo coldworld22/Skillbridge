@@ -64,12 +64,63 @@ const toDisplayString = (value) => {
   return "";
 };
 
+const resolveDateTime = (cls, keys) => {
+  for (const key of keys) {
+    if (cls[key] != null) {
+      return cls[key];
+    }
+  }
+  return null;
+};
+
+const resolveDisplayDate = (rawValue, displayValue) => {
+  const candidate = displayValue ?? rawValue;
+
+  if (!candidate) {
+    return "";
+  }
+
+  const date = candidate instanceof Date ? candidate : new Date(candidate);
+  if (Number.isNaN(date.getTime())) {
+    return typeof candidate === "string" || typeof candidate === "number"
+      ? String(candidate)
+      : "";
+  }
+
+  return date.toISOString();
+};
+
 const formatClass = (cls) => {
   if (!cls || typeof cls !== "object") {
     return null;
   }
 
   const { status, schedule_status, ...rest } = cls;
+  const startDateTime = resolveDateTime(cls, [
+    "start_date",
+    "startDate",
+    "start_date_time",
+    "startDateTime",
+  ]);
+  const endDateTime = resolveDateTime(cls, [
+    "end_date",
+    "endDate",
+    "end_date_time",
+    "endDateTime",
+  ]);
+  const startDateDisplay = resolveDisplayDate(startDateTime, (
+    cls.start_date_display ??
+    cls.startDateDisplay ??
+    cls.start_date_formatted ??
+    cls.startDateFormatted
+  ));
+  const endDateDisplay = resolveDisplayDate(endDateTime, (
+    cls.end_date_display ??
+    cls.endDateDisplay ??
+    cls.end_date_formatted ??
+    cls.endDateFormatted
+  ));
+
   const title = toDisplayString(
     cls.title ?? cls.name ?? cls.class_title ?? rest.title
   );
@@ -114,15 +165,18 @@ const formatClass = (cls) => {
       : null,
     trending: Boolean(cls.trending),
 
-    start_date: startDate.display || null,
-    end_date: endDate.display || null,
+    start_date: startDateDisplay ? startDateDisplay.split("T")[0] : null,
+    end_date: endDateDisplay ? endDateDisplay.split("T")[0] : null,
 
-    startDateInput: startDate.display ? toDateInput(startDate.display) : "",
-    endDateInput: endDate.display ? toDateInput(endDate.display) : "",
+    startDateTime,
+    endDateTime,
+
+    startDateInput: startDateDisplay ? toDateInput(startDateDisplay) : "",
+    endDateInput: endDateDisplay ? toDateInput(endDateDisplay) : "",
 
     approvalStatus: cls.moderation_status || "Pending",
     scheduleStatus:
-      schedule_status || computeScheduleStatus(cls.start_date, cls.end_date),
+      schedule_status || computeScheduleStatus(startDateTime, endDateTime),
     views: cls.views || 0,
     price:
       Number.isFinite(priceValue) && priceValue >= 0
