@@ -660,7 +660,9 @@
     "loading": "Loading class details...",
     "views_label": "Views",
     "view_students": "View Students",
-    "view_analytics": "View Analytics"
+    "view_analytics": "View Analytics",
+    "not_found": "Class not found.",
+    "error_loading": "We couldn't load this class. Please try again later."
   },
   "popupAnnouncementsPage": {
     "title": "Popup Announcements",

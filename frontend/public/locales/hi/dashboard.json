@@ -641,7 +641,9 @@
     "loading": "लोडिंग क्लास विवरण ...",
     "views_label": "दृश्य",
     "view_students": "छात्र देखें",
-    "view_analytics": "एनालिटिक्स देखें"
+    "view_analytics": "एनालिटिक्स देखें",
+    "not_found": "कक्षा नहीं मिली।",
+    "error_loading": "इस कक्षा को लोड नहीं किया जा सका। कृपया बाद में पुनः प्रयास करें।"
   },
   "popupAnnouncementsPage": {
     "title": "पॉपअप घोषणाएँ",

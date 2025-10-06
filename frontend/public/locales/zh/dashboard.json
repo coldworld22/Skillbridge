@@ -641,7 +641,9 @@
     "loading": "加载类详细信息...",
     "views_label": "视图",
     "view_students": "查看学生",
-    "view_analytics": "查看分析"
+    "view_analytics": "查看分析",
+    "not_found": "未找到课程。",
+    "error_loading": "无法加载此课程。请稍后重试。"
   },
   "popupAnnouncementsPage": {
     "title": "弹出公告",
