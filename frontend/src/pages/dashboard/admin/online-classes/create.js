@@ -95,6 +95,7 @@ function CreateOnlineClass() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [failedLessonIndices, setFailedLessonIndices] = useState([]);
+  const [lessonSubmissionSummary, setLessonSubmissionSummary] = useState({});
   const [createdClass, setCreatedClass] = useState(null);
   const [instructors, setInstructors] = useState([]);
   const [instructorId, setInstructorId] = useState('');
@@ -279,21 +280,41 @@ function CreateOnlineClass() {
   };
 
   const handleLessonChange = (index, field, value) => {
+    const lessonId = formData.lessons[index]?.id;
     setFormData((prev) => ({
       ...prev,
       lessons: prev.lessons.map((lesson, idx) =>
         idx === index ? { ...lesson, [field]: value } : lesson
       ),
     }));
+    if (lessonId) {
+      setLessonSubmissionSummary((prev) => {
+        if (!prev || !(lessonId in prev)) {
+          return prev;
+        }
+        const { [lessonId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleLessonResourceChange = (index, file) => {
+    const lessonId = formData.lessons[index]?.id;
     setFormData((prev) => ({
       ...prev,
       lessons: prev.lessons.map((lesson, idx) =>
         idx === index ? { ...lesson, resource: file } : lesson
       ),
     }));
+    if (lessonId) {
+      setLessonSubmissionSummary((prev) => {
+        if (!prev || !(lessonId in prev)) {
+          return prev;
+        }
+        const { [lessonId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleAddLesson = () => {
@@ -315,6 +336,13 @@ function CreateOnlineClass() {
         .filter((idx) => idx !== index)
         .map((idx) => (idx > index ? idx - 1 : idx))
     );
+    setLessonSubmissionSummary((prev) => {
+      if (!lessonToRemove?.id || !prev || !(lessonToRemove.id in prev)) {
+        return prev;
+      }
+      const { [lessonToRemove.id]: _removed, ...rest } = prev;
+      return rest;
+    });
   };
 
   const addTag = (tag) => {
@@ -344,7 +372,7 @@ function CreateOnlineClass() {
   };
 
   const removeTag = (tagToRemove) => {
-    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+    setSelectedTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const togglePlan = (slug) => {
@@ -463,6 +491,7 @@ function CreateOnlineClass() {
           ];
           addEvents(events);
 
+          setLessonSubmissionSummary({});
           toast.success(t('class_created'));
           fetchNotifications();
           fetchMessages();
@@ -528,6 +557,23 @@ function CreateOnlineClass() {
           return;
         }
 
+        setLessonSubmissionSummary((prev) => {
+          if (!prev) {
+            return prev;
+          }
+
+          let mutated = false;
+          const next = { ...prev };
+          lessonsToSubmit.forEach(({ lesson }) => {
+            if (lesson?.id && lesson.id in next) {
+              delete next[lesson.id];
+              mutated = true;
+            }
+          });
+
+          return mutated ? next : prev;
+        });
+
         const lessonResults = await Promise.allSettled(
           lessonsToSubmit.map(async ({ lesson }) => {
             const lessonData = new FormData();
@@ -541,9 +587,15 @@ function CreateOnlineClass() {
 
         const indexToStatus = new Map();
         const failedIndices = [];
+        const resultsByLessonId = {};
 
         lessonResults.forEach((result, idx) => {
-          const { index } = lessonsToSubmit[idx];
+          const { lesson, index } = lessonsToSubmit[idx];
+
+          if (lesson?.id) {
+            resultsByLessonId[lesson.id] = result;
+          }
+
           if (result.status === 'fulfilled') {
             indexToStatus.set(index, 'succeeded');
           } else {
@@ -551,6 +603,13 @@ function CreateOnlineClass() {
             failedIndices.push(index);
           }
         });
+
+        if (Object.keys(resultsByLessonId).length) {
+          setLessonSubmissionSummary((prev) => ({
+            ...(prev || {}),
+            ...resultsByLessonId,
+          }));
+        }
 
         if (indexToStatus.size) {
           setFormData((prev) => ({
@@ -1007,11 +1066,20 @@ function CreateOnlineClass() {
                       </p>
                     ) : (
                       formData.lessons.map((lesson, index) => {
-                        const result = lessonResults[lesson.id];
-                        const wasSkipped = Boolean(result?.value?.skipped);
-                        const wasSuccessful =
-                          result?.status === 'fulfilled' &&
-                          (wasSkipped || Boolean(successfulLessons[lesson.id]));
+                        const submissionResult = lessonSubmissionSummary[lesson.id];
+                        const wasSuccessful = lesson.status === 'succeeded';
+                        const wasSkipped =
+                          submissionResult?.status === 'fulfilled' &&
+                          submissionResult?.value?.skipped;
+                        const failureMessage =
+                          submissionResult?.status === 'rejected'
+                            ? submissionResult.reason?.response?.data?.message ||
+                              submissionResult.reason?.message ||
+                              t('lesson_upload_failed_details', {
+                                defaultValue:
+                                  'We could not save this lesson with the latest submission. Please review the details and try again.',
+                              })
+                            : null;
                         return (
                         <div
                           key={lesson.id}
@@ -1099,6 +1167,19 @@ function CreateOnlineClass() {
                               {t('lesson_requires_attention', {
                                 defaultValue:
                                   'We could not save this lesson. Please review its details and try again.',
+                              })}
+                            </p>
+                          )}
+
+                          {failureMessage && (
+                            <p className="text-sm text-red-600">{failureMessage}</p>
+                          )}
+
+                          {wasSkipped && (
+                            <p className="text-sm text-yellow-600">
+                              {t('lesson_skipped_on_retry', {
+                                defaultValue:
+                                  'This lesson was already uploaded and was skipped during the latest submission.',
                               })}
                             </p>
                           )}
