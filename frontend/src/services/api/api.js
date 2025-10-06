@@ -162,9 +162,38 @@ const ensureTrailingSlash = (candidate) => {
   return `${candidate.replace(/\/+$/, "")}/`;
 };
 
-const baseURL = ensureTrailingSlash(
+let baseURL = ensureTrailingSlash(
   ensureAbsoluteUrl(ensureApiSuffix(pickBaseCandidate())),
 );
+
+if (isBrowser) {
+  try {
+    const currentHost = window?.location?.hostname;
+    const baseHost = baseURL ? new URL(baseURL).hostname : null;
+    const isLocalHostName = (host) =>
+      ["localhost", "127.0.0.1", "0.0.0.0"].includes(host);
+
+    if (
+      baseHost &&
+      currentHost &&
+      baseHost !== currentHost &&
+      isLocalHostName(baseHost) &&
+      !isLocalHostName(currentHost)
+    ) {
+      const fallbackBase = ensureTrailingSlash(
+        new URL("/api/", window.location.origin).toString(),
+      );
+      logger.warn(
+        `Configured API base "${baseURL}" points to ${baseHost}, but the application is running on "${currentHost}". Falling back to same-origin API base "${fallbackBase}" to avoid cross-origin failures.`,
+      );
+      baseURL = fallbackBase;
+    }
+  } catch (error) {
+    logger.warn(
+      `Unable to reconcile API base URL "${baseURL}": ${error?.message || error}`,
+    );
+  }
+}
 
 // Warn developers if the default domain URL is used in production
 if (
