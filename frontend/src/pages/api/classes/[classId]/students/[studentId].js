@@ -4,6 +4,11 @@ import getApiBaseUrl from '@/pages/api/_utils/baseUrl';
 
 export default async function handler(req, res) {
   const { classId, studentId } = req.query;
+  const cookie = req.headers?.cookie;
+  const axiosOptions = {
+    withCredentials: true,
+    headers: cookie ? { Cookie: cookie } : {},
+  };
 
   try {
     const { data } = await axios.get(
