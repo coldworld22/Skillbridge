@@ -29,7 +29,7 @@ Environment files support variable expansion using [`dotenv-expand`](https://git
 
 Only commit placeholder values. Supply real values in production via environment variables or a mounted `.env.production` so `npm run build` can generate a bundle that connects to the correct services. If `APP_DOMAIN` is defined you may set `NEXT_PUBLIC_API_BASE_URL=/api`; the build expands the relative path to `https://${APP_DOMAIN}/api` while still rejecting non-HTTPS public hosts.
 
-For local development create a `.env.local` file and set `NEXT_PUBLIC_API_BASE_URL` to your backend, for example `http://localhost:5002/api`. Without this the browser falls back to `/api`, causing admin pages to send requests to the Next.js dev server instead of the actual API.
+For local development copy `.env.local.example` to `.env.local` and ensure `NEXT_PUBLIC_API_BASE_URL` points to your backend (the template defaults to `http://localhost:5002/api`). Without this the browser falls back to `/api`, causing admin pages to send requests to the Next.js dev server instead of the actual API.
 
 Docker builds export `STRICT_PUBLIC_API=true`, so container images **must** provide `NEXT_PUBLIC_API_BASE_URL` either by passing `--build-arg NEXT_PUBLIC_API_BASE_URL=https://your-domain/api` (or `/api` alongside `--build-arg APP_DOMAIN=your-domain`) or by including it in `.env.production`. Builds fail if the value is missing or if a non-local host still uses `http://`.
 

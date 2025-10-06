@@ -119,9 +119,20 @@ npm --prefix frontend install
      `http://backend:5002/api` value used for development.
 
    The backend's production configuration is loaded from
-   `backend/.env.production`. Copy `backend/.env.production.example` to
-   `backend/.env.production` and provide your database credentials and secrets
-   before deploying.
+     `backend/.env.production`. Copy `backend/.env.production.example` to
+     `backend/.env.production` and provide your database credentials and secrets
+     before deploying.
+
+   - Copy the frontend template so the Next.js app targets your API:
+
+     ```bash
+     cp frontend/.env.local.example frontend/.env.local
+     ```
+
+     Update `frontend/.env.local` before running `npm --prefix frontend run dev`
+     so `NEXT_PUBLIC_API_BASE_URL` points at your backend. For local
+     development keep the default `http://localhost:5002/api`; replace it with
+     your public HTTPS domain when deploying.
 
    - Copy the backend example file and adjust values as needed:
 
