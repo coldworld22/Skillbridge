@@ -11,6 +11,8 @@ import logger from "@/utils/logger";
 const isBrowser = typeof window !== "undefined";
 const publicBaseCandidate = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 const internalBaseCandidate = process.env.INTERNAL_API_BASE_URL;
+const serverFallbackBase =
+  process.env.SERVER_FALLBACK_API_BASE_URL || "http://localhost:5002/api";
 const LOCALHOST_HOSTNAMES = new Set([
   "localhost",
   "127.0.0.1",
@@ -114,7 +116,7 @@ const ensureAbsoluteUrl = (candidate) => {
 
   const fallback = internalBaseCandidate && /^https?:\/\//i.test(internalBaseCandidate)
     ? internalBaseCandidate
-    : candidate;
+    : serverFallbackBase;
 
   logger.warn(
     `API base "${candidate}" is not absolute and could not be resolved. Falling back to "${fallback}".`
