@@ -62,8 +62,6 @@ exports.getAllClasses = async (
   const query = db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
-    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
-    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.id",
       "c.title",
@@ -81,9 +79,17 @@ exports.getAllClasses = async (
       "u.full_name as instructor",
       "cat.name as category",
       db.raw(`${scheduleCaseSql} as schedule_status`),
-      db.raw(
-        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
-      )
+      db.raw(`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug))
+            FROM class_tag_map AS m
+            LEFT JOIN class_tags AS t ON t.id = m.tag_id
+            WHERE m.class_id = c.id AND t.id IS NOT NULL
+          ),
+          '[]'::json
+        ) AS tags
+      `)
     );
 
   if (filter) {
@@ -136,19 +142,24 @@ exports.getClassById = async (id) => {
   const cls = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
-    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
-    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.*",
       "u.full_name as instructor",
       "u.avatar_url as instructor_image",
       "cat.name as category",
-      db.raw(
-        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
-      )
+      db.raw(`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug))
+            FROM class_tag_map AS m
+            LEFT JOIN class_tags AS t ON t.id = m.tag_id
+            WHERE m.class_id = c.id AND t.id IS NOT NULL
+          ),
+          '[]'::json
+        ) AS tags
+      `)
     )
     .where("c.id", id)
-    .groupBy("c.id", "u.full_name", "u.avatar_url", "cat.name")
     .first();
   if (cls) {
     cls.views = await exports.getClassViewCount(id);
@@ -166,8 +177,6 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
 
   const classes = await db("online_classes as c")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
-    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
-    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.id",
       "c.title",
@@ -183,9 +192,17 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
       "c.included_plans",
       "c.created_at",
       "cat.name as category",
-      db.raw(
-        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
-      )
+      db.raw(`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug))
+            FROM class_tag_map AS m
+            LEFT JOIN class_tags AS t ON t.id = m.tag_id
+            WHERE m.class_id = c.id AND t.id IS NOT NULL
+          ),
+          '[]'::json
+        ) AS tags
+      `)
     )
     .where("c.instructor_id", instructorId)
     .groupBy(
