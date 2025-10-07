@@ -619,24 +619,36 @@ export default function AdminClassesTable() {
         const { data, meta } = await fetchAdminClasses(baseParams);
         let aggregated = sanitizeClassEntries(data);
 
-        const totalFromMeta = extractTotalItemsFromMeta(
-          meta,
-          aggregated.length
+        const totalFromMeta = Number(
+          meta?.total ??
+            meta?.totalItems ??
+            meta?.total_items ??
+            meta?.totalCount ??
+            aggregated.length
         );
 
-        const totalPagesFromMeta = extractTotalPagesFromMeta(
-          meta,
-          totalFromMeta,
-          perPage
+        let totalPagesFromMeta = Number(
+          meta?.totalPages ??
+            meta?.total_pages ??
+            (perPage > 0 ? Math.ceil(totalFromMeta / perPage) : 1)
         );
+
+        if (!Number.isFinite(totalPagesFromMeta) || totalPagesFromMeta <= 0) {
+          totalPagesFromMeta = 1;
+        }
 
         if (totalPagesFromMeta > 1) {
-          const additionalRequests = await fetchRemainingClassPagesSequentially(
-            baseParams,
-            totalPagesFromMeta,
-            totalFromMeta
-          );
-          aggregated = aggregated.concat(additionalRequests);
+          const additionalRequests = [];
+          for (let page = 2; page <= totalPagesFromMeta; page += 1) {
+            additionalRequests.push(
+              fetchAdminClasses({ ...baseParams, page }).then((response) =>
+                sanitizeClassEntries(response.data)
+              )
+            );
+          }
+
+          const results = await Promise.all(additionalRequests);
+          aggregated = aggregated.concat(...results);
         }
 
         classesToExport = sortClasses(aggregated, sortKey);
