@@ -1,3 +1,4 @@
+import { Component, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -5,7 +6,49 @@ import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
-import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
+import {
+  FaChalkboardTeacher,
+  FaExclamationTriangle,
+  FaPlus,
+  FaSyncAlt,
+} from "react-icons/fa";
+
+class AdminClassesErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("Failed to render admin classes table", error, info);
+  }
+
+  resetErrorBoundary = () => {
+    this.setState({ hasError: false });
+    if (typeof this.props.onReset === "function") {
+      this.props.onReset();
+    }
+  };
+
+  render() {
+    const { hasError } = this.state;
+    const { children, renderFallback } = this.props;
+
+    if (hasError) {
+      if (typeof renderFallback === "function") {
+        return renderFallback({ resetErrorBoundary: this.resetErrorBoundary });
+      }
+
+      return renderFallback ?? null;
+    }
+
+    return children;
+  }
+}
 
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
@@ -27,7 +70,12 @@ function AdminOnlineClassesPage() {
           <FaPlus className="w-4 h-4" /> {t('create_class')}
         </Link>
       </div>
-      <AdminClassesTable />
+      <AdminClassesErrorBoundary
+        onReset={() => setTableResetKey((value) => value + 1)}
+        renderFallback={renderTableFallback}
+      >
+        <AdminClassesTable key={tableResetKey} />
+      </AdminClassesErrorBoundary>
     </div>
   );
 }
