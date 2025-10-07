@@ -47,6 +47,68 @@ const sanitizeClassEntries = (value) => {
   return value.filter((item) => item && typeof item === "object");
 };
 
+const extractTotalItemsFromMeta = (meta, fallbackLength) => {
+  const totalValue =
+    meta?.total ??
+    meta?.totalItems ??
+    meta?.total_items ??
+    meta?.totalCount ??
+    meta?.total_count ??
+    fallbackLength;
+
+  const numeric = Number(totalValue);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return fallbackLength;
+  }
+
+  return Math.floor(numeric);
+};
+
+const extractTotalPagesFromMeta = (meta, totalItems, perPage) => {
+  const totalPagesValue =
+    meta?.totalPages ??
+    meta?.total_pages ??
+    meta?.last_page ??
+    meta?.pages ??
+    (perPage > 0 ? Math.ceil(totalItems / perPage) : 1);
+
+  const numeric = Number(totalPagesValue);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 1;
+  }
+
+  return Math.ceil(numeric);
+};
+
+const fetchRemainingClassPagesSequentially = async (
+  baseParams,
+  totalPages,
+  totalItems
+) => {
+  if (!Number.isFinite(totalPages) || totalPages <= 1) {
+    return [];
+  }
+
+  const aggregated = [];
+  const expectedTotal = Number.isFinite(totalItems) ? totalItems : Infinity;
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const response = await fetchAdminClasses({ ...baseParams, page });
+    const sanitized = sanitizeClassEntries(response.data);
+
+    if (sanitized.length) {
+      aggregated.push(...sanitized);
+    }
+
+    if (aggregated.length >= expectedTotal) {
+      break;
+    }
+  }
+
+  return aggregated;
+};
+
 const resolvePositiveInteger = (value, fallback = DEFAULT_PAGE_SIZE) => {
   const numeric = Number(value);
   if (Number.isFinite(numeric) && numeric > 0) {
@@ -323,34 +385,20 @@ export default function AdminClassesTable() {
 
         const { data, meta } = await fetchAdminClasses(baseParams);
         let aggregated = sanitizeClassEntries(data);
-        let totalFromMeta = Number(
-          meta?.total ??
-            meta?.totalItems ??
-            meta?.total_items ??
-            meta?.totalCount ??
-            aggregated.length
+        let totalFromMeta = extractTotalItemsFromMeta(meta, aggregated.length);
+        let totalPagesFromMeta = extractTotalPagesFromMeta(
+          meta,
+          totalFromMeta,
+          perPage
         );
-        let totalPagesFromMeta = Number(
-          meta?.totalPages ??
-            meta?.total_pages ??
-            (perPage > 0 ? Math.ceil(totalFromMeta / perPage) : 1)
-        );
-        if (!Number.isFinite(totalPagesFromMeta) || totalPagesFromMeta <= 0) {
-          totalPagesFromMeta = 1;
-        }
 
-        if (pageSizeSetting === "all" && Number.isFinite(totalPagesFromMeta) && totalPagesFromMeta > 1) {
-          const additionalPages = [];
-          for (let page = 2; page <= totalPagesFromMeta; page += 1) {
-            additionalPages.push(
-              fetchAdminClasses({ ...baseParams, page, limit: perPage }).then((response) =>
-                sanitizeClassEntries(response.data)
-              )
-            );
-          }
-
-          const results = await Promise.all(additionalPages);
-          aggregated = aggregated.concat(...results);
+        if (pageSizeSetting === "all" && totalPagesFromMeta > 1) {
+          const additionalClasses = await fetchRemainingClassPagesSequentially(
+            baseParams,
+            totalPagesFromMeta,
+            totalFromMeta
+          );
+          aggregated = aggregated.concat(additionalClasses);
           totalFromMeta = aggregated.length;
           totalPagesFromMeta = 1;
         }
@@ -543,13 +591,64 @@ export default function AdminClassesTable() {
   };
 
   const handleExport = async () => {
-    if (!classList.length) {
-      toast.error("No classes available to export");
-      return;
-    }
-
     setExporting(true);
+
     try {
+      let classesToExport = classList;
+
+      const hasAllClassesLoaded =
+        pageSizeSetting === "all" && classList.length >= totalItems && totalItems > 0;
+
+      if (!hasAllClassesLoaded) {
+        const scheduleParam = mapScheduleFilterToParam(filterSchedule);
+        const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
+        const sanitizedSearch = debouncedSearch.trim();
+        const perPage =
+          pageSizeSetting === "all"
+            ? DEFAULT_PAGE_SIZE
+            : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+
+        const baseParams = {
+          page: 1,
+          limit: perPage,
+          filter: sanitizedSearch || undefined,
+          approval: approvalParam,
+          schedule: scheduleParam,
+        };
+
+        const { data, meta } = await fetchAdminClasses(baseParams);
+        let aggregated = sanitizeClassEntries(data);
+
+        const totalFromMeta = extractTotalItemsFromMeta(
+          meta,
+          aggregated.length
+        );
+
+        const totalPagesFromMeta = extractTotalPagesFromMeta(
+          meta,
+          totalFromMeta,
+          perPage
+        );
+
+        if (totalPagesFromMeta > 1) {
+          const additionalRequests = await fetchRemainingClassPagesSequentially(
+            baseParams,
+            totalPagesFromMeta,
+            totalFromMeta
+          );
+          aggregated = aggregated.concat(additionalRequests);
+        }
+
+        classesToExport = sortClasses(aggregated, sortKey);
+      }
+
+      if (!Array.isArray(classesToExport) || classesToExport.length === 0) {
+        toast.error(
+          translate("no_classes_to_export", "No classes available to export")
+        );
+        return;
+      }
+
       const headers = [
         "Title",
         "Instructor",
@@ -561,18 +660,21 @@ export default function AdminClassesTable() {
         "Publish Status",
         "Approval Status",
       ];
-      const rows = classList.map((cls) => [
+      const rows = classesToExport.map((cls) => [
         cls.title || "",
         cls.instructor || "",
         cls.start_date || "",
         cls.end_date || "",
         cls.category || "",
-        formatCurrency(cls.price),
+        cls.price > 0 ? formatCurrency(cls.price) : translate("free_label", "Free"),
         cls.scheduleStatus || "",
         cls.publishStatus || "",
         cls.approvalStatus || "",
       ]);
       downloadCSV(rows, headers);
+    } catch (error) {
+      console.error(error);
+      toast.error(translate("export_classes_failed", "Failed to export classes"));
     } finally {
       setExporting(false);
     }
