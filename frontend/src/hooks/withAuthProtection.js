@@ -101,13 +101,18 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       !allowedPerms.length ||
       normalizedRoles.includes("superadmin") ||
       allowedPerms.some((p) => user?.permissions?.includes(p));
-    if (
-      !hydrated ||
-      !hasHydrated ||
-      !user ||
-      !hasAllowedRole ||
-      !hasRequiredPerms
-    ) {
+    if (!hydrated || !hasHydrated || isRedirectingRef.current) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="flex flex-col items-center gap-3 text-gray-600">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-400 border-t-transparent" />
+            <span className="text-sm font-medium">Loading dashboard…</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!user || !hasAllowedRole || !hasRequiredPerms) {
       return null;
     }
 
