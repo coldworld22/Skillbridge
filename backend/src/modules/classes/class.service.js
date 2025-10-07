@@ -77,6 +77,7 @@ exports.getAllClasses = async (
       "c.moderation_status",
       "c.included_plans",
       "c.instructor_id",
+      "c.created_at",
       "u.full_name as instructor",
       "cat.name as category",
       db.raw(`${scheduleCaseSql} as schedule_status`),
@@ -112,6 +113,7 @@ exports.getAllClasses = async (
       "c.moderation_status",
       "c.included_plans",
       "c.instructor_id",
+      "c.created_at",
       "u.full_name",
       "cat.name"
     )
@@ -179,6 +181,7 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
       "c.status",
       "c.moderation_status",
       "c.included_plans",
+      "c.created_at",
       "cat.name as category",
       db.raw(
         "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
@@ -198,6 +201,7 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
       "c.status",
       "c.moderation_status",
       "c.included_plans",
+      "c.created_at",
       "cat.name"
     )
     .orderBy("c.created_at", "desc")

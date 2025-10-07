@@ -90,6 +90,24 @@ const resolveDisplayDate = (rawValue, displayValue) => {
   return date.toISOString();
 };
 
+const toIsoStringOrNull = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  try {
+    return date.toISOString();
+  } catch (err) {
+    return null;
+  }
+};
+
 const formatClass = (cls) => {
   if (!cls || typeof cls !== "object") {
     return null;
@@ -147,6 +165,7 @@ const formatClass = (cls) => {
     title,
     instructor,
     category,
+    createdAt: toIsoStringOrNull(cls.created_at),
     publishStatus: status,
     cover_image: cls.cover_image
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
