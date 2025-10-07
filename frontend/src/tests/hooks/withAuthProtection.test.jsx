@@ -63,6 +63,31 @@ describe("withAuthProtection permission handling", () => {
     expect(replaceMock).not.toHaveBeenCalledWith("/error/403");
   });
 
+  it("does not trigger a logout when the user is present but the access token is missing", async () => {
+    useAuthStore.mockReturnValue({
+      user: {
+        id: "admin-missing-token",
+        role: "admin",
+        permissions: ["MANAGE_ONLINE_CLASSES"],
+      },
+      accessToken: null,
+      logout: mockLogout,
+      hasHydrated: true,
+    });
+
+    const Dummy = () => <div data-testid="protected">Protected</div>;
+    const ProtectedDummy = withAuthProtection(Dummy, {
+      roles: ["admin"],
+      permissions: ["manage_online_classes"],
+    });
+
+    const { findByTestId } = render(<ProtectedDummy />);
+
+    expect(await findByTestId("protected")).toBeInTheDocument();
+    expect(mockLogout).not.toHaveBeenCalled();
+    expect(replaceMock).not.toHaveBeenCalledWith("/auth/login");
+  });
+
   it("redirects to 403 when the user lacks the normalized permission", async () => {
     useAuthStore.mockReturnValue({
       user: {
