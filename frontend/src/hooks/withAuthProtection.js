@@ -1,9 +1,29 @@
 // src/hooks/withAuthProtection.js
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
 import { getNormalizedRoles } from "@/utils/auth/roleUtils";
+
+const normalizePermission = (permission) => {
+  if (typeof permission !== "string") {
+    return "";
+  }
+
+  return permission.trim().toLowerCase();
+};
+
+const buildNormalizedPermissionSet = (permissions) => {
+  if (!Array.isArray(permissions) || permissions.length === 0) {
+    return new Set();
+  }
+
+  return new Set(
+    permissions
+      .map(normalizePermission)
+      .filter((permission) => permission.length > 0)
+  );
+};
 
 export default function withAuthProtection(Component, rolesOrOptions = []) {
   const { roles: allowedRoles = [], permissions: allowedPerms = [] } =
@@ -17,6 +37,19 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const [hydrated, setHydrated] = useState(false);
     const isRedirectingRef = useRef(false);
     const logoutInProgressRef = useRef(false);
+
+    const normalizedAllowedPerms = useMemo(
+      () =>
+        allowedPerms
+          .map(normalizePermission)
+          .filter((permission) => permission.length > 0),
+      [allowedPerms]
+    );
+
+    const normalizedUserPerms = useMemo(
+      () => buildNormalizedPermissionSet(user?.permissions),
+      [user?.permissions]
+    );
 
     useEffect(() => {
       setHydrated(true);
@@ -55,6 +88,12 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       };
 
       const normalizedRoles = getNormalizedRoles(user);
+      const lacksRequiredPermissions =
+        normalizedAllowedPerms.length > 0 &&
+        !normalizedRoles.includes("superadmin") &&
+        !normalizedAllowedPerms.some((permission) =>
+          normalizedUserPerms.has(permission)
+        );
       if (!user) {
         logoutInProgressRef.current = false;
         attemptRedirect("/auth/login");
@@ -75,9 +114,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
           !allowedRoles.some((allowedRole) =>
             normalizedRoles.includes(allowedRole)
           )) ||
-        (allowedPerms.length &&
-          !normalizedRoles.includes("superadmin") &&
-          !allowedPerms.some((p) => user.permissions?.includes(p)))
+        lacksRequiredPermissions
       ) {
         attemptRedirect("/error/403");
       }
@@ -90,23 +127,26 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       router,
       router.asPath,
       allowedRoles,
-      allowedPerms,
+      normalizedAllowedPerms,
+      normalizedUserPerms,
     ]);
 
     const normalizedRoles = getNormalizedRoles(user);
     const hasAllowedRole =
       !allowedRoles.length ||
       allowedRoles.some((allowedRole) => normalizedRoles.includes(allowedRole));
-    const hasRequiredPerms =
-      !allowedPerms.length ||
-      normalizedRoles.includes("superadmin") ||
-      allowedPerms.some((p) => user?.permissions?.includes(p));
+    const lacksRequiredPermissions =
+      normalizedAllowedPerms.length > 0 &&
+      !normalizedRoles.includes("superadmin") &&
+      !normalizedAllowedPerms.some((permission) =>
+        normalizedUserPerms.has(permission)
+      );
     if (
       !hydrated ||
       !hasHydrated ||
       !user ||
       !hasAllowedRole ||
-      !hasRequiredPerms
+      lacksRequiredPermissions
     ) {
       return null;
     }
