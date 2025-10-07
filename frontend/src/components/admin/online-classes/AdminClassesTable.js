@@ -543,13 +543,76 @@ export default function AdminClassesTable() {
   };
 
   const handleExport = async () => {
-    if (!classList.length) {
-      toast.error("No classes available to export");
-      return;
-    }
-
     setExporting(true);
+
     try {
+      let classesToExport = classList;
+
+      const hasAllClassesLoaded =
+        pageSizeSetting === "all" && classList.length >= totalItems && totalItems > 0;
+
+      if (!hasAllClassesLoaded) {
+        const scheduleParam = mapScheduleFilterToParam(filterSchedule);
+        const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
+        const sanitizedSearch = debouncedSearch.trim();
+        const perPage =
+          pageSizeSetting === "all"
+            ? DEFAULT_PAGE_SIZE
+            : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
+
+        const baseParams = {
+          page: 1,
+          limit: perPage,
+          filter: sanitizedSearch || undefined,
+          approval: approvalParam,
+          schedule: scheduleParam,
+        };
+
+        const { data, meta } = await fetchAdminClasses(baseParams);
+        let aggregated = sanitizeClassEntries(data);
+
+        const totalFromMeta = Number(
+          meta?.total ??
+            meta?.totalItems ??
+            meta?.total_items ??
+            meta?.totalCount ??
+            aggregated.length
+        );
+
+        let totalPagesFromMeta = Number(
+          meta?.totalPages ??
+            meta?.total_pages ??
+            (perPage > 0 ? Math.ceil(totalFromMeta / perPage) : 1)
+        );
+
+        if (!Number.isFinite(totalPagesFromMeta) || totalPagesFromMeta <= 0) {
+          totalPagesFromMeta = 1;
+        }
+
+        if (totalPagesFromMeta > 1) {
+          const additionalRequests = [];
+          for (let page = 2; page <= totalPagesFromMeta; page += 1) {
+            additionalRequests.push(
+              fetchAdminClasses({ ...baseParams, page }).then((response) =>
+                sanitizeClassEntries(response.data)
+              )
+            );
+          }
+
+          const results = await Promise.all(additionalRequests);
+          aggregated = aggregated.concat(...results);
+        }
+
+        classesToExport = sortClasses(aggregated, sortKey);
+      }
+
+      if (!Array.isArray(classesToExport) || classesToExport.length === 0) {
+        toast.error(
+          translate("no_classes_to_export", "No classes available to export")
+        );
+        return;
+      }
+
       const headers = [
         "Title",
         "Instructor",
@@ -561,18 +624,21 @@ export default function AdminClassesTable() {
         "Publish Status",
         "Approval Status",
       ];
-      const rows = classList.map((cls) => [
+      const rows = classesToExport.map((cls) => [
         cls.title || "",
         cls.instructor || "",
         cls.start_date || "",
         cls.end_date || "",
         cls.category || "",
-        formatCurrency(cls.price),
+        cls.price > 0 ? formatCurrency(cls.price) : translate("free_label", "Free"),
         cls.scheduleStatus || "",
         cls.publishStatus || "",
         cls.approvalStatus || "",
       ]);
       downloadCSV(rows, headers);
+    } catch (error) {
+      console.error(error);
+      toast.error(translate("export_classes_failed", "Failed to export classes"));
     } finally {
       setExporting(false);
     }
