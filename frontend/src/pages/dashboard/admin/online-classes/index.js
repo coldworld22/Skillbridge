@@ -7,6 +7,11 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
 
+const CREATE_CLASS_BUTTON_CLASSES =
+  "bg-yellow-500 hover:bg-yellow-600 text-white font-semibold " +
+  "px-4 py-2 rounded-lg shadow transition duration-200 " +
+  "flex items-center gap-2";
+
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
   const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
@@ -20,7 +25,7 @@ function AdminOnlineClassesPage() {
         <Link
           href="/dashboard/admin/online-classes/create"
           aria-label={t('create_class')}
-          className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2"
+          className={CREATE_CLASS_BUTTON_CLASSES}
         >
           <FaPlus className="w-4 h-4" /> {t('create_class')}
         </Link>
