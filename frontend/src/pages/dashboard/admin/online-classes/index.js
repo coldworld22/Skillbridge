@@ -50,6 +50,11 @@ class AdminClassesErrorBoundary extends Component {
   }
 }
 
+const CREATE_CLASS_BUTTON_CLASSES =
+  "bg-yellow-500 hover:bg-yellow-600 text-white font-semibold " +
+  "px-4 py-2 rounded-lg shadow transition duration-200 " +
+  "flex items-center gap-2";
+
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
   const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
