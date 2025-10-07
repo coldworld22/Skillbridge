@@ -5,6 +5,21 @@ import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
 import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 
+const LoadingFallback = ({ message = "Checking your permissions…" }) => (
+  <div
+    className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600"
+    role="status"
+    aria-live="polite"
+  >
+    <div className="flex flex-col items-center gap-3">
+      <span className="h-12 w-12 rounded-full border-4 border-yellow-400 border-t-transparent animate-spin" />
+      <p className="text-sm font-medium" data-testid="auth-guard-message">
+        {message}
+      </p>
+    </div>
+  </div>
+);
+
 export default function withAuthProtection(Component, rolesOrOptions = []) {
   const { roles: allowedRoles = [], permissions: allowedPerms = [] } =
     Array.isArray(rolesOrOptions)
@@ -101,14 +116,23 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       !allowedPerms.length ||
       normalizedRoles.includes("superadmin") ||
       allowedPerms.some((p) => user?.permissions?.includes(p));
-    if (
-      !hydrated ||
-      !hasHydrated ||
-      !user ||
-      !hasAllowedRole ||
-      !hasRequiredPerms
-    ) {
-      return null;
+    const awaitingHydration = !hydrated || !hasHydrated;
+    const missingUserOrAccess = !user;
+    const lacksAccess = !hasAllowedRole || !hasRequiredPerms;
+    const shouldBlockRender =
+      awaitingHydration || missingUserOrAccess || lacksAccess;
+
+    if (shouldBlockRender) {
+      let loadingMessage = "Checking your permissions…";
+      if (awaitingHydration) {
+        loadingMessage = "Loading your session…";
+      } else if (missingUserOrAccess) {
+        loadingMessage = "Redirecting you to the login page…";
+      } else if (lacksAccess) {
+        loadingMessage = "Redirecting you to the access denied page…";
+      }
+
+      return <LoadingFallback message={loadingMessage} />;
     }
 
     return <Component {...props} />;
