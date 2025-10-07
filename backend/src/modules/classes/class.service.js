@@ -106,6 +106,23 @@ exports.getAllClasses = async (
     query.whereRaw(`LOWER(${scheduleCaseSql}) = ?`, [scheduleNormalized]);
 
   const classes = await query
+    .groupBy(
+      "c.id",
+      "c.title",
+      "c.slug",
+      "c.cover_image",
+      "c.start_date",
+      "c.end_date",
+      "c.price",
+      "c.access_type",
+      "c.status",
+      "c.moderation_status",
+      "c.included_plans",
+      "c.instructor_id",
+      "c.created_at",
+      "u.full_name",
+      "cat.name"
+    )
     .orderBy("c.created_at", "desc")
     .limit(lim)
     .offset(offset);
@@ -188,6 +205,22 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
       `)
     )
     .where("c.instructor_id", instructorId)
+    .groupBy(
+      "c.id",
+      "c.title",
+      "c.slug",
+      "c.cover_image",
+      "c.start_date",
+      "c.end_date",
+      "c.price",
+      "c.max_students",
+      "c.access_type",
+      "c.status",
+      "c.moderation_status",
+      "c.included_plans",
+      "c.created_at",
+      "cat.name"
+    )
     .orderBy("c.created_at", "desc")
     .limit(lim)
     .offset(offset);

@@ -95,11 +95,20 @@ const useAuthStore = create(
       name: "auth",
       partialize: (state) => ({
         user: state.user,
+        accessToken: typeof state.accessToken === "string" ? state.accessToken : null,
       }),
       onRehydrateStorage: () => {
         return (state) => {
           logger.log("🔥 Zustand hydrated");
-          authStoreApi?.setState({ hasHydrated: true });
+          const sanitizedToken =
+            typeof state?.accessToken === "string" && state.accessToken.trim().length > 0
+              ? state.accessToken
+              : null;
+
+          authStoreApi?.setState({
+            hasHydrated: true,
+            accessToken: sanitizedToken,
+          });
         };
       },
     }
