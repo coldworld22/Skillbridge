@@ -401,7 +401,7 @@ export default function AdminClassesTable() {
           console.error(error);
           const message = translate(
             "admin_classes_fetch_error",
-            "We were unable to load classes. Please try again."
+            "Failed to load classes"
           );
           toast.error(message);
           setFetchError(message);
