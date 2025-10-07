@@ -53,40 +53,8 @@ class AdminClassesErrorBoundary extends Component {
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
   const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
-  const [tableResetKey, setTableResetKey] = useState(0);
-
-  const renderTableFallback = ({ resetErrorBoundary }) => (
-    <div
-      className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center space-y-4"
-      dir={direction}
-    >
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-        <FaExclamationTriangle className="h-5 w-5" />
-      </div>
-      <p className="text-gray-700 font-semibold">
-        {t(
-          'admin_classes_render_error_title',
-          "We couldn't load the online classes"
-        )}
-      </p>
-      <p className="text-gray-500">
-        {t(
-          'admin_classes_render_error_message',
-          'An unexpected error occurred while rendering the classes list.'
-        )}
-      </p>
-      <div className="flex justify-center gap-3 flex-wrap">
-        <button
-          type="button"
-          onClick={resetErrorBoundary}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-xl shadow hover:bg-yellow-600"
-        >
-          <FaSyncAlt className="w-4 h-4" />
-          {t('retry_loading_classes', 'Try again')}
-        </button>
-      </div>
-    </div>
-  );
+  const createButtonClasses =
+    'bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2';
 
   return (
     <div className="p-6 space-y-6" dir={direction}>
@@ -97,21 +65,7 @@ function AdminOnlineClassesPage() {
         <Link
           href="/dashboard/admin/online-classes/create"
           aria-label={t('create_class')}
-          className={[
-            'bg-yellow-500',
-            'hover:bg-yellow-600',
-            'text-white',
-            'font-semibold',
-            'px-4',
-            'py-2',
-            'rounded-lg',
-            'shadow',
-            'transition',
-            'duration-200',
-            'flex',
-            'items-center',
-            'gap-2',
-          ].join(' ')}
+          className={createButtonClasses}
         >
           <FaPlus className="w-4 h-4" /> {t('create_class')}
         </Link>
