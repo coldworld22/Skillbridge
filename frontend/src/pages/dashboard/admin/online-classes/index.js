@@ -10,6 +10,8 @@ import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
 function AdminOnlineClassesPage() {
   const { t, i18n } = useTranslation('dashboard');
   const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
+  const createButtonClasses =
+    'bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2';
 
   return (
     <div className="p-6 space-y-6" dir={direction}>
@@ -20,11 +22,7 @@ function AdminOnlineClassesPage() {
         <Link
           href="/dashboard/admin/online-classes/create"
           aria-label={t('create_class')}
-          className={[
-            'bg-yellow-500 hover:bg-yellow-600 text-white font-semibold',
-            'px-4 py-2 rounded-lg shadow transition duration-200',
-            'flex items-center gap-2',
-          ].join(' ')}
+          className={createButtonClasses}
         >
           <FaPlus className="w-4 h-4" /> {t('create_class')}
         </Link>
