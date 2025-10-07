@@ -147,6 +147,7 @@ const formatClass = (cls) => {
     title,
     instructor,
     category,
+    createdAt: cls.created_at ? new Date(cls.created_at).toISOString() : null,
     publishStatus: status,
     cover_image: cls.cover_image
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
