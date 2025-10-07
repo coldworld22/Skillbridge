@@ -97,7 +97,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       if (!user) {
         logoutInProgressRef.current = false;
         attemptRedirect("/auth/login");
-      } else if (!accessToken || isTokenExpired(accessToken)) {
+      } else if (accessToken && isTokenExpired(accessToken)) {
         if (!logoutInProgressRef.current) {
           logoutInProgressRef.current = true;
           Promise.resolve(logout())

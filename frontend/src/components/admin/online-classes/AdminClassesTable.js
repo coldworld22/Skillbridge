@@ -34,6 +34,7 @@ import useDebounce from "@/hooks/useDebounce";
 const DEFAULT_PAGE_SIZE = 5;
 const FAILED_REQUEST_RETRY_DELAY_MS = 5000;
 const MIN_REJECTION_REASON_LENGTH = 3;
+const MAX_PAGINATION_BUTTONS = 100;
 
 const SCHEDULE_FILTER_OPTIONS = ["All", "Upcoming", "Ongoing", "Completed"];
 const APPROVAL_FILTER_OPTIONS = ["All", "Approved", "Pending", "Rejected"];
@@ -100,6 +101,20 @@ const mapScheduleFilterToParam = (value) => {
   }
 
   return String(value).toLowerCase();
+};
+
+const normalizeTotalPages = (value) => {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 1;
+  }
+
+  if (numeric > Number.MAX_SAFE_INTEGER) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Math.ceil(numeric);
 };
 
 const extractInstructorId = (cls) => {
@@ -224,6 +239,17 @@ export default function AdminClassesTable() {
     return user.permissions.includes("ADD_ONLINE_CLASS_RULE");
   }, [user]);
 
+  const totalPagesNormalized = useMemo(
+    () => normalizeTotalPages(totalPages),
+    [totalPages]
+  );
+
+  const paginationButtonCount = useMemo(() => {
+    return Math.min(totalPagesNormalized, MAX_PAGINATION_BUTTONS);
+  }, [totalPagesNormalized]);
+
+  const isPaginationTruncated = totalPagesNormalized > MAX_PAGINATION_BUTTONS;
+
   useEffect(() => {
     return () => {
       if (retryTimeoutRef.current) {
@@ -241,10 +267,10 @@ export default function AdminClassesTable() {
   }, [pageSizeSetting, currentPage]);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (currentPage > totalPagesNormalized) {
+      setCurrentPage(totalPagesNormalized);
     }
-  }, [currentPage, totalPages]);
+  }, [currentPage, totalPagesNormalized]);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -348,10 +374,11 @@ export default function AdminClassesTable() {
           const safeTotalPages = Number.isFinite(totalPagesFromMeta)
             ? Math.max(1, totalPagesFromMeta)
             : Math.max(1, Math.ceil(totalFromMeta / perPage));
-          setTotalPages(safeTotalPages);
-          if (requestedPage > safeTotalPages) {
+          const normalizedTotalPages = normalizeTotalPages(safeTotalPages);
+          setTotalPages(normalizedTotalPages);
+          if (requestedPage > normalizedTotalPages) {
             skipNextFetchRef.current = true;
-            setCurrentPage(safeTotalPages);
+            setCurrentPage(normalizedTotalPages);
           }
         }
 
@@ -497,13 +524,13 @@ export default function AdminClassesTable() {
         setTotalPages((prev) => {
           const nextTotal = Math.max(totalItems - 1, 0);
           const pageSize = resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-          return Math.max(1, Math.ceil(nextTotal / pageSize));
+          return normalizeTotalPages(Math.max(1, Math.ceil(nextTotal / pageSize)));
         });
         setCurrentPage((prevPage) => {
           const pageSize = resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
           const nextTotal = Math.max(totalItems - 1, 0);
           const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
-          return Math.min(prevPage, nextTotalPages);
+          return Math.min(prevPage, normalizeTotalPages(nextTotalPages));
         });
       }
       toast.success("Class deleted");
@@ -579,7 +606,7 @@ export default function AdminClassesTable() {
   };
 
   const handleNext = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    setCurrentPage((prev) => Math.min(prev + 1, totalPagesNormalized));
   };
 
   const handleRetryNow = () => {
@@ -955,7 +982,7 @@ export default function AdminClassesTable() {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {totalPagesNormalized > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-500">
             {translate("pagination_summary", "Showing")} {(currentPage - 1) * normalizedItemsPerPage + 1}
@@ -969,7 +996,7 @@ export default function AdminClassesTable() {
             >
               <FaChevronLeft />
             </button>
-            {Array.from({ length: totalPages }).map((_, index) => (
+            {Array.from({ length: paginationButtonCount }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentPage(index + 1)}
@@ -982,9 +1009,24 @@ export default function AdminClassesTable() {
                 {index + 1}
               </button>
             ))}
+            {isPaginationTruncated && (
+              <>
+                <span className="px-2 text-sm text-gray-500">…</span>
+                <button
+                  onClick={() => setCurrentPage(totalPagesNormalized)}
+                  className={`text-sm px-3 py-1 rounded ${
+                    currentPage === totalPagesNormalized
+                      ? "bg-yellow-500 text-white"
+                      : "bg-gray-100 hover:bg-yellow-100"
+                  }`}
+                >
+                  {totalPagesNormalized}
+                </button>
+              </>
+            )}
             <button
               onClick={handleNext}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPagesNormalized}
               className="text-sm px-3 py-1 bg-gray-200 hover:bg-yellow-100 rounded disabled:opacity-50"
             >
               <FaChevronRight />
@@ -993,8 +1035,10 @@ export default function AdminClassesTable() {
 
           <button
             type="button"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage >= totalPages}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPagesNormalized, prev + 1))
+            }
+            disabled={currentPage >= totalPagesNormalized}
             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
           >
             {translate("next", "Next")}
