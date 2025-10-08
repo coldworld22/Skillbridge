@@ -111,7 +111,8 @@ export default function BackgroundAnimation() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full pointer-events-none select-none"
-    ></canvas>
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-80"
+      aria-hidden="true"
+    />
   );
 }
