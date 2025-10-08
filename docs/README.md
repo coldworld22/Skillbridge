@@ -13,6 +13,7 @@
 - [Category Management](admin-category-management.md) — organize course categories.
 - [Third-Party Integrations](admin-third-party-integrations.md) — connect external services.
 - [License Verification](license-verification.md) — verify instructor credentials.
+- [Admin Dashboard Troubleshooting](admin-dashboard-troubleshooting.md) — resolve common console/network errors.
 - [Messages Configuration](messages-config.md) — customize message templates.
 - [Coupon Management](coupon-management.md) — define promotional codes.
 - [Payment Icon Sources](payment-icon-sources.md) — references for payment icons.
