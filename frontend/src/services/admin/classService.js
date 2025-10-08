@@ -108,6 +108,40 @@ const toIsoStringOrNull = (value) => {
   }
 };
 
+const toLowerCaseKey = (value) => {
+  const str = toDisplayString(value);
+  return str ? str.trim().toLowerCase() : "";
+};
+
+const toSentenceCase = (value) => {
+  const str = toDisplayString(value);
+  if (!str) {
+    return "";
+  }
+
+  const trimmed = str.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+};
+
+const normalizeApprovalStatus = (value) => {
+  const normalized = toLowerCaseKey(value);
+
+  switch (normalized) {
+    case "approved":
+      return "Approved";
+    case "rejected":
+      return "Rejected";
+    case "pending":
+      return "Pending";
+    default:
+      return normalized ? toSentenceCase(normalized) : "Pending";
+  }
+};
+
 const formatClass = (cls) => {
   if (!cls || typeof cls !== "object") {
     return null;
@@ -160,13 +194,27 @@ const formatClass = (cls) => {
 
   const priceValue = Number.parseFloat(cls.price);
 
+  const rawPublishStatus =
+    cls.publish_status ?? cls.publishStatus ?? status ?? rest.publishStatus;
+  const publishStatus = toLowerCaseKey(rawPublishStatus) || "draft";
+
+  const rawScheduleStatus =
+    schedule_status ?? cls.scheduleStatus ?? rest.scheduleStatus;
+  const scheduleStatus =
+    toSentenceCase(rawScheduleStatus) ||
+    computeScheduleStatus(startDateTime, endDateTime);
+
+  const approvalStatus = normalizeApprovalStatus(
+    cls.moderation_status ?? cls.approvalStatus ?? rest.approvalStatus
+  );
+
   return {
     ...rest,
     title,
     instructor,
     category,
     createdAt: cls.created_at ? new Date(cls.created_at).toISOString() : null,
-    publishStatus: status,
+    publishStatus,
     cover_image: cls.cover_image
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
       : null,
@@ -193,9 +241,8 @@ const formatClass = (cls) => {
     startDateInput: startDateDisplay ? toDateInput(startDateDisplay) : "",
     endDateInput: endDateDisplay ? toDateInput(endDateDisplay) : "",
 
-    approvalStatus: cls.moderation_status || "Pending",
-    scheduleStatus:
-      schedule_status || computeScheduleStatus(startDateTime, endDateTime),
+    approvalStatus,
+    scheduleStatus,
     views: cls.views || 0,
     price:
       Number.isFinite(priceValue) && priceValue >= 0
