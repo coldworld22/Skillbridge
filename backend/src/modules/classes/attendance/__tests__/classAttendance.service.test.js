@@ -21,7 +21,6 @@ beforeAll(async () => {
   await db.schema.createTable('online_classes', table => {
     table.uuid('id').primary();
     table.string('title');
-    table.string('access_type').defaultTo('paid');
   });
   await db.schema.createTable('class_enrollments', table => {
     table.uuid('class_id');
@@ -44,7 +43,7 @@ beforeAll(async () => {
   const classId = 'class1';
   const lesson1 = 'lesson1';
   const lesson2 = 'lesson2';
-  await db('online_classes').insert({ id: classId, title: 'Class', access_type: 'paid' });
+  await db('online_classes').insert({ id: classId, title: 'Class' });
   await db('class_lessons').insert([
     { id: lesson1, class_id: classId, title: 'L1' },
     { id: lesson2, class_id: classId, title: 'L2' },

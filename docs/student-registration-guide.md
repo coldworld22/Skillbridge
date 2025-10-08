@@ -7,7 +7,6 @@ This guide explains how a new user can create an account on SkillBridge and sign
 2. Fill in your name, email and password.
 3. Submit the form to receive a confirmation email.
 4. Click the verification link in the email to activate your account.
-5. If you try to log in before verifying, you'll see an "Account pending activation" message. Check your inbox (and spam folder) for the verification email or contact support for help.
 
 ## 2. Browse Available Classes
 1. Go to `/online-classes` after logging in.

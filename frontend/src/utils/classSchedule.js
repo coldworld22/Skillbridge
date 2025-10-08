@@ -4,7 +4,6 @@ export const computeScheduleStatus = (startDate, endDate) => {
   const end = endDate ? new Date(endDate) : null;
   if (start && now < start) return "Upcoming";
   if (start && end && now >= start && now <= end) return "Ongoing";
-  if (start && !end && now >= start) return "Ongoing";
   if (end && now > end) return "Completed";
   return "Upcoming";
 };

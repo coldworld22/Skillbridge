@@ -5,7 +5,7 @@ const {
   addToken: addTokenToStore,
   isTokenBlacklisted,
 } = require("../../services/tokenBlacklistService");
-const { normalizeRole, isAdminRole, resolvePrimaryRole } = require("../../utils/role");
+const { normalizeRole, isAdminRole } = require("../../utils/role");
 
 
 /**
@@ -47,7 +47,6 @@ const verifyToken = async (req, res, next) => {
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
-    const primaryRole = resolvePrimaryRole(userRoles, user.role);
     let permissions = await userModel.getUserPermissions(decoded.id);
     if (userRoles.map((r) => normalizeRole(r)).includes("superadmin")) {
       permissions = await userModel.getAllPermissionCodes();
@@ -57,7 +56,7 @@ const verifyToken = async (req, res, next) => {
       ...decoded,
       ...safeUser,
       roles: userRoles,
-      role: primaryRole,
+      role: userRoles[0],
       permissions,
     };
     next();

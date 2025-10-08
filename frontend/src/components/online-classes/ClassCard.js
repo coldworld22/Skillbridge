@@ -2,59 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaHeart, FaThumbsUp } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { computeScheduleStatus } from '@/utils/classSchedule';
 
 function ClassCard({ classData, index }) {
   const {
     id,
     title,
     instructor,
-    start_date,
-    end_date,
+    date,
     price,
-    spots_left,
-    cover_image,
+    spotsLeft,
+    duration,
+    image,
   } = classData;
-
-  const coverImage = cover_image || '/default-class.jpg';
-
-  const formatDate = (value) => {
-    if (!value) return null;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? null
-      : date.toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-  };
-
-  const formattedStartDate = formatDate(start_date) || 'TBD';
-  const formattedEndDate = formatDate(end_date);
-  const scheduleStatus = computeScheduleStatus(start_date, end_date);
-
-  let durationText = 'Schedule TBD';
-  if (formattedStartDate !== 'TBD' && formattedEndDate) {
-    durationText = `${formattedStartDate} - ${formattedEndDate}`;
-  } else if (formattedStartDate !== 'TBD') {
-    durationText = `Starts ${formattedStartDate}`;
-  } else if (formattedEndDate) {
-    durationText = `Until ${formattedEndDate}`;
-  }
-
-  if (scheduleStatus) {
-    durationText =
-      durationText === 'Schedule TBD'
-        ? scheduleStatus
-        : `${durationText} • ${scheduleStatus}`;
-  }
-
-  const normalizedSpotsLeft =
-    typeof spots_left === 'number' && !Number.isNaN(spots_left)
-      ? Math.max(spots_left, 0)
-      : null;
-  const isFull = normalizedSpotsLeft !== null ? normalizedSpotsLeft === 0 : false;
 
   const [liked, setLiked] = useState(false);
 
@@ -70,7 +29,7 @@ function ClassCard({ classData, index }) {
       toast.info('Already in wishlist');
       return;
     }
-    stored.push({ id, title, image: coverImage, instructor, price });
+    stored.push({ id, title, image, instructor, price });
     localStorage.setItem('wishlist', JSON.stringify(stored));
     toast.success('Added to wishlist');
   };
@@ -82,7 +41,7 @@ function ClassCard({ classData, index }) {
       toast.info('Already liked');
       return;
     }
-    stored.push({ id, title, image: coverImage, instructor, price });
+    stored.push({ id, title, image, instructor, price });
     localStorage.setItem('likedClasses', JSON.stringify(stored));
     setLiked(true);
     toast.success('Class liked');
@@ -94,7 +53,7 @@ function ClassCard({ classData, index }) {
         {/* Image */}
         <div className="h-40 mb-4 overflow-hidden rounded-md relative">
           <img
-            src={coverImage}
+            src={image || '/default-class.jpg'}
             alt={title}
             className="w-full h-full object-cover"
           />
@@ -118,19 +77,19 @@ function ClassCard({ classData, index }) {
 
         {/* Details */}
         <div className="text-sm text-gray-400 space-y-1 mb-4">
-          <p>📅 Start: {formattedStartDate}</p>
-          <p>🕒 Duration: {durationText}</p>
+          <p>📅 Start: {date}</p>
+          <p>🕒 Duration: {duration}</p>
           <p>💰 Price: {price === 0 ? 'Free' : `$${price}`}</p>
-          <p>👥 Spots Left: {normalizedSpotsLeft !== null ? normalizedSpotsLeft : 'N/A'}</p>
+          <p>👥 Spots Left: {spotsLeft}</p>
         </div>
 
         {/* Button */}
         <div className={`mt-auto px-4 py-2 text-center rounded-md font-semibold ${
-          isFull
+          spotsLeft === 0
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
             : 'bg-yellow-500 text-black hover:bg-yellow-400'
         }`}>
-          {isFull ? 'Full' : 'View Details'}
+          {spotsLeft === 0 ? 'Full' : 'View Details'}
         </div>
       </div>
     </Link>

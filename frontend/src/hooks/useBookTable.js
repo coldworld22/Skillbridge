@@ -37,17 +37,6 @@ export default function useBookTable({
   }, [filters, storageKey]);
 
   useEffect(() => {
-    setSelectedItems((prevSelected) => {
-      if (!prevSelected.length) return prevSelected;
-
-      const itemIds = new Set(items.map((item) => item.id));
-      const filtered = prevSelected.filter((id) => itemIds.has(id));
-
-      return filtered.length === prevSelected.length ? prevSelected : filtered;
-    });
-  }, [items]);
-
-  useEffect(() => {
     setAllSelected(items.length > 0 && selectedItems.length === items.length);
   }, [items, selectedItems]);
 

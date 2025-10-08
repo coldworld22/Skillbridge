@@ -9,20 +9,14 @@ export default function BookReviewList({ bookId, version = 0 }) {
 
   useEffect(() => {
     if (!bookId) return;
-    const controller = new AbortController();
     let isMounted = true;
-    fetchReviews(bookId, { signal: controller.signal })
-      .then((data) => {
-        if (!isMounted) return;
-        setReviews(data.reviews || []);
-        setAverage(data.averageRating || 0);
-      })
-      .catch((err) => {
-        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
-      });
+    fetchReviews(bookId).then((data) => {
+      if (!isMounted) return;
+      setReviews(data.reviews || []);
+      setAverage(data.averageRating || 0);
+    });
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, [bookId, version]);
 

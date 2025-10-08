@@ -1,6 +1,6 @@
 const logger = require('../utils/logger.js');
 const classService = require("../modules/classes/class.service");
-const notificationService = require("../modules/classes/notifications/classNotification.service");
+const enrollmentService = require("../modules/classes/enrollments/classEnrollment.service");
 const smsService = require("../services/smsService");
 const { sendClassReminderEmail } = require("../utils/email");
 
@@ -12,7 +12,7 @@ function startClassReminderJob() {
     try {
       const classes = await classService.getClassesStartingBetween(startWindow, endWindow);
       for (const cls of classes) {
-        const students = await notificationService.getSubscribedStudentsByClass(cls.id);
+        const students = await enrollmentService.getByClass(cls.id);
         for (const student of students) {
           const startTime = new Date(cls.start_date).toLocaleString();
           const text = `Reminder: ${cls.title} starts at ${startTime}`;

@@ -8,9 +8,8 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import useSWR, { mutate as mutateGlobal } from "swr";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function LanguageConfigPage() {
+export default function LanguageConfigPage() {
   const { t, i18n } = useTranslation("dashboard");
   const [config, setConfig] = useState({ defaultLanguage: "en" });
   const { data: configData } = useSWR("/app-config", fetchAppConfig, {
@@ -85,5 +84,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(LanguageConfigPage);

@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-import getApiBaseUrl from '@/pages/api/_utils/baseUrl';
-
 export default async function handler(req, res) {
-  const base = getApiBaseUrl();
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
   const url = `${base}/app-config`;
   try {
     const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};

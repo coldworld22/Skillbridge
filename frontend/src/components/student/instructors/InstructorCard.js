@@ -1,22 +1,20 @@
 import { FaStar, FaUserCheck, FaComments, FaHeart, FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/router";
-import { useTranslation } from "next-i18next";
 
 export default function InstructorCard({ instructor, isFavorite, onToggleFavorite, onBook, onChat }) {
   const router = useRouter();
-  const { t } = useTranslation("dashboard", { keyPrefix: "studentInstructorsPage" });
 
   return (
     <div className="p-5 bg-white rounded-lg shadow border text-center flex flex-col items-center relative">
       {instructor.availableNow && (
         <span className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-          {t('online')}
+          Online
         </span>
       )}
 
       {instructor.verified && (
         <span className="absolute top-2 left-2 text-green-500 text-xs flex items-center gap-1">
-          <FaCheckCircle /> {t('verified')}
+          <FaCheckCircle /> Verified
         </span>
       )}
 
@@ -63,21 +61,21 @@ export default function InstructorCard({ instructor, isFavorite, onToggleFavorit
           onClick={onBook}
           className="bg-yellow-400 text-black px-4 py-2 rounded-lg text-sm hover:bg-yellow-500"
         >
-          <FaUserCheck className="inline mr-1" /> {t('book')}
+          <FaUserCheck className="inline mr-1" /> Book
         </button>
 
         <button
           onClick={onChat}
           className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600"
         >
-          <FaComments className="inline mr-1" /> {t('chat')}
+          <FaComments className="inline mr-1" /> Chat
         </button>
 
         <button
           onClick={() => router.push(`/instructors/${instructor.id}`)}
           className="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600"
         >
-          {t('view_profile')}
+          View Profile
         </button>
 
         <button

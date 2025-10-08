@@ -8,7 +8,6 @@ import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchClassStudents } from "@/services/admin/classService";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { formatDateWithLocale } from "@/utils/date";
 
 function ClassStudentsPage() {
   const { id } = useRouter().query;
@@ -83,9 +82,7 @@ function ClassStudentsPage() {
                   <td className="border p-2">{stu.email}</td>
                   <td className="border p-2 text-center">{stu.status}</td>
                   <td className="border p-2 text-center">
-                    {formatDateWithLocale(stu.enrolled_at, {
-                      locale: i18n.language,
-                    })}
+                    {new Date(stu.enrolled_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
@@ -102,7 +99,6 @@ ClassStudentsPage.getLayout = function getLayout(page) {
 };
 
 const ProtectedClassStudentsPage = withAuthProtection(ClassStudentsPage, {
-  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 

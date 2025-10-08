@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   const { id } = req.query;
 
   try {
-    const base =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5002/api";
-    const { data } = await axios.get(`${base}/ads/public/${id}`);
+    const { data } = await axios.get(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/ads/public/${id}`
+    );
     if (!data?.data) {
       return res.status(404).json({ error: "Ad not found" });
     }

@@ -11,53 +11,41 @@ const formatUrl = (url) => {
   return `${apiBase}${url}`;
 };
 
-const attachCustomerName = ({ user_name, user, ...rest }) => ({
-  ...rest,
-  user_name,
-  user,
-  customerName: user_name || user || rest.customerName || null,
-});
-
 // ─────────────────────
 // 📨 Create a support ticket
 // ─────────────────────
 export const createTicket = async ({ subject, message }) => {
-  const { data } = await api.post('support/tickets', { subject, message });
+  const { data } = await api.post('/support/tickets', { subject, message });
   return data?.data;
 };
 
-export const fetchMyTickets = async (config = {}) => {
-  const cfg = Object.keys(config).length ? config : undefined;
-  const { data } = await api.get("support/my-tickets", cfg);
+export const fetchMyTickets = async () => {
+  const { data } = await api.get("/support/my-tickets");
   const list = data?.data ?? [];
-  return list.map(({ created_at, user_avatar, ...rest }) =>
-    attachCustomerName({
-      ...rest,
-      createdAt: created_at,
-      user_avatar: formatUrl(user_avatar),
-    })
-  );
+  return list.map(({ created_at, user_avatar, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatUrl(user_avatar),
+  }));
 };
 
 export const fetchAllTickets = async (filters = {}) => {
-  const { data } = await api.get("support/admin/tickets", { params: filters });
+  const { data } = await api.get("/support/admin/tickets", { params: filters });
   const list = data?.data ?? [];
-  return list.map(({ created_at, user_avatar, ...rest }) =>
-    attachCustomerName({
-      ...rest,
-      createdAt: created_at,
-      user_avatar: formatUrl(user_avatar),
-    })
-  );
+  return list.map(({ created_at, user_avatar, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatUrl(user_avatar),
+  }));
 };
 
 export const fetchTicketById = async (id) => {
-  const { data } = await api.get(`support/tickets/${id}`);
+  const { data } = await api.get(`/support/tickets/${id}`);
   const ticket = data?.data;
   if (!ticket) return null;
   const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
-    ...attachCustomerName(rest),
+    ...rest,
     createdAt: created_at,
     user_avatar: formatUrl(user_avatar),
     messages: messages.map(
@@ -75,7 +63,7 @@ export const fetchTicketById = async (id) => {
 };
 
 export const addMessage = async (id, message) => {
-  const { data } = await api.post(`support/tickets/${id}/messages`, { message });
+  const { data } = await api.post(`/support/tickets/${id}/messages`, { message });
   return data?.data;
 };
 
@@ -83,7 +71,7 @@ export const uploadAttachment = async (messageId, file) => {
   const form = new FormData();
   form.append('file', file);
   const { data } = await api.post(
-    `support/messages/${messageId}/attachments`,
+    `/support/messages/${messageId}/attachments`,
     form,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
@@ -91,25 +79,25 @@ export const uploadAttachment = async (messageId, file) => {
 };
 
 export const deleteTicket = async (id) => {
-  const { data } = await api.delete(`support/tickets/${id}`);
+  const { data } = await api.delete(`/support/tickets/${id}`);
   return data?.data;
 };
 
 export const updateStatus = async (id, status) => {
   const normalized = status?.toLowerCase();
-  const { data } = await api.patch(`support/admin/tickets/${id}/status`, { status: normalized });
+  const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status: normalized });
   return data?.data;
 };
 
 export const updatePriority = async (id, priority) => {
-  const { data } = await api.patch(`support/admin/tickets/${id}/priority`, {
+  const { data } = await api.patch(`/support/admin/tickets/${id}/priority`, {
     priority,
   });
   return data?.data;
 };
 
 export const fetchRecentActivity = async () => {
-  const { data } = await api.get("support/admin/recent-activity");
+  const { data } = await api.get("/support/admin/recent-activity");
   const list = data?.data ?? [];
   return list.map(({ created_at, ...rest }) => ({
     ...rest,
@@ -118,7 +106,7 @@ export const fetchRecentActivity = async () => {
 };
 
 export const fetchSupportAnalytics = async () => {
-  const { data } = await api.get("support/admin/analytics");
+  const { data } = await api.get("/support/admin/analytics");
   return data?.data ?? {
     open: 0,
     resolved: 0,

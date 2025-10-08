@@ -8,45 +8,11 @@
 // flag and relax `SameSite` when not running in production.
 // ---------------------------------------------------------------------------
 
-const { REFRESH_TOKEN_MAX_AGE } = require("../config/tokens");
-const {
-  COOKIE_DOMAIN,
-  COOKIE_SECURE,
-  COOKIE_SAMESITE,
-  NODE_ENV,
-} = require("../config/env");
-
-// Use the provided cookie domain when available. Leaving it undefined allows
-// browsers to scope the cookie to the current host which works for local
-// development and custom deployments without additional configuration.
-const domain = COOKIE_DOMAIN ? COOKIE_DOMAIN.trim() || undefined : undefined;
-
-const secure =
-  COOKIE_SECURE !== undefined ? COOKIE_SECURE : NODE_ENV === "production";
-
-const resolveSameSite = () => {
-  if (COOKIE_SAMESITE) {
-    if (COOKIE_SAMESITE === "none") {
-      return "None";
-    }
-    if (COOKIE_SAMESITE === "lax") {
-      return "Lax";
-    }
-    if (COOKIE_SAMESITE === "strict") {
-      return "Strict";
-    }
-  }
-
-  return NODE_ENV === "production" ? "None" : "Lax";
-};
-
-const sameSite = resolveSameSite();
-
 const refreshCookieOptions = {
   httpOnly: true,
-  secure,
-  sameSite,
-  maxAge: REFRESH_TOKEN_MAX_AGE,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 // CSRF token needs to be readable by the client so `httpOnly` is false, but we
@@ -54,13 +20,13 @@ const refreshCookieOptions = {
 // token to ensure it is available across subdomains in production.
 const csrfCookieOptions = {
   httpOnly: false,
-  secure,
-  sameSite,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
 };
 
-if (domain) {
-  refreshCookieOptions.domain = domain;
-  csrfCookieOptions.domain = domain;
+if (process.env.COOKIE_DOMAIN) {
+  refreshCookieOptions.domain = process.env.COOKIE_DOMAIN;
+  csrfCookieOptions.domain = process.env.COOKIE_DOMAIN;
 }
 
 module.exports = { refreshCookieOptions, csrfCookieOptions };

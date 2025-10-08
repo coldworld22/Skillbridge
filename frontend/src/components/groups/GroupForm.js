@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useAuthStore from '@/store/auth/authStore';
 import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import userService from '@/services/profile/userService';
@@ -10,7 +10,7 @@ import { sendChatMessage } from '@/services/messageService';
 import { createNotification } from '@/services/notificationService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
-import { buildUrl } from '@/utils/url';
+import { API_BASE_URL } from '@/config/config';
 
 export default function GroupForm() {
   const router = useRouter();
@@ -44,8 +44,11 @@ export default function GroupForm() {
       user.profile_image ||
       '';
     if (!url) return '/images/default-avatar.png';
-    if (url.startsWith('blob:') || url.startsWith('data:')) return url;
-    return buildUrl(url) || '/images/default-avatar.png';
+    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:'))
+      return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `${API_BASE_URL}${clean}`;
+
   };
 
   useEffect(() => {

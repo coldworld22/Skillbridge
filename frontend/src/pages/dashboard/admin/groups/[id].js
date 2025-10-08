@@ -20,14 +20,13 @@ import {
   FaFolderOpen,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
-import { toast } from 'react-toastify';
-import withAdminGuard from "@/hooks/withAdminGuard";
+import toast from 'react-hot-toast';
 
 // ...imports (same as before)...
 
 // Continue from your existing AdminGroupDetailsPage component
 
-function AdminGroupDetailsPage() {
+export default function AdminGroupDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
   const [group, setGroup] = useState();
@@ -542,4 +541,3 @@ function AdminGroupDetailsPage() {
   );
 }
 
-export default withAdminGuard(AdminGroupDetailsPage);

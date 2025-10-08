@@ -1,18 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import Link from "next/link";
 import { createPlan } from "@/services/admin/planService";
+import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import withAdminGuard from "@/hooks/withAdminGuard";
-import useAuthStore from "@/store/auth/authStore";
 
-function CreatePlanPage() {
+export default function CreatePlanPage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const { accessToken, user, hasHydrated } = useAuthStore();
 
   const [form, setForm] = useState({
     name: "",
@@ -46,6 +45,18 @@ function CreatePlanPage() {
 
   const removeFeature = (index) =>
     setFeatures(features.filter((_, i) => i !== index));
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!accessToken || !user) {
+      router.replace("/auth/login");
+      return;
+    }
+    const role = user.role?.toLowerCase() ?? "";
+    if (role !== "admin" && role !== "superadmin") {
+      router.replace("/error/403");
+    }
+  }, [accessToken, hasHydrated, router, user]);
 
   const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
 
@@ -334,5 +345,3 @@ function CreatePlanPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(CreatePlanPage);

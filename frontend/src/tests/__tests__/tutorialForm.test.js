@@ -1,4 +1,4 @@
-import { buildTutorialFormData } from "@/utils/tutorialDraft";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 describe("buildTutorialFormData", () => {
   it("builds form data with provided status", () => {
@@ -27,7 +27,7 @@ describe("buildTutorialFormData", () => {
     expect(formData.get("level")).toBe("beginner");
     expect(formData.get("language")).toBe("en");
     expect(formData.get("status")).toBe("draft");
-    expect(formData.get("is_paid")).toBe("1");
+    expect(formData.get("is_paid")).toBe("true");
     expect(formData.get("price")).toBe("100");
     expect(JSON.parse(formData.get("tags"))).toEqual(["a", "b"]);
     expect(JSON.parse(formData.get("chapters"))).toEqual([
@@ -68,7 +68,7 @@ describe("buildTutorialFormData", () => {
     const formData = buildTutorialFormData(tutorialData);
 
     expect(formData.get("status")).toBe("draft");
-    expect(formData.get("is_paid")).toBe("0");
+    expect(formData.get("is_paid")).toBe("false");
     expect(formData.has("price")).toBe(false);
     expect(formData.has("tags")).toBe(false);
     expect(formData.has("chapters")).toBe(false);

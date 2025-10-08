@@ -8,21 +8,12 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 
 - `POST /register` – create a new user
 - `POST /login` – authenticate and receive tokens
-- `POST /refresh` – refresh an access token (refresh token cookies expire after 30 days)
+- `POST /refresh` – refresh an access token
 - `POST /logout` – clear the refresh token
 - `POST /request-reset` – send a password reset OTP *(legacy)*
 - `POST /forgot-password` – send a password reset OTP via email
 - `POST /verify-otp` – verify the reset code
 - `POST /reset-password` – update the password
-
-`POST /login` and `POST /refresh` also issue a `csrfToken` cookie containing a
-random CSRF token. Clients must mirror this value in the `x-csrf-token` header
-on subsequent state‑changing requests (POST/PUT/PATCH/DELETE) to satisfy server
-CSRF validation.
-## CSRF Token
-
-`GET /api/csrf-token` – return a fresh CSRF token cookie. The endpoint responds
-with status `204` and no body.
 
 ## Users
 
@@ -35,7 +26,6 @@ with status `204` and no body.
   - `GET /api/users/classes/:id` – view details for a published class
   - `POST /api/users/classes/admin` – create a class (instructor or admin)
   - `PUT /api/users/classes/admin/:id` – update a class
-  - `POST /api/users/classes/admin/bulk-delete` – delete multiple classes in a single request (admin only)
   - `DELETE /api/users/classes/admin/:id` – remove a class
   - `GET /api/users/classes/admin/my` – list classes for the logged in instructor
 - `/admin` – administrator dashboard features

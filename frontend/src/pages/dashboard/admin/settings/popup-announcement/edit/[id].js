@@ -13,11 +13,10 @@ import {
   updatePopupAnnouncement,
 } from "@/services/admin/popupAnnouncementService";
 import { fetchPageList } from "@/services/admin/seoConfigService";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
-function EditAnnouncementForm() {
+export default function EditAnnouncementForm() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
@@ -288,4 +287,3 @@ export async function getServerSideProps({ locale }) {
   };
 }
 
-export default withAdminGuard(EditAnnouncementForm);

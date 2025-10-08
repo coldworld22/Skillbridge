@@ -10,7 +10,6 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
 import {
@@ -18,15 +17,12 @@ import {
   deleteTemplate,
   toggleTemplateStatus,
   duplicateTemplate,
-  getTemplatePreview,
 } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
 
-function CertificateTemplatesPage() {
+export default function CertificateTemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [previewTemplate, setPreviewTemplate] = useState(null);
-  const [previewData, setPreviewData] = useState(null);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -74,30 +70,6 @@ function CertificateTemplatesPage() {
       console.error("Failed to duplicate template", err);
       toast.error("Failed to duplicate template");
     }
-  };
-
-  const openPreview = async (template) => {
-    setPreviewTemplate(template);
-    setPreviewData(null);
-
-    if (!template?.id) return;
-
-    setIsPreviewLoading(true);
-    try {
-      const payload = await getTemplatePreview(template.id);
-      setPreviewData(payload);
-    } catch (err) {
-      console.error("Failed to load preview", err);
-      toast.error("Failed to load preview data");
-    } finally {
-      setIsPreviewLoading(false);
-    }
-  };
-
-  const closePreview = () => {
-    setPreviewTemplate(null);
-    setPreviewData(null);
-    setIsPreviewLoading(false);
   };
 
   return (
@@ -159,7 +131,7 @@ function CertificateTemplatesPage() {
                       <button onClick={() => handleDuplicate(template.id)}>
                         <FaClone title="Duplicate" />
                       </button>
-                      <button onClick={() => openPreview(template)}>
+                      <button onClick={() => setPreviewTemplate(template)}>
                         <FaEye title="Preview" />
                       </button>
                       <button
@@ -178,14 +150,10 @@ function CertificateTemplatesPage() {
         {previewTemplate && (
           <CertificatePreviewModal
             template={previewTemplate}
-            previewData={previewData}
-            loadingPreview={isPreviewLoading}
-            onClose={closePreview}
+            onClose={() => setPreviewTemplate(null)}
           />
         )}
       </div>
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(CertificateTemplatesPage);

@@ -2,7 +2,6 @@
 // Admin specific API calls for managing tutorials
 
 import api from "@/services/api/api";
-import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 
 /**
  * Create a new tutorial as an admin or instructor.
@@ -12,28 +11,22 @@ import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
  * @returns {Promise<Object>} Created tutorial record
  */
 export const createTutorial = async (formData) => {
-  const { data } = await api.post("users/tutorials/admin", formData, {
+  const { data } = await api.post("/users/tutorials/admin", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 /**
- * Fetch tutorials for the admin dashboard with backend pagination.
+ * Fetch all tutorials for admin dashboard view.
  *
- * @param {number} page - Page number to fetch
- * @param {number} limit - Number of items per page
  * @param {object} config - Optional Axios config (e.g. abort signal)
- * @returns {Promise<object>} tutorials array and pagination metadata
+ * @returns {Promise<Array>} Array of tutorial objects
  */
-export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
-  const requestConfig = {
-    ...config,
-    params: { ...(config.params || {}), page, limit },
-  };
-
-  const { data } = await api.get("users/tutorials/admin", requestConfig);
-  const tutorials = (data?.data ?? []).map((t) => ({
+export const fetchAllTutorials = async (config = {}) => {
+  const { data } = await api.get("/users/tutorials/admin", config);
+  const tutorials = data?.data ?? [];
+  return tutorials.map((t) => ({
     id: t.id,
     title: t.title,
     instructorId: t.instructor_id,
@@ -46,19 +39,11 @@ export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
     updatedAt: t.updated_at,
     instructor: t.instructor_name,
     category: t.category_name,
-    status:
-      t.status === TUTORIAL_STATUS.PUBLISHED
-        ? TUTORIAL_STATUS.PUBLISHED
-        : TUTORIAL_STATUS.DRAFT,
+    status: t.status === "published" ? "Published" : "Draft",
     approvalStatus: t.moderation_status ?? "Pending",
     rating: t.rating,
     views: t.views,
   }));
-
-  return {
-    tutorials,
-    meta: data?.meta ?? null,
-  };
 };
 
 /**
@@ -68,38 +53,28 @@ export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
  * @returns {Promise<Object>} Server response
  */
 export const permanentlyDeleteTutorial = async (id) => {
-  const res = await api.delete(`users/tutorials/admin/${id}`);
+  const res = await api.delete(`/users/tutorials/admin/${id}`);
   return res.data;
 };
 
 export const toggleTutorialStatus = async (id) => {
-  const { data } = await api.patch(`users/tutorials/admin/${id}/status`);
-  const payload = data?.data;
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const { status = null, moderation_status = null } = payload;
-
-  return {
-    status,
-    moderation_status,
-  };
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
+  return data?.data;
 };
 
 export const approveTutorial = async (id) => {
-  const { data } = await api.patch(`users/tutorials/admin/${id}/approve`);
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/approve`);
   return data?.data;
 };
 
 export const rejectTutorial = async (id, reason) => {
-  const { data } = await api.patch(`users/tutorials/admin/${id}/reject`, { reason });
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/reject`, { reason });
   return data?.data;
 };
 
 
 export const fetchTutorialById = async (id) => {
-  const { data } = await api.get(`users/tutorials/admin/${id}`);
+  const { data } = await api.get(`/users/tutorials/admin/${id}`);
   const t = data?.data;
   if (!t) return null;
   return {
@@ -128,25 +103,25 @@ export const fetchTutorialById = async (id) => {
 };
 
 export const updateTutorial = async (id, formData) => {
-  const { data } = await api.put(`users/tutorials/admin/${id}`, formData, {
+  const { data } = await api.put(`/users/tutorials/admin/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 export const bulkApproveTutorials = async (ids) => {
-  await api.patch("users/tutorials/admin/bulk/approve", { ids });
+  await api.patch("/users/tutorials/admin/bulk/approve", { ids });
   return true;
 };
 
 export const bulkDeleteTutorials = async (ids) => {
-  await api.post("users/tutorials/admin/bulk-delete", { ids });
+  await api.post("/users/tutorials/admin/bulk-delete", { ids });
   return true;
 };
 
 
 
 export const fetchAdminTutorialAnalytics = async (id) => {
-  const { data } = await api.get(`users/tutorials/admin/${id}/analytics`);
+  const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
   return data?.data ?? {};
 };

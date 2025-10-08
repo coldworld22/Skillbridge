@@ -20,9 +20,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Image from "next/image";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdAnalyticsPage({ ad: initialAd, error }) {
+export default function AdAnalyticsPage({ ad: initialAd, error }) {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation('dashboard', { keyPrefix: 'adsAnalyticsPage' });
@@ -257,5 +256,3 @@ export async function getServerSideProps({ params, locale, req }) {
     };
   }
 }
-
-export default withAdminGuard(AdAnalyticsPage);

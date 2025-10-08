@@ -1,8 +1,4 @@
-const path = require("path");
-
 const db = require("../../config/database");
-const AppError = require("../../utils/AppError");
-const { isAdminRole } = require("../../utils/role");
 
 /**
  * Create a new support ticket and initial message
@@ -12,46 +8,32 @@ const { isAdminRole } = require("../../utils/role");
  * @param {string} params.message - Initial message content
  */
 exports.createTicket = async ({ user_id, subject, message }) => {
-  const normalizedSubject =
-    typeof subject === "string" ? subject.trim() : "";
-  if (!normalizedSubject) {
-    throw new AppError("Subject is required", 400);
-  }
+  // ─────────────────────
+  // 🔢 Generate unique ticket number
+  // ─────────────────────
+  let ticketNumber;
+  do {
+    ticketNumber = Math.floor(100000 + Math.random() * 900000).toString();
+  } while (
+    await db("support_tickets")
+      .where({ ticket_number: ticketNumber })
+      .first()
+  );
 
-  const normalizedMessage =
-    typeof message === "string" ? message.trim() : "";
-  if (!normalizedMessage) {
-    throw new AppError("Message is required", 400);
-  }
+  // ─────────────────────
+  // 💾 Save the ticket
+  // ─────────────────────
+  const [ticket] = await db("support_tickets")
+    .insert({ user_id, subject, ticket_number: ticketNumber })
+    .returning("*");
 
-  return db.transaction(async (trx) => {
-    // ─────────────────────
-    // 🔢 Generate unique ticket number
-    // ─────────────────────
-    let ticketNumber;
-    do {
-      ticketNumber = Math.floor(100000 + Math.random() * 900000).toString();
-    } while (
-      await trx("support_tickets")
-        .where({ ticket_number: ticketNumber })
-        .first()
-    );
-
-    // ─────────────────────
-    // 💾 Save the ticket
-    // ─────────────────────
-    const [ticket] = await trx("support_tickets")
-      .insert({ user_id, subject: normalizedSubject, ticket_number: ticketNumber })
-      .returning("*");
-
-    await trx("support_messages").insert({
-      ticket_id: ticket.id,
-      sender_id: user_id,
-      message: normalizedMessage,
-    });
-
-    return ticket;
+  await db("support_messages").insert({
+    ticket_id: ticket.id,
+    sender_id: user_id,
+    message,
   });
+
+  return ticket;
 };
 
 exports.listUserTickets = (user_id) => {
@@ -167,49 +149,6 @@ exports.addAttachment = async ({ message_id, file_url, file_name }) => {
  */
 exports.getAttachmentsByMessage = (message_id) =>
   db("support_attachments").where({ message_id });
-
-/**
- * Upload and persist an attachment for a support message
- * @param {Object} params
- * @param {string} params.messageId - Target support message ID
- * @param {Object} params.file - Multer file object
- * @param {Object} params.user - Requesting user context
- */
-exports.uploadAttachment = async ({ messageId, file, user }) => {
-  const messageQuery = db("support_messages");
-  const message = await messageQuery.where({ id: messageId }).first();
-
-  if (!message) {
-    throw new AppError("Support message not found", 404);
-  }
-
-  const ticketQuery = db("support_tickets");
-  const ticket = await ticketQuery.where({ id: message.ticket_id }).first();
-
-  if (!ticket) {
-    throw new AppError("Support ticket not found", 404);
-  }
-
-  const hasAccess =
-    (user?.id &&
-      (ticket.user_id === user.id || message.sender_id === user.id)) ||
-    isAdminRole(user?.roles || user?.role);
-
-  if (!hasAccess) {
-    throw new AppError("Access denied", 403);
-  }
-
-  const fileUrl = path.posix.join(
-    "/uploads/support_attachments",
-    file.filename
-  );
-
-  return exports.addAttachment({
-    message_id: messageId,
-    file_url: fileUrl,
-    file_name: file.originalname || file.filename,
-  });
-};
 
 
 exports.updateStatus = async (id, status) => {

@@ -1,18 +1,6 @@
 // 📁 src/modules/auth/validators/auth.validator.js
 const { z } = require("zod");
 const { PASSWORD_REGEX, OTP_LENGTH } = require("../constants");
-const { isValidPhoneNumber } = require("libphonenumber-js");
-
-// Determine user country for phone validation with fallback to US
-const getUserCountry = () => {
-  try {
-    const locale = process.env.USER_LOCALE || Intl.DateTimeFormat().resolvedOptions().locale;
-    const country = locale?.split("-")[1];
-    return country || "US";
-  } catch {
-    return "US";
-  }
-};
 
 /**
  * @desc Validation for user registration
@@ -20,20 +8,15 @@ const getUserCountry = () => {
 exports.registerSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters long"),
   email: z.string().email("Invalid email address"),
-  phone: z
-    .string()
-    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
-      message: "Invalid phone number",
-    }),
+  phone: z.string().min(12, "Phone number must be at least 12 digits"),
   password: z
     .string()
     .regex(
       PASSWORD_REGEX,
-      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
+      "Password must be at least 8 characters, include an uppercase letter and a special character"
     ),
   role: z.enum(["Student", "Instructor", "Admin"]).optional(), // Optional for fallback logic
   recaptchaToken: z.string().optional(),
-  recaptchaBypass: z.boolean().optional(),
 });
 
 /**
@@ -43,7 +26,6 @@ exports.loginSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
   recaptchaToken: z.string().optional(),
-  recaptchaBypass: z.boolean().optional(),
 });
 
 /**
@@ -76,7 +58,7 @@ exports.resetPasswordSchema = z.object({
     .string()
     .regex(
       PASSWORD_REGEX,
-      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
+      "Password must be at least 8 characters, include an uppercase letter and a special character"
     ),
 });
 

@@ -22,15 +22,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import {
-  createTutorialDraft,
-  loadDraft,
-  saveDraft,
-  loadCategories,
-  buildTutorialFormData,
-} from "@/utils/tutorialDraft";
-
-/** @typedef {import('@/utils/tutorialDraft').TutorialDraft} TutorialDraft */
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -38,9 +30,7 @@ function EditTutorialPage() {
   const { id } = router.query;
 
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(
-    /** @type {TutorialDraft | null} */ (null)
-  );
+  const [tutorialData, setTutorialData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const user = useAuthStore((state) => state.user);
@@ -50,32 +40,14 @@ function EditTutorialPage() {
   useEffect(() => {
     if (!id) return;
 
-    const draftKey = `editTutorialDraft-${id}`;
-    const draftExists = () => {
-      if (typeof window === "undefined") return false;
-      try {
-        return localStorage.getItem(draftKey) !== null;
-      } catch (err) {
-        console.error("Failed to access localStorage", err);
-        return false;
-      }
-    };
-    const hasSavedDraft = draftExists();
-
-    if (hasSavedDraft) {
-      const draft = loadDraft(draftKey);
-      const draftStillExists = typeof window === "undefined" ? hasSavedDraft : draftExists();
-
-      if (draft && draftStillExists) {
-        setTutorialData(draft);
-        loadCategories(fetchAllCategories)
-          .then((cats) => setCategories(cats))
-          .catch((err) => {
-            console.error(err);
-            setError("Failed to load tutorial.");
-          });
-        return;
-      }
+    const draft = localStorage.getItem(`editTutorialDraft-${id}`);
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      setTutorialData({
+        ...parsed,
+        lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+      });
+      return;
     }
 
     const load = async () => {
@@ -84,7 +56,7 @@ function EditTutorialPage() {
         const [tutorial, chapters, cats] = await Promise.all([
           fetchTutorialById(id),
           fetchChaptersByTutorial(id),
-          loadCategories(fetchAllCategories),
+          fetchAllCategories(),
         ]);
         const mappedChapters = chapters.map((ch) => ({
           title: ch.title,
@@ -93,15 +65,24 @@ function EditTutorialPage() {
           videoUrl: ch.video_url,
           preview: ch.is_preview,
         }));
-        const normalized = createTutorialDraft({
-          ...tutorial,
-          chapters: mappedChapters,
+        setTutorialData({
+          title: tutorial.title,
+          shortDescription: tutorial.shortDescription || "",
+          category: tutorial.category,
+          categoryName: tutorial.categoryName,
+          level: tutorial.level,
+          language: tutorial.language || "",
+          instructorId: tutorial.instructorId,
+          status: tutorial.status,
           lessonCount: mappedChapters.length,
-          currency:
-            tutorial.currency || tutorial.currencyCode || tutorial.currency_code || "",
+          tags: tutorial.tags || [],
+          chapters: mappedChapters,
+          thumbnail: tutorial.thumbnail,
+          preview: tutorial.preview,
+          price: tutorial.price || "",
+          isFree: tutorial.isFree,
         });
-        setTutorialData(normalized);
-        setCategories(cats);
+        setCategories(cats?.data || cats);
       } catch (err) {
         console.error(err);
         setError("Failed to load tutorial.");
@@ -113,7 +94,7 @@ function EditTutorialPage() {
 
   useEffect(() => {
     if (tutorialData && id) {
-      saveDraft(`editTutorialDraft-${id}`, tutorialData);
+      localStorage.setItem(`editTutorialDraft-${id}`, JSON.stringify(tutorialData));
     }
   }, [tutorialData, id]);
 
@@ -144,7 +125,7 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onBack={onPrev}
+            onPrev={onPrev}
           />
         )}
         {step === 3 && (
@@ -152,13 +133,13 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onBack={onPrev}
+            onPrev={onPrev}
           />
         )}
         {step === 4 && (
             <ReviewStep
               tutorialData={tutorialData}
-              onBack={onPrev}
+              onPrev={onPrev}
               actionLabel="Save Changes"
               onPublish={async () => {
                 const formData = buildTutorialFormData(tutorialData);

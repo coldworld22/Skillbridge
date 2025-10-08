@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import logger from "@/utils/logger";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function CreateLanguagePage() {
+export default function CreateLanguagePage() {
   const router = useRouter();
   const [form, setForm] = useState({
     label: "",
@@ -119,5 +118,3 @@ function CreateLanguagePage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(CreateLanguagePage);

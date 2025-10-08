@@ -10,23 +10,10 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
-const { getActiveStudentSubscription } = require("../plans/subscription.helper");
-const { creditInstructorSubscription } = require("../payments/helpers/wallet");
-const { getPlanCoveredMethod } = require("../payments/helpers/methods");
+const { getActiveStudentPlanId } = require("../plans/subscription.helper");
+const planRevenue = require("../payments/helpers/planRevenue");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
-
-const getSubscriptionPaymentMethod = async () => {
-  const method =
-    (await paymentMethodsService.getByType("subscription")) ||
-    (await paymentMethodsService.getByType("free"));
-
-  if (!method) {
-    throw new AppError("Subscription payment method not configured", 400);
-  }
-
-  return method;
-};
 
 const DEFAULT_PLATFORM_CUT = { book: 10 };
 
@@ -285,9 +272,7 @@ exports.checkout = async (studentId) => {
   const bankMethod = await paymentMethodsService.getByType('bank');
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
-  const activeSubscription = await getActiveStudentSubscription(studentId);
-  const activePlanId = activeSubscription?.plan_id;
-  const activeSubscriptionId = activeSubscription?.id;
+  const activePlanId = await getActiveStudentPlanId(studentId);
 
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
@@ -325,45 +310,40 @@ exports.checkout = async (studentId) => {
     }
 
     const payments = [];
-    let planMethodRecord = null;
     for (const b of books) {
-      let includedPlans = [];
-      if (Array.isArray(b.included_plans)) {
-        includedPlans = b.included_plans;
-      } else if (typeof b.included_plans === 'string') {
-        try {
-          includedPlans = JSON.parse(b.included_plans);
-          if (!Array.isArray(includedPlans)) includedPlans = [];
-        } catch (err) {
-          includedPlans = [];
-        }
-      }
-      const coveredBySubscription =
-        activePlanId && includedPlans.includes(activePlanId);
+      const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
+      const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
 
       if (coveredBySubscription) {
-        if (!planMethodRecord) {
-          planMethodRecord = await getPlanCoveredMethod(trx);
+        const usage = await trx('plan_usage_metrics')
+          .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+          .first();
+        if (usage) {
+          await trx('plan_usage_metrics')
+            .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+            .update({ usage_count: usage.usage_count + 1 });
+        } else {
+          await trx('plan_usage_metrics').insert({
+            plan_id: activePlanId,
+            item_type: 'book',
+            item_id: b.id,
+            usage_count: 1,
+          });
         }
-        const [payment] = await trx('payments').insert(
-          {
+
+        await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
+
+        const [payment] = await trx('payments')
+          .insert({
             id: uuidv4(),
             user_id: studentId,
-            method_id: subscriptionMethod.id,
             item_type: 'book',
             item_id: b.id,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
             source: 'subscription',
-            paid_at: new Date(),
-          },
-          [],
-          trx
-        );
-
-        const payment = await trx('payments')
-          .where({ id: paymentId })
-          .first();
+          })
+          .returning('*');
 
         await trx('book_purchases').insert({
           student_id: studentId,
@@ -371,15 +351,7 @@ exports.checkout = async (studentId) => {
           price_paid: 0,
         });
 
-        await creditInstructorSubscription(
-          'book',
-          b.id,
-          activePlanId,
-          activeSubscriptionId,
-          trx
-        );
-
-        payments.push(paymentRecord);
+        payments.push(payment);
         continue;
       }
 

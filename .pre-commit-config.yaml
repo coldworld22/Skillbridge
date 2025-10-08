@@ -1,8 +1,0 @@
-repos:
-  - repo: local
-    hooks:
-      - id: frontend-lint
-        name: frontend lint
-        entry: npm run lint --prefix frontend
-        language: system
-        pass_filenames: false

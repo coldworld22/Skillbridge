@@ -30,9 +30,9 @@ jest.mock('../../components/tutorials/detail/RelatedTutorials', () => createMock
 jest.mock('../../components/classes/CourseProgress', () => createMock('CourseProgress'));
 jest.mock('../../components/tutorials/detail/TutorialSkeleton', () => createMock('TutorialSkeleton'));
 
-jest.mock('react-toastify', () => ({
+jest.mock('react-hot-toast', () => ({
   __esModule: true,
-  toast: { success: jest.fn(), error: jest.fn() },
+  default: { success: jest.fn(), error: jest.fn() },
 }));
 
 jest.mock('next/link', () => ({
@@ -81,7 +81,7 @@ describe('TutorialDetail add to cart', () => {
     const button = await screen.findByRole('button', { name: /add to cart/i });
     fireEvent.click(button);
     await waitFor(() => expect(addItem).not.toHaveBeenCalled());
-    const { toast } = require('react-toastify');
+    const toast = require('react-hot-toast').default;
     expect(toast.error).toHaveBeenCalledWith('Already in cart');
   });
 });

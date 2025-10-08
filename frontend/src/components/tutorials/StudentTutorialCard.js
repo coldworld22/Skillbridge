@@ -16,7 +16,7 @@ export default function StudentTutorialCard({ tutorial }) {
     <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition">
       <div className="relative">
         <img
-          src={tutorial.thumbnail || "/images/default-tutorial.jpg"}
+          src={tutorial.thumbnail || "/default-thumbnail.jpg"}
           alt={tutorial.title}
           className="w-full h-44 object-cover"
           loading="lazy"

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { API_BASE_URL } from '@/config/config';
 
 export default async function handler(req, res) {
   const { q = '' } = req.query;
@@ -8,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
     const { data } = await axios.get(`${base}/search`, { params: { q } });
     const payload = data.data || data;
     const suggestions = Object.values(payload)

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import ChatImage from "../shared/ChatImage";
 import formatRelativeTime from "@/utils/relativeTime";
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 import useAuthStore from "@/store/auth/authStore";
 import {
   FaPlay,
@@ -17,8 +17,8 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith("blob:") || url.startsWith("data:")) return url;
-    return buildUrl(url);
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url}`;
   };
 
   const isImage = (path) => {

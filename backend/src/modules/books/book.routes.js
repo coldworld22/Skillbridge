@@ -36,7 +36,7 @@ router.put(
 router.patch(
   "/:id/status",
   verifyToken,
-  isAdmin,
+  isInstructorOrAdmin,
   validate({ body: validation.updateBookStatus }),
   controller.updateBookStatus
 );

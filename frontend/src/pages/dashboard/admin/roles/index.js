@@ -15,6 +15,4 @@ function RolesPage() {
   );
 }
 
-export default withAuthProtection(RolesPage, {
-  permissions: ["view_roles", "view_permissions"],
-});
+export default withAuthProtection(RolesPage, { permissions: ["view_roles"] });

@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 import { FaSpinner, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 
 function TutorialsTable({
@@ -70,9 +69,9 @@ function TutorialsTable({
                     <Button
                       onClick={() => {
                         setSearchQuery("");
-                        setFilterCategory("");
-                        setFilterStatus("");
-                        setFilterApproval("");
+                        setFilterCategory("All");
+                        setFilterStatus("All");
+                        setFilterApproval("All");
                         setCurrentPage(1);
                       }}
                       className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800"
@@ -95,14 +94,12 @@ function TutorialsTable({
                   </td>
                   <td className="py-3 px-4">
                     <img
-                      src={
-                        tutorial.thumbnail || "/images/default-tutorial.jpg"
-                      }
+                      src={tutorial.thumbnail || "/default-thumbnail.jpg"}
                       alt={tutorial.title}
                       className="h-14 w-24 object-cover rounded-lg border"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/images/default-tutorial.jpg";
+                        e.target.src = "/default-thumbnail.jpg";
                       }}
                     />
                   </td>
@@ -124,13 +121,12 @@ function TutorialsTable({
                     <Button
                       onClick={() => togglePublishStatus(tutorial.id)}
                       className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                        tutorial.status === TUTORIAL_STATUS.PUBLISHED
+                        tutorial.status === "Published"
                           ? "bg-green-100 text-green-800 hover:bg-green-200"
                           : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                       }`}
                     >
-                      {tutorial.status.charAt(0).toUpperCase() +
-                        tutorial.status.slice(1)}
+                      {tutorial.status}
                     </Button>
                   </td>
                   <td className="py-3 px-4">

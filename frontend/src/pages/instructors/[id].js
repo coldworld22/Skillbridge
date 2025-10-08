@@ -5,15 +5,17 @@ import useAuthStore from "@/store/auth/authStore";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
+import { FaUserCheck, FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { IoMdTime } from "react-icons/io";
 import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
-import { fetchPublicInstructorById, fetchInstructorStats } from "@/services/public/instructorService";
+import { fetchPublicInstructorById } from "@/services/public/instructorService";
+import { fetchPublishedClasses } from "@/services/classService";
+import { fetchPublishedTutorials } from "@/services/tutorialService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 
-export default function InstructorProfilePage({ initialInstructor, initialStats, joinDate: initialJoinDate }) {
+export default function InstructorProfilePage({ initialInstructor, initialStats }) {
   const { t } = useTranslation("website");
   const router = useRouter();
   const { id } = router.query;
@@ -42,7 +44,10 @@ export default function InstructorProfilePage({ initialInstructor, initialStats,
       <p className="text-gray-500 mt-2">The requested instructor profile does not exist</p>
     </div>
   );
-  const joinDateLabel = instructor?.joinDate ?? initialJoinDate ?? null;
+
+  const joinDate = instructor.created_at
+    ? new Date(instructor.created_at).toLocaleDateString()
+    : null;
 
   const role = user?.role?.toLowerCase();
   let Layout = StudentLayout;
@@ -112,10 +117,10 @@ export default function InstructorProfilePage({ initialInstructor, initialStats,
                     <span>{t('instructor_rating', { count: instructor.rating.toFixed(1) })}</span>
                   </div>
                 )}
-                {joinDateLabel && (
+                {joinDate && (
                   <div className="flex items-center text-gray-600">
                     <IoMdTime className="mr-2 text-yellow-500" />
-                    <span>Joined {joinDateLabel}</span>
+                    <span>Joined {joinDate}</span>
                   </div>
                 )}
               </div>
@@ -200,7 +205,7 @@ export default function InstructorProfilePage({ initialInstructor, initialStats,
   );
 }
 
-export async function getServerSideProps({ params, locale }) {
+export async function getServerSideProps({ params }) {
   const { id } = params;
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
@@ -208,27 +213,24 @@ export async function getServerSideProps({ params, locale }) {
     if (!data) {
       return { props: { initialInstructor: null, initialStats: { classes: 0, tutorials: 0 } } };
     }
-    const joinDate = data?.created_at
-      ? new Intl.DateTimeFormat(locale || "en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          timeZone: "UTC",
-        }).format(new Date(data.created_at))
-      : null;
     const formatted = {
       ...data,
       avatar_url: data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png",
       demo_video_url: data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null,
-      joinDate,
     };
-    const stats = await fetchInstructorStats(id);
+
+    const classRes = await fetchPublishedClasses();
+    const classList = classRes?.data ?? classRes ?? [];
+    const classCount = classList.filter((c) => String(c.instructor_id) === String(id)).length;
+
+    const tutRes = await fetchPublishedTutorials();
+    const tutList = tutRes?.data ?? tutRes ?? [];
+    const tutCount = tutList.filter((t) => String(t.creator_id) === String(id)).length;
 
     return {
       props: {
         initialInstructor: formatted,
-        initialStats: stats || { classes: 0, tutorials: 0 },
-        joinDate,
+        initialStats: { classes: classCount, tutorials: tutCount },
       },
     };
   } catch (err) {

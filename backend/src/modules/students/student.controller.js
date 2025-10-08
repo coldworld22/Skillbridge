@@ -3,12 +3,12 @@ const { sendSuccess } = require("../../utils/response");
 const catchAsync = require("../../utils/catchAsync");
 const msgService = require("../messages/messages.service");
 
-exports.list = catchAsync(async (_req, res) => {
+exports.list = async (_req, res) => {
   const data = await service.getPublicStudents();
   sendSuccess(res, data, "Students fetched");
-});
+};
 
-exports.getById = catchAsync(async (req, res) => {
+exports.getById = async (req, res) => {
   const { id } = req.params;
   if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
     return res.status(400).json({ message: "Invalid student id" });
@@ -19,7 +19,7 @@ exports.getById = catchAsync(async (req, res) => {
     return res.status(404).json({ message: "Student not found" });
   }
   sendSuccess(res, student);
-});
+};
 
 exports.sendEmail = catchAsync(async (req, res) => {
   const { id } = req.params;

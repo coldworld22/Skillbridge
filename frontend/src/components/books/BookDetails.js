@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
 import { mapBookForCart } from "@/utils/bookMapping";
 import { API_BASE_URL } from "@/config/config";
-import { buildUrl } from "@/utils/url";
 
 export default function BookDetails({ book }) {
   const { t } = useTranslation(["website", "common"]);
@@ -39,7 +38,6 @@ export default function BookDetails({ book }) {
 
   let actionButtons = null;
   const downloadUrl = `${API_BASE_URL}/library/download/${book.id}`;
-  const coverUrl = book.cover_image_url || buildUrl(book.cover_image);
 
   if (book.is_paid) {
     if (book.user_has_access) {
@@ -91,9 +89,9 @@ export default function BookDetails({ book }) {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
-      {coverUrl && (
+      {book.cover_image_url && (
         <Image
-          src={coverUrl}
+          src={book.cover_image_url}
           alt={book.title}
           width={400}
           height={600}

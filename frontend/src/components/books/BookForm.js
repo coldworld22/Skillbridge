@@ -5,7 +5,7 @@ import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 export default function BookForm({
   onSubmit,

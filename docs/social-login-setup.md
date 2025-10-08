@@ -16,10 +16,10 @@ knex seed:run --specific=08_social_login_settings_seed.js
 2. Add the following URI to the **Authorized redirect URIs** list:
 
    ```
-   http://localhost:5002/api/auth/google/callback
+   http://localhost:5000/api/auth/google/callback
    ```
 
-   Replace `http://localhost:5002` with your production backend URL when deploying. For example:
+   Replace `http://localhost:5000` with your production backend URL when deploying. For example:
 
    ```
    https://yourdomain.com/api/auth/google/callback
@@ -32,7 +32,7 @@ knex seed:run --specific=08_social_login_settings_seed.js
 If the redirect URI does not exactly match what is configured on Google, the login page will display **Error 400: redirect_uri_mismatch**.
 
 
-If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, verify the frontend's `NEXT_PUBLIC_API_BASE_URL` points to your backend URL including the `/api` prefix. When using Docker Compose, configure this in `frontend/.env.production` and remove or ignore the root `.env` which defaults to `http://localhost:5002/api`. Set it to your externally reachable domain such as `https://yourdomain.com/api`. Without this variable the login and register buttons default to `/api/auth/*` which only works when the frontend and backend share the same host. Both buttons now append `?origin=` with the current site origin so the API can redirect back correctly even when `FRONTEND_URL` is not configured.
+If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, verify the frontend's `NEXT_PUBLIC_API_BASE_URL` points to your backend URL including the `/api` prefix. When using Docker Compose, configure this in `frontend/.env.production` and remove or ignore the root `.env` which defaults to `http://backend:5002/api`. Set it to your externally reachable domain such as `https://yourdomain.com/api`. Without this variable the login and register buttons default to `/api/auth/*` which only works when the frontend and backend share the same host. Both buttons now append `?origin=` with the current site origin so the API can redirect back correctly even when `FRONTEND_URL` is not configured.
 
 If requests to `/api/*` still return a Next.js 404 page, confirm your reverse proxy forwards the `/api` path to the backend container. The provided `nginx/conf.d` configs use `location ^~ /api/` to proxy to `backend:5002` without rewriting the prefix. Restart nginx after updating the configuration.
 
@@ -87,7 +87,7 @@ SkillBridge can optionally validate a Google reCAPTCHA token during login and re
 To temporarily disable reCAPTCHA you can call the configuration endpoint with admin credentials:
 
 ```bash
-curl -X PUT http://localhost:5002/api/social-login/config \
+curl -X PUT http://localhost:5000/api/social-login/config \
   -H 'Content-Type: application/json' \
   -d '{ "recaptcha": { "active": false } }'
 ```

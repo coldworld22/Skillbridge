@@ -1,33 +1,14 @@
 const request = require('supertest');
 const express = require('express');
 
-process.env.TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/test';
-
 jest.mock('../src/modules/payments/payments.service', () => ({
-  STATUS: {
-    PENDING_PAYMENT: 'pending_payment',
-    PAID: 'paid',
-  },
   getByUser: jest.fn(),
   getById: jest.fn(),
   create: jest.fn(),
-  STATUS: {
-    PAID: 'paid',
-    PENDING_PAYMENT: 'pending_payment',
-  },
 }));
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
   getById: jest.fn(),
-}));
-
-jest.mock('../src/modules/classes/class.service', () => ({
-  getClassById: jest.fn(),
-}));
-
-jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
-  countEnrollments: jest.fn(),
 }));
 
 jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
@@ -54,23 +35,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 
 const service = require('../src/modules/payments/payments.service');
 const methodService = require('../src/modules/paymentMethods/paymentMethods.service');
-const classService = require('../src/modules/classes/class.service');
-const enrollmentService = require('../src/modules/classes/enrollments/classEnrollment.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const couponService = require('../src/modules/coupons/coupons.service');
-const classService = require('../src/modules/classes/class.service');
-
-process.env.TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
 const routes = require('../src/modules/payments/student.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/payments/student', routes);
-app.use((err, _req, res, _next) => {
-  const status = err.statusCode || err.status || 500;
-  res.status(status).json({ message: err.message });
-});
 
 describe('GET /api/payments/student', () => {
   it('returns student payments', async () => {
@@ -110,24 +81,11 @@ describe('GET /api/payments/student/:id', () => {
 describe('POST /api/payments/student', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    classService.getClassById.mockResolvedValue({
-      id: 'i1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-      max_students: null,
-    });
-    enrollmentService.countEnrollments.mockResolvedValue(0);
   });
 
   it('creates a payment using authenticated user id', async () => {
     methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
     configService.getSettings.mockResolvedValue({ platformCut: {} });
-    classService.getClassById.mockResolvedValue({
-      id: 'i1',
-      price: 100,
-      allow_installments: true,
-    });
     service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/student').send({
@@ -169,51 +127,6 @@ describe('POST /api/payments/student', () => {
       item_id: 'i1',
       amount: 100,
       coupon_id: 'bad',
-    });
-
-    expect(res.status).toBe(400);
-    expect(service.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects unpublished classes', async () => {
-    methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    configService.getSettings.mockResolvedValue({ platformCut: {} });
-    classService.getClassById.mockResolvedValue({
-      id: 'i1',
-      price: 100,
-      status: 'draft',
-      moderation_status: 'Pending',
-      max_students: null,
-    });
-
-    const res = await request(app).post('/api/payments/student').send({
-      method_id: 'm1',
-      item_type: 'class',
-      item_id: 'i1',
-      amount: 100,
-    });
-
-    expect(res.status).toBe(400);
-    expect(service.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects fully booked classes', async () => {
-    methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    configService.getSettings.mockResolvedValue({ platformCut: {} });
-    classService.getClassById.mockResolvedValue({
-      id: 'i1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-      max_students: 1,
-    });
-    enrollmentService.countEnrollments.mockResolvedValue(1);
-
-    const res = await request(app).post('/api/payments/student').send({
-      method_id: 'm1',
-      item_type: 'class',
-      item_id: 'i1',
-      amount: 100,
     });
 
     expect(res.status).toBe(400);

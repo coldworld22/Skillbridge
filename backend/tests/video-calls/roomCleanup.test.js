@@ -10,7 +10,6 @@ jest.mock('../../src/config/database', () => {
 });
 
 const { initSockets, state } = require('../../src/sockets');
-const store = require('../../src/utils/socketStore');
 
 class MockSocket extends EventEmitter {
   constructor(id) {
@@ -24,27 +23,21 @@ class MockSocket extends EventEmitter {
 }
 
 describe('room cleanup', () => {
-  beforeEach(async () => {
-    await store.clearAll();
-  });
-
-  it('removes room data after last participant leaves', async () => {
+  it('removes room data after last participant leaves', () => {
     const server = http.createServer();
     initSockets(server, []);
-    const { io } = state;
+    const { io, rooms, participants } = state;
     const socket = new MockSocket('s1');
     const connectionHandler = io.listeners('connection')[0];
     connectionHandler(socket);
     socket.emit('join-room', { roomId: 'room1', name: 'Alice' });
-    await new Promise((r) => setImmediate(r));
 
-    expect(await store.getRoomSockets('room1')).toEqual(['s1']);
-    expect((await store.getRoomParticipants('room1')).length).toBe(1);
+    expect(rooms['room1']).toEqual(['s1']);
+    expect(participants['room1']).toHaveLength(1);
 
     socket.emit('disconnect');
-    await new Promise((r) => setImmediate(r));
 
-    expect(await store.getRoomSockets('room1')).toEqual([]);
-    expect(await store.getRoomParticipants('room1')).toEqual([]);
+    expect(rooms['room1']).toBeUndefined();
+    expect(participants['room1']).toBeUndefined();
   });
 });

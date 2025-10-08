@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookForm from "@/components/books/BookForm";
@@ -59,8 +59,8 @@ function AdminEditBookPage() {
         setCoverPreview(bookData?.cover_image_url || null);
       } catch (err) {
         console.error("Failed to load book", err);
-        setError(t("errors:bookLoad"));
-        toast.error(t("errors:bookLoad"));
+        setError(t("errors.bookLoad"));
+        toast.error(t("errors.bookLoad"));
       } finally {
         setIsLoading(false);
       }
@@ -69,7 +69,7 @@ function AdminEditBookPage() {
   }, [id, t]);
 
   const handleSubmit = async (formData, setProgress) => {
-    if (!fileError && fileInputRef.current?.files?.[0]) {
+    if (fileInputRef.current?.files?.[0]) {
       formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {

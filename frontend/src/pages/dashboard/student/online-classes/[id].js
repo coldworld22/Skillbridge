@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
 import VideoCallScreen from "@/components/video-call/VideoCallScreen";
 import StudentScoreSummary from "@/components/students/StudentScoreSummary";
-import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   fetchClassDetails,
   fetchClassLessons,
@@ -17,12 +16,11 @@ const computeScheduleStatus = (start, end) => {
   const e = end ? new Date(end) : null;
   if (s && now < s) return "Upcoming";
   if (s && e && now >= s && now <= e) return "Ongoing";
-  if (s && !e && now >= s) return "Ongoing";
   if (e && now > e) return "Completed";
   return "Upcoming";
 };
 
-function StudentClassRoom() {
+export default function StudentClassRoom() {
   const router = useRouter();
   const { id } = router.query;
   const [classData, setClassData] = useState(null);
@@ -35,33 +33,20 @@ function StudentClassRoom() {
 
   useEffect(() => {
     if (!id) return;
-    const controller = new AbortController();
-    const { signal } = controller;
-    // Reset per-class state so progress and chat start fresh for each class navigation
-    setCompletedLessons([]);
-    setMessages([]);
-    setChatInput("");
-    setAssignments([]);
-    setScheduleStatus(null);
     const load = async () => {
       try {
-        const details = await fetchClassDetails(id, signal);
-        const lessons = await fetchClassLessons(id, signal);
-        const assigns = await fetchClassAssignments(id, signal);
+        const details = await fetchClassDetails(id);
+        const lessons = await fetchClassLessons(id);
+        const assigns = await fetchClassAssignments(id);
         const status = computeScheduleStatus(details.start_date, details.end_date);
-        if (!signal.aborted) {
-          setClassData({ ...details, lessons, scheduleStatus: status });
-          setScheduleStatus(status);
-          setAssignments(assigns);
-        }
+        setClassData({ ...details, lessons, scheduleStatus: status });
+        setScheduleStatus(status);
+        setAssignments(assigns);
       } catch (err) {
-        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
-          console.error('Failed to load class', err);
-        }
+        console.error('Failed to load class', err);
       }
     };
     load();
-    return () => controller.abort();
   }, [id]);
 
   const markComplete = (index) => {
@@ -75,13 +60,8 @@ function StudentClassRoom() {
     }
   };
 
-  const totalLessons = classData?.lessons?.length || 0;
-  const progressPercentage = totalLessons > 0
-    ? (completedLessons.length / totalLessons) * 100
-    : 0;
-
   const showCertificate =
-    classData && totalLessons > 0 && completedLessons.length === totalLessons;
+    classData && classData.lessons && completedLessons.length === classData.lessons.length;
 
   if (!id) return <div className="text-white p-10">Loading class...</div>;
   if (!classData) return <div className="text-red-400 p-10">❌ Class not found</div>;
@@ -98,7 +78,7 @@ function StudentClassRoom() {
       <div className="w-full bg-gray-700 rounded-full h-4 mb-6">
         <div
           className="bg-yellow-500 h-4 rounded-full"
-          style={{ width: `${progressPercentage}%` }}
+          style={{ width: `${classData.lessons ? (completedLessons.length / classData.lessons.length) * 100 : 0}%` }}
         />
       </div>
 
@@ -148,49 +128,31 @@ function StudentClassRoom() {
           <p className="text-gray-400">No assignments available for this class.</p>
         ) : (
           <ul className="space-y-4">
-            {assignments.map((assignment) => {
-              const createdAtDate = assignment.createdAt
-                ? new Date(assignment.createdAt)
-                : null;
-              const isNew =
-                createdAtDate &&
-                !Number.isNaN(createdAtDate.getTime()) &&
-                Date.now() - createdAtDate.getTime() < 3 * 24 * 60 * 60 * 1000;
-              const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
-              const dueDateLabel =
-                dueDate && !Number.isNaN(dueDate.getTime())
-                  ? dueDate.toLocaleDateString()
-                  : "No due date";
-
-              return (
-                <li
-                  key={assignment.id}
-                  className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600"
-                >
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="font-semibold">{assignment.title}</p>
-                      {isNew && (
-                        <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
-                      )}
-                    </div>
-                    <small className="text-gray-400">Due: {dueDateLabel}</small>
-                  </div>
-                  <div>
-                    {assignment.status === 'Pending' ? (
-                      <button
-                        onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
-                        className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
-                      >
-                        Start
-                      </button>
-                    ) : (
-                      <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
+            {assignments.map((assignment) => (
+              <li key={assignment.id} className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <p className="font-semibold">{assignment.title}</p>
+                    {assignment.createdAt && Date.now() - new Date(assignment.createdAt).getTime() < 3 * 24 * 60 * 60 * 1000 && (
+                      <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
                     )}
                   </div>
-                </li>
-              );
-            })}
+                  <small className="text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</small>
+                </div>
+                <div>
+                  {assignment.status === 'Pending' ? (
+                    <button
+                      onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
+                      className="text-sm bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
+                    >
+                      Start
+                    </button>
+                  ) : (
+                    <span className="text-xs text-green-400 font-semibold">{assignment.status}</span>
+                  )}
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -245,5 +207,3 @@ function StudentClassRoom() {
     </div>
   );
 }
-
-export default withAuthProtection(StudentClassRoom, ['student']);

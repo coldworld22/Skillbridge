@@ -3,8 +3,28 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { liveClassMocks } from '@/mocks/data';
-import { fetchClassDetails, fetchClassLessons } from '@/services/classService';
+
+const mockClasses = {
+  "react-bootcamp": {
+    title: "React & Next.js Bootcamp",
+    instructor: "Ayman Khalid",
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    lessons: [
+      { title: "Intro to React", duration: "10 min" },
+      { title: "JSX & Components", duration: "15 min" },
+      { title: "Props & State", duration: "20 min" },
+    ],
+  },
+  "java-crash-course": {
+    title: "Java Crash Course",
+    instructor: "Sara Ali",
+    videoUrl: "https://www.w3schools.com/html/movie.mp4",
+    lessons: [
+      { title: "Intro to Java", duration: "12 min" },
+      { title: "Loops & Conditions", duration: "18 min" },
+    ],
+  },
+};
 
 export default function StudentClassRoom() {
   const router = useRouter();
@@ -16,22 +36,11 @@ export default function StudentClassRoom() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function loadClass() {
-      if (!id) return;
-      if (process.env.NODE_ENV === 'development') {
-        setClassData(liveClassMocks[id]);
-        return;
-      }
-      try {
-        const details = await fetchClassDetails(id);
-        const lessons = await fetchClassLessons(id);
-        setClassData({ ...details, lessons });
-      } catch (err) {
-        console.error('Failed to load class', err);
-        setClassData(null);
-      }
+    if (id && mockClasses[id]) {
+      setClassData(mockClasses[id]);
+    } else if (id) {
+      setClassData(null);
     }
-    loadClass();
   }, [id]);
 
   const markComplete = (index) => {

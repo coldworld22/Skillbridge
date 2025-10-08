@@ -2,7 +2,7 @@ import StudentLayout from '@/components/layouts/StudentLayout';
 import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 export default function JoinRequestsPage() {
   const [requests, setRequests] = useState([]);

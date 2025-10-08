@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
-import { buildUrl } from "@/utils/url";
 import dayjs from "dayjs";
 import ChatImage from "../shared/ChatImage";
 
@@ -10,8 +10,8 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
 
   const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
     if (!url) return fallback;
-    if (url.startsWith("blob:")) return url;
-    return buildUrl(url) || fallback;
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
   };
 
   if (!selectedChat) {

@@ -1,7 +1,6 @@
 // components/student/instructors/BookingCard.js
 import { FaCalendarAlt, FaComments, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { useTranslation } from "next-i18next";
 
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -10,7 +9,6 @@ const statusColors = {
 };
 
 export default function BookingCard({ booking, onCancel, onChat }) {
-  const { t } = useTranslation("dashboard", { keyPrefix: "studentInstructorsPage" });
   return (
     <motion.div
       whileHover={{ scale: 1.01 }}
@@ -33,14 +31,14 @@ export default function BookingCard({ booking, onCancel, onChat }) {
 
       <div className="flex items-center gap-3">
         <span className={`text-sm px-3 py-1 rounded-full ${statusColors[booking.status]}`}>
-          {t(`status.${booking.status}`)}
+          {booking.status}
         </span>
 
         <button
           onClick={onChat}
           className="px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
         >
-          <FaComments /> {t('chat')}
+          <FaComments /> Chat
         </button>
 
         {booking.status === "pending" && (
@@ -48,7 +46,7 @@ export default function BookingCard({ booking, onCancel, onChat }) {
             onClick={onCancel}
             className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
           >
-            <FaTimes /> {t('cancel')}
+            <FaTimes /> Cancel
           </button>
         )}
       </div>

@@ -1,45 +1,13 @@
 const csurf = require('csurf');
-const Tokens = require('csrf');
 const { csrfCookieOptions } = require('../utils/cookie');
-
-// Instantiate the same token generator used by csurf so we can manually create
-// a secret + helper when the library refuses to because a token is missing on
-// unsafe methods (e.g. the initial login request).
-const tokens = new Tokens();
 
 // Generate a CSRF token for every request but do not enforce validation yet.
 // This ensures req.csrfToken() is always available so we can expose the token
 // to clients via a cookie.
-const baseGenerateToken = csurf({ cookie: false });
-
-const ensureCsrfTokenHelper = (req) => {
-  if (typeof req.csrfToken === 'function') {
-    return;
-  }
-
-  if (!req.session) {
-    return;
-  }
-
-  const secret = req.session.csrfSecret || tokens.secretSync();
-  req.session.csrfSecret = secret;
-  req.csrfToken = () => tokens.create(secret);
-};
-
-const generateToken = (req, res, next) => {
-  baseGenerateToken(req, res, (err) => {
-    if (err) {
-      if (err.code === 'EBADCSRFTOKEN') {
-        ensureCsrfTokenHelper(req);
-        return next();
-      }
-      return next(err);
-    }
-
-    ensureCsrfTokenHelper(req);
-    return next();
-  });
-};
+const generateToken = csurf({
+  cookie: false,
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
+});
 
 // Middleware that verifies the CSRF token for unsafe requests.
 const verifyToken = csurf({ cookie: false });

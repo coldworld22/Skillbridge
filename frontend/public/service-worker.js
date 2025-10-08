@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
 
-import { CACHE_VERSION } from '../src/config/pwa.js';
+const CACHE_VERSION = 'V1';
 const WARM_CACHE = `SKILLBRIDGE-WARM-${CACHE_VERSION}`;
 const HTML_CACHE = `SKILLBRIDGE-HTML-${CACHE_VERSION}`;
 const ASSET_CACHE = `SKILLBRIDGE-ASSETS-${CACHE_VERSION}`;
@@ -72,7 +72,7 @@ workbox.routing.setCatchHandler(async ({ event }) => {
 
 workbox.routing.registerRoute(
   ({ request }) => request.destination === 'script' || request.destination === 'style',
-  new workbox.strategies.NetworkFirst({
+  new workbox.strategies.StaleWhileRevalidate({
     cacheName: ASSET_CACHE,
   })
 );

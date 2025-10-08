@@ -14,7 +14,7 @@ describe("instructor categoryService", () => {
     const apiData = [{ id: 1 }];
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const res = await fetchAllCategories();
-    expect(api.get).toHaveBeenCalledWith("users/categories", { params: {} });
+    expect(api.get).toHaveBeenCalledWith("/users/categories", { params: {} });
     expect(res).toEqual(apiData);
   });
 });

@@ -1,9 +1,8 @@
 // pages/admin/moderation.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import MessageFlagLog from "@/components/admin/security/MessageFlagLog";
-import withAuthProtection from "@/hooks/withAuthProtection";
 
-function ModerationPage() {
+export default function ModerationPage() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">🛡️ Moderation Center</h1>
@@ -18,5 +17,3 @@ function ModerationPage() {
 ModerationPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
-
-export default withAuthProtection(ModerationPage, ["admin", "superadmin"]);

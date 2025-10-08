@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import {
@@ -28,35 +28,47 @@ import {
   fetchInstructorDashboardStats,
   fetchInstructorTutorialViews,
 } from "@/services/instructor/instructorService";
-import {
-  fetchInstructorScheduleEvents,
-  fetchInstructorClasses,
-} from "@/services/instructor/classService";
-import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
-import { instructorDashboardMocks } from "@/mocks/data";
-import { formatDateTime } from "@/utils/date";
-import useAuthStore from "@/store/auth/authStore";
+import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 
 const localizer = momentLocalizer(moment);
 
 
-// In development we display local mock data. In production the lists below
-// are populated via service calls to the backend API. See the useEffect hook
-// for the fetching logic.
+const mockTutorials = [
+  { id: 1, title: "React Basics", status: "Draft" },
+  { id: 2, title: "Advanced Next.js", status: "Published" },
+  { id: 3, title: "JavaScript ES6", status: "Archived" },
+];
+
+const mockClasses = [
+  { id: 1, title: "React Live Session", date: "2025-05-05", time: "10:00 AM" },
+  { id: 2, title: "Final Q&A", date: "2025-05-07", time: "02:00 PM" },
+];
+
+const mockStudents = [
+  { id: 1, name: "Sara Ali", email: "sara@example.com", classTitle: "React Basics" },
+  { id: 2, name: "Omar Nasser", email: "omar@example.com", classTitle: "Advanced Next.js" },
+];
+
+const mockAssignments = [
+  { id: 1, title: "React Components Homework", dueDate: "2025-05-08" },
+  { id: 2, title: "Next.js Dynamic Routing", dueDate: "2025-05-10" },
+];
+
+const mockCertificates = [
+  { id: 1, student: "Sara Ali", classTitle: "React Basics", issueDate: "2025-05-01" },
+  { id: 2, student: "Omar Nasser", classTitle: "Next.js Bootcamp", issueDate: "2025-05-02" },
+];
+
+
+
+const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 function InstructorDashboard() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorDashboardPage' });
-  const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState("tutorials");
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
   const [events, setEvents] = useState([]);
-  const [tutorials, setTutorials] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [classesLoaded, setClassesLoaded] = useState(false);
-  const [students, setStudents] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [certificates, setCertificates] = useState([]);
 
   useEffect(() => {
     async function loadStats() {
@@ -78,71 +90,21 @@ function InstructorDashboard() {
       }
     }
     loadStats();
-    async function loadLists() {
-      setClassesLoaded(false);
-      if (process.env.NODE_ENV === 'development') {
-        const { tutorials, classes, students, assignments, certificates } =
-          instructorDashboardMocks;
-        const classesWithSchedule = classes.map((cls) => {
-          const scheduleDisplay = [cls.date, cls.time].filter(Boolean).join(" @ ");
-          return {
-            ...cls,
-            start_date: cls.start_date ?? cls.date ?? "",
-            end_date: cls.end_date ?? "",
-            scheduleDisplay,
-          };
-        });
-        setTutorials(tutorials);
-        setClasses(classesWithSchedule);
-        setStudents(students);
-        setAssignments(assignments);
-        setCertificates(certificates);
-        setClassesLoaded(true);
-        return;
-      }
-
-      if (!user?.id) return;
-
-      try {
-        const tuts = await fetchInstructorTutorials();
-        setTutorials(tuts);
-      } catch (err) {
-        console.error('Failed to load tutorials', err);
-      }
-
-      try {
-        const cls = await fetchInstructorClasses(user.id);
-        setClasses(cls);
-      } catch (err) {
-        console.error('Failed to load classes', err);
-      } finally {
-        setClassesLoaded(true);
-      }
-
-      // Students, assignments and certificates would be fetched through
-      // their respective services once available.
-    }
-    loadLists();
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id || !classesLoaded) return;
-
-    let isMounted = true;
     async function loadEvents() {
       try {
-        const data = await fetchInstructorScheduleEvents(user.id, classes);
-        if (isMounted) setEvents(data);
+        const data = await fetchInstructorScheduleEvents();
+        const parsed = data.map((e) => ({
+          ...e,
+          start: new Date(e.start),
+          ...(e.end ? { end: new Date(e.end) } : {}),
+        }));
+        setEvents(parsed);
       } catch (err) {
         console.error('Failed to load schedule events', err);
       }
     }
-
     loadEvents();
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id, classesLoaded, classes]);
+  }, []);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
   const tabButtonStyle = (tab) =>
@@ -162,33 +124,6 @@ function InstructorDashboard() {
       fontSize: "0.85rem",
     },
   });
-
-  const formatClassSchedule = (cls) => {
-    const startValue = cls.start_date ?? cls.startDate;
-    const endValue = cls.end_date ?? cls.endDate;
-
-    const formattedStart = startValue ? formatDateTime(startValue) : "";
-    const formattedEnd = endValue ? formatDateTime(endValue) : "";
-
-    if (formattedStart && formattedEnd) {
-      return `${formattedStart} - ${formattedEnd}`;
-    }
-
-    if (formattedStart) return formattedStart;
-    if (formattedEnd) return formattedEnd;
-
-    const legacyDate = cls.date ?? "";
-    const legacyTime = cls.time ?? "";
-
-    if (legacyDate && legacyTime) {
-      return `${legacyDate} @ ${legacyTime}`;
-    }
-
-    if (legacyDate) return legacyDate;
-    if (legacyTime) return legacyTime;
-
-    return t("schedule_pending", { defaultValue: "Schedule TBD" });
-  };
 
   return (
     <InstructorLayout>
@@ -268,7 +203,7 @@ function InstructorDashboard() {
       {t('create_tutorial')}
     </button>
     <ul className="space-y-2">
-      {tutorials.map((tutorial) => (
+      {mockTutorials.map((tutorial) => (
         <li key={tutorial.id} className="flex items-center justify-between border rounded p-3">
           <div>
             <h4 className="font-semibold">{tutorial.title}</h4>
@@ -291,11 +226,11 @@ function InstructorDashboard() {
       {t('schedule_class')}
     </button>
     <ul className="space-y-3">
-      {classes.map((cls) => (
+      {mockClasses.map((cls) => (
         <li key={cls.id} className="flex justify-between items-center p-3 border rounded">
           <div>
             <h4 className="font-semibold">{cls.title}</h4>
-            <p className="text-sm text-gray-500">{formatClassSchedule(cls)}</p>
+            <p className="text-sm text-gray-500">{cls.date} @ {cls.time}</p>
           </div>
           <div className="space-x-2">
             <button className="text-sky-600 hover:underline">{t('edit')}</button>
@@ -320,7 +255,7 @@ function InstructorDashboard() {
         </tr>
       </thead>
       <tbody>
-        {students.map((student) => (
+        {mockStudents.map((student) => (
           <tr key={student.id} className="border-b">
             <td className="py-2">{student.name}</td>
             <td>{student.email}</td>
@@ -342,7 +277,7 @@ function InstructorDashboard() {
       {t('create_assignment')}
     </button>
     <ul className="space-y-2">
-      {assignments.map((assignment) => (
+      {mockAssignments.map((assignment) => (
         <li key={assignment.id} className="border p-3 rounded flex justify-between items-center">
           <div>
             <h4 className="font-semibold">{assignment.title}</h4>
@@ -367,7 +302,7 @@ function InstructorDashboard() {
       className="border px-3 py-2 rounded w-full mb-4"
     />
     <ul className="space-y-2">
-      {certificates.map(cert => (
+      {mockCertificates.map(cert => (
         <li key={cert.id} className="flex justify-between items-center border rounded p-3">
           <div>
             <h4 className="font-semibold">{cert.student}</h4>

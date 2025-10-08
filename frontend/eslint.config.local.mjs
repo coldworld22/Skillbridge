@@ -19,7 +19,6 @@ const eslintConfig = [
   {
     rules: {
       'no-console': noConsoleRule,
-      'no-redeclare': 'error',
     },
   },
 ];

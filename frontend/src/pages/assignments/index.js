@@ -1,26 +1,31 @@
 // src/pages/assignments/index.js
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import AssignmentList from '@/components/assignments/AssignmentList';
 import AssignmentUpload from './AssignmentUpload';
-import { assignmentMocks } from '@/mocks/data';
+
+const mockAssignments = [
+  {
+    id: 1,
+    title: 'Week 1 Homework',
+    description: 'Solve the given problems on JSX and Components.',
+    dueDate: '2025-05-05',
+    classId: 'react-bootcamp',
+    uploadedBy: 'instructor',
+  },
+  {
+    id: 2,
+    title: 'Week 2 Project',
+    description: 'Build a ToDo App with state management.',
+    dueDate: '2025-05-12',
+    classId: 'react-bootcamp',
+    uploadedBy: 'instructor',
+  },
+];
 
 export default function AssignmentsPage() {
-  const [assignments, setAssignments] = useState([]);
+  const [assignments, setAssignments] = useState(mockAssignments);
   const [userRole, setUserRole] = useState('admin'); // Change to 'instructor' or 'student' to simulate roles
-
-  useEffect(() => {
-    async function loadAssignments() {
-      if (process.env.NODE_ENV === 'development') {
-        setAssignments(assignmentMocks);
-        return;
-      }
-      // Real assignments are retrieved from the API, e.g.:
-      // const data = await fetchClassAssignments(classId);
-      // setAssignments(data);
-    }
-    loadAssignments();
-  }, []);
 
   const addAssignment = (newAssignment) => {
     setAssignments((prev) => [...prev, { ...newAssignment, id: Date.now() }]);

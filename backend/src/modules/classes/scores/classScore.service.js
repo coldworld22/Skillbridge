@@ -1,7 +1,6 @@
 const db = require('../../../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { generateCode } = require('../../users/tutorials/certificate/certificate.service');
-const { resolveTemplateId } = require('../../certificateTemplates/certificateTemplates.service');
 
 const getPolicy = async (classId) => {
   const existing = await db('class_scoring_policies').where({ class_id: classId }).first();
@@ -103,16 +102,15 @@ const getStudentScore = async (classId, studentId) => {
     .leftJoin('certificates as c', function () {
       this.on('c.class_id', '=', 'scs.class_id').andOn('c.user_id', '=', 'scs.student_id');
     })
-    .leftJoin('certificate_templates as ct', 'ct.id', 'c.template_id')
     .where('scs.class_id', classId)
     .andWhere('scs.student_id', studentId)
-    .select('scs.*', 'c.id as certificate_id', db.raw('row_to_json(ct) as template'))
+    .select('scs.*', 'c.id as certificate_id')
     .first();
 
   return row;
 };
 
-const issueCertificate = async (classId, studentId, { templateId } = {}) => {
+const issueCertificate = async (classId, studentId) => {
   let cert = await db('certificates').where({ class_id: classId, user_id: studentId }).first();
   if (cert) return cert;
 
@@ -120,14 +118,12 @@ const issueCertificate = async (classId, studentId, { templateId } = {}) => {
   if (!score || !score.passed) {
     throw new Error('Student has not passed');
   }
-
-  const resolvedTemplateId = await resolveTemplateId(templateId);
   cert = {
     id: uuidv4(),
     user_id: studentId,
     class_id: classId,
     tutorial_id: null,
-    template_id: resolvedTemplateId,
+    template_id: null,
     certificate_code: generateCode().replace('TUT', 'CLS'),
     status: 'issued',
   };

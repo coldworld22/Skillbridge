@@ -64,12 +64,7 @@ describe('POST /api/payments/stripe/create', () => {
     jest.clearAllMocks();
     configService.getSettings.mockResolvedValue({ platformCut: { class: 15 } });
     methodsService.getById.mockResolvedValue({ id: 'm1', type: 'stripe', active: true });
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
+    classService.getClassById.mockResolvedValue({ id: 'c1', price: 100 });
   });
 
   it('creates payment when Stripe charge succeeds', async () => {

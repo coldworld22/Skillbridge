@@ -12,7 +12,7 @@ import ChapterList from "@/components/tutorials/detail/ChapterList";
 import dynamic from "next/dynamic";
 import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
 import CourseProgress from "@/components/classes/CourseProgress";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import useAuthStore from "@/store/auth/authStore";
 import useCartStore from "@/store/cart/cartStore";
 import useTutorialProgress from "@/hooks/useTutorialProgress";

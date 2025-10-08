@@ -25,6 +25,7 @@ import { toast } from "react-toastify";
 
 import useAuthStore from "@/store/auth/authStore";
 import useAdminStore from "@/store/admin/adminStore";
+import { API_BASE_URL } from "@/config/config";
 import useCartStore from "@/store/cart/cartStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -32,10 +33,6 @@ import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
 import api from "@/services/api/api";
 import { getCurrencies } from "@/services/currencyService";
-import { buildUrl } from "@/utils/url";
-
-import profileRoutes from "@/constants/profileRoutes";
-import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 const currencyFetcher = () => getCurrencies();
@@ -53,7 +50,6 @@ const Navbar = () => {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
 
   // Separate refs for each dropdown to avoid conflicts
   const profileRef = useRef(null);
@@ -63,37 +59,28 @@ const Navbar = () => {
   const cartRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const authHydrated = useAuthStore((state) => state.hasHydrated);
   const appSettings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   const { profile, fetchProfile, clearAdmin } = useAdminStore();
   const router = useRouter();
-  const userRole = getPrimaryRole(user);
+  const userRole = user?.role?.toLowerCase();
 
   const { items: cartItems, fetchCart, clearCart } = useCartStore();
-  const cartHydrated = useCartStore.persist?.hasHydrated?.() ?? true;
 
-  const notificationItems = useNotificationStore((state) => state.items);
+  const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const startPolling = useNotificationStore((state) => state.startPolling);
 
   const markRead = useNotificationStore((state) => state.markRead);
-  const messageItems = useMessageStore((state) => state.items);
-  const notifications = authHydrated && cartHydrated && isClient ? notificationItems : [];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const messages = useMessageStore((state) => state.items);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const startMessagePolling = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
-  const messages = authHydrated && cartHydrated && isClient ? messageItems : [];
   const unreadMessages = messages.filter((m) => !m.read);
-
-  const storesHydrated = authHydrated && cartHydrated;
-  const hydratedUser = storesHydrated && isClient ? user : null;
-  const hydratedUserRole = getPrimaryRole(hydratedUser);
-  const hydratedCartItems = storesHydrated && isClient ? cartItems : [];
 
   const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
@@ -126,16 +113,18 @@ const Navbar = () => {
   }, [fetchAppConfig]);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
     if (user?.role === "SuperAdmin" && !profile) fetchProfile();
-  }, [user, fetchProfile, profile]);
+  }, [user]);
 
   useEffect(() => {
     if (user && user.profile_complete === false) {
-      const rolePath = profileRoutes[userRole] || "/website";
+      const profilePaths = {
+        admin: "/dashboard/admin/profile/edit",
+        instructor: "/dashboard/instructor/profile/edit",
+        student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
+      };
+      const rolePath = profilePaths[userRole] || "/website";
       if (router.pathname !== rolePath) {
         router.replace(rolePath);
         toast.info(t('please_complete_profile'));
@@ -202,14 +191,15 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const profileLink = hydratedUserRole
-    ? profileRoutes[hydratedUserRole] || `/dashboard/${hydratedUserRole}/profile/edit`
-    : "/dashboard/profile/edit";
+  const profileLink =
+    userRole === "superadmin" || userRole === "admin"
+      ? "/dashboard/admin/profile/edit"
+      : `/dashboard/${userRole}/profile/edit`;
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "";
-    if (avatar.startsWith("blob:")) return avatar;
-    return buildUrl(avatar) || "";
+    if (avatar.startsWith("http") || avatar.startsWith("blob:")) return avatar;
+    return `${API_BASE_URL}${avatar}`; // avatar starts with "/uploads/..."
   };
 
   return (
@@ -227,7 +217,7 @@ const Navbar = () => {
         <Link href="/">
           <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer overflow-hidden">
             <img
-              src={appSettings.logo_url ? buildUrl(appSettings.logo_url) : logo.src || logo}
+              src={appSettings.logo_url ? `${API_BASE_URL}${appSettings.logo_url}` : logo.src || logo}
               alt={`${appSettings.appName || 'SkillBridge'} Logo`}
               width={45}
               height={45}
@@ -236,7 +226,7 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {hydratedUser && (
+        {user && (
           <>
             <div className="relative">
               <motion.button
@@ -360,10 +350,10 @@ const Navbar = () => {
                   <div className="mt-2 text-center">
                     <Link
                       href={
-                        hydratedUserRole
-                          ? hydratedUserRole === "superadmin"
+                        userRole
+                          ? userRole === "superadmin"
                             ? "/dashboard/admin/notifications"
-                            : `/dashboard/${hydratedUserRole}/notifications`
+                            : `/dashboard/${userRole}/notifications`
                           : "/notifications"
                       }
                       className="text-blue-600 hover:underline text-sm"
@@ -376,7 +366,7 @@ const Navbar = () => {
             </div>
 
             <span className="text-sm font-semibold hidden md:inline">
-              {t('welcome_user', { name: hydratedUser.full_name?.split(' ')[0] })}
+              {t('welcome_user', { name: user.full_name?.split(' ')[0] })}
             </span>
           </>
         )}
@@ -396,7 +386,7 @@ const Navbar = () => {
           <img
             src={
               currentLang?.icon_url
-                ? buildUrl(currentLang.icon_url)
+                ? `${API_BASE_URL}${currentLang.icon_url}`
                 : "/flags/default.png"
             }
             alt={currentLang ? currentLang.name : 'language'}
@@ -418,13 +408,13 @@ const Navbar = () => {
           </div>
         )}
 
-        {hydratedUserRole && (
+        {userRole && (
           <Link
             href={
-              hydratedUserRole
-                ? hydratedUserRole === "superadmin" || hydratedUserRole === "admin"
+              userRole
+                ? userRole === "superadmin" || userRole === "admin"
                   ? "/dashboard/admin"
-                  : `/dashboard/${hydratedUserRole}`
+                  : `/dashboard/${userRole}`
                 : "/dashboard"
             }
             className="flex items-center gap-2 font-semibold hover:underline"
@@ -432,7 +422,7 @@ const Navbar = () => {
             <FaTachometerAlt /> {t('dashboard')}
           </Link>
         )}
-        {hydratedUser ? (
+        {user ? (
           <>
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -446,9 +436,9 @@ const Navbar = () => {
           className="relative text-2xl"
         >
               <FaShoppingCart />
-              {hydratedCartItems.length > 0 && (
+              {cartItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
-                  {hydratedCartItems.length}
+                  {cartItems.length}
                 </span>
               )}
             </motion.button>
@@ -462,9 +452,9 @@ const Navbar = () => {
             }}
               className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg flex items-center justify-center bg-white"
             >
-              {hydratedUser.avatar_url && (
+              {user.avatar_url && (
                 <img
-                  src={getAvatarUrl(hydratedUser.avatar_url)}
+                  src={getAvatarUrl(user.avatar_url)}
                   alt="Avatar"
                   width={48}
                   height={48}
@@ -483,8 +473,8 @@ const Navbar = () => {
               >
                 <ul className="space-y-2 text-sm">
                   <li>
-                      <Link
-                        href={profileLink}
+                    <Link
+                      href={profileLink}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
                     >
                       <FaCog className="text-gray-500" />
@@ -500,7 +490,7 @@ const Navbar = () => {
                       <span>{t('change_password')}</span>
                     </Link>
                   </li>
-                  {hydratedUserRole === 'student' && (
+                  {userRole === 'student' && (
                     <li>
                       <Link
                         href="/dashboard/student/wishlist"
@@ -511,7 +501,7 @@ const Navbar = () => {
                       </Link>
                     </li>
                   )}
-                  {hydratedUserRole === "superadmin" && profile?.job_title && (
+                  {userRole === "superadmin" && profile?.job_title && (
                     <li className="px-3 pt-1 text-xs text-gray-400 font-medium italic">
                       {profile.job_title}
                     </li>
@@ -560,7 +550,7 @@ const Navbar = () => {
                   {t('your_cart')}
                 </h4>
                 <ul className="space-y-3 text-sm">
-                  {hydratedCartItems.map((item) => (
+                  {cartItems.map((item) => (
                     <li
                       key={item.id}
                       className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md"

@@ -3,7 +3,6 @@ const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./payments.service");
-const walletHelpers = require("./helpers/wallet");
 const { STATUS } = service;
 const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
@@ -19,30 +18,6 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
-// Attachment paths are resolved within the invoicePath helper, so no local
-// path module import is required here.
-const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
-
-async function sendInvoiceEmailWithAttachment(user, invoice) {
-  if (!user?.email || user?.invoice_email_opt_out || !invoice?.pdf_url) {
-    return;
-  }
-
-  const attachmentPath = resolveInvoicePdfPath(invoice);
-  if (!attachmentPath) {
-    logger.warn(
-      "Invoice PDF URL was present but could not be resolved for attachment"
-    );
-    return;
-  }
-
-  await mailService.sendMail({
-    to: user.email,
-    subject: "Payment Invoice",
-    html: `<p>Please find your invoice attached.</p>`,
-    attachments: [{ path: attachmentPath }],
-  });
-}
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -61,7 +36,6 @@ exports.createPayment = catchAsync(async (req, res) => {
     next_due_date,
     totalInstallments,
     subscriptionPlanId,
-    subscriptionId,
   } = validation;
 
   let statusToUse = finalStatus;
@@ -130,12 +104,28 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (subscriptionPlanId && item_type === "book") {
     try {
-      await walletHelpers.creditInstructorSubscription(
-        "book",
-        item_id,
+      const db = require("../../config/database");
+      const usage = await db("plan_usage_metrics")
+        .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+        .first();
+      if (usage) {
+        await db("plan_usage_metrics")
+          .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+          .update({ usage_count: usage.usage_count + 1 });
+      } else {
+        await db("plan_usage_metrics").insert({
+          plan_id: subscriptionPlanId,
+          item_type: "book",
+          item_id,
+          usage_count: 1,
+        });
+      }
+      const planRevenue = require("./helpers/planRevenue");
+      await planRevenue.calculateInstructorAmount(
         subscriptionPlanId,
-        subscriptionId,
-        null
+        item_id,
+        null,
+        "book"
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
@@ -143,25 +133,9 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    try {
-      await handleEnrollment(item_type, user_id, item_id);
-      await walletHelpers.creditInstructorWallet(
-        item_type,
-        item_id,
-        instructor_amount
-      );
-    } catch (err) {
-      await service.update(payment.id, {
-        status: STATUS.AWAITING_APPROVAL,
-        paid_at: null,
-      });
-
-      if (err instanceof AppError) {
-        throw err;
-      }
-
-      throw new AppError(err.message || "Enrollment failed", 400);
-    }
+    const { creditInstructorWallet } = require("./helpers/wallet");
+    await creditInstructorWallet(item_type, item_id, instructor_amount);
+    await handleEnrollment(item_type, user_id, item_id);
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {
@@ -212,7 +186,14 @@ exports.createPayment = catchAsync(async (req, res) => {
         user = await userModel.findById(user_id);
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
-      await sendInvoiceEmailWithAttachment(user, invoice);
+      if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
+        await mailService.sendMail({
+          to: user.email,
+          subject: "Payment Invoice",
+          html: `<p>Please find your invoice attached.</p>`,
+          attachments: [{ path: invoice.pdf_url }],
+        });
+      }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
     }
@@ -297,11 +278,15 @@ exports.updatePayment = catchAsync(async (req, res) => {
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
         try {
-          const invoice = await invoiceService.generateFromPayment(
-            payment,
-            user
-          );
-          await sendInvoiceEmailWithAttachment(user, invoice);
+          const invoice = await invoiceService.generateFromPayment(payment, user);
+          if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
+            await mailService.sendMail({
+              to: user.email,
+              subject: "Payment Invoice",
+              html: `<p>Please find your invoice attached.</p>`,
+              attachments: [{ path: invoice.pdf_url }],
+            });
+          }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
         }

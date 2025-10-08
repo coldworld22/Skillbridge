@@ -1,90 +1,9 @@
 // pages/dashboard/instructor/certificates/preview/[id].js
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import QRCode from "react-qr-code";
 import { getCertificate } from "@/services/instructor/certificateService";
-import { getTemplate } from "@/services/admin/certificateTemplateService";
-
-const FALLBACK_BACKGROUND = "/images/paper-texture.png";
-const FALLBACK_LOGO = "/images/certificate/logo.png";
-const FALLBACK_BORDER_COLOR = "#FACC15";
-const FALLBACK_FONT_FAMILY = "Georgia, serif";
-const FALLBACK_TITLE_FONT = "'Great Vibes', cursive";
-
-const firstDefined = (...values) =>
-  values.find((value) => value !== undefined && value !== null && value !== "");
-
-const sanitizeAsset = (value, fallback) =>
-  typeof value === "string" && value.trim().length > 0 ? value : fallback;
-
-const deriveTemplateSettings = (certificate) => {
-  const template = certificate?.template ?? {};
-
-  const borderColor =
-    firstDefined(
-      template.border_color,
-      template.borderColor,
-      certificate?.border_color,
-      certificate?.borderColor,
-      FALLBACK_BORDER_COLOR
-    ) || FALLBACK_BORDER_COLOR;
-
-  const fontFamily =
-    firstDefined(
-      template.font_family,
-      template.fontFamily,
-      certificate?.font_family,
-      certificate?.fontFamily,
-      FALLBACK_FONT_FAMILY
-    ) || FALLBACK_FONT_FAMILY;
-
-  const titleFont =
-    firstDefined(
-      template.title_font,
-      template.titleFont,
-      certificate?.title_font,
-      certificate?.titleFont,
-      FALLBACK_TITLE_FONT
-    ) || FALLBACK_TITLE_FONT;
-
-  const background = sanitizeAsset(
-    firstDefined(
-      template.background,
-      template.backgroundUrl,
-      certificate?.background,
-      certificate?.backgroundImage
-    ),
-    FALLBACK_BACKGROUND
-  );
-
-  const logo = sanitizeAsset(
-    firstDefined(
-      template.logo,
-      template.logoUrl,
-      certificate?.logo,
-      certificate?.logoUrl
-    ),
-    FALLBACK_LOGO
-  );
-
-  const showQrPreference = firstDefined(
-    template.show_qr,
-    template.showQr,
-    certificate?.show_qr,
-    certificate?.showQR
-  );
-
-  return {
-    borderColor,
-    fontFamily,
-    titleFont,
-    background,
-    logo,
-    accentColor: borderColor,
-    showQR: showQrPreference === undefined ? true : Boolean(showQrPreference),
-  };
-};
 
 export default function CertificatePreviewPage() {
   const router = useRouter();
@@ -93,14 +12,6 @@ export default function CertificatePreviewPage() {
   const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [template, setTemplate] = useState(null);
-  const [templateError, setTemplateError] = useState("");
-  const [templateLoading, setTemplateLoading] = useState(false);
-
-  const templateSettings = useMemo(
-    () => deriveTemplateSettings(certificate),
-    [certificate]
-  );
 
   useEffect(() => {
     const load = async () => {
@@ -110,7 +21,6 @@ export default function CertificatePreviewPage() {
       try {
         const data = await getCertificate(id);
         setCertificate(data);
-        setTemplate(data?.template ?? null);
       } catch (err) {
         console.error('Failed to load certificate', err);
         setError('Failed to load certificate');
@@ -121,82 +31,9 @@ export default function CertificatePreviewPage() {
     load();
   }, [id]);
 
-  useEffect(() => {
-    if (!certificate) {
-      setTemplate(null);
-      setTemplateError("");
-      setTemplateLoading(false);
-      return;
-    }
-
-    if (certificate.template || template) {
-      if (certificate.template && template !== certificate.template) {
-        setTemplate(certificate.template);
-      }
-      setTemplateError("");
-      setTemplateLoading(false);
-      return;
-    }
-
-    const templateId =
-      certificate.templateId ??
-      certificate.template_id ??
-      certificate.template?.id;
-
-    if (!templateId) {
-      setTemplate(null);
-      setTemplateError("");
-      setTemplateLoading(false);
-      return;
-    }
-
-    let ignore = false;
-    setTemplateLoading(true);
-    setTemplateError("");
-
-    getTemplate(templateId)
-      .then((tpl) => {
-        if (ignore) return;
-        setTemplate(tpl);
-        setCertificate((prev) => (prev ? { ...prev, template: tpl } : prev));
-      })
-      .catch((err) => {
-        if (ignore) return;
-        console.error("Failed to load certificate template", err);
-        setTemplateError("Failed to load certificate template.");
-      })
-      .finally(() => {
-        if (ignore) return;
-        setTemplateLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [certificate, template]);
-
   if (loading) return <div className="text-gray-700 p-10">Loading certificate...</div>;
   if (error) return <div className="text-red-500 p-10">{error}</div>;
   if (!certificate) return null;
-
-  const activeTemplate = useMemo(
-    () => template ?? certificate?.template ?? {},
-    [certificate, template]
-  );
-
-  const backgroundImage = activeTemplate.background || "/images/paper-texture.png";
-  const backgroundStyle =
-    typeof backgroundImage === "string" && backgroundImage.includes("url(")
-      ? backgroundImage
-      : `url('${backgroundImage}')`;
-  const logoUrl = activeTemplate.logo || "/images/certificate/logo.png";
-  const borderColor =
-    activeTemplate.borderColor ||
-    activeTemplate.border_color ||
-    "#FACC15";
-  const bodyFont = activeTemplate.fontFamily || activeTemplate.font_family || "Georgia, serif";
-  const titleFont = activeTemplate.titleFont || activeTemplate.title_font || "'Great Vibes', cursive";
-  const showQr = (activeTemplate.showQr ?? activeTemplate.show_qr) !== false;
 
   return (
     <InstructorLayout>
@@ -230,28 +67,21 @@ export default function CertificatePreviewPage() {
         {/* ✅ Print Area */}
         <div className="certificate-print-area">
           {/* Certificate Card */}
-          <div
-            className="w-full max-w-4xl bg-white border-[12px] rounded-2xl p-12 text-center shadow-2xl relative"
-            style={{
-              backgroundImage: backgroundStyle,
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-              fontFamily: bodyFont,
-              borderColor,
-            }}
-          >
+          <div className="w-full max-w-4xl bg-white border-[12px] border-yellow-400 rounded-2xl p-12 text-center shadow-2xl relative" style={{
+            backgroundImage: "url('/images/paper-texture.png')",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            fontFamily: "Georgia, serif",
+          }}>
 
             {/* Logo inside certificate */}
             <div className="w-full flex justify-center mb-4">
-              <img src={logoUrl} alt="Certificate Logo" className="w-32" />
+              <img src="/images/certificate/logo.png" alt="SkillBridge Logo" className="w-32" />
             </div>
 
             {/* Certificate Title */}
-            <h1
-              className="text-5xl font-bold mb-8"
-              style={{ fontFamily: titleFont, color: borderColor }}
-            >
+            <h1 className="text-5xl font-bold text-yellow-600 mb-8" style={{ fontFamily: "'Great Vibes', cursive" }}>
               Certificate of Completion
             </h1>
 
@@ -272,15 +102,15 @@ export default function CertificatePreviewPage() {
 
             {/* Issue Date and Serial */}
             <p className="text-sm text-gray-500 mb-2">
-              Issued on: <strong>{formattedIssueDate}</strong>
+              Issued on: <strong>{new Date(certificate.issueDate).toLocaleDateString()}</strong>
             </p>
             <p className="text-sm text-gray-500 mb-8">
-              Serial Number: <strong>CERT-{certificateSerial}</strong>
+              Serial Number: <strong>CERT-{certificate.id.slice(0, 6).toUpperCase()}</strong>
             </p>
 
             {/* Bottom Signature / QR Section */}
             <div className="flex justify-between items-center px-8 mt-10">
-
+              
               {/* Instructor Signature */}
               <div className="text-center">
                 <p className="text-sm text-gray-500">Instructor</p>
@@ -289,14 +119,12 @@ export default function CertificatePreviewPage() {
               </div>
 
               {/* QR Code */}
-              {showQr && (
-                <div className="text-center">
-                  <div className="bg-white p-2 rounded-lg inline-block">
-                    <QRCode value={`https://yourplatform.com/certificate/verify/${certificate.id}`} size={80} />
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-1">Scan to Verify</p>
+              <div className="text-center">
+                <div className="bg-white p-2 rounded-lg inline-block">
+                  <QRCode value={`https://yourplatform.com/certificate/verify/${certificate.id}`} size={80} />
                 </div>
-              )}
+                <p className="text-[10px] text-gray-500 mt-1">Scan to Verify</p>
+              </div>
 
               {/* Platform Signature */}
               <div className="text-center">
@@ -310,22 +138,18 @@ export default function CertificatePreviewPage() {
         </div> {/* End of Print Area */}
 
         {/* ✅ Print Button */}
-        <div className="flex flex-col items-center gap-2 mt-6">
-          {templateLoading && (
-            <span className="text-sm text-gray-500">Loading template settings...</span>
-          )}
-          {templateError && (
-            <span className="text-sm text-red-500">{templateError}</span>
-          )}
-          <button
-            onClick={() => window.print()}
-            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg shadow-md"
-          >
-            📄 Print Certificate
-          </button>
-        </div>
+        <button
+          onClick={() => window.print()}
+          className="mt-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg shadow-md"
+        >
+          📄 Print Certificate
+        </button>
 
       </div>
     </InstructorLayout>
   );
 }
+// iomportant NotebookTabs
+
+
+// we did admin certifcate templats so it pulled from it

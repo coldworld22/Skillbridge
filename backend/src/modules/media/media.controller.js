@@ -4,13 +4,10 @@ const mime = require('mime-types');
 
 exports.stream = (req, res) => {
   const requested = req.params[0] || req.params.filename || '';
-  const uploadsDir = path.resolve(__dirname, '../../../uploads');
-  const filePath = path.resolve(uploadsDir, requested);
-  const relative = path.relative(uploadsDir, filePath);
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-
+  const safePath = path
+    .normalize(requested)
+    .replace(/^([\.]{2}[\/])+/, '');
+  const filePath = path.join(__dirname, '../../../uploads', safePath);
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
       return res.status(404).json({ message: 'File not found' });

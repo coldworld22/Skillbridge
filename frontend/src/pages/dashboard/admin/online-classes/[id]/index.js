@@ -1,11 +1,12 @@
 // pages/dashboard/admin/online-classes/[id]/index.js
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
@@ -14,44 +15,28 @@ import DOMPurify from 'isomorphic-dompurify';
 function AdminClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { t, i18n } = useTranslation('dashboard');
-  const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
 
   useEffect(() => {
     if (!id) return;
     const load = async () => {
       setLoading(true);
-      setError(null);
       try {
         const data = await fetchAdminClassById(id);
-        if (!data) {
-          setError(t('adminClassDetailPage.not_found'));
-          setDetails(null);
-          return;
-        }
-
         setDetails(data);
-        setError(null);
       } catch (err) {
         console.error("Failed to load class", err);
-        setError(t('adminClassDetailPage.error_loading'));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [id, t]);
-
-  const sanitizedDescription = useMemo(
-    () => DOMPurify.sanitize(details?.description || ""),
-    [details?.description]
-  );
+  }, [id]);
 
   return (
-    <div className="p-6 space-y-8" dir={direction}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" dir={direction}>
+    <div className="p-6 space-y-8" dir={i18n.dir()}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" dir={i18n.dir()}>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('adminClassDetailPage.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">ID: {id}</p>
@@ -74,16 +59,8 @@ function AdminClassDetailPage() {
           </div>
           <p className="mt-3 text-gray-600">{t('adminClassDetailPage.loading')}</p>
         </div>
-      ) : error ? (
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-100 text-center">
-          <p className="text-gray-700">{error}</p>
-        </div>
-      ) : !details ? (
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-100 text-center">
-          <p className="text-gray-700">{t('adminClassDetailPage.not_found')}</p>
-        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         {/* Media section */}
         <div className="p-6 md:p-8 space-y-6">
           {/* Cover image and video */}
@@ -105,7 +82,7 @@ function AdminClassDetailPage() {
           <h3 className="text-sm font-medium text-gray-700">{t('adminClassDetailPage.class_demo_video')}</h3>
                 </div>
                 <CustomVideoPlayer
-                  videos={[{ src: details.demo_video_url }]}
+                  videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
                 />
               </div>
             )}
@@ -180,17 +157,13 @@ function AdminClassDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">{t('status_label')}</p>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    details?.publishStatus === 'published'
-                      ? 'bg-green-100 text-green-800'
-                      : details?.publishStatus === 'draft'
-                        ? 'bg-yellow-100 text-yellow-800'
+                    details?.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : details?.status === 'upcoming' 
+                        ? 'bg-blue-100 text-blue-800' 
                         : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {details?.publishStatus === 'published'
-                      ? 'Published'
-                      : details?.publishStatus === 'draft'
-                        ? 'Draft'
-                        : details?.publishStatus || '-'}
+                    {details?.status}
                   </span>
                 </div>
               </div>
@@ -232,7 +205,7 @@ function AdminClassDetailPage() {
             <h3 className="text-lg font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">{t('description_label')}</h3>
             <div
               className="prose max-w-none text-gray-600"
-              dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(details?.description || "") }}
             />
           </div>
 
@@ -278,7 +251,6 @@ AdminClassDetailPage.getLayout = function getLayout(page) {
 };
 
 const ProtectedAdminClassDetailPage = withAuthProtection(AdminClassDetailPage, {
-  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedAdminClassDetailPage.getLayout = AdminClassDetailPage.getLayout;
@@ -288,7 +260,7 @@ export default ProtectedAdminClassDetailPage;
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
     },
   };
 }

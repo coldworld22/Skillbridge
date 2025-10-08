@@ -2,8 +2,6 @@ import { render, screen } from '@testing-library/react';
 
 jest.mock('../../services/tutorialService', () => ({
   fetchPublishedTutorials: jest.fn(() => Promise.reject(new Error('fail'))),
-  fetchTutorialProgress: jest.fn(() => Promise.resolve(null)),
-  saveTutorialProgress: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../../components/layouts/StudentLayout', () => ({

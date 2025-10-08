@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaSave, FaArrowLeft } from 'react-icons/fa';
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function EditAssignmentPage() {
+export default function EditAssignmentPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -157,5 +156,3 @@ function EditAssignmentPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(EditAssignmentPage);

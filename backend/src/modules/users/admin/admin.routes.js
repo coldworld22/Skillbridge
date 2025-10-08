@@ -28,31 +28,7 @@ router.use(verifyToken, isAdmin);
 // ─────────────────────────────────────────────
 // 📤 Avatar Upload (FormData: avatar)
 // ─────────────────────────────────────────────
-router.patch(
-  "/:id/avatar",
-  (req, res, next) => {
-    upload.single("avatar")(req, res, (err) => {
-      if (err) {
-        logger.error("Multer upload error:", err.message);
-        let message = err.message;
-        if (err.code === "LIMIT_FILE_SIZE") {
-          message = "Avatar file too large. Max 10MB allowed.";
-        } else if (err.message === "Invalid file type for this field") {
-          message = "Invalid avatar file type. Only image files are allowed.";
-        }
-        return res.status(400).json({ message });
-      }
-      if (process.env.NODE_ENV !== "production") {
-        logger.debug("Avatar upload request received");
-      }
-      next();
-    });
-  },
-  controller.updateAvatar
-);
-
-// 🗑 Remove avatar
-router.delete("/:id/avatar", controller.deleteAvatar);
+router.patch("/:id/avatar", upload.single("avatar"), controller.updateAvatar);
 
 
 

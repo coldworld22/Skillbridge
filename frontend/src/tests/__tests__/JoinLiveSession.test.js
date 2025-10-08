@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import InstructorSchedule from '@/pages/dashboard/instructor/schedule';
-import useAuthStore from '@/store/auth/authStore';
 
 jest.mock('../../services/instructor/classService', () => ({
   fetchInstructorScheduleEvents: jest.fn(() => Promise.resolve([
@@ -35,7 +34,6 @@ jest.mock('../../components/layouts/InstructorLayout', () => {
 
 describe('Join live session link', () => {
   it('requests room link when lesson is live', async () => {
-    useAuthStore.getState().setUser({ id: 'instructor-1' });
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
     render(<InstructorSchedule />);
     fireEvent.click(screen.getByText('cal'));

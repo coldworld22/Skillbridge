@@ -21,33 +21,20 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useAppConfigStore from "@/store/appConfigStore";
 import LinkText from "@/components/shared/LinkText";
-import { buildUrl } from "@/utils/url";
-
-import profileRoutes from "@/constants/profileRoutes";
-import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const logout = useAuthStore((state) => state.logout);
-  const setUser = useAuthStore((state) => state.setUser);
-  const [mounted, setMounted] = useState(false);
-  const isHydrated = mounted && hasHydrated;
-  const hydratedUser = isHydrated ? user : null;
-  const userOnlineStatus = hydratedUser?.is_online ?? false;
-  const userRole = getPrimaryRole(hydratedUser);
-  const userIsOnline = hydratedUser?.is_online ?? false;
+  const userRole = user?.role?.toLowerCase();
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
-  const searchPlaceholder = t("search_placeholder", { defaultValue: "Search" });
-  const searchButtonLabel = t("search", { defaultValue: "Search" });
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [available, setAvailable] = useState(false);
+  const [available, setAvailable] = useState(user?.is_online ?? false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
@@ -69,30 +56,10 @@ export default function Header() {
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const query = searchQuery.trim();
-
-    setDropdownOpen(false);
-    setNotifOpen(false);
-    setMsgOpen(false);
-
-    router.push(`/search?q=${encodeURIComponent(query)}`);
-  };
-
-  const notificationFallbackMessage = t("notification_missing_message", {
-    defaultValue: t("notification_message_unavailable", {
-      defaultValue: "Notification message unavailable",
-    }),
-  });
-
   const profileLink =
-    (userRole && profileRoutes[userRole]) ||
-    (userRole ? `/dashboard/${userRole}/profile/edit` : "/dashboard/profile/edit");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+    userRole === "superadmin" || userRole === "admin"
+      ? "/dashboard/admin/profile/edit"
+      : `/dashboard/${userRole}/profile/edit`;
 
   const handleLogout = async () => {
     try {
@@ -142,6 +109,8 @@ export default function Header() {
       document.documentElement.classList.add("dark");
     }
 
+    setAvailable(user?.is_online ?? false);
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -156,17 +125,7 @@ export default function Header() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const hydratedUserOnlineStatus = hydratedUser?.is_online ?? false;
-
-  useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
-    setAvailable(userIsOnline);
-  }, [hasHydrated, userIsOnline]);
+  }, [user]);
 
   // Stop polling when component unmounts
   useEffect(() => {
@@ -174,42 +133,22 @@ export default function Header() {
       stopPolling();
       stopMessagePolling();
     };
-  }, [stopPolling, stopMessagePolling]);
+  }, []);
 
   useEffect(() => {
-    if (!isHydrated || !user) {
-      return;
+    if (user) {
+      fetchNotifications();
+      startPolling();
+      fetchMessages();
+      startMessagePolling();
     }
-
-    fetchNotifications();
-    startPolling();
-    fetchMessages();
-    startMessagePolling();
   }, [
-    hasHydrated,
-    hydratedUser,
+    user,
     fetchNotifications,
     startPolling,
     fetchMessages,
     startMessagePolling,
-    isHydrated,
   ]);
-
-  const handleSearch = (event) => {
-    if (event) {
-      event.preventDefault();
-    }
-
-    const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery) {
-      return;
-    }
-
-    router.push({
-      pathname: "/search",
-      query: { q: trimmedQuery },
-    });
-  };
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
@@ -220,30 +159,16 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 relative">
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden md:flex items-center gap-2"
-          role="search"
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" aria-hidden="true" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-          </div>
-          <button
-            type="submit"
-            className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 rounded-md hover:text-yellow-500 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          >
-            <Search className="w-4 h-4" aria-hidden="true" />
-            <span>{searchButtonLabel}</span>
-          </button>
-        </form>
+        <div className="relative hidden md:block">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('search_placeholder')}
+            className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
+        </div>
 
         <button
           onClick={toggleDarkMode}
@@ -261,9 +186,8 @@ export default function Header() {
                 const res = await toggleInstructorStatus(newStatus);
                 const updated = res?.is_online ?? newStatus;
                 setAvailable(updated);
-                if (hydratedUser) {
-                  setUser({ ...hydratedUser, is_online: updated });
-                }
+                const setUser = useAuthStore.getState().setUser;
+                setUser({ ...user, is_online: updated });
                 toast.success(
                   updated
                     ? t('available_now')
@@ -364,33 +288,26 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
-                  {notifications.slice(0, 10).map((n) => {
-                    const message =
-                      typeof n?.message === "string" && n.message.trim().length > 0
-                        ? n.message
-                        : notificationFallbackMessage;
-
-                    return (
-                      <li
-                        key={n.id}
-                        className={`flex justify-between items-center px-4 py-2 transition ${
-                          n.read
-                            ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
-                            : "bg-yellow-50 dark:bg-gray-600"
-                        }`}
-                      >
-                        <LinkText text={message} />
+                  {notifications.slice(0, 10).map((n) => (
+                    <li
+                      key={n.id}
+                      className={`flex justify-between items-center px-4 py-2 transition ${
+                        n.read
+                          ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
+                          : "bg-yellow-50 dark:bg-gray-600"
+                      }`}
+                    >
+                      <LinkText text={n.message} />
                         {!n.read && (
                           <button
                             onClick={() => markRead(n.id)}
                             className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                           >
-                            {t("mark_as_read")}
+                            {t('mark_as_read')}
                           </button>
                         )}
-                      </li>
-                    );
-                  })}
+                    </li>
+                  ))}
                   {notifications.length === 0 && (
                     <li className="px-4 py-2 text-center text-sm text-gray-500">
                       {t('no_notifications')}
@@ -423,12 +340,13 @@ export default function Header() {
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
           >
-            {hydratedUser?.avatar_url && (
+            {user?.avatar_url && (
               <img
                 src={
-                  hydratedUser.avatar_url.startsWith("blob:")
-                    ? hydratedUser.avatar_url
-                    : buildUrl(hydratedUser.avatar_url)
+                  user.avatar_url.startsWith("http") ||
+                  user.avatar_url.startsWith("blob:")
+                    ? user.avatar_url
+                    : `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
                 }
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
@@ -439,7 +357,7 @@ export default function Header() {
             )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">
-                {hydratedUser?.full_name || t("guest")}
+                {user?.full_name || t('guest')}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-300">
                 <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">

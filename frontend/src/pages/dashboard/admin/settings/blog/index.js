@@ -11,9 +11,8 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdminBlogManager() {
+export default function AdminBlogManager() {
   const [posts, setPosts] = useState([]);
   const { t } = useTranslation("dashboard", { keyPrefix: "blogManagerPage" });
 
@@ -233,5 +232,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(AdminBlogManager);

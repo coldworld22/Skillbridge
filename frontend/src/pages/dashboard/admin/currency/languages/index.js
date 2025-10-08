@@ -11,7 +11,6 @@ import {
   Trash,
   ArrowLeftRight,
 } from "lucide-react";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const mockLanguages = [
   {
@@ -43,7 +42,7 @@ const mockLanguages = [
   },
 ];
 
-function LanguageManagerPage() {
+export default function LanguageManagerPage() {
   const [languages, setLanguages] = useState(mockLanguages);
 
   const toggleActive = (id) => {
@@ -159,5 +158,3 @@ function LanguageManagerPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(LanguageManagerPage);

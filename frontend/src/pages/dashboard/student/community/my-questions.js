@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FaEye } from "react-icons/fa";
 import { fetchDiscussions } from "@/services/communityService";
 import useAuthStore from "@/store/auth/authStore";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 export default function MyQuestionsPage() {
   const { user } = useAuthStore();

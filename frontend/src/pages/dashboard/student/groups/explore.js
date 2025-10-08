@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';

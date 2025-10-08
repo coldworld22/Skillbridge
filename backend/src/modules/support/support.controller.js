@@ -185,22 +185,14 @@ exports.addMessage = catchAsync(async (req, res) => {
   sendSuccess(res, msg, "Message added");
 });
 
-exports.uploadAttachment = catchAsync(async (req, res, next) => {
+exports.uploadAttachment = catchAsync(async (req, res) => {
   const file = req.file;
   if (!file) throw new AppError("No file uploaded", 400);
-  try {
-    const attachment = await service.uploadAttachment({
-      messageId: req.params.messageId,
-      file,
-      user: req.user,
-    });
-    sendSuccess(res, attachment, "Attachment uploaded");
-  } catch (error) {
-    if (error instanceof AppError) {
-      return next(error);
-    }
-    throw error;
-  }
+  const attachment = await service.uploadAttachment(
+    req.params.messageId,
+    file
+  );
+  sendSuccess(res, attachment, "Attachment uploaded");
 });
 
 exports.updateStatus = catchAsync(async (req, res) => {

@@ -19,7 +19,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 import { fetchDashboardStats } from "@/services/admin/communityService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -58,7 +57,7 @@ const StatCard = ({ label, value, color }) => (
   </div>
 );
 
-function AdminCommunityDashboard({ initialStats }) {
+export default function AdminCommunityDashboard({ initialStats }) {
   const { t } = useTranslation("dashboard");
   const [stats, setStats] = useState(initialStats ? {
     totalDiscussions: initialStats.totalDiscussions,
@@ -190,5 +189,3 @@ function AdminCommunityDashboard({ initialStats }) {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(AdminCommunityDashboard);

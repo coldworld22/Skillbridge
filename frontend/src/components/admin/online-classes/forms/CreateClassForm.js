@@ -1,5 +1,5 @@
 // src/components/forms/CreateClassForm.js
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import logger from '@/utils/logger';
 
 export default function CreateClassForm() {
@@ -45,23 +45,6 @@ export default function CreateClassForm() {
     const updated = formData.lessons.filter((_, i) => i !== index);
     setFormData({ ...formData, lessons: updated });
   };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (formData.image) {
-      URL.revokeObjectURL(formData.image);
-    }
-    const imageUrl = file ? URL.createObjectURL(file) : '';
-    setFormData({ ...formData, image: imageUrl });
-  };
-
-  useEffect(() => {
-    return () => {
-      if (formData.image) {
-        URL.revokeObjectURL(formData.image);
-      }
-    };
-  }, [formData.image]);
 
   const next = () => setStep((prev) => prev + 1);
   const back = () => setStep((prev) => prev - 1);
@@ -119,7 +102,11 @@ export default function CreateClassForm() {
             <input
               type="file"
               accept="image/*"
-              onChange={handleImageChange}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                const imageUrl = file ? URL.createObjectURL(file) : '';
+                setFormData({ ...formData, image: imageUrl });
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg"
             />
             {formData.image && (

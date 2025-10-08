@@ -1,61 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
 import { FaSave, FaEye, FaSpinner } from "react-icons/fa";
 import { uploadTemplateFile } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
 
-const buildDefaultSampleData = () => ({
-  id: "ABC123",
-  student_name: "Student Name",
-  course_name: "Course Title",
-  issue_date: new Date().toISOString().split("T")[0],
-  instructor: "Instructor Name",
-  platform_name: "Platform Name",
-  grade: "A+",
-});
-
 export default function CertificateTemplateForm({ initialValues, onSubmit, submitText }) {
-  const mergedInitialValues = useMemo(() => {
-    const baseValues = initialValues || {};
-    const defaultSampleData = buildDefaultSampleData();
-    return {
-      show_qr: true,
-      ...baseValues,
-      sample_data: {
-        ...defaultSampleData,
-        ...(baseValues.sample_data || {}),
-      },
-    };
-  }, [initialValues]);
-
-  const [form, setForm] = useState(mergedInitialValues);
+  const [form, setForm] = useState(initialValues);
   const [logoPreview, setLogoPreview] = useState(
-    mergedInitialValues?.logo || "/images/certificate/logo.png"
+    initialValues?.logo || "/images/certificate/logo.png"
   );
   const [bgPreview, setBgPreview] = useState(
-    mergedInitialValues?.background || "/images/paper-texture.png"
+    initialValues?.background || "/images/paper-texture.png"
   );
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setForm(mergedInitialValues);
-    setLogoPreview(mergedInitialValues?.logo || "/images/certificate/logo.png");
-    setBgPreview(mergedInitialValues?.background || "/images/paper-texture.png");
-  }, [mergedInitialValues]);
+    setForm(initialValues);
+    setLogoPreview(initialValues?.logo || "/images/certificate/logo.png");
+    setBgPreview(initialValues?.background || "/images/paper-texture.png");
+  }, [initialValues]);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSampleDataChange = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      sample_data: {
-        ...(prev.sample_data || {}),
-        [key]: value,
-      },
-    }));
   };
 
   const handleImageUpload = async (e, type) => {
@@ -77,7 +44,7 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
   };
 
   const handleSubmit = async () => {
-    if (!form?.name?.trim()) {
+    if (!form.name.trim()) {
       toast.error("Template name is required.");
       return;
     }
@@ -167,73 +134,6 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
             />
             <span className="text-gray-700">Include QR Code</span>
           </div>
-        </div>
-      </section>
-
-      {/* Sample Data */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">🔖 Sample Data</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Provide example values to preview how certificates will look. These values are
-          only used for previews and can be customized per template.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Student Name"
-            value={form.sample_data?.student_name ?? ""}
-            onChange={(e) => handleSampleDataChange("student_name", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="text"
-            placeholder="Course Title"
-            value={form.sample_data?.course_name ?? ""}
-            onChange={(e) => handleSampleDataChange("course_name", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="date"
-            placeholder="Issue Date"
-            value={(() => {
-              const value = form.sample_data?.issue_date;
-              if (!value) return "";
-              if (typeof value === "string" && value.includes("T")) {
-                return value.split("T")[0];
-              }
-              return value;
-            })()}
-            onChange={(e) => handleSampleDataChange("issue_date", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="text"
-            placeholder="Instructor Name"
-            value={form.sample_data?.instructor ?? ""}
-            onChange={(e) => handleSampleDataChange("instructor", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="text"
-            placeholder="Platform Name"
-            value={form.sample_data?.platform_name ?? ""}
-            onChange={(e) => handleSampleDataChange("platform_name", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="text"
-            placeholder="Final Grade"
-            value={form.sample_data?.grade ?? ""}
-            onChange={(e) => handleSampleDataChange("grade", e.target.value)}
-            className="input input-bordered w-full"
-          />
-          <input
-            type="text"
-            placeholder="Certificate ID"
-            value={form.sample_data?.id ?? ""}
-            onChange={(e) => handleSampleDataChange("id", e.target.value)}
-            className="input input-bordered w-full"
-          />
         </div>
       </section>
 

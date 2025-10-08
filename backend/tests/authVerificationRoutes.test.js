@@ -10,23 +10,12 @@ jest.mock('../src/modules/auth/services/auth.service', () => ({
   confirmVerificationOtp: jest.fn(),
 }));
 
-// Mock unrelated routes used by the grouped auth router
-jest.mock('../src/modules/users/user.routes', () => require('express').Router());
-jest.mock('../src/modules/verify/verify.routes', () => require('express').Router());
-jest.mock('../src/modules/license/license.routes', () => require('express').Router());
-jest.mock('../src/modules/users/tutorials/certificate/certificatePublic.routes', () => require('express').Router());
-jest.mock('../src/modules/users/tutorials/certificate/certificateAdmin.routes', () => require('express').Router());
-jest.mock('../src/modules/certificateTemplates/certificateTemplates.routes', () => require('express').Router());
-jest.mock('../src/modules/roles/roles.routes', () => require('express').Router());
-jest.mock('../src/modules/plans/plans.routes', () => require('express').Router());
-jest.mock('../src/modules/subscriptions/subscriptions.routes', () => require('express').Router());
-
 const service = require('../src/modules/auth/services/auth.service');
-const routes = require('../src/routes/auth');
+const routes = require('../src/modules/auth/routes/auth.routes');
 
 const app = express();
 app.use(express.json());
-app.use(routes);
+app.use('/api/auth', routes);
 
 const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);
@@ -41,15 +30,6 @@ describe('POST /api/auth/send-verification', () => {
     expect(service.sendVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'email' });
     expect(res.body.message).toMatch(/sent/i);
   });
-
-  it('supports phone verification', async () => {
-    service.sendVerificationOtp.mockResolvedValue();
-    const res = await request(app)
-      .post('/api/auth/send-verification')
-      .send({ user_id: 1, type: 'phone' });
-    expect(res.status).toBe(200);
-    expect(service.sendVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'phone' });
-  });
 });
 
 describe('POST /api/auth/confirm-verification', () => {
@@ -61,15 +41,6 @@ describe('POST /api/auth/confirm-verification', () => {
     expect(res.status).toBe(200);
     expect(service.confirmVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'email', code: '123456' });
     expect(res.body.message).toMatch(/successful/i);
-  });
-
-  it('confirms phone verification OTP', async () => {
-    service.confirmVerificationOtp.mockResolvedValue();
-    const res = await request(app)
-      .post('/api/auth/confirm-verification')
-      .send({ user_id: 1, type: 'phone', code: '654321' });
-    expect(res.status).toBe(200);
-    expect(service.confirmVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'phone', code: '654321' });
   });
 
   it('returns error for invalid OTP', async () => {

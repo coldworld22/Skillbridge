@@ -222,33 +222,14 @@ exports.updateAvatar = async (req, res) => {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
-        const { avatar_url: oldAvatar } = await db("users")
-            .where({ id: req.user.id })
-            .first("avatar_url");
-
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
         await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
 
-        const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
-
-        if (oldAvatar && !isRemoteUrl(oldAvatar)) {
-            const sanitizedOldAvatar = oldAvatar.replace(/^\/+/, "");
-            const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
-            fs.unlink(oldPath, (error) => {
-                if (error && error.code !== "ENOENT") {
-                    logger.error("Failed to remove old avatar:", error);
-                }
-            });
-        }
-
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
-        if (req.file) {
-            fs.unlink(req.file.path, (error) => error && logger.error(error));
-        }
-        logger.error(err);
-        res.status(500).json({ message: "Failed to upload avatar" });
+        logger.error("❌ Avatar upload error:", err.message);
+        res.status(500).json({ error: "Failed to upload avatar" });
     }
 };
 
@@ -258,11 +239,7 @@ exports.updateAvatar = async (req, res) => {
  * @access Instructor
  */
 exports.deleteAvatar = async (req, res) => {
-    const userId = String(req.user.id);
-
-    if (req.params.id !== userId) {
-        return res.status(403).json({ message: "Forbidden" });
-    }
+    const userId = req.params.id;
 
     const [user] = await db("users").where({ id: userId }).select("avatar_url");
     if (!user || !user.avatar_url) {
@@ -282,57 +259,12 @@ exports.deleteAvatar = async (req, res) => {
 };
 
 /**
- * @desc Upload instructor demo video
- * @route PATCH /api/users/instructor/:id/demo
- * @access Instructor
- */
-exports.uploadDemoVideo = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        // Validate the provided id
-        if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
-            if (req.file) {
-                fs.unlink(req.file.path, (error) => error && logger.error(error));
-            }
-            return res.status(400).json({ error: "Invalid user id" });
-        }
-
-        // Ensure instructors can only update their own demo video
-        if (id !== req.user.id) {
-            if (req.file) {
-                fs.unlink(req.file.path, (error) => error && logger.error(error));
-            }
-            return res.status(403).json({ error: "Unauthorized" });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ error: "No file uploaded" });
-        }
-
-        const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
-        await db("instructor_profiles")
-            .where({ user_id: id })
-            .update({ demo_video_url: demoVideoUrl });
-
-        res.json({ demo_video_url: demoVideoUrl });
-    } catch (err) {
-        logger.error("Demo video upload error:", err);
-        res.status(500).json({ error: "Failed to upload demo video" });
-    }
-};
-
-/**
  * @desc Delete instructor demo video
  * @route DELETE /api/users/instructor/:id/demo
  * @access Instructor
  */
 exports.deleteDemoVideo = async (req, res) => {
-    const userId = String(req.user.id);
-
-    if (req.params.id !== userId) {
-        return res.status(403).json({ message: "Forbidden" });
-    }
+    const userId = req.params.id;
 
     const [profile] = await db("instructor_profiles").where({ user_id: userId }).select("demo_video_url");
     if (!profile || !profile.demo_video_url) {

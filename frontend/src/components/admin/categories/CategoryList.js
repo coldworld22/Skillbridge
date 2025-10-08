@@ -9,22 +9,15 @@ export default function CategoryList() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
     let isMounted = true;
-    fetchBookCategories({ signal: controller.signal })
+    fetchBookCategories()
       .then((data) => {
         if (isMounted) setCategories(data);
       })
-      .catch((err) => {
-        if (err.name === "AbortError" || err.name === "CanceledError") return;
-        if (isMounted) setError("Failed to load categories");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .catch(() => isMounted && setError("Failed to load categories"))
+      .finally(() => isMounted && setLoading(false));
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, []);
 

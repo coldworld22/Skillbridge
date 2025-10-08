@@ -1,19 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
-import { ToastContainer, toast } from "react-toastify";
+import { Toaster, toast } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
-import ResizeObserver from "resize-observer-polyfill";
-import "@/styles/globals.css";
+import "@/styles/globals.css";    
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
-import useAppConfigStore, {
-  useAppConfigHydrated,
-} from "@/store/appConfigStore";
+import useAppConfigStore from "@/store/appConfigStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
@@ -25,19 +23,13 @@ import {
 } from "@/services/messageService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
-import { ensureCsrfToken } from "@/services/api/csrf";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
-import Script from "next/script";
 import { getLanguages } from "@/services/languageService";
-import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
-
-if (typeof window !== "undefined" && !window.ResizeObserver) {
-  window.ResizeObserver = ResizeObserver;
-}
+import { API_BASE_URL } from "@/config/config";
 
 const langFetcher = () => getLanguages();
 
@@ -57,7 +49,6 @@ function MyApp({ Component, pageProps, router }) {
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const configLoaded = useAppConfigStore((state) => state.loaded);
   const settings = useAppConfigStore((state) => state.settings);
-  const appConfigHydrated = useAppConfigHydrated();
   const startNotifPolling = useNotificationStore((s) => s.startPolling);
   const fetchNotifs = useNotificationStore((s) => s.fetch);
   const startMsgPolling = useMessageStore((s) => s.startPolling);
@@ -75,21 +66,28 @@ function MyApp({ Component, pageProps, router }) {
   
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
-  const { data: thirdPartyConfig } = useSWR(
-    "third-party-config",
-    fetchThirdPartyConfig
-  );
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
-  const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const [gaId, setGaId] = useState(null);
 
   useEffect(() => {
-    if (!hasHydrated || router.pathname.startsWith('/auth')) return;
+    const local = localStorage.getItem("auth");
+    if (local) {
+      const parsed = JSON.parse(local)?.state;
+      if (parsed?.user) {
+        useAuthStore.setState({
+          user: parsed.user,
+          accessToken: parsed.accessToken,
+          hasHydrated: true, // ✅ manually set hydration flag
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (router.pathname.startsWith('/auth')) return;
 
     const init = async () => {
       try {
-        await ensureCsrfToken({ forceRefresh: true });
         const { accessToken } = await authService.refreshAccessToken();
         useAuthStore.setState({ accessToken });
         const res = await getFullProfile();
@@ -99,13 +97,36 @@ function MyApp({ Component, pageProps, router }) {
       }
     };
     init();
-  }, [router.pathname, hasHydrated]);
+  }, [router.pathname]);
 
   useEffect(() => {
     if (!configLoaded) fetchConfig();
   }, [configLoaded, fetchConfig]);
 
-  const gaConfig = thirdPartyConfig?.googleAnalytics;
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/google-analytics`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
+        return res.json();
+      })
+      .then((cfg) => {
+        if (cfg.enabled && cfg.measurementId) {
+          if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
+            const s = document.createElement('script');
+            s.async = true;
+            s.src = `https://www.googletagmanager.com/gtag/js?id=${cfg.measurementId}`;
+            s.dataset.gaMeasurementId = cfg.measurementId;
+            document.head.appendChild(s);
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', cfg.measurementId);
+          }
+        }
+      })
+      .catch((err) => console.error('Failed to load Google Analytics', err));
+  }, []);
 
   useEffect(() => {
     if (!seoLoaded) {
@@ -166,47 +187,12 @@ function MyApp({ Component, pageProps, router }) {
     return slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  const appName =
-    appConfigHydrated && settings.appName
-      ? settings.appName
-      : 'SkillBridge';
+  const appName = settings.appName || 'SkillBridge';
   const defaultTitle = `${appName} | ${getPageTitle()}`;
 
     return (
       <>
-        {gaConfig?.enabled && gaConfig?.measurementId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaConfig.measurementId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga-init" strategy="afterInteractive">
-              {`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){window.dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '${gaConfig.measurementId}');
-      `}
-            </Script>
-          </>
-        )}
         <PageLoader />
-        {gaId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga-inline" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
-              `}
-            </Script>
-          </>
-        )}
         <AnimatePresence mode="wait">
           {/* Motion wrapper for route transition */}
           <motion.div
@@ -219,10 +205,10 @@ function MyApp({ Component, pageProps, router }) {
             <Head>
               <title>{defaultTitle}</title>
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              {appConfigHydrated && settings.metaDescription && (
+              {settings.metaDescription && (
                 <meta name="description" content={settings.metaDescription} />
               )}
-              {appConfigHydrated && settings.favicon_url && (
+              {settings.favicon_url && (
                 <link
                   rel="icon"
                   href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
@@ -243,6 +229,17 @@ function MyApp({ Component, pageProps, router }) {
               />
             )}
 
+            {/* Global Toast Message Containers */}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+              }}
+            />
             {/* Display React Toastify notifications centered at the top */}
             <ToastContainer position="top-center" autoClose={3000} />
           </motion.div>

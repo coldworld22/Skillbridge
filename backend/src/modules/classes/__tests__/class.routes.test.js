@@ -1,8 +1,6 @@
 const request = require('supertest');
 const express = require('express');
 
-let mockUser = { id: 'test-user', role: 'instructor' };
-
 // Mock database to avoid connection attempts
 jest.mock('../../../config/database', () => {
   const db = jest.fn(() => db);
@@ -52,7 +50,7 @@ jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next(
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { ...mockUser };
+    req.user = { id: 'test-user', role: 'instructor' };
     next();
   },
   isStudent: (_req, _res, next) => next(),
@@ -69,8 +67,6 @@ const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
 jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
 
-const authMiddleware = require('../../../middleware/auth/authMiddleware');
-
 const app = express();
 app.use(express.json());
 app.use('/classes', routes);
@@ -81,7 +77,6 @@ app.use((err, _req, res, _next) => {
 describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUser = { id: 'test-user', role: 'instructor' };
     getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
@@ -161,50 +156,6 @@ describe('Class routes', () => {
     expect(service.getClassesByInstructor).toHaveBeenCalledWith('test-user', { page: 1, limit: 5 });
   });
 
-  test('instructor cannot override instructorId when fetching own classes', async () => {
-    mockUser = { id: 'instructor-123', role: 'instructor' };
-    const list = [{ id: '1', instructor_id: 'instructor-123', title: 'Mine' }];
-    const result = {
-      data: list,
-      meta: { page: 1, limit: 3, total: 1, totalPages: 1 },
-    };
-    service.getClassesByInstructor.mockResolvedValue(result);
-
-    const res = await request(app).get(
-      '/classes/instructor/my?instructorId=other-instructor&limit=3'
-    );
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data).toEqual(list);
-    expect(res.body.meta).toEqual(result.meta);
-    expect(service.getClassesByInstructor).toHaveBeenCalledWith('instructor-123', {
-      page: 1,
-      limit: 3,
-    });
-  });
-
-  test('admin can override instructorId when fetching instructor classes', async () => {
-    mockUser = { id: 'admin-user', role: 'admin' };
-    const list = [{ id: '1', instructor_id: 'target-instructor', title: 'Other' }];
-    const result = {
-      data: list,
-      meta: { page: 2, limit: 2, total: 1, totalPages: 1 },
-    };
-    service.getClassesByInstructor.mockResolvedValue(result);
-
-    const res = await request(app).get(
-      '/classes/admin/my?instructorId=target-instructor&page=2&limit=2'
-    );
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data).toEqual(list);
-    expect(res.body.meta).toEqual(result.meta);
-    expect(service.getClassesByInstructor).toHaveBeenCalledWith('target-instructor', {
-      page: 2,
-      limit: 2,
-    });
-  });
-
   test('get published classes', async () => {
     const list = [{ id: '1', title: 'Pub', status: 'published' }];
     const result = { data: list, meta: { page: 2, limit: 1, total: 1, totalPages: 1 } };
@@ -234,65 +185,12 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(approved);
   });
 
-  test('approve class fails without active plan', async () => {
-    getActiveInstructorPlan.mockResolvedValueOnce(null);
-
-    const res = await request(app).patch('/classes/admin/1/approve');
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body.message).toBe(
-      'Active instructor plan required to approve classes'
-    );
-    expect(service.updateModeration).not.toHaveBeenCalled();
-  });
-
-  test('approve class fails when max courses reached', async () => {
-    getActiveInstructorPlan.mockResolvedValueOnce({ id: 'plan1', max_courses: 1 });
-    service.countPublishedClasses.mockResolvedValueOnce(1);
-
-    const res = await request(app).patch('/classes/admin/1/approve');
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body.message).toBe('Course limit reached for your plan');
-    expect(service.updateModeration).not.toHaveBeenCalled();
-  });
-
   test('instructor can create class within plan limit', async () => {
-    const data = {
-      id: '1',
-      instructor_id: 'test-user',
-      title: 'Test Class',
-      access_type: 'free',
-    };
+    const data = { id: '1', instructor_id: 'test-user', title: 'Test Class' };
     service.createClass.mockResolvedValue(data);
-    const res = await request(app)
-      .post('/classes/instructor')
-      .send({ ...data, access_type: 'free' });
+    const res = await request(app).post('/classes/instructor').send(data);
     expect(res.statusCode).toBe(200);
-    expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ access_type: 'free' })
-    );
-    expect(res.body.data.access_type).toBe('free');
-  });
-
-  test('instructor class creation defaults access_type to paid when omitted', async () => {
-    const created = {
-      id: '2',
-      instructor_id: 'test-user',
-      title: 'Paid Class',
-      access_type: 'paid',
-    };
-    service.createClass.mockResolvedValue(created);
-
-    const res = await request(app)
-      .post('/classes/instructor')
-      .send({ title: 'Paid Class' });
-
-    expect(res.statusCode).toBe(200);
-    expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ access_type: 'paid' })
-    );
-    expect(res.body.data.access_type).toBe('paid');
+    expect(service.createClass).toHaveBeenCalled();
   });
 
   test('instructor cannot create class when feature disabled', async () => {

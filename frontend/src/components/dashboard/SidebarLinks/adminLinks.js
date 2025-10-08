@@ -83,7 +83,7 @@ export const adminNavLinks = [
   {
     title: 'settings',
     items: [
-      { label: 'clear_cache', action: 'clearCache', icon: RefreshCcw },
+      { label: 'clear_cache', href: '/dashboard/admin/cache', icon: RefreshCcw },
       {
         label: 'settings',
         href: '#',
@@ -107,7 +107,8 @@ export const adminNavLinks = [
           { label: 'certificate_templates', href: '/dashboard/admin/settings/certificates', icon: LayoutTemplate },
           { label: 'third_parties_config', href: '/dashboard/admin/settings/thirdParty', icon: Brain }
         ]
-      }
+      },
+      { label: 'clear_cache', href: '/dashboard/admin/cache', icon: RefreshCcw }
     ]
   }
 ];

@@ -12,9 +12,8 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useDebounce from "@/hooks/useDebounce";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdminAdsPage() {
+export default function AdminAdsPage() {
     // ─────────────────────
     // State Management
     // ─────────────────────
@@ -246,4 +245,3 @@ export async function getStaticProps({ locale }) {
     };
 }
 
-export default withAdminGuard(AdminAdsPage);

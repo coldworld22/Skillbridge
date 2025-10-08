@@ -3,7 +3,7 @@ import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaPaperPlane } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { createDiscussion, searchTags } from "@/services/communityService";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");

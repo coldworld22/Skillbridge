@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import GoogleAd from "@/components/shared/GoogleAd";
+import { API_BASE_URL } from "@/config/config";
 import useAppConfigStore from "@/store/appConfigStore";
 import {
   FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube,
@@ -212,19 +213,6 @@ const Footer = () => {
       </div>
 
      
-
-      {/* Scroll to Top Button */}
-      {showScroll && (
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={scrollToTop}
-          className="fixed bottom-24 right-8 bg-yellow-500 text-gray-900 p-4 rounded-full shadow-lg hover:bg-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-300 z-50"
-          aria-label="Scroll to top"
-        >
-          <FaArrowUp size={20} />
-        </motion.button>
-      )}
 
       {/* WhatsApp Button (For Direct Contact) */}
       <motion.a

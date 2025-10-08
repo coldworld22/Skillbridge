@@ -1,13 +1,13 @@
 import api from "@/services/api/api";
 
 export const fetchClassScores = async (classId) => {
-  const { data } = await api.get(`users/classes/scores/instructor/${classId}`);
+  const { data } = await api.get(`/users/classes/scores/instructor/${classId}`);
   return data?.data ?? [];
 };
 
 export const setScoringPolicy = async (classId, payload) => {
   const { data } = await api.post(
-    `users/classes/scores/policy/${classId}`,
+    `/users/classes/scores/policy/${classId}`,
     payload
   );
   return data?.data;
@@ -15,12 +15,12 @@ export const setScoringPolicy = async (classId, payload) => {
 
 export const issueClassCertificate = async (classId, studentId) => {
   const { data } = await api.post(
-    `users/classes/scores/instructor/${classId}/students/${studentId}/issue`
+    `/users/classes/scores/instructor/${classId}/students/${studentId}/issue`
   );
   return data?.data;
 };
 
 export const fetchMyClassScore = async (classId) => {
-  const { data } = await api.get(`users/classes/scores/student/${classId}`);
+  const { data } = await api.get(`/users/classes/scores/student/${classId}`);
   return data?.data;
 };

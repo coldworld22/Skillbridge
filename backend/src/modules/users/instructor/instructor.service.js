@@ -4,7 +4,6 @@
  */
 
 const db = require("../../../config/database");
-const { allowedPlatforms } = require("../common/socialPlatforms");
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];
@@ -69,85 +68,19 @@ const getInstructorProfile = async (userId) => {
   };
 };
 
-const normalizeUrl = (url = "") => {
-  const trimmed = url.trim();
-  if (!trimmed) return "";
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-};
-
-const extractPricingAmount = (value) => {
-  if (value === undefined || value === null) return Number.NaN;
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const match = value.match(/-?\d*\.?\d+/);
-    return match ? Number.parseFloat(match[0]) : Number.NaN;
-  }
-  return Number.NaN;
-};
-
 // 🔹 Update instructor user data, profile data, and social links in a transaction
-const updateInstructorProfile = async (
-  userId,
-  userData,
-  instructorData,
-  socialLinks = []
-) => {
-  const sanitizedLinks = Array.isArray(socialLinks)
-    ? socialLinks
-        .filter(
-          (link) =>
-            link &&
-            typeof link.url === "string" &&
-            link.url.trim() !== "" &&
-            typeof link.platform === "string" &&
-            allowedPlatforms.includes(link.platform.trim().toLowerCase())
-        )
-        .map((link) => ({
-          platform: link.platform.trim().toLowerCase(),
-          url: normalizeUrl(link.url),
-        }))
-    : [];
-
-  // Ensure each platform appears only once by using a Map keyed by platform
-  const uniqueLinks = Array.from(
-    new Map(sanitizedLinks.map((link) => [link.platform, link])).values()
-  );
-
-  const hasUserFields =
-    userData.full_name &&
-    userData.phone &&
-    userData.gender &&
-    userData.date_of_birth;
-  const hasValidExperience =
-    instructorData.experience !== undefined &&
-    instructorData.experience !== null &&
-    Number(instructorData.experience) > 0;
-  const pricingAmount = extractPricingAmount(instructorData.pricing);
-  const hasValidPricing = Number.isFinite(pricingAmount) && pricingAmount > 0;
-  const hasInstructorFields =
-    Array.isArray(instructorData.expertise) &&
-    instructorData.expertise.length > 0 &&
-    typeof instructorData.bio === "string" &&
-    instructorData.bio.trim().length > 0 &&
-    hasValidExperience &&
-    hasValidPricing;
-  const isProfileComplete =
-    hasUserFields && hasInstructorFields && uniqueLinks.length > 0;
-
+const updateInstructorProfile = async (userId, userData, instructorData, socialLinks = []) => {
   await db.transaction(async (trx) => {
     // ✅ Update users table
     await trx("users").where({ id: userId }).update({
       ...userData,
-      profile_complete: isProfileComplete,
+      profile_complete: true,
     });
 
     // ✅ Upsert instructor profile
-    const existing = await trx("instructor_profiles")
-      .where({ user_id: userId })
-      .first();
+    const existing = await trx("instructor_profiles").where({ user_id: userId }).first();
     const data = {
       ...instructorData,
-      pricing: Number.isFinite(pricingAmount) ? pricingAmount : null,
       expertise: instructorData.expertise
         ? JSON.stringify(instructorData.expertise)
         : null,
@@ -158,14 +91,16 @@ const updateInstructorProfile = async (
       await trx("instructor_profiles").insert({ user_id: userId, ...data });
     }
 
-    // ✅ Replace social links with unique platforms
+    // ✅ Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of uniqueLinks) {
-      await trx("user_social_links").insert({
-        user_id: userId,
-        platform: link.platform,
-        url: link.url,
-      });
+    for (const link of socialLinks) {
+      if (link.url) {
+        await trx("user_social_links").insert({
+          user_id: userId,
+          platform: link.platform,
+          url: link.url,
+        });
+      }
     }
   });
 };

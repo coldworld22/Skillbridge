@@ -68,12 +68,11 @@ const LandingTutorialsSection = () => {
     if (typeof navigator !== "undefined") {
       setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
     }
-    const controller = new AbortController();
     let isMounted = true;
 
     const load = async () => {
-      const tutorialsPromise = fetchFeaturedTutorials({ signal: controller.signal }).catch((err) => ({ error: err }));
-      const categoriesPromise = fetchAllCategories({ limit: 100 }, { signal: controller.signal }).catch((err) => ({ error: err }));
+      const tutorialsPromise = fetchFeaturedTutorials().catch((err) => ({ error: err }));
+      const categoriesPromise = fetchAllCategories({ limit: 100 }).catch((err) => ({ error: err }));
 
       const [tutorialRes, categoryRes] = await Promise.all([
         tutorialsPromise,
@@ -83,27 +82,23 @@ const LandingTutorialsSection = () => {
       if (isMounted) {
         if (tutorialRes?.error) {
           const err = tutorialRes.error;
-          if (err.name !== "AbortError" && err.name !== "CanceledError") {
-            const msg =
-              err.code === "ERR_NETWORK"
-                ? t('network_error')
-                : t('tutorials_load_error');
-            toast.error(msg);
-          }
+          const msg =
+            err.code === "ERR_NETWORK"
+              ? t('network_error')
+              : t('tutorials_load_error');
+          toast.error(msg);
         } else {
           setTutorials(tutorialRes || []);
         }
 
         if (categoryRes?.error) {
           const err = categoryRes.error;
-          if (err.name !== "AbortError" && err.name !== "CanceledError") {
-            const msg =
-              err.code === "ERR_NETWORK"
-                ? t('network_error')
-                : t('categories_load_error');
-            toast.error(msg);
-            console.error(t('categories_load_error'), err);
-          }
+          const msg =
+            err.code === "ERR_NETWORK"
+              ? t('network_error')
+              : t('categories_load_error');
+          toast.error(msg);
+          console.error(t('categories_load_error'), err);
         } else {
           setCategories(categoryRes?.data || categoryRes || []);
         }
@@ -113,7 +108,6 @@ const LandingTutorialsSection = () => {
 
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, [user, isStudent]);
 
@@ -134,30 +128,22 @@ const LandingTutorialsSection = () => {
 
   useEffect(() => {
     if (!user || !isStudent) return;
-    const controller = new AbortController();
-    let isMounted = true;
     const loadLists = async () => {
       try {
         const [w, f, e] = await Promise.all([
-          getMyTutorialWishlist({ signal: controller.signal }),
-          getMyTutorialFavorites({ signal: controller.signal }),
-          getMyEnrolledTutorials({ signal: controller.signal }),
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+          getMyEnrolledTutorials(),
         ]);
-        if (!isMounted) return;
         setWishlistIds(w.map((t) => t.id));
         setFavoriteIds(f.map((t) => t.id));
         setEnrolledIds(e.map((t) => t.id));
       } catch (err) {
-        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error('Failed to load user lists', err);
       }
     };
     loadLists();
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [user, isStudent]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;

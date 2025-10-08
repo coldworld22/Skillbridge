@@ -19,16 +19,6 @@ const tutorialService = require("../users/tutorials/tutorial.service");
 const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
-const { resolveInvoicePdfPath } = require("../invoices/helpers/invoicePath");
-
-const resolveInvoiceAttachmentPath = (invoice) => {
-  if (typeof invoiceService.resolveInvoiceAttachmentPath === "function") {
-    const resolved = invoiceService.resolveInvoiceAttachmentPath(invoice);
-    if (resolved) return resolved;
-  }
-
-  return resolveInvoicePdfPath(invoice);
-};
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -77,8 +67,6 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     branch_address,
     extra_instructions,
     coupon_id,
-    reference,
-    receipt_url,
   } = req.body;
   const user_id = req.user?.id;
 
@@ -185,14 +173,6 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     extra_instructions,
   };
 
-  if (reference) {
-    bank_details.reference = reference;
-  }
-
-  if (receipt_url) {
-    bank_details.receipt_url = receipt_url;
-  }
-
   const paymentData = {
     id: uuidv4(),
     user_id,
@@ -206,14 +186,6 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     instructor_amount,
     bank_details,
   };
-
-  if (reference) {
-    paymentData.reference_id = reference;
-  }
-
-  if (receipt_url) {
-    paymentData.receipt_url = receipt_url;
-  }
 
   const payment = await paymentsService.create(paymentData);
 
@@ -364,19 +336,12 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     if (user) {
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
-        const attachmentPath = resolveInvoiceAttachmentPath(invoice);
-        if (attachmentPath) {
-          await mailService.sendMail({
-            to: user.email,
-            subject: "Payment Invoice",
-            html: `<p>Please find your invoice attached.</p>`,
-            attachments: [{ path: attachmentPath }],
-          });
-        } else {
-          logger.warn(
-            "Invoice PDF URL was present but could not be resolved for attachment"
-          );
-        }
+        await mailService.sendMail({
+          to: user.email,
+          subject: "Payment Invoice",
+          html: `<p>Please find your invoice attached.</p>`,
+          attachments: [{ path: invoice.pdf_url }],
+        });
       }
     }
   } catch (err) {

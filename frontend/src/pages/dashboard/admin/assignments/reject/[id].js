@@ -7,9 +7,8 @@ import {
   fetchAssignmentById,
   rejectAssignment,
 } from '@/services/admin/assignmentService';
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function RejectAssignmentPage() {
+export default function RejectAssignmentPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -96,5 +95,3 @@ function RejectAssignmentPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(RejectAssignmentPage);

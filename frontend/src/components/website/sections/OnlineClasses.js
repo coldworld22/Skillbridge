@@ -19,7 +19,6 @@ import {
   getMyClassWishlist,
   getMyLikedClasses,
 } from "@/services/classService";
-import { computeScheduleStatus } from "@/utils/classSchedule";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 
@@ -31,10 +30,11 @@ const computeStatus = (start, end) => {
   const s = start ? new Date(start) : null;
   const e = end ? new Date(end) : null;
   if (s && now < s) return "Upcoming";
-  if (s && (!e || now <= e) && now >= s) return "Ongoing";
+  if (s && (!e || now <= e) && now >= s) return "Live";
   if (e && now > e) return "Completed";
   return "Upcoming";
 };
+
 const OnlineClasses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +56,7 @@ const OnlineClasses = () => {
         const list = res?.data ?? [];
         const formatted = list.map((c) => ({
           ...c,
-          status: computeScheduleStatus(c.start_date, c.end_date),
+          status: computeStatus(c.start_date, c.end_date),
         }));
         setClasses(formatted);
         const cats = Array.from(
@@ -95,7 +95,7 @@ const OnlineClasses = () => {
       (selectedCategory === "All" ||
         (selectedCategory === "Trending" && classItem.trending) ||
         classItem.category === selectedCategory) &&
-      (showLiveClasses ? classItem.status === "Ongoing" : true) &&
+      (showLiveClasses ? classItem.status === "Live" : true) &&
       classItem.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -210,7 +210,7 @@ const OnlineClasses = () => {
                   )}
                   <span
                     className={`px-3 py-1 text-xs font-bold rounded-full ${
-                      classItem.status === "Ongoing"
+                      classItem.status === "Live"
                         ? "bg-red-500 text-white animate-pulse"
                         : classItem.status === "Completed"
                         ? "bg-gray-600 text-white"
@@ -222,7 +222,7 @@ const OnlineClasses = () => {
                 </div>
 
                 {/* Icon */}
-                {classItem.status === "Ongoing" ? (
+                {classItem.status === "Live" ? (
                   <FaVideo className="text-red-400 text-5xl mb-4 mx-auto" />
                 ) : (
                   <FaBookOpen className="text-yellow-400 text-5xl mb-4 mx-auto" />
@@ -240,7 +240,7 @@ const OnlineClasses = () => {
                   className="mt-4 bg-yellow-500 text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-yellow-600 transition w-full"
                   onClick={() => router.push(`/online-classes/${classItem.id}`)}
                 >
-                  {classItem.status === "Ongoing" ? `🎥 ${t('join_live')}` : `📘 ${t('view_class')}`}
+                  {classItem.status === "Live" ? `🎥 ${t('join_live')}` : `📘 ${t('view_class')}`}
                 </button>
               </motion.div>
             ))}

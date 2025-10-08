@@ -15,7 +15,7 @@ exports.up = function(knex) {
       .inTable('users')
       .onDelete('CASCADE');
     table.string('type').notNullable(); // 'email' or 'phone'
-    table.text('code').notNullable();
+    table.string('code', 10).notNullable();
     table.timestamp('expires_at').notNullable();
     table.boolean('verified').defaultTo(false);
     table.timestamp('created_at').defaultTo(knex.fn.now());

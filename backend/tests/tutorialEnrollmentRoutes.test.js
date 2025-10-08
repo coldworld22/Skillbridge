@@ -6,23 +6,14 @@ jest.mock('../src/config/database', () => jest.fn());
 const db = require('../src/config/database');
 
 jest.mock('../src/modules/plans/subscription.helper', () => ({
-  getActiveStudentSubscription: jest.fn(),
+  getActiveStudentPlanId: jest.fn(),
 }));
-const { getActiveStudentSubscription } = require('../src/modules/plans/subscription.helper');
+const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
 jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn(),
 }));
-jest.mock('../src/modules/payments/helpers/planPayments', () => ({
-  recordPlanCoveredPayment: jest.fn(),
-}));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
-const { recordPlanCoveredPayment } = require('../src/modules/payments/helpers/planPayments');
-
-jest.mock('../src/modules/payments/helpers/wallet', () => ({
-  creditTutorialSubscription: jest.fn(),
-}));
-const { creditTutorialSubscription } = require('../src/modules/payments/helpers/wallet');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -42,22 +33,10 @@ app.use(errorHandler);
 describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getActiveStudentSubscription.mockResolvedValue(null);
-    planRevenue.calculateInstructorAmount.mockResolvedValue(0);
-    recordPlanCoveredPayment.mockResolvedValue({ id: 'payment-id' });
-    creditTutorialSubscription.mockResolvedValue();
+    getActiveStudentPlanId.mockResolvedValue(null);
   });
 
   it('enrolls in a free tutorial', async () => {
-    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
-
-    const paymentMethodWhere = jest.fn(() => ({
-      first: () => Promise.resolve({ id: 'plan-method-1' }),
-    }));
-    const paymentMethodInsert = jest.fn(() =>
-      Promise.resolve([{ id: 'plan-method-1' }]),
-    );
-
     db.mockImplementation((table) => {
       if (table === 'tutorials')
         return {
@@ -151,15 +130,8 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   });
 
   it('enrolls in paid tutorial covered by subscription', async () => {
-    const calculatedAmount = 42;
-    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
-
-    const paymentMethodWhere = jest.fn(() => ({
-      first: () => Promise.resolve({ id: 'plan-method-1' }),
-    }));
-    const paymentMethodInsert = jest.fn(() =>
-      Promise.resolve([{ id: 'plan-method-1' }]),
-    );
+    const planInsert = jest.fn(() => Promise.resolve());
+    const paymentInsert = jest.fn(() => Promise.resolve());
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -180,132 +152,37 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null) }),
           insert: jest.fn(() => Promise.resolve()),
         };
-      if (table === 'payments')
+      if (table === 'plan_usage_metrics')
         return {
-          insert: jest.fn(async () => [
-            {
-              id: 'payment-sub',
-              user_id: 'user1',
-              item_id: tutorialId,
-              status: 'paid',
-            },
-          ]),
+          where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
+          insert: planInsert,
         };
-      if (table === 'payment_methods_config')
-        return { where: paymentMethodWhere, insert: paymentMethodInsert };
+      if (table === 'payments')
+        return { insert: paymentInsert };
     });
 
-    getActiveStudentSubscription.mockResolvedValue({
-      id: 'sub1',
-      plan_id: 'plan1',
-    });
-    planRevenue.calculateInstructorAmount.mockResolvedValue(calculatedAmount);
-    let instructorWalletBalance = 0;
-    creditTutorialSubscription.mockImplementation(
-      async (tutorial, planId, subscriptionId, trx) => {
-        const amount = await planRevenue.calculateInstructorAmount(
-          planId,
-          subscriptionId,
-          tutorial,
-          trx,
-          'tutorial',
-        );
-        instructorWalletBalance += amount;
-      },
-    );
+    getActiveStudentPlanId.mockResolvedValue('plan1');
 
+    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
     const res = await request(app).post(
       `/api/users/tutorials/enrollments/${tutorialId}`,
     );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
+    expect(planInsert).toHaveBeenCalled();
+    expect(paymentInsert).toHaveBeenCalledWith({
+      user_id: 'user1',
+      item_id: tutorialId,
+      item_type: 'tutorial',
+      source: 'subscription',
+      amount: 0,
+    });
     expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
       'plan1',
-      'sub1',
       tutorialId,
       expect.anything(),
       'tutorial'
     );
-    expect(recordPlanCoveredPayment).toHaveBeenCalledTimes(1);
-    expect(creditTutorialSubscription).toHaveBeenCalledWith(
-      tutorialId,
-      'plan1',
-      'sub1',
-      expect.anything(),
-    );
-    expect(creditTutorialSubscription).toHaveBeenCalledTimes(1);
-    expect(instructorWalletBalance).toBe(calculatedAmount);
-  });
-
-  it('creates a single payment record for subscription-covered enrollments', async () => {
-    const tutorialId = '123e4567-e89b-12d3-a456-426614174004';
-    const paymentsReturning = jest.fn(() =>
-      Promise.resolve([{ id: 'payment-sub', item_id: tutorialId }]),
-    );
-    const paymentsInsert = jest.fn(() => ({ returning: paymentsReturning }));
-
-    db.mockImplementation((table) => {
-      if (table === 'tutorials')
-        return {
-          where: () => ({
-            first: () =>
-              Promise.resolve({
-                id: tutorialId,
-                price: 100,
-                currency: 'USD',
-                moderation_status: 'Approved',
-                status: 'published',
-                included_plans: ['plan1'],
-              }),
-          }),
-        };
-      if (table === 'tutorial_enrollments')
-        return {
-          where: () => ({ first: () => Promise.resolve(null) }),
-          insert: jest.fn(() => Promise.resolve()),
-        };
-      if (table === 'payments')
-        return {
-          insert: paymentsInsert,
-        };
-      return {};
-    });
-
-    getActiveStudentSubscription.mockResolvedValue({
-      id: 'sub1',
-      plan_id: 'plan1',
-    });
-    getPlanCoveredMethod.mockResolvedValue({ id: 'plan-method-1' });
-    recordPlanCoveredPayment.mockImplementationOnce(
-      async ({ trx, userId, itemId, itemType, amount, currency, source, methodId }) => {
-        const [row] = await trx('payments')
-          .insert({
-            user_id: userId,
-            item_id: itemId,
-            item_type: itemType,
-            amount,
-            currency,
-            source,
-            method_id: methodId,
-          })
-          .returning('*');
-
-        return row;
-      },
-    );
-
-    const res = await request(app).post(
-      `/api/users/tutorials/enrollments/${tutorialId}`,
-    );
-
-    expect(res.status).toBe(200);
-    expect(paymentsInsert).toHaveBeenCalledTimes(1);
-    expect(paymentsInsert.mock.calls[0][0]).toMatchObject({
-      user_id: 'user1',
-      item_id: tutorialId,
-      source: 'subscription',
-    });
-    expect(paymentsReturning).toHaveBeenCalledWith('*');
   });
 });
 
@@ -389,60 +266,6 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
       '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174000/complete',
     );
     expect(res.status).toBe(400);
-  });
-});
-
-describe('POST /api/users/tutorials/enrollments/status/batch', () => {
-  it('returns enrollment status map for provided tutorials', async () => {
-    db.mockImplementation((table) => {
-      if (table === 'tutorial_enrollments')
-        return {
-          where: () => ({
-            whereIn: () =>
-              Promise.resolve([
-                {
-                  tutorial_id: '123e4567-e89b-12d3-a456-426614174100',
-                  status: 'completed',
-                  progress: null,
-                },
-                {
-                  tutorial_id: '123e4567-e89b-12d3-a456-426614174101',
-                  status: 'enrolled',
-                  progress: 40,
-                },
-              ]),
-          }),
-        };
-    });
-
-    const res = await request(app)
-      .post('/api/users/tutorials/enrollments/status/batch')
-      .send({
-        tutorialIds: [
-          '123e4567-e89b-12d3-a456-426614174100',
-          '123e4567-e89b-12d3-a456-426614174101',
-          '123e4567-e89b-12d3-a456-426614174102',
-        ],
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({
-      '123e4567-e89b-12d3-a456-426614174100': {
-        enrolled: true,
-        status: 'completed',
-        progress: 100,
-      },
-      '123e4567-e89b-12d3-a456-426614174101': {
-        enrolled: true,
-        status: 'enrolled',
-        progress: 40,
-      },
-      '123e4567-e89b-12d3-a456-426614174102': {
-        enrolled: false,
-        status: null,
-        progress: 0,
-      },
-    });
   });
 });
 

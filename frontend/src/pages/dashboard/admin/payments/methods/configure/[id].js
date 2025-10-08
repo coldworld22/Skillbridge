@@ -4,9 +4,8 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 import PaymentProviderConfig from "@/components/payments/PaymentProviderConfig";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function ConfigurePaymentMethodPage() {
+export default function ConfigurePaymentMethodPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation('dashboard');
@@ -30,5 +29,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(ConfigurePaymentMethodPage);

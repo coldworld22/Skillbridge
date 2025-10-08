@@ -4,11 +4,8 @@ const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
-const {
-  getActiveStudentPlanId,
-  getActiveStudentSubscription,
-} = require("../../../plans/subscription.helper");
-const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
+const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
+const planRevenue = require("../../../payments/helpers/planRevenue");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -22,36 +19,56 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
-  const activeSubscription = await getActiveStudentSubscription(user_id);
-  const activePlanId = activeSubscription?.plan_id;
-  const activeSubscriptionId = activeSubscription?.id;
+  const activePlanId = await getActiveStudentPlanId(user_id);
   const includedPlans = Array.isArray(tutorial.included_plans)
     ? tutorial.included_plans
     : [];
   const coveredBySubscription =
     activePlanId && includedPlans.includes(activePlanId);
 
-  const enrollmentId = uuidv4();
+  const id = uuidv4();
 
   const enroll = async (trx) => {
     if (coveredBySubscription) {
-      await recordPlanCoveredPayment({
-        trx,
-        userId: user_id,
-        itemId: tutorialId,
-        itemType: "tutorial",
-        amount: 0,
-        currency: tutorial.currency || "USD",
-        source: "subscription",
-        methodId: planMethod?.id ?? null,
-      });
+      const usage = await trx("plan_usage_metrics")
+        .where({
+          plan_id: activePlanId,
+          item_type: "tutorial",
+          item_id: tutorialId,
+        })
+        .first();
 
-      await creditTutorialSubscription(
-        tutorialId,
+      if (usage) {
+        await trx("plan_usage_metrics")
+          .where({
+            plan_id: activePlanId,
+            item_type: "tutorial",
+            item_id: tutorialId,
+          })
+          .update({ usage_count: usage.usage_count + 1 });
+      } else {
+        await trx("plan_usage_metrics").insert({
+          plan_id: activePlanId,
+          item_type: "tutorial",
+          item_id: tutorialId,
+          usage_count: 1,
+        });
+      }
+
+      await planRevenue.calculateInstructorAmount(
         activePlanId,
-        activeSubscriptionId,
-        trx
+        tutorialId,
+        trx,
+        "tutorial"
       );
+
+      await trx("payments").insert({
+        user_id,
+        item_id: tutorialId,
+        item_type: "tutorial",
+        source: "subscription",
+        amount: 0,
+      });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })
@@ -63,7 +80,7 @@ exports.enroll = catchAsync(async (req, res) => {
     }
 
     await trx("tutorial_enrollments").insert({
-      id: enrollmentId,
+      id,
       user_id,
       tutorial_id: tutorialId,
       status: "enrolled",
@@ -83,7 +100,7 @@ exports.enroll = catchAsync(async (req, res) => {
     throw err;
   }
 
-  sendSuccess(res, { id: enrollmentId }, "Enrolled successfully");
+  sendSuccess(res, { id }, "Enrolled successfully");
 });
 
 // Mark as completed
@@ -192,42 +209,6 @@ exports.getStatus = catchAsync(async (req, res) => {
     status: enrollment.status,
     progress,
   });
-});
-
-// Get enrollment status and progress for multiple tutorials
-exports.getStatusBatch = catchAsync(async (req, res) => {
-  const userId = requireUser(req);
-  const { tutorialIds } = req.body;
-
-  const ids = Array.isArray(tutorialIds) ? tutorialIds : [];
-  let enrollments = [];
-
-  if (ids.length) {
-    enrollments = await db("tutorial_enrollments")
-      .where({ user_id: userId })
-      .whereIn("tutorial_id", ids);
-  }
-
-  const map = {};
-  ids.forEach((id) => {
-    map[id] = { enrolled: false, status: null, progress: 0 };
-  });
-
-  enrollments.forEach((e) => {
-    const progress =
-      e.progress != null
-        ? Number(e.progress)
-        : e.status === "completed"
-        ? 100
-        : 0;
-    map[e.tutorial_id] = {
-      enrolled: true,
-      status: e.status,
-      progress,
-    };
-  });
-
-  sendSuccess(res, map);
 });
 
 // Update progress percentage for a tutorial

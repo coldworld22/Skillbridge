@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import DOMPurify from "isomorphic-dompurify";
 import api from "@/services/api/api";
 import useAuthStore from "@/store/auth/authStore";
 
@@ -21,7 +20,7 @@ export default function PopupAnnouncement() {
           ? "instructor"
           : "logged-in";
 
-        const { data } = await api.get("popup-announcements/active", {
+        const { data } = await api.get("/popup-announcements/active", {
           params: { audience, page: router.pathname },
         });
         const [ann] = data?.data || [];
@@ -32,9 +31,7 @@ export default function PopupAnnouncement() {
         }
         setPopup(ann);
       } catch (err) {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn("Failed to load popup", err);
-        }
+        console.error("Failed to load popup", err);
       }
     };
     fetchPopup();
@@ -62,9 +59,7 @@ export default function PopupAnnouncement() {
     <div className={`fixed z-50 ${positionClass} transform`}> 
       <div className={`p-4 rounded shadow ${themeClass}`}> 
         {popup.title && <h3 className="font-bold mb-2">{popup.title}</h3>}
-        <div
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(popup.message) }}
-        />
+        <div dangerouslySetInnerHTML={{ __html: popup.message }} />
       </div>
     </div>
   );

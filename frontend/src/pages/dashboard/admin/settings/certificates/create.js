@@ -3,12 +3,9 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { saveTemplate } from "@/services/admin/certificateTemplateService";
 import CertificateTemplateForm from "@/components/admin/certificates/CertificateTemplateForm";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function CreateCertificateTemplate() {
+export default function CreateCertificateTemplate() {
   const router = useRouter();
-
-  const today = new Date().toISOString().split("T")[0];
 
   const initialValues = {
     name: "",
@@ -19,15 +16,6 @@ function CreateCertificateTemplate() {
     show_qr: true,
     logo: null,
     background: null,
-    sample_data: {
-      id: "ABC123",
-      student_name: "Student Name",
-      course_name: "Course Title",
-      issue_date: today,
-      instructor: "Instructor Name",
-      platform_name: "Platform Name",
-      grade: "A+",
-    },
   };
 
   const handleSubmit = async (data) => {
@@ -56,5 +44,3 @@ function CreateCertificateTemplate() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(CreateCertificateTemplate);

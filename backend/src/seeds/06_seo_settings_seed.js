@@ -42,7 +42,7 @@ exports.seed = async function (knex) {
       { path: '/contact', include: true, priority: 0.6, freq: 'monthly' },
     ],
     robots:
-      `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${BASE_URL}/uploads/seo/sitemap.xml`,
+      `User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${BASE_URL}/sitemap.xml`,
     openGraph: {
       '/': {
         title: 'SkillBridge | Launch Your Tech Career',

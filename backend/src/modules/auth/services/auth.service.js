@@ -1,7 +1,5 @@
 const logger = require('../../../utils/logger.js');
-const redisClient = require("../../../utils/redisClient");
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const userModel = require("../../users/user.model");
@@ -20,170 +18,48 @@ const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
-const { addToken } = require("../../../services/tokenBlacklistService");
 const verificationService = require("../../verify/verify.service");
-const { resolvePrimaryRole } = require("../../../utils/role");
-const {
-  REFRESH_TOKEN_EXPIRES_IN,
-  REFRESH_TOKEN_MAX_AGE,
-} = require("../../../config/tokens");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
 // ─────────────────────────────────────────────────────────────
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "60m";
+const REFRESH_EXPIRES_IN = "30d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
+// Track failed logins per email with timestamps to aid cleanup
+const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
+const CLEANUP_INTERVAL = 60 * 1000; // Run cleanup every minute
 
-// OTP attempt tracking
-const OTP_ATTEMPT_PREFIX = "otpAttempt:";
-const OTP_MAX_ATTEMPTS = 5;
-const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+function recordFailedAttempt(email) {
+  const info =
+    failedLoginAttempts.get(email) || { timestamps: [], lockUntil: null };
+  info.timestamps.push(Date.now());
 
-// Bcrypt only hashes the first 72 bytes of input which can silently truncate
-// long refresh tokens. To avoid rejecting valid tokens we migrate to a SHA-256
-// based hash (stored as base64) while still accepting legacy bcrypt hashes
-// stored in the database. We also support the interim SHA-256 hex strings
-// produced during the initial rollout. Once those tokens expire naturally we
-// can remove the fallbacks.
-const BCRYPT_HASH_PREFIXES = ["$2a$", "$2b$", "$2y$"];
-
-const hashRefreshToken = (token) =>
-  crypto.createHash("sha256").update(token).digest();
-
-const encodeRefreshTokenHash = (buffer) => buffer.toString("base64");
-
-const decodeRefreshTokenHash = (storedHash) => {
-  if (!storedHash) return null;
-
-  // Preferred encoding going forward is base64 to guarantee shorter strings
-  try {
-    const base64Buffer = Buffer.from(storedHash, "base64");
-    if (base64Buffer.length === 32) {
-      return base64Buffer;
-    }
-  } catch (err) {
-    logger.debug("Failed to decode base64 refresh token hash", err);
+  if (info.timestamps.length >= MAX_ATTEMPTS) {
+    info.lockUntil = Date.now() + LOCK_TIME;
   }
 
-  // Legacy SHA-256 hashes stored as lowercase hex (introduced in previous fix)
-  try {
-    const hexBuffer = Buffer.from(storedHash, "hex");
-    if (hexBuffer.length === 32) {
-      return hexBuffer;
-    }
-  } catch (err) {
-    logger.debug("Failed to decode hex refresh token hash", err);
-  }
+  failedLoginAttempts.set(email, info);
+}
 
-  return null;
-};
-
-async function compareRefreshToken(token, storedHash) {
-  if (!storedHash) return false;
-
-  if (BCRYPT_HASH_PREFIXES.some((prefix) => storedHash.startsWith(prefix))) {
-    try {
-      return await bcrypt.compare(token, storedHash);
-    } catch (err) {
-      logger.warn("Failed to compare legacy bcrypt refresh token hash", err);
-      return false;
+/**
+ * Periodically purge expired lock entries to prevent memory leaks
+ */
+function cleanupFailedAttempts() {
+  const now = Date.now();
+  for (const [email, info] of failedLoginAttempts.entries()) {
+    if (info.lockUntil && info.lockUntil <= now) {
+      failedLoginAttempts.delete(email);
     }
   }
-
-  const tokenBuffer = hashRefreshToken(token);
-  const storedBuffer = decodeRefreshTokenHash(storedHash);
-
-  if (!storedBuffer || storedBuffer.length !== tokenBuffer.length) {
-    return false;
-  }
-
-  try {
-    return crypto.timingSafeEqual(tokenBuffer, storedBuffer);
-  } catch (err) {
-    logger.warn("Failed to compare refresh token hash", err);
-    return false;
-  }
 }
 
-async function getActivePasswordResetRequests(userId) {
-  return db("password_resets")
-    .where({ user_id: userId, used: false })
-    .andWhere("expires_at", ">", new Date())
-    .orderBy("created_at", "desc")
-    .select("*");
-}
-
-async function findMatchingResetRecord(records, code) {
-  for (const record of records) {
-    if (!record?.code_hash) continue;
-    const match = await bcrypt.compare(code, record.code_hash);
-    if (match) {
-      return record;
-    }
-  }
-  return null;
-}
-
-function getAttemptKey(email, ip) {
-  return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
-}
-
-function getOtpAttemptKey(userId) {
-  return `${OTP_ATTEMPT_PREFIX}${userId}`;
-}
-
-async function recordFailedAttempt(email, ip) {
-  if (!redisClient) return;
-  const key = getAttemptKey(email, ip);
-  let info = { count: 0, lockUntil: null };
-  try {
-    const data = await redisClient.get(key);
-    if (data) info = JSON.parse(data);
-    info.count += 1;
-    if (info.count >= MAX_ATTEMPTS) {
-      info.lockUntil = Date.now() + LOCK_TIME;
-    }
-    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
-  } catch (err) {
-    logger.error("Failed to record login attempt", err);
-  }
-}
-
-async function recordFailedOtpAttempt(userId) {
-  if (!redisClient) return;
-  const key = getOtpAttemptKey(userId);
-  let info = { count: 0, lockUntil: null };
-  try {
-    const data = await redisClient.get(key);
-    if (data) info = JSON.parse(data);
-    info.count += 1;
-    if (info.count >= OTP_MAX_ATTEMPTS) {
-      info.lockUntil = Date.now() + OTP_LOCK_TIME;
-    }
-    await redisClient.set(key, JSON.stringify(info), { PX: OTP_LOCK_TIME });
-  } catch (err) {
-    logger.error("Failed to record OTP attempt", err);
-  }
-}
-
-async function clearOtpAttempts(userId) {
-  if (!redisClient) return;
-  try {
-    await redisClient.del(getOtpAttemptKey(userId));
-  } catch (err) {
-    logger.error("Failed to clear OTP attempts", err);
-  }
-}
-
-async function cleanupFailedAttempts() {
-  // Redis key TTL handles cleanup automatically
-}
+setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
 
 /**
  * Register a new user
@@ -199,95 +75,70 @@ exports.registerUser = async (data) => {
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  const admins = await userModel.findAdmins();
-  let newUser;
-  try {
-    await db.transaction(async (trx) => {
-      [newUser] = await userModel.insertUser(
-        {
-          full_name: data.full_name,
-          email: data.email,
-          phone: data.phone,
-          password_hash: hashed,
-          role: data.role || "Student",
-          status: "pending",
-          is_email_verified: false,
-          is_phone_verified: false,
-          profile_complete: false,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-        trx,
-      );
+  const [newUser] = await userModel.insertUser({
+    full_name: data.full_name,
+    email: data.email,
+    phone: data.phone,
+    password_hash: hashed,
+    role: data.role || "Student",
+    status: "pending",
+    is_email_verified: false,
+    is_phone_verified: false,
+    profile_complete: false,
+    created_at: new Date(),
+    updated_at: new Date(),
+  });
 
-      const roleName = data.role || "Student";
-      const roleRow = await trx("roles").where({ name: roleName }).first();
-      if (roleRow) {
-        await trx("user_roles").insert({
-          user_id: newUser.id,
-          role_id: roleRow.id,
-        });
-      }
-
-      const welcomeMessage =
-        newUser.role && newUser.role.toLowerCase() === "instructor"
-          ? "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
-          : "Welcome to SkillBridge!";
-
-      await notificationService.createNotification(
-        {
-          user_id: newUser.id,
-          type: "welcome",
-          message: welcomeMessage,
-        },
-        trx,
-      );
-
-      const firstAdmin = admins[0];
-      if (firstAdmin) {
-        await messageService.createMessage(
-          {
-            sender_id: firstAdmin.id,
-            receiver_id: newUser.id,
-            message: welcomeMessage,
-          },
-          trx,
-        );
-      }
-
-      await Promise.all(
-        admins.map((admin) =>
-          notificationService.createNotification(
-            {
-              user_id: admin.id,
-              type: "new_user",
-              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-            },
-            trx,
-          ),
-        ),
-      );
-
-      await Promise.all(
-        admins.map((admin) =>
-          messageService.createMessage(
-            {
-              sender_id: newUser.id,
-              receiver_id: admin.id,
-              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-            },
-            trx,
-          ),
-        ),
-      );
-    });
-  } catch (err) {
-    logger.error("Failed to register user", err);
-    throw err;
+  const roleName = data.role || "Student";
+  const roleRow = await db("roles").where({ name: roleName }).first();
+  if (roleRow) {
+    await db("user_roles").insert({ user_id: newUser.id, role_id: roleRow.id });
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
   const permissions = await userModel.getUserPermissions(newUser.id);
+
+  const welcomeMessage =
+    newUser.role && newUser.role.toLowerCase() === "instructor"
+      ?
+        "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
+      : "Welcome to SkillBridge!";
+
+  await notificationService.createNotification({
+    user_id: newUser.id,
+    type: "welcome",
+    message: welcomeMessage,
+  });
+
+  const admins = await userModel.findAdmins();
+  const firstAdmin = admins[0];
+  if (firstAdmin) {
+    await messageService.createMessage({
+      sender_id: firstAdmin.id,
+      receiver_id: newUser.id,
+      message: welcomeMessage,
+    });
+  }
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_user",
+        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+
+      })
+    )
+  );
+  await Promise.all(
+    admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: newUser.id,
+        receiver_id: admin.id,
+        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+
+      })
+    )
+  );
 
   // Send emails
   try {
@@ -297,20 +148,12 @@ exports.registerUser = async (data) => {
         sendNewUserAdminEmail(admin.email, {
           full_name: newUser.full_name,
           email: newUser.email,
-        }),
-      ),
+        })
+      )
     );
   } catch (err) {
     logger.error("Error sending registration emails:", err.message);
   }
-
-  // Queue verification email OTP sending without delaying response
-  setImmediate(() => {
-    verificationService
-      .sendOtp(newUser.id, "email")
-      .catch((err) => logger.error("Error sending verification OTP:", err));
-  });
-
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };
 };
@@ -319,7 +162,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password, ip }) => {
+exports.loginUser = async ({ email, password }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -330,90 +173,51 @@ exports.loginUser = async ({ email, password, ip }) => {
     );
   }
 
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getAttemptKey(email, ip));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check login attempts", err);
-    }
-  }
+  // Clear out any expired lock entries before processing login
+  cleanupFailedAttempts();
+  const attempt = failedLoginAttempts.get(email);
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
   }
 
   const user = await userModel.findByEmail(email);
   if (!user) {
-    // Perform a dummy hash to mitigate timing attacks when the user is missing
-    await bcrypt.hash(password, SALT_ROUNDS);
-    recordFailedAttempt(email, ip);
+    recordFailedAttempt(email);
     throw new AppError("Invalid credentials", 401);
   }
 
-  const canLogin =
-    user.status === "active" ||
-    (user.status === "pending" && user.is_email_verified);
-
-  if (!canLogin) {
-    throw new AppError(
-      "Account pending activation. Please verify your email or contact support.",
-      403,
-    );
+  if (user.status !== "active") {
+    throw new AppError("Account is not active", 403);
   }
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) {
-    await recordFailedAttempt(email, ip);
+    recordFailedAttempt(email);
     throw new AppError("Invalid credentials", 401);
   }
 
-  if (redisClient) {
-    try {
-      await redisClient.del(getAttemptKey(email, ip));
-    } catch (err) {
-      logger.error("Failed to clear login attempts", err);
-    }
-  }
+  failedLoginAttempts.delete(email);
 
   // Mark user as online on successful login
-  try {
-    await userModel.updateUser(user.id, {
-      is_online: true,
-      updated_at: new Date(),
-    });
-  } catch (err) {
-    logger.error("Failed to update user online status", err);
-  }
+  await userModel.updateUser(user.id, {
+    is_online: true,
+    updated_at: new Date(),
+  });
   user.is_online = true;
 
   const roles = await userModel.getUserRoles(user.id);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const primaryRole = resolvePrimaryRole(tokenRoles, user.role);
-  const accessToken = generateAccessToken({
-    id: user.id,
-    role: primaryRole,
-    roles: tokenRoles,
-  });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles);
+  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
 
-  try {
-    await notificationService.createNotification({
-      user_id: user.id,
-      type: "login",
-      message: "You have logged in successfully",
-    });
-  } catch (err) {
-    logger.error("Failed to create login notification", err);
-  }
+  await notificationService.createNotification({
+    user_id: user.id,
+    type: "login",
+    message: "You have logged in successfully",
+  });
   const safeUser = sanitizeUserUtil(user);
-  const canonicalRole = roles[0] || user.role;
-  return {
-    accessToken,
-    refreshToken,
-    user: { ...safeUser, role: canonicalRole, roles, permissions },
-  };
+  return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
 };
 
 /**
@@ -433,20 +237,15 @@ function generateRefreshToken(payload, jti) {
     throw new AppError("REFRESH_TOKEN_SECRET not configured", 500);
   }
   return jwt.sign({ ...payload, jti }, REFRESH_TOKEN_SECRET, {
-    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+    expiresIn: REFRESH_EXPIRES_IN,
   });
 }
 
-async function issueRefreshToken(userId, roles = []) {
-  const roleArr = Array.isArray(roles) ? roles : [roles];
-  const primaryRole = resolvePrimaryRole(roleArr);
+async function issueRefreshToken(userId, role) {
   const jti = uuidv4();
-  const token = generateRefreshToken(
-    { id: userId, role: primaryRole, roles: roleArr },
-    jti
-  );
-  const tokenHash = encodeRefreshTokenHash(hashRefreshToken(token));
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
+  const token = generateRefreshToken({ id: userId, role }, jti);
+  const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await db("refresh_tokens").insert({
     id: jti,
     user_id: userId,
@@ -470,11 +269,9 @@ exports.verifyRefreshToken = async (token) => {
   if (!row || row.revoked_at || row.expires_at < new Date()) {
     throw new Error("Invalid refresh token");
   }
-  const match = await compareRefreshToken(token, row.token_hash);
+  const match = await bcrypt.compare(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
-  const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
-  const primaryRole = resolvePrimaryRole(roles, decoded.role);
-  return { ...decoded, roles, role: primaryRole };
+  return decoded;
 };
 
 exports.rotateRefreshToken = async (token) => {
@@ -482,7 +279,7 @@ exports.rotateRefreshToken = async (token) => {
   await db("refresh_tokens")
     .where({ id: decoded.jti })
     .update({ revoked_at: new Date() });
-  const refreshToken = await issueRefreshToken(decoded.id, decoded.roles);
+  const refreshToken = await issueRefreshToken(decoded.id, decoded.role);
   return { decoded, refreshToken };
 };
 
@@ -552,72 +349,39 @@ exports.verifyOtp = async ({ email, code }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(user.id));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
+  const record = await db("password_resets")
+    .where({ user_id: user.id, used: false })
+    .andWhere("expires_at", ">", new Date())
+    .orderBy("created_at", "desc")
+    .first();
 
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError(
-      "Too many failed OTP attempts. Try again later.",
-      429
-    );
-  }
+  if (!record) throw new AppError("Invalid or expired OTP", 400);
 
-  const activeResets = await getActivePasswordResetRequests(user.id);
-  if (!activeResets.length) {
-    await recordFailedOtpAttempt(user.id);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
+  const match = await bcrypt.compare(code, record.code_hash);
+  if (!match) throw new AppError("Invalid or expired OTP", 400);
 
-  const matchingRecord = await findMatchingResetRecord(activeResets, code);
-  if (!matchingRecord) {
-    await recordFailedOtpAttempt(user.id);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
-
-  await clearOtpAttempts(user.id);
   return true;
 };
 
 /**
  * Reset a user's password using a valid OTP code.
- * @param {{email:string, code:string, new_password:string, accessToken?:string}} data
+ * @param {{email:string, code:string, new_password:string}} data
  * @returns {Promise<void>}
  */
-exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
+exports.resetPassword = async ({ email, code, new_password }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(user.id));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
-  }
+  const resetRecord = await db("password_resets")
+    .where({ user_id: user.id, used: false })
+    .andWhere("expires_at", ">", new Date())
+    .orderBy("created_at", "desc")
+    .first();
 
-  const activeResets = await getActivePasswordResetRequests(user.id);
-  if (!activeResets.length) {
-    await recordFailedOtpAttempt(user.id);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
+  if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
 
-  const matchingRecord = await findMatchingResetRecord(activeResets, code);
-  if (!matchingRecord) {
-    await recordFailedOtpAttempt(user.id);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
+  const match = await bcrypt.compare(code, resetRecord.code_hash);
+  if (!match) throw new AppError("Invalid or expired OTP", 400);
 
   const samePassword = await bcrypt.compare(new_password, user.password_hash);
   if (samePassword) {
@@ -627,53 +391,16 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const hashed = await bcrypt.hash(new_password, SALT_ROUNDS);
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
-  await db("password_resets").where({ id: matchingRecord.id }).update({ used: true });
+  await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
 
-  // Revoke all refresh tokens for this user
-  await db("refresh_tokens").where({ user_id: user.id }).del();
+  await sendPasswordChangeEmail(user.email);
 
-  // Optionally blacklist the provided access token
-  if (accessToken) {
-    try {
-      await addToken(accessToken);
-    } catch (err) {
-      logger.error("Failed to blacklist access token", err);
-    }
-  }
-
-  const warnings = [];
-
-  try {
-    await sendPasswordChangeEmail(user.email);
-  } catch (err) {
-    logger.error("Failed to send password change email", err);
-    warnings.push({
-      type: "email",
-      message:
-        "Password reset succeeded, but the confirmation email could not be sent.",
-    });
-  }
-
-  try {
-    await notificationService.createNotification({
-      user_id: user.id,
-      type: "security",
-      message: "Your password was changed successfully",
-    });
-  } catch (err) {
-    logger.error("Failed to create password change notification", err);
-    warnings.push({
-      type: "notification",
-      message:
-        "Password reset succeeded, but the security notification could not be recorded.",
-    });
-  }
-
-  await clearOtpAttempts(user.id);
-  return {
-    user: sanitizeUserUtil(user),
-    warnings,
-  };
+  await notificationService.createNotification({
+    user_id: user.id,
+    type: "security",
+    message: "Your password was changed successfully",
+  });
+  return sanitizeUserUtil(user);
 };
 
 /**
@@ -693,24 +420,4 @@ exports.sendVerificationOtp = async ({ user_id, type }) => {
  */
 exports.confirmVerificationOtp = async ({ user_id, type, code }) => {
   await verificationService.verifyOtp(user_id, type, code);
-
-  // After verification, check if both email and phone are verified
-  // and activate the user if not already active.
-  const user = await userModel.findById(user_id);
-  if (!user) {
-    return;
-  }
-
-  if (type === "email" && user.status !== "active") {
-    await userModel.updateUser(user_id, { status: "active" });
-    return;
-  }
-
-  if (
-    user.is_email_verified &&
-    user.is_phone_verified &&
-    user.status !== "active"
-  ) {
-    await userModel.updateUser(user_id, { status: "active" });
-  }
 };

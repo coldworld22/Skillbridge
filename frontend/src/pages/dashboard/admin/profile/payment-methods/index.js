@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import PaymentMethodList from '@/components/payments/PaymentMethodList';
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function SavedPaymentMethodsPage() {
+export default function SavedPaymentMethodsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -17,5 +16,3 @@ function SavedPaymentMethodsPage() {
     </div>
   );
 }
-
-export default withAdminGuard(SavedPaymentMethodsPage);

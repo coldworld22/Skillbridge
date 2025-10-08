@@ -1,12 +1,10 @@
 // pages/dashboard/instructor/assignments/[classId]/create.js
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchInstructorClasses, createClassAssignment } from '@/services/instructor/classService';
-import { prepareAssignmentPayload } from '@/utils/assignments/payload';
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -28,22 +26,20 @@ export default function CreateAssignmentPage() {
   const [previewMode, setPreviewMode] = useState(false);
 
   const [classes, setClasses] = useState([]);
-  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     setMounted(true);
     if (routerClassId) setClassId(routerClassId);
     const load = async () => {
       try {
-        if (!user?.id) return;
-        const data = await fetchInstructorClasses(user.id);
+        const data = await fetchInstructorClasses();
         setClasses(data || []);
       } catch (err) {
         console.error('Failed to load classes', err);
       }
     };
     load();
-  }, [routerClassId, user?.id]);
+  }, [routerClassId]);
 
   const handleAddQuestion = () => {
     setQuestions(prev => [...prev, { id: uuidv4(), question: '', options: ['', '', '', ''], correct: 0, points: 1 }]);
@@ -63,19 +59,12 @@ export default function CreateAssignmentPage() {
       return;
     }
 
-    const { payload } = prepareAssignmentPayload({
+    const payload = {
       title,
       description,
-      dueDate,
-      timeToFinish,
-      type,
-      questions,
-      language,
-      starterCode,
-      allowLate,
-      gradingRubric,
-      resourceFile,
-    });
+      due_date: dueDate,
+      time_to_finish: timeToFinish || null,
+    };
 
     try {
       await createClassAssignment(classId, payload);
@@ -200,22 +189,15 @@ export default function CreateAssignmentPage() {
             </div>
           )}
 
-          {type === 'file' && (
-            <div className="space-y-4">
-              <input
-                type="file"
-                onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
-                className="w-full p-3 bg-gray-100 rounded-md"
-              />
-            </div>
+          {/* File Upload or Text Answer */}
+          {type === 'text' && (
+            <textarea
+              placeholder="Grading Rubric (optional)"
+              value={gradingRubric}
+              onChange={(e) => setGradingRubric(e.target.value)}
+              className="w-full p-3 h-24 bg-gray-100 rounded-md"
+            />
           )}
-
-          <textarea
-            placeholder="Grading Rubric (optional)"
-            value={gradingRubric}
-            onChange={(e) => setGradingRubric(e.target.value)}
-            className="w-full p-3 h-24 bg-gray-100 rounded-md"
-          />
 
           {/* Late Submission Option */}
           <div className="flex items-center gap-2">

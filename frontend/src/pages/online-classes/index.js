@@ -8,16 +8,15 @@ import ClassesGrid from '@/components/online-classes/ClassesGrid';
 import LoadMoreButton from '@/components/online-classes/LoadMoreButton';
 import { fetchPublishedClasses } from '@/services/classService';
 import { fetchAds as fetchAdBanners } from '@/services/adsService';
-import { toast } from 'react-toastify';
 
 export default function OnlineClassesPage({ initialClasses = [] }) {
   const [allClasses, setAllClasses] = useState(initialClasses);
   const [visibleCount, setVisibleCount] = useState(6);
   const [loading, setLoading] = useState(initialClasses.length === 0);
   const [error, setError] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
   const [ads, setAds] = useState([]);
-  const [adsError, setAdsError] = useState(false);
 
   useEffect(() => {
     if (initialClasses.length > 0) {
@@ -44,11 +43,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   }, [initialClasses]);
 
   useEffect(() => {
-    fetchAdBanners({ limit: 10 })
-      .then((res) => setAds(res.data))
-      .catch((err) => {
-        console.error('Failed to load ads', err);
-      });
+    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -58,22 +53,21 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const applyFilters = (cls) => {
     if (filters.search) {
       const term = filters.search.toLowerCase();
-      const title = (cls?.title || '').toLowerCase();
-      const instructor = (cls?.instructor || '').toLowerCase();
-      if (!title.includes(term) && !instructor.includes(term)) return false;
+      if (
+        !cls.title.toLowerCase().includes(term) &&
+        !cls.instructor.toLowerCase().includes(term)
+      )
+        return false;
     }
-    if (filters.category && cls?.category !== filters.category) return false;
-    if (filters.date) {
-      const d = cls?.start_date
-        ? new Date(cls.start_date).toISOString().slice(0, 10)
-        : '';
+    if (filters.category && cls.category !== filters.category) return false;
+    if (filters.date && cls.start_date) {
+      const d = new Date(cls.start_date).toISOString().slice(0, 10);
       if (d !== filters.date) return false;
     }
     if (filters.priceRange) {
-      const price = cls?.price ?? 0;
-      if (filters.priceRange === 'free' && price !== 0) return false;
-      if (filters.priceRange === 'under50' && price >= 50) return false;
-      if (filters.priceRange === 'over50' && price < 50) return false;
+      if (filters.priceRange === 'free' && cls.price !== 0) return false;
+      if (filters.priceRange === 'under50' && cls.price >= 50) return false;
+      if (filters.priceRange === 'over50' && cls.price < 50) return false;
     }
     return true;
   };
@@ -84,8 +78,11 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const hasMore = visibleCount < filtered.length;
 
   const handleLoadMore = () => {
-    // No additional data is fetched; simply reveal more preloaded classes.
-    setVisibleCount((prev) => prev + 3);
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + 3);
+      setLoadingMore(false);
+    }, 300);
   };
 
   return (
@@ -94,29 +91,19 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
 
       <main className="container mx-auto px-6 py-12 mt-16 max-w-7xl">
         <OnlineClassesHero />
-        {adsError ? (
-          <div className="my-6">
-            <img
-              src="https://via.placeholder.com/728x90?text=Advertisement"
-              alt="Ad placeholder"
-              className="w-full h-48 object-cover rounded"
-            />
+        {ads.map((ad) => (
+          <div key={ad.id} className="my-6">
+            <a href={ad.link} target="_blank" rel="noopener noreferrer">
+              {ad.image && (
+                <img
+                  src={ad.image}
+                  alt={ad.title}
+                  className="w-full h-48 object-cover rounded"
+                />
+              )}
+            </a>
           </div>
-        ) : (
-          ads.map((ad) => (
-            <div key={ad.id} className="my-6">
-              <a href={ad.link} target="_blank" rel="noopener noreferrer">
-                {ad.image && (
-                  <img
-                    src={ad.image}
-                    alt={ad.title}
-                    className="w-full h-48 object-cover rounded"
-                  />
-                )}
-              </a>
-            </div>
-          ))
-        )}
+        ))}
 
         <section className="mt-10 space-y-10">
           <ClassFilters filters={filters} onChange={setFilters} />
@@ -129,7 +116,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
               <ClassesGrid classes={visibleClasses} />
               <LoadMoreButton
                 onClick={handleLoadMore}
-                isLoading={false}
+                isLoading={loadingMore}
                 hasMore={hasMore}
               />
             </>

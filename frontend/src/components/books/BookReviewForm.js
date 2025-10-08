@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createReview } from "@/services/bookReviewService";
 import useAuthStore from "@/store/auth/authStore";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 
 export default function BookReviewForm({ bookId, onSubmitted }) {

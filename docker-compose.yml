@@ -2,10 +2,7 @@ version: "3.8"
 
 services:
   db:
-    build:
-      context: ./database
-      dockerfile: Dockerfile
-    image: skillbridge/postgres:14
+    image: postgres:14
     restart: always
     env_file:
       - ./.env
@@ -19,11 +16,16 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -53,44 +55,33 @@ services:
       - app-network
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    build: ./backend
     restart: always
     env_file:
       - ./.env
+      - ./backend/.env.production
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "5002:5002"
     environment:
-      BACKEND_PORT: ${BACKEND_PORT}
-      DATABASE_URL: ${DATABASE_URL:-}
-      JWT_SECRET: ${JWT_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      SESSION_SECRET: ${SESSION_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL}
-      MAX_BLOG_IMAGE_BYTES: ${MAX_BLOG_IMAGE_BYTES}
-      NODE_ENV: ${NODE_ENV}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      POSTGRES_HOST: ${POSTGRES_HOST:-db}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
-      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - REDIS_URL=${REDIS_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
+      - NODE_ENV=${NODE_ENV}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     healthcheck:
-      test:
-        - CMD-SHELL
-        - >-
-          curl --noproxy localhost,127.0.0.1 --fail --silent --show-error
-          --connect-timeout 5 --max-time 10
-          http://127.0.0.1:${BACKEND_PORT}/api/health
-      interval: 60s
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5002/api/health"]
+      interval: 30s
       timeout: 30s
-      retries: 5
-      start_period: 5m
+      retries: 3
+      start_period: 30s
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - db
+      - redis
     volumes:
       - ./backend/uploads:/app/uploads
     networks:
@@ -98,34 +89,17 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_API_BASE_URL: ${DOCKER_NEXT_PUBLIC_API_BASE_URL:-/api}
-        NEXT_PUBLIC_PGADMIN_URL: ${NEXT_PUBLIC_PGADMIN_URL:-http://pgadmin:80}
-        APP_DOMAIN: ${APP_DOMAIN:-eduskillbridge.net}
-        INTERNAL_API_BASE_URL: ${DOCKER_INTERNAL_API_BASE_URL:-http://backend:5002/api}
-        STRICT_PUBLIC_API: ${DOCKER_STRICT_PUBLIC_API:-false}
+      context: ./frontend
     ports:
       - "3000:3000"
     env_file:
-      - ./.env
-      - ./frontend/.env.production.expanded
-    environment:
-      PORT: 3000
-      HOST: 0.0.0.0
-      NODE_ENV: production
-      NO_PROXY: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
-      no_proxy: localhost,127.0.0.1,backend,frontend,db,redis,pgadmin,nginx
+      - ./frontend/.env.production
     healthcheck:
-      test:
-        - CMD
-        - node
-        - /app/scripts/healthcheck.js
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 30s
       retries: 3
-      start_period: 45s
+      start_period: 30s
     depends_on:
       backend:
         condition: service_healthy
@@ -137,34 +111,24 @@ services:
     restart: always
     env_file:
       - ./.env
-    environment:
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/snippets/common_locations.inc:/etc/nginx/snippets/common_locations.inc:ro
-      - ./nginx/snippets/cors.inc:/etc/nginx/snippets/cors.inc:ro
-      - ./nginx/snippets/cors_allowed_origin.inc:/etc/nginx/snippets/cors_allowed_origin.inc:ro
       - ./nginx/conf.d/ssl.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
+      - backend
+      - frontend
     networks:
       - app-network
 
 volumes:
   postgres_data:
-    driver: local
   pgadmin_data:
-    driver: local
   redis_data:
-    driver: local
 
 networks:
   app-network:

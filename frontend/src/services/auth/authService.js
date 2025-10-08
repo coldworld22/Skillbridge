@@ -1,9 +1,6 @@
 // 📁 src/services/auth/authService.js
 import api from "@/services/api/api";
 import logger from "@/utils/logger";
-import { ensureCsrfToken, clearCachedCsrfToken } from "@/services/api/csrf";
-import { getCookie } from "@/utils/cookies";
-import { normalizeError } from "@/utils/error";
 
 /**
  * 🔐 Log in a user and retrieve access token and user info.
@@ -14,32 +11,20 @@ import { normalizeError } from "@/utils/error";
  * @param {string} credentials.password
  * @returns {Promise<{ message: string, user: object }>}
  */
-export const loginUser = async ({
-  email,
-  password,
-  recaptchaToken,
-  recaptchaBypass,
-}) => {
+export const loginUser = async ({ email, password, recaptchaToken }) => {
   try {
     logger.log(
       "🔐 loginUser requesting",
       `${api.defaults.baseURL}/auth/login`
     );
-    const res = await api.post("auth/login", {
-      email,
-      password,
-      recaptchaToken,
-      recaptchaBypass,
-    });
-    // Ensure the CSRF cookie from the backend is present for subsequent requests
-    await ensureCsrfToken();
+    const res = await api.post("/auth/login", { email, password, recaptchaToken });
     return res.data;
   } catch (err) {
     logger.error("❌ loginUser error", {
       message: err?.message,
       status: err?.response?.status,
     });
-    throw normalizeError(err);
+    throw err;
   }
 };
 
@@ -50,12 +35,8 @@ export const loginUser = async ({
  * @returns {Promise<{ message: string, user: object }>}
  */
 export const registerUser = async (payload) => {
-  try {
-    const res = await api.post("auth/register", payload);
-    return res.data;
-  } catch (err) {
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/register", payload);
+  return res.data;
 };
 
 /**
@@ -65,12 +46,8 @@ export const registerUser = async (payload) => {
  * @returns {Promise<{ message: string }>}
  */
 export const requestPasswordReset = async ({ email, via = "email" }) => {
-  try {
-    const res = await api.post("auth/forgot-password", { email, via });
-    return res.data;
-  } catch (err) {
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/forgot-password", { email, via });
+  return res.data;
 };
 
 /**
@@ -82,12 +59,8 @@ export const requestPasswordReset = async ({ email, via = "email" }) => {
  * @returns {Promise<{ valid: boolean }>}
  */
 export const verifyOtpCode = async ({ email, code }) => {
-  try {
-    const res = await api.post("auth/verify-otp", { email, code });
-    return res.data;
-  } catch (err) {
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/verify-otp", { email, code });
+  return res.data;
 };
 
 /**
@@ -100,16 +73,12 @@ export const verifyOtpCode = async ({ email, code }) => {
  * @returns {Promise<{ message: string }>}
  */
 export const resetPassword = async ({ email, code, new_password }) => {
-  try {
-    const res = await api.post("auth/reset-password", {
-      email,
-      code,
-      new_password,
-    });
-    return res.data;
-  } catch (err) {
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/reset-password", {
+    email,
+    code,
+    new_password,
+  });
+  return res.data;
 };
 
 /**
@@ -119,21 +88,8 @@ export const resetPassword = async ({ email, code, new_password }) => {
  * @returns {Promise<{ accessToken: string }>}
  */
 export const refreshAccessToken = async () => {
-  try {
-    await ensureCsrfToken({ forceRefresh: true });
-    const csrfToken = getCookie("csrfToken");
-    const res = await api.post(
-      "auth/refresh",
-      null,
-      {
-        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-      }
-    );
-    return res.data;
-  } catch (err) {
-    clearCachedCsrfToken();
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/refresh");
+  return res.data;
 };
 
 /**
@@ -142,10 +98,6 @@ export const refreshAccessToken = async () => {
  * @returns {Promise<{ message: string }>}
  */
 export const logoutUser = async () => {
-  try {
-    const res = await api.post("auth/logout");
-    return res.data;
-  } catch (err) {
-    throw normalizeError(err);
-  }
+  const res = await api.post("/auth/logout");
+  return res.data;
 };

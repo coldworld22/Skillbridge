@@ -3,7 +3,6 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const os = require("os");
 
 /**
  * @desc Middleware for handling admin file uploads
@@ -15,39 +14,15 @@ const os = require("os");
  * @access Admin
  */
 
-const resolveDir = () =>
-  path.resolve(
-    process.env.ADMIN_UPLOAD_DIR ||
-      path.join(__dirname, "../../../../uploads/admin")
-  );
+const baseUploadDir = path.join(__dirname, "../../../../uploads/admin");
+const avatarDir = path.join(__dirname, "../../../../uploads/admin/avatars");
 
-const ensureWritable = (dir) => {
-  fs.mkdirSync(dir, { recursive: true });
-  fs.accessSync(dir, fs.constants.W_OK);
-};
-
-let baseUploadDir = resolveDir();
-try {
-  ensureWritable(baseUploadDir);
-} catch (err) {
-  const fallback = path.join(os.tmpdir(), "admin_uploads");
-  try {
-    ensureWritable(fallback);
-    baseUploadDir = fallback;
-  } catch (fallbackErr) {
-    throw new Error(
-      `Failed to initialize admin upload directories at ${baseUploadDir}: ${err.message}`
-    );
-  }
-}
-
-const avatarDir = path.join(baseUploadDir, "avatars");
 const identityDir = path.join(baseUploadDir, "identity");
-[
-  avatarDir,
-  identityDir,
-].forEach((dir) => {
-  ensureWritable(dir);
+
+
+// Ensure folders exist
+[avatarDir, identityDir].forEach((dir) => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 // Storage engine

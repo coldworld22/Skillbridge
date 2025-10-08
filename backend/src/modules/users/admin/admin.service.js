@@ -1,7 +1,6 @@
 // 📁 src/modules/users/admin/admin.service.js
 
 const db = require("../../../config/database");
-const logger = require("../../../utils/logger.js");
 
 /**
  * Fetch admin profile data by user_id
@@ -12,42 +11,28 @@ exports.getAdminProfile = (userId) => {
 };
 
 /**
- * Helper to create or update an admin profile
- * @param {object} dbConn - Knex instance
- * @param {string} userId
- * @param {object} profileData
- */
-exports.upsertAdminProfile = async (dbConn, userId, profileData) => {
-  try {
-    const existing = await dbConn("admin_profiles").where({ user_id: userId }).first();
-
-    const data = {
-      ...profileData,
-      updated_at: new Date(),
-    };
-
-    if (existing) {
-      await dbConn("admin_profiles").where({ user_id: userId }).update(data);
-    } else {
-      await dbConn("admin_profiles").insert({
-        user_id: userId,
-        ...data,
-        created_at: new Date(),
-      });
-    }
-  } catch (error) {
-    logger.error("Failed to upsert admin profile", error.message);
-    throw error;
-  }
-};
-
-/**
- * Create or update admin profile details using default db connection
+ * Create or update admin profile details
  * @param {string} userId
  * @param {object} data - { gender, date_of_birth, avatar_url, identity_doc_url, etc. }
  */
-exports.updateAdminProfile = (userId, data) =>
-  exports.upsertAdminProfile(db, userId, data);
+exports.updateAdminProfile = async (userId, data) => {
+  const exists = await db("admin_profiles").where({ user_id: userId }).first();
+
+  const profileData = {
+    ...data,
+    updated_at: new Date(),
+  };
+
+  if (exists) {
+    await db("admin_profiles").where({ user_id: userId }).update(profileData);
+  } else {
+    await db("admin_profiles").insert({
+      user_id: userId,
+      ...profileData,
+      created_at: new Date(),
+    });
+  }
+};
 
 // ---------------------------------------------------------------------------
 // 📊 Dashboard statistics for the main admin dashboard

@@ -3,12 +3,11 @@
 // This file sets up an Axios interceptor to handle token-based authentication
 // 📁 src/services/api/tokenInterceptor.js
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import axios from "axios";
 import api from "./api";
 import { toast } from "react-toastify";
 import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
-import { ensureCsrfToken, clearCachedCsrfToken } from "@/services/api/csrf";
+import { getCookie } from "@/utils/cookies";
 import logger from "@/utils/logger";
 
 let isRefreshing = false;
@@ -28,9 +27,7 @@ const processQueue = (error, token = null) => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 api.interceptors.request.use(
-  async (config) => {
-    config.headers = config.headers ?? {};
-
+  (config) => {
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -38,15 +35,9 @@ api.interceptors.request.use(
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
-      try {
-        const csrfToken = await ensureCsrfToken();
-        if (csrfToken) {
-          config.headers["x-csrf-token"] = csrfToken;
-        }
-      } catch (error) {
-        logger.warn(
-          `Failed to refresh CSRF token before ${method?.toUpperCase()} ${config?.url}: ${error?.message || error}`
-        );
+      const csrfToken = getCookie("csrfToken");
+      if (csrfToken) {
+        config.headers["x-csrf-token"] = csrfToken;
       }
     }
 
@@ -65,33 +56,12 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
 
-    const isCanceledRequest =
-      error?.code === "ERR_CANCELED" ||
-      error?.name === "CanceledError" ||
-      error?.message?.toLowerCase() === "canceled";
-
-    if (isCanceledRequest) {
-      return Promise.reject(error);
-    }
-
-    if (
-      axios.isCancel?.(error) ||
-      error?.code === "ERR_CANCELED" ||
-      error?.name === "CanceledError"
-    ) {
-      return Promise.reject(error);
-    }
-
     if (
       (error.code === "ERR_NETWORK" || !error.response) &&
       Date.now() - lastNetworkToast > 5000
     ) {
-      const failedUrl = error.config?.url;
-      const errMsg = error.message;
-      const logMessage = `Network error on ${failedUrl || "unknown endpoint"}: ${errMsg}`;
-      logger.error(logMessage);
       toast.error(
-        `${logMessage}. Check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.`
+        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings."
       );
       lastNetworkToast = Date.now();
     }
@@ -104,14 +74,16 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       logger.warn("\u26A0\uFE0F Received 401 for", originalRequest?.url);
+      const refreshCookie = getCookie("refreshToken");
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
 
-      if (!hasAuthState) {
-        logger.warn("\u26A0\uFE0F No auth state; treating as guest request");
-        if (authStore.accessToken || authStore.user) {
-          authStore.setToken?.(null);
-          authStore.setUser?.(null);
+      if (!refreshCookie && !hasAuthState) {
+        logger.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
+        authStore.logout(true);
+        if (typeof window !== "undefined") {
+          Router.push("/auth/login");
         }
+        toast.error("Session expired. Please log in again.");
         return Promise.reject(error);
       }
 
@@ -127,69 +99,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const performRefreshRequest = async (forceCsrfRefresh = false) => {
-        let csrfToken;
-        try {
-          csrfToken = await ensureCsrfToken(
-            forceCsrfRefresh ? { forceRefresh: true } : undefined
-          );
-        } catch (csrfError) {
-          logger.warn(
-            `Failed to ensure CSRF token before refresh: ${csrfError?.message || csrfError}`
-          );
-        }
-
-        return api.post(
-          "auth/refresh",
-          null,
-          {
-            withCredentials: true,
-            headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-          }
-        );
-      };
-
-      const handleRefreshSuccess = async (data) => {
+      try {
+        logger.log("\uD83D\uDD04 Attempting token refresh...");
+        const { data } = await api.post("/auth/refresh", null, {
+          withCredentials: true,
+        });
         logger.log("\u2705 Token refresh successful");
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
-      };
-
-      const handleRefreshFailure = async (failureError) => {
-        logger.error("\u274C Refresh token request failed:", failureError);
-        processQueue(failureError, null);
+      } catch (refreshErr) {
+        logger.error("\u274C Refresh token request failed:", refreshErr);
+        processQueue(refreshErr, null);
         authStore.logout(true);
         toast.info("You have been logged out.");
         toast.error("Session expired. Please log in again.");
         if (typeof window !== "undefined") {
           Router.push("/auth/login");
         }
-        return Promise.reject(failureError);
-      };
-
-      try {
-        logger.log("\uD83D\uDD04 Attempting token refresh...");
-        const { data } = await performRefreshRequest();
-        return handleRefreshSuccess(data);
-      } catch (refreshErr) {
-        const refreshStatus = refreshErr?.response?.status;
-        if (refreshStatus === 401 || refreshStatus === 403) {
-          logger.warn(
-            `\u26A0\uFE0F Refresh token request returned ${refreshStatus}. Forcing CSRF refresh and retrying once.`
-          );
-          try {
-            clearCachedCsrfToken();
-            const { data } = await performRefreshRequest(true);
-            return handleRefreshSuccess(data);
-          } catch (retryError) {
-            return handleRefreshFailure(retryError);
-          }
-        }
-
-        return handleRefreshFailure(refreshErr);
+        return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
       }

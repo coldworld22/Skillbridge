@@ -1,8 +1,8 @@
+const path = require("path");
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./invoices.service");
-const { resolveInvoicePdfPath } = require("./helpers/invoicePath");
 
 exports.getInvoices = catchAsync(async (_req, res) => {
   const data = await service.getInvoices();
@@ -46,6 +46,10 @@ exports.downloadInvoice = catchAsync(async (req, res) => {
   ) {
     throw new AppError("Forbidden", 403);
   }
-  const filePath = resolveInvoicePdfPath(invoice);
+  const filePath = path.join(
+    __dirname,
+    "../../../",
+    invoice.pdf_url.replace(/^\//, "")
+  );
   res.download(filePath);
 });

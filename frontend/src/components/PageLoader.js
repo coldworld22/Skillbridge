@@ -3,37 +3,18 @@ import Router from "next/router";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import useAppConfigStore from "@/store/appConfigStore";
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 
 // Configure NProgress to remove the spinner icon
 NProgress.configure({ showSpinner: false });
 
 const PageLoader = () => {
   const [visible, setVisible] = useState(true);
-  const [hydrated, setHydrated] = useState(() =>
-    useAppConfigStore.persist?.hasHydrated?.() ?? false
-  );
-  const settings = useAppConfigStore((s) => (hydrated ? s.settings : {}));
+  const settings = useAppConfigStore((s) => s.settings);
   const loaded = useAppConfigStore((s) => s.loaded);
-  const logoSrc =
-    hydrated && (settings.logoUrl || settings.logo_url)
-      ? buildUrl(settings.logoUrl || settings.logo_url)
-      : null;
-
-  useEffect(() => {
-    if (hydrated) {
-      return;
-    }
-
-    const onFinishHydration = () => setHydrated(true);
-    const unsub = useAppConfigStore.persist?.onFinishHydration?.(onFinishHydration);
-
-    if (useAppConfigStore.persist?.hasHydrated?.()) {
-      setHydrated(true);
-    }
-
-    return () => unsub?.();
-  }, [hydrated]);
+  const logoSrc = settings.logoUrl || settings.logo_url
+    ? `${API_BASE_URL}${settings.logoUrl || settings.logo_url}`
+    : null;
 
   useEffect(() => {
     const handleStart = () => NProgress.start();
@@ -65,7 +46,7 @@ const PageLoader = () => {
     >
       <div className="relative flex items-center justify-center">
         <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-        {hydrated && logoSrc && (
+        {logoSrc && (
           <img
             src={logoSrc}
             alt="Logo"

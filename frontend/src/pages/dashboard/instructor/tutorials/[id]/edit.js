@@ -18,24 +18,13 @@ import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import {
-  createTutorialDraft,
-  loadDraft,
-  saveDraft,
-  loadCategories,
-  buildTutorialFormData,
-} from "@/utils/tutorialDraft";
-
-/** @typedef {import('@/utils/tutorialDraft').TutorialDraft} TutorialDraft */
 
 export default function EditTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [step, setStep] = useState(1);
-  const [tutorialData, setTutorialData] = useState(
-    /** @type {TutorialDraft | null} */ (null)
-  );
+  const [tutorialData, setTutorialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -46,16 +35,27 @@ export default function EditTutorialPage() {
 
   useEffect(() => {
     if (!id) return;
-    const draft = loadDraft(`editTutorialDraft-${id}`);
+    const draft = localStorage.getItem(`editTutorialDraft-${id}`);
     if (draft) {
-      setTutorialData(draft);
-      loadCategories(fetchAllCategories)
-        .then((cats) => setCategories(cats?.data || cats || []))
-        .catch((err) => {
+      const parsed = JSON.parse(draft);
+      setTutorialData({
+        ...parsed,
+        language: parsed.language || "",
+        lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+      });
+
+      const loadCats = async () => {
+        try {
+          const cats = await fetchAllCategories();
+          setCategories(cats?.data || cats || []);
+        } catch (err) {
           console.error(err);
           setError(t("tutorials:detail.load_error"));
-        })
-        .finally(() => setLoading(false));
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadCats();
       return;
     }
 
@@ -63,19 +63,19 @@ export default function EditTutorialPage() {
       try {
         const [tutorial, cats] = await Promise.all([
           fetchInstructorTutorialById(id),
-          loadCategories(fetchAllCategories),
+          fetchAllCategories(),
         ]);
         const formatted = tutorial?.data || tutorial || null;
         if (formatted) {
-          const normalized = createTutorialDraft({
+          setTutorialData({
             ...formatted,
-            chapters: formatted.chapters,
+            language: formatted.language || "",
+            lessonCount: formatted.chapters?.length || 1,
           });
-          setTutorialData(normalized);
         } else {
           setTutorialData(null);
         }
-        setCategories(cats);
+        setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
         setError(t("tutorials:detail.load_error"));
@@ -88,7 +88,7 @@ export default function EditTutorialPage() {
 
   useEffect(() => {
     if (tutorialData && id) {
-      saveDraft(`editTutorialDraft-${id}`, tutorialData);
+      localStorage.setItem(`editTutorialDraft-${id}`, JSON.stringify(tutorialData));
     }
   }, [tutorialData, id]);
 
@@ -132,7 +132,34 @@ export default function EditTutorialPage() {
             onBack={onBack}
             actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
-              const formData = buildTutorialFormData(tutorialData);
+              const formData = new FormData();
+              formData.append("title", tutorialData.title);
+              formData.append("description", tutorialData.shortDescription);
+              formData.append("category_id", tutorialData.category);
+              formData.append("level", tutorialData.level);
+              formData.append("language", tutorialData.language);
+              formData.append("is_paid", (!tutorialData.isFree).toString());
+              if (!tutorialData.isFree) {
+                formData.append("price", tutorialData.price);
+              }
+              formData.append(
+                "tags",
+                JSON.stringify(tutorialData.tags || [])
+              );
+              const chapters = (tutorialData.chapters || []).map((ch, idx) => ({
+                title: ch.title,
+                duration: ch.duration,
+                video_url: ch.videoUrl,
+                order: idx + 1,
+                is_preview: ch.preview,
+              }));
+              formData.append("chapters", JSON.stringify(chapters));
+              if (tutorialData.thumbnail instanceof File) {
+                formData.append("thumbnail", tutorialData.thumbnail);
+              }
+              if (tutorialData.preview instanceof File) {
+                formData.append("preview", tutorialData.preview);
+              }
 
               try {
                 await updateTutorial(id, formData);

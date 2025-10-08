@@ -19,29 +19,3 @@ export function formatDateTime(value) {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : format(d, 'yyyy-MM-dd HH:mm');
 }
-
-export function formatDateWithLocale(
-  value,
-  { locale, options, fallback = '—' } = {}
-) {
-  if (!value) return fallback;
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return fallback;
-  }
-
-  const locales = locale ? [locale, 'en-US'] : 'en-US';
-  const formatOptions = {
-    dateStyle: 'medium',
-    timeZone: 'UTC',
-    ...options,
-  };
-
-  try {
-    return new Intl.DateTimeFormat(locales, formatOptions).format(date);
-  } catch (error) {
-    console.error('Failed to format date', error);
-    return fallback;
-  }
-}

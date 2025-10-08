@@ -7,8 +7,6 @@ import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 export default function TutorialFavoritesPage() {
   const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { t } = useTranslation('tutorials');
   const tr = (key, def) => {
     const res = t(key);
@@ -22,9 +20,6 @@ export default function TutorialFavoritesPage() {
         setFavorites(items);
       } catch (err) {
         console.error(err);
-        setError(tr('favoritesPage.load_error', 'Failed to load favorite tutorials'));
-      } finally {
-        setLoading(false);
       }
     };
     load();
@@ -38,26 +33,6 @@ export default function TutorialFavoritesPage() {
       console.error(err);
     }
   };
-
-  if (loading) {
-    return (
-      <StudentLayout>
-        <div className="p-6 text-center" role="status">
-          {tr('favoritesPage.loading', 'Loading favorites...')}
-        </div>
-      </StudentLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <StudentLayout>
-        <div className="p-6 text-red-500" role="alert">
-          {error}
-        </div>
-      </StudentLayout>
-    );
-  }
 
   return (
     <StudentLayout>

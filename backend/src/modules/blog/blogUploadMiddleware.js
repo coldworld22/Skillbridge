@@ -20,15 +20,8 @@ const fileFilter = (_req, file, cb) => {
   else cb(new Error("Invalid file type. Only images are allowed."), false);
 };
 
-const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-const envMax = Number(process.env.MAX_BLOG_IMAGE_BYTES);
-const maxFileSize =
-  Number.isInteger(envMax) && envMax > 0 && envMax <= 20 * 1024 * 1024
-    ? envMax
-    : DEFAULT_MAX_SIZE;
-
 module.exports = multer({
   storage,
   fileFilter,
-  limits: { fileSize: maxFileSize },
+  limits: { fileSize: process.env.MAX_BLOG_IMAGE_BYTES || 10 * 1024 * 1024 }
 });

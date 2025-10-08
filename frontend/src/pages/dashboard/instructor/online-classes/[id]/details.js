@@ -4,29 +4,14 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClassById } from "@/services/instructor/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import DOMPurify from "isomorphic-dompurify";
-import { useTranslation } from "next-i18next";
 
 function InstructorClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation("dashboard");
-
-  const translate = (key, fallback) => {
-    const translation = t(key);
-    return translation === key ? fallback : translation;
-  };
-
-  const publishStatus = details?.publishStatus;
-  const isPublished = publishStatus === "published";
-  const publishStatusLabel = isPublished
-    ? translate("onlineClassListPage.published", "Published")
-    : translate("onlineClassListPage.draft", "Draft");
-  const publishStatusClasses = isPublished
-    ? "bg-green-100 text-green-800"
-    : "bg-yellow-100 text-yellow-800";
 
   useEffect(() => {
     if (!id) return;
@@ -62,7 +47,7 @@ function InstructorClassDetailPage() {
           )}
           {details?.demo_video_url && (
             <div className="mt-4">
-              <CustomVideoPlayer videos={[{ src: details.demo_video_url }]} />
+              <CustomVideoPlayer videos={[{ src: safeEncodeURI(details.demo_video_url) }]} />
             </div>
           )}
 
@@ -88,17 +73,12 @@ function InstructorClassDetailPage() {
             </div>
             <div className="space-y-1">
               <p>
-                <strong>📌 Status:</strong>{" "}
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${publishStatusClasses}`}>
-                  {publishStatusLabel}
+                <strong>📌 Status:</strong>{' '}
+                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                  {details?.status}
                 </span>
               </p>
-              {details?.price !== undefined && details?.price !== null && (
-                <p>
-                  <strong>💵 Price:</strong>{" "}
-                  {details.price === 0 ? "Free" : `$${details.price}`}
-                </p>
-              )}
+              {details?.price && <p><strong>💵 Price:</strong> ${details.price}</p>}
               <p><strong>👁️ Views:</strong> {details?.views ?? 0}</p>
             </div>
           </div>

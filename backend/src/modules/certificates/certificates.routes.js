@@ -8,6 +8,5 @@ const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware")
 router.use(verifyToken, isAdmin);
 
 router.get("/", ctrl.list);
-router.get("/:id", ctrl.getById);
 
 module.exports = router;

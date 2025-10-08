@@ -1,3 +1,8 @@
+  set $allowed_origin "";
+  if ($app_domain != "") {
+    set $allowed_origin https://$app_domain;
+  }
+
   location / {
     proxy_pass http://frontend:3000;
     proxy_http_version 1.1;
@@ -5,7 +10,14 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    include /etc/nginx/snippets/cors.inc;
+    # Ensure a single Access-Control-Allow-Origin header
+    proxy_hide_header Access-Control-Allow-Origin;
+    if ($allowed_origin != "") {
+      if ($http_origin = $allowed_origin) {
+        add_header Access-Control-Allow-Origin $allowed_origin always;
+      }
+    }
+    add_header Access-Control-Allow-Credentials true always;
   }
 
   # Serve Next.js static assets directly from the frontend service
@@ -16,7 +28,14 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    include /etc/nginx/snippets/cors.inc;
+    # Ensure a single Access-Control-Allow-Origin header
+    proxy_hide_header Access-Control-Allow-Origin;
+    if ($allowed_origin != "") {
+      if ($http_origin = $allowed_origin) {
+        add_header Access-Control-Allow-Origin $allowed_origin always;
+      }
+    }
+    add_header Access-Control-Allow-Credentials true always;
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
@@ -31,7 +50,14 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    include /etc/nginx/snippets/cors.inc;
+    # Ensure a single Access-Control-Allow-Origin header
+    proxy_hide_header Access-Control-Allow-Origin;
+    if ($allowed_origin != "") {
+      if ($http_origin = $allowed_origin) {
+        add_header Access-Control-Allow-Origin $allowed_origin always;
+      }
+    }
+    add_header Access-Control-Allow-Credentials true always;
   }
 
   location ^~ /api/ {
@@ -42,33 +68,12 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    include /etc/nginx/snippets/cors.inc;
-  }
-  # Forward installer requests to the backend
-  location ^~ /install/ {
-    proxy_pass http://backend:5002;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-
-  location = /install {
-    proxy_pass http://backend:5002/install/;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-
-  # Proxy uploaded files to the backend
-  location ^~ /uploads/ {
-    proxy_pass http://backend:5002;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    # Ensure a single Access-Control-Allow-Origin header
+    proxy_hide_header Access-Control-Allow-Origin;
+    if ($allowed_origin != "") {
+      if ($http_origin = $allowed_origin) {
+        add_header Access-Control-Allow-Origin $allowed_origin always;
+      }
+    }
+    add_header Access-Control-Allow-Credentials true always;
   }

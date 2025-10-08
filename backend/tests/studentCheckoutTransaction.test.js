@@ -3,7 +3,7 @@ jest.mock('../src/config/database', () => {
   const rollbackSpy = jest.fn();
 
   const data = {
-    online_classes: [{ id: 'c1', access_type: 'paid' }],
+    online_classes: [{ id: 'c1' }],
     class_enrollments: [],
     cart_items: [{ user_id: 'u1', item_id: 'c1' }],
     payments: [],

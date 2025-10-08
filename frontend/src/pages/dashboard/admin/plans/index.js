@@ -1,20 +1,37 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import Link from "next/link";
 import { fetchPlans, deletePlan, updatePlan } from "@/services/admin/planService";
+import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function PlansIndex() {
+export default function PlansIndex() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
 
   const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
 
+  const router = useRouter();
+  const { accessToken, user, hasHydrated } = useAuthStore();
+
   useEffect(() => {
+    if (!hasHydrated) return;
+
+    if (!accessToken || !user) {
+      router.replace("/auth/login");
+      return;
+    }
+
+    const role = user.role?.toLowerCase() ?? "";
+    if (role !== "admin" && role !== "superadmin") {
+      router.replace("/error/403");
+      return;
+    }
+
     const loadPlans = async () => {
       try {
         const data = await fetchPlans();
@@ -28,7 +45,7 @@ function PlansIndex() {
     };
 
     loadPlans();
-  }, []);
+  }, [accessToken, hasHydrated, router, user]);
 
   const toggleActive = async (id) => {
     const plan = plans.find((p) => p.id === id);
@@ -79,6 +96,14 @@ function PlansIndex() {
       toast.error(t('failed_to_delete'));
     }
   };
+
+  if (!hasHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500 text-lg">{t('loading')}</p>
+      </div>
+    );
+  }
 
   return (
     <AdminLayout title={t('title')}>
@@ -182,5 +207,3 @@ function PlansIndex() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(PlansIndex);

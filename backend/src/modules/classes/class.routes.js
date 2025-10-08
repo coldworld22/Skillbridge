@@ -14,11 +14,6 @@ const {
   isInstructor,
 } = require("../../middleware/auth/authMiddleware");
 
-const enforceInstructorScope = (req, _res, next) => {
-  req.query.instructorId = req.user.id;
-  next();
-};
-
 // Student enrollments
 router.use("/enroll", require("./enrollments/classEnrollment.routes"));
 // Class lessons and assignments
@@ -98,12 +93,6 @@ router.delete(
   isAdmin,
   controller.deleteClass
 );
-router.post(
-  "/admin/bulk-delete",
-  verifyToken,
-  isAdmin,
-  controller.bulkDeleteClasses
-);
 router.patch(
   "/admin/:id/status",
   verifyToken,
@@ -137,7 +126,6 @@ router.get(
   "/instructor/my",
   verifyToken,
   isInstructor,
-  enforceInstructorScope,
   controller.getMyClasses
 );
 router.get(

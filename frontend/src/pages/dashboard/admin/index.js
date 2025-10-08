@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
-import withAdminGuard from "@/hooks/withAdminGuard";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
@@ -25,6 +26,7 @@ import { fetchLicenseStatus } from "@/services/admin/licenseService";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -36,26 +38,19 @@ function AdminDashboardHome() {
   const [licenseLoading, setLicenseLoading] = useState(false);
   const { t } = useTranslation("dashboard");
 
-  const formatDateTime = useMemo(
-    () =>
-      (value) => {
-        if (!value) {
-          return t("adminDashboardHome.notAvailable");
-        }
-
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-          return t("adminDashboardHome.notAvailable");
-        }
-
-        return date.toLocaleString();
-      },
-    [t]
-  );
-
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      if (!user) {
+        router.replace("/auth/login");
+      } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+        router.replace("/error/403");
+      }
+    }
+  }, [user, hydrated, router]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -105,66 +100,39 @@ function AdminDashboardHome() {
         setLicenseLoading(false);
       }
     };
-    if (hydrated) {
+    if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
       loadData();
     }
-  }, [hydrated]);
+  }, [hydrated, user]);
 
-  if (!hydrated || !user) {
+  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
     return null;
   }
 
-  const adminName = user?.full_name ?? "Admin";
-
   const statsArray = stats
     ? [
-        {
-          icon: <FaUsers aria-hidden="true" />,
-          label: t("adminDashboardHome.totalUsers"),
-          value: stats.totalUsers,
-          color: "text-blue-500",
-        },
-        {
-          icon: <FaChalkboardTeacher aria-hidden="true" />,
-          label: t("adminDashboardHome.instructors"),
-          value: stats.instructors,
-          color: "text-purple-500",
-        },
-        {
-          icon: <FaUsers aria-hidden="true" />,
-          label: t("adminDashboardHome.students"),
-          value: stats.students,
-          color: "text-green-500",
-        },
-        {
-          icon: <FaBook aria-hidden="true" />,
-          label: t("adminDashboardHome.tutorials"),
-          value: stats.tutorials,
-          color: "text-indigo-500",
-        },
-        {
-          icon: <FaVideo aria-hidden="true" />,
-          label: t("adminDashboardHome.classes"),
-          value: stats.classes,
-          color: "text-yellow-500",
-        },
+        { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: "Students", value: stats.students, color: "text-green-500" },
+        { icon: <FaBook aria-hidden="true" />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo aria-hidden="true" />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-10">
-      <WelcomeBanner name={adminName} />
+      <WelcomeBanner name={user.full_name || "Admin"} />
 
       {/* Alerts Summary */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">
-            <span aria-hidden="true">🚨</span> {t("adminDashboardHome.recentAlerts")}
+            <span aria-hidden="true">🚨</span> {t("recentAlerts")}
           </h3>
           {alertsLoading ? (
-            <p className="text-sm">{t("adminDashboardHome.loadingAlerts")}</p>
+            <p className="text-sm">Loading alerts...</p>
           ) : alerts.length === 0 ? (
-            <p className="text-sm text-gray-600">{t("adminDashboardHome.noAlerts")}</p>
+            <p className="text-sm text-gray-600">No alerts</p>
           ) : (
             <ul className="text-sm text-red-600 space-y-1">
               {alerts.slice(0, 3).map((alert, idx) => (
@@ -176,18 +144,18 @@ function AdminDashboardHome() {
             href="/admin/alerts"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            {t("adminDashboardHome.viewAllAlerts")}
+            View all alerts
           </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">
-            <span aria-hidden="true">🛡️</span> {t("adminDashboardHome.flaggedMessages")}
+            <span aria-hidden="true">🛡️</span> {t("flaggedMessages")}
           </h3>
           {flagsLoading ? (
-            <p className="text-sm">{t("adminDashboardHome.loadingMessages")}</p>
+            <p className="text-sm">Loading messages...</p>
           ) : flaggedMessages.length === 0 ? (
-            <p className="text-sm text-gray-600">{t("adminDashboardHome.noFlaggedMessages")}</p>
+            <p className="text-sm text-gray-600">No flagged messages</p>
           ) : (
             <ul className="text-sm text-red-500 space-y-1">
               {flaggedMessages.slice(0, 2).map((msg) => (
@@ -201,45 +169,41 @@ function AdminDashboardHome() {
             href="/admin/moderation"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            {t("adminDashboardHome.reviewMessages")}
+            Review messages
           </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">
-            <span aria-hidden="true">🔒</span> {t("adminDashboardHome.licenseCheck")}
+            <span aria-hidden="true">🔒</span> {t("licenseCheck")}
           </h3>
           {licenseLoading ? (
-            <p className="text-sm">{t("adminDashboardHome.checkingLicense")}</p>
+            <p className="text-sm">Checking license...</p>
           ) : licenseStatus ? (
             <>
               <p className="text-sm text-gray-800">
-                {t("adminDashboardHome.lastCheck", {
-                  value: formatDateTime(licenseStatus.last_check),
-                })}
+                Last check: {licenseStatus.last_check || "N/A"}
               </p>
               <p
                 className={`text-sm mt-1 ${
                   licenseStatus.unauthorized_count ? "text-red-600" : "text-green-600"
                 }`}
               >
-                {licenseStatus.unauthorized_count
-                  ? licenseStatus.unauthorized_count === 1
-                    ? t("adminDashboardHome.unauthorizedInstanceDetected")
-                    : t("adminDashboardHome.unauthorizedInstancesCount", {
-                        count: licenseStatus.unauthorized_count,
-                      })
-                  : t("adminDashboardHome.noUnauthorizedInstances")}
+                  {licenseStatus.unauthorized_count
+                    ? `❌ ${licenseStatus.unauthorized_count} unauthorized instance${
+                        licenseStatus.unauthorized_count > 1 ? "s" : ""
+                      } detected`
+                    : "✅ No unauthorized instances"}
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-600">{t("adminDashboardHome.noLicenseData")}</p>
+            <p className="text-sm text-gray-600">No license data</p>
           )}
           <Link
             href="/admin/license-logs"
             className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
           >
-            {t("adminDashboardHome.seeDetails")}
+            See details
           </Link>
         </div>
       </section>
@@ -257,10 +221,10 @@ function AdminDashboardHome() {
         </div>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">
-          <span aria-hidden="true">📊</span> {t("adminDashboardHome.platformInsights")}
+          <span aria-hidden="true">📊</span> {t("platformInsights")}
         </h2>
         {statsLoading ? (
-          <p>{t("adminDashboardHome.loadingStats")}</p>
+          <p>{t("loadingStats")}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}
@@ -269,7 +233,7 @@ function AdminDashboardHome() {
   );
 }
 
-const ProtectedAdminDashboard = withAdminGuard(AdminDashboardHome);
+const ProtectedAdminDashboard = withAuthProtection(AdminDashboardHome, ["admin", "superadmin"]);
 
 ProtectedAdminDashboard.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;

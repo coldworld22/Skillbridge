@@ -10,14 +10,6 @@ const authMiddleware = require("../../../middleware/auth/authMiddleware");
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
 
-const omitCookieExpiry = (options = {}) => {
-  const { maxAge, expires, ...rest } = options;
-  return rest;
-};
-
-const refreshCookieClearOptions = omitCookieExpiry(refreshCookieOptions);
-const csrfCookieClearOptions = omitCookieExpiry(csrfCookieOptions);
-
 /**
  * @desc Register a new user
  * @access Public
@@ -25,17 +17,14 @@ const csrfCookieClearOptions = omitCookieExpiry(csrfCookieOptions);
 exports.register = catchAsync(async (req, res, next) => {
   try {
     const cfg = await socialLoginConfigService.getSettings();
-    const bypassRecaptcha = recaptchaService.shouldBypass(cfg, req.body);
-    if (bypassRecaptcha) {
-      logger.warn('reCAPTCHA bypass requested during registration – allowing request without verification');
-    } else if (cfg?.recaptcha?.active) {
+    if (cfg?.recaptcha?.active) {
       const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
       if (!valid) {
         throw new AppError('Failed reCAPTCHA verification', 400);
       }
     }
     const { user } = await authService.registerUser(req.body);
-    res.status(201).json({ message: "Registration successful. A verification email has been sent.", user });
+    res.status(201).json({ message: "Registration successful", user });
   } catch (err) {
     logger.error("🔥 Registration error caught:");
     logger.error("Name:", err.name);
@@ -71,34 +60,16 @@ exports.register = catchAsync(async (req, res, next) => {
  */
 exports.login = catchAsync(async (req, res) => {
   const cfg = await socialLoginConfigService.getSettings();
-  const bypassRecaptcha = recaptchaService.shouldBypass(cfg, req.body);
-  if (bypassRecaptcha) {
-    logger.warn('reCAPTCHA bypass requested during login – allowing request without verification');
-  } else if (cfg?.recaptcha?.active) {
+  if (cfg?.recaptcha?.active) {
     const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
     if (!valid) {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user } =
-    await authService.loginUser({ ...req.body, ip: req.ip });
-  let response = res.cookie("refreshToken", refreshToken, refreshCookieOptions);
-
-  if (typeof req.csrfToken === "function") {
-    try {
-      response = response.cookie("csrfToken", req.csrfToken(), csrfCookieOptions);
-    } catch (err) {
-      logger.warn(
-        `⚠️ Failed to issue CSRF cookie on login: ${err.message}`
-      );
-    }
-  } else {
-    logger.warn(
-      "⚠️ CSRF token helper missing on login request; skipping csrfToken cookie. Verify session/Redis configuration."
-    );
-  }
-
-  response.json({ message: "Login successful", accessToken, user });
+  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
+  res
+    .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .json({ message: "Login successful", accessToken, user });
 });
 
 /**
@@ -116,48 +87,20 @@ exports.refreshToken = catchAsync(async (req, res) => {
   }
 
   try {
-    const { decoded, refreshToken: newRefreshToken } =
-      await authService.rotateRefreshToken(token);
-    const roles = decoded.roles || [decoded.role];
+    const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
     const accessToken = authService.generateAccessToken({
       id: decoded.id,
-      role: roles[0],
-      roles,
+      role: decoded.role,
     });
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
-    let response = res.cookie(
-      "refreshToken",
-      newRefreshToken,
-      refreshCookieOptions
-    );
-
-    if (typeof req.csrfToken === "function") {
-      try {
-        response = response.cookie(
-          "csrfToken",
-          req.csrfToken(),
-          csrfCookieOptions
-        );
-      } catch (err) {
-        logger.warn(
-          `⚠️ Failed to issue CSRF cookie on refresh: ${err.message}`
-        );
-      }
-    } else {
-      logger.warn(
-        "⚠️ CSRF token helper missing on refresh request; skipping csrfToken cookie. Verify session/Redis configuration."
-      );
-    }
-    response.json({ message: "Token refreshed", accessToken });
+    res
+      .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+      .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
-    return res
-      .clearCookie("refreshToken", refreshCookieClearOptions)
-      .clearCookie("csrfToken", csrfCookieClearOptions)
-      .status(401)
-      .json({ message: "Invalid or expired refresh token" });
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
   }
 });
 
@@ -184,8 +127,8 @@ exports.logout = catchAsync(async (req, res) => {
     await authMiddleware.addTokenToBlacklist(access);
   }
   res
-    .clearCookie("refreshToken", refreshCookieClearOptions)
-    .clearCookie("csrfToken", csrfCookieClearOptions)
+    .clearCookie("refreshToken", refreshCookieOptions)
+    .clearCookie("csrfToken", csrfCookieOptions)
     .json({ message: "Logged out successfully" });
 });
 
@@ -215,18 +158,8 @@ exports.verifyOtp = catchAsync(async (req, res) => {
  */
 exports.resetPassword = catchAsync(async (req, res) => {
   const { email, code, new_password } = req.body;
-  const { warnings = [] } = await authService.resetPassword({
-    email,
-    code,
-    new_password,
-  });
-
-  const response = { message: "Password reset successful" };
-  if (warnings.length) {
-    response.warnings = warnings;
-  }
-
-  res.json(response);
+  await authService.resetPassword({ email, code, new_password });
+  res.json({ message: "Password reset successful" });
 });
 
 /**

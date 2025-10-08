@@ -14,7 +14,6 @@ import { API_BASE_URL } from "@/config/config";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const defaultConfig = { 
   appName: "", 
@@ -26,7 +25,7 @@ const defaultConfig = {
   contactEmail: ""
 };
 
-function AppSettingsPage() {
+export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
   const [logoFile, setLogoFile] = useState(null);
   const [faviconFile, setFaviconFile] = useState(null);
@@ -397,5 +396,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(AppSettingsPage);

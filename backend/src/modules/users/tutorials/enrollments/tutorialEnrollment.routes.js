@@ -7,13 +7,6 @@ const validator = require("./tutorialEnrollment.validator");
 router.post("/:tutorialId", verifyToken, isStudent, ctrl.enroll);
 router.post("/:tutorialId/complete", verifyToken, isStudent, ctrl.complete);
 router.get("/:tutorialId/status", verifyToken, isStudent, ctrl.getStatus);
-router.post(
-  "/status/batch",
-  verifyToken,
-  isStudent,
-  validate(validator.batchStatus),
-  ctrl.getStatusBatch
-);
 router.patch(
   "/:tutorialId/progress",
   verifyToken,

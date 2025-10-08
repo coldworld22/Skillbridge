@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
 import {
   FaChalkboardTeacher,
@@ -16,114 +15,44 @@ import {
   FaSortAmountDown
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
 import { toast } from 'react-toastify';
 
-function MyEnrolledClassesPage() {
+export default function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [error, setError] = useState(null);
-  const { t } = useTranslation('dashboard');
-
-  const statusLabels = {
-    all: t('studentOnlineClassesPage.status_all'),
-    ongoing: t('studentOnlineClassesPage.status_live'),
-    upcoming: t('studentOnlineClassesPage.status_upcoming'),
-    completed: t('studentOnlineClassesPage.status_completed')
-  };
-  const scheduleStatusLabels = {
-    Ongoing: t('studentOnlineClassesPage.status_live'),
-    Upcoming: t('studentOnlineClassesPage.status_upcoming'),
-    Completed: t('studentOnlineClassesPage.status_completed')
-  };
 
   useEffect(() => {
     const load = async () => {
       try {
         const list = await fetchMyEnrolledClasses();
         setClasses(list);
-        setError(null);
       } catch (err) {
         console.error('Failed to load classes', err);
-        toast.error('Failed to load classes');
-        setError('Failed to load classes');
       }
     };
     load();
   }, []);
 
-  const handleNotify = async (classId) => {
-    try {
-      await subscribeToClassReminder(classId);
-      toast.success(t('studentOnlineClassesPage.notify_success'));
-    } catch (err) {
-      console.error('Failed to subscribe to class reminder', err);
-      toast.error(t('studentOnlineClassesPage.notify_error'));
-    }
-  };
-
-  const getScheduleDate = (cls) => {
-    const timestamp =
-      cls.start_date || cls.startDate || cls.end_date || cls.endDate || null;
-
-    if (!timestamp) {
-      return null;
-    }
-
-    const date = new Date(timestamp);
-    return Number.isNaN(date.getTime()) ? null : date;
-  };
-
-  const classesWithSchedule = classes.map((cls) => ({
-    ...cls,
-    scheduleDate: getScheduleDate(cls),
-  }));
-
-  const filteredClasses = classesWithSchedule
-    .filter(
-      (cls) => filter === 'all' || cls.scheduleStatus?.toLowerCase() === filter,
-    )
-    .filter((cls) => (cls.title || '').toLowerCase().includes(search.toLowerCase()))
+  const filteredClasses = classes
+    .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
+    .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      const dateA = a.scheduleDate;
-      const dateB = b.scheduleDate;
-
-      if (!dateA && !dateB) {
-        return 0;
-      }
-
-      if (!dateA) {
-        return 1;
-      }
-
-      if (!dateB) {
-        return -1;
-      }
-
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
       return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
 
-  if (error) {
-    return (
-      <StudentLayout>
-        <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
-          <p className="text-center text-red-500">{error}</p>
-        </div>
-      </StudentLayout>
-    );
-  }
-
   return (
     <StudentLayout>
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
-        <h1 className="text-2xl font-bold text-yellow-500 mb-6">{t('studentOnlineClassesPage.title')}</h1>
+        <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 My Enrolled Classes</h1>
 
         {/* Search and Sort */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
@@ -131,7 +60,7 @@ function MyEnrolledClassesPage() {
             <FaSearch className="text-gray-500" />
             <input
               type="text"
-              placeholder={t('studentOnlineClassesPage.search_placeholder')}
+              placeholder="Search classes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full outline-none"
@@ -141,13 +70,13 @@ function MyEnrolledClassesPage() {
             onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
             className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm"
           >
-            <FaSortAmountDown /> {t('studentOnlineClassesPage.sort_by_date')} ({sortOrder.toUpperCase()})
+            <FaSortAmountDown /> Sort by Date ({sortOrder.toUpperCase()})
           </button>
         </div>
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {['all', 'ongoing', 'upcoming', 'completed'].map((status) => (
+          {['all', 'live', 'upcoming', 'completed'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -157,12 +86,10 @@ function MyEnrolledClassesPage() {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {statusLabels[status]} ({
+              {status.charAt(0).toUpperCase() + status.slice(1)} ({
                 status === 'all'
                   ? classes.length
-                  : classes.filter(
-                      (c) => c.scheduleStatus?.toLowerCase() === status,
-                    ).length
+                  : classes.filter(c => c.scheduleStatus.toLowerCase() === status).length
               })
             </button>
           ))}
@@ -170,7 +97,7 @@ function MyEnrolledClassesPage() {
 
         {/* Class Cards */}
         {visibleClasses.length === 0 ? (
-          <p className="text-gray-600 text-center">{t('studentOnlineClassesPage.no_classes')}</p>
+          <p className="text-gray-600 text-center">No classes found under this filter.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {visibleClasses.map(cls => (
@@ -179,45 +106,33 @@ function MyEnrolledClassesPage() {
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-gray-800">
                     <FaChalkboardTeacher className="text-yellow-500" /> {cls.title}
                   </h2>
-                  <FaEye
-                    className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1"
-                    title={t('studentOnlineClassesPage.preview')}
-                  />
+                  <FaEye className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1" title="Preview" />
                 </div>
-                <p className="text-sm text-gray-600 mb-1">{t('studentOnlineClassesPage.instructor')} {cls.instructor}</p>
+                <p className="text-sm text-gray-600 mb-1">Instructor: {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
-                  <FaCalendarAlt />
-                  {cls.scheduleDate
-                    ? cls.scheduleDate.toLocaleString()
-                    : t('studentOnlineClassesPage.schedule_pending', {
-                        defaultValue: t('studentOnlineClassesPage.class_ended'),
-                      })}
+                  <FaCalendarAlt /> {new Date(cls.startDate).toLocaleString()}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
-                  <FaTags className="mr-1 text-gray-400" />
-                  {cls.tags?.join(', ') || t('studentOnlineClassesPage.category_general')}
+                  <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || 'General'}
                 </p>
                 <div className="h-2 bg-gray-300 rounded-full mb-2">
                   <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${cls.progress || 0}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">{t('studentOnlineClassesPage.progress_completed', { progress: cls.progress || 0 })}</p>
+                <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
 
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                  cls.scheduleStatus === 'Ongoing'
+                  cls.scheduleStatus === 'Live'
                     ? 'bg-green-100 text-green-800'
                     : cls.scheduleStatus === 'Upcoming'
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-200 text-gray-600'
                 }`}>
-                  {scheduleStatusLabels[cls.scheduleStatus] || cls.scheduleStatus}
+                  {cls.scheduleStatus}
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button
-                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
-                    onClick={() => handleNotify(cls.id)}
-                  >
-                    <FaBell /> {t('studentOnlineClassesPage.notify_me')}
+                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                    <FaBell /> Notify Me
                   </button>
                 )}
                 {cls.enrollmentStatus === 'completed' && (
@@ -225,35 +140,34 @@ function MyEnrolledClassesPage() {
                     href={`/dashboard/student/certificates/${cls.id}`}
                     className="text-xs text-green-600 underline mb-2 block text-center"
                   >
-                    <FaCertificate className="inline mr-1" /> {t('studentOnlineClassesPage.view_certificate')}
+                    <FaCertificate className="inline mr-1" /> View Certificate
                   </Link>
                 )}
                 <Link
                   href={`/dashboard/student/assignments/${cls.id}`}
                   className="text-xs text-blue-600 underline mb-3 block text-center"
                 >
-                  <FaClipboardList className="inline mr-1" /> {t('studentOnlineClassesPage.view_assignments')}
+                  <FaClipboardList className="inline mr-1" /> View Assignments
                 </Link>
-                {cls.scheduleStatus === 'Ongoing' &&
-                  cls.enrollmentStatus?.toLowerCase() === 'enrolled' ? (
+                {cls.scheduleStatus === 'Live' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
                   >
-                    <FaVideo className="inline mr-2" /> {t('studentOnlineClassesPage.join_class')}
+                    <FaVideo className="inline mr-2" /> Join Class
                   </Link>
                 ) : cls.scheduleStatus === 'Upcoming' ? (
                   <p className="text-center text-sm text-yellow-600">
-                    <FaHourglassHalf className="inline mr-1" /> {t('studentOnlineClassesPage.starts_soon')}
+                    <FaHourglassHalf className="inline mr-1" /> Starts Soon
                   </p>
                 ) : (
                   cls.enrollmentStatus === 'completed' ? (
                     <p className="text-center text-sm text-gray-500">
-                      <FaCheckCircle className="inline mr-1" /> {t('studentOnlineClassesPage.completed')}
+                      <FaCheckCircle className="inline mr-1" /> Completed
                     </p>
                   ) : (
                     <p className="text-center text-sm text-gray-500">
-                      <FaHourglassHalf className="inline mr-1" /> {t('studentOnlineClassesPage.class_ended')}
+                      <FaHourglassHalf className="inline mr-1" /> Class Ended
                     </p>
                   )
                 )}
@@ -267,12 +181,10 @@ function MyEnrolledClassesPage() {
             onClick={() => setVisibleCount(prev => prev + 6)}
             className="mt-10 block mx-auto bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 rounded-full"
           >
-            {t('studentOnlineClassesPage.load_more')}
+            Load More
           </button>
         )}
       </div>
     </StudentLayout>
   );
 }
-
-export default withAuthProtection(MyEnrolledClassesPage, ['student']);

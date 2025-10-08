@@ -12,9 +12,7 @@ export default function TicketDetailPanel({ ticket }) {
         <Image
           src={ticket.user_avatar || '/images/default-avatar.png'}
           alt={
-            ticket.customerName
-              ? `${ticket.customerName}'s avatar`
-              : ticket.user_name
+            ticket.user_name
               ? `${ticket.user_name}'s avatar`
               : ticket.user
               ? `${ticket.user}'s avatar`
@@ -26,9 +24,7 @@ export default function TicketDetailPanel({ ticket }) {
         />
         <div>
           <h2 className="text-xl font-semibold mb-1">{ticket.subject}</h2>
-          <p className="text-sm text-gray-500">
-            {ticket.customerName || ticket.user_name || ticket.user}
-          </p>
+          <p className="text-sm text-gray-500">{ticket.user_name || ticket.user}</p>
         </div>
         <div className="ml-auto">
           <StatusBadge status={ticket.status} />

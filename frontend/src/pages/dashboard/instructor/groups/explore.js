@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 
 export default function ExploreGroupsPage() {

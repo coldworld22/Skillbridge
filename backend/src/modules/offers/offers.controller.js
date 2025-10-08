@@ -10,7 +10,6 @@ const mailService = require("../../services/mailService");
 const groupService = require("../groups/groups.service");
 const slugify = require("slugify");
 const db = require("../../config/database");
-const { isAdminRole } = require("../../utils/role");
 
 exports.createOffer = catchAsync(async (req, res) => {
   const {
@@ -136,7 +135,7 @@ exports.updateOffer = catchAsync(async (req, res) => {
   }
 
   if (
-    !isAdminRole(req.user.roles || req.user.role) &&
+    req.user.role?.toLowerCase() !== "admin" &&
     req.user.id !== existing.student_id
   ) {
     return res.status(403).json({ message: "Not authorized" });

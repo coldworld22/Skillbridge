@@ -11,7 +11,6 @@ import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import {
   fetchPublishedTutorials,
   fetchTutorialProgress,
-  fetchTutorialProgressBatch,
   getMyTutorialWishlist,
   getMyTutorialFavorites,
   addTutorialToWishlist,
@@ -32,26 +31,24 @@ import { fetchAds as fetchAdBanners } from "@/services/adsService";
  * chapter metadata.
  * @returns {Promise<{enrolled: boolean, status: string | null, progress: number}>}
  */
-export const loadTutorialStatus = async (tut, useApi = true) => {
+export const loadTutorialStatus = async (tut) => {
   const userId = useAuthStore.getState().user?.id;
   let enrolled = false;
   let progressPercent = 0;
   let status = null;
 
-  if (useApi) {
-    try {
-      const apiData = await fetchTutorialProgress(tut.id);
-      if (apiData) {
-        enrolled = !!apiData.enrolled;
-        status = apiData.status ?? null;
-        if (apiData.progress != null) {
-          progressPercent = Number(apiData.progress);
-        }
-        return { enrolled, status, progress: progressPercent };
+  try {
+    const apiData = await fetchTutorialProgress(tut.id);
+    if (apiData) {
+      enrolled = !!apiData.enrolled;
+      status = apiData.status ?? null;
+      if (apiData.progress != null) {
+        progressPercent = Number(apiData.progress);
       }
-    } catch (err) {
-      // Ignore API errors and fall back to localStorage
+      return { enrolled, status, progress: progressPercent };
     }
+  } catch (err) {
+    // Ignore API errors and fall back to localStorage
   }
 
   if (typeof window !== "undefined") {
@@ -75,30 +72,6 @@ export const loadTutorialStatus = async (tut, useApi = true) => {
   }
 
   return { enrolled, status, progress: progressPercent };
-};
-
-// Load statuses for multiple tutorials using batch endpoint with local fallback
-export const loadTutorialStatuses = async (tutorials) => {
-  const ids = tutorials.map((t) => t.id);
-  let apiMap = {};
-
-  if (ids.length) {
-    try {
-      const data = await fetchTutorialProgressBatch(ids);
-      if (data) apiMap = data;
-    } catch (err) {
-      // Ignore API errors and rely on local storage
-    }
-  }
-
-  const entries = await Promise.all(
-    tutorials.map(async (tut) => [
-      tut.id,
-      apiMap[tut.id] || (await loadTutorialStatus(tut, false)),
-    ])
-  );
-
-  return Object.fromEntries(entries);
 };
 
 const TutorialsSection = () => {
@@ -175,11 +148,7 @@ const TutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    fetchAdBanners({ limit: 10 })
-      .then((res) => setAds(res.data))
-      .catch((err) => {
-        console.error("Failed to load ads", err);
-      });
+    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
   }, []);
 
   const handleFilterChange = (f) => {
@@ -214,8 +183,10 @@ const TutorialsSection = () => {
   useEffect(() => {
     if (!tutorials.length) return;
     const loadStatuses = async () => {
-      const map = await loadTutorialStatuses(tutorials);
-      setStatusMap(map);
+      const entries = await Promise.all(
+        tutorials.map(async (t) => [t.id, await loadTutorialStatus(t)])
+      );
+      setStatusMap(Object.fromEntries(entries));
     };
     loadStatuses();
   }, [tutorials]);

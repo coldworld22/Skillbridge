@@ -35,11 +35,10 @@ const SearchPage = () => {
       return;
     }
 
-    const controller = new AbortController();
     let isMounted = true;
     setLoading(true);
     setError(null);
-    searchAll(searchQuery, { signal: controller.signal })
+    searchAll(searchQuery)
       .then((data) => {
         if (!isMounted) return;
         const flat = [];
@@ -56,17 +55,11 @@ const SearchPage = () => {
         });
         setResults(flat);
       })
-      .catch((err) => {
-        if (err.name === "AbortError" || err.name === "CanceledError") return;
-        if (isMounted) setError("Failed to fetch results");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .catch(() => isMounted && setError("Failed to fetch results"))
+      .finally(() => isMounted && setLoading(false));
 
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, [searchQuery]);
 

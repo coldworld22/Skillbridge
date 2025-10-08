@@ -5,9 +5,6 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
   const { t } = useTranslation('common');
   const { register, handleSubmit } = useForm();
 
-  const resolvedDetails =
-    (bankDetails && (bankDetails.settings || bankDetails.config)) || bankDetails || {};
-
   const submit = (data) => {
     onSubmit({
       reference: data.reference || '',
@@ -22,7 +19,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={resolvedDetails.bank_name || ''}
+          value={bankDetails.bank_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -31,7 +28,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={resolvedDetails.account_holder_name || ''}
+          value={bankDetails.account_holder_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -40,7 +37,7 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={resolvedDetails.account_number || ''}
+          value={bankDetails.account_number || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
@@ -49,17 +46,17 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         <input
           type="text"
           readOnly
-          value={resolvedDetails.swift_code || ''}
+          value={bankDetails.swift_code || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
         />
       </label>
-      {resolvedDetails.branch_address && (
+      {bankDetails.branch_address && (
         <label className="block">
           <span className="text-sm">{t('branch_address')}</span>
           <input
             type="text"
             readOnly
-            value={resolvedDetails.branch_address}
+            value={bankDetails.branch_address}
             className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
           />
         </label>

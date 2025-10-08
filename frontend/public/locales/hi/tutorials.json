@@ -63,9 +63,8 @@
       "add_tags_placeholder": "टैग जोड़ें...",
       "add_tag": "जोड़ें",
       "is_free": "क्या यह नि:शुल्क है?",
-      "price_label": "मूल्य *",
+      "price_label": "मूल्य (USD) *",
       "price_placeholder": "मूल्य दर्ज करें, उदा., 19.99",
-      "select_currency": "मुद्रा चुनें",
       "next": "अगला ➡️",
       "validation": {
         "title_required": "शीर्षक आवश्यक है।",
@@ -74,8 +73,7 @@
         "level_required": "स्तर आवश्यक है।",
         "language_required": "ट्यूटोरियल भाषा आवश्यक है।",
         "lessons_required": "पाठों की संख्या आवश्यक है।",
-        "price_required": "मान्य मूल्य आवश्यक है।",
-        "currency_required": "मुद्रा आवश्यक है।"
+        "price_required": "मान्य मूल्य आवश्यक है।"
       }
     },
     "curriculum": {
@@ -126,7 +124,8 @@
       "price_label": "मूल्य:",
       "publish_tutorial": "ट्यूटोरियल प्रकाशित करें"
     }
-  },
+  }
+  ,
   "filters": {
     "title": "फ़िल्टर",
     "max_price": "अधिकतम कीमत: ${{price}}",

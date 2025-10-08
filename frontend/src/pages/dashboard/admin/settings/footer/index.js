@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const defaultFooter = {
   about: "SkillBridge connects learners with expert instructors worldwide.",
@@ -36,7 +35,7 @@ const defaultFooter = {
   },
 };
 
-function FooterSettingsPage() {
+export default function FooterSettingsPage() {
   const updateStore = useAppConfigStore((state) => state.update);
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const [config, setConfig] = useState({});
@@ -295,5 +294,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(FooterSettingsPage);

@@ -13,32 +13,11 @@ exports.list = async (req, res, next) => {
   }
 };
 
-exports.getActive = async (_req, res, next) => {
-  try {
-    const template = await service.getActiveTemplate();
-    if (!template)
-      return res.status(404).json({ message: "No active certificate template found" });
-    sendSuccess(res, template);
-  } catch (err) {
-    next(err);
-  }
-};
-
 exports.get = async (req, res, next) => {
   try {
     const template = await service.getById(req.params.id);
     if (!template) return res.status(404).json({ message: "Template not found" });
     sendSuccess(res, template);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.preview = async (req, res, next) => {
-  try {
-    const preview = await service.getPreview(req.params.id);
-    if (!preview) return res.status(404).json({ message: "Template not found" });
-    sendSuccess(res, preview);
   } catch (err) {
     next(err);
   }

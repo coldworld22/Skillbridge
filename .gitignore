@@ -1,7 +1,8 @@
 node_modules/
 
 # Local environment variables
-backend/.env
+/.env
+/.env.production
 backend/.env.production
 dist/
 coverage/

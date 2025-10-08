@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import {
-  fetchPublishedTutorials,
-  fetchTutorialProgress,
-  saveTutorialProgress,
-} from "@/services/tutorialService";
+import { fetchPublishedTutorials } from "@/services/tutorialService";
 import StudentTutorialCard from "@/components/tutorials/StudentTutorialCard";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
@@ -16,9 +12,6 @@ export default function StudentTutorialsPage() {
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const limit = 6;
   const [sortBy, setSortBy] = useState("title");
   const { t } = useTranslation("tutorials");
   const tr = (key, def, opts) => {
@@ -29,65 +22,26 @@ export default function StudentTutorialsPage() {
   useEffect(() => {
     const controller = new AbortController();
     const load = async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const data = await fetchPublishedTutorials({
-          page,
-          limit,
-          signal: controller.signal,
-        });
-        const enriched = await Promise.all(
-          data.map(async (tut) => {
-            const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-            let local = { completedChapters: [], completedQuiz: false };
-            if (saved) {
-              try {
-                local = JSON.parse(saved);
-              } catch {}
-            }
-
-            const totalLessons = Array.isArray(tut.chapters)
-              ? tut.chapters.length
-              : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
-            const localPercent = totalLessons
-              ? ((local.completedChapters?.length || 0) / totalLessons) * 100
-              : Number(local.percent || 0);
-
-            let server;
+        const data = await fetchPublishedTutorials({ signal: controller.signal });
+        const enriched = data.map((tut) => {
+          const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+          let progress = { completedChapters: [], completedQuiz: false };
+          if (saved) {
             try {
-              server = await fetchTutorialProgress(tut.id);
-            } catch {}
-
-            if (
-              localPercent > 0 &&
-              (!server || Number(server.progress || 0) < localPercent)
-            ) {
-              try {
-                await saveTutorialProgress(tut.id, localPercent);
-              } catch {}
+              progress = JSON.parse(saved);
+            } catch {
+              progress = { completedChapters: [], completedQuiz: false };
             }
-
-            const percent =
-              server && server.progress != null
-                ? Number(server.progress)
-                : localPercent;
-
-            return {
-              ...tut,
-              completedLessons: totalLessons
-                ? Math.round((percent / 100) * totalLessons)
-                : 0,
-              totalLessons,
-              isCompleted:
-                (server?.status && server.status === "completed") ||
-                percent >= 100 ||
-                local.completedQuiz,
-            };
-          })
-        );
+          }
+          return {
+            ...tut,
+            completedLessons: progress.completedChapters.length,
+            totalLessons: tut.chapter_count || 0,
+            isCompleted: progress.completedQuiz,
+          };
+        });
         setTutorials(enriched);
-        setHasMore(data.length === limit);
       } catch (err) {
         if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
@@ -100,7 +54,7 @@ export default function StudentTutorialsPage() {
     return () => {
       controller.abort();
     };
-  }, [page]);
+  }, []);
 
   const filtered = tutorials.filter((tut) => {
     const matchesSearch = tut.title
@@ -208,28 +162,6 @@ export default function StudentTutorialsPage() {
             <StudentTutorialCard key={tut.id} tutorial={tut} />
           ))}
         </div>
-
-        {sorted.length > 0 && (
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              {tr("studentPage.prev", "Previous")}
-            </button>
-            <span className="text-sm">
-              {tr("studentPage.page", "Page {{page}}", { page })}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasMore}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              {tr("studentPage.next", "Next")}
-            </button>
-          </div>
-        )}
 
         {sorted.length === 0 && (
           <div className="text-center text-gray-500">

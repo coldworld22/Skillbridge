@@ -11,58 +11,12 @@ const { getActiveInstructorPlan } = require("../plans/instructor.helper");
 const planService = require("../plans/plans.service");
 const AppError = require("../../utils/AppError");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
-const { isAdminRole, normalizeRole } = require("../../utils/role");
 
 const slugify = require("slugify");
 const db = require("../../config/database");
 
 const fs = require("fs");
 const path = require("path");
-
-const TAGS_FORMAT_ERROR = "Invalid tags format. Expected an array of strings.";
-
-const normalizeTagsInput = (input, { defaultValue = [] } = {}) => {
-  if (input === undefined || input === null || input === "") {
-    return defaultValue;
-  }
-
-  if (Array.isArray(input)) {
-    return input;
-  }
-
-  if (typeof input === "string") {
-    try {
-      const parsed = JSON.parse(input);
-
-      if (!Array.isArray(parsed)) {
-        throw new AppError(TAGS_FORMAT_ERROR, 400);
-      }
-
-      return parsed;
-    } catch (error) {
-      throw new AppError(TAGS_FORMAT_ERROR, 400);
-    }
-  }
-
-  throw new AppError(TAGS_FORMAT_ERROR, 400);
-};
-
-const parseBoolean = (value) => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) {
-      return false;
-    }
-
-    return ["true", "1", "yes", "on"].includes(normalized);
-  }
-
-  return false;
-};
 
 const generateUniqueSlug = async (title) => {
   const base = slugify(title, { lower: true, strict: true });
@@ -76,39 +30,14 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const {
-    tags: rawTags,
-    status,
-    included_plans,
-    access_type,
-    publish_immediately,
-    ...body
-  } = req.body;
-  const roles = req.user?.roles || req.user?.role;
-  const isAdminUser = isAdminRole(roles);
-
-  const ensureArray = (value) =>
-    Array.isArray(value) ? value : value ? [value] : [];
-  const normalizedRoles = [
-    ...ensureArray(req.user?.roles),
-    ...ensureArray(req.user?.role),
-  ]
-    .map((role) =>
-      typeof role === "string" ? normalizeRole(role) : ""
-    )
-    .filter(Boolean);
-  const isInstructorUser = normalizedRoles.includes("instructor");
-  const normalizedStatus = status === "published" ? "published" : "draft";
-  const shouldAutoApprove = isAdminUser && normalizedStatus === "published";
+  const { tags: rawTags, status, included_plans, access_type, ...body } = req.body;
   const data = {
     ...body,
     id: uuidv4(),
     slug,
-    status: normalizedStatus,
-    moderation_status: shouldAutoApprove ? "Approved" : "Pending",
-    access_type: "paid",
+    status: status === "published" ? "published" : "draft",
+    moderation_status: "Pending",
   };
-  const publishImmediately = parseBoolean(publish_immediately);
   if (included_plans) {
     let plansList = included_plans;
     if (typeof plansList === "string") {
@@ -132,12 +61,10 @@ exports.createClass = catchAsync(async (req, res) => {
     }
     data.included_plans = ids;
   }
-  const normalizedAccessType =
-    typeof access_type === "string" && ["paid", "free"].includes(access_type)
-      ? access_type
-      : "paid";
-  data.access_type = normalizedAccessType;
-  if (!isAdminUser && isInstructorUser) {
+  if (access_type) {
+    data.access_type = access_type;
+  }
+  if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
     const plan = await getActiveInstructorPlan(req.user.id);
     if (!plan) {
@@ -155,34 +82,13 @@ exports.createClass = catchAsync(async (req, res) => {
       }
     }
   }
-  const canAutoApprove =
-    data.status === "published" && publishImmediately && isAdminUser;
-  if (canAutoApprove) {
-    if (!data.instructor_id) {
-      throw new AppError("Instructor information required to publish immediately", 400);
-    }
-    const plan = await getActiveInstructorPlan(data.instructor_id);
-    if (!plan) {
-      throw new AppError(
-        "Active instructor plan required to approve classes",
-        403
-      );
-    }
-    if (plan.max_courses) {
-      const count = await service.countPublishedClasses(data.instructor_id);
-      if (count >= plan.max_courses) {
-        throw new AppError("Course limit reached for your plan", 403);
-      }
-    }
-    data.moderation_status = "Approved";
-  }
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
   }
   if (req.files?.demo_video?.[0]) {
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
-  const tags = normalizeTagsInput(rawTags);
+  const tags = rawTags ? JSON.parse(rawTags) : [];
   const cls = await service.createClass(data);
   if (tags.length) {
     const tagIds = [];
@@ -199,118 +105,91 @@ exports.createClass = catchAsync(async (req, res) => {
     await service.addClassTags(cls.id, tagIds);
     cls.tags = await service.getClassTags(cls.id);
   }
-  const approvedImmediately = cls.moderation_status === "Approved";
-
   notificationService
     .createNotification({
       user_id: cls.instructor_id,
-      type: approvedImmediately ? "class_approved" : "class_created",
-      message: approvedImmediately
-        ? `Class "${cls.title}" approved. You can now start teaching`
-        :
-            "Your class was created successfully and is now pending review. We'll notify you once it's published.",
+      type: "class_created",
+      message:
+        "Your class was created successfully and is now pending review. We'll notify you once it's published.",
     })
     .catch((err) =>
       logger.error("Failed to notify instructor of new class:", err.message)
     );
 
-  let admins = [];
-  let adminNotificationPromises = [];
-  let adminMessagePromises = [];
+  const admins = await userModel.findAdmins();
+  const instructor = await userModel.findById(cls.instructor_id);
 
-  if (!approvedImmediately) {
-    admins = await userModel.findAdmins();
-    const instructor = await userModel.findById(cls.instructor_id);
+  const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
+    cls.start_date ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}` : ""
+  } that is awaiting your review.`;
+  const adminNotificationPromises = admins.map((admin) =>
+    notificationService.createNotification({
+      user_id: admin.id,
+      type: "new_class",
+      message: adminMessage,
+    })
+  );
 
-    const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
-      cls.start_date
-        ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}`
-        : ""
-    } that is awaiting your review.`;
-    adminNotificationPromises = admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "new_class",
-        message: adminMessage,
+  const instructorMessage =
+    `Your class "${cls.title}" was created successfully and is pending admin approval. It will appear on your dashboard once published.`;
+
+  const sender = admins[0];
+  if (sender) {
+    messageService
+      .createMessage({
+        sender_id: sender.id,
+        receiver_id: cls.instructor_id,
+        message: instructorMessage,
       })
-    );
-
-    const instructorMessage =
-      `Your class "${cls.title}" was created successfully and is pending admin approval. It will appear on your dashboard once published.`;
-
-    const sender = admins[0];
-    if (sender) {
-      messageService
-        .createMessage({
-          sender_id: sender.id,
-          receiver_id: cls.instructor_id,
-          message: instructorMessage,
-        })
-        .catch((err) =>
-          logger.error(
-            "Failed to send instructor class message:",
-            err.message
-          )
-        );
-    }
-
-    adminMessagePromises = admins.map((admin) =>
-      messageService.createMessage({
-        sender_id: instructor.id,
-        receiver_id: admin.id,
-        message: adminMessage,
-      })
-    );
+      .catch((err) =>
+        logger.error(
+          "Failed to send instructor class message:",
+          err.message
+        )
+      );
   }
+
+  const adminMessagePromises = admins.map((admin) =>
+    messageService.createMessage({
+      sender_id: instructor.id,
+      receiver_id: admin.id,
+      message: adminMessage,
+    })
+  );
 
   sendSuccess(res, cls, "Class created");
 
-  if (adminNotificationPromises.length) {
-    Promise.allSettled(adminNotificationPromises).then((results) => {
-      results.forEach((result, idx) => {
-        if (result.status === "rejected") {
-          logger.error(
-            "Failed to notify admin",
-            admins[idx].id,
-            result.reason?.message || result.reason
-          );
-        }
-      });
+  Promise.allSettled(adminNotificationPromises).then((results) => {
+    results.forEach((result, idx) => {
+      if (result.status === "rejected") {
+        logger.error(
+          "Failed to notify admin",
+          admins[idx].id,
+          result.reason?.message || result.reason
+        );
+      }
     });
-  }
+  });
 
-  if (adminMessagePromises.length) {
-    Promise.allSettled(adminMessagePromises).then((results) => {
-      results.forEach((result, idx) => {
-        if (result.status === "rejected") {
-          logger.error(
-            "Failed to send admin message",
-            admins[idx].id,
-            result.reason?.message || result.reason
-          );
-        }
-      });
+  Promise.allSettled(adminMessagePromises).then((results) => {
+    results.forEach((result, idx) => {
+      if (result.status === "rejected") {
+        logger.error(
+          "Failed to send admin message",
+          admins[idx].id,
+          result.reason?.message || result.reason
+        );
+      }
     });
-  }
+  });
 
 });
 
 exports.getAllClasses = catchAsync(async (req, res) => {
-  const {
-    page = 1,
-    limit = 10,
-    filter,
-    approval,
-    status,
-    schedule,
-  } = req.query;
+  const { page = 1, limit = 10 } = req.query;
   const result = await service.getAllClasses({
     page: Number(page),
     limit: Number(limit),
-    filter,
-    approval,
-    status,
-    schedule,
   });
   sendSuccess(res, result.data, undefined, result.meta);
 });
@@ -324,11 +203,8 @@ exports.getClassById = catchAsync(async (req, res) => {
 });
 
 exports.getMyClasses = catchAsync(async (req, res) => {
-  const { page = 1, limit = 10, instructorId } = req.query;
-  const roles = req.user?.roles || req.user?.role;
-  const canOverrideInstructor = isAdminRole(roles);
-  const targetId = canOverrideInstructor && instructorId ? instructorId : req.user.id;
-  const result = await service.getClassesByInstructor(targetId, {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await service.getClassesByInstructor(req.user.id, {
     page: Number(page),
     limit: Number(limit),
   });
@@ -391,28 +267,24 @@ exports.updateClass = catchAsync(async (req, res) => {
   if (req.user.role === 'instructor') {
     data.instructor_id = existing.instructor_id;
   }
-  const tags = normalizeTagsInput(rawTags, { defaultValue: null });
+  const tags = rawTags ? JSON.parse(rawTags) : null;
   const cls = await service.updateClass(req.params.id, data);
-  if (tags !== null) {
+  if (tags) {
     // remove existing then add
     await db('class_tag_map').where({ class_id: cls.id }).del();
-    if (tags.length) {
-      const tagIds = [];
-      for (const name of tags) {
-        const existingTag = await tagService.findByName(name);
-        const tag =
-          existingTag ||
-          (await tagService.createTag({
-            name,
-            slug: slugify(name, { lower: true, strict: true }),
-          }));
-        tagIds.push(tag.id);
-      }
-      await service.addClassTags(cls.id, tagIds);
-      cls.tags = await service.getClassTags(cls.id);
-    } else {
-      cls.tags = [];
+    const tagIds = [];
+    for (const name of tags) {
+      const existingTag = await tagService.findByName(name);
+      const tag =
+        existingTag ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
     }
+    await service.addClassTags(cls.id, tagIds);
+    cls.tags = await service.getClassTags(cls.id);
   }
   if (
     req.user.role !== "instructor" &&
@@ -474,56 +346,6 @@ exports.deleteClass = catchAsync(async (req, res) => {
   sendSuccess(res, null, "Class deleted");
 });
 
-exports.bulkDeleteClasses = catchAsync(async (req, res) => {
-  const ids = req.body?.ids;
-
-  if (!Array.isArray(ids) || ids.length === 0) {
-    throw new AppError("ids must be a non-empty array", 400);
-  }
-
-  const invalidIds = ids.filter(
-    (id) => typeof id !== "string" || !id.trim()
-  );
-
-  if (invalidIds.length) {
-    throw new AppError("Each id must be a non-empty string", 400);
-  }
-
-  const normalizedIds = Array.from(new Set(ids.map((id) => id.trim())));
-
-  const classes = await service.bulkDeleteClasses(normalizedIds);
-
-  const notificationPromises = classes
-    .filter((cls) => cls?.instructor_id)
-    .map((cls) =>
-      notificationService
-        .createNotification({
-          user_id: cls.instructor_id,
-          type: "class_deleted",
-          message: `Class "${cls.title}" deleted`,
-        })
-        .catch((err) =>
-          logger.error(
-            "Failed to notify instructor of class deletion:",
-            err.message
-          )
-        )
-    );
-
-  if (notificationPromises.length) {
-    await Promise.allSettled(notificationPromises);
-  }
-
-  sendSuccess(
-    res,
-    {
-      ids: classes.map((cls) => cls.id),
-      count: classes.length,
-    },
-    "Classes deleted"
-  );
-});
-
 exports.getPublishedClasses = catchAsync(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const result = await service.getPublishedClasses({
@@ -583,21 +405,6 @@ exports.toggleClassStatus = catchAsync(async (req, res) => {
 });
 
 exports.approveClass = catchAsync(async (req, res) => {
-  const existing = await service.getClassById(req.params.id);
-  if (!existing) throw new AppError("Class not found", 404);
-  const plan = await getActiveInstructorPlan(existing.instructor_id);
-  if (!plan) {
-    throw new AppError(
-      "Active instructor plan required to approve classes",
-      403
-    );
-  }
-  if (plan.max_courses) {
-    const count = await service.countPublishedClasses(existing.instructor_id);
-    if (count >= plan.max_courses) {
-      throw new AppError("Course limit reached for your plan", 403);
-    }
-  }
   const cls = await service.updateModeration(req.params.id, "Approved");
   await notificationService.createNotification({
     user_id: cls.instructor_id,

@@ -12,9 +12,8 @@ import {
   updateClassRule,
   deleteClassRule,
 } from "@/services/admin/classRuleService";
-import withAuthProtection from "@/hooks/withAuthProtection";
 
-function ClassRulesPage() {
+export default function ClassRulesPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
@@ -36,18 +35,18 @@ function ClassRulesPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleAdd = async ({ text }) => {
+  const handleAdd = async (payload) => {
     try {
-      const created = await createClassRule(id, { text });
+      const created = await createClassRule(id, payload);
       if (created) setRules((prev) => [...prev, created]);
     } catch (err) {
       console.error('Failed to create rule', err);
     }
   };
 
-  const handleUpdate = async (ruleId, { text }) => {
+  const handleUpdate = async (ruleId, payload) => {
     try {
-      const updated = await updateClassRule(id, ruleId, { text });
+      const updated = await updateClassRule(id, ruleId, payload);
       if (updated) setRules((prev) => prev.map((r) => (r.id === ruleId ? updated : r)));
     } catch (err) {
       console.error('Failed to update rule', err);
@@ -93,8 +92,3 @@ export async function getServerSideProps({ locale }) {
   };
 }
 
-const ProtectedClassRulesPage = withAuthProtection(ClassRulesPage, {
-  permissions: ['ADD_ONLINE_CLASS_RULE'],
-});
-ProtectedClassRulesPage.getLayout = ClassRulesPage.getLayout;
-export default ProtectedClassRulesPage;

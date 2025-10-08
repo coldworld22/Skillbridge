@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -14,32 +15,19 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import useTutorialCreation from "@/hooks/useTutorialCreation";
 
 function CreateTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
-  const router = useRouter();
-
-  const {
-    step,
-    setStep,
-    nextStep,
-    prevStep,
-    tutorialData,
-    setTutorialData,
-    categories,
-    buildFormData,
-  } = useTutorialCreation({ fetchCategories: fetchAllCategories });
-
   const notify = async (type, message) => {
     if (!user?.id) {
-      toast.warn(t('notification_warning'));
+      toast.warn('Notification skipped: missing user data.');
       return;
     }
 
@@ -50,28 +38,85 @@ function CreateTutorialPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || t('failed_create');
+      const msg = err.response?.data?.message || t('creation_failed');
       toast.error(msg);
     }
   };
+  const [step, setStep] = useState(1);
+  const router = useRouter();
+  const [tutorialData, setTutorialData] = useState({
+    title: "",
+    shortDescription: "",
+    category: "",
+    categoryName: "",
+    level: "",
+    lessonCount: 1,
+    tags: [],
+    chapters: [],
+    thumbnail: null,
+    preview: null,
+    language: "",
+    price: "",
+    isFree: false,
+  });
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem("tutorialDraft");
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setTutorialData({
+          ...draft,
+          thumbnail: null,
+          preview: null,
+          language: draft.language || "",
+          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+        });
+      } catch (err) {
+        console.error("Failed to parse tutorialDraft", err);
+        localStorage.removeItem("tutorialDraft");
+      }
+    }
+
+    const loadCategories = async () => {
+      try {
+        const result = await fetchAllCategories();
+
+        setCategories(result || []);
+
+      
+      } catch (err) {
+        console.error("Failed to load categories", err);
+        toast.error(t('load_categories_failed'));
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  const nextStep = () => setStep((prev) => prev + 1);
+  const prevStep = () => setStep((prev) => prev - 1);
+
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error(t('upload_video_each_lesson'));
+      toast.error(t('video_required'));
       return;
     }
 
-    const formData = buildFormData(status);
+    const formData = buildTutorialFormData(tutorialData, status);
 
     try {
       await createTutorial(formData);
       toast.success(
-        status === "draft" ? t('draft_saved') : t('submitted_success')
+        status === "draft" ? t('draft_success') : t('submit_success')
       );
       const msg =
         status === "draft"
-          ? t('notification_draft_message', { title: tutorialData.title })
-          : t('notification_submitted_message', { title: tutorialData.title });
+          ? `Tutorial "${tutorialData.title}" saved as draft.`
+          : `Tutorial "${tutorialData.title}" submitted for approval.`;
       notify('tutorial_created', msg);
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
@@ -80,7 +125,7 @@ function CreateTutorialPage() {
       if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else {
-        toast.error(t('failed_create'));
+        toast.error(t('creation_failed'));
       }
     }
   };
@@ -91,15 +136,15 @@ function CreateTutorialPage() {
   return (
     <AdminLayout>
       <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">{t('title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 {t('title')}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
           steps={[
-            t('step_basic_info'),
-            t('step_curriculum'),
-            t('step_media'),
-            t('step_pricing_publish'),
+            t('basic_info'),
+            t('curriculum'),
+            t('media'),
+            t('pricing_publish'),
           ]}
           currentStep={step}
           onStepClick={(s) => {
@@ -150,14 +195,14 @@ function CreateTutorialPage() {
                 onClick={prevStep}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-full font-bold"
               >
-                {t('back')}
+                ⬅️ {t('back')}
               </button>
             )}
             <button
               onClick={saveDraft}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              {t('save_draft')}
+              💾 {t('save_draft')}
             </button>
           </div>
           {step < 4 && (
@@ -165,7 +210,7 @@ function CreateTutorialPage() {
               onClick={nextStep}
               className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              {t('next')}
+              {t('next')} ➡️
             </button>
           )}
         </div>

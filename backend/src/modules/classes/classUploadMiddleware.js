@@ -27,29 +27,16 @@ const storage = multer.diskStorage({
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 const videoTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/webm'];
 
-const normalizeMime = (value) => (value ? value.toLowerCase() : '');
-
-const hasAllowedType = (file, allowedTypes) => {
-  const mimeFromClient = normalizeMime(file.mimetype);
-  const mimeFromName = normalizeMime(mime.lookup(file.originalname));
-
-  if (allowedTypes.includes(mimeFromClient) || allowedTypes.includes(mimeFromName)) {
-    return true;
-  }
-
-  // Some browsers/devices may not send a reliable mimetype. In that case we
-  // fall back to checking the file extension directly.
-  const ext = normalizeMime(path.extname(file.originalname)).replace('.', '');
-  if (!ext) return false;
-  return allowedTypes.some((type) => normalizeMime(mime.extension(type)) === ext);
-};
-
 const fileFilter = (_req, file, cb) => {
+  const detectedMime = mime.lookup(file.originalname) || '';
+
   if (file.fieldname === 'cover_image') {
-    if (hasAllowedType(file, imageTypes)) return cb(null, true);
+    if (imageTypes.includes(file.mimetype) && imageTypes.includes(detectedMime))
+      return cb(null, true);
     return cb(new Error('Invalid file type'), false);
   } else if (file.fieldname === 'demo_video') {
-    if (hasAllowedType(file, videoTypes)) return cb(null, true);
+    if (videoTypes.includes(file.mimetype) && videoTypes.includes(detectedMime))
+      return cb(null, true);
     return cb(new Error('Invalid file type'), false);
   }
 

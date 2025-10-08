@@ -13,7 +13,7 @@ import {
   FiImage,
 } from "react-icons/fi";
 import Link from "next/link";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -59,12 +59,12 @@ function AdminViewBookPage() {
         setLoading(false);
       } catch (err) {
         console.error("Failed to load book", err);
-        setError(t("errors:bookLoad"));
+        setError(t("errors.bookLoad"));
         setLoading(false);
       }
     };
     load();
-  }, [id, t]);
+  }, [id]);
 
   const handleDelete = () => {
     openConfirmModal({

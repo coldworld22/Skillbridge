@@ -1,21 +1,15 @@
 const express = require('express');
-const requireAdmin = require('../middleware/requireAdmin');
-const { clearServerCache } = require('../server');
-
 const router = express.Router();
 
-router.post('/clear', requireAdmin, async (_req, res) => {
+router.post('/clear', async (_req, res) => {
   try {
-    if (typeof clearServerCache !== 'function') {
-      throw new Error('Cache clear function not available');
+    if (global.clearServerCache) {
+      await global.clearServerCache();
     }
-    await clearServerCache();
-    res.status(200).json({ status: 'success', message: 'Cache cleared' });
+    res.status(200).json({ status: 'cleared' });
   } catch (err) {
     console.error('Failed to clear cache', err);
-    res
-      .status(500)
-      .json({ status: 'error', message: 'Failed to clear cache' });
+    res.status(500).json({ status: 'error', message: 'Failed to clear cache' });
   }
 });
 

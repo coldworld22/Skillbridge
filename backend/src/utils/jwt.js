@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const { REFRESH_TOKEN_EXPIRES_IN } = require("../config/tokens");
 
 /**
  * Generate JWT access token
@@ -16,9 +15,7 @@ exports.generateAccessToken = (payload) => {
  * @returns {string} - The generated JWT refresh token
  */
 exports.generateRefreshToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-  });
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 /**

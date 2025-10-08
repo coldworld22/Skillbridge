@@ -62,8 +62,6 @@ describe('Redis connection', () => {
     jest.mock('../src/sockets', () => ({
       initSockets: jest.fn(),
       state: { io: {}, rooms: {}, participants: {}, userSockets: {} },
-      getIO: () => ({}),
-      getUserSockets: () => ({}),
     }));
 
     const { startServer } = require('../src/server');

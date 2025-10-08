@@ -3,7 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useAuthStore from "@/store/auth/authStore";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";

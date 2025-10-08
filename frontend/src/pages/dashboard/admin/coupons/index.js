@@ -3,9 +3,8 @@ import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchCoupons, deleteCoupon } from "@/services/admin/couponService";
 import Link from "next/link";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdminCouponsPage() {
+export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -127,5 +126,3 @@ function AdminCouponsPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(AdminCouponsPage);

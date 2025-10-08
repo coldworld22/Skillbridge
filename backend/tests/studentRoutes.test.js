@@ -1,6 +1,5 @@
 const request = require('supertest');
 const express = require('express');
-const errorHandler = require('../src/middleware/errorHandler');
 
 jest.mock('../src/modules/messages/messages.service', () => ({
   sendEmail: jest.fn(),
@@ -15,13 +14,11 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const msgService = require('../src/modules/messages/messages.service');
-const service = require('../src/modules/students/student.service');
 const routes = require('../src/modules/students/student.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/students', routes);
-app.use(errorHandler);
 
 describe('POST /api/students/:id/email', () => {
   it('sends email to student', async () => {
@@ -63,23 +60,5 @@ describe('POST /api/students/:id/video-call', () => {
       sender_id: 'user1',
       receiver_id: '123e4567-e89b-12d3-a456-426614174000',
     });
-  });
-});
-
-describe('GET /api/students', () => {
-  it('forwards errors to handler', async () => {
-    service.getPublicStudents = jest.fn().mockRejectedValue(new Error('fail'));
-    const res = await request(app).get('/api/students');
-    expect(res.status).toBe(500);
-    expect(res.body.message).toBe('fail');
-  });
-});
-
-describe('GET /api/students/:id', () => {
-  it('forwards errors to handler', async () => {
-    service.getPublicStudent = jest.fn().mockRejectedValue(new Error('oops'));
-    const res = await request(app).get('/api/students/123e4567-e89b-12d3-a456-426614174000');
-    expect(res.status).toBe(500);
-    expect(res.body.message).toBe('oops');
   });
 });

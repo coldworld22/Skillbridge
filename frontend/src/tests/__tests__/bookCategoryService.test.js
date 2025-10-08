@@ -10,7 +10,7 @@ describe("bookCategoryService", () => {
 
     const categories = await fetchBookCategories();
 
-    expect(api.get).toHaveBeenCalledWith("book-categories");
+    expect(api.get).toHaveBeenCalledWith("/book-categories");
     expect(categories).toEqual(mock);
   });
 });

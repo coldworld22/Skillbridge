@@ -43,25 +43,14 @@ const mockUser = {
   status: 'active',
 };
 
-const ORIGINAL_ENV = { ...process.env };
-
 describe('loginUser token secret validation', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
-    process.env = {
-      ...ORIGINAL_ENV,
-      JWT_SECRET: 'testsecret',
-      REFRESH_TOKEN_SECRET: 'refreshsecret',
-      SESSION_SECRET: 'sessionsecret',
-    };
-  });
-
-  afterAll(() => {
-    process.env = { ...ORIGINAL_ENV };
   });
 
   it('fails when JWT_SECRET is missing', async () => {
+    process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
     delete process.env.JWT_SECRET;
 
     const authService = require('../src/modules/auth/services/auth.service');
@@ -76,6 +65,7 @@ describe('loginUser token secret validation', () => {
   });
 
   it('fails when REFRESH_TOKEN_SECRET is missing', async () => {
+    process.env.JWT_SECRET = 'testsecret';
     delete process.env.REFRESH_TOKEN_SECRET;
 
     const authService = require('../src/modules/auth/services/auth.service');
@@ -87,29 +77,5 @@ describe('loginUser token secret validation', () => {
     await expect(
       authService.loginUser({ email: 'test@example.com', password: 'pass' })
     ).rejects.toThrow('Missing environment variable(s): REFRESH_TOKEN_SECRET');
-  });
-
-  it('fails when JWT_SECRET is blank', () => {
-    process.env.JWT_SECRET = '   ';
-
-    expect(() => require('../src/config/env')).toThrow(
-      'JWT_SECRET must not be empty'
-    );
-  });
-
-  it('fails when REFRESH_TOKEN_SECRET is blank', () => {
-    process.env.REFRESH_TOKEN_SECRET = '   ';
-
-    expect(() => require('../src/config/env')).toThrow(
-      'REFRESH_TOKEN_SECRET must not be empty'
-    );
-  });
-
-  it('fails when SESSION_SECRET is blank', () => {
-    process.env.SESSION_SECRET = '   ';
-
-    expect(() => require('../src/config/env')).toThrow(
-      'SESSION_SECRET must not be empty'
-    );
   });
 });

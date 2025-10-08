@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import ChatImage from "../shared/ChatImage";
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 import {
   FaPlus,
   FaClock,
@@ -28,8 +28,8 @@ const ChatSidebar = ({
 
   const getAvatarUrl = (url) => {
     if (!url) return "/images/default-avatar.png";
-    if (url.startsWith("blob:")) return url;
-    return buildUrl(url) || "/images/default-avatar.png";
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
   };
 
   const isUserOnline = (user) =>

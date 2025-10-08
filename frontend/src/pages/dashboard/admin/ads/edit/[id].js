@@ -9,9 +9,8 @@ import AdForm from "@/components/ads/AdForm";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
 import { fetchPlanFeatures } from "@/services/planFeatureService";
 import useAuthStore from "@/store/auth/authStore";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function EditAdPage() {
+export default function EditAdPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation("dashboard", { keyPrefix: "adsEditPage" });
@@ -77,5 +76,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(EditAdPage);

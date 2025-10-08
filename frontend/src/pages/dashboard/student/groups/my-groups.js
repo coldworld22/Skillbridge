@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 
 export default function MyGroupsPage() {

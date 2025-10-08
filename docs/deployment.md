@@ -2,16 +2,6 @@
 
 Follow these steps to run SkillBridge on a server or production host.
 
-## ZIP package deployments
-
-If you received the managed archive from Memonet, follow the
-[ZIP installation workflow](./installation.md#deploy-from-the-customer-zip-package)
-to upload the bundle, prepare the environment files, and run the install
-scripts. That section covers cPanel/FTP uploads, SSH-based installs, and
-fallbacks for hosts that cannot run Docker. Use this approach when you do not
-have Git access on the production server or when you prefer to promote a tested
-bundle directly from the customer portal.
-
 ## Automated Nginx and SSL setup
 
 After pointing your domain DNS records to the server, run the installation
@@ -33,16 +23,7 @@ referenced in `nginx/conf.d/ssl.conf`.
 
 ## Configure environment variables
 
-1. **Nginx** – set the `ALLOWED_ORIGINS` environment variable to a
-   comma-separated list of origins that should be allowed by the reverse
-   proxy (e.g. `https://foo.com,https://bar.com`). After updating this list
-   reload Nginx so the new value takes effect:
-
-   ```bash
-   docker compose exec nginx nginx -s reload
-   ```
-
-2. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
+1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
    - `PORT` – typically `5000` unless changed.
    - `APP_DOMAIN` – your production domain (e.g. `yourdomain.com`).
    - `SUPPORT_EMAIL` – address used for outbound messages.
@@ -54,13 +35,8 @@ referenced in `nginx/conf.d/ssl.conf`.
   APP_DOMAIN=yourdomain.com
   FRONTEND_URL=https://${APP_DOMAIN},http://147.93.121.45
   # Do not prefix with "FRONTEND_URL=" when using
-  # Docker Compose environment variables.
+  # docker-compose environment variables.
     ```
-
-   For production deployments, Docker Compose also loads variables from
-   `backend/.env.production`. Copy `backend/.env.production.example` to
-   `backend/.env.production` and fill in production secrets such as database
-   credentials and JWT keys.
 
    If the frontend and backend are on different subdomains, also set
     `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
@@ -107,30 +83,21 @@ referenced in `nginx/conf.d/ssl.conf`.
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
-3. **Frontend** – for Docker Compose production builds, set variables in
-  `frontend/.env.production`:
+ 2. **Frontend** – for Docker Compose production builds, set variables in
+   `frontend/.env.production`:
 
-```bash
-APP_DOMAIN=yourdomain.com
-NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
-NEXT_PUBLIC_PGADMIN_URL=https://${APP_DOMAIN}/pgadmin
-```
+ ```bash
+ # Point the frontend to your backend including the /api prefix
+ NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
+ ```
 
-> **Tip:** When `APP_DOMAIN` is defined you can alternatively set
-> `NEXT_PUBLIC_API_BASE_URL=/api`. During the build the relative value expands
-> to `https://${APP_DOMAIN}/api`, letting reverse proxies expose the API at the
-> same origin without hard-coding the domain in your environment file.
+   The root `.env` is intended for local development and defaults
+   `NEXT_PUBLIC_API_BASE_URL` to `http://backend:5002/api` for internal
+   container communication. Remove or override this file in production so the
+   frontend uses your public HTTPS domain.
 
-Commit only placeholder values. Provide real production settings via
-environment variables or by mounting a `.env.production` file at deploy time
-so secrets stay out of version control. The root `.env` is intended for local
-development and defaults `NEXT_PUBLIC_API_BASE_URL` to
-`http://localhost:5002/api` for internal container communication. Remove or
-override this file in production so the frontend uses your public HTTPS
-domain.
-
- Without these variables the frontend defaults to `/api` which may point to the
- wrong server when deployed.
+  Without this variable the frontend defaults to `/api` which may point to the
+  wrong server when deployed.
 
 ### Production example: eduskillbridge.net
 
@@ -143,8 +110,7 @@ values managed outside of version control. Configure the public URLs:
 APP_DOMAIN=eduskillbridge.net
 FRONTEND_URL=https://eduskillbridge.net
 NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
-NEXT_PUBLIC_PGADMIN_URL=https://eduskillbridge.net/pgadmin
-NEXT_PUBLIC_SOCKET_URL=wss://eduskillbridge.net
+NEXT_PUBLIC_SOCKET_URL=https://eduskillbridge.net
 ```
 
 Keep these files out of git and store the secrets in your hosting
@@ -164,20 +130,6 @@ npm --prefix backend run migrate
 
 Running migrations separately keeps `startServer()` lightweight and ensures the
 database schema matches the application's expectations.
-
-> **Important:** Docker Compose no longer bind-mounts `backend/src/migrations`.
-> When a release adds new migration files (for example the critical verification
-> migrations `20250930160000` and `20250930160010`), rebuild the backend image so
-> the container sees the updated migration directory before running `npm --prefix
-> backend run migrate`:
->
-> ```bash
-> docker compose build backend && docker compose up -d backend
-> ```
->
-> Otherwise the running container will still contain the previous migration set
-> and Knex will report **"The migration directory is corrupt..."** because it
-> cannot find the new files.
 
 ## Preserve uploaded media
 
@@ -214,53 +166,10 @@ domains you can still extend `remotePatterns` in
 
 ## Troubleshooting
 
-### Knex reports "The migration directory is corrupt"
-
-When Compose reuses an older backend image it may not contain the newest
-`backend/src/migrations` files.  Knex then aborts with errors like:
-
-```
-The migration directory is corrupt, the following files are missing:
-20250930160000_alter_verifications_code_to_varchar255.js,
-20250930160010_alter_verifications_code_to_text.js
-```
-
-To resolve this:
-
-1. Rebuild the backend image so the container bakes in the updated migration
-   list (pass `--no-cache` if you want to discard any cached layers):
-
-   ```bash
-   docker compose build --no-cache backend && docker compose up -d backend
-   ```
-
-2. Confirm the new container can see the migrations:
-
-   ```bash
-   docker compose exec backend ls /app/src/migrations
-   ```
-
-   The output should include the verification migrations
-   `20250930160000_alter_verifications_code_to_varchar255.js` and
-   `20250930160010_alter_verifications_code_to_text.js`.
-
-3. Re-run the migration command if it did not execute automatically during the
-   container start-up:
-
-   ```bash
-   docker compose exec backend npm run migrate
-   ```
-
-If the error persists, stop the backend service and remove the old container so
-Compose cannot reuse it (`docker compose rm -fs backend`), then repeat the
-build/start steps above.  Always rebuild the backend image after adding or
-renaming migration files because the directory is no longer bind-mounted into
-the container.
-
-### Login page requests `http://localhost:5002`
+### Login page requests `http://localhost:5000`
 
 If you deploy the frontend and see network errors pointing to
-`http://localhost:5002/api` it means the build did not have
+`http://localhost:5000/api` it means the build did not have
 `NEXT_PUBLIC_API_BASE_URL` set.  Update `frontend/.env.local` with the correct
 backend URL and rebuild/restart the frontend container so the new value is
 picked up.
@@ -308,24 +217,4 @@ COOKIE_SAMESITE=None
 ```
 
 This ensures the refresh token cookie is sent across subdomains without HTTPS.
-
-### "Failed to load SEO settings" or network errors
-
-If the dashboard displays **"Failed to load SEO settings"** or other
-`ERR_NETWORK` messages, the frontend is usually pointed at the wrong API or the
-backend is not allowing the frontend's origin.
-
-1. Verify `NEXT_PUBLIC_API_BASE_URL` in your frontend `.env.local` or
-   `.env.production` matches your public backend URL with the `/api` suffix. See
-   the [production example](#production-example-eduskillbridgenet) above for a
-   typical value using `${APP_DOMAIN}`.
-2. Ensure `FRONTEND_URL` in `backend/.env` lists the exact origin of your
-   frontend, including both `www` and non-`www` domains if applicable. Refer to
-   the earlier `FRONTEND_URL` snippet under **Configure environment variables**.
-3. Check the backend logs or browser console for CORS messages such as
-   `No 'Access-Control-Allow-Origin'` or `Origin ... not allowed by CORS` to
-   confirm which domain is being rejected.
-
-Updating these variables and restarting the affected service should resolve most
-SEO and networking issues.
 

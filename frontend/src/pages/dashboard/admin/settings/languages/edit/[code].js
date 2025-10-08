@@ -10,7 +10,6 @@ import { FaArrowLeft, FaSave, FaUpload } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const fetchTranslations = async (code) => {
   const data = {};
@@ -24,7 +23,7 @@ const fetchTranslations = async (code) => {
 
 const namespaces = ["common", "website", "dashboard", "auth"];
 
-function EditLanguagePage() {
+export default function EditLanguagePage() {
   const router = useRouter();
   const { code } = router.query;
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
@@ -324,5 +323,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(EditLanguagePage);

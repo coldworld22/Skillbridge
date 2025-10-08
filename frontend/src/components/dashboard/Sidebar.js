@@ -2,12 +2,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
-import { useTranslation, i18n } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
+import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
-import { buildUrl } from '@/utils/url';
-import { clearCache as clearCacheWithToast } from '@/utils/cache';
+import { clearCache } from '@/services/admin/cacheService';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -17,18 +17,11 @@ export default function Sidebar({ role = 'admin' }) {
   const { t } = useTranslation('dashboard');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [currentYear, setCurrentYear] = useState(null);
   const settings = useAppConfigStore((state) => state.settings);
-  const appConfigHydrated = useAppConfigStore((state) => state.hasHydrated);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   useEffect(() => {
     setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    const year = new Date().getFullYear();
-    setCurrentYear((prev) => (prev === year ? prev : year));
   }, []);
 
   useEffect(() => {
@@ -37,7 +30,7 @@ export default function Sidebar({ role = 'admin' }) {
 
   const handleClearCache = async () => {
     try {
-      await clearCacheWithToast();
+      await clearCache();
     } catch (err) {
       console.error('Failed to clear cache', err);
     }
@@ -56,29 +49,17 @@ export default function Sidebar({ role = 'admin' }) {
     setActiveDropdown((prev) => (prev === label ? null : label));
   };
 
-  const shouldUseSettings = isHydrated && appConfigHydrated;
-  const fallbackAppName = 'SkillBridge';
-  const fallbackLogoSrc = logo.src || logo;
-  const displayAppName =
-    shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
-  const logoSrc =
-    shouldUseSettings && settings?.logo_url
-      ? buildUrl(settings.logo_url)
-      : fallbackLogoSrc;
-  const footerBranding =
-    shouldUseSettings && settings?.appName ? settings.appName : fallbackAppName;
-
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 shadow-lg p-6 flex flex-col justify-between">
       <div>
         <div className="flex items-center gap-3 mb-8">
           <img
-            src={logoSrc}
-            alt={`${displayAppName} Logo`}
+            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo.src || logo}
+            alt={`${settings.appName || 'SkillBridge'} Logo`}
             className="w-12 h-12 rounded-full object-contain shadow"
           />
           <h2 className="text-2xl font-extrabold text-yellow-500">
-            {displayAppName}
+            {settings.appName || 'SkillBridge'}
           </h2>
         </div>
 
@@ -160,10 +141,17 @@ export default function Sidebar({ role = 'admin' }) {
         </nav>
       </div>
 
+      {['admin','superadmin'].includes(role) && (
+        <button
+          onClick={handleClearCache}
+          className="flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+        >
+          {t('sidebar.clear_cache')}
+        </button>
+      )}
+
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy;{' '}
-        {currentYear ? `${currentYear} ` : ''}
-        {footerBranding}
+        &copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}
       </div>
     </aside>
   );

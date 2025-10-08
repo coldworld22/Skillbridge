@@ -12,10 +12,8 @@ const upload = require("./certificateTemplateUpload.middleware");
 router.use(verifyToken, isAdmin);
 
 router.get("/", controller.list);
-router.get("/active/default", controller.getActive);
 router.post("/", validate(createTemplate), controller.create);
 router.post("/upload", upload, controller.upload);
-router.get("/:id/preview", controller.preview);
 router.get("/:id", controller.get);
 router.put("/:id", validate(updateTemplate), controller.update);
 router.patch("/:id/toggle", controller.toggle);

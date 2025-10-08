@@ -1,9 +1,6 @@
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
-// Raised to support "All" selections in admin tables without truncating results.
-// Aligns with the largest datasets exposed through our APIs while still
-// preventing unbounded queries.
-const MAX_LIMIT = 10000;
+const MAX_LIMIT = 100;
 
 exports.parsePagination = ({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) => {
   let pageNum = parseInt(page, 10);

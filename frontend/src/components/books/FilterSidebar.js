@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaTimesCircle } from "react-icons/fa";
 import { fetchBookCategories } from "@/services/bookCategoryService";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import {
   BOOK_PRICE_RANGE_DEFAULT,

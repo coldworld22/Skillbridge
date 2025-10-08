@@ -5,9 +5,8 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchAds, purchaseAd } from "@/services/admin/adService";
 import { toast } from "react-toastify";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function PurchaseAdsPage() {
+export default function PurchaseAdsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "adsPurchasePage" });
   const [ads, setAds] = useState([]);
 
@@ -75,5 +74,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(PurchaseAdsPage);

@@ -38,7 +38,6 @@ describe.skip('class.service tag aggregation', () => {
       table.float('price');
       table.string('status');
       table.string('moderation_status');
-      table.string('access_type').notNullable().defaultTo('paid');
       table.uuid('instructor_id').references('users.id');
       table.integer('category_id').references('categories.id');
       table.integer('max_students');
@@ -76,26 +75,8 @@ describe.skip('class.service tag aggregation', () => {
     await mockDb('users').insert({ id: instructorId, full_name: 'Teacher' });
     await mockDb('categories').insert({ id: 1, name: 'Cat' });
     await mockDb('online_classes').insert([
-      {
-        id: class1Id,
-        title: 'C1',
-        slug: 'c1',
-        instructor_id: instructorId,
-        category_id: 1,
-        status: 'draft',
-        moderation_status: 'Pending',
-        access_type: 'paid',
-      },
-      {
-        id: class2Id,
-        title: 'C2',
-        slug: 'c2',
-        instructor_id: instructorId,
-        category_id: 1,
-        status: 'draft',
-        moderation_status: 'Pending',
-        access_type: 'paid',
-      },
+      { id: class1Id, title: 'C1', slug: 'c1', instructor_id: instructorId, category_id: 1, status: 'draft', moderation_status: 'Pending' },
+      { id: class2Id, title: 'C2', slug: 'c2', instructor_id: instructorId, category_id: 1, status: 'draft', moderation_status: 'Pending' },
     ]);
     await mockDb('class_tags').insert([
       { id: 1, name: 'Tag1', slug: 'tag1' },

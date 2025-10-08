@@ -188,11 +188,8 @@ exports.getFullProfile = async (req, res) => {
       .where({ user_id: userId })
       .select('platform', 'url');
 
-    const canonicalRole = (req.user.roles && req.user.roles[0]) || req.user.role;
-
     res.json({
       ...user,
-      role: canonicalRole,
       roles: req.user.roles,
       permissions: req.user.permissions,
       ...roleData,

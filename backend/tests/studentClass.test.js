@@ -2,12 +2,8 @@ const Student = require('../src/modules/users/student/student.class');
 
 jest.mock('../src/modules/classes/class.service', () => ({
   getPublishedClasses: jest.fn(() => Promise.resolve({ data: [], meta: {} })),
-  getPublicClassDetails: jest.fn((id) =>
-    Promise.resolve({ id, price: 10, status: 'published', moderation_status: 'Approved' })
-  ),
-  getClassById: jest.fn((id) =>
-    Promise.resolve({ id, price: 10, status: 'published', moderation_status: 'Approved' })
-  )
+  getPublicClassDetails: jest.fn((id) => Promise.resolve({ id, price: 10 })),
+  getClassById: jest.fn((id) => Promise.resolve({ id, price: 10 }))
 }));
 
 jest.mock('../src/modules/classes/wishlist/classWishlist.service', () => ({

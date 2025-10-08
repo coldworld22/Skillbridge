@@ -1,26 +1,26 @@
-const config = require('./src/config/env');
+require('dotenv').config();
 
 const baseConfig = {
   client: 'pg',
   migrations: {
-    directory: './src/migrations',
+    directory: './src/migrations'
   },
   seeds: {
-    directory: './src/seeds',
-  },
+    directory: './src/seeds'
+  }
 };
 
 module.exports = {
   development: {
     ...baseConfig,
-    connection: config.getDatabaseUrl('development'),
+    connection: process.env.DATABASE_URL
   },
   test: {
     ...baseConfig,
-    connection: config.getDatabaseUrl('test'),
+    connection: process.env.TEST_DATABASE_URL
   },
   production: {
     ...baseConfig,
-    connection: config.getDatabaseUrl('production'),
-  },
+    connection: process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL
+  }
 };

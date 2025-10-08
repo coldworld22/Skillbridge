@@ -1,7 +1,6 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
 
 const SETTINGS_KEY = "social_login_settings";
@@ -16,11 +15,6 @@ exports.getSettings = async () => {
       return null;
     }
   } catch (err) {
-    if (process.env.NODE_ENV === 'test') {
-      // Jest expectations spy on console.error directly, so ensure the message
-      // is emitted without logger prefixes when running in the test environment.
-      console.error('Failed to load social login settings', err);
-    }
     logger.error("Failed to load social login settings", err);
     return null;
   }
@@ -36,86 +30,16 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
-  try {
-    await saveToEnv(settings);
-  } catch (error) {
-    logger.warn('Skipping .env update for social login settings due to an unexpected error.', error);
-  }
+  await saveToEnv(settings);
   return settings;
 };
 
-function resolveEnvPath() {
-  const explicitEnvPath = process.env.SOCIAL_LOGIN_ENV_PATH
-    ? path.resolve(process.env.SOCIAL_LOGIN_ENV_PATH)
-    : null;
-  const persistentEnvPath = path.join(__dirname, '../../../data/social-login.env');
-  const defaultEnvPath = path.join(__dirname, '../../../.env');
-  const fallbackEnvPath = path.join(os.tmpdir(), 'skillbridge', 'social-login.env');
-  const candidates = [explicitEnvPath, defaultEnvPath, persistentEnvPath, fallbackEnvPath].filter(Boolean);
-
-  for (const candidate of candidates) {
-    try {
-      const dir = path.dirname(candidate);
-      try {
-        fs.mkdirSync(dir, { recursive: true });
-      } catch (mkdirError) {
-        if (mkdirError?.code !== 'EEXIST') {
-          throw mkdirError;
-        }
-      }
-
-      fs.accessSync(dir, fs.constants.W_OK);
-
-      const fd = fs.openSync(candidate, fs.constants.O_CREAT | fs.constants.O_WRONLY, 0o600);
-      fs.closeSync(fd);
-
-      return candidate;
-    } catch (error) {
-      const isExplicitEnvPath = explicitEnvPath && candidate === explicitEnvPath;
-      const isDefaultEnvPath = candidate === defaultEnvPath;
-
-      if (isExplicitEnvPath) {
-        logger.warn(
-          'Unable to access SOCIAL_LOGIN_ENV_PATH for social login settings. Falling back to defaults.'
-        );
-        logger.debug('SOCIAL_LOGIN_ENV_PATH error details:', error);
-      } else if (isDefaultEnvPath && (error?.code === 'EACCES' || error?.code === 'EPERM')) {
-        logger.warn(
-          'Default .env file is not writable for social login settings. Falling back to an internal storage location.',
-          error
-        );
-        logger.debug('Default .env permission error details:', error);
-      }
-    }
-  }
-
-  return null;
-}
-
 function saveToEnv(settings) {
-  let envPath;
-  try {
-    envPath = resolveEnvPath();
-  } catch (error) {
-    logger.warn(
-      'Skipping .env update for social login settings because the env path could not be resolved.',
-      error
-    );
-    return;
-  }
-  if (!envPath) {
-    logger.warn('Skipping .env update for social login settings because no writable env file was found.');
-    updateProcessEnv(settings);
-    return;
-  }
-
+  const envPath = path.join(__dirname, '../../../.env');
   let env = '';
   try {
     env = fs.readFileSync(envPath, 'utf8');
-  } catch (err) {
-    if (err?.code !== 'ENOENT') {
-      logger.warn('Failed to read existing env file for social login settings. Proceeding with a blank file.', err);
-    }
+  } catch (_err) {
     env = '';
   }
 
@@ -160,40 +84,5 @@ function saveToEnv(settings) {
     remove('APPLE_PRIVATE_KEY');
   }
 
-  try {
-    fs.writeFileSync(envPath, env, 'utf8');
-  } finally {
-    updateProcessEnv(settings);
-  }
-}
-
-function updateProcessEnv(settings) {
-  const providers = settings.providers || {};
-
-  const assign = (key, value) => {
-    if (value) {
-      process.env[key] = value;
-    } else {
-      delete process.env[key];
-    }
-  };
-
-  assign('GOOGLE_CLIENT_ID', providers.google?.clientId);
-  assign('GOOGLE_CLIENT_SECRET', providers.google?.clientSecret);
-  assign('FACEBOOK_CLIENT_ID', providers.facebook?.clientId);
-  assign('FACEBOOK_CLIENT_SECRET', providers.facebook?.clientSecret);
-  assign('GITHUB_CLIENT_ID', providers.github?.clientId);
-  assign('GITHUB_CLIENT_SECRET', providers.github?.clientSecret);
-
-  if (providers.apple?.active) {
-    assign('APPLE_CLIENT_ID', providers.apple?.clientId);
-    assign('APPLE_TEAM_ID', providers.apple?.teamId);
-    assign('APPLE_KEY_ID', providers.apple?.keyId);
-    assign('APPLE_PRIVATE_KEY', providers.apple?.privateKey);
-  } else {
-    assign('APPLE_CLIENT_ID');
-    assign('APPLE_TEAM_ID');
-    assign('APPLE_KEY_ID');
-    assign('APPLE_PRIVATE_KEY');
-  }
+  fs.writeFileSync(envPath, env);
 }

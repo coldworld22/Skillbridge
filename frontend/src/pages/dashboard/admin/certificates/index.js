@@ -14,9 +14,8 @@ import {
   rejectCertificate,
   downloadCertificate,
 } from "@/services/admin/certificateService";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdminCertificatesPage() {
+export default function AdminCertificatesPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminCertificatesPage' });
 
   const [certificates, setCertificates] = useState([]);
@@ -230,5 +229,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(AdminCertificatesPage);

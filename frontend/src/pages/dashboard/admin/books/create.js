@@ -42,8 +42,8 @@ function AdminCreateBookPage() {
         setCategories(result?.data || result || []);
       } catch (err) {
         console.error("Failed to load categories", err);
-        setError(t("errors:categoryLoad"));
-        toast.error(t("errors:categoryLoad"));
+        setError(t("errors.categoryLoad"));
+        toast.error(t("errors.categoryLoad"));
       } finally {
         setIsLoading(false);
       }
@@ -53,7 +53,7 @@ function AdminCreateBookPage() {
   }, [t]);
 
   const handleSubmit = async (formData, setProgress) => {
-    if (!fileError && fileInputRef.current?.files?.[0]) {
+    if (fileInputRef.current?.files?.[0]) {
       formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {

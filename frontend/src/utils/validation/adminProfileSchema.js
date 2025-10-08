@@ -1,15 +1,9 @@
 // 📁 src/utils/validation/adminProfileSchema.js
 import { z } from "zod";
-import { isValidPhoneNumber } from "libphonenumber-js";
-import { getUserCountry } from "@/utils/getUserCountry";
 
 export const adminProfileSchema = z.object({
   full_name: z.string().min(3, "Full name is required"),
-  phone: z
-    .string()
-    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
-      message: "Invalid phone number",
-    }),
+  phone: z.string().min(8, "Phone number is required"),
   gender: z.enum(["male", "female"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date",
@@ -18,6 +12,6 @@ export const adminProfileSchema = z.object({
   job_title: z.string().min(2, "Job title is required"),
   department: z.string().min(2, "Department is required"),
   socialLinks: z
-    .record(z.string().url("url_invalid"))
+    .record(z.string().url("Must be a valid URL"))
     .optional(), // optional dictionary { platform: url }
 });

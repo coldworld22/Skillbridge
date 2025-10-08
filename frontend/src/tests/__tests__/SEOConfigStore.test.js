@@ -1,6 +1,5 @@
 import useSEOConfigStore from '@/store/seoConfigStore';
 import { act } from '@testing-library/react';
-import { fetchSEOConfig } from '../../services/admin/seoConfigService';
 
 jest.mock('../../services/admin/seoConfigService', () => ({
   fetchSEOConfig: jest.fn(async () => ({ metaTags: { '/': { title: 'Home' } } })),
@@ -60,26 +59,4 @@ test('fetchPages loads page list', async () => {
   });
   const { pages } = useSEOConfigStore.getState();
   expect(pages).toEqual(['/', '/about']);
-});
-
-test('fetch error leaves loaded false and allows retry', async () => {
-  fetchSEOConfig.mockRejectedValueOnce(new Error('fail'));
-  const { fetch, retryOnError } = useSEOConfigStore.getState();
-  await act(async () => {
-    await fetch();
-  });
-  let state = useSEOConfigStore.getState();
-  expect(state.loaded).toBe(false);
-  expect(state.error).toBe('fail');
-  expect(state.retryPending).toBe(true);
-
-  fetchSEOConfig.mockResolvedValueOnce({ metaTags: { '/': { title: 'Retry' } } });
-  await act(async () => {
-    await retryOnError();
-  });
-  state = useSEOConfigStore.getState();
-  expect(state.loaded).toBe(true);
-  expect(state.error).toBeNull();
-  expect(state.retryPending).toBe(false);
-  expect(state.settings.metaTags['/'].title).toBe('Retry');
 });

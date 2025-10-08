@@ -3,7 +3,7 @@ import { useTranslation } from "next-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown, FaFilter } from "react-icons/fa";
 import { fetchCategoryTree } from "@/services/instructor/categoryService";
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 
 const renderTree = (nodes, level = 1) => {
   return (nodes || []).map((node) => (
@@ -96,7 +96,7 @@ export default function StudyCategories() {
               <div className="p-6">
                 {cat.image_url && (
                   <img
-                    src={buildUrl(cat.image_url)}
+                    src={`${API_BASE_URL}${cat.image_url}`}
                     alt={cat.name}
                     className="w-16 h-16 rounded-full mx-auto mb-2 object-cover"
                   />

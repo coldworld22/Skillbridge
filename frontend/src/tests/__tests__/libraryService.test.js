@@ -8,7 +8,7 @@ describe("libraryService", () => {
     const mock = [{ id: 1, title: "B" }];
     api.get.mockResolvedValue({ data: { data: mock } });
     const items = await fetchLibrary();
-    expect(api.get).toHaveBeenCalledWith("library");
+    expect(api.get).toHaveBeenCalledWith("/library");
     expect(items).toEqual(mock);
   });
 });

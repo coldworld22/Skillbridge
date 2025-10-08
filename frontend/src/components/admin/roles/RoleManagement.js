@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck, PlusCircle, PenSquare, Trash2 } from "lucide-react";
 import useAuthStore from "@/store/auth/authStore";
 import PermissionAssignment from "./PermissionAssignment";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
-import { toast } from "react-toastify";
-import { getNormalizedRoles } from "@/utils/auth/roleUtils";
+import { toast } from "react-hot-toast";
 import {
   fetchAllRoles,
   fetchRoleById,
@@ -17,17 +16,10 @@ import {
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [isRoleLoading, setIsRoleLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editRole, setEditRole] = useState(null);
   const { user } = useAuthStore();
-  const normalizedRoles = getNormalizedRoles(user);
-  const hasAdminRole = normalizedRoles.some((role) =>
-    ["admin", "superadmin"].includes(role)
-  );
-  const canManage =
-    hasAdminRole || user?.permissions?.includes("manage_roles");
-  const latestRequestedRoleId = useRef(null);
+  const canManage = user?.permissions?.includes("manage_roles");
 
   useEffect(() => {
     const loadRoles = async () => {
@@ -35,22 +27,8 @@ export default function RoleManagement() {
         const data = await fetchAllRoles();
         setRoles(data);
         if (data.length) {
-          const firstRoleId = data[0].id;
-          latestRequestedRoleId.current = firstRoleId;
-          setIsRoleLoading(true);
-          try {
-            const firstRole = await fetchRoleById(firstRoleId);
-            if (latestRequestedRoleId.current === firstRoleId) {
-              setSelectedRole(firstRole);
-            }
-          } catch (error) {
-            console.error(error);
-            toast.error("Failed to load role details");
-          } finally {
-            if (latestRequestedRoleId.current === firstRoleId) {
-              setIsRoleLoading(false);
-            }
-          }
+          const firstRole = await fetchRoleById(data[0].id);
+          setSelectedRole(firstRole);
         }
         toast.success("Roles loaded");
       } catch (error) {
@@ -62,15 +40,8 @@ export default function RoleManagement() {
   }, []);
 
   const handleSelect = async (role) => {
-    const previousRole = selectedRole;
-    try {
-      const detailed = await fetchRoleById(role.id);
-      setSelectedRole(detailed);
-    } catch (error) {
-      console.error(error);
-      setSelectedRole(previousRole);
-      toast.error("Failed to load role details");
-    }
+    const detailed = await fetchRoleById(role.id);
+    setSelectedRole(detailed);
   };
 
   const handleAddRole = async (payload) => {
@@ -110,16 +81,6 @@ export default function RoleManagement() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete role");
-    }
-  };
-
-  const handleRolePermissionsUpdated = (updatedRole) => {
-    if (!updatedRole) return;
-    setRoles((prev) =>
-      prev.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role))
-    );
-    if (selectedRole?.id === updatedRole.id) {
-      setSelectedRole(updatedRole);
     }
   };
 
@@ -175,13 +136,7 @@ export default function RoleManagement() {
       </div>
 
       <div className="w-3/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-        {selectedRole && (
-          <PermissionAssignment
-            role={selectedRole}
-            canManage={canManage}
-            onRolePermissionsUpdated={handleRolePermissionsUpdated}
-          />
-        )}
+        {selectedRole && <PermissionAssignment role={selectedRole} canManage={canManage} />}
       </div>
       {showAdd && canManage && (
         <AddRoleModal

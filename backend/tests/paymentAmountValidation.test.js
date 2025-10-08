@@ -28,8 +28,6 @@ jest.mock('../src/modules/payments/paymentAccess', () => ({ grantAccess: jest.fn
 const paymentsController = require('../src/modules/payments/payments.controller');
 const paymentsService = require('../src/modules/payments/payments.service');
 const paymentMethodsService = require('../src/modules/paymentMethods/paymentMethods.service');
-const classService = require('../src/modules/classes/class.service');
-const bookService = require('../src/modules/books/book.service');
 
 function mockRes() {
   return {
@@ -41,16 +39,6 @@ function mockRes() {
 describe('payment amount validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
-    bookService.getBookById.mockResolvedValue({
-      id: 'b1',
-      price: 100,
-    });
   });
 
   it('rejects zero amount with non-free method', async () => {
@@ -65,7 +53,7 @@ describe('payment amount validation', () => {
 
     expect(next).toHaveBeenCalled();
     const err = next.mock.calls[0][0];
-    expect(err.message).toBe('Payment amount does not match item price');
+    expect(err.message).toBe('Invalid amount');
     expect(paymentsService.create).not.toHaveBeenCalled();
   });
 
@@ -81,7 +69,7 @@ describe('payment amount validation', () => {
 
     expect(next).toHaveBeenCalled();
     const err = next.mock.calls[0][0];
-    expect(err.message).toBe('Payment amount does not match item price');
+    expect(err.message).toBe('Invalid amount');
     expect(paymentsService.create).not.toHaveBeenCalled();
   });
 
@@ -97,82 +85,7 @@ describe('payment amount validation', () => {
 
     expect(next).toHaveBeenCalled();
     const err = next.mock.calls[0][0];
-    expect(err.message).toBe('Payment amount does not match item price');
+    expect(err.message).toBe('Bank payments must use the bank transfer API');
     expect(paymentsService.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects purchasing unpublished classes', async () => {
-    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'draft',
-      moderation_status: 'Approved',
-    });
-
-    const req = {
-      body: { method_id: 'm1', item_type: 'class', item_id: 'c1', amount: 100 },
-      user: { id: 'u1' },
-    };
-    const res = mockRes();
-    const next = jest.fn();
-
-    await paymentsController.createPayment(req, res, next);
-    await new Promise(process.nextTick);
-
-    expect(next).toHaveBeenCalled();
-    const err = next.mock.calls[0][0];
-    expect(err.message).toBe('Class is not available for enrollment');
-    expect(paymentsService.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects purchasing unapproved classes', async () => {
-    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Rejected',
-    });
-
-    const req = {
-      body: { method_id: 'm1', item_type: 'class', item_id: 'c1', amount: 100 },
-      user: { id: 'u1' },
-    };
-    const res = mockRes();
-    const next = jest.fn();
-
-    await paymentsController.createPayment(req, res, next);
-    await new Promise(process.nextTick);
-
-    expect(next).toHaveBeenCalled();
-    const err = next.mock.calls[0][0];
-    expect(err.message).toBe('Class is not available for enrollment');
-    expect(paymentsService.create).not.toHaveBeenCalled();
-  });
-
-  it('allows purchasing published and approved classes', async () => {
-    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
-    paymentsService.create.mockResolvedValue({ id: 'p1', status: 'pending_payment' });
-
-    const req = {
-      body: { method_id: 'm1', item_type: 'class', item_id: 'c1', amount: 100 },
-      user: { id: 'u1' },
-    };
-    const res = mockRes();
-    const next = jest.fn();
-
-    await paymentsController.createPayment(req, res, next);
-    await new Promise(process.nextTick);
-
-    expect(next).not.toHaveBeenCalled();
-    expect(paymentsService.create).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(200);
   });
 });

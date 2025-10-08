@@ -73,105 +73,15 @@ exports.getPhonesByClass = async (class_id) => {
 
 // Get a single student's enrollment details in a class
 exports.getStudent = async (class_id, user_id) => {
-  const enrollment = await db("class_enrollments as ce")
+  return db("class_enrollments as ce")
     .join("users as u", "ce.user_id", "u.id")
     .where({ "ce.class_id": class_id, "ce.user_id": user_id })
     .select(
       "u.id",
       "u.full_name",
       "u.email",
-      "u.phone",
       "ce.status",
       "ce.enrolled_at"
     )
     .first();
-
-  if (!enrollment) {
-    return null;
-  }
-
-  const [lessonRows, attendanceRows, scoreRow] = await Promise.all([
-    db("class_lessons")
-      .where({ class_id })
-      .orderBy("order", "asc")
-      .select("id", "title", "order"),
-    db("class_attendance as ca")
-      .leftJoin("class_lessons as cl", "ca.lesson_id", "cl.id")
-      .where({ "ca.class_id": class_id, "ca.user_id": user_id })
-      .select(
-        "ca.id",
-        "ca.lesson_id",
-        "ca.attended",
-        "ca.timestamp",
-        "cl.title as lesson_title"
-      )
-      .orderBy("ca.timestamp", "asc"),
-    db("student_class_scores as scs")
-      .leftJoin("certificates as c", function () {
-        this.on("c.class_id", "=", "scs.class_id").andOn(
-          "c.user_id",
-          "=",
-          "scs.student_id"
-        );
-      })
-      .where({ "scs.class_id": class_id, "scs.student_id": user_id })
-      .select(
-        "scs.assignment_score",
-        "scs.attendance_score",
-        "scs.final_exam_score",
-        "scs.total_score",
-        "scs.passed",
-        "scs.certificate_issued",
-        "scs.issued_at",
-        "c.id as certificate_id"
-      )
-      .first(),
-  ]);
-
-  const lessons = Array.isArray(lessonRows)
-    ? lessonRows.map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title,
-        order: lesson.order,
-      }))
-    : [];
-
-  const attendance = Array.isArray(attendanceRows)
-    ? attendanceRows.map((record) => ({
-        id: record.id,
-        lessonId: record.lesson_id,
-        lessonTitle: record.lesson_title,
-        attended: Boolean(record.attended),
-        timestamp: record.timestamp,
-      }))
-    : [];
-
-  const certificate = scoreRow
-    ? {
-        issued:
-          Boolean(scoreRow.certificate_issued) || Boolean(scoreRow.certificate_id),
-        issuedAt: scoreRow.issued_at,
-        certificateId: scoreRow.certificate_id,
-        passed: Boolean(scoreRow.passed),
-        totalScore: scoreRow.total_score,
-        assignmentScore: scoreRow.assignment_score,
-        attendanceScore: scoreRow.attendance_score,
-        finalExamScore: scoreRow.final_exam_score,
-      }
-    : null;
-
-  return {
-    id: enrollment.id,
-    full_name: enrollment.full_name,
-    name: enrollment.full_name,
-    email: enrollment.email,
-    phone: enrollment.phone,
-    status: enrollment.status,
-    enrolled_at: enrollment.enrolled_at,
-    lessons,
-    attendance,
-    notes: [],
-    certificate,
-    certificateIssued: certificate?.issued ?? false,
-  };
 };

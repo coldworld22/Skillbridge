@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
 import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import debounce from 'lodash/debounce';
 
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -17,32 +18,12 @@ import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { toDateTimeISO } from '@/utils/date';
 import FloatingInput from '@/components/shared/FloatingInput';
-import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
   loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded"></div>
 });
 import 'react-quill/dist/quill.snow.css';
-
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-const ALLOWED_VIDEO_TYPES = [
-  'video/mp4',
-  'video/webm',
-  'video/quicktime',
-  'video/x-matroska',
-];
-const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.mkv'];
-
-const isAllowedFileType = (file, allowedTypes, allowedExtensions) => {
-  if (allowedTypes.includes(file.type)) return true;
-  const name = file.name || '';
-  const dotIndex = name.lastIndexOf('.');
-  if (dotIndex === -1) return false;
-  const extension = name.slice(dotIndex).toLowerCase();
-  return allowedExtensions.includes(extension);
-};
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -71,29 +52,14 @@ function CreateOnlineClass() {
     lessons: [],
     lessonCount: ''
   });
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isServerUploading, setIsServerUploading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-
-  const mediaUploader = useMediaUploader({
-    onError: (msg) => toast.error(msg),
-    onImageSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
-    onVideoSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
-  });
-
-  const {
-    uploadProgress = 0,
-    imageUploading: isImageUploading = false,
-    videoUploading: isVideoUploading = false,
-    handleImageUpload: mediaImageUpload = () => {},
-    handleVideoUpload: mediaVideoUpload = () => {},
-    setUploadProgress = () => {},
-  } = mediaUploader ?? {};
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -101,31 +67,26 @@ function CreateOnlineClass() {
       .catch(() => setCategories([]));
   }, []);
 
-  const debouncedFetchTags = useMemo(
-    () =>
-      debounce(async (input) => {
-        try {
-          const tags = await fetchClassTags(input);
-          const filtered = tags.filter((t) => !selectedTags.includes(t.name));
-          setTagSuggestions(filtered);
-        } catch {
-          setTagSuggestions([]);
-        }
-      }, 300),
-    [selectedTags]
-  );
-
   useEffect(() => {
     if (!tagInput) {
       setTagSuggestions([]);
-      debouncedFetchTags.cancel();
       return;
     }
-    debouncedFetchTags(tagInput);
+    let ignore = false;
+    fetchClassTags(tagInput)
+      .then((tags) => {
+        if (!ignore) {
+          const filtered = tags.filter((t) => !selectedTags.includes(t.name));
+          setTagSuggestions(filtered);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setTagSuggestions([]);
+      });
     return () => {
-      debouncedFetchTags.cancel();
+      ignore = true;
     };
-  }, [tagInput, debouncedFetchTags]);
+  }, [tagInput, selectedTags]);
 
   useEffect(() => {
     if (user?.full_name) {
@@ -145,33 +106,64 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!isAllowedFileType(file, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_EXTENSIONS)) {
-      toast.error('Unsupported image type. Allowed formats: JPG, PNG, WEBP.');
-      return;
-    }
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image must be less than 5MB');
       return;
     }
 
-    mediaImageUpload(e);
+    setImageUploading(true);
+    setUploadProgress(0);
+
+    const reader = new FileReader();
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      }
+    };
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: reader.result
+      }));
+      setImageUploading(false);
+    };
+    reader.onerror = () => {
+      toast.error('Failed to load image preview.');
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!isAllowedFileType(file, ALLOWED_VIDEO_TYPES, ALLOWED_VIDEO_EXTENSIONS)) {
-      toast.error('Unsupported video type. Allowed formats: MP4, MOV, WEBM, MKV.');
-      return;
-    }
 
     if (file.size > 100 * 1024 * 1024) {
       toast.error('Video must be less than 100MB');
       return;
     }
 
-    mediaVideoUpload(e);
+    setVideoUploading(true);
+    setUploadProgress(0);
+
+    // Simulate upload progress (replace with actual upload logic)
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setVideoUploading(false);
+          setFormData(prev => ({
+            ...prev,
+            demoVideo: file,
+            demoPreview: URL.createObjectURL(file)
+          }));
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 300);
   };
 
   const addTag = (tag) => {
@@ -225,7 +217,6 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        setIsServerUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -247,21 +238,15 @@ function CreateOnlineClass() {
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
         payload.append('status', formData.isApproved ? 'published' : 'draft');
-        payload.append('access_type', formData.isFree ? 'free' : 'paid');
         if (formData.category) payload.append('category_id', formData.category);
         if (formData.image) payload.append('cover_image', formData.image);
         if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
         const newClass = await createInstructorClass(payload, (e) => {
-          if (!e?.total) return;
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
-
-        if (!newClass?.id) {
-          throw new Error('Failed to create class. Please try again.');
-        }
 
         await Promise.all(
           formData.lessons.map(async (lesson) => {
@@ -293,20 +278,9 @@ function CreateOnlineClass() {
         router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
-        const serverMessage = error.response?.data?.message;
-        const normalizedServerMessage = serverMessage?.toLowerCase?.() || '';
-        if (normalizedServerMessage.includes('invalid file type')) {
-          toast.error('Invalid file type. Please use JPG/PNG/WEBP images and MP4/MOV/WEBM/MKV videos.');
-          return;
-        }
-        toast.error(
-          serverMessage ||
-          error.message ||
-          'Upload failed. Please try again.'
-        );
+        toast.error(error.response?.data?.message || 'Failed to create class');
       } finally {
         setIsSubmitting(false);
-        setIsServerUploading(false);
       }
     }
   };
@@ -557,7 +531,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isImageUploading ? (
+                            {imageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
@@ -592,7 +566,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept={ALLOWED_IMAGE_TYPES.join(',')}
+                              accept="image/*"
                               onChange={handleImageUpload}
                               className="hidden"
                             />
@@ -604,7 +578,7 @@ function CreateOnlineClass() {
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                         <label className="cursor-pointer">
                           <div className="flex flex-col items-center justify-center space-y-2">
-                            {isVideoUploading || isServerUploading ? (
+                            {videoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
                                 <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
@@ -639,10 +613,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept={[
-                                ...ALLOWED_VIDEO_TYPES,
-                                ...ALLOWED_VIDEO_EXTENSIONS,
-                              ].join(',')}
+                              accept="video/*"
                               onChange={handleVideoUpload}
                               className="hidden"
                             />
@@ -760,10 +731,10 @@ function CreateOnlineClass() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || isServerUploading}
+                disabled={isSubmitting}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting || isServerUploading ? (
+                {isSubmitting ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
                     {currentStep === 1 ? 'Processing...' : 'Submitting...'}

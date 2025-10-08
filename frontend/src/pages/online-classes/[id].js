@@ -18,7 +18,6 @@ import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
-import DOMPurify from 'isomorphic-dompurify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
 
@@ -28,7 +27,6 @@ const computeScheduleStatus = (start, end) => {
   const e = end ? new Date(end) : null;
   if (s && now < s) return 'Upcoming';
   if (s && e && now >= s && now <= e) return 'Ongoing';
-  if (s && !e && now >= s) return 'Ongoing';
   if (e && now > e) return 'Completed';
   return 'Upcoming';
 };
@@ -218,7 +216,7 @@ export default function ClassDetailsPage() {
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const plainDescription = classInfo.description
-    ? DOMPurify.sanitize(classInfo.description, { ALLOWED_TAGS: [] })
+    ? classInfo.description.replace(/<[^>]*>/g, '')
     : '';
   const classFull =
     typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0;

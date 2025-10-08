@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { TUTORIAL_STATUS } from "@/constants/tutorialStatus";
 import {
   FaPlus,
   FaEdit,
@@ -26,22 +25,16 @@ import {
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { toast } from "react-toastify";
-import useInstructorTutorials from "@/hooks/useInstructorTutorials";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "tutorials"]);
+  const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const {
-    tutorials,
-    setTutorials,
-    sortBy,
-    setSortBy,
-    handleSearch,
-    handleFilter,
-    filteredTutorials,
-  } = useInstructorTutorials();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [checklistTutorial, setChecklistTutorial] = useState(null);
   const [showChecklist, setShowChecklist] = useState(false);
 
@@ -83,6 +76,14 @@ export default function InstructorTutorialsPage() {
     };
   }, []);
 
+  const handleSearch = (query) => {
+    setSearchQuery(query.toLowerCase());
+  };
+
+  const handleFilter = (status) => {
+    setStatusFilter(status);
+  };
+
   const handleDelete = (id) => {
     openConfirmModal({
       title: t("dashboard:tutorialsPage.delete_confirm_title"),
@@ -101,6 +102,20 @@ export default function InstructorTutorialsPage() {
       },
     });
   };
+
+  const filteredTutorials = tutorials
+    .filter((tut) => {
+      const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
+      const matchesStatus = statusFilter ? tut.status === statusFilter : true;
+      return matchesTitle && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === "views") return b.views - a.views;
+      if (sortBy === "enrollments") return b.enrollments - a.enrollments;
+      if (sortBy === "oldest")
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      return new Date(b.createdAt) - new Date(a.createdAt); // newest
+    });
 
   if (loading) {
     return (
@@ -168,9 +183,7 @@ export default function InstructorTutorialsPage() {
                 onChange={(e) => handleFilter(e.target.value)}
               >
                 <option value="">{t("dashboard:tutorialsPage.status_all")}</option>
-                <option value={TUTORIAL_STATUS.DRAFT}>
-                  {t("dashboard:tutorialsPage.status_label.draft")}
-                </option>
+                <option value="Draft">{t("dashboard:tutorialsPage.status_label.draft")}</option>
                 <option value="Pending">{t("dashboard:tutorialsPage.status_label.pending")}</option>
                 <option value="Approved">{t("dashboard:tutorialsPage.status_label.approved")}</option>
                 <option value="Rejected">{t("dashboard:tutorialsPage.status_label.rejected")}</option>
@@ -210,7 +223,7 @@ export default function InstructorTutorialsPage() {
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="text-sm text-gray-500">{t("dashboard:tutorialsPage.drafts")}</div>
             <div className="text-2xl font-bold text-yellow-600">
-              {tutorials.filter(t => t.status === TUTORIAL_STATUS.DRAFT).length}
+              {tutorials.filter(t => t.status === 'Draft').length}
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -222,17 +235,15 @@ export default function InstructorTutorialsPage() {
         </div>
 
         {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTutorials.map((tutorial) => (
-              <div
-                key={tutorial.id}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100"
-              >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTutorials.map((tutorial) => (
+            <div
+              key={tutorial.id}
+              className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100"
+            >
               <div className="relative">
                 <img
-                  src={
-                    tutorial.thumbnail || "/images/default-tutorial.jpg"
-                  }
+                  src={tutorial.thumbnail || "/default-thumbnail.jpg"}
                   alt={tutorial.title}
                   className="h-48 w-full object-cover"
                 />
@@ -243,7 +254,7 @@ export default function InstructorTutorialsPage() {
                         ? "bg-green-100 text-green-800"
                         : tutorial.status === "Pending"
                         ? "bg-blue-100 text-blue-800"
-                        : tutorial.status === TUTORIAL_STATUS.DRAFT
+                        : tutorial.status === "Draft"
                         ? "bg-yellow-100 text-yellow-800"
                         : "bg-red-100 text-red-800"
                     }`}
@@ -315,7 +326,7 @@ export default function InstructorTutorialsPage() {
                   </div>
                   
                   {/* Progress bar if Draft */}
-                  {tutorial.status === TUTORIAL_STATUS.DRAFT && (
+                  {tutorial.status === "Draft" && (
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-gray-600 mb-1">
                         <span>{t("dashboard:tutorialsPage.progress")}</span>
@@ -354,7 +365,7 @@ export default function InstructorTutorialsPage() {
                     <FaEye className="mr-2" /> {t("dashboard:tutorialsPage.view")}
                   </button>
 
-                  {(tutorial.status === TUTORIAL_STATUS.DRAFT || tutorial.status === "Rejected") && (
+                  {(tutorial.status === "Draft" || tutorial.status === "Rejected") && (
                     <button
                       onClick={() =>
                         router.push(`/dashboard/instructor/tutorials/${tutorial.id}/edit`)
@@ -375,7 +386,7 @@ export default function InstructorTutorialsPage() {
                     <span className="mr-2">📋</span> {t("dashboard:tutorialsPage.checklist")}
                   </button>
 
-                  {tutorial.status === TUTORIAL_STATUS.DRAFT && tutorial.progress === 100 && (
+                  {tutorial.status === "Draft" && tutorial.progress === 100 && (
                     <button
                       onClick={async () => {
                         try {
@@ -397,7 +408,7 @@ export default function InstructorTutorialsPage() {
                     </button>
                   )}
 
-                  {(tutorial.status === TUTORIAL_STATUS.DRAFT || tutorial.status === "Rejected") && (
+                  {(tutorial.status === "Draft" || tutorial.status === "Rejected") && (
                     <button
                       onClick={() => handleDelete(tutorial.id)}
                       className="bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
@@ -425,9 +436,9 @@ export default function InstructorTutorialsPage() {
                   </button>
                 </div>
               </div>
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
 
         {/* No Tutorials */}
         {filteredTutorials.length === 0 && (

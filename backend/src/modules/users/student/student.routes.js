@@ -47,8 +47,6 @@ router.patch(
   controller.updateAvatar
 );
 
-router.delete("/:id/avatar", verifyToken, isStudent, ensureSelf, controller.deleteAvatar);
-
 /**
  * @desc Upload identity document
  * @route PATCH /api/users/student/:id/identity
@@ -60,18 +58,6 @@ router.patch(
   ensureSelf,
   identityUpload.single("identity"),
   controller.updateIdentity
-);
-
-/**
- * @desc Delete identity document
- * @route DELETE /api/users/student/:id/identity
- */
-router.delete(
-  "/:id/identity",
-  verifyToken,
-  isStudent,
-  ensureSelf,
-  controller.deleteIdentity
 );
 
 /**

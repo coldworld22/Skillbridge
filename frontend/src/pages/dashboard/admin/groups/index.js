@@ -12,9 +12,8 @@ import {
   FaRegSquare,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/common/ConfirmModal';
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const imagePool = [
   'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
@@ -23,7 +22,7 @@ const imagePool = [
 ];
 
 
-function AdminGroupsIndex() {
+export default function AdminGroupsIndex() {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
@@ -427,5 +426,3 @@ function AdminGroupsIndex() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(AdminGroupsIndex);

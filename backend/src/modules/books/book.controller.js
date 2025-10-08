@@ -281,8 +281,11 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
   const { status } = req.body || {};
   const existing = await service.getBookById(req.params.id);
   if (!existing) throw new AppError("Book not found", 404);
-  if (!isAdminRole(req.user.roles || req.user.role)) {
-    throw new AppError("Only admins can update book status", 403);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
   }
   const book = await service.updateBookStatus(req.params.id, status);
   if (!book) {

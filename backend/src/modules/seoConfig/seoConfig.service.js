@@ -73,7 +73,7 @@ exports.generateSitemap = async () => {
     .filter((p) => p.include)
     .map(
       (p) =>
-        `  <url><loc>${baseUrl.replace(/\/$/, "")}${p.path}</loc><changefreq>${p.freq || "weekly"}</changefreq><priority>${p.priority ?? 0.5}</priority></url>`
+        `  <url><loc>${baseUrl.replace(/\/$/, "")}${p.path}</loc><changefreq>${p.freq || "weekly"}</changefreq><priority>${p.priority || 0.5}</priority></url>`
     )
     .join("\n");
 

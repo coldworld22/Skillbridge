@@ -23,8 +23,8 @@ export const fetchInstructorBooks = async ({
     ? { params, ...config }
     : { ...config };
   const { data } = Object.keys(requestConfig).length
-    ? await api.get("instructor/books", requestConfig)
-    : await api.get("instructor/books");
+    ? await api.get("/instructor/books", requestConfig)
+    : await api.get("/instructor/books");
   const list = data?.data
     ? data.data.map((book) => ({
         ...book,
@@ -36,7 +36,7 @@ export const fetchInstructorBooks = async ({
 };
 
 export const createBook = async (formData, onUploadProgress) => {
-  const { data } = await api.post("books", formData, {
+  const { data } = await api.post("/books", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
@@ -44,7 +44,7 @@ export const createBook = async (formData, onUploadProgress) => {
 };
 
 export const updateBook = async (id, formData, onUploadProgress) => {
-  const { data } = await api.put(`books/${id}`, formData, {
+  const { data } = await api.put(`/books/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
@@ -52,13 +52,13 @@ export const updateBook = async (id, formData, onUploadProgress) => {
 };
 
 export const deleteBook = async (id) => {
-  await api.delete(`books/${id}`);
+  await api.delete(`/books/${id}`);
   return true;
 };
 
 // Fetch a single book by ID for the current instructor
 export const fetchBook = async (id) => {
-  const { data } = await api.get(`books/${id}`);
+  const { data } = await api.get(`/books/${id}`);
   const book = data?.data || null;
   return book
     ? {
@@ -70,7 +70,7 @@ export const fetchBook = async (id) => {
 
 // Fetch aggregated analytics about the instructor's books
 export const fetchBookAnalytics = async (params = {}) => {
-  const { data } = await api.get("instructor/books/analytics", { params });
+  const { data } = await api.get("/instructor/books/analytics", { params });
   return data?.data || [];
 };
 

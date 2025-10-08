@@ -1,8 +1,6 @@
 // pages/api/tutorials/[id]/analytics.js
 import axios from 'axios';
 
-import getApiBaseUrl from '@/pages/api/_utils/baseUrl';
-
 const EMPTY_ANALYTICS = {
   totalStudents: 0,
   completed: 0,
@@ -14,7 +12,7 @@ export default async function handler(req, res) {
   const { id } = req.query;
   try {
     const { data } = await axios.get(
-      `${getApiBaseUrl()}/users/tutorials/admin/${id}/analytics`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/tutorials/admin/${id}/analytics`,
       {
         headers: req.headers.cookie ? { Cookie: req.headers.cookie } : {},
         withCredentials: true,

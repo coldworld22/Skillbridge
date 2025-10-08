@@ -128,8 +128,8 @@ exports.findStudents = () => {
  * - Expects pre-validated user object
  * - Returns full inserted row
  */
-exports.insertUser = (data, trx = db) => {
-  return trx("users").insert(data).returning("*");
+exports.insertUser = (data) => {
+  return db("users").insert(data).returning("*");
 };
 
 /**

@@ -22,8 +22,6 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const [availability, setAvailability] = useState([]);
   const [error, setError] = useState("");
   const [hasPending, setHasPending] = useState(false);
-  const instructorDisplayName =
-    instructor?.full_name || instructor?.name || "the instructor";
 
   // Ensure only logged in students can book
   useEffect(() => {
@@ -122,7 +120,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
         instructor_id: instructor.id,
         start_time: startIso,
         end_time: endIso,
-        notes: `${type} with ${instructorDisplayName}`,
+        notes: `${type} with ${instructor.name}`,
       });
       setSubmitted(true);
     } catch (err) {
@@ -148,7 +146,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
           <div className="text-center">
             <h3 className="text-2xl font-semibold text-green-600 mb-2">Request Sent!</h3>
             <p className="text-gray-700 mb-4">
-              Your lesson request has been sent to <strong>{instructorDisplayName}</strong>.
+              Your lesson request has been sent to <strong>{instructor?.name}</strong>.
             </p>
             <button
               onClick={onClose}

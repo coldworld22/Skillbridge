@@ -1,7 +1,6 @@
 // pages/dashboard/student/instructors/favorites.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import InstructorCard from "@/components/student/instructors/InstructorCard";
 
@@ -32,7 +31,6 @@ const allInstructors = [
 
 export default function StudentFavorites() {
   const router = useRouter();
-  const { t } = useTranslation("dashboard", { keyPrefix: "studentInstructorsPage" });
   const [favorites, setFavorites] = useState([]);
   const [bookingInstructor, setBookingInstructor] = useState(null);
   const [chatInstructorId, setChatInstructorId] = useState(null);
@@ -55,10 +53,10 @@ export default function StudentFavorites() {
   return (
     <StudentLayout>
       <section className="py-10 px-4">
-        <h1 className="text-2xl font-bold mb-6">{t('favorites_title')}</h1>
+        <h1 className="text-2xl font-bold mb-6">My Favorite Instructors</h1>
 
         {favoriteInstructors.length === 0 ? (
-          <p className="text-gray-600 text-center">{t('favorites_empty')}</p>
+          <p className="text-gray-600 text-center">You haven’t favorited any instructors yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {favoriteInstructors.map((i) => (

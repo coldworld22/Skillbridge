@@ -1,5 +1,6 @@
-const logger = require("../../../utils/logger.js");
+const logger = require('../../../utils/logger.js');
 // 📁 src/modules/users/tutorials/tutorial.controller.js
+const db = require("../../../config/database");
 const service = require("./tutorial.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
@@ -17,19 +18,15 @@ const { v4: uuidv4 } = require("uuid");
 const { getActiveInstructorPlan } = require("../../plans/instructor.helper");
 const planService = require("../../plans/plans.service");
 const { parsePlanFeatures } = require("../../../utils/planFeatures");
-const tutorialValidator = require("./tutorial.validator");
-const { normalizeRole } = require("../../../utils/role");
 
 
 const { sendSuccess } = require("../../../utils/response");
 const { parseTags, parseChapters } = require("./tutorial.helpers");
 const { sendCreationNotifications } = require("./tutorial.notifications");
-const { ZodError } = require("zod");
-const slugify = require("slugify");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
-  let role = normalizeRole(req.user?.role) || "other";
+  let role = req.user?.role?.toLowerCase() || "other";
   if (["superadmin", "admin"].includes(role)) role = "admin";
   return role;
 };
@@ -42,8 +39,6 @@ const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
-  const userRole = normalizeRole(req.user?.role);
-  const { body } = tutorialValidator.create.parse({ body: req.body });
   const {
     title,
     description,
@@ -56,13 +51,24 @@ exports.createTutorial = catchAsync(async (req, res) => {
     chapters: rawChapters,
     included_plans = [],
     instructor_id: bodyInstructorId,
-  } = body;
+  } = req.body;
 
   const parsedChapters = parseChapters(rawChapters);
   const tags = parseTags(rawTags);
 
+  // 🚫 Prevent duplicate titles
+  const existing = await db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
+  if (existing) {
+    return res.status(400).json({ message: "Tutorial title already exists" });
+  }
+
   let instructor_id;
-  if (["admin", "superadmin"].includes(userRole) && bodyInstructorId) {
+  if (
+    ["admin", "superadmin"].includes(req.user.role) &&
+    bodyInstructorId
+  ) {
     const instructor = await userModel.findById(bodyInstructorId);
     if (!instructor) {
       return res.status(404).json({ message: "Instructor not found" });
@@ -72,7 +78,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id = req.user.id;
   }
 
-  if (userRole === "instructor") {
+  if (req.user.role === "instructor") {
     const plan = await getActiveInstructorPlan(instructor_id);
     if (!plan) {
       throw new AppError("Active plan required", 403);
@@ -96,8 +102,6 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
-  const baseSlug = slugify(title, { lower: true, strict: true });
-
   const tutorialData = {
     id,
     title,
@@ -117,37 +121,26 @@ exports.createTutorial = catchAsync(async (req, res) => {
     preview_video: previewFile
       ? `/uploads/tutorials/${roleDir}/${previewFile.filename}`
       : null,
-    slug: baseSlug || id,
   };
 
-  try {
-    const tutorial = await service.createTutorialWithRelations(
-      tutorialData,
-      tags,
-      parsedChapters
-    );
+  const tutorial = await service.createTutorialWithRelations(
+    tutorialData,
+    tags,
+    parsedChapters
+  );
 
-    await sendCreationNotifications(instructor_id, title);
+  await sendCreationNotifications(instructor_id, title);
 
-    sendSuccess(res, tutorial, "Tutorial with chapters created");
-  } catch (err) {
-    if (err.code === "23505") {
-      return res
-        .status(409)
-        .json({ message: "Tutorial title already exists" });
-    }
-    throw err;
-  }
+  sendSuccess(res, tutorial, "Tutorial with chapters created");
 });
 
 
 exports.getAllTutorials = async (req, res) => {
-  const { status, category, search, approval, page = 1, limit = 10 } = req.query;
+  const { status, category, search, page = 1, limit = 10 } = req.query;
   const result = await service.getAllTutorials({
     status,
     category,
     search,
-    approval,
     page,
     limit,
   });
@@ -173,25 +166,10 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
-  const userRole = normalizeRole(req.user?.role);
-  if (userRole === "instructor") {
+  if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
-
-  let body;
-  try {
-    ({ body } = await tutorialValidator.update.parseAsync({ body: req.body }));
-  } catch (err) {
-    if (err instanceof ZodError) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: err.errors,
-      });
-    }
-    throw err;
-  }
-
-  const { tags: rawTags, ...data } = body;
+  const { tags: rawTags, ...data } = req.body;
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
     data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
@@ -234,8 +212,7 @@ exports.restoreTutorial = catchAsync(async (req, res) => {
 
 
 exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
-  const userRole = normalizeRole(req.user?.role);
-  if (userRole === "instructor") {
+  if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
   await service.permanentlyDeleteTutorial(req.params.id);
@@ -247,9 +224,7 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   const tutorialId = req.params.id;
 
-  const userRole = normalizeRole(req.user?.role);
-
-  if (userRole === "instructor") {
+  if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
   const existing = await service.getTutorialById(tutorialId);
@@ -280,7 +255,7 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
   const updated = await service.togglePublishStatus(tutorialId);
   const tut = await service.getTutorialById(tutorialId);
   if (
-    userRole !== "instructor" &&
+    req.user.role !== "instructor" &&
     tut.instructor_id &&
     tut.instructor_id !== req.user.id
   ) {

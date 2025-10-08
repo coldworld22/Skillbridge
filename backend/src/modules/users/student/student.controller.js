@@ -1,13 +1,12 @@
 const logger = require('../../../utils/logger.js');
-const fs = require("fs");
-const path = require("path");
 /**
  * Student controller
  */
+const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
-const userService = require("../user.service");
-const { allowedPlatforms } = require("../common/socialPlatforms");
-const { getStudentProfile, updateStudentProfile } = require("./student.service");
+const notificationService = require("../../notifications/notifications.service");
+
+const messageService = require("../../messages/messages.service");
 
 
 /**
@@ -16,12 +15,34 @@ const { getStudentProfile, updateStudentProfile } = require("./student.service")
  * @access Student
  */
 exports.getProfile = async (req, res) => {
-  try {
-    res.json(await getStudentProfile(req.user.id));
-  } catch (err) {
-    logger.error("Failed to load student profile", err);
-    res.status(500).json({ message: "Failed to load profile" });
-  }
+  const userId = req.user.id;
+
+  const [user] = await db("users")
+    .where({ id: userId })
+    .select(
+      "id",
+      "full_name",
+      "email",
+      "phone",
+      "gender",
+      "date_of_birth",
+      "avatar_url",
+      "is_email_verified",
+      "is_phone_verified",
+      "profile_complete",
+      "created_at",
+      "updated_at"
+    );
+
+  const [student] = await db("student_profiles")
+    .where({ user_id: userId })
+    .select("education_level", "topics", "learning_goals", "identity_doc_url");
+
+  const socialLinks = await db("user_social_links")
+    .where({ user_id: userId })
+    .select("platform", "url");
+
+  res.json({ ...user, student, social_links: socialLinks });
 };
 
 /**
@@ -42,14 +63,6 @@ exports.updateProfile = async (req, res) => {
     social_links,
   } = req.body;
 
-  const coerceToString = (value = "") =>
-    typeof value === "string" ? value : value ? String(value) : "";
-
-  const normalizeUrl = (url = "") => {
-    const trimmed = url.trim();
-    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  };
-
   // Sanitize social links before database operations
   const sanitizedLinks = Array.isArray(social_links)
     ? social_links
@@ -58,37 +71,42 @@ exports.updateProfile = async (req, res) => {
             link &&
             typeof link.url === "string" &&
             typeof link.platform === "string" &&
-            allowedPlatforms.includes(link.platform.trim().toLowerCase()) &&
             link.url.trim()
         )
         .map((link) => ({
-          platform: link.platform.trim().toLowerCase(),
-          url: normalizeUrl(link.url),
+          platform: link.platform.trim(),
+          url: link.url.trim(),
         }))
-        .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  const userData = {
-    full_name: coerceToString(full_name),
-    phone: coerceToString(phone),
-    gender: coerceToString(gender),
-    date_of_birth: coerceToString(date_of_birth),
-  };
-
+  const trx = await db.transaction();
   try {
-    await updateStudentProfile(
-      userId,
-      userData,
-      {
-        education_level: coerceToString(education_level),
-        topics: coerceToString(topics),
-        learning_goals: coerceToString(learning_goals),
-      },
-      sanitizedLinks
-    );
-    res.json(await getStudentProfile(userId));
+    await trx("users")
+      .where({ id: userId })
+      .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
+
+    const exists = await trx("student_profiles").where({ user_id: userId }).first();
+    const studentData = { education_level, topics, learning_goals };
+    if (exists) {
+      await trx("student_profiles").where({ user_id: userId }).update(studentData);
+    } else {
+      await trx("student_profiles").insert({ user_id: userId, ...studentData });
+    }
+
+    await trx("user_social_links").where({ user_id: userId }).del();
+    for (const link of sanitizedLinks) {
+      await trx("user_social_links").insert({
+        user_id: userId,
+        platform: link.platform,
+        url: link.url,
+      });
+    }
+
+    await trx.commit();
+    res.json({ message: "Profile updated successfully" });
   } catch (err) {
-    logger.error("Failed to update student profile", err);
+    await trx.rollback();
+    logger.error("Failed to update student profile", err.message);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
@@ -103,78 +121,14 @@ exports.updateAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No avatar uploaded" });
     }
-
-    const { avatar_url: oldAvatar } = await db("users")
-      .where({ id: req.user.id })
-      .first("avatar_url");
-
     const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
     await db("users")
       .where({ id: req.user.id })
       .update({ avatar_url: avatarUrl });
-
-    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
-
-    if (oldAvatar && !isRemoteUrl(oldAvatar)) {
-      const sanitizedOldAvatar = oldAvatar.replace(/^\/+/, "");
-      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
-      fs.unlink(oldPath, (err) => {
-        if (err && err.code !== "ENOENT") {
-          logger.error("Failed to remove old avatar:", err);
-        }
-      });
-    }
-
     res.json({ avatar_url: avatarUrl });
   } catch (error) {
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => err && logger.error(err));
-    }
     logger.error(error);
-    res.status(500).json({ message: "Failed to upload avatar" });
-  }
-};
-
-/**
- * @desc Delete student avatar
- * @route DELETE /api/users/student/:id/avatar
- * @access Student
- */
-exports.deleteAvatar = async (req, res) => {
-  const userId = String(req.user.id);
-
-  if (req.params.id !== userId) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-
-  try {
-    const existing = await db("users").where({ id: userId }).first("avatar_url");
-
-    if (!existing || !existing.avatar_url) {
-      return res.status(404).json({ message: "Avatar not found." });
-    }
-
-    const isRemoteUrl = (url) => typeof url === "string" && /^https?:\/\//i.test(url);
-
-    if (!isRemoteUrl(existing.avatar_url)) {
-      const sanitizedPath = existing.avatar_url.replace(/^\/+/, "");
-      const absolutePath = path.join(process.cwd(), sanitizedPath);
-
-      try {
-        await fs.promises.unlink(absolutePath);
-      } catch (err) {
-        if (err?.code !== "ENOENT") {
-          logger.error("Failed to delete student avatar:", err);
-        }
-      }
-    }
-
-    await db("users").where({ id: userId }).update({ avatar_url: null });
-
-    res.json({ message: "Avatar deleted successfully." });
-  } catch (error) {
-    logger.error("Failed to delete student avatar", error);
-    res.status(500).json({ message: "Failed to delete avatar" });
+    res.status(500).json({ message: "Failed to update avatar" });
   }
 };
 
@@ -184,40 +138,15 @@ exports.deleteAvatar = async (req, res) => {
  * @access Student
  */
 exports.updateIdentity = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No identity document uploaded" });
-  }
-
-  const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-  const uploadedFilePath = req.file.path;
-
-  const safeUnlink = async (targetPath) => {
-    if (!targetPath) {
-      return;
-    }
-
-    try {
-      await fs.promises.unlink(targetPath);
-    } catch (err) {
-      if (err && err.code !== "ENOENT") {
-        logger.error("Failed to remove identity document", err);
-      }
-    }
-  };
-
   try {
-    const existingProfile = await db("student_profiles")
+    if (!req.file) {
+      return res.status(400).json({ message: "No identity document uploaded" });
+    }
+    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+    const exists = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
-
-    let previousDocumentPath;
-
-    if (existingProfile && existingProfile.identity_doc_url) {
-      const sanitizedOldDoc = existingProfile.identity_doc_url.replace(/^\/+/, "");
-      previousDocumentPath = path.join(process.cwd(), sanitizedOldDoc);
-    }
-
-    if (existingProfile) {
+    if (exists) {
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
@@ -227,59 +156,10 @@ exports.updateIdentity = async (req, res) => {
         identity_doc_url: identityUrl,
       });
     }
-
-    await safeUnlink(previousDocumentPath);
-
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
-    await safeUnlink(uploadedFilePath);
-    logger.error("Failed to update identity document", error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
-  }
-};
-
-/**
- * @desc Delete student identity document
- * @route DELETE /api/users/student/:id/identity
- * @access Student
- */
-exports.deleteIdentity = async (req, res) => {
-  try {
-    const profile = await db("student_profiles")
-      .where({ user_id: req.user.id })
-      .first("identity_doc_url");
-
-    if (!profile || !profile.identity_doc_url) {
-      return res.status(404).json({ message: "No identity document found" });
-    }
-
-    const identityUrl = profile.identity_doc_url;
-    const isRemoteUrl = typeof identityUrl === "string" && /^https?:\/\//i.test(identityUrl);
-
-    if (!isRemoteUrl) {
-      const sanitizedPath = identityUrl.replace(/^\/+/, "");
-      const absolutePath = path.join(process.cwd(), sanitizedPath);
-
-      try {
-        await fs.promises.unlink(absolutePath);
-      } catch (err) {
-        if (err && err.code !== "ENOENT") {
-          logger.error("Failed to remove identity document", err);
-          return res
-            .status(500)
-            .json({ message: "Failed to remove identity document" });
-        }
-      }
-    }
-
-    await db("student_profiles")
-      .where({ user_id: req.user.id })
-      .update({ identity_doc_url: null });
-
-    res.json({ identity_doc_url: null });
-  } catch (error) {
-    logger.error("Failed to delete identity document", error);
-    res.status(500).json({ message: "Failed to delete identity document" });
   }
 };
 
@@ -290,7 +170,7 @@ exports.deleteIdentity = async (req, res) => {
  */
 exports.changePassword = async (req, res) => {
   const userId = req.user.id;
-  const { newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   if (!newPassword || newPassword.length < 8) {
     return res
@@ -298,7 +178,34 @@ exports.changePassword = async (req, res) => {
       .json({ message: "New password must be at least 8 characters." });
   }
 
-  await userService.updateUser(userId, { password: newPassword });
+  const [user] = await db("users").where({ id: userId }).select("password_hash");
+  if (!user) {
+    return res.status(404).json({ message: "User not found." });
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Current password is incorrect." });
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+
+  await db("users").where({ id: userId }).update({
+    password_hash: newHash,
+    updated_at: new Date(),
+  });
+
+  await notificationService.createNotification({
+    user_id: userId,
+    type: "security",
+    message: "Your password was changed successfully",
+  });
+
+  await messageService.createMessage({
+    sender_id: userId,
+    receiver_id: userId,
+    message: "Your password was changed successfully",
+  });
 
   res.json({ message: "Password changed successfully." });
 };

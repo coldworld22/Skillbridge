@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
-import LinkText, {
-  DEFAULT_LINK_TEXT,
-} from "@/components/shared/LinkText";
+import LinkText from "@/components/shared/LinkText";
 import i18next from "i18next";
 import {
   getNotifications,
@@ -22,8 +20,7 @@ const useNotificationStore = create((set, get) => ({
     set({ loading: true });
     try {
       const data = await getNotifications();
-      const notifications = Array.isArray(data) ? data : [];
-      const filtered = notifications.filter(
+      const filtered = data.filter(
         (n) => !(n.read && n.read_at && new Date() - new Date(n.read_at) > HOUR_MS)
       );
       const prevUnread = get().items.filter((n) => !n.read).length;
@@ -32,15 +29,7 @@ const useNotificationStore = create((set, get) => ({
         const diff = unread - prevUnread;
         if (diff === 1) {
           const note = filtered.find((n) => !n.read);
-          const fallbackMessage = i18next.t("new_notification_available", {
-            defaultValue: DEFAULT_LINK_TEXT,
-          });
-          const message =
-            typeof note?.message === "string" && note.message.trim().length > 0
-              ? note.message
-              : fallbackMessage;
-
-          toast.info(<LinkText text={message} />);
+          toast.info(<LinkText text={note.message} />);
         } else {
           toast.info(i18next.t("you_have_new_notifications", { count: diff }));
         }

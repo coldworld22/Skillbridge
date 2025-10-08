@@ -1,8 +1,6 @@
 import { create } from "zustand";
-import getSocket from "@/services/socketService";
+import socket from "@/services/socketService";
 import useAuthStore from "@/store/auth/authStore";
-
-const socket = getSocket();
 
 const useCallStore = create((set, get) => ({
   incomingCall: null,

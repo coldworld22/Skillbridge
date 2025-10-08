@@ -17,7 +17,6 @@ import {
   FaUniversity,
 } from "react-icons/fa";
 import OverviewTab from './OverviewTab';
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 import { fetchPayments } from '@/services/admin/paymentService';
 import {
@@ -58,7 +57,7 @@ const defaultConfig = {
 };
 
 
-function AdminPaymentsPage() {
+export default function AdminPaymentsPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard');
   const user = useAuthStore((s) => s.user);
@@ -338,7 +337,7 @@ function AdminPaymentsPage() {
             transactions={transactions}
             methods={methods}
             payouts={payouts}
-            onViewAll={() => setActiveTab("transactions")}
+            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
           />
         );
 
@@ -760,5 +759,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(AdminPaymentsPage);

@@ -1,34 +1,13 @@
 import api from "@/services/api/api";
-import { ensureCsrfToken, getCsrfToken } from "@/services/api/csrf";
-
-const requestClearCache = async (csrfToken) => {
-  if (!csrfToken) {
-    throw new Error("CSRF token unavailable");
-  }
-
-  // Use a relative path so Axios preserves the configured `/api` prefix.
-  const { data } = await api.post("admin/cache/clear", null, {
-    headers: { "x-csrf-token": csrfToken },
-  });
-
-  return data;
-};
-
-const prepareCsrfToken = async () => {
-  await ensureCsrfToken();
-  return getCsrfToken();
-};
+import { toast } from "react-toastify";
+import { i18n } from "next-i18next";
 
 export const clearCache = async () => {
   try {
-    const initialToken = await prepareCsrfToken();
-    return await requestClearCache(initialToken);
-  } catch (error) {
-    if (error?.response?.status !== 403) {
-      throw error;
-    }
-
-    const refreshedToken = await prepareCsrfToken();
-    return requestClearCache(refreshedToken);
+    await api.post("/cache/clear");
+    toast.success(i18n.t("dashboard.cache_cleared"));
+  } catch (err) {
+    toast.error(i18n.t("dashboard.cache_clear_failed"));
+    throw err;
   }
 };

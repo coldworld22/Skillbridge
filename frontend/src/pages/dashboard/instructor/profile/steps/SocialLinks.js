@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
+import { FaArrowLeft, FaArrowRight, FaLinkedin, FaGithub, FaTwitter, FaGlobe, FaYoutube } from "react-icons/fa";
 
 const SocialLinks = ({
   formData = {},
@@ -36,37 +35,29 @@ const SocialLinks = ({
       <h2 className="text-2xl font-bold mb-4 text-yellow-500">Connect Your Social Profiles</h2>
       <p className="text-gray-400 mb-4 text-sm">Link your professional profiles to enhance credibility.</p>
 
-      {allowedPlatforms.map(({ name, Icon, className }) => {
-        const IconComponent = Icon || defaultPlatformIcon.Icon;
-        if (!IconComponent) {
-          return null;
-        }
-        const iconClassName = className || defaultPlatformIcon.className;
-
-        return (
-          <div key={name} className="mb-4">
-            <label className="block text-sm font-medium">
-              {`${name.charAt(0).toUpperCase() + name.slice(1)} Profile`}
-            </label>
-            <div className="flex items-center bg-gray-700 rounded-lg p-2">
-              <IconComponent className={iconClassName} />
-              <input
-                type="text"
-                name={name}
-                value={socialLinks[name] || ""}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
-                placeholder={
-                  name === 'website'
-                    ? 'https://yourwebsite.com'
-                    : `https://${name}.com`
-                }
-              />
-            </div>
-            {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
+      {[
+        { name: "linkedin", placeholder: "LinkedIn Profile", icon: <FaLinkedin className="text-blue-400" /> },
+        { name: "github", placeholder: "GitHub Profile", icon: <FaGithub className="text-gray-300" /> },
+        { name: "twitter", placeholder: "Twitter Profile", icon: <FaTwitter className="text-blue-500" /> },
+        { name: "website", placeholder: "Personal Website", icon: <FaGlobe className="text-green-400" /> },
+        { name: "youtube", placeholder: "YouTube Channel", icon: <FaYoutube className="text-red-500" /> },
+      ].map(({ name, placeholder, icon }) => (
+        <div key={name} className="mb-4">
+          <label className="block text-sm font-medium">{placeholder}</label>
+          <div className="flex items-center bg-gray-700 rounded-lg p-2">
+            {icon}
+            <input
+              type="text"
+              name={name}
+              value={socialLinks[name] || ""}
+              onChange={handleChange}
+              className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
+              placeholder={`https://your-${name}.com`}
+            />
           </div>
-        );
-      })}
+          {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
+        </div>
+      ))}
 
       {/* ✅ Navigation Buttons */}
       <div className="flex justify-between mt-6">

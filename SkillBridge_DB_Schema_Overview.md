@@ -34,12 +34,6 @@
 - **Foreign Keys**: `user_id → users(id)`
 - **Columns**: `user_id`, `code_hash`, `expires_at`, `used`, `created_at`
 
-### `blacklisted_tokens`
-- **Purpose**: Stores SHA-256 hashes of revoked JWTs to prevent reuse
-- **Primary Key**: `id`
-- **Foreign Keys**: `—`
-- **Columns**: `token_hash`, `expires_at`, `created_at`
-
 ### `student_profiles`
 - **Purpose**: Extra details for student accounts
 - **Primary Key**: `user_id (PK)`

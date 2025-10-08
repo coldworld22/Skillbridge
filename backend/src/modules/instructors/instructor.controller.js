@@ -31,16 +31,6 @@ exports.getAvailability = catchAsync(async (req, res) => {
   sendSuccess(res, availability);
 });
 
-exports.getStats = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
-    return res.status(400).json({ message: "Invalid instructor id" });
-  }
-
-  const stats = await service.getInstructorStats(id);
-  sendSuccess(res, stats);
-});
-
 exports.sendEmail = catchAsync(async (req, res) => {
   const { id } = req.params;
   if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {

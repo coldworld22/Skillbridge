@@ -149,7 +149,7 @@ function StudentDashboardHome() {
                   {t("next_session")}: {cls.nextSession}
                 </p>
                 <a
-                  href={`/dashboard/student/online-classes/${cls.id}`}
+                  href={`/dashboard/student/classes/${cls.id}`}
                   className="inline-block mt-2 text-sm text-blue-600 hover:underline"
                 >
                   {t("view_class")}

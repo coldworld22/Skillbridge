@@ -22,18 +22,7 @@ async function createTransporter() {
   const cfg = (await emailConfigService.getSettings()) || {};
 
   const host = (cfg.smtpHost || process.env.SMTP_HOST || "").trim();
-  const rawPort = cfg.smtpPort || process.env.SMTP_PORT;
-  const defaultPort = 587;
-  let port = Number.parseInt(rawPort, 10);
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    if (rawPort) {
-      logger.error(`Invalid SMTP port "${rawPort}". Falling back to ${defaultPort}.`);
-    }
-    port = defaultPort;
-  }
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    throw new Error(`Invalid SMTP port: ${port}`);
-  }
+  const port = parseInt(cfg.smtpPort || process.env.SMTP_PORT, 10);
   const user = (cfg.username || process.env.SMTP_USER || "").trim();
   const pass = (cfg.password || process.env.SMTP_PASS || "").trim();
 

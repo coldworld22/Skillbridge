@@ -17,48 +17,13 @@ any are missing:
 
 - `JWT_SECRET` – signing key for access tokens
 - `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
-- Database connection details – either provide a full connection string via `DATABASE_URL`/`PRODUCTION_DATABASE_URL` (and `TEST_DATABASE_URL` when running tests) or set the individual `POSTGRES_*` variables so the server can build one automatically.
-- `BACKEND_PORT` – port for the HTTP server
+- `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests)
+- `PORT` – port for the HTTP server
 - `SESSION_SECRET` – session cookie signing secret
-- `GLOBAL_RATE_LIMIT_MAX` – optional ceiling for the shared rate limiter (defaults to 1000). Increase this if dashboards or other
-  authenticated flows legitimately send large bursts of requests; lowering it again risks reintroducing HTTP 429 responses when
-  admins keep multiple monitoring tabs open.
 
 Provide these variables via a `.env` file or the hosting environment.
 
-### Rate limiting
-
-Requests are throttled globally using `express-rate-limit`. The defaults allow
-1,000 requests per IP every 15 minutes, which comfortably covers typical page
-loads that trigger dozens of API calls. Operators can adjust the limits with
-environment variables when necessary:
-
-- `RATE_LIMIT_MAX` – maximum number of requests allowed per IP during a window
-- `RATE_LIMIT_WINDOW_MS` – window size in milliseconds
-
-Tune these values in `backend/.env` (and the production variant) to align with
-your deployment's traffic patterns. The health check endpoint remains exempt so
-load balancers and uptime monitors are unaffected.
-
-### Pagination defaults
-
-List endpoints share a pagination helper that now caps `limit` values at
-10,000. This higher ceiling allows the admin "All" option to truly fetch every
-matching record—useful for exports—while still providing a hard stop against
-unbounded queries. If your datasets grow beyond this size, raise the value in
-`src/utils/pagination.js` in tandem with any frontend controls that surface an
-"All" selection.
-
 The `/api/system-errors` route reads the latest lines from `logs/error.log` and is used by the admin alerts page. Only authenticated admins can access it.
-
-### Rate limiting
-
-The global rate limiter defaults to a generous ceiling so development and production traffic remain responsive. Tune these variables to fit your deployment:
-
-- `RATE_LIMIT_MAX_REQUESTS` – maximum number of requests allowed per IP during the window (default: `1000`).
-- `RATE_LIMIT_WINDOW_MINUTES` – rolling window length for the limiter in minutes (default: `15`).
-
-Raising the values increases the burst capacity, while lowering them provides stricter protection against abusive clients.
 
 ### Bank transfer receipts
 

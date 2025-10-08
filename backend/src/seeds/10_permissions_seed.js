@@ -33,16 +33,6 @@ exports.seed = async function (knex) {
     { code: 'manage_certificate_templates', description: 'Permission to manage certificate templates' },
     { code: 'view_third_party_config', description: 'Permission to view third-party configuration' },
     { code: 'manage_third_party_config', description: 'Permission to manage third-party configuration' },
-    { code: 'view_online_classes', description: 'Permission to view online classes' },
-    { code: 'manage_online_classes', description: 'Permission to manage online classes' },
-    {
-      code: 'ADD_ONLINE_CLASS_RULE',
-      description: 'Permission to add or manage online class rules',
-    },
-    { code: 'view_roles', description: 'Permission to view roles' },
-    { code: 'manage_roles', description: 'Permission to create and update roles' },
-    { code: 'view_permissions', description: 'Permission to view permissions' },
-    { code: 'manage_permissions', description: 'Permission to create and update permissions' },
   ];
 
   await knex('permissions')

@@ -3,17 +3,19 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import Link from "next/link";
-import { fetchPlanById, updatePlan } from "@/services/admin/planService";
+import {
+  fetchPlanById,
+  updatePlan,
+} from "@/services/admin/planService";
+import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import withAdminGuard from "@/hooks/withAdminGuard";
-import useAuthStore from "@/store/auth/authStore";
 
-function EditPlanPage() {
+export default function EditPlanPage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
   const { id } = router.query;
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const { accessToken, user, hasHydrated } = useAuthStore();
 
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,17 @@ function EditPlanPage() {
     setFeatures(features.filter((_, i) => i !== index));
 
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady || !hasHydrated) return;
+
+    if (!accessToken || !user) {
+      router.replace("/auth/login");
+      return;
+    }
+    const role = user.role?.toLowerCase() ?? "";
+    if (role !== "admin" && role !== "superadmin") {
+      router.replace("/error/403");
+      return;
+    }
 
     const loadPlan = async () => {
       try {
@@ -81,7 +93,7 @@ function EditPlanPage() {
     };
 
     loadPlan();
-  }, [router.isReady, id]);
+  }, [accessToken, hasHydrated, id, router, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -380,5 +392,3 @@ function EditPlanPage() {
     </AdminLayout>
   );
 }
-
-export default withAdminGuard(EditPlanPage);

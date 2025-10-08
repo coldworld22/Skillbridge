@@ -6,22 +6,9 @@ const userModel = require("../users/user.model");
 const { sendOtpEmail } = require("../../utils/email");
 const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
-const { OTP_LENGTH } = require("../auth/constants");
-const {
-  redisClient,
-  logger,
-  getOtpAttemptKey,
-  recordFailedOtpAttempt,
-  clearOtpAttempts,
-} = require("../../utils/otpAttempts");
 
-const SALT_ROUNDS = 12;
-const generateCode = () => {
-  const max = Math.pow(10, OTP_LENGTH);
-  return crypto.randomInt(0, max).toString().padStart(OTP_LENGTH, "0");
-};
+const generateCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 exports.sendOtp = async (userId, type) => {
   const user = await userModel.findById(userId);
@@ -31,14 +18,13 @@ exports.sendOtp = async (userId, type) => {
   }
 
   const code = generateCode();
-  const codeHash = await bcrypt.hash(code, SALT_ROUNDS);
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await db("verifications").insert({
     id: uuidv4(),
     user_id: userId,
     type,
-    code: codeHash,
+    code,
     expires_at: expires,
     verified: false,
     created_at: new Date(),
@@ -60,27 +46,10 @@ exports.sendOtp = async (userId, type) => {
     }
   }
 
-  return { alreadyVerified: false };
+  return { code };
 };
 
 exports.verifyOtp = async (userId, type, code) => {
-  const identifier = `${userId}:${type}`;
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(identifier));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError(
-      "Too many invalid OTP attempts. Try again later.",
-      429
-    );
-  }
-
   const user = await db("users").where({ id: userId }).first();
   const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
 
@@ -89,49 +58,22 @@ exports.verifyOtp = async (userId, type, code) => {
   }
 
   const record = await db("verifications")
-    .where({ user_id: userId, type, verified: false })
+    .where({ user_id: userId, type, code, verified: false })
     .andWhere("expires_at", ">", new Date())
-    .orderBy("created_at", "desc")
     .first();
 
-  if (!record) {
-    await recordFailedOtpAttempt(identifier);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
-
-  const match = await bcrypt.compare(code, record.code);
-  if (!match) {
-    await recordFailedOtpAttempt(identifier);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
+  if (!record) throw new Error("Invalid or expired OTP");
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
   await db("users").where({ id: userId }).update({ [updateField]: true });
 
-  await clearOtpAttempts(identifier);
-
   const userAfter = await db("users").where({ id: userId }).first();
-
-  const verificationComplete = Boolean(userAfter[updateField]);
-
-  if (userAfter.status === "pending" && verificationComplete) {
-    await db("users").where({ id: userId }).update({ status: "active" });
-
-    await notificationService.createNotification({
-      user_id: userId,
-      type: "account",
-      message: "Your account has been activated.",
-    });
-  }
-
   if (
     userAfter.is_email_verified &&
     userAfter.is_phone_verified &&
     userAfter.profile_complete
   ) {
-    await userModel.updateUser(userId, { status: "active" });
-
     await notificationService.createNotification({
       user_id: userId,
       type: "profile",

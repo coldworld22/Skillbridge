@@ -1,21 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { z, ZodError } from "zod";
-import { isValidPhoneNumber } from "libphonenumber-js";
-import { getUserCountry } from "@/utils/getUserCountry";
-import { useTranslation } from "next-i18next";
-import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { z } from "zod";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   getStudentProfile,
   updateStudentProfile,
   uploadStudentAvatar,
-  uploadStudentIdentity,
-  deleteStudentAvatar,
+  uploadStudentIdentity
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -23,90 +15,33 @@ import useMessageStore from "@/store/messages/messageStore";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
-import { toSocialLinksArray } from "@/utils/socialLinks";
-import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaGlobe,
-  FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
-  FaCheck
+  FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
+  FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
-const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
-import getCroppedImg from "@/utils/cropImage";
 
-const AVATAR_PLACEHOLDER_SRC = "/images/profile/default-avatar.png";
-const IDENTITY_PLACEHOLDER_SRC = "/images/default-book-cover.jpg";
-
-export const studentProfileSchema = z.object({
-  full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val, getUserCountry()), {
-    message: "invalid_phone",
-  }),
-  gender: z.enum(['male', 'female']),
+const studentProfileSchema = z.object({
+  full_name: z.string().min(3, "Full name must be at least 3 characters"),
+  phone: z.string().min(8, "Phone number must be at least 8 digits"),
+  gender: z.enum(["male", "female"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: "invalid_date",
+    message: "Invalid date format",
   }),
-  education_level: z.string().min(2, "education_required"),
+  education_level: z.string().min(2, "Education level is required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links validated as URLs but allow empty strings for optional entries
-  socialLinks: z
-    .record(z.string().url("url_invalid").or(z.literal("")))
-    .optional(),
+  // Social links are optional strings without strict URL validation
+  socialLinks: z.record(z.string()).optional(),
 });
 
-const safeString = (value, fallback = "") => {
-  if (typeof value === "string") return value;
-  if (value === null || value === undefined) return fallback;
-  try {
-    return String(value);
-  } catch (err) {
-    return fallback;
-  }
-};
-
-const normalizeTopics = (value) => {
-  const toTrimmedArray = (arr) =>
-    arr
-      .map((item) => safeString(item).trim())
-      .filter((item) => item.length > 0);
-
-  if (!value) return [];
-
-  if (Array.isArray(value)) {
-    return toTrimmedArray(value);
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        return toTrimmedArray(parsed);
-      }
-    } catch (err) {
-      // Ignore JSON parse errors and treat as comma-separated string
-    }
-
-    return toTrimmedArray(trimmed.split(","));
-  }
-
-  return toTrimmedArray([value]);
-};
-
-function StudentProfileEdit() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
+export default function StudentProfileEdit() {
   const router = useRouter();
-  const { user, logout, hasHydrated, setUser, refreshUser } = useAuthStore();
+  const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isUploadingIdentity, setIsUploadingIdentity] = useState(false);
-  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -127,60 +62,19 @@ function StudentProfileEdit() {
     avatarPreview: null,
     identityFile: null,
     identityPreview: null,
-    identityPreviewIsBlob: false,
-    avatarPreviewFallback: false,
-    identityPreviewFallback: false,
   });
   const [errors, setErrors] = useState({});
-  const [showCropper, setShowCropper] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [tempAvatar, setTempAvatar] = useState(null);
-  const [tempFileName, setTempFileName] = useState("");
 
-  const translateValidationMessage = useCallback(
-    (key) => {
-      if (!key) return "";
-      const nested = t(`validation.${key}`, { defaultValue: "" });
-      if (typeof nested === "string" && nested.trim().length > 0) {
-        return nested;
-      }
-      const direct = t(key, { defaultValue: "" });
-      if (typeof direct === "string" && direct.trim().length > 0) {
-        return direct;
-      }
-      return key;
-    },
-    [t]
-  );
-
-  const ensureAssetAvailability = useCallback(async (url, assetType) => {
-    if (!url) {
-      return { resolvedUrl: null, fallback: false };
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: "HEAD",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        return { resolvedUrl: url, fallback: false };
-      }
-
-      logger.warn("[StudentProfileEdit] Missing asset", { assetType, url, status: response.status });
-    } catch (error) {
-      logger.warn("[StudentProfileEdit] Asset check failed", { assetType, url, error });
-    }
-
-    return { resolvedUrl: null, fallback: true };
-  }, []);
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    const local = localStorage.getItem("auth");
+    const parsed = JSON.parse(local)?.state;
+    if (hasHydrated && !user && parsed?.user) {
+      setUser(parsed.user);
+    }
+  }, [hasHydrated]);
 
+  useEffect(() => {
     if (!user) {
       // No logged in user – stop loading to avoid endless spinner
       setIsLoading(false);
@@ -199,49 +93,26 @@ function StudentProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, student, social_links } = res;
 
         const socialMap = {};
-        social_links?.forEach((link) => {
-          if (allowedPlatforms.some((p) => p.name === link.platform)) {
-            socialMap[link.platform] = link.url;
-          }
+        social_links?.forEach(link => {
+          socialMap[link.platform] = link.url;
         });
 
-        const avatarFullUrl = avatar_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
-          : null;
-        const identityDocUrl = student?.identity_doc_url;
-        const identityFullUrl = identityDocUrl
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${identityDocUrl}`
-          : null;
-
-        const { resolvedUrl: safeAvatarUrl, fallback: avatarFallback } = await ensureAssetAvailability(
-          avatarFullUrl,
-          "avatar"
-        );
-
-        const { resolvedUrl: safeIdentityUrl, fallback: identityFallback } = await ensureAssetAvailability(
-          identityFullUrl,
-          "identity document"
-        );
-
         setFormData({
-          full_name: full_name ?? "",
-          phone: phone ?? "",
+          full_name,
+          phone,
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           education_level: student?.education_level || "",
-          topics: normalizeTopics(student?.topics),
+          topics: student?.topics || [],
           learning_goals: student?.learning_goals || "",
           socialLinks: socialMap,
           avatar_url,
-          avatarPreview: safeAvatarUrl,
-          avatarPreviewFallback: avatarFallback,
+          avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
           identityFile: null,
-          identityPreview: safeIdentityUrl,
-          identityPreviewIsBlob: false,
-          identityPreviewFallback: identityFallback,
+          identityPreview: null,
         });
       } catch (err) {
-        toast.error(t('load_failed'));
+        toast.error("Failed to load profile data");
         console.error("Profile load error:", err);
       } finally {
         setIsLoading(false);
@@ -249,15 +120,7 @@ function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user, hasHydrated, router, ensureAssetAvailability]);
-
-  useEffect(() => {
-    return () => {
-      if (formData.identityPreview && formData.identityPreviewIsBlob) {
-        URL.revokeObjectURL(formData.identityPreview);
-      }
-    };
-  }, [formData.identityPreview, formData.identityPreviewIsBlob]);
+  }, [user, router]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
@@ -273,108 +136,30 @@ function StudentProfileEdit() {
       ...prev,
       socialLinks: { ...prev.socialLinks, [name]: value.trim() }
     }));
-    setErrors(prev => ({ ...prev, [`socialLinks.${name}`]: null }));
   };
 
-  const onCropComplete = useCallback((_, area) => {
-    setCroppedAreaPixels(area);
-  }, []);
-
-const handleAvatarSelect = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    toast.error(t('avatar_invalid_type'));
-    e.target.value = "";
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    toast.error(t('image_size_error'));
-    return;
-  }
-  setTempFileName(file.name);
-  setTempAvatar(URL.createObjectURL(file));
-  setShowCropper(true);
-  setFormData(prev => ({
-    ...prev,
-    avatarPreviewFallback: false,
-  }));
-};
-
-  const handleCropUpload = async () => {
-    if (!user) return;
-    setIsUploadingAvatar(true);
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image size should be less than 10MB");
+      return;
+    }
     try {
-      if (!tempAvatar || !croppedAreaPixels) return;
-      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
-      const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
+      setIsSubmitting(true);
       const res = await uploadStudentAvatar(user.id, file);
       const avatar_url = res.avatar_url;
-      setUser({ ...user, avatar_url });
+      useAuthStore.getState().setUser({ ...user, avatar_url });
       setFormData(prev => ({
         ...prev,
         avatar_url,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`,
-        avatarPreviewFallback: false,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
-      toast.success(t('avatar_upload_success'));
-      setShowCropper(false);
-      setTempAvatar(null);
-    } catch (error) {
-      console.error('Avatar upload error:', error.response);
-      const msg = error.response?.data?.message || t('avatar_upload_failed');
-      toast.error(msg);
+      toast.success("Avatar uploaded successfully!");
+    } catch (err) {
+      toast.error("Failed to upload avatar");
     } finally {
-      if (tempAvatar) {
-        URL.revokeObjectURL(tempAvatar);
-      }
-      setIsUploadingAvatar(false);
-    }
-  };
-
-  const handleCropCancel = () => {
-    setShowCropper(false);
-    if (tempAvatar) URL.revokeObjectURL(tempAvatar);
-    setTempAvatar(null);
-    setCroppedAreaPixels(null);
-    setZoom(1);
-    setCrop({ x: 0, y: 0 });
-  };
-
-  const handleAvatarRemove = async () => {
-    if (!user?.id) {
-      toast.error(t('user_not_loaded'));
-      return;
-    }
-
-    if (!formData.avatar_url) {
-      setFormData((prev) => ({
-        ...prev,
-        avatar_url: null,
-        avatarPreview: null,
-        avatarPreviewFallback: false,
-      }));
-      toast.success(t('avatar_remove_success'));
-      return;
-    }
-
-    setIsDeletingAvatar(true);
-    try {
-      await deleteStudentAvatar(user.id);
-      await refreshUser?.();
-      setFormData((prev) => ({
-        ...prev,
-        avatar_url: null,
-        avatarPreview: null,
-        avatarPreviewFallback: false,
-      }));
-      toast.success(t('avatar_remove_success'));
-    } catch (error) {
-      logger.error('Avatar remove error:', error);
-      const message = error?.response?.data?.message || t('avatar_remove_failed');
-      toast.error(message);
-    } finally {
-      setIsDeletingAvatar(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -382,102 +167,50 @@ const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.type !== "application/pdf") {
-      toast.error(t('pdf_only_error'));
+      toast.error("Only PDF files are allowed");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('pdf_size_error'));
+      toast.error("PDF size should be less than 5MB");
       return;
     }
     try {
-      setIsUploadingIdentity(true);
-      if (!user) return;
+      setIsSubmitting(true);
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => {
-        if (prev.identityPreview && prev.identityPreviewIsBlob) {
-          URL.revokeObjectURL(prev.identityPreview);
-        }
-        return {
-          ...prev,
-          identityFile: file,
-          identityPreview: URL.createObjectURL(file),
-          identityPreviewIsBlob: true,
-          identityPreviewFallback: false,
-        };
-      });
-      toast.success(t('id_upload_success'));
+      setFormData(prev => ({
+        ...prev,
+        identityFile: file,
+        identityPreview: URL.createObjectURL(file)
+      }));
+      toast.success("Identity document uploaded successfully!");
     } catch (err) {
-      toast.error(t('id_upload_failed'));
+      toast.error("Failed to upload identity document");
     } finally {
-      setIsUploadingIdentity(false);
+      setIsSubmitting(false);
     }
   };
 
   const removeIdentity = () => {
-    setFormData(prev => {
-      if (prev.identityPreview && prev.identityPreviewIsBlob) {
-        URL.revokeObjectURL(prev.identityPreview);
-      }
-      return {
-        ...prev,
-        identityFile: null,
-        identityPreview: null,
-        identityPreviewIsBlob: false,
-        identityPreviewFallback: false,
-      };
-    });
+    setFormData(prev => ({ ...prev, identityFile: null, identityPreview: null }));
   };
-
-  const handleAvatarImageError = useCallback(() => {
-    setFormData((prev) => {
-      if (prev.avatarPreviewFallback) {
-        return prev;
-      }
-
-      logger.warn("[StudentProfileEdit] Avatar preview failed to load", {
-        assetType: "avatar",
-        url: prev.avatarPreview,
-      });
-
-      return {
-        ...prev,
-        avatarPreview: null,
-        avatarPreviewFallback: true,
-      };
-    });
-  }, []);
 
   const validateForm = () => {
     try {
       const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks || {}).filter(
-          ([platform, url]) =>
-            allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
-        )
+        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
       );
 
       studentProfileSchema.parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
-      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
-      if (err instanceof ZodError) {
-        err.errors.forEach((error) => {
-          const key = error.path.join(".");
-          errs[key] = translateValidationMessage(error.message);
-        });
-        setErrors(errs);
-        if (err.errors?.length) {
-          toast.error(translateValidationMessage(err.errors[0].message));
-        } else {
-          toast.error(t('fix_errors'));
-        }
-      } else {
-        toast.error(t('fix_errors'));
-      }
+      err.errors.forEach((e) => {
+        errs[e.path[0]] = e.message;
+      });
+      setErrors(errs);
       return false;
     }
   };
@@ -485,14 +218,17 @@ const handleAvatarSelect = (e) => {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!user) {
-      toast.error(t('user_not_loaded'));
+      toast.error("User not loaded. Please login again.");
       return;
     }
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
       logger.log("[StudentProfileEdit] Submitting form", formData);
-      const social_links = toSocialLinksArray(formData.socialLinks);
+
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
 
       const payload = {
         full_name: formData.full_name,
@@ -500,21 +236,21 @@ const handleAvatarSelect = (e) => {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         education_level: formData.education_level,
-        topics: normalizeTopics(formData.topics),
+        topics: formData.topics,
         learning_goals: formData.learning_goals,
         social_links,
       };
       logger.log("[StudentProfileEdit] Payload", payload);
 
       await toast.promise(updateStudentProfile(payload), {
-        pending: t('saving_profile'),
-        success: t('update_success'),
+        pending: "Saving profile...",
+        success: "Profile updated successfully!",
         error: {
           render({ data }) {
             return (
               data?.response?.data?.message ||
               data?.message ||
-              t('update_failed')
+              "Failed to update profile"
             );
           },
         },
@@ -530,7 +266,7 @@ const handleAvatarSelect = (e) => {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: fresh.profile_complete,
+        profile_complete: true,
       });
 
       setTimeout(() => {
@@ -538,7 +274,7 @@ const handleAvatarSelect = (e) => {
       }, 1500);
 
       try {
-        const message = t('profile_update_notification');
+        const message = "Your student profile was updated.";
         await Promise.all([
           createNotification({ user_id: user.id, type: "profile_update", message }),
           sendChatMessage(user.id, { text: message }),
@@ -555,10 +291,10 @@ const handleAvatarSelect = (e) => {
 
     } catch (err) {
       logger.error("[StudentProfileEdit] update error", err);
-      const msg = err.response?.data?.message || err.message || t('update_failed');
+      const msg = err.response?.data?.message || err.message || "Failed to update profile";
       toast.error(msg);
       if (err.response?.status === 401) {
-        toast.error(t('session_expired'));
+        toast.error("Session expired. Please login again.");
         logout();
         router.push("/auth/login");
       }
@@ -580,7 +316,7 @@ const handleAvatarSelect = (e) => {
     <StudentLayout>
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">{t('title')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Student Profile</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -596,7 +332,7 @@ const handleAvatarSelect = (e) => {
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
                     <FaUserCircle className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">{t('profile_picture')}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Profile Picture</h2>
                 </div>
                 {expanded.avatar ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -604,30 +340,19 @@ const handleAvatarSelect = (e) => {
               {expanded.avatar && (
                 <div className="p-4 space-y-4">
                   <div className="flex flex-col items-center">
-                    {formData.avatarPreview || formData.avatarPreviewFallback ? (
+                    {formData.avatarPreview ? (
                       <div className="relative">
                         <img
-                          src={formData.avatarPreview || AVATAR_PLACEHOLDER_SRC}
+                          src={formData.avatarPreview}
                           alt="Avatar Preview"
                           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                          onError={handleAvatarImageError}
                         />
-                        {formData.avatarPreview && !formData.avatarPreviewFallback && (
-                          <button
-                            type="button"
-                            onClick={handleAvatarRemove}
-                            disabled={isDeletingAvatar}
-                            className={`absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full transition-colors ${
-                              isDeletingAvatar ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'
-                            }`}
-                          >
-                            {isDeletingAvatar ? (
-                              <FaSpinner className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <FaTimesCircle className="w-5 h-5" />
-                            )}
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setFormData(prev => ({ ...prev, avatar_url: null, avatarPreview: null }))}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <FaTimesCircle className="w-5 h-5" />
+                        </button>
                       </div>
                     ) : (
                       <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
@@ -638,16 +363,16 @@ const handleAvatarSelect = (e) => {
                     <label className="mt-4 cursor-pointer">
                       <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-2">
                         <FaUpload className="w-4 h-4" />
-                        <span>{formData.avatarPreview ? t('change_photo') : t('upload_photo')}</span>
+                        <span>{formData.avatarPreview ? 'Change Photo' : 'Upload Photo'}</span>
                       </div>
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleAvatarSelect}
+                        onChange={handleAvatarUpload}
                         className="hidden"
                       />
                     </label>
-                    <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
+                    <p className="mt-2 text-xs text-gray-500">JPG, PNG up to 10MB</p>
                   </div>
                 </div>
               )}
@@ -663,7 +388,7 @@ const handleAvatarSelect = (e) => {
                   <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
                     <FaIdCard className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">{t('student_id')}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Student ID</h2>
                 </div>
                 {expanded.identity ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -671,16 +396,12 @@ const handleAvatarSelect = (e) => {
               {expanded.identity && (
                 <div className="p-4 space-y-4">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    {isUploadingIdentity ? (
-                      <div className="flex justify-center">
-                        <FaSpinner className="w-6 h-6 text-purple-600 animate-spin" />
-                      </div>
-                    ) : formData.identityPreview ? (
+                    {formData.identityPreview ? (
                       <div className="space-y-3">
                         <div className="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full">
                           <FaFilePdf className="w-8 h-8 text-purple-600" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">{t('id_uploaded')}</p>
+                        <p className="text-sm font-medium text-gray-700">ID Document Uploaded</p>
                         <div className="flex justify-center space-x-3">
                           <a
                             href={formData.identityPreview}
@@ -689,69 +410,41 @@ const handleAvatarSelect = (e) => {
                             className="px-3 py-1 bg-yellow-50 text-yellow-600 rounded-md text-sm hover:bg-yellow-100 transition-colors flex items-center space-x-1"
                           >
                             <FaFilePdf className="w-3 h-3" />
-                            <span>{t('view_pdf')}</span>
+                            <span>View PDF</span>
                           </a>
                           <button
                             onClick={removeIdentity}
                             className="px-3 py-1 bg-red-50 text-red-600 rounded-md text-sm hover:bg-red-100 transition-colors flex items-center space-x-1"
                           >
                             <FaTrash className="w-3 h-3" />
-                            <span>{t('remove')}</span>
+                            <span>Remove</span>
                           </button>
                         </div>
-                      </div>
-                    ) : formData.identityPreviewFallback ? (
-                      <div className="space-y-3">
-                        <img
-                          src={IDENTITY_PLACEHOLDER_SRC}
-                          alt="Identity placeholder"
-                          className="mx-auto h-32 w-32 rounded-lg object-cover shadow-sm border border-gray-200"
-                        />
-                        <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
-                        <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
-                        <label className={`cursor-pointer inline-block mt-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                          <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
-                            {isUploadingIdentity ? <FaSpinner className="w-4 h-4 animate-spin" /> : <FaUpload className="w-4 h-4" />}
-                            <span>{t('select_file')}</span>
-                          </div>
-                          <input
-                            type="file"
-                            accept="application/pdf"
-                            onChange={handleIdentityUpload}
-                            className="hidden"
-                            disabled={isUploadingIdentity}
-                          />
-                        </label>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         <div className="inline-flex items-center justify-center p-3 bg-gray-100 rounded-full">
-                          {isUploadingIdentity ? (
-                            <FaSpinner className="w-6 h-6 text-gray-500 animate-spin" />
-                          ) : (
-                            <FaUpload className="w-6 h-6 text-gray-500" />
-                          )}
+                          <FaUpload className="w-6 h-6 text-gray-500" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
-                        <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
-                        <label className={`cursor-pointer inline-block mt-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        <p className="text-sm font-medium text-gray-700">Upload your student ID</p>
+                        <p className="text-xs text-gray-500">PDF format only, max 5MB</p>
+                        <label className="cursor-pointer inline-block mt-2">
                           <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
-                            {isUploadingIdentity ? <FaSpinner className="w-4 h-4 animate-spin" /> : <FaUpload className="w-4 h-4" />}
-                            <span>{t('select_file')}</span>
+                            <FaUpload className="w-4 h-4" />
+                            <span>Select File</span>
                           </div>
                           <input
                             type="file"
                             accept="application/pdf"
                             onChange={handleIdentityUpload}
                             className="hidden"
-                            disabled={isUploadingIdentity}
                           />
                         </label>
                       </div>
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {t('upload_id_note')}
+                    Upload your student ID or other verification document.
                   </p>
                 </div>
               )}
@@ -770,7 +463,7 @@ const handleAvatarSelect = (e) => {
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
                     <FaUserCircle className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">{t('personal_section')}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
                 </div>
                 {expanded.personal ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -779,24 +472,24 @@ const handleAvatarSelect = (e) => {
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('full_name_label')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                       <input
                         name="full_name"
                         value={formData.full_name}
                         onChange={handleInputChange}
-                        placeholder={t('full_name_placeholder')}
+                        placeholder="John Doe"
                         className={`w-full px-3 py-2 border ${errors.full_name ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       />
                       {errors.full_name && <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone_label')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                       <input
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder={t('phone_placeholder')}
+                        placeholder="+1 (555) 123-4567"
                         className={`w-full px-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       />
                       {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -805,20 +498,20 @@ const handleAvatarSelect = (e) => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('gender_label')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
                       <select
                         name="gender"
                         value={formData.gender}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                       >
-                        <option value="male">{t('male')}</option>
-                        <option value="female">{t('female')}</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('dob_label')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
                       <input
                         type="date"
                         name="date_of_birth"
@@ -843,7 +536,7 @@ const handleAvatarSelect = (e) => {
                   <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
                     <FaGraduationCap className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">{t('education_section')}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Education Information</h2>
                 </div>
                 {expanded.education ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -851,24 +544,24 @@ const handleAvatarSelect = (e) => {
               {expanded.education && (
                 <div className="p-4 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('education_level_label')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Education Level *</label>
                     <input
                       name="education_level"
                       value={formData.education_level}
                       onChange={handleInputChange}
-                      placeholder={t('education_level_placeholder')}
+                      placeholder="e.g., High School, Bachelor's Degree"
                       className={`w-full px-3 py-2 border ${errors.education_level ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                     />
                     {errors.education_level && <p className="mt-1 text-sm text-red-600">{errors.education_level}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('learning_goals_label')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Learning Goals</label>
                     <textarea
                       name="learning_goals"
                       value={formData.learning_goals}
                       onChange={handleInputChange}
-                      placeholder={t('learning_goals_placeholder')}
+                      placeholder="Describe your learning objectives..."
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
@@ -885,44 +578,44 @@ const handleAvatarSelect = (e) => {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
-                    <FaGlobe className="w-5 h-5" />
+                    <FaLinkedin className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">{t('social_section')}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Social Links</h2>
                 </div>
                 {expanded.social ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  {allowedPlatforms.map(({ name, Icon, className }) => {
-                    const IconComponent = Icon || defaultPlatformIcon.Icon;
-                    if (!IconComponent) {
-                      return null;
-                    }
-                    const iconClassName = className || defaultPlatformIcon.className;
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                      <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
+                      LinkedIn Profile URL
+                    </label>
+                    <input
+                      type="text"
+                      name="linkedin"
+                      value={formData.socialLinks.linkedin || ""}
+                      onChange={handleSocialChange}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    />
+                  </div>
 
-                    return (
-                      <div key={name}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                          <IconComponent className={`w-4 h-4 mr-2 ${iconClassName}`} />
-                          {t(`${name}_label`)}
-                        </label>
-                        <input
-                          type="text"
-                          name={name}
-                          value={formData.socialLinks[name] || ""}
-                          onChange={handleSocialChange}
-                          placeholder={t(`${name}_placeholder`)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                        />
-                        {errors[`socialLinks.${name}`] && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors[`socialLinks.${name}`]}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                      <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
+                      GitHub Profile URL
+                    </label>
+                    <input
+                      type="text"
+                      name="github"
+                      value={formData.socialLinks.github || ""}
+                      onChange={handleSocialChange}
+                      placeholder="https://github.com/yourusername"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -934,7 +627,7 @@ const handleAvatarSelect = (e) => {
                 onClick={() => router.push("/dashboard/student")}
                 className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
-                {t('cancel')}
+                Cancel
               </button>
               <button
                 type="submit"
@@ -944,62 +637,16 @@ const handleAvatarSelect = (e) => {
                 {isSubmitting ? (
                   <span className="flex items-center justify-center">
                     <FaSpinner className="animate-spin mr-2" />
-                    {t('saving')}
+                    Saving...
                   </span>
                 ) : (
-                  t('save_changes')
+                  'Save Changes'
                 )}
               </button>
             </div>
           </div>
         </div>
       </form>
-      {showCropper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
-            <div className="relative w-full h-64">
-              <Cropper
-                image={tempAvatar}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={handleCropCancel}
-                className="px-4 py-2 bg-gray-200 rounded"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleCropUpload}
-                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
-              >
-                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                {t('upload')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </StudentLayout>
   );
-}
-
-export default withAuthProtection(StudentProfileEdit, ['student']);
-
-export async function getServerSideProps({ locale }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(
-        locale,
-        ['dashboard', 'common'],
-        nextI18NextConfig
-      )),
-    },
-  };
 }

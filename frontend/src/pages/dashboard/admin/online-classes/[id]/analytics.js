@@ -7,99 +7,55 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { fetchAdminClassAnalytics } from "@/services/admin/classService";
-import AnalyticsCharts from "@/components/admin/online-classes/AnalyticsCharts";
-import { formatCurrency } from "@/utils/currency";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+
+const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#f87171"];
 
 // ─────────────────────
 // Fallback analytics when API fails
 // ─────────────────────
-const EMPTY_BREAKDOWN_BUCKET = Object.freeze({ count: 0, revenue: 0 });
-
 const EMPTY_STATS = {
   totalStudents: 0,
   totalRevenue: 0,
   totalAttendance: 0,
   completed: 0,
   revenueBreakdown: {
-    full: EMPTY_BREAKDOWN_BUCKET,
-    subscription: EMPTY_BREAKDOWN_BUCKET,
-    free: EMPTY_BREAKDOWN_BUCKET,
+    full: 0,
+    installments: 0,
+    free: 0,
   },
   locations: [],
   devices: [],
   registrationTrend: [],
 };
 
-const normalizeBreakdownBucket = (bucket) => {
-  if (!bucket || typeof bucket !== "object" || Array.isArray(bucket)) {
-    const count = Number(bucket ?? 0) || 0;
-    return { count, revenue: 0 };
-  }
-
-  return {
-    count: Number(bucket.count ?? 0) || 0,
-    revenue: Number(bucket.revenue ?? 0) || 0,
-  };
-};
-
-const normalizeBreakdown = (breakdown) => {
-  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) {
-    return {
-      full: normalizeBreakdownBucket(),
-      subscription: normalizeBreakdownBucket(),
-      free: normalizeBreakdownBucket(),
-    };
-  }
-
-  const normalized = {
-    full: normalizeBreakdownBucket(breakdown.full),
-    subscription: normalizeBreakdownBucket(breakdown.subscription),
-    free: normalizeBreakdownBucket(breakdown.free),
-  };
-
-  normalized.free.revenue = 0;
-
-  return normalized;
-};
-
 function AnalyticsDashboard() {
   const router = useRouter();
-  const rawId = router.query?.id;
-  const classId = Array.isArray(rawId) ? rawId[0] : rawId ?? "";
+  const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
+
   useEffect(() => {
-    let isMounted = true;
-
-    if (!classId || !classId.trim()) {
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    setStats(null);
-    fetchAdminClassAnalytics(classId)
-      .then((data) => {
-        if (!isMounted) return;
-        setStats({
-          ...EMPTY_STATS,
-          ...(data ?? {}),
-          revenueBreakdown: normalizeBreakdown(data?.revenueBreakdown),
-          locations: data?.locations ?? EMPTY_STATS.locations,
-          devices: data?.devices ?? EMPTY_STATS.devices,
-          registrationTrend: data?.registrationTrend ?? EMPTY_STATS.registrationTrend,
-        });
-      })
+    if (!id) return;
+    fetchAdminClassAnalytics(id)
+      .then((data) => setStats(data))
       .catch((err) => {
-        if (!isMounted) return;
         console.error("Failed to load analytics", err);
         setStats(EMPTY_STATS);
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [classId]);
+  }, [id]);
 
   if (!stats) {
     return (
@@ -109,59 +65,42 @@ function AnalyticsDashboard() {
     );
   }
 
-  const totalStudents = stats.totalStudents ?? 0;
-  const totalRevenue = stats.totalRevenue ?? 0;
-  const totalAttendance = stats.totalAttendance ?? 0;
-  const totalCompleted = stats.completed ?? 0;
-  const revenueBreakdown = stats.revenueBreakdown ?? EMPTY_STATS.revenueBreakdown;
-  const locations = stats.locations ?? EMPTY_STATS.locations;
-  const devices = stats.devices ?? EMPTY_STATS.devices;
-  const registrationTrend = stats.registrationTrend ?? EMPTY_STATS.registrationTrend;
-
-  const avgRevenue = formatCurrency(
-    totalStudents > 0 ? totalRevenue / totalStudents : 0
-  );
+  const avgRevenue =
+    stats.totalStudents > 0
+      ? (stats.totalRevenue / stats.totalStudents).toFixed(2)
+      : "0";
   const attendanceRate =
-    totalStudents > 0
-      ? ((totalAttendance / totalStudents) * 100).toFixed(1)
+    stats.totalStudents > 0
+      ? ((stats.totalAttendance / stats.totalStudents) * 100).toFixed(1)
       : "0";
   const completionRate =
-    totalStudents > 0
-      ? ((totalCompleted / totalStudents) * 100).toFixed(1)
+    stats.totalStudents > 0
+      ? ((stats.completed / stats.totalStudents) * 100).toFixed(1)
       : "0";
 
   return (
     <div className="p-6 space-y-6" dir={i18n.dir()}>
       <h1 className="text-2xl font-bold text-gray-800">
-        📊 {t('classAnalyticsPage.title')} - {t('classAnalyticsPage.class_id')} {classId}
+        📊 {t('classAnalyticsPage.title')} - {t('classAnalyticsPage.class_id')} {id}
       </h1>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 {t('classAnalyticsPage.total_enrolled_students')}</h2>
-          <p className="text-3xl font-bold text-green-600">{totalStudents}</p>
+          <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 {t('classAnalyticsPage.total_revenue')}</h2>
-          <p className="text-3xl font-bold text-indigo-600">{formatCurrency(totalRevenue)}</p>
+          <p className="text-3xl font-bold text-indigo-600">${stats.totalRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 {t('classAnalyticsPage.revenue_breakdown')}</h2>
           <ul className="text-gray-700 space-y-1">
-            <li>
-              <strong>{t('classAnalyticsPage.full_payments')}:</strong>{' '}
-              {revenueBreakdown.full.count} {t('classAnalyticsPage.students_label', 'students')} – {formatCurrency(revenueBreakdown.full.revenue)} {t('classAnalyticsPage.revenue_label', 'revenue')}
-            </li>
-            <li>
-              <strong>{t('classAnalyticsPage.subscription_seats')}:</strong>{' '}
-              {revenueBreakdown.subscription.count} {t('classAnalyticsPage.students_label', 'students')} – {formatCurrency(revenueBreakdown.subscription.revenue)} {t('classAnalyticsPage.revenue_label', 'revenue')}
-            </li>
-            <li>
-              <strong>{t('classAnalyticsPage.free_seats')}:</strong>{' '}
-              {revenueBreakdown.free.count} {t('classAnalyticsPage.students_label', 'students')}
-            </li>
+            <li><strong>{t('classAnalyticsPage.full_payments')}:</strong> {stats.revenueBreakdown.full}</li>
+            <li><strong>{t('classAnalyticsPage.installments')}:</strong> {stats.revenueBreakdown.installments}</li>
+            <li><strong>{t('classAnalyticsPage.free_seats')}:</strong> {stats.revenueBreakdown.free}</li>
           </ul>
         </div>
       </div>
@@ -169,7 +108,7 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">📊 {t('classAnalyticsPage.avg_revenue_per_student')}</h2>
-          <p className="text-3xl font-bold text-yellow-600">{avgRevenue}</p>
+          <p className="text-3xl font-bold text-yellow-600">${avgRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
@@ -183,12 +122,50 @@ function AnalyticsDashboard() {
         </div>
       </div>
 
-      <AnalyticsCharts
-        t={t}
-        locations={locations}
-        devices={devices}
-        registrationTrend={registrationTrend}
-      />
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">🌍 {t('classAnalyticsPage.top_countries')}</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={stats.locations} dataKey="value" nameKey="name" outerRadius={100}>
+                {stats.locations.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">📱 {t('classAnalyticsPage.devices_used')}</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={stats.devices} dataKey="value" nameKey="name" outerRadius={100}>
+                {stats.devices.map((entry, index) => (
+                  <Cell key={`cell-dev-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow border">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 {t('classAnalyticsPage.registration_trend')}</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={stats.registrationTrend}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="students" fill="#facc15" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -198,7 +175,6 @@ AnalyticsDashboard.getLayout = function getLayout(page) {
 };
 
 const ProtectedAnalyticsDashboard = withAuthProtection(AnalyticsDashboard, {
-  roles: ['admin', 'superadmin'],
   permissions: ['manage_online_classes'],
 });
 ProtectedAnalyticsDashboard.getLayout = AnalyticsDashboard.getLayout;

@@ -17,7 +17,6 @@ backend/uploads
 # Environment files
 .env
 *.env
-!/.env.production
 !frontend/.env.production
 !backend/.env.production
 

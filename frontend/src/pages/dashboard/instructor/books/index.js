@@ -9,25 +9,19 @@ import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import useAuthStore from "@/store/auth/authStore";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
 import useBookTable from "@/hooks/useBookTable";
-import { getNormalizedRoles } from "@/utils/auth/roleUtils";
 
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
-  const canModerateBooks =
-    normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -213,7 +207,6 @@ function InstructorBooksPage() {
   };
 
   const handleBulkStatusUpdate = async () => {
-    if (!canModerateBooks) return;
     if (!bulkStatus) return;
     openConfirmModal({
       title: t("Confirm Status Change"),
@@ -238,7 +231,6 @@ function InstructorBooksPage() {
   };
 
   const handleStatusChange = async (bookId, newStatus, currentStatus) => {
-    if (!canModerateBooks) return;
     setBooks(prev =>
       prev.map(book =>
         book.id === bookId ? { ...book, status: newStatus } : book
@@ -418,13 +410,12 @@ function InstructorBooksPage() {
                     {tag}
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={() =>
                         setFilters({
                           ...filters,
                           tags: filters.tags.filter((t) => t !== tag),
-                        });
-                        setPage(1);
-                      }}
+                        })
+                      }
                       className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       &times;
@@ -442,7 +433,6 @@ function InstructorBooksPage() {
                       e.preventDefault();
                       if (tagInput && !filters.tags.includes(tagInput)) {
                         setFilters({ ...filters, tags: [...filters.tags, tagInput] });
-                        setPage(1);
                       }
                       setTagInput("");
                     }
@@ -458,7 +448,6 @@ function InstructorBooksPage() {
                         onClick={() => {
                           if (!filters.tags.includes(tg.name)) {
                             setFilters({ ...filters, tags: [...filters.tags, tg.name] });
-                            setPage(1);
                           }
                           setTagInput("");
                         }}
@@ -646,8 +635,7 @@ function InstructorBooksPage() {
               <select
                 value={bulkStatus}
                 onChange={(e) => setBulkStatus(e.target.value)}
-                disabled={!canModerateBooks}
-                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
               >
                 <option value="">{t("Change Status")}</option>
                 <option value="pending">{t("Pending")}</option>
@@ -656,8 +644,7 @@ function InstructorBooksPage() {
               </select>
               <button
                 onClick={handleBulkStatusUpdate}
-                disabled={!canModerateBooks || !bulkStatus}
-                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
               >
                 {t("Apply")}
               </button>
@@ -731,13 +718,11 @@ function InstructorBooksPage() {
                       />
                       <div className="absolute top-3 right-3">
                         <select
-                          data-testid={`book-status-${book.id}`}
                           value={book.status}
                           onChange={(e) =>
                             handleStatusChange(book.id, e.target.value, book.status)
                           }
-                          disabled={!canModerateBooks}
-                          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs rounded px-2 py-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs rounded px-2 py-1"
                         >
                           <option value="pending">{t("Pending")}</option>
                           <option value="approved">{t("Approved")}</option>
@@ -909,8 +894,6 @@ function InstructorBooksPage() {
     </>
   );
 };
-
-export { InstructorBooksPage };
 
 const ProtectedInstructorBooksPage = withAuthProtection(InstructorBooksPage, ["instructor"]);
 

@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 /**
  * Instructor profile controller
  * @file instructor.routes.js
@@ -7,6 +8,7 @@ const router = express.Router();
 const controller = require("./instructor.controller");
 const { verifyToken, isInstructor } = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, demoUpload, certificateUpload } = require("./instructorUploadMiddleware");
+const db = require("../../../config/database");
 const { updateInstructorProfileSchema } = require("./instructor.validator");
 const validate = require("../../../middleware/validate");
 
@@ -110,7 +112,23 @@ router.patch(
   verifyToken,
   isInstructor,
   demoUpload.single("demo"),
-  controller.uploadDemoVideo
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+        return res.status(400).json({ error: "Invalid user id" });
+      }
+
+      const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+      await db("instructor_profiles")
+        .where({ user_id: id })
+        .update({ demo_video_url: demoVideoUrl });
+      res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+      logger.error("Demo video upload error:", err);
+      res.status(500).json({ error: "Failed to upload demo video" });
+    }
+  }
 );
 
 /**

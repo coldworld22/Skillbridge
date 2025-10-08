@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaUpload, FaTrash, FaCheckCircle } from "react-icons/fa";
 
@@ -6,21 +6,13 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
   const [errors, setErrors] = useState({});
   const [profilePic, setProfilePic] = useState(null);
 
-  useEffect(() => {
-    return () => {
-      if (profilePic) {
-        URL.revokeObjectURL(profilePic);
-      }
-    };
-  }, [profilePic]);
-
   // ✅ Handle Input Change
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      studentDetails: {
-        ...formData.studentDetails,
-        [e.target.name]: e.target.value
+    setFormData({ 
+      ...formData, 
+      studentDetails: { 
+        ...formData.studentDetails, 
+        [e.target.name]: e.target.value 
       }
     });
   };
@@ -31,11 +23,11 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setProfilePic(imageUrl);
-      setFormData({
-        ...formData,
-        studentDetails: {
-          ...formData.studentDetails,
-          profilePicture: imageUrl
+      setFormData({ 
+        ...formData, 
+        studentDetails: { 
+          ...formData.studentDetails, 
+          profilePicture: imageUrl 
         }
       });
     }
@@ -43,15 +35,12 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
 
   // ✅ Remove Profile Picture
   const removeImage = () => {
-    if (profilePic) {
-      URL.revokeObjectURL(profilePic);
-    }
     setProfilePic(null);
-    setFormData({
-      ...formData,
-      studentDetails: {
-        ...formData.studentDetails,
-        profilePicture: "",
+    setFormData({ 
+      ...formData, 
+      studentDetails: { 
+        ...formData.studentDetails, 
+        profilePicture: "" 
       }
     });
   };
@@ -97,10 +86,10 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
       {/* ✅ Education Level */}
       <div className="mb-4">
         <label className="block text-sm font-medium">Education Level</label>
-        <select
-          name="educationLevel"
-          value={formData.studentDetails.educationLevel}
-          onChange={handleChange}
+        <select 
+          name="educationLevel" 
+          value={formData.studentDetails.educationLevel} 
+          onChange={handleChange} 
           className="w-full p-2 border rounded bg-gray-800 text-white"
         >
           <option value="">Select your education level</option>
@@ -128,10 +117,10 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
       {/* ✅ Preferred Learning Style */}
       <div className="mb-4">
         <label className="block text-sm font-medium">Preferred Learning Style</label>
-        <select
-          name="learningStyle"
-          value={formData.studentDetails.learningStyle}
-          onChange={handleChange}
+        <select 
+          name="learningStyle" 
+          value={formData.studentDetails.learningStyle} 
+          onChange={handleChange} 
           className="w-full p-2 border rounded bg-gray-800 text-white"
         >
           <option value="">Select your preferred learning style</option>
@@ -174,4 +163,3 @@ const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
 };
 
 export default StudentDetails;
-

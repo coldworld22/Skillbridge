@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
 import { API_BASE_URL } from "@/config/config";
-import useAppConfigStore, { useAppConfigHydrated } from "@/store/appConfigStore";
+import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
@@ -21,15 +21,11 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 import logger from "@/utils/logger";
-import { handleError } from "@/utils/error";
 
 // ─────────────────────
 // 🔐 Validation schema
 // ─────────────────────
 import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
-import { isTokenExpired } from "@/utils/auth/tokenUtils";
-import profileRoutes from "@/constants/profileRoutes";
-import { getPrimaryRole } from "@/utils/auth/roleUtils";
 
 function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
@@ -37,12 +33,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   const user = useAuthStore((state) => state.user);
   const login = useAuthStore((state) => state.login);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const logout = useAuthStore((state) => state.logout);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
-  const appConfigHydrated = useAppConfigHydrated();
   const { executeRecaptcha } = useGoogleReCaptcha() || {};
 
   // ─────────────────────
@@ -59,26 +52,26 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     defaultValues: {
       email: "",
       password: "",
+      remember: true,
     },
   });
 
   useEffect(() => {
-    if (!hasHydrated) return;
-
-    if (!user || !accessToken || isTokenExpired(accessToken)) {
-      if (user || accessToken) {
-        logout(true);
-      }
-      return;
-    }
+    if (!hasHydrated || !user) return;
 
     if (user.profile_complete === false) {
-      const rolePath = profileRoutes[getPrimaryRole(user)] || "/website";
+      const profilePaths = {
+        admin: "/dashboard/admin/profile/edit",
+        instructor: "/dashboard/instructor/profile/edit",
+        student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
+      };
+      const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
       router.replace(rolePath);
     } else {
       router.replace("/website");
     }
-  }, [hasHydrated, user, accessToken, logout, router]);
+  }, [hasHydrated, user]);
 
   useEffect(() => {
     fetchAppConfig();
@@ -88,76 +81,64 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   // 🔑 Handle form submission
   // ─────────────────────────────
   const onSubmit = async (data) => {
-    try {
-      logger.log("➡️ login onSubmit invoked");
-      let cfg = recaptchaCfg;
-      if (!cfg && cfgLoading) {
-        setCfgLoading(true);
-        cfg = await fetchSocialLoginConfig().catch(() => null);
-        setRecaptchaCfg(cfg);
-        setCfgLoading(false);
-      }
-
-      const recaptchaConfigured = Boolean(
-        cfg?.recaptcha?.active &&
-          cfg?.recaptcha?.siteKey &&
-          executeRecaptcha
-      );
-
-      let shouldBypassRecaptcha = Boolean(
-        cfg?.recaptcha?.active && !recaptchaConfigured
-      );
-      if (cfg?.recaptcha?.active && !cfg?.recaptcha?.siteKey) {
-        logger.warn("⚠️ reCAPTCHA enabled without a site key – skipping");
-      }
-
-      let token;
-      if (recaptchaConfigured) {
-        try {
-          token = await executeRecaptcha("login");
-          if (!token) {
-            shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
-          }
-        } catch (recaptchaErr) {
-          shouldBypassRecaptcha = Boolean(cfg?.recaptcha?.active);
-          logger.warn("⚠️ Failed to execute reCAPTCHA, proceeding without token", recaptchaErr);
-        }
-      }
-
-      if (shouldBypassRecaptcha) {
-        logger.warn("⚠️ Bypassing reCAPTCHA for login so the request can proceed");
-      }
-
-      const loggedInUser = await login({
-        ...data,
-        recaptchaToken: token,
-        recaptchaBypass: shouldBypassRecaptcha,
-      });
-      toast.success(t("login_successful"));
-      fetchNotifications();
-
-      const primaryRole = getPrimaryRole(loggedInUser);
-      const targetPath =
-        loggedInUser.profile_complete === false
-          ? profileRoutes[primaryRole] || "/website"
-          : "/website";
-
-      // 🚀 Redirect after a short delay so the toast is visible
-      setTimeout(() => {
-        router.push(targetPath);
-      }, 500);
-    } catch (err) {
-      logger.error("❌ login onSubmit error", err);
-      handleError(err, t("login_failed"));
-      setValue("password", "");
-      document.activeElement?.blur();
-
-      setTimeout(() => {
-        const loginBtn = document.querySelector("button[type=submit]");
-        loginBtn?.blur();
-      }, 100);
+  try {
+    logger.log("➡️ login onSubmit invoked");
+    let cfg = recaptchaCfg;
+    if (!cfg && cfgLoading) {
+      cfg = await fetchSocialLoginConfig().catch(() => null);
+      setRecaptchaCfg(cfg);
+      setCfgLoading(false);
     }
-  };
+    let token;
+    if (cfg?.recaptcha?.active && executeRecaptcha) {
+      token = await executeRecaptcha("login");
+    }
+    const loggedInUser = await login({ ...data, recaptchaToken: token });
+    toast.success(t("login_successful"));
+    fetchNotifications();
+
+    const profilePaths = {
+      admin: "/dashboard/admin/profile/edit",
+      instructor: "/dashboard/instructor/profile/edit",
+      student: "/dashboard/student/profile/edit",
+      superadmin: "/dashboard/admin/profile/edit",
+    };
+
+    const targetPath =
+      loggedInUser.profile_complete === false
+        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+        : "/website";
+
+    // 🚀 Redirect after a short delay so the toast is visible
+    setTimeout(() => {
+      router.push(targetPath);
+    }, 500);
+  } catch (err) {
+    logger.error("❌ login onSubmit error", { message: err?.message });
+    let msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      t("login_failed");
+
+    if (msg === "Invalid credentials") {
+      msg = t("invalid_credentials");
+    }
+
+    if (err.code === "ERR_NETWORK") {
+      msg = t("network_error_check_config");
+    }
+
+    toast.error(msg);
+    setValue("password", "");
+    document.activeElement?.blur();
+
+    setTimeout(() => {
+      const loginBtn = document.querySelector("button[type=submit]");
+      loginBtn?.blur();
+    }, 100);
+  }
+};
 
 
 
@@ -177,28 +158,17 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
 
           <img
 
-            src={
-              appConfigHydrated && settings.logo_url
-                ? `${API_BASE_URL}${settings.logo_url}`
-                : "/images/logo.png"
-            }
-            alt={`${
-              appConfigHydrated && settings.appName
-                ? settings.appName
-                : 'SkillBridge'
-            } Logo`}
+            src={settings.logo_url
+              ? `${API_BASE_URL}${settings.logo_url}`
+              : "/images/logo.png"}
+            alt={(settings.appName || 'SkillBridge') + ' Logo'}
             width={80}
             height={80}
             className="rounded-full object-contain"
           />
         </div>
         <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          {t('welcome', {
-            appName:
-              appConfigHydrated && settings.appName
-                ? settings.appName
-                : 'SkillBridge',
-          })}
+          {t('welcome', { appName: settings.appName || 'SkillBridge' })}
         </h2>
 
         {/* Login Form */}
@@ -227,7 +197,11 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
             </p>
           )}
 
-          <div className="mt-4 flex items-center justify-end w-full text-sm text-gray-400">
+          <div className="mt-4 flex items-center justify-between w-full text-sm text-gray-400">
+            <label className="flex items-center">
+              <input type="checkbox" className="mr-2" {...register("remember")} />
+              {t('remember_me')}
+            </label>
             <a href="/auth/forgot-password" className="text-yellow-400 hover:underline">
               {t('forgot_password')}
             </a>
@@ -273,11 +247,7 @@ export default function Login() {
       .finally(() => setCfgLoading(false));
   }, []);
 
-  const recaptchaEnabled = Boolean(
-    recaptchaCfg?.recaptcha?.active && recaptchaCfg?.recaptcha?.siteKey
-  );
-
-  if (recaptchaEnabled) {
+  if (recaptchaCfg?.recaptcha?.active) {
     return (
       <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
         <LoginForm

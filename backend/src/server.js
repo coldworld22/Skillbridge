@@ -1,4 +1,3 @@
-const config = require("./config/env");
 const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -10,37 +9,27 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
-const redisClient = require("./utils/redisClient");
-const socketStore = require("./utils/socketStore");
-const cache = require("./utils/cache");
+const { createClient } = require("redis");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const csrf = require("./middleware/csrf");
 const path = require("path");
-const fs = require("fs");
 const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
-// Expose a cache-clearing utility so other modules (like routes) can
-// programmatically flush any server-side caches. This clears Redis, the socket
-// store, and the in-memory cache.
-async function clearServerCache() {
-  if (redisClient) {
-    await redisClient.flushAll();
-  }
-  await socketStore.clearAll();
-  await cache.clear();
-};
-
-exports.clearServerCache = clearServerCache;
 const routes = require("./routes");
+require("dotenv").config();
+
 // Ensure required environment secrets are present
 const requiredSecrets = [
   "JWT_SECRET",
   "REFRESH_TOKEN_SECRET",
   "SESSION_SECRET",
 ];
+const dbKey =
+  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
+requiredSecrets.push(dbKey);
 const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
 if (missingSecrets.length) {
   console.error(
@@ -56,71 +45,45 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-// Configure security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://cdn.tailwindcss.com",
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-  })
-);
+app.use(helmet());
 
 // 🌐 Fix CORS (must be very early)
-const FRONTEND_ORIGINS = config.FRONTEND_ORIGINS;
-const APP_DOMAIN = config.APP_DOMAIN;
+let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
+  FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
+}
+const APP_DOMAIN = process.env.APP_DOMAIN;
 const defaultOrigins = APP_DOMAIN
   ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
-  : [];
-const EXTRA_CORS_ORIGINS = process.env.EXTRA_CORS_ORIGINS
-  ? process.env.EXTRA_CORS_ORIGINS.split(",").filter(Boolean).map((url) => {
-      try {
-        return new URL(url.trim()).origin;
-      } catch {
-        throw new Error(`Invalid EXTRA_CORS_ORIGINS: ${url}`);
-      }
-    })
   : [];
 const ALLOWED_ORIGINS = Array.from(
   new Set([
     ...defaultOrigins,
-    ...FRONTEND_ORIGINS,
-    ...EXTRA_CORS_ORIGINS,
+    ...FRONTEND_URL.split(",").map((o) => o.trim().replace(/\/$/, "")),
   ])
 );
-// 🌐 CORS must run before body parsing so even 4xx responses include the header
-const corsOptions = {
-  origin(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-    const err = new Error("Origin not allowed");
-    err.status = 403;
-    logger.warn(`CORS blocked origin: ${origin}`);
-    return callback(err);
-  },
-  credentials: true,
-};
-app.use(cors(corsOptions));
-// Ensure preflight requests get CORS headers
-app.options("*", cors(corsOptions));
 
-// Translate CORS errors into JSON responses
-app.use((err, req, res, next) => {
-  if (err && err.message === "Origin not allowed") {
-    return res.status(403).json({ error: "Origin not allowed" });
-  }
-  return next(err);
+app.disable("etag");
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
 });
+// 🌐 CORS must run before body parsing so even 4xx responses include the header
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, origin);
+      } else {
+        // Deny the request without throwing so Express can return 403
+        logger.warn(`CORS blocked origin: ${origin}`);
+        callback(null, false);
+      }
+    },
+    credentials: true,
+  })
+);
 
 // Set reasonable body parser limits; routes needing more can override per-route
 const defaultBodyLimit = "10mb";
@@ -130,29 +93,25 @@ app.use(cookieParser());
 app.use(
   morgan("dev", {
     skip: (req) =>
-      config.NODE_ENV === "production" && req.url === "/api/health",
+      process.env.NODE_ENV === "production" && req.url === "/api/health",
   })
 );
 
-// Lightweight health check that stays available even if downstream middleware fails
-app.get("/api/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
-});
-const sessionCookieOptions = { ...refreshCookieOptions };
-
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required");
+}
 const sessionOptions = {
-  secret: config.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  // Reuse the same cookie defaults as refresh tokens so domain, secure and
-  // sameSite stay consistent. When COOKIE_DOMAIN is not set the domain remains
-  // undefined which lets browsers scope the cookie to the current host.
-  cookie: sessionCookieOptions,
+  cookie: { ...refreshCookieOptions },
 };
 
-if (redisClient) {
+let redisClient;
+if (process.env.REDIS_URL) {
+  redisClient = createClient({ url: process.env.REDIS_URL });
   sessionOptions.store = new RedisStore({ client: redisClient });
-} else if (config.NODE_ENV === "production") {
+} else if (process.env.NODE_ENV === "production") {
   const msg = "REDIS_URL is required in production for session persistence";
   logger.error(`❌ ${msg}`);
   throw new Error(msg);
@@ -162,15 +121,10 @@ app.use(session(sessionOptions));
 
 app.use(csrf);
 
-// Apply rate limiting to all requests. Allow the ceiling to be tuned via
-// GLOBAL_RATE_LIMIT_MAX so that heavy dashboard usage does not trigger 429s.
+// Apply rate limiting to all requests
 const limiter = rateLimit({
-  windowMs: config.RATE_LIMIT_WINDOW_MS,
-  max: config.RATE_LIMIT_MAX,
-  skip: (req) => {
-    const path = req.path || req.url;
-    return path === '/api/health' || path === '/api/health/';
-  },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
 
@@ -181,19 +135,8 @@ app.use(passport.session());
 
 // Restrict direct PDF access from the uploads folder
 const uploadsPath = path.join(__dirname, "../uploads");
-const serveUploads = express.static(uploadsPath, {
-  maxAge: "1h",
-  redirect: false,
-  setHeaders: (res) => {
-    res.setHeader("Cache-Control", "public, max-age=3600");
-  },
-});
+const serveUploads = express.static(uploadsPath);
 const blockPdfMiddleware = (req, res, next) => {
-  const normalizedPath = req.path || "";
-
-  if (normalizedPath === "" || normalizedPath === "/") {
-    return res.status(404).json({ message: "Not Found" });
-  }
   if (req.path.toLowerCase().endsWith(".pdf")) {
     return res.status(403).json({ message: "Direct PDF access is forbidden" });
   }
@@ -206,115 +149,29 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/install", (req, res, next) => {
-  if (!config.ENABLE_INSTALL) {
-    return res
-      .status(410)
-      .send(
-        'The web installer has been disabled. See the <a href="https://eduskillbridge.net/docs">installation guide</a>.'
-      );
-  }
-  return next();
-});
-
-if (config.ENABLE_INSTALL) {
-  const monorepoInstallerPath = path.join(__dirname, "../../install");
-  const packagedInstallerPath = path.join(__dirname, "../install");
-  const installerPath = [monorepoInstallerPath, packagedInstallerPath].find(
-    (candidate) => fs.existsSync(candidate)
-  );
-
-  if (installerPath) {
-    app.use(
-      "/install",
-      express.static(installerPath, { maxAge: "1h" })
-    );
-  } else {
-    logger.warn(
-      "⚠️ ENABLE_INSTALL is true but no installer assets were found in either the monorepo or packaged directories."
-    );
-  }
+if (process.env.ENABLE_INSTALL === "true") {
+  const installerPath = path.join(__dirname, "../../install");
+  app.use("/install", express.static(installerPath));
 }
 
 // ─── Routes ───
 app.use(routes);
-if (!config.ENABLE_INSTALL) {
-  app.get('/install', (req, res) => {
-    res.status(403).send('Installer disabled – set ENABLE_INSTALL=true to enable');
-  });
-}
+
+// Initialize sockets
+initSockets(server, ALLOWED_ORIGINS);
+const { io, rooms, participants, userSockets } = socketState;
+global.io = io;
+global.userSockets = userSockets;
+
 app.use(require("./middleware/errorHandler"));
-const BACKEND_PORT = config.BACKEND_PORT;
-
-const DEFAULT_REDIS_RETRY_OPTIONS = {
-  maxAttempts: 5,
-  baseDelayMs: 1000,
-  backoffFactor: 2,
-  maxDelayMs: 10000,
-};
-
-async function connectRedisWithRetry(
-  client,
-  {
-    maxAttempts = DEFAULT_REDIS_RETRY_OPTIONS.maxAttempts,
-    baseDelayMs = DEFAULT_REDIS_RETRY_OPTIONS.baseDelayMs,
-    backoffFactor = DEFAULT_REDIS_RETRY_OPTIONS.backoffFactor,
-    maxDelayMs = DEFAULT_REDIS_RETRY_OPTIONS.maxDelayMs,
-  } = DEFAULT_REDIS_RETRY_OPTIONS
-) {
-  if (!client) {
-    return;
-  }
-
-  if (client.isOpen) {
-    logger.log("ℹ️ Redis client already connected");
-    return;
-  }
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      logger.log(
-        `🔄 Connecting to Redis (attempt ${attempt} of ${maxAttempts})`
-      );
-      await client.connect();
-      logger.log("✅ Redis connected");
-      return;
-    } catch (err) {
-      logger.error(`❌ Redis connection attempt ${attempt} failed:`, err);
-
-      if (attempt === maxAttempts) {
-        logger.error(
-          `❌ Redis connection failed after ${maxAttempts} attempts. Exhausting retry budget.`,
-          err
-        );
-        throw err;
-      }
-
-      const delay = Math.min(
-        maxDelayMs,
-        Math.round(baseDelayMs * Math.pow(backoffFactor, attempt - 1))
-      );
-      try {
-        if (client.isOpen) {
-          await client.disconnect();
-        }
-      } catch (disconnectErr) {
-        logger.warn("⚠️ Failed to cleanly disconnect Redis client before retry:", disconnectErr);
-      }
-
-      logger.warn(`Retrying Redis connection in ${delay}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-}
+const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   if (redisClient) {
     try {
-      await connectRedisWithRetry(redisClient);
-      await socketStore.clearAll();
+      await redisClient.connect();
     } catch (err) {
-      logger.error("❌ Failed to connect to Redis after retries:", err);
+      logger.error("❌ Failed to connect to Redis:", err);
       process.exit(1);
     }
   }
@@ -333,19 +190,8 @@ async function startServer() {
       logger.log("✅ Database migrations up to date");
     }
     await initStrategies();
-    await new Promise((resolve, reject) => {
-      server.listen(BACKEND_PORT, "0.0.0.0", (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        logger.log(`✅ Server running on port ${BACKEND_PORT}`);
-        initSockets(server, ALLOWED_ORIGINS);
-        const { io, userSockets } = socketState;
-        global.io = io;
-        global.userSockets = userSockets;
-        resolve();
-      });
+    server.listen(PORT, "0.0.0.0", () => {
+      logger.log(`✅ Server running on port ${PORT}`);
     });
     startJobs();
   } catch (err) {
@@ -354,23 +200,8 @@ async function startServer() {
   }
 }
 
-if (config.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test") {
   startServer();
 }
 
-module.exports = {
-  app,
-  server,
-  startServer,
-  connectRedisWithRetry,
-  clearServerCache,
-  get io() {
-    return socketState.io;
-  },
-  get rooms() {
-    return socketState.rooms;
-  },
-  get participants() {
-    return socketState.participants;
-  },
-};
+module.exports = { app, server, io, rooms, participants, startServer };

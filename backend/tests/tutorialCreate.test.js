@@ -1,9 +1,21 @@
+jest.mock('../src/config/database', () => {
+  const mockDb = jest.fn(() => ({
+    where: jest.fn().mockReturnThis(),
+    whereRaw: jest.fn().mockReturnThis(),
+    first: jest.fn().mockResolvedValue(null),
+  }));
+  mockDb.transaction = jest.fn(async (cb) => {
+    await cb({});
+  });
+  mockDb.raw = jest.fn();
+  return mockDb;
+});
+
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   createTutorialWithRelations: jest.fn(),
   addTutorialTags: jest.fn(),
   getTutorialTags: jest.fn(),
   countPublishedTutorials: jest.fn(),
-  updateTutorialTagsTransactional: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/tutorials/chapters/tutorialChapter.service', () => ({
@@ -29,13 +41,6 @@ jest.mock('../src/modules/users/user.model', () => ({
   findAdmins: jest.fn(),
 }));
 
-jest.mock('../src/modules/users/tutorials/certificate/certificate.service', () => ({
-  generateCode: jest.fn(),
-  isUserCompletedTutorial: jest.fn(),
-  findExisting: jest.fn(),
-  issueCertificate: jest.fn(),
-}));
-
 jest.mock('../src/utils/email', () => ({
   sendTutorialCreatedAdminEmail: jest.fn(),
   sendTutorialCreatedInstructorEmail: jest.fn(),
@@ -51,15 +56,12 @@ jest.mock('../src/modules/plans/plans.service', () => ({
   getPlanById: jest.fn(),
 }));
 
-process.env.TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/testdb';
-
 const controller = require('../src/modules/users/tutorials/tutorial.controller');
 const service = require('../src/modules/users/tutorials/tutorial.service');
 const userModel = require('../src/modules/users/user.model');
+const db = require('../src/config/database');
 const { getActiveInstructorPlan } = require('../src/modules/plans/instructor.helper');
 const planService = require('../src/modules/plans/plans.service');
-const slugify = require('slugify');
 
 
 describe('createTutorial', () => {
@@ -99,7 +101,6 @@ describe('createTutorial', () => {
     expect(service.createTutorialWithRelations).toHaveBeenCalled();
     const data = service.createTutorialWithRelations.mock.calls[0][0];
     expect(data.instructor_id).toBe(instructorId);
-    expect(data.slug).toBe(slugify('Test Tut', { lower: true, strict: true }));
   });
 
   it('prevents instructor from creating tutorial for another instructor', async () => {
@@ -168,29 +169,10 @@ describe('createTutorial', () => {
     expect(data.is_paid).toBe(true);
   });
 
-  it('derives a slug from the tutorial title before creation', async () => {
-    service.createTutorialWithRelations.mockResolvedValue({ id: 'slug-tut' });
-
-    const req = {
-      body: {
-        title: 'Slug Test Tutorial',
-        category_id: 'cat',
-        level: 'beginner',
-      },
-      user: { id: 'inst1', role: 'instructor' },
-      files: {},
-    };
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-
-    await controller.createTutorial(req, res, jest.fn());
-    await new Promise((resolve) => setImmediate(resolve));
-
-    const data = service.createTutorialWithRelations.mock.calls[0][0];
-    expect(data.slug).toBe(slugify('Slug Test Tutorial', { lower: true, strict: true }));
-  });
-
   it('rejects duplicate titles regardless of case', async () => {
-    service.createTutorialWithRelations.mockRejectedValue({ code: '23505' });
+    const whereRaw = jest.fn().mockReturnThis();
+    const first = jest.fn().mockResolvedValue({ id: 'existing' });
+    db.mockImplementationOnce(() => ({ whereRaw, first }));
 
     const req = {
       body: {
@@ -206,11 +188,9 @@ describe('createTutorial', () => {
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(service.createTutorialWithRelations).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith({
-      message: 'Tutorial title already exists',
-    });
+    expect(whereRaw).toHaveBeenCalledWith('LOWER(title) = ?', 'my unique');
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(service.createTutorialWithRelations).not.toHaveBeenCalled();
   });
 });
 

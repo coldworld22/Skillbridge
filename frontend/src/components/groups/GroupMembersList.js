@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import groupService from "@/services/groupService";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { FaUserSlash, FaVolumeMute, FaUserShield, FaBan } from "react-icons/fa";
 
 export default function GroupMembersList({

@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useTranslation } from "next-i18next";
 import api from "@/services/api/api";
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 
 const fetcher = url => api.get(url).then(res => res.data.data);
 
@@ -34,7 +34,7 @@ export default function LanguageSwitcher({ changeLang }) {
               <img
                 src={
                   lang.icon_url
-                    ? buildUrl(lang.icon_url)
+                    ? `${API_BASE_URL}${lang.icon_url}`
                     : "/flags/default.png"
                 }
                 alt={`${lang.name} flag`}

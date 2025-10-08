@@ -1,214 +1,37 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-requirements=()
-all_ok=true
-any_warn=false
-escape_json() {
-  local s="${1-}"
-  s=${s//\\/\\\\}
-  s=${s//\"/\\\"}
-  s=${s//$'\n'/\\n}
-  s=${s//$'\r'/}
-  s=${s//$'\t'/\\t}
-  echo "$s"
-}
-
-add_requirement() {
-  local id="$1"
-  local label="$2"
-  local status="$3"
-  local message="$4"
-
-  local escaped_label
-  escaped_label=$(escape_json "$label")
-  local escaped_message
-  escaped_message=$(escape_json "$message")
-
-  local passed="false"
-  case "$status" in
-    pass|PASS|ok|OK|ready|READY)
-      passed="true"
-      status="pass"
-      ;;
-    warn|WARN|warning|WARNING)
-      status="warn"
-      ;;
-    *)
-      status="fail"
-      ;;
-  esac
-
-  requirements+=(
-    "{\"id\":\"$id\",\"label\":\"$escaped_label\",\"status\":\"$status\",\"passed\":$passed,\"message\":\"$escaped_message\"}"
-  )
-
-  if [ "$status" = "fail" ]; then
-    all_ok=false
-  elif [ "$status" = "warn" ]; then
-    any_warn=true
-  fi
-}
-# Common helper for CLI tools where only presence/version check is required
-check_cli_tool() {
-  local id="$1"
-  local name="$2"
-  local command="$3"
-  local version_flag="${4---version}"
-
-  if command -v "$command" >/dev/null 2>&1; then
-    local version
-    version=$("$command" "$version_flag" 2>/dev/null || true)
-    if [ -n "$version" ]; then
-      add_requirement "$id" "$name" "pass" "Detected ${version}"
-    else
-      add_requirement "$id" "$name" "pass" "${name} executable detected."
-    fi
-  else
-    add_requirement "$id" "$name" "fail" "${name} executable not found."
-  fi
-}
-
-# Determine whether host-level prerequisite checks should be skipped.
-should_skip_host_prereqs=false
-if [ -n "${SKIP_HOST_PREREQS:-}" ]; then
-  case "$(printf '%s' "${SKIP_HOST_PREREQS}" | tr '[:upper:]' '[:lower:]')" in
-    1|true|yes|on)
-      should_skip_host_prereqs=true
-      ;;
-    0|false|no|off)
-      should_skip_host_prereqs=false
-      ;;
-  esac
-else
-  if [ -f /.dockerenv ] || grep -qaE 'docker|containerd|kubepods' /proc/1/cgroup 2>/dev/null; then
-    should_skip_host_prereqs=true
-  fi
-fi
+set -e
 
 # Verify Node.js
-if command -v node >/dev/null 2>&1; then
-  NODE_VERSION=$(node -v 2>/dev/null || true)
-  NODE_MAJOR=$(echo "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
-  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ && "$NODE_MAJOR" -ge 18 ]]; then
-    add_requirement "node" "Node.js >= 18" "pass" "Detected ${NODE_VERSION}"
-  else
-    add_requirement "node" "Node.js >= 18" "fail" "Detected ${NODE_VERSION:-unknown}. Version 18 or newer required."
-  fi
-else
-  add_requirement "node" "Node.js >= 18" "fail" "Node.js executable not found."
-fi
-
-# Verify npm (bundled with Node.js)
-check_cli_tool "npm" "npm" "npm" "--version"
-
-# Verify Docker
-docker_present=false
-if [ "$should_skip_host_prereqs" = true ]; then
-  add_requirement "docker" "Docker" "warn" "Docker check skipped in containerized environment."
-else
-  if command -v docker >/dev/null 2>&1; then
-    docker_present=true
-    DOCKER_VERSION=$(docker --version 2>/dev/null || true)
-    if [ -n "$DOCKER_VERSION" ]; then
-      add_requirement "docker" "Docker" "pass" "$DOCKER_VERSION"
-    else
-      add_requirement "docker" "Docker" "pass" "Docker CLI detected."
-    fi
-  else
-    add_requirement "docker" "Docker" "fail" "Docker CLI not found."
-  fi
-fi
-
-compose_message="Docker Compose not found. Install Docker Compose V2 (the \"docker compose\" plugin)."
-compose_status="fail"
-
-extract_major_version() {
-  echo "$1" | sed -E 's/^v?([0-9]+).*/\1/'
-}
-
-if [ "$should_skip_host_prereqs" = true ]; then
-  compose_status="warn"
-  compose_message="Docker Compose check skipped in containerized environment."
-else
-  if [ "$docker_present" = true ] && docker compose version >/dev/null 2>&1; then
-    COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version 2>/dev/null | head -n 1)
-    COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
-    if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
-      compose_status="pass"
-      if [ -n "$COMPOSE_VERSION" ]; then
-        compose_message="Docker Compose plugin ${COMPOSE_VERSION}"
-      else
-        compose_message="Docker Compose plugin detected."
-      fi
-    else
-      compose_status="fail"
-      compose_message="Docker Compose plugin ${COMPOSE_VERSION:-unknown} detected. Version 2 or newer is required."
-    fi
-  elif command -v docker-compose >/dev/null 2>&1; then
-    COMPOSE_VERSION=$(docker-compose --version 2>/dev/null || true)
-    COMPOSE_MAJOR=$(extract_major_version "$COMPOSE_VERSION")
-    if [[ "$COMPOSE_MAJOR" =~ ^[0-9]+$ && "$COMPOSE_MAJOR" -ge 2 ]]; then
-      compose_status="pass"
-      compose_message="${COMPOSE_VERSION:-docker-compose command available.}"
-    else
-      compose_status="fail"
-      compose_message="Legacy docker-compose ${COMPOSE_VERSION:-version unknown} detected. Install Docker Compose V2 and use the 'docker compose' command to avoid errors such as KeyError: 'ContainerConfig'. If you must continue temporarily, run scripts/run-compose.sh so DOCKER_API_VERSION=1.43 is exported automatically, and consider setting DOCKER_BUILDKIT=0 and COMPOSE_DOCKER_CLI_BUILD=0 if the legacy CLI struggles with BuildKit."
-    fi
-  fi
-fi
-
-add_requirement "docker_compose" "Docker Compose" "$compose_status" "$compose_message"
-
-# Verify Git
-if [ "$should_skip_host_prereqs" = true ]; then
-  add_requirement "git" "Git" "warn" "Git check skipped in containerized environment."
-else
-  if command -v git >/dev/null 2>&1; then
-    GIT_VERSION=$(git --version 2>/dev/null || true)
-    if [ -n "$GIT_VERSION" ]; then
-      add_requirement "git" "Git" "pass" "$GIT_VERSION"
-    else
-      add_requirement "git" "Git" "pass" "Git executable detected."
-    fi
-  else
-    add_requirement "git" "Git" "fail" "Git executable not found."
-  fi
-fi
-
-if [ "$all_ok" = true ]; then
-  if [ "$any_warn" = true ]; then
-    SUMMARY="All critical prerequisites met. Review the warnings before continuing."
-  else
-    SUMMARY="All prerequisites met."
-  fi
-else
-  SUMMARY="One or more prerequisites are missing. Please review the list above."
-fi
-
-if [ "${#requirements[@]}" -gt 0 ]; then
-  printf -v joined '%s,' "${requirements[@]}"
-  joined=${joined%,}
-else
-  joined=''
-fi
-
-SUMMARY_ESCAPED=$(escape_json "$SUMMARY")
-OVERALL=$([ "$all_ok" = true ] && echo "true" || echo "false")
-
-printf '{'
-printf '"ok": %s,' "$OVERALL"
-printf '"allPassed": %s,' "$OVERALL"
-printf '"summary": "%s",' "$SUMMARY_ESCAPED"
-printf '"requirements": [%s]' "$joined"
-printf '}'
-printf '\n'
-
-if [ "$all_ok" = true ]; then
-  exit 0
-else
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is required. Please install Node.js 18 or newer." >&2
   exit 1
 fi
+NODE_MAJOR=$(node -v | sed -E 's/^v([0-9]+).*/\1/')
+if [ "$NODE_MAJOR" -lt 18 ]; then
+  echo "Node.js version 18 or higher is required. Current version: $(node -v)" >&2
+  exit 1
+fi
+
+# Verify Docker
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required. Please install Docker." >&2
+  exit 1
+fi
+
+# Verify Docker Compose
+if command -v docker-compose >/dev/null 2>&1; then
+  :
+elif docker compose version >/dev/null 2>&1; then
+  :
+else
+  echo "Docker Compose is required. Please install Docker Compose." >&2
+  exit 1
+fi
+
+# Verify Git
+if ! command -v git >/dev/null 2>&1; then
+  echo "Git is required. Please install Git." >&2
+  exit 1
+fi
+
+echo "All prerequisites met."

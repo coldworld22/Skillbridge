@@ -9,13 +9,10 @@ const useLastSeen = (userId) => {
 
   useEffect(() => {
     if (!userId) return;
-    const controller = new AbortController();
     let isMounted = true;
     const fetchStatus = async () => {
       try {
-        const { data } = await api.get(`users/usersmanagement/${userId}`, {
-          signal: controller.signal,
-        });
+        const { data } = await api.get(`/users/usersmanagement/${userId}`);
         if (!isMounted) return;
         const user = data?.data || data;
         const online = user?.is_online ?? false;
@@ -28,7 +25,6 @@ const useLastSeen = (userId) => {
           setLastSeen("Offline");
         }
       } catch (err) {
-        if (err.name === "AbortError" || err.name === "CanceledError") return;
         if (isMounted) setError("Failed to fetch status");
       } finally {
         if (isMounted) setLoading(false);
@@ -37,7 +33,6 @@ const useLastSeen = (userId) => {
     fetchStatus();
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, [userId]);
 

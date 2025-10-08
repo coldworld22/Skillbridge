@@ -63,7 +63,7 @@
       "add_tags_placeholder": "Ajouter des mots-clés...",
       "add_tag": "Ajouter",
       "is_free": "Est-ce gratuit ?",
-      "price_label": "Price *",
+      "price_label": "Prix (USD) *",
       "price_placeholder": "Saisissez le prix, ex : 19,99",
       "next": "Suivant ➡️",
       "validation": {
@@ -73,10 +73,8 @@
         "level_required": "Le niveau est requis.",
         "language_required": "La langue du tutoriel est requise.",
         "lessons_required": "Le nombre de leçons est requis.",
-        "price_required": "Un prix valide est requis.",
-        "currency_required": "Currency is required."
-      },
-      "select_currency": "Select Currency"
+        "price_required": "Un prix valide est requis."
+      }
     },
     "curriculum": {
       "heading": "📚 Programme",
@@ -126,7 +124,8 @@
       "price_label": "Prix :",
       "publish_tutorial": "Publier le tutoriel"
     }
-  },
+  }
+  ,
   "filters": {
     "title": "Filtres",
     "max_price": "Prix max : ${{price}}",
@@ -182,3 +181,4 @@
     "remove": "Supprimer"
   }
 }
+

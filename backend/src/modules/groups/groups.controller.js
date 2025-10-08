@@ -7,14 +7,12 @@ const AppError = require("../../utils/AppError");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
-const socketStore = require("../../utils/socketStore");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
 const planService = require("../plans/plans.service");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
-const socketState = require("../../sockets").state;
 
 exports.createGroup = catchAsync(async (req, res) => {
   const planId =
@@ -411,9 +409,6 @@ exports.startVideoCall = catchAsync(async (req, res) => {
 
   const note = `${req.user.full_name} started a video call in group "${group.name}"`;
 
-  const io = getIO();
-  const userSockets = getUserSockets();
-
   await Promise.all(
     recipients.map(async (uid) => {
       await db("video_calls").insert({
@@ -436,9 +431,9 @@ exports.startVideoCall = catchAsync(async (req, res) => {
       });
 
       try {
-        if (socketState.io && socketState.userSockets?.[uid]) {
-          socketState.io
-            .to(socketState.userSockets[uid])
+        if (global.io && global.userSockets?.[uid]) {
+          global.io
+            .to(global.userSockets[uid])
             .emit("incoming-call", {
               chatId: id,
               roomId,

@@ -7,9 +7,7 @@ import {
   removeParticipant,
   makeCoHost,
 } from "@/services/videoCallService";
-import getSocket from "@/services/socketService";
-
-const socket = getSocket();
+import socket from "@/services/socketService";
 
 export default function ParticipantList({ chatId, userRole = "participant" }) {
   const [participants, setParticipants] = useState([]);

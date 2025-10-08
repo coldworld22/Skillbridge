@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
@@ -6,66 +6,26 @@ import useSEOConfigStore from '@/store/seoConfigStore';
 
 export default function SeoTags() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const path = router.asPath.split('?')[0] || '/';
   const fetchConfig = useSEOConfigStore((s) => s.fetch);
   const loaded = useSEOConfigStore((s) => s.loaded);
-  const loading = useSEOConfigStore((s) => s.loading);
-  const failed = useSEOConfigStore((s) => s.failed);
-  const error = useSEOConfigStore((s) => s.error);
-  const retryFetch = useSEOConfigStore((s) => s.retry);
   const settings = useSEOConfigStore((s) => s.settings);
 
-  const persist = useMemo(() => useSEOConfigStore.persist, []);
-  const [hydrated, setHydrated] = useState(() => persist?.hasHydrated?.() ?? !persist);
-
   useEffect(() => {
-    if (!persist) {
-      return;
-    }
+    if (!loaded) fetchConfig();
+  }, [loaded, fetchConfig]);
 
-    if (hydrated) return;
-
-    if (persist?.hasHydrated?.()) {
-      setHydrated(true);
-      return;
-    }
-
-    const unsub = persist?.onFinishHydration?.(() => {
-      setHydrated(true);
-    });
-
-    return () => {
-      unsub?.();
-    };
-  }, [hydrated, persist]);
-
-  const [resolvedOrigin, setResolvedOrigin] = useState(
-    () => settings.baseUrl || process.env.NEXT_PUBLIC_SITE_URL || ''
-  );
-
-  useEffect(() => {
-    if (!hydrated || loaded || loading || failed) return;
-    fetchConfig();
-  }, [hydrated, loaded, loading, failed, fetchConfig]);
-
-  useEffect(() => {
-    if (!resolvedOrigin && typeof window !== 'undefined') {
-      setResolvedOrigin(window.location.origin);
-    }
-  }, [resolvedOrigin]);
-
-  const effectiveSettings = hydrated ? settings : {};
-
-  const meta = effectiveSettings.metaTags?.[path] || {};
-  const og = effectiveSettings.openGraph?.[path] || {};
-  const twitter = effectiveSettings.twitter?.[path] || {};
+  const meta = settings.metaTags?.[path] || {};
+  const og = settings.openGraph?.[path] || {};
+  const twitter = settings.twitter?.[path] || {};
   const twitterImage = twitter.image || og.image;
 
-  const baseUrl = effectiveSettings.baseUrl || resolvedOrigin;
-  const canonical = meta.canonical || (effectiveSettings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
+  const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const baseUrl = settings.baseUrl || fallbackUrl;
+  const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
   const ogUrl = og.url || `${baseUrl}${path}`;
-  const ogSiteName = og.site_name || effectiveSettings.siteName;
+  const ogSiteName = og.site_name || settings.siteName;
 
   // Compute alternate language URLs using next-i18next and current path
   const pathWithoutLocale = path.replace(new RegExp(`^/${router.locale}`), '') || '/';
@@ -76,17 +36,20 @@ export default function SeoTags() {
   });
   const defaultAlternate = alternates.find((a) => a.hrefLang === router.defaultLocale);
 
-  const robotsBase = effectiveSettings.globalSEO?.noindexSitewide || meta.noindex;
-  const robotsFollow = meta.nofollow;
-  const robots = robotsBase || robotsFollow
-    ? `${robotsBase ? 'noindex' : 'index'},${robotsFollow ? 'nofollow' : 'follow'}`
+  const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
+    ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
     : null;
 
+  const allowedSchemaFields = ['@context', '@type', 'name', 'url', 'logo', 'sameAs'];
   let sanitizedJsonSchema;
-  if (effectiveSettings.jsonSchema) {
+  if (settings.jsonSchema) {
     try {
-      const parsed = JSON.parse(effectiveSettings.jsonSchema);
-      if (parsed && typeof parsed === 'object') {
+      const parsed = JSON.parse(settings.jsonSchema);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        Object.keys(parsed).every((key) => allowedSchemaFields.includes(key))
+      ) {
         sanitizedJsonSchema = JSON.stringify(parsed)
           .replace(/</g, '\\u003c')
           .replace(/>/g, '\\u003e')
@@ -98,45 +61,32 @@ export default function SeoTags() {
   }
 
   return (
-    <>
-      <Head>
-        {meta.title && <title>{meta.title}</title>}
-        {meta.description && <meta name="description" content={meta.description} />}
-        {meta.keywords && <meta name="keywords" content={meta.keywords} />}
-        {canonical && <link rel="canonical" href={canonical} />}
-        {alternates.map(({ hrefLang, href }) => (
-          <link key={`alt-${hrefLang}`} rel="alternate" hrefLang={hrefLang} href={href} />
-        ))}
-        {defaultAlternate && (
-          <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
-        )}
-        {robots && <meta name="robots" content={robots} />}
-        {ogUrl && <meta property="og:url" content={ogUrl} />}
-        {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
-        {Object.entries(og)
-          .filter(([k]) => !["url", "site_name"].includes(k))
-          .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
-        {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
-        {twitter.title && <meta name="twitter:title" content={twitter.title} />}
-        {twitter.description && <meta name="twitter:description" content={twitter.description} />}
-        {twitterImage && <meta name="twitter:image" content={twitterImage} />}
-        {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
-        {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
-        {sanitizedJsonSchema && (
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: sanitizedJsonSchema }} />
-        )}
-      </Head>
-
-      {failed && (
-        <div role="alert" className="seo-config-error">
-          <p>{error || t('seo.load_failed', 'Unable to load SEO settings.')}</p>
-          <button type="button" onClick={retryFetch} disabled={loading}>
-            {loading
-              ? t('seo.retrying', 'Retrying…')
-              : t('seo.retry', 'Retry')}
-          </button>
-        </div>
+    <Head>
+      {meta.title && <title>{meta.title}</title>}
+      {meta.description && <meta name="description" content={meta.description} />}
+      {meta.keywords && <meta name="keywords" content={meta.keywords} />}
+      {canonical && <link rel="canonical" href={canonical} />}
+      {alternates.map(({ hrefLang, href }) => (
+        <link key={`alt-${hrefLang}`} rel="alternate" hrefLang={hrefLang} href={href} />
+      ))}
+      {defaultAlternate && (
+        <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
       )}
-    </>
+      {robots && <meta name="robots" content={robots} />}
+      {ogUrl && <meta property="og:url" content={ogUrl} />}
+      {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
+      {Object.entries(og)
+        .filter(([k]) => !["url", "site_name"].includes(k))
+        .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
+      {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
+      {twitter.title && <meta name="twitter:title" content={twitter.title} />}
+      {twitter.description && <meta name="twitter:description" content={twitter.description} />}
+      {twitterImage && <meta name="twitter:image" content={twitterImage} />}
+      {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
+      {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
+      {sanitizedJsonSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: sanitizedJsonSchema }} />
+      )}
+    </Head>
   );
 }

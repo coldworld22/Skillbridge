@@ -1,19 +1,15 @@
 // Reusable Admin Profile Edit Template (Tailwind + API + Zod + Crop + Upload + Modal)
 // This is based on the polished UI you implemented — to be used for other roles/forms
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
-import { z, ZodError } from "zod";
-import { isValidPhoneNumber } from "libphonenumber-js";
-import { getUserCountry } from "@/utils/getUserCountry";
+import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { getNormalizedRoles } from "@/utils/auth/roleUtils";
-import dynamic from "next/dynamic";
 import {
   FaSpinner,
   FaChevronDown,
@@ -30,79 +26,36 @@ import {
   getAdminProfile,
   updateAdminProfile,
   uploadAdminAvatar,
-  deleteAdminAvatar,
 } from "@/services/admin/adminService";
-import { API_BASE_URL } from "@/config/config";
-const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
+import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
-import { toSocialLinksArray } from "@/utils/socialLinks";
-import { allowedPlatforms, defaultPlatformIcon } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-const LAYOUT_NAMESPACES = ["common", "dashboard"];
-
-const buildAvatarUrl = (url) =>
-  url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
-
-const areSocialLinksEqual = (a = {}, b = {}) => {
-  const keysA = Object.keys(a || {});
-  const keysB = Object.keys(b || {});
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  return keysA.every(
-    (key) => Object.prototype.hasOwnProperty.call(b || {}, key) && Object.is(a[key], b[key])
-  );
-};
-
-export const profileSchema = z.object({
+const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
-  phone: z
-    .string()
-    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
-      message: "invalid_phone_number",
-    }),
-  job_title: z.string().min(2, 'job_title_min'),
-  department: z.string().min(2, 'department_min'),
+  phone: z.string().min(8, "phone_min"),
+  job_title: z.string().min(2),
+  department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links validated as URLs; allow empty strings so optional fields don't fail validation
-  // Additionally ensure provided keys correspond to allowed platforms
-  socialLinks: z
-    .record(z.string().url("url_invalid").or(z.literal("")))
-    .refine(
-      (links) =>
-        Object.keys(links).every((key) =>
-          allowedPlatforms.some((p) => p.name === key)
-        ),
-      {
-        message: "invalid_social_platform",
-      }
-    )
-    .optional(),
+  // Social links are optional strings without URL validation
+  socialLinks: z.record(z.string()).optional(),
 });
 
 function ProfileEditTemplate() {
   const router = useRouter();
-  const { t, i18n } = useTranslation("dashboard", {
-    keyPrefix: "adminProfilePage",
-  });
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminProfilePage' });
   const { user, hasHydrated, setUser } = useAuthStore();
-  const tRef = useRef(t);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     phone: "",
     gender: "male",
     date_of_birth: "",
-    avatar_url: undefined,
+    avatar_url: null,
     avatarPreview: null,
     job_title: "",
     department: "",
@@ -110,8 +63,6 @@ function ProfileEditTemplate() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -122,80 +73,47 @@ function ProfileEditTemplate() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
-  const updateFormData = useCallback((updates) => {
-    setFormData((prev) => {
-      let changed = false;
-      const next = { ...prev };
-
-      Object.entries(updates || {}).forEach(([key, value]) => {
-        if (key === "socialLinks") {
-          const nextLinks = value || {};
-          if (!areSocialLinksEqual(prev.socialLinks || {}, nextLinks)) {
-            next.socialLinks = nextLinks;
-            changed = true;
-          }
-        } else if (!Object.is(prev[key], value)) {
-          next[key] = value;
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-  }, [setFormData]);
+useEffect(() => {
+  const local = localStorage.getItem("auth");
+  const parsed = JSON.parse(local)?.state;
+  if (hasHydrated && !user && parsed?.user) {
+    setUser(parsed.user);
+  }
+}, [hasHydrated]);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    tRef.current = t;
-  }, [t]);
-
-  useEffect(() => {
-    if (!hasHydrated) {
-      return undefined;
-    }
-
-    let isMounted = true;
-    const controller = new AbortController();
-
+    if (!hasHydrated) return;
     if (!user) {
       setLoadingProfile(false);
-      return () => {
-        isMounted = false;
-        controller.abort();
-      };
+      return;
     }
-
-    const normalizedRoles = getNormalizedRoles(user);
-    if (!normalizedRoles.includes("admin") && !normalizedRoles.includes("superadmin")) {
+    const role = user.role?.toLowerCase();
+    if (role !== "admin" && role !== "superadmin") {
       setLoadingProfile(false);
-      return () => {
-        isMounted = false;
-        controller.abort();
-      };
+      return;
     }
 
-    updateFormData({
+    // Pre-fill with existing user info while fetching latest data
+    setFormData((prev) => ({
+      ...prev,
       full_name: user.full_name || "",
       email: user.email || "",
       phone: user.phone || "",
       gender: user.gender || "male",
       date_of_birth: user.date_of_birth?.split("T")[0] || "",
       avatar_url: user.avatar_url,
-      avatarPreview: buildAvatarUrl(user.avatar_url),
+      avatarPreview: user.avatar_url
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+        : null,
       job_title: user.job_title || "",
       department: user.department || "",
-    });
+    }));
 
     const loadProfile = async () => {
-      setLoadingProfile(true);
-
       try {
-        const res = await getAdminProfile({ signal: controller.signal });
-        if (!isMounted) return;
+        setLoadingProfile(true);
 
+        const res = await getAdminProfile();
         const {
           full_name,
           email,
@@ -210,86 +128,35 @@ function ProfileEditTemplate() {
 
         const socialMap = {};
         social_links?.forEach((link) => {
-          if (allowedPlatforms.some((p) => p.name === link.platform)) {
-            socialMap[link.platform] = link.url;
-          }
+          socialMap[link.platform] = link.url;
         });
 
-        updateFormData({
+        setFormData((prev) => ({
+          ...prev,
           full_name,
           email: email || "",
-          phone: phone || "",
+          phone,
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           avatar_url,
-          avatarPreview: buildAvatarUrl(avatar_url),
+          avatarPreview: avatar_url
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
+            : null,
           job_title: job_title || "",
           department: department || "",
           socialLinks: socialMap,
-        });
+        }));
       } catch (err) {
-        if (
-          err?.name === "AbortError" ||
-          err?.code === "ERR_CANCELED" ||
-          err?.name === "CanceledError"
-        ) {
-          return;
-        }
-        toast.error(tRef.current("load_profile_failed"));
+        toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
-        if (isMounted) {
-          setLoadingProfile(false);
-        }
+        setLoadingProfile(false);
+
       }
     };
 
     loadProfile();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [hasHydrated, updateFormData, user]);
-
-
-  const sanitizeString = (val) => (typeof val === "string" ? val.trim() : val);
-
-  const sanitizeFormData = (data) => {
-    const sanitized = {
-      ...data,
-      full_name: sanitizeString(data.full_name),
-      email: sanitizeString(data.email),
-      phone: sanitizeString(data.phone),
-      gender: data.gender,
-      date_of_birth: sanitizeString(data.date_of_birth),
-      job_title: sanitizeString(data.job_title),
-      department: sanitizeString(data.department),
-      avatar_url: sanitizeString(data.avatar_url),
-    };
-
-    if (data.socialLinks && typeof data.socialLinks === "object") {
-      sanitized.socialLinks = Object.entries(data.socialLinks).reduce(
-        (acc, [key, value]) => {
-          acc[key] = sanitizeString(value);
-          return acc;
-        },
-        {}
-      );
-    } else {
-      sanitized.socialLinks = undefined;
-    }
-
-    return sanitized;
-  };
-
-  useEffect(() => {
-    return () => {
-      if (tempAvatar) {
-        URL.revokeObjectURL(tempAvatar);
-      }
-    };
-  }, [tempAvatar]);
+  }, [hasHydrated, user]);
 
 
   const handleChange = (e) => {
@@ -298,81 +165,45 @@ function ProfileEditTemplate() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
-  const handleSocialLinkChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      socialLinks: { ...prev.socialLinks, [name]: value },
-    }));
-  };
-
   const onCropComplete = useCallback((_, area) => {
     setCroppedAreaPixels(area);
   }, []);
 
-  const isHydrated = mounted && hasHydrated;
-  const direction = typeof i18n?.dir === "function" ? i18n.dir() : "ltr";
-
   const handleAvatarSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      e.target.value = "";
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error(t("invalid_image_type"));
-      e.target.value = "";
-      return;
-    }
+    const file = e.target.files[0];
+    if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(t("avatar_max_size"));
-      e.target.value = "";
+      toast.error(t('avatar_max_size'));
       return;
-    }
-    if (tempAvatar) {
-      URL.revokeObjectURL(tempAvatar);
     }
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
-    setCroppedAreaPixels(null);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
     setShowCropper(true);
-    e.target.value = "";
   };
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
-    if (!user?.id) {
-      toast.error(t("user_not_loaded"));
-      return;
-    }
-    setIsUploadingAvatar(true);
+    setIsSubmitting(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
       const res = await uploadAdminAvatar(user.id, file);
-      setUser({ ...user, avatar_url: res.avatar_url ?? undefined });
-      const cacheBust = Date.now();
+      const { setUser } = useAuthStore.getState();
+      const current = useAuthStore.getState().user;
+      setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
-        avatar_url: res.avatar_url,
-        avatarPreview: buildAvatarUrl(
-          res.avatar_url ? `${res.avatar_url}?v=${cacheBust}` : null
-        ),
-
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      console.error('Avatar upload error:', error.response);
-      const msg = error.response?.data?.message || t('avatar_upload_failed');
-      toast.error(msg);
+      toast.error(t('avatar_upload_failed'));
     } finally {
-      setIsUploadingAvatar(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -386,78 +217,45 @@ function ProfileEditTemplate() {
     setCrop({ x: 0, y: 0 });
   };
 
-  const handleAvatarRemove = async () => {
-    if (!user?.id) {
-      toast.error(t("user_not_loaded"));
-      return;
-    }
-    setIsRemovingAvatar(true);
-    try {
-      await deleteAdminAvatar(user.id);
-      setUser({ ...user, avatar_url: undefined });
-      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: undefined }));
-      toast.success(t("avatar_remove_success"));
-    } catch (error) {
-      console.error("Avatar delete error:", error.response);
-      const msg = error.response?.data?.message || t("avatar_remove_failed");
-      toast.error(msg);
-    } finally {
-      setIsRemovingAvatar(false);
-    }
-  };
 
-
-  const validateForm = (data) => {
+  const validateForm = () => {
     try {
-      profileSchema.parse(data);
+      profileSchema.parse(formData);
       setErrors({});
       return true;
     } catch (err) {
-      if (err instanceof ZodError) {
+      if (err instanceof z.ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
-          const key = error.path.join(".");
-          newErrors[key] = t(error.message);
+          newErrors[error.path[0]] = t(error.message);
         });
         setErrors(newErrors);
         if (err.errors?.length) {
           toast.error(t(err.errors[0].message));
-        } else {
-          toast.error(t('fix_errors'));
         }
-      } else {
-        toast.error(t('fix_errors'));
       }
       return false;
     }
   };
 
   const handleSubmit = async () => {
-    const sanitizedData = sanitizeFormData(formData);
-    if (!validateForm(sanitizedData)) return;
+    if (!validateForm()) return;
     try {
       setIsSubmitting(true);
-      const social_links = toSocialLinksArray(sanitizedData.socialLinks);
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
 
-      const payload = {
-        full_name: sanitizedData.full_name,
-        email: sanitizedData.email,
-        phone: sanitizedData.phone,
-        gender: sanitizedData.gender,
-        date_of_birth: sanitizedData.date_of_birth,
-        job_title: sanitizedData.job_title,
-        department: sanitizedData.department,
+      await updateAdminProfile({
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        job_title: formData.job_title,
+        department: formData.department,
         social_links,
-      };
-
-      if (
-        typeof sanitizedData.avatar_url === "string" &&
-        sanitizedData.avatar_url.trim() !== ""
-      ) {
-        payload.avatar_url = sanitizedData.avatar_url;
-      }
-
-      await updateAdminProfile(payload);
+      });
 
       const fresh = await getAdminProfile();
       setUser({
@@ -467,57 +265,30 @@ function ProfileEditTemplate() {
         phone: fresh.phone,
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
-        avatar_url: fresh.avatar_url ?? undefined,
+        avatar_url: fresh.avatar_url,
         profile_complete: fresh.profile_complete,
-        job_title: fresh.job_title,
-        department: fresh.department,
       });
 
-      const updatedSocialLinks = (fresh.social_links || []).reduce((acc, cur) => {
-        acc[cur.platform] = cur.url;
-        return acc;
-      }, {});
-
-      updateFormData({
-        avatar_url: fresh.avatar_url ?? undefined,
+      setFormData((prev) => ({
+        ...prev,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
-        avatarPreview: buildAvatarUrl(fresh.avatar_url),
-        socialLinks: updatedSocialLinks,
-      });
+        avatarPreview: fresh.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fresh.avatar_url}`
+          : null,
+        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
+          acc[cur.platform] = cur.url;
+          return acc;
+        }, {}),
+      }));
 
       toast.success(t('profile_update_success'));
       await fetchNotifications();
-      await fetchMessages();
-      router.push("/dashboard/admin/profile/steps/verification");
+      fetchMessages();
+      router.push("/dashboard/admin/profile/steps/Verification");
     } catch (err) {
-      const responseData = err?.response?.data;
-      const backendErrors = Array.isArray(responseData?.errors)
-        ? responseData.errors
-        : [];
-
-      if (backendErrors.length) {
-        const formattedErrors = backendErrors.reduce((acc, current) => {
-          if (current?.field) {
-            acc[current.field] = current?.message || t('fix_errors');
-          }
-          return acc;
-        }, {});
-
-        setErrors((prev) => ({
-          ...prev,
-          ...formattedErrors,
-        }));
-      }
-
-      const fallbackMessage = t('profile_update_failed');
-      const errorMessage =
-        (typeof responseData === 'string'
-          ? responseData
-          : responseData?.message) || err?.message || fallbackMessage;
-
-      toast.error(errorMessage);
+      toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
@@ -525,11 +296,7 @@ function ProfileEditTemplate() {
   };
 
 
-  if (!mounted) {
-    return null;
-  }
-
-  if (!isHydrated || loadingProfile) {
+  if (!hasHydrated || loadingProfile) {
     return (
       <div className="flex justify-center items-center h-64">
         <FaSpinner className="animate-spin text-4xl text-yellow-600" />
@@ -540,7 +307,7 @@ function ProfileEditTemplate() {
   return (
 
     <>
-      <div className="max-w-5xl mx-auto p-6" dir={direction}>
+      <div className="max-w-5xl mx-auto p-6" dir={i18n.dir()}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('title')}</h1>
         <div className="space-y-6">
           {/* Avatar Upload */}
@@ -557,19 +324,12 @@ function ProfileEditTemplate() {
                     className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
                   />
                   <button
-                    onClick={handleAvatarRemove}
-                    disabled={isRemovingAvatar}
-                    className={`absolute -top-2 -right-2 p-1 rounded-full text-white transition-colors ${
-                      isRemovingAvatar
-                        ? 'bg-red-400 cursor-not-allowed'
-                        : 'bg-red-600 hover:bg-red-700'
-                    }`}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, avatarPreview: null }))
+                    }
+                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
                   >
-                    {isRemovingAvatar ? (
-                      <FaSpinner className="animate-spin" size={14} />
-                    ) : (
-                      <FaTrash size={14} />
-                    )}
+                    <FaTrash size={14} />
                   </button>
                 </div>
               ) : (
@@ -577,22 +337,15 @@ function ProfileEditTemplate() {
                   <FaUserCircle size={48} className="text-gray-400" />
                 </div>
               )}
-              <label
-                className={
-                  user?.id
-                    ? "cursor-pointer"
-                    : "cursor-not-allowed opacity-50"
-                }
-              >
+              <label className="cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarSelect}
                   className="hidden"
-                  disabled={!user?.id}
                 />
                 <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                  {isUploadingAvatar ? (
+                  {isSubmitting ? (
                     <FaSpinner className="animate-spin" />
                   ) : (
                     <FaUpload />
@@ -600,10 +353,6 @@ function ProfileEditTemplate() {
                   {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
-              <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
-              {!user?.id && (
-                <p className="text-sm text-gray-500 mt-2">{t('user_not_loaded')}</p>
-              )}
             </div>
           </div>
 
@@ -713,47 +462,22 @@ function ProfileEditTemplate() {
               {expanded.social ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expanded.social && (
-              <div className="p-4 space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {allowedPlatforms.map(({ name, Icon, className }) => {
-                  const IconComponent = Icon || defaultPlatformIcon.Icon;
-                  if (!IconComponent) {
-                    return null;
-                  }
-                  const iconClassName = className || defaultPlatformIcon.className;
-
-                  return (
-                    <div key={name}>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                        <IconComponent className={`${iconClassName} w-4 h-4`} />
-                        {name.charAt(0).toUpperCase() + name.slice(1)}
-                      </label>
-                      <input
-                        type="text"
-                        name={name}
-                        value={formData.socialLinks[name] || ""}
-                        onChange={(e) => {
-                          const { value } = e.target;
-                          setFormData((prev) => ({
-                            ...prev,
-                            socialLinks: { ...prev.socialLinks, [name]: value },
-                          }));
-                          setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
-                        }}
-                        placeholder={
-                          name === 'website'
-                            ? 'https://yourwebsite.com'
-                            : `https://${name}.com/yourprofile`
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                      {errors[`socialLinks.${name}`] && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors[`socialLinks.${name}`]}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">LinkedIn</label>
+                  <input
+                    type="text"
+                    name="linkedin"
+                    value={formData.socialLinks.linkedin || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, linkedin: e.target.value.trim() },
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -803,7 +527,7 @@ function ProfileEditTemplate() {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 {t('upload')}
               </button>
             </div>
@@ -823,23 +547,14 @@ const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
   "superadmin",
 ]);
 
-const ClientOnlyProtectedProfileEdit = dynamic(
-  () => Promise.resolve(ProtectedProfileEdit),
-  { ssr: false }
-);
+ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 
-ClientOnlyProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
-
-export default ClientOnlyProtectedProfileEdit;
+export default ProtectedProfileEdit;
 
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(
-        locale,
-        LAYOUT_NAMESPACES,
-        nextI18NextConfig
-      )),
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
     },
   };
 }

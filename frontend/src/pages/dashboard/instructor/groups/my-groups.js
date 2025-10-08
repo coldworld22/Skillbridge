@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 import useAuthStore from '@/store/auth/authStore';
 

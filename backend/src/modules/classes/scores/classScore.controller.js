@@ -13,12 +13,7 @@ exports.listScores = catchAsync(async (req, res) => {
 });
 
 exports.issueCertificate = catchAsync(async (req, res) => {
-  const templateId = req.body?.templateId || req.body?.template_id || null;
-  const cert = await service.issueCertificate(
-    req.params.classId,
-    req.params.studentId,
-    { templateId }
-  );
+  const cert = await service.issueCertificate(req.params.classId, req.params.studentId);
   sendSuccess(res, cert, 'Certificate issued');
 });
 

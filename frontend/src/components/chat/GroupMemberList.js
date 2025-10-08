@@ -15,23 +15,16 @@ export default function GroupMembersList({ groupId }) {
 
   useEffect(() => {
     if (!groupId) return;
-    const controller = new AbortController();
     let isMounted = true;
     groupService
-      .getGroupMembers(groupId, { signal: controller.signal })
+      .getGroupMembers(groupId)
       .then((data) => {
         if (isMounted) setMembers(data);
       })
-      .catch((err) => {
-        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
-        if (isMounted) setError('Failed to load members');
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .catch(() => isMounted && setError('Failed to load members'))
+      .finally(() => isMounted && setLoading(false));
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, [groupId]);
 

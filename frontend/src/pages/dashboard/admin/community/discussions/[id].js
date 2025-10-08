@@ -11,9 +11,8 @@ import {
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
-function AdminDiscussionDetailsPage() {
+export default function AdminDiscussionDetailsPage() {
   const { t } = useTranslation("dashboard", {
     keyPrefix: "communityDiscussionDetailsPage",
   });
@@ -137,5 +136,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(AdminDiscussionDetailsPage);

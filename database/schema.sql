@@ -18,17 +18,6 @@ CREATE TABLE IF NOT EXISTS cart_items (
   UNIQUE (user_id, item_id)
 );
 
--- verifications table
-CREATE TABLE IF NOT EXISTS verifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR NOT NULL,
-  code TEXT NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  verified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- book_reviews table
 CREATE TABLE IF NOT EXISTS book_reviews (
   id SERIAL PRIMARY KEY,

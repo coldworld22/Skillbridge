@@ -9,8 +9,8 @@ import BookFilterSidebar from "@/components/books/FilterSidebar";
 import { fetchBooks } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import useCartStore from "@/store/cart/cartStore";
-// Use global react-toastify setup from _app.js
-import { toast } from "react-toastify";
+// Use global react-hot-toast setup from _app.js
+import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";

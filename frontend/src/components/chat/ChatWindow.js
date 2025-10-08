@@ -5,8 +5,8 @@ import formatRelativeTime from "@/utils/relativeTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import { FaCheck, FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
+import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
-import { buildUrl } from "@/utils/url";
 import useAuthStore from "@/store/auth/authStore";
 import {
   getConversation,
@@ -15,9 +15,7 @@ import {
   togglePinMessage as apiTogglePinMessage,
   startVideoCall,
 } from "@/services/messageService";
-import getSocket from "@/services/socketService";
-
-const socket = getSocket();
+import socket from "@/services/socketService";
 
 const ChatWindow = ({ selectedChat, refreshUsers }) => {
   const router = useRouter();
@@ -30,14 +28,14 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
 
   const getAvatarUrl = (url) => {
     if (!url) return "/images/default-avatar.png";
-    if (url.startsWith("blob:")) return url;
-    return buildUrl(url) || "/images/default-avatar.png";
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
   };
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith("blob:") || url.startsWith("data:")) return url;
-    return buildUrl(url);
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url}`;
   };
 
   const isImage = (path) => {

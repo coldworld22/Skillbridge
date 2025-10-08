@@ -64,22 +64,11 @@ app.use(errorHandler);
 describe('duplicate enrollment prevention', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
   });
 
   it('updates existing class enrollment instead of creating new one', async () => {
     paymentsService.create.mockResolvedValue({ id: 'p1', status: 'paid' });
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
+    classService.getClassById.mockResolvedValue({});
     enrollmentService.countEnrollments.mockResolvedValue(0);
     enrollmentService.findEnrollment.mockResolvedValue({ user_id: 'u1', class_id: 'c1', status: 'pending' });
 
@@ -98,12 +87,7 @@ describe('duplicate enrollment prevention', () => {
   });
 
   it('skips creation when enrollment already enrolled in grantAccess', async () => {
-    classService.getClassById.mockResolvedValue({
-      id: 'c1',
-      price: 100,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
+    classService.getClassById.mockResolvedValue({});
     enrollmentService.countEnrollments.mockResolvedValue(0);
     enrollmentService.findEnrollment.mockResolvedValue({ user_id: 'u1', class_id: 'c1', status: 'enrolled' });
 
@@ -114,11 +98,7 @@ describe('duplicate enrollment prevention', () => {
   });
 
   it('flags payment when class is full', async () => {
-    classService.getClassById.mockResolvedValue({
-      max_students: 1,
-      status: 'published',
-      moderation_status: 'Approved',
-    });
+    classService.getClassById.mockResolvedValue({ max_students: 1 });
     enrollmentService.countEnrollments.mockResolvedValue(1);
 
     await grantAccess({ id: 'p1', item_type: 'class', item_id: 'c1', user_id: 'u1', amount: 100 });

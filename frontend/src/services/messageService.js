@@ -4,13 +4,11 @@ import { getCsrfToken } from "@/services/api/csrf";
 import useCallStore from "@/store/call/callStore";
 import useAuthStore from "@/store/auth/authStore";
 import useMessageStore from "@/store/messages/messageStore";
-import getSocket from "@/services/socketService";
-
-const socket = getSocket();
+import socket from "@/services/socketService";
 
 
 export const getUsers = async () => {
-  const res = await api.get("chat/users");
+  const res = await api.get("/chat/users");
   const data = res.data.data || res.data;
   return (data || []).map((u) => ({
     ...u,
@@ -20,7 +18,7 @@ export const getUsers = async () => {
 };
 
 export const getGroups = async () => {
-  const res = await api.get("groups/my");
+  const res = await api.get("/groups/my");
   const data = res.data.data || res.data;
   return (data || []).map((g) => ({
     ...g,
@@ -33,7 +31,7 @@ export const getMessages = async ({ limit, offset } = {}) => {
   const params = {};
   if (limit !== undefined) params.limit = limit;
   if (offset !== undefined) params.offset = offset;
-  const res = await api.get("messages", { params });
+  const res = await api.get("/messages", { params });
   return res.data.data || res.data;
 };
 
@@ -41,7 +39,7 @@ export const markMessageAsRead = async (id) => {
   const headers = {};
   const token = getCsrfToken();
   if (token) headers["x-csrf-token"] = token;
-  const res = await api.patch(`messages/${id}/read`, {}, { headers });
+  const res = await api.patch(`/messages/${id}/read`, {}, { headers });
   return res.data.data || res.data;
 };
 
@@ -49,23 +47,23 @@ export const deleteMessage = async (id) => {
   const headers = {};
   const token = getCsrfToken();
   if (token) headers["x-csrf-token"] = token;
-  const res = await api.delete(`messages/${id}`, { headers });
+  const res = await api.delete(`/messages/${id}`, { headers });
   return res.data.data || res.data;
 };
 
 export const sendDirectEmail = async (userId, { subject, message }) => {
-  const res = await api.post(`messages/${userId}/email`, { subject, message });
+  const res = await api.post(`/messages/${userId}/email`, { subject, message });
   return res.data.data || res.data;
 };
 
 export const sendWhatsAppMessage = async (userId, { message }) => {
-  const res = await api.post(`messages/${userId}/whatsapp`, { message });
+  const res = await api.post(`/messages/${userId}/whatsapp`, { message });
   return res.data.data || res.data;
 };
 
 export const startVideoCall = async (userId) => {
   try {
-    const res = await api.post(`messages/${userId}/video-call`);
+    const res = await api.post(`/messages/${userId}/video-call`);
     const { roomId, callId } = res.data.data || res.data;
     useCallStore.getState().initiateCall({ chatId: userId, roomId, callId });
     const caller = useAuthStore.getState().user;
@@ -80,17 +78,17 @@ export const startVideoCall = async (userId) => {
 };
 
 export const respondToCall = async (callId, action) => {
-  const res = await api.post(`messages/call/${callId}/respond`, { action });
+  const res = await api.post(`/messages/call/${callId}/respond`, { action });
   return res.data.data || res.data;
 };
 
 export const endCall = async (callId) => {
-  const res = await api.post(`messages/call/${callId}/end`);
+  const res = await api.post(`/messages/call/${callId}/end`);
   return res.data.data || res.data;
 };
 
 export const getConversation = async (userId) => {
-  const res = await api.get(`chat/${userId}`);
+  const res = await api.get(`/chat/${userId}`);
   return res.data.data || res.data;
 };
 
@@ -100,19 +98,19 @@ export const sendChatMessage = async (userId, { text, file, audio, replyId }) =>
   if (file) form.append("file", file);
   if (audio) form.append("audio", audio);
   if (replyId) form.append("replyTo", replyId);
-  const res = await api.post(`chat/${userId}`, form, {
+  const res = await api.post(`/chat/${userId}`, form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data.data || res.data;
 };
 
 export const deleteChatMessage = async (id) => {
-  const res = await api.delete(`chat/messages/${id}`);
+  const res = await api.delete(`/chat/messages/${id}`);
   return res.data.data || res.data;
 };
 
 export const togglePinMessage = async (id) => {
-  const res = await api.patch(`chat/messages/${id}/pin`);
+  const res = await api.patch(`/chat/messages/${id}/pin`);
   return res.data.data || res.data;
 };
 

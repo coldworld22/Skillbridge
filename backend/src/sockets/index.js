@@ -1,37 +1,34 @@
 const { Server } = require('socket.io');
 const db = require('../config/database');
 const logger = require('../utils/logger.js');
-const store = require('../utils/socketStore');
 
 const state = {
   io: null,
+  rooms: {},
+  participants: {},
+  userSockets: {},
 };
-
-function getIO() {
-  return state.io;
-}
-
-function getUserSockets() {
-  return state.userSockets;
-}
 
 function initSockets(server, allowedOrigins) {
   state.io = new Server(server, {
     cors: { origin: allowedOrigins, credentials: true },
   });
+  state.rooms = {};
+  state.participants = {};
+  state.userSockets = {};
 
-  const { io } = state;
+  const { io, rooms, participants, userSockets } = state;
 
   io.on('connection', (socket) => {
-    socket.on('register', async ({ userId }) => {
+    socket.on('register', ({ userId }) => {
       if (!userId) return;
-      await store.addUserSocket(userId, socket.id);
+      userSockets[userId] = socket.id;
       socket.userId = userId;
     });
 
     socket.on('call-user', async ({ to, roomId }) => {
       const from = socket.userId;
-      const target = await store.getUserSocket(to);
+      const target = userSockets[to];
       if (from && target) {
         try {
           const caller = await db('users')
@@ -49,39 +46,41 @@ function initSockets(server, allowedOrigins) {
       }
     });
 
-    socket.on('call-accepted', async ({ chatId, roomId }) => {
-      const target = await store.getUserSocket(chatId);
+    socket.on('call-accepted', ({ chatId, roomId }) => {
+      const target = userSockets[chatId];
       if (socket.userId && target) {
         io.to(target).emit('call-accepted', { chatId: socket.userId, roomId });
       }
     });
 
-    socket.on('call-declined', async ({ chatId }) => {
-      const target = await store.getUserSocket(chatId);
+    socket.on('call-declined', ({ chatId }) => {
+      const target = userSockets[chatId];
       if (socket.userId && target) {
         io.to(target).emit('call-declined', { chatId: socket.userId });
       }
     });
 
-    socket.on('call-cancelled', async ({ chatId }) => {
-      const target = await store.getUserSocket(chatId);
+    socket.on('call-cancelled', ({ chatId }) => {
+      const target = userSockets[chatId];
       if (socket.userId && target) {
         io.to(target).emit('call-cancelled', { chatId: socket.userId });
       }
     });
 
-    socket.on('disconnect', async () => {
-      if (socket.userId) {
-        await store.removeUserSocket(socket.userId, socket.id);
+    socket.on('disconnect', () => {
+      if (socket.userId && userSockets[socket.userId] === socket.id) {
+        delete userSockets[socket.userId];
       }
     });
 
-    socket.on('join-room', async ({ roomId, name, role }) => {
+    socket.on('join-room', ({ roomId, name, role }) => {
+      rooms[roomId] = rooms[roomId] || [];
+      participants[roomId] = participants[roomId] || [];
+      rooms[roomId].push(socket.id);
       const participant = { id: socket.id, name, role: role || 'participant', isMuted: false };
-      await store.addSocketToRoom(roomId, socket.id, participant);
+      participants[roomId].push(participant);
       socket.join(roomId);
-      const others = (await store.getRoomSockets(roomId)).filter((id) => id !== socket.id);
-      socket.emit('all-users', others);
+      socket.emit('all-users', rooms[roomId].filter((id) => id !== socket.id));
 
       db('video_call_participants')
         .insert({ room_id: roomId, socket_id: socket.id, name, role: role || 'participant' })
@@ -105,9 +104,14 @@ function initSockets(server, allowedOrigins) {
         });
       });
 
-      socket.on('disconnect', async () => {
-        await store.removeSocketFromRoom(roomId, socket.id);
+      socket.on('disconnect', () => {
+        rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
+        participants[roomId] = participants[roomId].filter((p) => p.id !== socket.id);
         socket.to(roomId).emit('user-disconnected', socket.id);
+        if (!rooms[roomId].length) {
+          delete rooms[roomId];
+          delete participants[roomId];
+        }
         if (socket.participantDbId) {
           db('video_call_participants')
             .where({ id: socket.participantDbId })
@@ -121,4 +125,4 @@ function initSockets(server, allowedOrigins) {
   return state;
 }
 
-module.exports = { initSockets, state, getIO, getUserSockets };
+module.exports = { initSockets, state };

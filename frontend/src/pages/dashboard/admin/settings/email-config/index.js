@@ -9,7 +9,6 @@ import { fetchEmailConfig, updateEmailConfig } from "@/services/admin/emailConfi
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import withAdminGuard from "@/hooks/withAdminGuard";
 
 const defaultConfig = {
   fromName: "SkillBridge Admin",
@@ -23,7 +22,7 @@ const defaultConfig = {
   method: "smtp",
 };
 
-function EmailConfigPage() {
+export default function EmailConfigPage() {
   const { t } = useTranslation('dashboard');
   const [form, setForm] = useState(defaultConfig);
 
@@ -188,5 +187,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-export default withAdminGuard(EmailConfigPage);

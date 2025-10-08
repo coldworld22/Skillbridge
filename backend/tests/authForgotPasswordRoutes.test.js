@@ -13,24 +13,13 @@ jest.mock('../src/modules/users/user.model', () => ({
   findByEmail: jest.fn(),
 }));
 
-// Mock unrelated routes used by grouped auth router
-jest.mock('../src/modules/users/user.routes', () => require('express').Router());
-jest.mock('../src/modules/verify/verify.routes', () => require('express').Router());
-jest.mock('../src/modules/license/license.routes', () => require('express').Router());
-jest.mock('../src/modules/users/tutorials/certificate/certificatePublic.routes', () => require('express').Router());
-jest.mock('../src/modules/users/tutorials/certificate/certificateAdmin.routes', () => require('express').Router());
-jest.mock('../src/modules/certificateTemplates/certificateTemplates.routes', () => require('express').Router());
-jest.mock('../src/modules/roles/roles.routes', () => require('express').Router());
-jest.mock('../src/modules/plans/plans.routes', () => require('express').Router());
-jest.mock('../src/modules/subscriptions/subscriptions.routes', () => require('express').Router());
-
 const service = require('../src/modules/auth/services/auth.service');
 const userModel = require('../src/modules/users/user.model');
-const routes = require('../src/routes/auth');
+const routes = require('../src/modules/auth/routes/auth.routes');
 
 const app = express();
 app.use(express.json());
-app.use(routes);
+app.use('/api/auth', routes);
 
 const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);

@@ -8,6 +8,7 @@ import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCoinbasePayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import { createPayment, fetchPayment } from '@/services/student/paymentService';
+import { subscribeToPlan } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -104,42 +105,6 @@ export function resolveIconElement(method) {
   );
 }
 
-function DirectGatewayPayment({
-  onSubmit,
-  processing,
-  allowInstallments,
-  installments,
-  perInstallment,
-  finalPrice,
-  selectedMethodLabel,
-}) {
-  const usingInstallments = allowInstallments && installments > 1;
-  const buttonText = processing
-    ? 'Processing...'
-    : usingInstallments
-    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
-    : `Pay $${finalPrice} with ${selectedMethodLabel}`;
-
-  return (
-    <div className="space-y-4 text-center">
-      <p className="text-sm text-gray-300">
-        Complete your payment using {selectedMethodLabel}.
-      </p>
-      <button
-        type="button"
-        onClick={() => onSubmit({})}
-        disabled={processing}
-        className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {buttonText}
-      </button>
-      <p className="text-sm text-gray-500">
-        You&apos;ll be redirected after successful payment.
-      </p>
-    </div>
-  );
-}
-
 function getMethodIdentifier(method) {
   const type = method?.type;
   if (type !== undefined && type !== null) {
@@ -152,24 +117,6 @@ function getMethodIdentifier(method) {
     if (nameStr) return nameStr;
   }
   return '';
-}
-
-function normalizePaymentMethod(method) {
-  if (!method || typeof method !== 'object') return method;
-  const identifier = getMethodIdentifier(method).toLowerCase();
-  if (identifier !== 'bank') return method;
-
-  const settings =
-    method.settings && typeof method.settings === 'object' && !Array.isArray(method.settings)
-      ? method.settings
-      : {};
-  const mergedConfig = { ...(method.config || {}), ...settings };
-
-  return {
-    ...method,
-    config: mergedConfig,
-    bankSettings: settings,
-  };
 }
 
 const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase', 'nowpayments'];
@@ -191,6 +138,7 @@ export function filterEligibleMethods(methods) {
   return Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
+  return active;
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -235,31 +183,14 @@ export async function handleBankPayment({
 }) {
   try {
     setPaymentStatus('processing');
-    const payload = {
-      item_id: itemInfo.id,
-      item_type: itemType,
-      amount: finalPrice,
-    };
-    if (couponId) payload.coupon_id = couponId;
-    if (itemType === 'plan') payload.interval = interval;
-    if (formData.reference) payload.reference = formData.reference;
-
-    if (formData.receipt) {
-      try {
-        const uploaded = await uploadReceipt(formData.receipt);
-        const uploadedUrl =
-          uploaded?.url || uploaded?.receipt_url || uploaded || null;
-        if (uploadedUrl) {
-          payload.receipt_url = uploadedUrl;
-        }
-      } catch (uploadErr) {
-        console.error('Failed to upload bank receipt', uploadErr);
-        toast.error(t('payment_bank_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
-    }
-
+    const payload = new FormData();
+    payload.append('item_id', itemInfo.id);
+    payload.append('item_type', itemType);
+    payload.append('amount', finalPrice);
+    if (couponId) payload.append('coupon_id', couponId);
+    if (itemType === 'plan') payload.append('interval', interval);
+    if (formData.reference) payload.append('reference', formData.reference);
+    if (formData.receipt) payload.append('receipt', formData.receipt);
     const payment = await initiateBankPayment(payload);
     router.push(
       `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
@@ -357,16 +288,11 @@ export async function handleDefaultPayment({
 }) {
   try {
     setPaymentStatus('processing');
-    const installmentCount = Math.max(Number(installments) || 1, 1);
-    const usingInstallments = allowInstallments && installmentCount > 1;
-    const amount = usingInstallments
-      ? finalPrice / installmentCount
-      : finalPrice;
     const payload = {
       method_id: method?.id,
       item_type: itemType,
       item_id: itemInfo.id,
-      amount,
+      amount: finalPrice,
       allow_installments: allowInstallments,
       installments,
     };
@@ -374,27 +300,10 @@ export async function handleDefaultPayment({
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const response = await createPayment(payload);
-
-    if (!response || typeof response !== 'object') {
-      throw new Error('Invalid payment response');
-    }
-
-    await completePayment(response);
-
-    const status =
-      typeof response.status === 'string' ? response.status.toLowerCase() : '';
-
-    if (!status) {
-      throw new Error('Payment status missing');
-    }
-
-    const failureIndicators = ['fail', 'cancel', 'declin', 'error'];
-    const isFailureStatus = failureIndicators.some((indicator) =>
-      status.includes(indicator)
-    );
-
-    if (isFailureStatus) {
-      throw new Error(`Payment ${status}`);
+    if (response?.status === 'paid') {
+      await completePayment(response);
+    } else {
+      throw new Error('Payment not confirmed');
     }
   } catch (err) {
     console.error('Failed to process payment', err);
@@ -577,7 +486,7 @@ export default function CheckoutPage() {
         try {
           const data = await fetchPaymentMethods();
           if (!active) return;
-          const methodsList = Array.isArray(data) ? data.map(normalizePaymentMethod) : [];
+          const methodsList = Array.isArray(data) ? data : [];
           setMethods(methodsList);
           const eligibleMethods = filterEligibleMethods(methodsList);
           if (eligibleMethods.length > 0) {
@@ -637,28 +546,60 @@ export default function CheckoutPage() {
   };
 
 
-  const buildBasePaymentPayload = ({ amount }) => {
-    const payload = {
-      item_type: itemType,
-      item_id: itemInfo.id,
-      amount,
-    };
-    if (itemType === 'plan') payload.interval = interval;
-    if (couponId) payload.coupon_id = couponId;
-    return payload;
-  };
-
-  const completePayment = async (paymentOverride) => {
-    const payment = paymentOverride || existingPayment;
-    const status = payment?.status;
-
-    if (payment && status && status !== 'paid') {
-      toast.error(t('payment_pending_confirmation'));
-      setPaymentStatus(status);
+  const completePayment = async (existingPayment) => {
+    let payment = existingPayment;
+    if (itemType === 'plan' && finalPrice <= Number.EPSILON) {
+      setPaymentStatus('processing');
+      try {
+        await subscribeToPlan(itemInfo.id, interval);
+      } catch (err) {
+        console.error('Failed to subscribe to plan', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+      setPaymentStatus('success');
+      setTimeout(() => {
+        router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`);
+      }, 1500);
       return;
     }
-
+    if (itemType === 'plan' && !payment) {
+      setPaymentStatus('processing');
+      const eligible = filterEligibleMethods(methods);
+      if (eligible.length === 0) {
+        toast.error(t('no_payment_methods_plan'));
+        setPaymentStatus('idle');
+        return;
+      }
+      const defaultMethod = eligible[0];
+      try {
+        const payload = {
+          item_type: itemType,
+          item_id: itemInfo.id,
+          amount: finalPrice,
+          status: 'paid',
+          interval,
+        };
+        if (defaultMethod?.id) payload.method_id = defaultMethod.id;
+        if (couponId) payload.coupon_id = couponId;
+        payment = await createPayment(payload);
+      } catch (err) {
+        console.error('Failed to create payment', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+    }
     if (itemType === 'plan') {
+      try {
+        await subscribeToPlan(itemInfo.id, interval, payment?.id);
+      } catch (err) {
+        console.error('Failed to subscribe to plan', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
       setPaymentStatus('success');
       setTimeout(() => {
         const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
@@ -668,42 +609,47 @@ export default function CheckoutPage() {
       }, 1500);
       return;
     }
-
-    setPaymentStatus('success');
-
+    const storageKey =
+      itemType === 'tutorial'
+        ? 'enrolledTutorials'
+        : itemType === 'book'
+        ? 'purchasedBooks'
+        : 'enrolledClasses';
+    let enrolled = [];
     if (typeof window !== 'undefined') {
-      const storageKey =
-        itemType === 'tutorial'
-          ? 'enrolledTutorials'
-          : itemType === 'book'
-          ? 'purchasedBooks'
-          : 'enrolledClasses';
       try {
-        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        const newItem =
-          itemType === 'book'
-            ? {
-                id: itemInfo.id,
-                title: itemInfo.title,
-                author: itemInfo.author,
-                purchaseDate: new Date().toISOString(),
-              }
-            : {
-                id: itemInfo.id,
-                title: itemInfo.title,
-                instructor: itemInfo.instructor,
-                startDate: new Date().toISOString(),
-                status: 'Live',
-                joined: true,
-              };
-        const updated = Array.isArray(existing) ? [...existing, newItem] : [newItem];
-        localStorage.setItem(storageKey, JSON.stringify(updated));
-        await Promise.resolve(removeItem(itemInfo.id));
-      } catch (err) {
-        console.warn('Failed to update local enrollment cache', err);
+        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch {
+        enrolled = [];
       }
     }
-
+    const newItem =
+      itemType === 'book'
+        ? {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            author: itemInfo.author,
+            purchaseDate: new Date().toISOString(),
+          }
+        : {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            instructor: itemInfo.instructor,
+            startDate: new Date().toISOString(),
+            status: 'Live',
+            joined: true,
+          };
+    if (typeof window !== 'undefined') {
+      try {
+        enrolled.push(newItem);
+        localStorage.setItem(storageKey, JSON.stringify(enrolled));
+        await Promise.resolve(removeItem(itemInfo.id));
+      } catch (err) {
+        console.error('Failed to persist enrollment', err);
+        toast.error(t('payment_generic_failure'));
+      }
+    }
+    setPaymentStatus('success');
     setTimeout(() => {
       const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
       router.push(
@@ -714,16 +660,7 @@ export default function CheckoutPage() {
 
   const handlePayment = async (_formData = {}) => {
     if (finalPrice <= Number.EPSILON) {
-      try {
-        setPaymentStatus('processing');
-        const payload = { ...buildBasePaymentPayload({ amount: finalPrice }), status: 'paid' };
-        const payment = await createPayment(payload);
-        await completePayment(payment);
-      } catch (err) {
-        console.error('Failed to finalize free payment', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-      }
+      await completePayment();
       return;
     }
     const method = filteredMethods.find(
@@ -777,26 +714,23 @@ export default function CheckoutPage() {
     setInstallments(count);
   }, [existingPayment, itemInfo]);
 
-  const perInstallment = useMemo(() => {
-    const count = Math.max(Number(installments) || 1, 1);
-    if (allowInstallments && count > 1) {
-      return finalPrice / count;
-    }
-    return finalPrice;
-  }, [allowInstallments, finalPrice, installments]);
+  const perInstallment = useMemo(
+    () => finalPrice / installments,
+    [finalPrice, installments]
+  );
   const schedule = useMemo(() => {
     if (!allowInstallments) return [];
-    const count = Math.max(Number(installments) || 1, 1);
-    return Array.from({ length: count }, (_, i) => {
+    const amount = finalPrice / installments;
+    return Array.from({ length: installments }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() + i);
       return {
         number: i + 1,
         date: d.toLocaleDateString(),
-        amount: perInstallment.toFixed(2),
+        amount: amount.toFixed(2),
       };
     });
-  }, [allowInstallments, installments, perInstallment]);
+  }, [finalPrice, allowInstallments, installments]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
@@ -904,7 +838,7 @@ export default function CheckoutPage() {
           {isFree ? (
             <div className="text-center">
               <p className="mb-4">{t('free_item_notice')}</p>
-              <button onClick={() => handlePayment()} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
+              <button onClick={() => completePayment()} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
                 {t('enroll_for_free')}
               </button>
             </div>
@@ -931,11 +865,7 @@ export default function CheckoutPage() {
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
-              bankDetails={
-                selectedMethodObj?.settings ||
-                selectedMethodObj?.config ||
-                selectedMethodObj
-              }
+              bankDetails={selectedMethodObj?.config || selectedMethodObj}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
@@ -955,11 +885,10 @@ export default function CheckoutPage() {
                 perInstallment={perInstallment}
                 finalPrice={finalPrice}
                 selectedMethodLabel={selectedMethodLabel}
-                requireStripeTokenization
               />
             </Elements>
           ) : (
-            <DirectGatewayPayment
+            <CardPaymentForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
               allowInstallments={allowInstallments}
@@ -967,7 +896,6 @@ export default function CheckoutPage() {
               perInstallment={perInstallment}
               finalPrice={finalPrice}
               selectedMethodLabel={selectedMethodLabel}
-              requireStripeTokenization={false}
             />
           )}
         </div>

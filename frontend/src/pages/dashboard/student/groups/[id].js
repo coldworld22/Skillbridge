@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';

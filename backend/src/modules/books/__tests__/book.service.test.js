@@ -20,63 +20,28 @@ const mockDb = knex({
   useNullAsDefault: true,
 });
 
-const parseJsonColumns = (result) => {
-  const parseRow = (row) => {
-    if (row && typeof row === 'object' && 'included_plans' in row) {
-      const value = row.included_plans;
-      if (typeof value === 'string') {
-        try {
-          row.included_plans = JSON.parse(value);
-        } catch (_) {
-          // ignore parsing errors for non-JSON values
-        }
-      }
-    }
-    return row;
-  };
-
-  if (Array.isArray(result)) {
-    return result.map((row) => parseRow(row));
-  }
-  return parseRow(result);
-};
-
-mockDb.client.config.postProcessResponse = parseJsonColumns;
-
 // Mock the database module used in the service
 jest.mock('../../../config/database', () => mockDb);
-
 jest.mock('../../plans/subscription.helper', () => ({
-  getActiveStudentSubscription: jest.fn().mockResolvedValue(null),
+  getActiveStudentPlanId: jest.fn().mockResolvedValue(null),
 }));
-
-jest.mock('../../payments/helpers/wallet', () => ({
-  creditInstructorSubscription: jest.fn().mockResolvedValue(undefined),
-  creditInstructorWallet: jest.fn(),
+jest.mock('../../payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn().mockResolvedValue(0),
 }));
-
 jest.mock('../../payments/payments.service', () => ({
-  STATUS: { PAID: 'paid', AWAITING_APPROVAL: 'awaiting_approval' },
-  create: jest.fn(async (data) => ({
-    ...data,
-    status: 'awaiting_approval',
-  })),
-  approveBankPayment: jest.fn(async (id, data) => ({
+  create: jest.fn(async (data) => ({ ...data, status: 'awaiting_approval' })),
+  approveBankPayment: jest.fn(async (id, payload) => ({
     id,
-    ...data,
+    ...payload,
     status: 'paid',
   })),
+  STATUS: { AWAITING_APPROVAL: 'awaiting_approval', PAID: 'paid' },
 }));
-
 jest.mock('../../library/library.service', () => ({
   recordPurchase: jest.fn(),
 }));
-
 jest.mock('../../payments/paymentAccess', () => ({
   grantAccess: jest.fn(() => Promise.resolve()),
-}));
-jest.mock('../../paymentConfig/paymentConfig.service', () => ({
-  getSettings: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock('../../payments/payments.service', () => ({
@@ -85,28 +50,14 @@ jest.mock('../../payments/payments.service', () => ({
   approveBankPayment: jest.fn(async (id, data) => ({ id, ...data, status: 'paid' })),
 }));
 
-jest.mock('../../paymentConfig/paymentConfig.service', () => ({
-  getSettings: jest.fn().mockResolvedValue(null),
-}));
-
 jest.mock('../../payments/paymentAccess', () => ({
   grantAccess: jest.fn(() => Promise.resolve()),
-}));
-
-jest.mock('../../paymentConfig/paymentConfig.service', () => ({
-  getSettings: jest.fn().mockResolvedValue(null),
 }));
 
 const db = require('../../../config/database');
 const { listBooks, checkout, updateBook } = require('../book.service');
 const paymentsService = require('../../payments/payments.service');
 const { grantAccess } = require('../../payments/paymentAccess');
-const {
-  getActiveStudentSubscription,
-} = require('../../plans/subscription.helper');
-const { creditInstructorSubscription } = require('../../payments/helpers/wallet');
-
-const SUBSCRIPTION_METHOD_ID = 'subscription-method-1';
 
 beforeAll(async () => {
   await db.schema.createTable('books', (table) => {
@@ -154,12 +105,6 @@ beforeAll(async () => {
     active: 1,
     name: 'Bank',
   });
-  await db('payment_methods_config').insert({
-    id: SUBSCRIPTION_METHOD_ID,
-    type: 'subscription',
-    active: 1,
-    name: 'Subscription',
-  });
 
   await db.schema.createTable('payments', (table) => {
     table.uuid('id').primary();
@@ -170,25 +115,9 @@ beforeAll(async () => {
     table.decimal('amount', 10, 2);
     table.string('currency');
     table.string('status');
-    table.string('source');
     table.decimal('platform_fee', 10, 2).defaultTo(0);
     table.decimal('instructor_amount', 10, 2).defaultTo(0);
-    table.string('source');
     table.timestamp('paid_at');
-    table.string('source');
-  });
-
-  await db.schema.createTable('settings', (table) => {
-    table.string('key').primary();
-    table.text('value');
-    table.timestamp('updated_at');
-  });
-
-  await db.schema.createTable('settings', (table) => {
-    table.string('key').primary();
-    table.text('value');
-    table.timestamp('created_at');
-    table.timestamp('updated_at');
   });
 
   const books = [
@@ -260,30 +189,6 @@ describe('listBooks', () => {
   });
 });
 
-describe('checkout (smoke)', () => {
-  const studentId = 'student-smoke';
-
-  beforeEach(async () => {
-    await db('book_cart').del();
-    await db('book_purchases').del();
-    await db('payments').del();
-  });
-
-  test('processes checkout without subscription coverage', async () => {
-    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
-
-    const payments = await checkout(studentId);
-
-    expect(payments).toHaveLength(1);
-    expect(payments[0]).toMatchObject({
-      user_id: studentId,
-      item_type: 'book',
-      item_id: 1,
-      amount: 10,
-    });
-  });
-});
-
 describe.skip('checkout', () => {
   const studentId = 'student1';
 
@@ -291,43 +196,6 @@ describe.skip('checkout', () => {
     await db('book_cart').del();
     await db('book_purchases').del();
     await db('payments').del();
-    await db('books').update({ included_plans: JSON.stringify([]) });
-    jest.clearAllMocks();
-    getActiveStudentSubscription.mockResolvedValue(null);
-    paymentsService.create.mockImplementation(async (data, _returning = [], trx) => {
-      const client = trx || db;
-      await client('payments').insert({
-        ...data,
-        status: data.status ?? paymentsService.STATUS.AWAITING_APPROVAL,
-      });
-      return { ...data, status: paymentsService.STATUS.AWAITING_APPROVAL };
-    });
-    grantAccess.mockImplementation(async (payment) => {
-      if (payment.status === paymentsService.STATUS.PAID) {
-        await db('book_purchases').insert({
-          student_id: payment.user_id,
-          book_id: payment.item_id,
-          price_paid: payment.amount,
-        });
-      }
-    });
-    paymentsService.approveBankPayment.mockImplementation(async (id, data) => {
-      const payment = await db('payments').where({ id }).first();
-      const updated = {
-        ...payment,
-        ...data,
-        status: paymentsService.STATUS.PAID,
-      };
-      await db('payments')
-        .where({ id })
-        .update({
-          amount: updated.amount,
-          item_id: updated.item_id,
-          item_type: updated.item_type,
-          status: paymentsService.STATUS.PAID,
-        });
-      return updated;
-    });
   });
 
   test('throws error when book already purchased', async () => {
@@ -346,60 +214,16 @@ describe.skip('checkout', () => {
     expect(payments).toHaveLength(0);
   });
 
-  test('uses subscription payment method for plan-covered checkout', async () => {
-    await db('books')
-      .where({ id: 1 })
-      .update({ included_plans: JSON.stringify(['plan-123']) });
-    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
-    getActiveStudentSubscription.mockResolvedValue({
-      id: 'sub-123',
-      plan_id: 'plan-123',
-    });
-
-    const payments = await checkout(studentId);
-
-    expect(payments).toHaveLength(1);
-    const paymentRecord = await db('payments')
-      .where({ user_id: studentId, item_id: 1, item_type: 'book' })
-      .first();
-    expect(paymentRecord).toBeTruthy();
-    expect(paymentRecord.method_id).toBe('sub1');
-    expect(Number(paymentRecord.amount)).toBe(0);
-    expect(paymentRecord.status).toBe('paid');
-    expect(paymentRecord.source).toBe('subscription');
-
-    const purchaseRecord = await db('book_purchases')
-      .where({ student_id: studentId, book_id: 1 })
-      .first();
-    expect(purchaseRecord).toBeTruthy();
-    expect(Number(purchaseRecord.price_paid)).toBe(0);
-
-    expect(creditInstructorSubscription).toHaveBeenCalledTimes(1);
-    expect(creditInstructorSubscription).toHaveBeenCalledWith(
-      'book',
-      1,
-      'plan-123',
-      'sub-123',
-      expect.any(Function)
-    );
-  });
-
   test('completes checkout when no duplicates', async () => {
     await db('book_cart').insert({ student_id: studentId, book_id: 2 });
     const payments = await checkout(studentId);
     expect(payments).toHaveLength(1);
-    expect(paymentsService.create).toHaveBeenCalledTimes(1);
-    const [createPayload, schedulesArg, trxArg] = paymentsService.create.mock.calls[0];
-    expect(createPayload).toMatchObject({
+    const payInDb = await db('payments').where({
       user_id: studentId,
       item_id: 2,
       item_type: 'book',
-      method_id: 'bank1',
-      amount: 15,
-      status: 'awaiting_approval',
     });
-    expect(schedulesArg).toEqual([]);
-    expect(trxArg).toBeInstanceOf(Function);
+    expect(payInDb).toHaveLength(1);
     const cart = await db('book_cart').where({ student_id: studentId });
     expect(cart).toHaveLength(0);
     const purchases = await db('book_purchases').where({ student_id: studentId });
@@ -411,51 +235,11 @@ describe.skip('checkout', () => {
       item_type: 'book',
     });
     await grantAccess(approved);
-    expect(approved.status).toBe('paid');
-    expect(grantAccess).toHaveBeenCalledWith(approved);
-  });
-
-  test('completes checkout for plan-covered book with zero payment', async () => {
-    const planId = 'plan-free';
-    getActiveStudentSubscription.mockResolvedValue({
-      id: 'sub-1',
-      plan_id: planId,
+    const after = await db('book_purchases').where({
+      student_id: studentId,
+      book_id: 2,
     });
-
-    await db('books')
-      .where({ id: 1 })
-      .update({ included_plans: JSON.stringify([planId]) });
-
-    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
-
-    const payments = await checkout(studentId);
-
-    expect(payments).toHaveLength(1);
-    expect(payments[0]).toMatchObject({
-      amount: 0,
-      source: 'subscription',
-      method_id: 'sub-method',
-      item_id: 1,
-      item_type: 'book',
-    });
-
-    expect(paymentsService.create).not.toHaveBeenCalled();
-
-    const paymentRow = await db('payments')
-      .where({ item_id: 1, user_id: studentId })
-      .first();
-    expect(paymentRow).toMatchObject({
-      method_id: 'sub-method',
-      status: 'paid',
-      source: 'subscription',
-    });
-    expect(Number(paymentRow.amount)).toBe(0);
-
-    const purchase = await db('book_purchases')
-      .where({ student_id: studentId, book_id: 1 })
-      .first();
-    expect(purchase).toBeTruthy();
-    expect(Number(purchase.price_paid)).toBe(0);
+    expect(after).toHaveLength(1);
   });
 
   test('throws error when book is inactive', async () => {

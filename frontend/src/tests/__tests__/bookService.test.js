@@ -27,7 +27,7 @@ describe("bookService", () => {
       filters: { search: "test", category: "c1", priceRange: 25 },
       sort: { sortBy: "title" },
     });
-    expect(api.get).toHaveBeenCalledWith("books", {
+    expect(api.get).toHaveBeenCalledWith("/books", {
       params: {
         page: 2,
         perPage: 5,
@@ -58,7 +58,7 @@ describe("bookService", () => {
     const meta = { total: 1 };
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchBooks({ admin: true });
-    expect(api.get).toHaveBeenCalledWith("books/admin", { params: {} });
+    expect(api.get).toHaveBeenCalledWith("/books/admin", { params: {} });
     expect(res).toEqual({
       books: [
         {
@@ -78,7 +78,7 @@ describe("bookService", () => {
     const apiData = { id: 1, title: "A" };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1);
-    expect(api.get).toHaveBeenCalledWith("books/1");
+    expect(api.get).toHaveBeenCalledWith("/books/1");
     expect(book).toEqual({
       id: 1,
       title: "A",
@@ -93,7 +93,7 @@ describe("bookService", () => {
     const apiData = { id: 1, title: "A" };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1, { admin: true });
-    expect(api.get).toHaveBeenCalledWith("books/admin/1");
+    expect(api.get).toHaveBeenCalledWith("/books/admin/1");
     expect(book).toEqual({
       id: 1,
       title: "A",
@@ -110,8 +110,8 @@ describe("bookService", () => {
       .mockRejectedValueOnce(new Error("fail"))
       .mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1, { admin: true });
-    expect(api.get).toHaveBeenNthCalledWith(1, "books/admin/1");
-    expect(api.get).toHaveBeenNthCalledWith(2, "books/1");
+    expect(api.get).toHaveBeenNthCalledWith(1, "/books/admin/1");
+    expect(api.get).toHaveBeenNthCalledWith(2, "/books/1");
     expect(book).toEqual({
       id: 1,
       title: "A",
@@ -157,7 +157,7 @@ describe("bookService", () => {
     const error = { response: { status: 404 } };
     api.get.mockRejectedValueOnce(error);
     const book = await fetchBook(999);
-    expect(api.get).toHaveBeenCalledWith("books/999");
+    expect(api.get).toHaveBeenCalledWith("/books/999");
     expect(book).toBeNull();
   });
 
@@ -167,7 +167,7 @@ describe("bookService", () => {
     const formData = new FormData();
     const book = await updateBook(1, formData);
     expect(api.put).toHaveBeenCalledWith(
-      "books/1",
+      "/books/1",
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
@@ -186,7 +186,7 @@ describe("bookService", () => {
     const formData = new FormData();
     const book = await createBook(formData);
     expect(api.post).toHaveBeenCalledWith(
-      "books",
+      "/books",
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );

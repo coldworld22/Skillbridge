@@ -6,7 +6,6 @@ exports.up = function(knex) {
   return knex.schema.createTable('blacklisted_tokens', (table) => {
     table.increments('id').primary();
     table.string('token').notNullable().unique();
-    table.timestamp('expires_at').notNullable().index();
     table.timestamp('created_at').defaultTo(knex.fn.now());
   });
 };

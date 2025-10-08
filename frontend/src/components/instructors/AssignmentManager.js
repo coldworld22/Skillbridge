@@ -51,31 +51,28 @@ export default function AssignmentManager({ classId, initialAssignments = [] }) 
         </div>
       )}
       <ul className="space-y-3">
-        {assignments.map((a, i) => {
-          const dueDate = a?.dueDate ?? a?.due_date;
-          return (
-            <li
-              key={a.id}
-              className="bg-gray-700 p-3 rounded flex justify-between items-center"
+        {assignments.map((a, i) => (
+          <li
+            key={a.id}
+            className="bg-gray-700 p-3 rounded flex justify-between items-center"
+          >
+            <div>
+              <p className="font-medium">{a.title}</p>
+              {a.due_date && (
+                <p className="text-gray-400 text-xs">
+                  Due: {toDateInput(a.due_date)}
+                </p>
+              )}
+              <p className="text-gray-400 text-xs">Status: {computeStatus(a.due_date)}</p>
+            </div>
+            <button
+              onClick={() => removeAssignment(i)}
+              className="text-red-400 hover:underline text-xs"
             >
-              <div>
-                <p className="font-medium">{a.title}</p>
-                {dueDate && (
-                  <p className="text-gray-400 text-xs">
-                    Due: {toDateInput(dueDate)}
-                  </p>
-                )}
-                <p className="text-gray-400 text-xs">Status: {computeStatus(dueDate)}</p>
-              </div>
-              <button
-                onClick={() => removeAssignment(i)}
-                className="text-red-400 hover:underline text-xs"
-              >
-                Remove
-              </button>
-            </li>
-          );
-        })}
+              Remove
+            </button>
+          </li>
+        ))}
       </ul>
     </div>
   );

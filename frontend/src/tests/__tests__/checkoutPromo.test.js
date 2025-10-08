@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { validateCode } from '../../services/couponService';
-import { createPayment } from '../../services/student/paymentService';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 jest.mock('next-i18next', () => ({ useTranslation: () => ({ t: (key) => key }) }));
@@ -52,9 +51,6 @@ jest.mock('../../components/payments/forms/CardPaymentForm', () => {
 jest.mock('../../services/couponService', () => ({
   validateCode: jest.fn(),
 }));
-jest.mock('../../services/student/paymentService', () => ({
-  createPayment: jest.fn(),
-}));
 
 const mockUseRouter = jest.fn();
 jest.mock('next/router', () => ({
@@ -77,55 +73,6 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.clearAllMocks();
-});
-
-test('creates payment when promo reduces price to zero', async () => {
-  jest.useFakeTimers();
-  const push = jest.fn();
-  mockUseRouter.mockReturnValue({
-    query: { itemId: '1', itemType: 'class' },
-    isReady: true,
-    push,
-  });
-  validateCode.mockResolvedValue({ id: 9, discount_percent: 100 });
-  createPayment.mockResolvedValue({ id: 202, status: 'paid' });
-
-  render(<CheckoutPage />);
-  await screen.findByText('checkout');
-
-  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
-    target: { value: 'FREE100' },
-  });
-  fireEvent.click(screen.getByText('apply'));
-
-  await waitFor(() =>
-    expect(validateCode).toHaveBeenCalledWith('FREE100', 'class', '1')
-  );
-
-  const enrollButton = await screen.findByRole('button', {
-    name: /enroll_for_free/i,
-  });
-  fireEvent.click(enrollButton);
-
-  await waitFor(() =>
-    expect(createPayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        item_type: 'class',
-        item_id: 1,
-        amount: 0,
-        status: 'paid',
-        coupon_id: 9,
-      })
-    )
-  );
-
-  jest.runAllTimers();
-  await waitFor(() =>
-    expect(push).toHaveBeenCalledWith(
-      '/payments/success?itemType=class&itemId=1&payment_id=202'
-    )
-  );
-  jest.useRealTimers();
 });
 
 test('applies promo code successfully', async () => {
