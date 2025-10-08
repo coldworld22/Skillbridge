@@ -249,10 +249,8 @@ const downloadCSV = (rows, headers) => {
 
 export default function AdminClassesTable() {
   const { t } = useTranslation("dashboard");
-  const { user, hasHydrated } = useAuthStore((state) => ({
-    user: state.user,
-    hasHydrated: state.hasHydrated,
-  }));
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
 
