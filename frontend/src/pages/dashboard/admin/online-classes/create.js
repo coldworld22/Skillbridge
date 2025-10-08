@@ -35,6 +35,7 @@ import { toDateTimeISO } from '@/utils/date';
 import { getPendingLessonEntries } from '@/utils/lessonSubmission';
 import useMediaUploader from '@/hooks/useMediaUploader';
 import nextI18NextConfig from '@/../next-i18next.config.js';
+import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -104,6 +105,55 @@ function CreateOnlineClass() {
   const [instructorsPage, setInstructorsPage] = useState(1);
   const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
   const [loadingInstructors, setLoadingInstructors] = useState(false);
+
+  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
+
+  const loggedInInstructorOption = useMemo(() => {
+    if (!user?.id || !normalizedRoles.includes('instructor')) {
+      return null;
+    }
+
+    const nameSegments = [user?.first_name, user?.last_name].filter(Boolean);
+    const fallbackName =
+      user?.full_name ||
+      user?.name ||
+      (nameSegments.length ? nameSegments.join(' ') : null) ||
+      user?.email ||
+      'Current Instructor';
+
+    return {
+      id: user.id,
+      full_name: fallbackName,
+      email: user?.email ?? '',
+      isCurrentUser: true,
+    };
+  }, [user, normalizedRoles]);
+
+  const ensureLoggedInInstructorListed = useCallback(
+    (list) => {
+      if (!loggedInInstructorOption) {
+        return list;
+      }
+
+      const normalizedId = String(loggedInInstructorOption.id);
+      const existingIndex = list.findIndex(
+        (inst) => String(inst?.id) === normalizedId
+      );
+
+      if (existingIndex === 0) {
+        return list;
+      }
+
+      if (existingIndex > -1) {
+        const reordered = [...list];
+        const [existing] = reordered.splice(existingIndex, 1);
+        return [existing, ...reordered];
+      }
+
+      return [loggedInInstructorOption, ...list];
+    },
+    [loggedInInstructorOption]
+  );
 
   const {
     uploadProgress = 0,
@@ -191,7 +241,8 @@ function CreateOnlineClass() {
               unique.set(inst.id, inst);
             }
           });
-          return Array.from(unique.values());
+          const deduped = Array.from(unique.values());
+          return ensureLoggedInInstructorListed(deduped);
         });
         setHasMoreInstructors(meta?.hasNextPage ?? ((data ?? []).length >= 50));
         setInstructorsPage(page);
@@ -206,7 +257,7 @@ function CreateOnlineClass() {
         setLoadingInstructors(false);
       }
     },
-    [t]
+    [ensureLoggedInInstructorListed, t]
   );
 
   useEffect(() => {
@@ -214,10 +265,13 @@ function CreateOnlineClass() {
   }, [loadInstructors]);
 
   useEffect(() => {
-    if (user?.role === 'instructor' && user?.id) {
-      setInstructorId(String(user.id));
+    if (!loggedInInstructorOption) {
+      return;
     }
-  }, [user]);
+
+    setInstructorId((prev) => (prev ? prev : String(loggedInInstructorOption.id)));
+    setInstructors((prev) => ensureLoggedInInstructorListed(prev));
+  }, [ensureLoggedInInstructorListed, loggedInInstructorOption]);
 
   useEffect(() => {
     setLessonSubmissionSummary((prev) => {
