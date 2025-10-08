@@ -83,8 +83,10 @@ export default function BackgroundAnimation() {
       }
     }
 
+    let animationFrameId;
+
     function animate() {
-      requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let i = 0; i < particlesArray.length; i++) {
         particlesArray[i].update();
@@ -95,13 +97,16 @@ export default function BackgroundAnimation() {
     init();
     animate();
 
-    window.addEventListener("resize", () => {
+    const handleResize = () => {
       resizeCanvas();
       init(); // re-init particles after resizing
-    });
+    };
+
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -109,7 +114,7 @@ export default function BackgroundAnimation() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full"
+      className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-80"
     ></canvas>
   );
 }
