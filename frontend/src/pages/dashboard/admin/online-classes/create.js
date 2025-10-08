@@ -53,6 +53,60 @@ function CreateOnlineClass() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
+  const normalizeInstructor = useCallback((instructor) => {
+    if (!instructor) return null;
+
+    const rawId =
+      instructor.id ?? instructor._id ?? instructor.user_id ?? instructor.userId;
+
+    if (rawId === undefined || rawId === null) {
+      return null;
+    }
+
+    const firstName =
+      typeof instructor.first_name === 'string'
+        ? instructor.first_name.trim()
+        : '';
+    const lastName =
+      typeof instructor.last_name === 'string'
+        ? instructor.last_name.trim()
+        : '';
+    const fullNameFromParts = [firstName, lastName].filter(Boolean).join(' ');
+    const providedFullName =
+      typeof instructor.full_name === 'string'
+        ? instructor.full_name.trim()
+        : '';
+    const fallbackName =
+      typeof instructor.name === 'string' ? instructor.name.trim() : '';
+    const email =
+      typeof instructor.email === 'string' ? instructor.email.trim() : '';
+
+    const full_name =
+      fullNameFromParts || providedFullName || fallbackName || email;
+
+    return {
+      id: String(rawId),
+      full_name,
+      email,
+    };
+  }, []);
+
+  const deriveInstructorIdFromUser = useCallback((currentUser) => {
+    if (!currentUser?.id) return '';
+
+    const rolesSource = Array.isArray(currentUser.roles)
+      ? currentUser.roles
+      : currentUser.role
+        ? [currentUser.role]
+        : [];
+
+    const hasInstructorRole = rolesSource.some(
+      (role) => typeof role === 'string' && role.toLowerCase() === 'instructor'
+    );
+
+    return hasInstructorRole ? String(currentUser.id) : '';
+  }, []);
+
   const createEmptyLesson = () => ({
     id:
       typeof crypto !== 'undefined' && crypto.randomUUID
@@ -182,13 +236,15 @@ function CreateOnlineClass() {
       try {
         setLoadingInstructors(true);
         const { instructors: data, meta } = await fetchAllInstructors(page, 50);
+        const normalizedList = (Array.isArray(data) ? data : [])
+          .map((inst) => normalizeInstructor(inst))
+          .filter(Boolean);
         setInstructors((prev) => {
-          const incoming = data ?? [];
-          const combined = reset ? incoming : [...prev, ...incoming];
+          const combined = reset ? normalizedList : [...prev, ...normalizedList];
           const unique = new Map();
           combined.forEach((inst) => {
             if (inst?.id) {
-              unique.set(inst.id, inst);
+              unique.set(String(inst.id), inst);
             }
           });
           return Array.from(unique.values());
@@ -206,7 +262,7 @@ function CreateOnlineClass() {
         setLoadingInstructors(false);
       }
     },
-    [t]
+    [normalizeInstructor, t]
   );
 
   useEffect(() => {
@@ -214,10 +270,35 @@ function CreateOnlineClass() {
   }, [loadInstructors]);
 
   useEffect(() => {
-    if (user?.role === 'instructor' && user?.id) {
-      setInstructorId(String(user.id));
+    const autoInstructorId = deriveInstructorIdFromUser(user);
+    if (!autoInstructorId) {
+      return;
     }
-  }, [user]);
+
+    setInstructorId((prev) => (prev ? prev : autoInstructorId));
+
+    if (user) {
+      const normalized = normalizeInstructor({
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+      });
+
+      if (!normalized) {
+        return;
+      }
+
+      setInstructors((prev) => {
+        if (prev.some((inst) => inst.id === normalized.id)) {
+          return prev;
+        }
+
+        return [...prev, normalized];
+      });
+    }
+  }, [deriveInstructorIdFromUser, normalizeInstructor, user]);
 
   useEffect(() => {
     setLessonSubmissionSummary((prev) => {
