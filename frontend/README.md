@@ -16,6 +16,11 @@ npm install
 npm run dev
 ```
 
+By default the Next.js dev server proxies API requests to `http://localhost:8000/api`.
+If your backend runs elsewhere, create a `.env.local` file and set
+`NEXT_PUBLIC_API_BASE_URL` to the appropriate base URL (for example
+`http://127.0.0.1:8000/api`).
+
 ## Linting
 
 ```bash
