@@ -34,6 +34,7 @@ import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
 import { getPendingLessonEntries } from '@/utils/lessonSubmission';
 import useMediaUploader from '@/hooks/useMediaUploader';
+import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 import nextI18NextConfig from '@/../next-i18next.config.js';
 import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 
@@ -263,6 +264,27 @@ function CreateOnlineClass() {
   useEffect(() => {
     loadInstructors(1, true);
   }, [loadInstructors]);
+
+  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
+  const shouldAutofillInstructor = useMemo(() => {
+    if (!user?.id) {
+      return false;
+    }
+
+    if (!normalizedRoles.length) {
+      return false;
+    }
+
+    const hasAdminPrivileges = normalizedRoles.some((role) =>
+      ['admin', 'superadmin'].includes(role)
+    );
+
+    if (hasAdminPrivileges) {
+      return false;
+    }
+
+    return normalizedRoles.length === 1 && normalizedRoles[0] === 'instructor';
+  }, [normalizedRoles, user?.id]);
 
   useEffect(() => {
     if (!loggedInInstructorOption) {
