@@ -11,7 +11,7 @@ const { getActiveInstructorPlan } = require("../plans/instructor.helper");
 const planService = require("../plans/plans.service");
 const AppError = require("../../utils/AppError");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
-const { isAdminRole } = require("../../utils/role");
+const { isAdminRole, normalizeRole } = require("../../utils/role");
 
 const slugify = require("slugify");
 const db = require("../../config/database");
@@ -86,6 +86,18 @@ exports.createClass = catchAsync(async (req, res) => {
   } = req.body;
   const roles = req.user?.roles || req.user?.role;
   const isAdminUser = isAdminRole(roles);
+
+  const ensureArray = (value) =>
+    Array.isArray(value) ? value : value ? [value] : [];
+  const normalizedRoles = [
+    ...ensureArray(req.user?.roles),
+    ...ensureArray(req.user?.role),
+  ]
+    .map((role) =>
+      typeof role === "string" ? normalizeRole(role) : ""
+    )
+    .filter(Boolean);
+  const isInstructorUser = normalizedRoles.includes("instructor");
   const normalizedStatus = status === "published" ? "published" : "draft";
   const shouldAutoApprove = isAdminUser && normalizedStatus === "published";
   const data = {
@@ -125,7 +137,7 @@ exports.createClass = catchAsync(async (req, res) => {
       ? access_type
       : "paid";
   data.access_type = normalizedAccessType;
-  if (req.user?.role === "instructor") {
+  if (!isAdminUser && isInstructorUser) {
     data.instructor_id = req.user.id;
     const plan = await getActiveInstructorPlan(req.user.id);
     if (!plan) {

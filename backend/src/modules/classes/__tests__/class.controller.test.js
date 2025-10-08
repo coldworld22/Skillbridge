@@ -107,6 +107,39 @@ describe('class.controller createClass', () => {
     );
   });
 
+  test('admin with instructor role can create class for selected instructor', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: { instructor_id: 'other-instructor', title: 'Admin Created' },
+      user: { id: 'admin-1', role: 'instructor', roles: ['admin', 'instructor'] },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({ instructor_id: 'other-instructor' })
+    );
+    expect(getActiveInstructorPlan).not.toHaveBeenCalled();
+  });
+
   test('resolves plan slugs to ids', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
