@@ -83,7 +83,8 @@ const extractTotalPagesFromMeta = (meta, totalItems, perPage) => {
 const fetchRemainingClassPagesSequentially = async (
   baseParams,
   totalPages,
-  totalItems
+  totalItems,
+  scheduleFilter = "All"
 ) => {
   if (!Number.isFinite(totalPages) || totalPages <= 1) {
     return [];
@@ -96,9 +97,10 @@ const fetchRemainingClassPagesSequentially = async (
     // eslint-disable-next-line no-await-in-loop
     const response = await fetchAdminClasses({ ...baseParams, page });
     const sanitized = sanitizeClassEntries(response.data);
+    const filtered = applyScheduleFilterToClasses(sanitized, scheduleFilter);
 
-    if (sanitized.length) {
-      aggregated.push(...sanitized);
+    if (filtered.length) {
+      aggregated.push(...filtered);
     }
 
     if (aggregated.length >= expectedTotal) {
@@ -179,6 +181,38 @@ const normalizeTotalPages = (value) => {
   return Math.ceil(numeric);
 };
 
+const getScheduleStatusValue = (cls) => {
+  if (!cls || typeof cls !== "object") {
+    return "";
+  }
+
+  const rawStatus =
+    cls.scheduleStatus ??
+    cls.schedule_status ??
+    cls.schedule_status_label ??
+    cls.schedule ??
+    "";
+
+  if (typeof rawStatus === "string") {
+    return rawStatus.trim().toLowerCase();
+  }
+
+  return "";
+};
+
+const applyScheduleFilterToClasses = (classes, scheduleFilter) => {
+  const sanitized = sanitizeClassEntries(classes);
+
+  if (!scheduleFilter || scheduleFilter === "All") {
+    return sanitized;
+  }
+
+  const normalizedFilter = scheduleFilter.toLowerCase();
+  return sanitized.filter(
+    (cls) => getScheduleStatusValue(cls) === normalizedFilter
+  );
+};
+
 const extractInstructorId = (cls) => {
   if (!cls || typeof cls !== "object") {
     return null;
@@ -247,6 +281,51 @@ const downloadCSV = (rows, headers) => {
   URL.revokeObjectURL(url);
 };
 
+const shouldAttemptFullFetch = (pageSizeSetting, totalFromMeta, currentLength) => {
+  if (pageSizeSetting !== "all") {
+    return false;
+  }
+
+  if (!Number.isFinite(totalFromMeta) || totalFromMeta <= 0) {
+    return false;
+  }
+
+  return totalFromMeta > currentLength;
+};
+
+const buildFullFetchParams = (baseParams, totalFromMeta, fallbackLength) => {
+  const limitCandidate = Number.isFinite(totalFromMeta)
+    ? Math.max(1, Math.floor(totalFromMeta))
+    : Math.max(1, Math.floor(fallbackLength));
+
+  return {
+    ...baseParams,
+    page: 1,
+    limit: limitCandidate,
+  };
+};
+
+const findFirstNonEmptyPage = async (sharedParams, startPage, endPage) => {
+  if (!Number.isFinite(startPage) || !Number.isFinite(endPage)) {
+    return null;
+  }
+
+  for (let page = startPage; page <= endPage; page += 1) {
+    try {
+      const response = await fetchAdminClasses({ ...sharedParams, page });
+      const sanitized = sanitizeClassEntries(response.data);
+      if (sanitized.length > 0) {
+        return { page, response, data: sanitized };
+      }
+    } catch (error) {
+      console.error("Failed to fetch fallback page", error);
+      break;
+    }
+  }
+
+  return null;
+};
+
 export default function AdminClassesTable() {
   const { t } = useTranslation("dashboard");
   const user = useAuthStore((state) => state.user);
@@ -267,6 +346,7 @@ export default function AdminClassesTable() {
   const [pageSizeSetting, setPageSizeSetting] = useState(String(DEFAULT_PAGE_SIZE));
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [serverTotalItems, setServerTotalItems] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [modalClass, setModalClass] = useState(null);
   const [modalType, setModalType] = useState(null);
@@ -366,22 +446,32 @@ export default function AdminClassesTable() {
       const scheduleParam = mapScheduleFilterToParam(filterSchedule);
       const approvalParam = filterApproval !== "All" ? filterApproval : undefined;
       const sanitizedSearch = debouncedSearch.trim();
+      const targetAllPageSize =
+        serverTotalItems || totalItems || classList.length || DEFAULT_PAGE_SIZE;
+      const normalizedAllPageSize = resolvePositiveInteger(
+        targetAllPageSize,
+        DEFAULT_PAGE_SIZE
+      );
+
       const perPage =
         pageSizeSetting === "all"
-          ? DEFAULT_PAGE_SIZE
+          ? normalizedAllPageSize
           : resolvePositiveInteger(pageSizeSetting, DEFAULT_PAGE_SIZE);
-      const requestedPage = pageSizeSetting === "all" ? 1 : currentPage;
+      const initialRequestedPage = pageSizeSetting === "all" ? 1 : currentPage;
+      let targetPage = initialRequestedPage;
 
       try {
-        const baseParams = {
-          page: requestedPage,
+        const sharedParams = {
           limit: perPage,
           filter: sanitizedSearch || undefined,
           approval: approvalParam,
           schedule: scheduleParam,
         };
 
-        const { data, meta } = await fetchAdminClasses(baseParams);
+        const { data, meta } = await fetchAdminClasses({
+          ...sharedParams,
+          page: targetPage,
+        });
         let aggregated = sanitizeClassEntries(data);
         let totalFromMeta = extractTotalItemsFromMeta(meta, aggregated.length);
         let totalPagesFromMeta = extractTotalPagesFromMeta(
@@ -389,16 +479,116 @@ export default function AdminClassesTable() {
           totalFromMeta,
           perPage
         );
+        let serverReportedTotal = Number.isFinite(totalFromMeta)
+          ? totalFromMeta
+          : aggregated.length;
 
-        if (pageSizeSetting === "all" && totalPagesFromMeta > 1) {
+        aggregated = applyScheduleFilterToClasses(aggregated, filterSchedule);
+        let displayTotal = aggregated.length;
+
+        if (
+          pageSizeSetting === "all" &&
+          shouldAttemptFullFetch(pageSizeSetting, totalFromMeta, displayTotal)
+        ) {
+          try {
+            const fullFetchParams = buildFullFetchParams(
+              sharedParams,
+              totalFromMeta,
+              aggregated.length
+            );
+            const fullResponse = await fetchAdminClasses(fullFetchParams);
+            const fullData = sanitizeClassEntries(fullResponse.data);
+            const filteredFullData = applyScheduleFilterToClasses(
+              fullData,
+              filterSchedule
+            );
+            if (filteredFullData.length) {
+              aggregated = filteredFullData;
+              totalFromMeta = extractTotalItemsFromMeta(
+                fullResponse.meta,
+                filteredFullData.length
+              );
+              totalPagesFromMeta = 1;
+              displayTotal = aggregated.length;
+              serverReportedTotal = Number.isFinite(totalFromMeta)
+                ? totalFromMeta
+                : aggregated.length;
+            }
+          } catch (err) {
+            console.error("Failed to fetch all classes", err);
+            const additionalClasses =
+              await fetchRemainingClassPagesSequentially(
+                sharedParams,
+                totalPagesFromMeta,
+                totalFromMeta,
+                filterSchedule
+              );
+            if (additionalClasses.length) {
+              aggregated = aggregated.concat(additionalClasses);
+              totalFromMeta = aggregated.length;
+              totalPagesFromMeta = 1;
+              displayTotal = aggregated.length;
+              serverReportedTotal = Math.max(
+                serverReportedTotal,
+                aggregated.length
+              );
+            }
+          }
+        } else if (pageSizeSetting === "all" && totalPagesFromMeta > 1) {
           const additionalClasses = await fetchRemainingClassPagesSequentially(
-            baseParams,
+            sharedParams,
             totalPagesFromMeta,
-            totalFromMeta
+            totalFromMeta,
+            filterSchedule
           );
-          aggregated = aggregated.concat(additionalClasses);
-          totalFromMeta = aggregated.length;
-          totalPagesFromMeta = 1;
+          if (additionalClasses.length) {
+            aggregated = aggregated.concat(additionalClasses);
+            totalFromMeta = aggregated.length;
+            totalPagesFromMeta = 1;
+            displayTotal = aggregated.length;
+            serverReportedTotal = Math.max(
+              serverReportedTotal,
+              aggregated.length
+            );
+          }
+        } else if (
+          aggregated.length === 0 &&
+          Number.isFinite(totalPagesFromMeta) &&
+          totalPagesFromMeta >= targetPage &&
+          targetPage < totalPagesFromMeta
+        ) {
+          const fallbackResult = await findFirstNonEmptyPage(
+            sharedParams,
+            targetPage + 1,
+            totalPagesFromMeta
+          );
+
+          if (fallbackResult) {
+            const { page, response, data: fallbackData } = fallbackResult;
+            const filteredFallback = applyScheduleFilterToClasses(
+              fallbackData,
+              filterSchedule
+            );
+            aggregated = filteredFallback;
+            totalFromMeta = extractTotalItemsFromMeta(
+              response.meta,
+              filteredFallback.length
+            );
+            totalPagesFromMeta = extractTotalPagesFromMeta(
+              response.meta,
+              totalFromMeta,
+              perPage
+            );
+            displayTotal = aggregated.length;
+            targetPage = page;
+            if (!cancelled) {
+              skipNextFetchRef.current = true;
+              setCurrentPage(page);
+            }
+            serverReportedTotal = Number.isFinite(totalFromMeta)
+              ? totalFromMeta
+              : aggregated.length;
+          }
         }
 
         const sorted = sortClasses(aggregated, sortKey);
@@ -408,7 +598,9 @@ export default function AdminClassesTable() {
         }
 
         setClassList(sorted);
-        setTotalItems(totalFromMeta);
+        displayTotal = aggregated.length;
+        setTotalItems(displayTotal);
+        setServerTotalItems(serverReportedTotal);
 
         if (pageSizeSetting === "all") {
           setTotalPages(1);
@@ -417,14 +609,19 @@ export default function AdminClassesTable() {
             setCurrentPage(1);
           }
         } else {
-          const safeTotalPages = Number.isFinite(totalPagesFromMeta)
+          const computedFromMeta = Number.isFinite(totalPagesFromMeta)
             ? Math.max(1, totalPagesFromMeta)
-            : Math.max(1, Math.ceil(totalFromMeta / perPage));
+            : null;
+          const computedFromCounts =
+            perPage > 0
+              ? Math.max(1, Math.ceil(serverReportedTotal / perPage))
+              : 1;
+          const safeTotalPages = computedFromMeta ?? computedFromCounts;
           const normalizedTotalPages = normalizeTotalPages(safeTotalPages);
           setTotalPages(normalizedTotalPages);
-          if (requestedPage > normalizedTotalPages) {
-            skipNextFetchRef.current = true;
+          if (targetPage > normalizedTotalPages) {
             setCurrentPage(normalizedTotalPages);
+            targetPage = normalizedTotalPages;
           }
         }
 
@@ -443,6 +640,12 @@ export default function AdminClassesTable() {
           setTotalItems(0);
           setTotalPages(1);
           setFetchError(null);
+          toast.error(
+            translate(
+              "admin_classes_auth_error",
+              "Unable to load classes. Please sign in again to continue."
+            )
+          );
         } else {
           console.error(error);
           const message = translate(
