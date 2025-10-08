@@ -6,9 +6,13 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import logger from "@/utils/logger";
 
+let rehydrateSet;
+
 const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      rehydrateSet = set;
+      return {
       user: null,
       accessToken: null,
       hasHydrated: false,
@@ -81,16 +85,19 @@ const useAuthStore = create(
         const msgStop = useMessageStore.getState().stopPolling;
         notifStop?.();
         msgStop?.();
-        localStorage.removeItem("auth");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth");
+        }
         set({ accessToken: null, user: null });
       },
-    }),
+    };
+    },
     {
       name: "auth",
       onRehydrateStorage: () => {
         return (state) => {
           logger.log("🔥 Zustand hydrated");
-          set({ hasHydrated: true });
+          rehydrateSet?.({ hasHydrated: true });
         };
       },
     }

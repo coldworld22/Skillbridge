@@ -167,12 +167,13 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       >
         <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-yellow-500 bg-gray-950 shadow-lg">
           <Image
-            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : "/images/logo.png"}
+            src={logoSrc}
             alt={`${settings.appName || "SkillBridge"} Logo`}
             width={96}
             height={96}
             className="h-20 w-20 object-contain"
             priority
+            onError={() => setLogoErrored(true)}
           />
         </div>
 
