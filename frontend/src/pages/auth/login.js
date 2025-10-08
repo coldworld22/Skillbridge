@@ -171,7 +171,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
             alt={`${settings.appName || "SkillBridge"} Logo`}
             width={96}
             height={96}
-            className="h-20 w-20 object-contain"
+            className="h-20 w-20 rounded-full object-cover"
             priority
             onError={() => setLogoErrored(true)}
           />
