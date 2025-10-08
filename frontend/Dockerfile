@@ -14,7 +14,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
     APP_DOMAIN=$APP_DOMAIN
 
 # Source optional production env file if present before building.
-RUN if [ -f .env.production ]; then set -a && . .env.production; fi && npm run build
+RUN if [ -f .env.production ]; then set -a && . ./.env.production; fi && npm run build
 
 # Production stage
 FROM node:18-alpine AS production
