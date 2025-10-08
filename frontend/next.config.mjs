@@ -1,7 +1,10 @@
 import nextI18NextConfig from './next-i18next.config.js';
 
 /** @type {import('next').NextConfig} */
-const defaultApiBase = 'https://eduskillbridge.net/api';
+const defaultApiBase =
+  process.env.NODE_ENV === 'production'
+    ? 'https://eduskillbridge.net/api'
+    : 'http://localhost:8000/api';
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
 let apiBase = apiBaseEnv || defaultApiBase;
 const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
