@@ -1,7 +1,7 @@
 // ───────────────────────────────────────
 // 📁 frontend/src/pages/auth/login.js
 //  ──────────────────────────────────────
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
@@ -20,8 +20,9 @@ import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import { useTranslation } from "next-i18next";
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
+import Image from "next/image";
 import logger from "@/utils/logger";
 
 // ─────────────────────
@@ -39,6 +40,15 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const { executeRecaptcha } = useGoogleReCaptcha() || {};
+  const [logoErrored, setLogoErrored] = useState(false);
+
+  const logoSrc = useMemo(() => {
+    if (logoErrored) return "/images/logo.png";
+    if (settings.logo_url) {
+      return `${API_BASE_URL}${settings.logo_url}`;
+    }
+    return "/images/logo.png";
+  }, [logoErrored, settings.logo_url]);
 
   // ─────────────────────
   // 📝 Form setup
@@ -83,64 +93,64 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   // 🔑 Handle form submission
   // ─────────────────────────────
   const onSubmit = async (data) => {
-  try {
-    logger.log("➡️ login onSubmit invoked");
-    let cfg = recaptchaCfg;
-    if (!cfg && cfgLoading) {
-      cfg = await fetchSocialLoginConfig().catch(() => null);
-      setRecaptchaCfg(cfg);
-      setCfgLoading(false);
+    try {
+      logger.log("➡️ login onSubmit invoked");
+      let cfg = recaptchaCfg;
+      if (!cfg && cfgLoading) {
+        cfg = await fetchSocialLoginConfig().catch(() => null);
+        setRecaptchaCfg(cfg);
+        setCfgLoading(false);
+      }
+      let token;
+      if (cfg?.recaptcha?.active && executeRecaptcha) {
+        token = await executeRecaptcha("login");
+      }
+      const loggedInUser = await login({ ...data, recaptchaToken: token });
+      toast.success(t("login_successful"));
+      fetchNotifications();
+
+      const profilePaths = {
+        admin: "/dashboard/admin/profile/edit",
+        instructor: "/dashboard/instructor/profile/edit",
+        student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
+      };
+
+      const targetPath =
+        loggedInUser.profile_complete === false
+          ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+          : "/website";
+
+      // 🚀 Redirect after a short delay so the toast is visible
+      setTimeout(() => {
+        router.push(targetPath);
+      }, 500);
+    } catch (err) {
+      logger.error("❌ login onSubmit error", { message: err?.message });
+      let msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        t("login_failed");
+
+      if (msg === "Invalid credentials") {
+        msg = t("invalid_credentials");
+      }
+
+      if (err.code === "ERR_NETWORK") {
+        msg = t("network_error_check_config");
+      }
+
+      toast.error(msg);
+      setValue("password", "");
+      document.activeElement?.blur();
+
+      setTimeout(() => {
+        const loginBtn = document.querySelector("button[type=submit]");
+        loginBtn?.blur();
+      }, 100);
     }
-    let token;
-    if (cfg?.recaptcha?.active && executeRecaptcha) {
-      token = await executeRecaptcha("login");
-    }
-    const loggedInUser = await login({ ...data, recaptchaToken: token });
-    toast.success(t("login_successful"));
-    fetchNotifications();
-
-    const profilePaths = {
-      admin: "/dashboard/admin/profile/edit",
-      instructor: "/dashboard/instructor/profile/edit",
-      student: "/dashboard/student/profile/edit",
-      superadmin: "/dashboard/admin/profile/edit",
-    };
-
-    const targetPath =
-      loggedInUser.profile_complete === false
-        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
-        : "/website";
-
-    // 🚀 Redirect after a short delay so the toast is visible
-    setTimeout(() => {
-      router.push(targetPath);
-    }, 500);
-  } catch (err) {
-    logger.error("❌ login onSubmit error", { message: err?.message });
-    let msg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
-      err?.message ||
-      t("login_failed");
-
-    if (msg === "Invalid credentials") {
-      msg = t("invalid_credentials");
-    }
-
-    if (err.code === "ERR_NETWORK") {
-      msg = t("network_error_check_config");
-    }
-
-    toast.error(msg);
-    setValue("password", "");
-    document.activeElement?.blur();
-
-    setTimeout(() => {
-      const loginBtn = document.querySelector("button[type=submit]");
-      loginBtn?.blur();
-    }, 100);
-  }
-};
+  };
 
 
 
