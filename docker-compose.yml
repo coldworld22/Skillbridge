@@ -63,15 +63,15 @@ services:
     ports:
       - "5002:5002"
     environment:
-      - PORT=${PORT}
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
-      - NODE_ENV=${NODE_ENV}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      MAX_BLOG_IMAGE_BYTES: ${MAX_BLOG_IMAGE_BYTES}
+      NODE_ENV: ${NODE_ENV}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5002/api/health"]
       interval: 30s
