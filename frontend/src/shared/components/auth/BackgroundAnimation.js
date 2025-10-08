@@ -95,13 +95,15 @@ export default function BackgroundAnimation() {
     init();
     animate();
 
-    window.addEventListener("resize", () => {
+    const handleResize = () => {
       resizeCanvas();
       init(); // re-init particles after resizing
-    });
+    };
+
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -109,7 +111,8 @@ export default function BackgroundAnimation() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full"
-    ></canvas>
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-80"
+      aria-hidden="true"
+    />
   );
 }
