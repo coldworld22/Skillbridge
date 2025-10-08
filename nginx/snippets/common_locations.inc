@@ -2,6 +2,10 @@
   if ($app_domain != "") {
     set $allowed_origin https://$app_domain;
   }
+  set $allow_cors 0;
+  if ($allowed_origin != "") {
+    set $allow_cors 1;
+  }
 
   location / {
     proxy_pass http://frontend:3000;
@@ -12,12 +16,10 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($allowed_origin != "") {
-      if ($http_origin = $allowed_origin) {
-        add_header Access-Control-Allow-Origin $allowed_origin always;
-      }
+    if ($allow_cors) {
+      add_header Access-Control-Allow-Origin $allowed_origin always;
+      add_header Access-Control-Allow-Credentials true always;
     }
-    add_header Access-Control-Allow-Credentials true always;
   }
 
   # Serve Next.js static assets directly from the frontend service
@@ -30,12 +32,10 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($allowed_origin != "") {
-      if ($http_origin = $allowed_origin) {
-        add_header Access-Control-Allow-Origin $allowed_origin always;
-      }
+    if ($allow_cors) {
+      add_header Access-Control-Allow-Origin $allowed_origin always;
+      add_header Access-Control-Allow-Credentials true always;
     }
-    add_header Access-Control-Allow-Credentials true always;
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
@@ -52,12 +52,10 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($allowed_origin != "") {
-      if ($http_origin = $allowed_origin) {
-        add_header Access-Control-Allow-Origin $allowed_origin always;
-      }
+    if ($allow_cors) {
+      add_header Access-Control-Allow-Origin $allowed_origin always;
+      add_header Access-Control-Allow-Credentials true always;
     }
-    add_header Access-Control-Allow-Credentials true always;
   }
 
   location ^~ /api/ {
@@ -70,10 +68,8 @@
     proxy_set_header X-Forwarded-Proto $scheme;
     # Ensure a single Access-Control-Allow-Origin header
     proxy_hide_header Access-Control-Allow-Origin;
-    if ($allowed_origin != "") {
-      if ($http_origin = $allowed_origin) {
-        add_header Access-Control-Allow-Origin $allowed_origin always;
-      }
+    if ($allow_cors) {
+      add_header Access-Control-Allow-Origin $allowed_origin always;
+      add_header Access-Control-Allow-Credentials true always;
     }
-    add_header Access-Control-Allow-Credentials true always;
   }
