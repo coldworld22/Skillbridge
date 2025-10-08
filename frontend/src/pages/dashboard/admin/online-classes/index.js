@@ -60,6 +60,35 @@ function AdminOnlineClassesPage() {
   const direction = typeof i18n?.dir === 'function' ? i18n.dir() : 'ltr';
   const createButtonClasses =
     'bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2';
+  const [tableResetKey, setTableResetKey] = useState(0);
+
+  const renderTableFallback = ({ resetErrorBoundary }) => (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center space-y-4">
+      <div className="flex flex-col items-center gap-2 text-red-600">
+        <FaExclamationTriangle className="w-8 h-8" />
+        <p className="text-lg font-semibold">{t('classes_table_error_title', 'Unable to load classes')}</p>
+        <p className="text-sm text-red-500">
+          {t(
+            'classes_table_error_message',
+            'Something went wrong while loading the classes list. Please try again.'
+          )}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          setTableResetKey((value) => value + 1);
+          if (typeof resetErrorBoundary === 'function') {
+            resetErrorBoundary();
+          }
+        }}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow hover:bg-yellow-600 transition"
+      >
+        <FaSyncAlt className="w-4 h-4" />
+        {t('retry', 'Retry')}
+      </button>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6" dir={direction}>
