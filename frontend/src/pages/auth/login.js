@@ -1,10 +1,12 @@
 // ───────────────────────────────────────
 // 📁 frontend/src/pages/auth/login.js
 //  ──────────────────────────────────────
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
+import Link from "next/link";
+import Image from "next/image";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
@@ -18,8 +20,9 @@ import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import { useTranslation } from "next-i18next";
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
+import Image from "next/image";
 import logger from "@/utils/logger";
 
 // ─────────────────────
@@ -37,6 +40,15 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const { executeRecaptcha } = useGoogleReCaptcha() || {};
+  const [logoErrored, setLogoErrored] = useState(false);
+
+  const logoSrc = useMemo(() => {
+    if (logoErrored) return "/images/logo.png";
+    if (settings.logo_url) {
+      return `${API_BASE_URL}${settings.logo_url}`;
+    }
+    return "/images/logo.png";
+  }, [logoErrored, settings.logo_url]);
 
   // ─────────────────────
   // 📝 Form setup
@@ -81,157 +93,173 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   // 🔑 Handle form submission
   // ─────────────────────────────
   const onSubmit = async (data) => {
-  try {
-    logger.log("➡️ login onSubmit invoked");
-    let cfg = recaptchaCfg;
-    if (!cfg && cfgLoading) {
-      cfg = await fetchSocialLoginConfig().catch(() => null);
-      setRecaptchaCfg(cfg);
-      setCfgLoading(false);
+    try {
+      logger.log("➡️ login onSubmit invoked");
+      let cfg = recaptchaCfg;
+      if (!cfg && cfgLoading) {
+        cfg = await fetchSocialLoginConfig().catch(() => null);
+        setRecaptchaCfg(cfg);
+        setCfgLoading(false);
+      }
+      let token;
+      if (cfg?.recaptcha?.active && executeRecaptcha) {
+        token = await executeRecaptcha("login");
+      }
+      const loggedInUser = await login({ ...data, recaptchaToken: token });
+      toast.success(t("login_successful"));
+      fetchNotifications();
+
+      const profilePaths = {
+        admin: "/dashboard/admin/profile/edit",
+        instructor: "/dashboard/instructor/profile/edit",
+        student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
+      };
+
+      const targetPath =
+        loggedInUser.profile_complete === false
+          ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+          : "/website";
+
+      // 🚀 Redirect after a short delay so the toast is visible
+      setTimeout(() => {
+        router.push(targetPath);
+      }, 500);
+    } catch (err) {
+      logger.error("❌ login onSubmit error", { message: err?.message });
+      let msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        t("login_failed");
+
+      if (msg === "Invalid credentials") {
+        msg = t("invalid_credentials");
+      }
+
+      if (err.code === "ERR_NETWORK") {
+        msg = t("network_error_check_config");
+      }
+
+      toast.error(msg);
+      setValue("password", "");
+      document.activeElement?.blur();
+
+      setTimeout(() => {
+        const loginBtn = document.querySelector("button[type=submit]");
+        loginBtn?.blur();
+      }, 100);
     }
-    let token;
-    if (cfg?.recaptcha?.active && executeRecaptcha) {
-      token = await executeRecaptcha("login");
-    }
-    const loggedInUser = await login({ ...data, recaptchaToken: token });
-    toast.success(t("login_successful"));
-    fetchNotifications();
-
-    const profilePaths = {
-      admin: "/dashboard/admin/profile/edit",
-      instructor: "/dashboard/instructor/profile/edit",
-      student: "/dashboard/student/profile/edit",
-      superadmin: "/dashboard/admin/profile/edit",
-    };
-
-    const targetPath =
-      loggedInUser.profile_complete === false
-        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
-        : "/website";
-
-    // 🚀 Redirect after a short delay so the toast is visible
-    setTimeout(() => {
-      router.push(targetPath);
-    }, 500);
-  } catch (err) {
-    logger.error("❌ login onSubmit error", { message: err?.message });
-    let msg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
-      err?.message ||
-      t("login_failed");
-
-    if (msg === "Invalid credentials") {
-      msg = t("invalid_credentials");
-    }
-
-    if (err.code === "ERR_NETWORK") {
-      msg = t("network_error_check_config");
-    }
-
-    toast.error(msg);
-    setValue("password", "");
-    document.activeElement?.blur();
-
-    setTimeout(() => {
-      const loginBtn = document.querySelector("button[type=submit]");
-      loginBtn?.blur();
-    }, 100);
-  }
-};
+  };
 
 
 
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 px-4 py-10 text-white">
       <BackgroundAnimation />
 
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.03 }}
-        transition={{ duration: 0.3 }}
-        className="relative z-10 bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md rounded-2xl border border-yellow-500/40 bg-gray-900/90 p-8 shadow-2xl backdrop-blur-md"
       >
-        <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
-
-          <img
-
-            src={settings.logo_url
-              ? `${API_BASE_URL}${settings.logo_url}`
-              : "/images/logo.png"}
-            alt={(settings.appName || 'SkillBridge') + ' Logo'}
-            width={80}
-            height={80}
-            className="rounded-full object-contain"
+        <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-yellow-500 bg-gray-950 shadow-lg">
+          <Image
+            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : "/images/logo.png"}
+            alt={`${settings.appName || "SkillBridge"} Logo`}
+            width={96}
+            height={96}
+            className="h-20 w-20 object-contain"
+            priority
           />
         </div>
-        <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          {t('welcome', { appName: settings.appName || 'SkillBridge' })}
-        </h2>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <motion.h2
+          layout
+          className="mt-6 text-center text-2xl font-bold text-yellow-400"
+        >
+          {t("welcome", { appName: settings.appName || "SkillBridge" })}
+        </motion.h2>
+        <p className="mt-2 text-center text-sm text-gray-300">
+          {t("signing_you_in")}
+        </p>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <InputField
-            label={t('email')}
+            label={t("email")}
             type="email"
-            placeholder={t('email')}
+            placeholder={t("email")}
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-red-500 text-xs mt-1 w-full text-left">
+            <p className="text-left text-xs text-red-400">
               {errors.email.message}
             </p>
           )}
 
           <InputField
-            label={t('password')}
+            label={t("password")}
             type="password"
-            placeholder={t('password')}
+            placeholder={t("password")}
             {...register("password")}
           />
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1 w-full text-left">
+            <p className="text-left text-xs text-red-400">
               {errors.password.message}
             </p>
           )}
 
-          <div className="mt-4 flex items-center justify-between w-full text-sm text-gray-400">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" {...register("remember")} />
-              {t('remember_me')}
+          <div className="flex items-center justify-between text-sm text-gray-300">
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                {...register("remember")}
+              />
+              {t("remember_me")}
             </label>
-            <a href="/auth/forgot-password" className="text-yellow-400 hover:underline">
-              {t('forgot_password')}
-            </a>
+            <Link
+              href="/auth/forgot-password"
+              className="font-medium text-yellow-400 transition hover:text-yellow-300"
+            >
+              {t("forgot_password")}
+            </Link>
           </div>
 
           <motion.button
             type="submit"
             disabled={isSubmitting}
-            whileHover={{ scale: 1.05 }}
-            className={`w-full mt-6 py-2 rounded-lg font-semibold transition ${
-              isSubmitting
-                ? "bg-gray-500 cursor-not-allowed text-white"
-                : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+            className={`w-full rounded-lg bg-yellow-500 py-2 font-semibold text-gray-900 shadow-lg shadow-yellow-500/30 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+              isSubmitting ? "cursor-not-allowed opacity-70" : "hover:bg-yellow-400"
             }`}
           >
-            {isSubmitting ? t('logging_in') : t('login')}
+            {isSubmitting ? t("logging_in") : t("login")}
           </motion.button>
         </form>
 
-        <SocialLogin />
+        <div className="mt-6">
+          <div className="flex items-center gap-4 text-gray-500">
+            <span className="h-px flex-1 bg-gray-700" aria-hidden />
+            <span className="text-xs uppercase tracking-[0.3em]">
+              {t("or", { defaultValue: "Or" })}
+            </span>
+            <span className="h-px flex-1 bg-gray-700" aria-hidden />
+          </div>
+          <SocialLogin />
+        </div>
 
-
-        <p className="text-center mt-6 text-gray-400 text-sm">
-          {t('dont_have_account')} {" "}
-          <a href="/auth/register" className="text-yellow-400 hover:underline">
-            {t('sign_up')}
-          </a>
+        <p className="mt-8 text-center text-sm text-gray-400">
+          {t("dont_have_account")}{" "}
+          <Link href="/auth/register" className="font-medium text-yellow-400 transition hover:text-yellow-300">
+            {t("sign_up")}
+          </Link>
         </p>
       </motion.div>
-
     </div>
   );
 }
