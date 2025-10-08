@@ -34,7 +34,9 @@ import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
 import { getPendingLessonEntries } from '@/utils/lessonSubmission';
 import useMediaUploader from '@/hooks/useMediaUploader';
+import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 import nextI18NextConfig from '@/../next-i18next.config.js';
+import { getNormalizedRoles } from '@/utils/auth/roleUtils';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -159,6 +161,55 @@ function CreateOnlineClass() {
   const [hasMoreInstructors, setHasMoreInstructors] = useState(false);
   const [loadingInstructors, setLoadingInstructors] = useState(false);
 
+  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
+
+  const loggedInInstructorOption = useMemo(() => {
+    if (!user?.id || !normalizedRoles.includes('instructor')) {
+      return null;
+    }
+
+    const nameSegments = [user?.first_name, user?.last_name].filter(Boolean);
+    const fallbackName =
+      user?.full_name ||
+      user?.name ||
+      (nameSegments.length ? nameSegments.join(' ') : null) ||
+      user?.email ||
+      'Current Instructor';
+
+    return {
+      id: user.id,
+      full_name: fallbackName,
+      email: user?.email ?? '',
+      isCurrentUser: true,
+    };
+  }, [user, normalizedRoles]);
+
+  const ensureLoggedInInstructorListed = useCallback(
+    (list) => {
+      if (!loggedInInstructorOption) {
+        return list;
+      }
+
+      const normalizedId = String(loggedInInstructorOption.id);
+      const existingIndex = list.findIndex(
+        (inst) => String(inst?.id) === normalizedId
+      );
+
+      if (existingIndex === 0) {
+        return list;
+      }
+
+      if (existingIndex > -1) {
+        const reordered = [...list];
+        const [existing] = reordered.splice(existingIndex, 1);
+        return [existing, ...reordered];
+      }
+
+      return [loggedInInstructorOption, ...list];
+    },
+    [loggedInInstructorOption]
+  );
+
   const {
     uploadProgress = 0,
     imageUploading: isImageUploading = false,
@@ -247,7 +298,8 @@ function CreateOnlineClass() {
               unique.set(String(inst.id), inst);
             }
           });
-          return Array.from(unique.values());
+          const deduped = Array.from(unique.values());
+          return ensureLoggedInInstructorListed(deduped);
         });
         setHasMoreInstructors(meta?.hasNextPage ?? ((data ?? []).length >= 50));
         setInstructorsPage(page);
@@ -262,43 +314,42 @@ function CreateOnlineClass() {
         setLoadingInstructors(false);
       }
     },
-    [normalizeInstructor, t]
+    [ensureLoggedInInstructorListed, t]
   );
 
   useEffect(() => {
     loadInstructors(1, true);
   }, [loadInstructors]);
 
+  const normalizedRoles = useMemo(() => getNormalizedRoles(user), [user]);
+  const shouldAutofillInstructor = useMemo(() => {
+    if (!user?.id) {
+      return false;
+    }
+
+    if (!normalizedRoles.length) {
+      return false;
+    }
+
+    const hasAdminPrivileges = normalizedRoles.some((role) =>
+      ['admin', 'superadmin'].includes(role)
+    );
+
+    if (hasAdminPrivileges) {
+      return false;
+    }
+
+    return normalizedRoles.length === 1 && normalizedRoles[0] === 'instructor';
+  }, [normalizedRoles, user?.id]);
+
   useEffect(() => {
-    const autoInstructorId = deriveInstructorIdFromUser(user);
-    if (!autoInstructorId) {
+    if (!loggedInInstructorOption) {
       return;
     }
 
-    setInstructorId((prev) => (prev ? prev : autoInstructorId));
-
-    if (user) {
-      const normalized = normalizeInstructor({
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-      });
-
-      if (!normalized) {
-        return;
-      }
-
-      setInstructors((prev) => {
-        if (prev.some((inst) => inst.id === normalized.id)) {
-          return prev;
-        }
-
-        return [...prev, normalized];
-      });
-    }
-  }, [deriveInstructorIdFromUser, normalizeInstructor, user]);
+    setInstructorId((prev) => (prev ? prev : String(loggedInInstructorOption.id)));
+    setInstructors((prev) => ensureLoggedInInstructorListed(prev));
+  }, [ensureLoggedInInstructorListed, loggedInInstructorOption]);
 
   useEffect(() => {
     setLessonSubmissionSummary((prev) => {
