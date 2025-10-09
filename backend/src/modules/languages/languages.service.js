@@ -2,13 +2,18 @@ const db = require("../../config/database");
 const { isUndefinedTableError, logUndefinedTableWarning } = require("../../utils/dbErrors");
 
 exports.create = async (data) => {
-  return db.transaction(async (trx) => {
-    if (data.is_default) {
-      await trx("languages").update({ is_default: false });
-    }
-    const [row] = await trx("languages").insert(data).returning("*");
-    return row;
-  });
+  try {
+    return await db.transaction(async (trx) => {
+      if (data.is_default) {
+        await trx("languages").update({ is_default: false });
+      }
+      const [row] = await trx("languages").insert(data).returning("*");
+      return row;
+    });
+  } catch (err) {
+    logger.error("[languages] Failed to create language", err);
+    throw databaseUnavailableError();
+  }
 };
 
 exports.list = async () => {
@@ -36,13 +41,25 @@ exports.getById = async (id) => {
 };
 
 exports.update = async (id, data) => {
-  return db.transaction(async (trx) => {
-    if (data.is_default) {
-      await trx("languages").update({ is_default: false });
-    }
-    const [row] = await trx("languages").where({ id }).update(data).returning("*");
-    return row;
-  });
+  try {
+    return await db.transaction(async (trx) => {
+      if (data.is_default) {
+        await trx("languages").update({ is_default: false });
+      }
+      const [row] = await trx("languages").where({ id }).update(data).returning("*");
+      return row;
+    });
+  } catch (err) {
+    logger.error("[languages] Failed to update language", err);
+    throw databaseUnavailableError();
+  }
 };
 
-exports.remove = (id) => db("languages").where({ id }).del();
+exports.remove = async (id) => {
+  try {
+    return await db("languages").where({ id }).del();
+  } catch (err) {
+    logger.error("[languages] Failed to delete language", err);
+    throw databaseUnavailableError();
+  }
+};
