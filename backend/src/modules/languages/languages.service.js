@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { isUndefinedTableError, logUndefinedTableWarning } = require("../../utils/dbErrors");
 
 exports.create = async (data) => {
   return db.transaction(async (trx) => {
@@ -10,12 +11,28 @@ exports.create = async (data) => {
   });
 };
 
-exports.list = () => {
-  return db("languages").select("*").orderBy("name");
+exports.list = async () => {
+  try {
+    return await db("languages").select("*").orderBy("name");
+  } catch (error) {
+    if (isUndefinedTableError(error, "languages")) {
+      logUndefinedTableWarning("languages", "languages.list");
+      return [];
+    }
+    throw error;
+  }
 };
 
-exports.getById = (id) => {
-  return db("languages").where({ id }).first();
+exports.getById = async (id) => {
+  try {
+    return await db("languages").where({ id }).first();
+  } catch (error) {
+    if (isUndefinedTableError(error, "languages")) {
+      logUndefinedTableWarning("languages", "languages.getById");
+      return null;
+    }
+    throw error;
+  }
 };
 
 exports.update = async (id, data) => {

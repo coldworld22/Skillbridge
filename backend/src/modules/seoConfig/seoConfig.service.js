@@ -1,5 +1,5 @@
 const logger = require('../../utils/logger.js');
-const db = require("../../config/database");
+const { readJsonSetting, writeJsonSetting } = require("../../utils/settingsStore");
 
 const SETTINGS_KEY = "seo_settings";
 
@@ -11,17 +11,14 @@ const DEFAULT_GLOBAL_SEO = {
 };
 
 exports.getSettings = async () => {
-  const row = await db("settings").where({ key: SETTINGS_KEY }).first();
   const base = process.env.FRONTEND_URL || "http://localhost:3000";
-  if (!row) return { baseUrl: base, siteName: "" };
-  try {
-    const data = JSON.parse(row.value);
-    if (!data.baseUrl) data.baseUrl = base;
-    if (!data.siteName) data.siteName = "";
-    return data;
-  } catch (_err) {
-    return { baseUrl: base, siteName: "" };
+  const stored = (await readJsonSetting(SETTINGS_KEY)) || {};
+  const data = { ...stored };
+  if (!data.baseUrl) data.baseUrl = base;
+  if (data.siteName === undefined || data.siteName === null) {
+    data.siteName = "";
   }
+  return data;
 };
 
 exports.updateSettings = async (settings) => {
@@ -31,15 +28,7 @@ exports.updateSettings = async (settings) => {
   if (settings.siteName === undefined) {
     settings.siteName = "";
   }
-  const value = JSON.stringify(settings);
-  const existing = await db("settings").where({ key: SETTINGS_KEY }).first();
-  if (existing) {
-    await db("settings")
-      .where({ key: SETTINGS_KEY })
-      .update({ value, updated_at: db.fn.now() });
-  } else {
-    await db("settings").insert({ key: SETTINGS_KEY, value });
-  }
+  await writeJsonSetting(SETTINGS_KEY, settings);
 
   // Also write robots.txt if robots content is provided
   try {

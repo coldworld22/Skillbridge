@@ -1,5 +1,5 @@
 const logger = require('../../utils/logger.js');
-const db = require("../../config/database");
+const { readJsonSetting, writeJsonSetting } = require("../../utils/settingsStore");
 const fs = require("fs");
 const path = require("path");
 
@@ -7,13 +7,7 @@ const SETTINGS_KEY = "social_login_settings";
 
 exports.getSettings = async () => {
   try {
-    const row = await db("settings").where({ key: SETTINGS_KEY }).first();
-    if (!row) return null;
-    try {
-      return JSON.parse(row.value);
-    } catch (_err) {
-      return null;
-    }
+    return await readJsonSetting(SETTINGS_KEY);
   } catch (err) {
     logger.error("Failed to load social login settings", err);
     return null;
@@ -21,15 +15,7 @@ exports.getSettings = async () => {
 };
 
 exports.updateSettings = async (settings) => {
-  const value = JSON.stringify(settings);
-  const existing = await db("settings").where({ key: SETTINGS_KEY }).first();
-  if (existing) {
-    await db("settings")
-      .where({ key: SETTINGS_KEY })
-      .update({ value, updated_at: db.fn.now() });
-  } else {
-    await db("settings").insert({ key: SETTINGS_KEY, value });
-  }
+  await writeJsonSetting(SETTINGS_KEY, settings);
   await saveToEnv(settings);
   return settings;
 };

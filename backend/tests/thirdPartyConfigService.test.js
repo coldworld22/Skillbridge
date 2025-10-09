@@ -17,15 +17,19 @@ describe('thirdPartyConfig.service', () => {
   });
 
   it('removes recaptcha from stored settings when retrieving', async () => {
-    db.first.mockResolvedValueOnce({ value: JSON.stringify({ recaptcha: { siteKey: 'k' }, other: 1 }) });
+    db.first
+      .mockResolvedValueOnce({ value: JSON.stringify({ recaptcha: { siteKey: 'k' }, other: 1 }) })
+      .mockResolvedValueOnce({ key: 'third_party_settings' });
     const settings = await service.getSettings();
     expect(settings).toEqual({ other: 1 });
+    expect(db.where).toHaveBeenCalledWith({ key: 'third_party_settings' });
     expect(db.update).toHaveBeenCalledWith({ value: JSON.stringify({ other: 1 }), updated_at: expect.anything() });
   });
 
   it('ignores recaptcha during update', async () => {
     db.first
       .mockResolvedValueOnce({ value: JSON.stringify({}) }) // getSettings inside updateSettings
+      .mockResolvedValueOnce({ value: JSON.stringify({}) }) // getSettings inside updateSettings -> writeJsonSetting first check
       .mockResolvedValueOnce({ key: 'third_party_settings' }); // existing record for update
 
     const res = await service.updateSettings({ recaptcha: { siteKey: 'k' }, other: 2 });
