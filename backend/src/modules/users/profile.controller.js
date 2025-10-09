@@ -27,7 +27,7 @@ exports.updateProfile = async (req, res) => {
     // ─────────────────────────────────────────────────────
     // 1. Update main `users` table fields
     // ─────────────────────────────────────────────────────
-    const [updatedUser] = await userModel.updateUser(userId, {
+    let [updatedUser] = await userModel.updateUser(userId, {
       full_name,
       phone,
       gender,
@@ -39,6 +39,7 @@ exports.updateProfile = async (req, res) => {
     // ─────────────────────────────────────────────────────
     // 2. If role is "student", update or insert student profile
     // ─────────────────────────────────────────────────────
+    let studentProfile = null;
     if (role === "student" && studentDetails) {
       const exists = await db("student_profiles").where({ user_id: userId }).first();
       if (exists) {
@@ -46,11 +47,12 @@ exports.updateProfile = async (req, res) => {
       } else {
         await db("student_profiles").insert({ ...studentDetails, user_id: userId });
       }
+      studentProfile = await db("student_profiles").where({ user_id: userId }).first();
+    } else if (role === "student") {
+      studentProfile = await db("student_profiles").where({ user_id: userId }).first();
     }
 
-    // ─────────────────────────────────────────────────────
-    // 3. If role is "instructor", update or insert instructor profile
-    // ─────────────────────────────────────────────────────
+    let instructorProfile = null;
     if (role === "instructor" && instructorDetails) {
       const exists = await db("instructor_profiles").where({ user_id: userId }).first();
       if (exists) {
@@ -58,11 +60,15 @@ exports.updateProfile = async (req, res) => {
       } else {
         await db("instructor_profiles").insert({ ...instructorDetails, user_id: userId });
       }
+      instructorProfile = await db("instructor_profiles").where({ user_id: userId }).first();
+    } else if (role === "instructor") {
+      instructorProfile = await db("instructor_profiles").where({ user_id: userId }).first();
     }
 
     // ─────────────────────────────────────────────────────
     // 4. Replace all user_social_links with new ones
     // ─────────────────────────────────────────────────────
+    let normalizedSocialLinks = [];
     if (Array.isArray(socialLinks)) {
       await db("user_social_links").where({ user_id: userId }).del();
       for (const link of socialLinks) {
@@ -77,21 +83,35 @@ exports.updateProfile = async (req, res) => {
           url: cleanedUrl,
         });
       }
+      normalizedSocialLinks = await db("user_social_links")
+        .where({ user_id: userId })
+        .select("platform", "url");
+    } else {
+      normalizedSocialLinks = await db("user_social_links")
+        .where({ user_id: userId })
+        .select("platform", "url");
     }
 
     // ─────────────────────────────────────────────────────
-    // 5. Conditionally set `profile_complete = true`
+    // 5. Conditionally set `profile_complete`
     // ─────────────────────────────────────────────────────
-    const profileComplete =
-      full_name && phone && gender && date_of_birth &&
-      (role !== "student" || studentDetails) &&
-      (role !== "instructor" || instructorDetails) &&
-      Array.isArray(socialLinks) && socialLinks.length > 0;
+    const hasCoreDetails =
+      Boolean(updatedUser.full_name && updatedUser.gender && updatedUser.date_of_birth);
+    const hasStudentDetails =
+      role !== "student" || Boolean(studentProfile);
+    const hasInstructorDetails =
+      role !== "instructor" || Boolean(instructorProfile);
+    const profileComplete = hasCoreDetails && hasStudentDetails && hasInstructorDetails;
 
-    if (profileComplete) {
-      await userModel.updateUser(userId, { profile_complete: true });
+    let justCompleted = false;
+    if (profileComplete && !updatedUser.profile_complete) {
+      [updatedUser] = await userModel.updateUser(userId, { profile_complete: true });
+      justCompleted = true;
+    } else if (!profileComplete && updatedUser.profile_complete) {
+      [updatedUser] = await userModel.updateUser(userId, { profile_complete: false });
+    }
 
-      // Notify user profile completion
+    if (justCompleted) {
       await notificationService.createNotification({
         user_id: userId,
         type: "profile",
@@ -111,12 +131,23 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
+    if (
+      updatedUser.is_email_verified &&
+      updatedUser.profile_complete &&
+      (updatedUser.status || "").toLowerCase() !== "active"
+    ) {
+      [updatedUser] = await userModel.updateUser(userId, { status: "active" });
+    }
+
     // ─────────────────────────────────────────────────────
     // 6. Final response
     // ─────────────────────────────────────────────────────
     res.json({
       message: "Profile updated successfully",
-      user: updatedUser,
+      user: {
+        ...updatedUser,
+        social_links: normalizedSocialLinks,
+      },
     });
 
   } catch (err) {

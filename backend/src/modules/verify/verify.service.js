@@ -69,11 +69,11 @@ exports.verifyOtp = async (userId, type, code) => {
   await db("users").where({ id: userId }).update({ [updateField]: true });
 
   const userAfter = await db("users").where({ id: userId }).first();
-  if (
-    userAfter.is_email_verified &&
-    userAfter.is_phone_verified &&
-    userAfter.profile_complete
-  ) {
+  if (userAfter.is_email_verified && userAfter.profile_complete) {
+    if ((userAfter.status || "").toLowerCase() !== "active") {
+      await db("users").where({ id: userId }).update({ status: "active" });
+    }
+
     await notificationService.createNotification({
       user_id: userId,
       type: "profile",

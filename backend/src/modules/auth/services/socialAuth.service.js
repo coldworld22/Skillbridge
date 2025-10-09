@@ -112,6 +112,16 @@ exports.loginOrRegister = async ({
     message: "You have logged in successfully",
   });
 
+  const onboardingComplete = Boolean(user.profile_complete && user.is_email_verified);
   const safeUser = sanitizeUser({ ...user, roles, permissions });
-  return { accessToken, refreshToken, user: safeUser };
+  return {
+    accessToken,
+    refreshToken,
+    user: safeUser,
+    onboarding: {
+      profile_complete: user.profile_complete,
+      is_email_verified: user.is_email_verified,
+      complete: onboardingComplete,
+    },
+  };
 };

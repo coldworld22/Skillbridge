@@ -1,106 +1,87 @@
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { useRouter } from "next/router";
-import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
-import {
-  sendEmailOtp,
-  sendPhoneOtp,
-  confirmEmailOtp,
-  confirmPhoneOtp,
-} from "@/services/verificationService";
+import { sendEmailOtp, confirmEmailOtp } from "@/services/verificationService";
 import StudentLayout from "@/components/layouts/StudentLayout";
-
 
 const Verification = ({ prevStep = () => {} }) => {
   const router = useRouter();
-
   const { user, refreshUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
-  const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
+  const [otpSent, setOtpSent] = useState(false);
   const [emailOTP, setEmailOTP] = useState("");
-  const [phoneOTP, setPhoneOTP] = useState("");
-  const [otpSent, setOtpSent] = useState({ email: false, phone: false });
+  const [submitting, setSubmitting] = useState(false);
 
-  // Redirect immediately if already verified
   useEffect(() => {
-    if (emailVerified && phoneVerified) {
-      toast.success("Both email and phone verified. Redirecting to dashboard...");
-      const t = setTimeout(() => router.push("/dashboard/student"), 1500);
-      return () => clearTimeout(t);
+    if (emailVerified) {
+      toast.success("Email verified. Redirecting to dashboard...");
+      const timer = setTimeout(() => router.push("/dashboard/student"), 1200);
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [emailVerified, router]);
 
-  const sendOtp = async (type) => {
+  const handleSendOtp = async () => {
     try {
-      const res = type === "email" ? await sendEmailOtp() : await sendPhoneOtp();
+      const res = await sendEmailOtp();
       if (res.verified) {
-        type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
-        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+        setEmailVerified(true);
+        toast.info("Email already verified");
         return;
       }
-      setOtpSent((prev) => ({ ...prev, [type]: true }));
-      toast.success("OTP sent");
+      setOtpSent(true);
+      toast.success("Verification code sent to your email");
     } catch (err) {
-      toast.error("Failed to send OTP");
+      toast.error("Failed to send verification email");
     }
   };
 
-  const verifyOtp = async (type) => {
-    const enteredOTP = type === "email" ? emailOTP : phoneOTP;
+  const handleVerify = async () => {
+    if (!emailOTP.trim()) {
+      toast.error("Enter the verification code");
+      return;
+    }
     try {
-      const res =
-        type === "email"
-          ? await confirmEmailOtp(enteredOTP)
-          : await confirmPhoneOtp(enteredOTP);
+      setSubmitting(true);
+      const res = await confirmEmailOtp(emailOTP.trim());
       if (res.alreadyVerified) {
-        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+        toast.info("Email already verified");
       } else {
-        toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
+        toast.success("Email verified successfully");
       }
-
-      if (type === "email") setEmailVerified(true);
-      if (type === "phone") setPhoneVerified(true);
-
+      setEmailVerified(true);
       await refreshUser();
       refreshNotifications?.();
       refreshMessages?.();
 
       try {
-        const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
         await createNotification({
           user_id: user.id,
           type: "verification",
-          message,
+          message: "Email verified successfully.",
         });
-        await sendChatMessage(user.id, { text: message });
+        await sendChatMessage(user.id, { text: "Email verified successfully." });
         refreshNotifications?.();
         refreshMessages?.();
       } catch (notifyErr) {
         console.error(notifyErr);
       }
-
-      const emailNow = type === "email" ? true : emailVerified;
-      const phoneNow = type === "phone" ? true : phoneVerified;
-      if (emailNow && phoneNow) {
-        toast.success("Both email and phone verified. Redirecting to dashboard...");
-        setTimeout(() => router.push("/dashboard/student"), 1500);
-      }
     } catch (err) {
-      const msg = err?.response?.data?.message || "Invalid or expired OTP";
+      const msg = err?.response?.data?.message || "Invalid or expired verification code";
       toast.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
-
-  // No identity document upload required
 
   return (
     <StudentLayout>
@@ -111,105 +92,63 @@ const Verification = ({ prevStep = () => {} }) => {
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-yellow-600">🔐 Verification</h2>
+        <h2 className="text-2xl font-bold mb-6 text-yellow-600">🔐 Email Verification</h2>
 
-        {/* Email Verification */}
-        <div className="mb-4">
-          <div className="flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
-            <FaEnvelope className="text-yellow-500 text-lg" />
-            <span className="font-medium">Email Verification:</span>
-            {emailVerified ? (
-              <span className="text-green-600 flex items-center gap-1">
-                <FaCheckCircle /> Verified
-              </span>
-            ) : otpSent.email ? (
-              <span className="text-sm">OTP sent</span>
-            ) : (
-              <button
-                onClick={() => sendOtp("email")}
-                className="bg-yellow-500 px-3 py-1 rounded-lg text-white hover:bg-yellow-600 transition"
-              >
-                Send OTP
-              </button>
-            )}
-          </div>
-
-          {/* Email OTP Input */}
-          {!emailVerified && otpSent.email && (
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Email OTP"
-                value={emailOTP}
-                onChange={(e) => setEmailOTP(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
-              />
-              <button
-                onClick={() => verifyOtp("email")}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Verify
-              </button>
-            </div>
+        <div className="mb-4 flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
+          <FaEnvelope className="text-yellow-500 text-lg" />
+          <span className="font-medium">Email Verification:</span>
+          {emailVerified ? (
+            <span className="text-green-600 flex items-center gap-1">
+              <FaCheckCircle /> Verified
+            </span>
+          ) : otpSent ? (
+            <span className="text-sm text-gray-700">Code sent to {user.email}</span>
+          ) : (
+            <button
+              onClick={handleSendOtp}
+              className="bg-yellow-500 px-3 py-1 rounded-lg text-white hover:bg-yellow-600 transition"
+            >
+              Send Verification Email
+            </button>
           )}
         </div>
 
-        {/* Phone Verification */}
-        <div className="mb-4">
-          <div className="flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
-            <FaPhone className="text-yellow-500 text-lg" />
-            <span className="font-medium">Phone Verification:</span>
-            {phoneVerified ? (
-              <span className="text-green-600 flex items-center gap-1">
-                <FaCheckCircle /> Verified
-              </span>
-            ) : otpSent.phone ? (
-              <span className="text-sm">OTP sent</span>
-            ) : (
-              <button
-                onClick={() => sendOtp("phone")}
-                className="bg-yellow-500 px-3 py-1 rounded-lg text-white hover:bg-yellow-600 transition"
-              >
-                Send OTP
-              </button>
-            )}
+        {!emailVerified && otpSent && (
+          <div className="mt-3 space-y-2">
+            <input
+              type="text"
+              placeholder="Enter verification code"
+              value={emailOTP}
+              onChange={(e) => setEmailOTP(e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+            />
+            <button
+              onClick={handleVerify}
+              className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition disabled:opacity-60"
+              disabled={submitting}
+            >
+              {submitting ? "Verifying..." : "Verify Email"}
+            </button>
           </div>
+        )}
 
-          {/* Phone OTP Input */}
-          {!phoneVerified && otpSent.phone && (
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Phone OTP"
-                value={phoneOTP}
-                onChange={(e) => setPhoneOTP(e.target.value)}
-                className="w-full px-3 py-2 border rounded mb-2"
-              />
-              <p className="text-xs text-gray-500">Default OTP: <code>123456</code></p>
-              <button
-                onClick={() => verifyOtp("phone")}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Verify
-              </button>
-            </div>
-          )}
-        </div>
-
-
-        {/* Navigation */}
-        <div className="flex justify-start mt-6">
+        <div className="flex justify-between mt-6">
           <button
             className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center gap-2"
             onClick={prevStep}
           >
             <FaArrowLeft /> Back
           </button>
-
+          <button
+            className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2"
+            onClick={() => router.push("/dashboard/student")}
+            disabled={!emailVerified}
+          >
+            Finish <FaArrowRight />
+          </button>
         </div>
       </motion.div>
     </StudentLayout>
-
   );
 };
 

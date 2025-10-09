@@ -22,14 +22,32 @@ export default function SocialSuccess() {
         const { accessToken } = await refreshAccessToken();
         setToken(accessToken);
         const res = await getFullProfile();
-        setUser(res.data);
-        fetchNotifications();
+        const profile = res.data;
+        setUser(profile);
+        if (profile.profile_complete && profile.is_email_verified) {
+          fetchNotifications();
+        }
         toast.success(t('login_successful'));
+        const role = profile.role?.toLowerCase();
+        const profilePaths = {
+          admin: "/dashboard/admin/profile/edit",
+          instructor: "/dashboard/instructor/profile/edit",
+          student: "/dashboard/student/profile/edit",
+          superadmin: "/dashboard/admin/profile/edit",
+        };
+        let destination = "/website";
+        if (profile.profile_complete === false) {
+          destination = profilePaths[role] || "/profile/edit";
+        } else if (!profile.is_email_verified) {
+          destination = "/auth/verify-email";
+        }
+        router.replace(destination);
+        return;
       } catch (err) {
         console.error('Failed to fetch profile after social login', err);
         toast.error(t('login_failed'));
       }
-      router.replace('/website');
+      router.replace('/auth/login');
     }
     finalize();
   }, [router, setToken, setUser, fetchNotifications, t]);

@@ -77,6 +77,15 @@ function MyApp({ Component, pageProps, router }) {
         useAuthStore.setState({
           user: parsed.user,
           accessToken: parsed.accessToken,
+          onboarding:
+            parsed.onboarding ||
+            {
+              profile_complete: parsed.user.profile_complete,
+              is_email_verified: parsed.user.is_email_verified,
+              complete:
+                Boolean(parsed.user.profile_complete) &&
+                Boolean(parsed.user.is_email_verified),
+            },
           hasHydrated: true, // ✅ manually set hydration flag
         });
       }
@@ -135,7 +144,7 @@ function MyApp({ Component, pageProps, router }) {
   }, [seoLoaded, fetchSEO]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !user.profile_complete || !user.is_email_verified) return;
 
     fetchNotifs();
     startNotifPolling();

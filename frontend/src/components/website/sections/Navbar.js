@@ -117,7 +117,9 @@ const Navbar = () => {
   }, [user]);
 
   useEffect(() => {
-    if (user && user.profile_complete === false) {
+    if (!user) return;
+
+    if (user.profile_complete === false) {
       const profilePaths = {
         admin: "/dashboard/admin/profile/edit",
         instructor: "/dashboard/instructor/profile/edit",
@@ -129,6 +131,9 @@ const Navbar = () => {
         router.replace(rolePath);
         toast.info(t('please_complete_profile'));
       }
+    } else if (!user.is_email_verified && router.pathname !== "/auth/verify-email") {
+      router.replace("/auth/verify-email");
+      toast.info(t('please_verify_email', { defaultValue: "Please verify your email to continue." }));
     }
   }, [user, userRole, router]);
 

@@ -11,7 +11,7 @@ export const getFullProfile = () =>
 // 📋 Complete Profile (JSON payload)
 // ────────────────────────────────
 export const updateProfile = (formData) =>
-    api.put("/users/me/complete-profile", formData, {
+    api.patch("/users/profile", formData, {
         withCredentials: true,
         headers: {
             "Content-Type": "application/json",

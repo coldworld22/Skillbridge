@@ -41,6 +41,7 @@ router.use("/classes", classRoutes);
 // Profile helpers for current authenticated user
 // ---------------------------------------------------------------------------
 router.get("/me/full-profile", verifyToken, profileController.getFullProfile);
+router.patch("/profile", verifyToken, profileController.updateProfile);
 
 
 // ==============================================

@@ -66,10 +66,10 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user, onboarding } = await authService.loginUser(req.body);
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .json({ message: "Login successful", accessToken, user });
+    .json({ message: "Login successful", accessToken, user, onboarding });
 });
 
 /**

@@ -71,14 +71,17 @@ exports.registerUser = async (data) => {
 
   // ✅ Check duplicate phone
   const existingPhone = await userModel.findByPhone(data.phone);
-  if (existingPhone) throw new AppError("Phone number is already in use", 409);
+  if (data.phone) {
+    const existingPhone = await userModel.findByPhone(data.phone);
+    if (existingPhone) throw new AppError("Phone number is already in use", 409);
+  }
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const [newUser] = await userModel.insertUser({
     full_name: data.full_name,
     email: data.email,
-    phone: data.phone,
+    phone: data.phone || null,
     password_hash: hashed,
     role: data.role || "Student",
     status: "pending",
@@ -186,7 +189,8 @@ exports.loginUser = async ({ email, password }) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  if (user.status !== "active") {
+  const status = (user.status || "").toLowerCase();
+  if (!["active", "pending"].includes(status)) {
     throw new AppError("Account is not active", 403);
   }
 
@@ -217,7 +221,17 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
   const safeUser = sanitizeUserUtil(user);
-  return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
+  const onboardingComplete = Boolean(user.profile_complete && user.is_email_verified);
+  return {
+    accessToken,
+    refreshToken,
+    user: { ...safeUser, roles, permissions },
+    onboarding: {
+      profile_complete: user.profile_complete,
+      is_email_verified: user.is_email_verified,
+      complete: onboardingComplete,
+    },
+  };
 };
 
 /**

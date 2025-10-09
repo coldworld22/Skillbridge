@@ -15,9 +15,22 @@ const useAuthStore = create(
       return {
       user: null,
       accessToken: null,
+      onboarding: null,
       hasHydrated: false,
 
-      setUser: (userData) => set({ user: userData }),
+      setUser: (userData) =>
+        set({
+          user: userData,
+          onboarding: userData
+            ? {
+                profile_complete: userData.profile_complete,
+                is_email_verified: userData.is_email_verified,
+                complete:
+                  Boolean(userData.profile_complete) &&
+                  Boolean(userData.is_email_verified),
+              }
+            : null,
+        }),
       setToken: (token) => set({ accessToken: token }),
       markHydrated: () => set({ hasHydrated: true }),
 
@@ -25,11 +38,23 @@ const useAuthStore = create(
 
       login: async (credentials) => {
         logger.log("🔑 authStore.login invoked");
-        const { accessToken, user } = await authService.loginUser(credentials);
+        const { accessToken, user, onboarding } = await authService.loginUser(credentials);
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;
         }
-        set({ accessToken, user });
+        set({
+          accessToken,
+          user,
+          onboarding:
+            onboarding ||
+            {
+              profile_complete: user.profile_complete,
+              is_email_verified: user.is_email_verified,
+              complete:
+                Boolean(user.profile_complete) &&
+                Boolean(user.is_email_verified),
+            },
+        });
         return user;
       },
 
@@ -45,13 +70,22 @@ const useAuthStore = create(
           if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
             user.avatar_url = null;
           }
-          set({ user });
+          set({
+            user,
+            onboarding: {
+              profile_complete: user.profile_complete,
+              is_email_verified: user.is_email_verified,
+              complete:
+                Boolean(user.profile_complete) &&
+                Boolean(user.is_email_verified),
+            },
+          });
           const fetchNotifications = useNotificationStore.getState().fetch;
           fetchNotifications?.();
           return user;
         } catch (err) {
           logger.error("❌ loginWithToken error", { message: err?.message });
-          set({ accessToken: null, user: null });
+          set({ accessToken: null, user: null, onboarding: null });
         }
       },
 
@@ -62,7 +96,16 @@ const useAuthStore = create(
           if (fresh.avatar_url?.startsWith("blob:") || fresh.avatar_url === "null") {
             fresh.avatar_url = null;
           }
-          set({ user: fresh });
+          set({
+            user: fresh,
+            onboarding: {
+              profile_complete: fresh.profile_complete,
+              is_email_verified: fresh.is_email_verified,
+              complete:
+                Boolean(fresh.profile_complete) &&
+                Boolean(fresh.is_email_verified),
+            },
+          });
           return fresh;
         } catch (err) {
           logger.error("❌ refreshUser error", { message: err?.message });
@@ -88,7 +131,7 @@ const useAuthStore = create(
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth");
         }
-        set({ accessToken: null, user: null });
+        set({ accessToken: null, user: null, onboarding: null });
       },
     };
     },

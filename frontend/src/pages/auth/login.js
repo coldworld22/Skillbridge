@@ -79,6 +79,8 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       };
       const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
       router.replace(rolePath);
+    } else if (!user.is_email_verified) {
+      router.replace("/auth/verify-email");
     } else {
       router.replace("/website");
     }
@@ -106,7 +108,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       }
       const loggedInUser = await login({ ...data, recaptchaToken: token });
       toast.success(t("login_successful"));
-      fetchNotifications();
+      if (loggedInUser.profile_complete && loggedInUser.is_email_verified) {
+        fetchNotifications();
+      }
 
       const profilePaths = {
         admin: "/dashboard/admin/profile/edit",
@@ -115,10 +119,15 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
         superadmin: "/dashboard/admin/profile/edit",
       };
 
-      const targetPath =
-        loggedInUser.profile_complete === false
-          ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
-          : "/website";
+      const targetPath = (() => {
+        if (loggedInUser.profile_complete === false) {
+          return profilePaths[loggedInUser.role?.toLowerCase()] || "/website";
+        }
+        if (!loggedInUser.is_email_verified) {
+          return "/auth/verify-email";
+        }
+        return "/website";
+      })();
 
       // 🚀 Redirect after a short delay so the toast is visible
       setTimeout(() => {

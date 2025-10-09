@@ -13,7 +13,7 @@ export default function IncompleteAlertModal() {
     // 🎯 Only show for Student or Instructor roles
     const isRelevantRole = user.role === "Student" || user.role === "Instructor";
 
-    const needsProfile = !user.profile_complete || !user.is_email_verified || !user.is_phone_verified;
+    const needsProfile = !user.profile_complete || !user.is_email_verified;
 
     if (isRelevantRole && needsProfile) {
       setShow(true);
@@ -27,7 +27,7 @@ export default function IncompleteAlertModal() {
       <div className="bg-white p-6 rounded-lg text-center max-w-md">
         <h2 className="text-xl font-semibold text-red-600 mb-2">Complete Your Profile</h2>
         <p className="text-gray-700 mb-4">
-          You must verify your email and phone, and complete your profile before using the platform.
+          Please complete your profile details and verify your email before using the platform.
         </p>
         <button
           onClick={() => {

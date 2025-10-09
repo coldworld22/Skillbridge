@@ -7,6 +7,20 @@ const {
 } = require("../../services/tokenBlacklistService");
 const { normalizeRole, isAdminRole } = require("../../utils/role");
 
+const ONBOARDING_ALLOWED_PATTERNS = [
+  /^\/api\/users\/profile$/i,
+  /^\/api\/users\/me\/full-profile$/i,
+  /^\/api\/users\/[^/]+\/(avatar|demo-video)$/i,
+  /^\/api\/verify\/email\/(send|confirm)$/i,
+  /^\/api\/verify\/phone\/(send|confirm)$/i,
+  /^\/api\/auth\/logout$/i,
+];
+
+function isOnboardingPathAllowed(url) {
+  const path = url.split("?")[0];
+  return ONBOARDING_ALLOWED_PATTERNS.some((regex) => regex.test(path));
+}
+
 
 /**
  * 🔐 Middleware: Verifies JWT access token
@@ -42,8 +56,22 @@ const verifyToken = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
-    if (user.status !== "active") {
+    const status = (user.status || "").toLowerCase();
+    if (!["active", "pending"].includes(status)) {
       return res.status(403).json({ message: "Account is not active" });
+    }
+    const onboardingComplete = Boolean(user.profile_complete && user.is_email_verified);
+    if (
+      !onboardingComplete &&
+      !isOnboardingPathAllowed(req.originalUrl || "")
+    ) {
+      return res.status(403).json({
+        message: "Complete your profile and verify your email to continue.",
+        onboarding: {
+          profile_complete: user.profile_complete,
+          is_email_verified: user.is_email_verified,
+        },
+      });
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
@@ -58,6 +86,7 @@ const verifyToken = async (req, res, next) => {
       roles: userRoles,
       role: userRoles[0],
       permissions,
+      onboardingComplete,
     };
     next();
   } catch (err) {

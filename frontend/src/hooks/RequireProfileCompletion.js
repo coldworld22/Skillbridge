@@ -16,14 +16,20 @@ export default function RequireProfileCompletion({ children }) {
   const userRole = user?.role?.toLowerCase();
 
   useEffect(() => {
-    if (user && user.profile_complete === false) {
-      const targetPath = roleRedirects[userRole] || "/auth/login";
+    if (!user) return;
 
-      // Avoid redirecting if already on the profile page
+    if (user.profile_complete === false) {
+      const targetPath = roleRedirects[userRole] || "/profile/edit";
       if (router.pathname !== targetPath) {
         toast.info("Please complete your profile to continue.");
         router.replace(targetPath);
       }
+      return;
+    }
+
+    if (!user.is_email_verified && router.pathname !== "/auth/verify-email") {
+      toast.info("Verify your email to continue.");
+      router.replace("/auth/verify-email");
     }
   }, [user, userRole, router]);
 
