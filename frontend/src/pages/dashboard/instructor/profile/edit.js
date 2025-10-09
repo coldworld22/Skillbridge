@@ -191,8 +191,8 @@ export default function InstructorProfileEdit() {
 
         setFormData(prev => ({
           ...prev,
-          full_name,
-          phone,
+          full_name: full_name || "",
+          phone: phone || "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           experience: instructor?.experience ? parseInt(instructor.experience) : 0,
@@ -405,11 +405,17 @@ export default function InstructorProfileEdit() {
           acc[cur.platform] = cur.url;
           return acc;
         }, {}),
+        demoPreview: fresh.instructor?.demo_video_url
+          ? `${BASE_URL}${fresh.instructor.demo_video_url}`
+          : null,
       }));
 
-        toast.success(t('profile_update_success'));
+      toast.success(t('profile_update_success'));
       await fetchNotifications();
-      router.push("/dashboard/instructor/profile/steps/Verification");
+      const nextRoute = !fresh.is_email_verified
+        ? "/auth/verify-email"
+        : "/dashboard/instructor";
+      router.push(nextRoute);
     } catch (err) {
         toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);

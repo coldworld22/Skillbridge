@@ -6,9 +6,15 @@ module.exports = (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  if (!user.is_email_verified || !user.is_phone_verified) {
+  if (!user.profile_complete) {
     return res.status(403).json({
-      message: "Please verify your email and phone to access this feature.",
+      message: "Please complete your profile to access this feature.",
+    });
+  }
+
+  if (!user.is_email_verified) {
+    return res.status(403).json({
+      message: "Please verify your email to access this feature.",
     });
   }
 

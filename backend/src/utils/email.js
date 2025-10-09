@@ -189,7 +189,7 @@ exports.sendWelcomeEmail = async (to, name) => {
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
         <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
         <p>Hello${name ? ` ${name}` : ""},</p>
-        <p>Thank you for registering with <strong>${fromName}</strong>! All you have to do is complete your profile and verify your email and phone number.</p>
+        <p>Thank you for registering with <strong>${fromName}</strong>! All you have to do is complete your profile and verify your email.</p>
         <p>If you have any questions, reach us at <a href="mailto:${support}">${support}</a>.</p>
 
         <p>Thank you,<br/>The ${fromName} Team</p>
