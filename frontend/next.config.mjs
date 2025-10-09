@@ -1,10 +1,20 @@
 import nextI18NextConfig from './next-i18next.config.js';
 
 /** @type {import('next').NextConfig} */
-const defaultApiBase =
-  process.env.NODE_ENV === 'production'
-    ? 'https://eduskillbridge.net/api'
-    : 'http://localhost:8000/api';
+const resolveDefaultApiBase = () => {
+  if (process.env.NODE_ENV === 'production') {
+    if (process.env.APP_DOMAIN) {
+      return `https://${process.env.APP_DOMAIN}/api`;
+    }
+    console.warn(
+      'APP_DOMAIN is not set. Defaulting API base URL to http://localhost:8000/api. '
+        + 'Set NEXT_PUBLIC_API_BASE_URL in your environment to point to your backend.'
+    );
+  }
+  return 'http://localhost:8000/api';
+};
+
+const defaultApiBase = resolveDefaultApiBase();
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
 let apiBase = apiBaseEnv || defaultApiBase;
 const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
