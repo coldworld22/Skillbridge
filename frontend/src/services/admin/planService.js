@@ -10,8 +10,9 @@ export const fetchPlanById = async (id) => {
   return data?.data ?? null;
 };
 
-export const fetchPlanIdentifiers = async () => {
-  const { data } = await api.get("/plans/identifiers");
+export const fetchPlanIdentifiers = async (params = {}) => {
+  const query = { role: "student", ...params };
+  const { data } = await api.get("/plans/identifiers", { params: query });
   return data?.data ?? [];
 };
 

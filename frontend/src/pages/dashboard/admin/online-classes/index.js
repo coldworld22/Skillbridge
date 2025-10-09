@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -14,6 +14,13 @@ function AdminOnlineClassesPage() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const stats = useMemo(() => {
+    const total = classes.length;
+    const published = classes.filter((cls) => cls.publishStatus === "published").length;
+    const draft = classes.filter((cls) => cls.publishStatus === "draft").length;
+    const pendingReview = classes.filter((cls) => cls.approvalStatus === "Pending").length;
+    return { total, published, draft, pendingReview };
+  }, [classes]);
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +52,22 @@ function AdminOnlineClassesPage() {
         </Link>
       </div>
       {error && <p className="text-red-600">{error}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          { label: t('classes_total', { defaultValue: 'Total Classes' }), value: stats.total },
+          { label: t('classes_published', { defaultValue: 'Published' }), value: stats.published },
+          { label: t('classes_draft', { defaultValue: 'Draft' }), value: stats.draft },
+          { label: t('classes_pending_review', { defaultValue: 'Pending Review' }), value: stats.pendingReview },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3 flex flex-col"
+          >
+            <span className="text-sm text-gray-500">{card.label}</span>
+            <span className="text-2xl font-semibold text-gray-900">{card.value}</span>
+          </div>
+        ))}
+      </div>
       <AdminClassesTable classes={classes} loading={loading} />
     </div>
   );
@@ -71,5 +94,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-
-

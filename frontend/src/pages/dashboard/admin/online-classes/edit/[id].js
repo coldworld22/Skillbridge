@@ -62,7 +62,7 @@ function EditClassPage() {
             description: data.description || '',
             max_students: data.max_students || '',
             access_type: data.access_type || 'paid',
-            included_plans: data.included_plans || [],
+            included_plans: Array.isArray(data.included_plans) ? data.included_plans : [],
           });
         }
       } catch (err) {
@@ -73,7 +73,7 @@ function EditClassPage() {
   }, [id]);
 
   useEffect(() => {
-    fetchPlanIdentifiers()
+    fetchPlanIdentifiers({ includeInactive: true })
       .then(setPlans)
       .catch(() => setPlans([]));
   }, []);
@@ -83,12 +83,12 @@ function EditClassPage() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const togglePlan = (slug) => {
+  const togglePlan = (planId) => {
     setFormData((prev) => ({
       ...prev,
-      included_plans: prev.included_plans.includes(slug)
-        ? prev.included_plans.filter((s) => s !== slug)
-        : [...prev.included_plans, slug],
+      included_plans: prev.included_plans.includes(planId)
+        ? prev.included_plans.filter((id) => id !== planId)
+        : [...prev.included_plans, planId],
     }));
   };
 
@@ -144,7 +144,8 @@ function EditClassPage() {
           value={formData.instructor}
           onChange={handleChange}
           placeholder={t('instructor_name_label')}
-          className="w-full border rounded px-4 py-2"
+          className="w-full border rounded px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+          disabled
         />
         <div className="flex gap-4">
           <input
@@ -203,21 +204,33 @@ function EditClassPage() {
               <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
             </label>
           </div>
-          {formData.access_type === 'free' && (
+          {formData.access_type === 'free' && plans.length > 0 && (
             <div className="flex flex-wrap gap-4">
               {plans.map((p) => (
                 <label key={p.id} className="inline-flex items-center">
                   <input
                     type="checkbox"
-                    value={p.slug}
-                    checked={formData.included_plans.includes(p.slug)}
-                    onChange={() => togglePlan(p.slug)}
+                    value={p.id}
+                    checked={formData.included_plans.includes(p.id)}
+                    onChange={() => togglePlan(p.id)}
                     className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">{p.slug}</span>
+                  <span className="ml-2 text-sm text-gray-700">
+                    {p.name || p.slug}
+                    {p.name && p.slug ? (
+                      <span className="ml-1 text-xs text-gray-500">({p.slug})</span>
+                    ) : null}
+                  </span>
                 </label>
               ))}
             </div>
+          )}
+          {formData.access_type === 'free' && plans.length === 0 && (
+            <p className="text-sm text-gray-500">
+              {t('no_student_plans_hint', {
+                defaultValue: 'No student plans available yet. Create one to attach access.',
+              })}
+            </p>
           )}
         </div>
         <input

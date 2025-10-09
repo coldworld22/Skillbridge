@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -52,18 +52,41 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     setClassList(classes);
   }, [classes]);
 
-  const filteredClasses = classList
-    .filter((cls) =>
-      cls.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cls.instructor.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((cls) =>
-      filterStatus === "All" ? true : cls.scheduleStatus === filterStatus
-    )
-    .filter((cls) =>
-      filterApproval === "All" ? true : cls.approvalStatus === filterApproval
-    )
-    .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredClasses = useMemo(() => {
+    const matchingSearch = classList.filter((cls) => {
+      if (!normalizedSearch) return true;
+      const title = cls.title?.toLowerCase?.() || "";
+      const instructorName = cls.instructor?.toLowerCase?.() || "";
+      return (
+        title.includes(normalizedSearch) || instructorName.includes(normalizedSearch)
+      );
+    });
+
+    return matchingSearch
+      .filter((cls) =>
+        filterStatus === "All" ? true : cls.scheduleStatus === filterStatus
+      )
+      .filter((cls) =>
+        filterApproval === "All" ? true : cls.approvalStatus === filterApproval
+      )
+      .sort((a, b) => {
+        const aValue = a[sortKey];
+        const bValue = b[sortKey];
+
+        if (aValue === undefined || aValue === null) return 1;
+        if (bValue === undefined || bValue === null) return -1;
+
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          return aValue.localeCompare(bValue);
+        }
+
+        if (aValue > bValue) return 1;
+        if (aValue < bValue) return -1;
+        return 0;
+      });
+  }, [classList, normalizedSearch, filterStatus, filterApproval, sortKey]);
 
   const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
   const paginatedClasses = filteredClasses.slice(
@@ -75,7 +98,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
     const rows = classList.map(cls => [
       cls.title,
-      cls.instructor,
+      cls.instructor || "",
       cls.start_date,
       cls.end_date,
       cls.category,
@@ -97,6 +120,10 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   
   const handleStatusChange = async (id, action, reason = "") => {
     const target = classList.find((c) => c.id === id);
+    if (!target) {
+      toast.error(t('class_not_found', { defaultValue: 'Class not found.' }));
+      return;
+    }
     try {
 
       if (action === "approve") {
@@ -413,6 +440,15 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                 </td>
               </tr>
             ))}
+            {paginatedClasses.length === 0 && (
+              <tr>
+                <td colSpan={11} className="px-6 py-8 text-center text-gray-500">
+                  {t('no_classes_match_filters', {
+                    defaultValue: 'No classes match the current filters.',
+                  })}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

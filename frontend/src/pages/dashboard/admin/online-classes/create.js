@@ -198,12 +198,12 @@ function CreateOnlineClass() {
     setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
   };
 
-  const togglePlan = (slug) => {
+  const togglePlan = (planId) => {
     setFormData((prev) => ({
       ...prev,
-      includedPlans: prev.includedPlans.includes(slug)
-        ? prev.includedPlans.filter((s) => s !== slug)
-        : [...prev.includedPlans, slug],
+      includedPlans: prev.includedPlans.includes(planId)
+        ? prev.includedPlans.filter((id) => id !== planId)
+        : [...prev.includedPlans, planId],
     }));
   };
 
@@ -526,21 +526,33 @@ function CreateOnlineClass() {
                             <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
                           </label>
                         </div>
-                        {formData.accessType === 'free' && (
+                        {formData.accessType === 'free' && plans.length > 0 && (
                           <div className="flex flex-wrap gap-4">
                             {plans.map((p) => (
                               <label key={p.id} className="inline-flex items-center">
                                 <input
                                   type="checkbox"
-                                  value={p.slug}
-                                  checked={formData.includedPlans.includes(p.slug)}
-                                  onChange={() => togglePlan(p.slug)}
+                                  value={p.id}
+                                  checked={formData.includedPlans.includes(p.id)}
+                                  onChange={() => togglePlan(p.id)}
                                   className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                                 />
-                                <span className="ml-2 text-sm text-gray-700">{p.slug}</span>
+                                <span className="ml-2 text-sm text-gray-700">
+                                  {p.name || p.slug}
+                                  {p.name && p.slug ? (
+                                    <span className="ml-1 text-xs text-gray-500">({p.slug})</span>
+                                  ) : null}
+                                </span>
                               </label>
                             ))}
                           </div>
+                        )}
+                        {formData.accessType === 'free' && plans.length === 0 && (
+                          <p className="text-sm text-gray-500">
+                            {t('no_student_plans_hint', {
+                              defaultValue: 'No student plans available yet. Create one to attach access.',
+                            })}
+                          </p>
                         )}
                         <label className="inline-flex items-center">
                           <input
@@ -828,4 +840,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-

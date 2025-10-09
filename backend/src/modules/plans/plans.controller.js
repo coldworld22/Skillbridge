@@ -105,8 +105,12 @@ exports.getPlanFeatures = catchAsync(async (req, res) => {
   sendSuccess(res, features);
 });
 
-exports.getPlanIdentifiers = catchAsync(async (_req, res) => {
-  const plans = await service.getPlanIdentifiers();
+exports.getPlanIdentifiers = catchAsync(async (req, res) => {
+  const { role, includeInactive } = req.query;
+  const plans = await service.getPlanIdentifiers({
+    role,
+    includeInactive: includeInactive === "true" || includeInactive === "1",
+  });
   sendSuccess(res, plans);
 });
 

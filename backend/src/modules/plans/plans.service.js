@@ -116,5 +116,18 @@ exports.getPlanFeatures = async (prefix) => {
   return result;
 };
 
-exports.getPlanIdentifiers = () =>
-  db("plans").select("id", "slug").orderBy("id");
+exports.getPlanIdentifiers = ({ role, includeInactive } = {}) => {
+  const query = db("plans")
+    .select("id", "slug", "name", "target_role", "active")
+    .orderBy("name");
+
+  if (!includeInactive) {
+    query.where({ active: true });
+  }
+
+  if (role) {
+    query.andWhereRaw("LOWER(target_role) = ?", [role.toLowerCase()]);
+  }
+
+  return query;
+};
