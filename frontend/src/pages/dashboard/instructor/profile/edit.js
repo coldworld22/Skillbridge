@@ -53,9 +53,12 @@ import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-const MAX_UPLOAD_SIZE_MB = 20;
-const MAX_AVATAR_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
-const MAX_CERTIFICATE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
+const MAX_AVATAR_MB = 200;
+const MAX_AVATAR_BYTES = MAX_AVATAR_MB * 1024 * 1024;
+const MAX_CERTIFICATE_MB = 200;
+const MAX_CERTIFICATE_BYTES = MAX_CERTIFICATE_MB * 1024 * 1024;
+const MAX_DEMO_MB = 500;
+const MAX_DEMO_BYTES = MAX_DEMO_MB * 1024 * 1024;
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z.string().min(8, "phone_min"),
@@ -302,7 +305,7 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > MAX_AVATAR_BYTES) return toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
+    if (file.size > MAX_AVATAR_BYTES) return toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
     setShowCropper(true);
@@ -314,7 +317,7 @@ export default function InstructorProfileEdit() {
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       if (blob.size > MAX_AVATAR_BYTES) {
-        toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
+        toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
         setIsSubmitting(false);
         return;
       }
@@ -332,7 +335,7 @@ export default function InstructorProfileEdit() {
       setTempAvatar(null);
     } catch (error) {
         if (error?.response?.status === 413) {
-          toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
+          toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
         } else {
           toast.error(t('avatar_upload_failed'));
         }
@@ -529,7 +532,7 @@ export default function InstructorProfileEdit() {
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 3 * 1024 * 1024) return toast.error(t('demo_max_size'));
+                    if (file.size > MAX_DEMO_BYTES) return toast.error(t('demo_max_size', { size: MAX_DEMO_MB }));
                     setIsSubmitting(true);
                     try {
                       const res = await uploadInstructorDemo(user.id, file);
@@ -843,7 +846,7 @@ export default function InstructorProfileEdit() {
                         if (!file) return;
 
                         if (file.size > MAX_CERTIFICATE_BYTES) {
-                          toast.error(`File size must be ${MAX_UPLOAD_SIZE_MB}MB or less`);
+                          toast.error(t('avatar_max_size', { size: MAX_CERTIFICATE_MB }));
                           return;
                         }
 

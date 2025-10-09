@@ -39,7 +39,7 @@ const avatarUpload = multer({
     if (file.mimetype.startsWith("image/")) cb(null, true);
     else cb(new Error("Only image files are allowed"), false);
   },
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 });
 
 // ──────────────── Demo Video Upload ────────────────
@@ -61,7 +61,7 @@ const demoUpload = multer({
     if (file.mimetype.startsWith("video/")) cb(null, true);
     else cb(new Error("Only video files are allowed"), false);
   },
-  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
 });
 
 // ──────────────── Certificate Upload ────────────────
@@ -84,7 +84,7 @@ const certificateUpload = multer({
     if (allowedTypes.includes(file.mimetype)) cb(null, true);
     else cb(new Error("Only PDF or image files are allowed"), false);
   },
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 });
 
 // ──────────────── Exports ────────────────

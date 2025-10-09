@@ -571,7 +571,7 @@
     "avatar_upload_failed": "Failed to upload avatar",
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
-    "demo_max_size": "Max size 10 MB",
+    "demo_max_size": "Max size {{size}} MB",
     "demo_upload_failed": "Failed to upload demo video",
     "full_name_min": "Full name must be at least 3 characters",
     "phone_min": "Phone number must be at least 8 digits",

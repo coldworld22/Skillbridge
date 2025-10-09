@@ -557,7 +557,7 @@
     "avatar_upload_failed": "无法上传头像",
     "profile_update_success": "个人资料成功更新了！",
     "profile_update_failed": "无法更新个人资料",
-    "demo_max_size": "最大尺寸10MB",
+    "demo_max_size": "最大尺寸{{size}}MB",
     "demo_upload_failed": "无法上传演示视频",
     "full_name_min": "全名必须至少为3个字符",
     "phone_min": "电话号码必须至少8位数字",

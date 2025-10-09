@@ -557,7 +557,7 @@
     "avatar_upload_failed": "فشل رفع الصورة الشخصية",
     "profile_update_success": "تم تحديث الملف الشخصي بنجاح!",
     "profile_update_failed": "فشل تحديث الملف الشخصي",
-    "demo_max_size": "الحجم الأقصى 10 MB",
+    "demo_max_size": "الحجم الأقصى {{size}} MB",
     "demo_upload_failed": "فشل رفع فيديو المعاينة",
     "full_name_min": "يجب أن يكون الاسم الكامل 3 أحرف على الأقل",
     "phone_min": "يجب أن يتكون رقم الهاتف من 8 أرقام على الأقل",
