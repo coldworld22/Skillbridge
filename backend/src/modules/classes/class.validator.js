@@ -63,111 +63,13 @@ const requirePlansForFreeAccess = (schema) =>
       }
     );
 
-exports.create = z.object({
-  body: requirePlansForFreeAccess(
-    z
-      .object({
-        instructor_id: z.string().uuid().optional(),
-        title: z.string().min(3).max(255),
-        description: z.string().optional(),
-        level: z.string().optional(),
-        cover_image: z.string().optional(),
-    start_date: z
-      .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid date format",
-      })
-      .optional(),
-    end_date: z
-      .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid date format",
-      })
-      .optional(),
-    category_id: z.string().uuid().optional(),
-    price: z.preprocess(toNumber, z.number().optional()),
-    max_students: z.preprocess(toNumber, z.number().int().optional()),
-    language: z.string().optional(),
-    demo_video_url: z.string().optional(),
-    allow_installments: z.preprocess(
-      (v) => (typeof v === 'string' ? v === 'true' : v),
-      z.boolean().optional()
-    ),
-    tags: z.string().optional(),
-    slug: z.string().optional(),
-    status: z.enum(["draft", "published", "archived"]).optional(),
-    access_type: z.enum(["paid", "free"]).optional(),
-        included_plans: includedPlans,
-      })
-      .refine(
-        (data) =>
-          !data.start_date ||
-          !data.end_date ||
-          new Date(data.end_date) >= new Date(data.start_date),
-        {
-          message: "end_date cannot be earlier than start_date",
-          path: ["end_date"],
-        }
-      )
-  ),
-});
-
-exports.update = z.object({
-  body: requirePlansForFreeAccess(
-    z
-      .object({
-        title: z.string().min(3).max(255).optional(),
-        description: z.string().optional(),
-        level: z.string().optional(),
-        cover_image: z.string().optional(),
-      start_date: z
-        .string()
-        .refine((val) => !isNaN(Date.parse(val)), {
-          message: "Invalid date format",
-        })
-        .optional(),
-      end_date: z
-        .string()
-        .refine((val) => !isNaN(Date.parse(val)), {
-          message: "Invalid date format",
-        })
-        .optional(),
-      category_id: z.string().uuid().optional(),
-      price: z.preprocess(toNumber, z.number().optional()),
-      max_students: z.preprocess(toNumber, z.number().int().optional()),
-      language: z.string().optional(),
-      demo_video_url: z.string().optional(),
-      allow_installments: z.preprocess(
-        (v) => (typeof v === 'string' ? v === 'true' : v),
-        z.boolean().optional()
-      ),
-      tags: z.string().optional(),
-      slug: z.string().optional(),
-      status: z.enum(["draft", "published", "archived"]).optional(),
-      access_type: z.enum(["paid", "free"]).optional(),
-        included_plans: includedPlans,
-      })
-      .refine(
-        (data) =>
-          !data.start_date ||
-          !data.end_date ||
-          new Date(data.end_date) >= new Date(data.start_date),
-        {
-          message: "end_date cannot be earlier than start_date",
-          path: ["end_date"],
-        }
-      )
-  ),
-});
-
-exports.adminUpdate = z.object({
-  body: requirePlansForFreeAccess(
-    z
-      .object({
-        instructor_id: z.string().uuid().optional(),
-        title: z.string().min(3).max(255).optional(),
-        description: z.string().optional(),
-        level: z.string().optional(),
+const createSchema = requirePlansForFreeAccess(
+  z
+    .object({
+      instructor_id: z.string().uuid().optional(),
+      title: z.string().min(3).max(255),
+      description: z.string().optional(),
+      level: z.string().optional(),
       cover_image: z.string().optional(),
       start_date: z
         .string()
@@ -187,27 +89,123 @@ exports.adminUpdate = z.object({
       language: z.string().optional(),
       demo_video_url: z.string().optional(),
       allow_installments: z.preprocess(
-        (v) => (typeof v === 'string' ? v === 'true' : v),
+        (v) => (typeof v === "string" ? v === "true" : v),
         z.boolean().optional()
       ),
       tags: z.string().optional(),
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       access_type: z.enum(["paid", "free"]).optional(),
-        included_plans: includedPlans,
-      })
-      .refine(
-        (data) =>
-          !data.start_date ||
-          !data.end_date ||
-          new Date(data.end_date) >= new Date(data.start_date),
-        {
-          message: "end_date cannot be earlier than start_date",
-          path: ["end_date"],
-        }
-      )
-  ),
-});
+      included_plans: includedPlans,
+    })
+    .refine(
+      (data) =>
+        !data.start_date ||
+        !data.end_date ||
+        new Date(data.end_date) >= new Date(data.start_date),
+      {
+        message: "end_date cannot be earlier than start_date",
+        path: ["end_date"],
+      }
+    )
+);
+
+const updateSchema = requirePlansForFreeAccess(
+  z
+    .object({
+      title: z.string().min(3).max(255).optional(),
+      description: z.string().optional(),
+      level: z.string().optional(),
+      cover_image: z.string().optional(),
+      start_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      end_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      category_id: z.string().uuid().optional(),
+      price: z.preprocess(toNumber, z.number().optional()),
+      max_students: z.preprocess(toNumber, z.number().int().optional()),
+      language: z.string().optional(),
+      demo_video_url: z.string().optional(),
+      allow_installments: z.preprocess(
+        (v) => (typeof v === "string" ? v === "true" : v),
+        z.boolean().optional()
+      ),
+      tags: z.string().optional(),
+      slug: z.string().optional(),
+      status: z.enum(["draft", "published", "archived"]).optional(),
+      access_type: z.enum(["paid", "free"]).optional(),
+      included_plans: includedPlans,
+    })
+    .refine(
+      (data) =>
+        !data.start_date ||
+        !data.end_date ||
+        new Date(data.end_date) >= new Date(data.start_date),
+      {
+        message: "end_date cannot be earlier than start_date",
+        path: ["end_date"],
+      }
+    )
+);
+
+const adminUpdateSchema = requirePlansForFreeAccess(
+  z
+    .object({
+      instructor_id: z.string().uuid().optional(),
+      title: z.string().min(3).max(255).optional(),
+      description: z.string().optional(),
+      level: z.string().optional(),
+      cover_image: z.string().optional(),
+      start_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      end_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      category_id: z.string().uuid().optional(),
+      price: z.preprocess(toNumber, z.number().optional()),
+      max_students: z.preprocess(toNumber, z.number().int().optional()),
+      language: z.string().optional(),
+      demo_video_url: z.string().optional(),
+      allow_installments: z.preprocess(
+        (v) => (typeof v === "string" ? v === "true" : v),
+        z.boolean().optional()
+      ),
+      tags: z.string().optional(),
+      slug: z.string().optional(),
+      status: z.enum(["draft", "published", "archived"]).optional(),
+      access_type: z.enum(["paid", "free"]).optional(),
+      included_plans: includedPlans,
+    })
+    .refine(
+      (data) =>
+        !data.start_date ||
+        !data.end_date ||
+        new Date(data.end_date) >= new Date(data.start_date),
+      {
+        message: "end_date cannot be earlier than start_date",
+        path: ["end_date"],
+      }
+    )
+);
+
+exports.create = { body: createSchema };
+exports.update = { body: updateSchema };
+exports.adminUpdate = { body: adminUpdateSchema };
 
 exports.reject = z.object({
   body: z.object({
