@@ -20,32 +20,34 @@ const { availabilitySlotSchema } = require("./instructor.validator");
 exports.getProfile = async (req, res) => {
   const userId = req.user.id;
 
-  const [user] = await db("users")
-    .where({ id: userId })
-    .select(
-      "id", "full_name", "email", "phone",
-      "gender", "date_of_birth", "avatar_url",
-      "is_email_verified", "is_phone_verified",
-      "is_online",
-      "profile_complete", "created_at", "updated_at"
-    );
+  try {
+    const userExists = await db("users").where({ id: userId }).first();
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-  const [instructor] = await db("instructor_profiles")
-    .where({ user_id: userId })
-    .select(
-      "expertise", "experience", "certifications",
-      "pricing", "demo_video_url", "bio"
-    );
+    const existingProfile = await db("instructor_profiles")
+      .where({ user_id: userId })
+      .first();
 
-  const socialLinks = await db("user_social_links")
-    .where({ user_id: userId })
-    .select("platform", "url");
+    if (!existingProfile) {
+      await db("instructor_profiles").insert({
+        user_id: userId,
+        expertise: JSON.stringify([]),
+        experience: null,
+        bio: null,
+        certifications: null,
+        pricing: null,
+        demo_video_url: null,
+      });
+    }
 
-  const certificates = await db("instructor_certificates")
-    .where({ user_id: userId })
-    .select("id", "title", "file_url", "created_at");
-
-  res.json({ ...user, instructor, social_links: socialLinks, certificates });
+    const payload = await instructorService.getInstructorProfile(userId);
+    res.json(payload);
+  } catch (err) {
+    logger.error("Instructor profile load error:", err);
+    res.status(500).json({ message: "Failed to load instructor profile" });
+  }
 };
 
 
@@ -218,13 +220,16 @@ exports.updateAvatar = async (req, res) => {
             return res.status(400).json({ error: "No file uploaded" });
         }
 
-        if (req.params.id !== req.user.id) {
+        const ownerId = req.user.id;
+        const paramId = req.params.id;
+
+        if (paramId && paramId !== "undefined" && paramId !== ownerId) {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
-        await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
+        await db("users").where({ id: ownerId }).update({ avatar_url: avatarUrl });
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {

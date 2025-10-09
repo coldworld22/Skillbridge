@@ -114,15 +114,35 @@ router.patch(
   demoUpload.single("demo"),
   async (req, res) => {
     try {
-      const { id } = req.params;
-      if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
-        return res.status(400).json({ error: "Invalid user id" });
+      const requestUserId = req.user.id;
+      const paramId = req.params.id;
+      const targetId =
+        paramId && paramId !== "undefined" ? paramId : requestUserId;
+
+      if (targetId !== requestUserId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
       const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
-      await db("instructor_profiles")
-        .where({ user_id: id })
-        .update({ demo_video_url: demoVideoUrl });
+      const existing = await db("instructor_profiles")
+        .where({ user_id: targetId })
+        .first();
+
+      if (existing) {
+        await db("instructor_profiles")
+          .where({ user_id: targetId })
+          .update({ demo_video_url: demoVideoUrl });
+      } else {
+        await db("instructor_profiles").insert({
+          user_id: targetId,
+          expertise: JSON.stringify([]),
+          demo_video_url: demoVideoUrl,
+        });
+      }
       res.json({ demo_video_url: demoVideoUrl });
     } catch (err) {
       logger.error("Demo video upload error:", err);

@@ -15,6 +15,8 @@ const ONBOARDING_ALLOWED_PATTERNS = [
   /^\/api\/users\/instructor\/[0-9a-fA-F-]{36}\/(avatar|demo)$/i,
   /^\/api\/users\/instructor\/certificates(?:\/[0-9a-fA-F-]{36})?$/i,
   /^\/api\/users\/instructor\/status$/i,
+  /^\/api\/notifications(?:\/.*)?$/i,
+  /^\/api\/messages(?:\/.*)?$/i,
   /^\/api\/verify\/email\/(send|confirm)$/i,
   /^\/api\/verify\/phone\/(send|confirm)$/i,
   /^\/api\/auth\/logout$/i,

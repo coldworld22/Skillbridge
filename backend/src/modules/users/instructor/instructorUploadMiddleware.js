@@ -13,11 +13,23 @@ const createDirIfNotExist = (dir) => {
 const avatarDir = path.join(__dirname, "../../../../uploads/avatars/instructor");
 createDirIfNotExist(avatarDir);
 
+const resolveOwnerId = (req) => {
+  const paramId = req.params?.id;
+  if (paramId && paramId !== "undefined") {
+    return paramId;
+  }
+  if (req.user?.id) {
+    return req.user.id;
+  }
+  return Date.now().toString();
+};
+
 const avatarStorage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, avatarDir),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `instructor-avatar-${req.params.id || Date.now()}${ext}`);
+    const ext = path.extname(file.originalname) || ".png";
+    const ownerId = resolveOwnerId(req);
+    cb(null, `instructor-avatar-${ownerId}-${Date.now()}${ext}`);
   },
 });
 
@@ -37,8 +49,9 @@ createDirIfNotExist(demoDir);
 const demoStorage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, demoDir),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `instructor-demo-${req.params.id || Date.now()}${ext}`);
+    const ext = path.extname(file.originalname) || ".mp4";
+    const ownerId = resolveOwnerId(req);
+    cb(null, `instructor-demo-${ownerId}-${Date.now()}${ext}`);
   },
 });
 

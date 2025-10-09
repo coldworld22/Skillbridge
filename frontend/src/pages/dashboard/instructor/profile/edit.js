@@ -53,6 +53,7 @@ import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z.string().min(8, "phone_min"),
@@ -299,7 +300,7 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) return toast.error(t('avatar_max_size'));
+    if (file.size > MAX_AVATAR_BYTES) return toast.error(t('avatar_max_size'));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
     setShowCropper(true);
@@ -310,6 +311,11 @@ export default function InstructorProfileEdit() {
     setIsSubmitting(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      if (blob.size > MAX_AVATAR_BYTES) {
+        toast.error(t('avatar_max_size'));
+        setIsSubmitting(false);
+        return;
+      }
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadInstructorAvatar(user.id, file);
       const { setUser } = useAuthStore.getState();
@@ -323,7 +329,11 @@ export default function InstructorProfileEdit() {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-        toast.error(t('avatar_upload_failed'));
+        if (error?.response?.status === 413) {
+          toast.error(t('avatar_max_size'));
+        } else {
+          toast.error(t('avatar_upload_failed'));
+        }
     } finally {
       setIsSubmitting(false);
     }
