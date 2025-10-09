@@ -39,7 +39,7 @@ const avatarUpload = multer({
     if (file.mimetype.startsWith("image/")) cb(null, true);
     else cb(new Error("Only image files are allowed"), false);
   },
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
 // ──────────────── Demo Video Upload ────────────────
@@ -84,7 +84,7 @@ const certificateUpload = multer({
     if (allowedTypes.includes(file.mimetype)) cb(null, true);
     else cb(new Error("Only PDF or image files are allowed"), false);
   },
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
 // ──────────────── Exports ────────────────

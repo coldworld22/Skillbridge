@@ -32,6 +32,9 @@ import getCroppedImg from "@/utils/cropImage";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
+const MAX_UPLOAD_SIZE_MB = 20;
+const MAX_AVATAR_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
+
 const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
@@ -172,8 +175,8 @@ useEffect(() => {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(t('avatar_max_size'));
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
       return;
     }
     setTempFileName(file.name);
@@ -186,6 +189,11 @@ useEffect(() => {
     setIsSubmitting(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      if (blob.size > MAX_AVATAR_BYTES) {
+        toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
+        setIsSubmitting(false);
+        return;
+      }
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
@@ -201,7 +209,11 @@ useEffect(() => {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      toast.error(t('avatar_upload_failed'));
+      if (error?.response?.status === 413) {
+        toast.error(t('avatar_max_size', { size: MAX_UPLOAD_SIZE_MB }));
+      } else {
+        toast.error(t('avatar_upload_failed'));
+      }
     } finally {
       setIsSubmitting(false);
     }
