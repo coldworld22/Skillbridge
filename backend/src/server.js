@@ -178,16 +178,23 @@ async function startServer() {
 
   try {
     await db.connectWithRetry();
-    // Migrations are handled via the dedicated `npm run migrate` script.
-    // Only warn here if the database is behind so the server can still start.
     const migrationDir = path.join(__dirname, "migrations");
-    const [, pending] = await db.migrate.list({ directory: migrationDir });
-    if (pending.length) {
-      logger.warn(
-        `⚠️ Pending migrations detected. Run \"npm run migrate\" before starting the server.`
-      );
-    } else {
-      logger.log("✅ Database migrations up to date");
+    try {
+      const [batch, migrations] = await db.migrate.latest({
+        directory: migrationDir,
+      });
+      if (migrations.length) {
+        logger.log(
+          `✅ Ran ${migrations.length} database migration${
+            migrations.length === 1 ? "" : "s"
+          } (batch ${batch})`
+        );
+      } else {
+        logger.log("✅ Database migrations up to date");
+      }
+    } catch (migrationErr) {
+      logger.error("❌ Failed to run database migrations:", migrationErr);
+      throw migrationErr;
     }
     await initStrategies();
     server.listen(PORT, "0.0.0.0", () => {

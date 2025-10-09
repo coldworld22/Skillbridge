@@ -17,6 +17,25 @@ module.exports = (err, req, res, next) => {
       : 500;
   let message = err.message || "Internal Server Error";
 
+  // Provide clearer responses for common database connectivity issues so the
+  // frontend (and operators) understand why requests are failing with 500s.
+  // When PostgreSQL cannot find a relation it responds with code `42P01`,
+  // which typically means migrations were not executed.  Connection issues
+  // surface as ECONNREFUSED / ENOTFOUND errors.  Instead of returning a vague
+  // 500 we surface an actionable message explaining what to fix.
+  const postgresUndefinedTable = err.code === "42P01";
+  const connectionErrors = ["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN"]; // DNS
+  if (!err.statusCode && (postgresUndefinedTable || connectionErrors.includes(err.code))) {
+    status = 503;
+    if (postgresUndefinedTable) {
+      message =
+        "Database schema is missing required tables. Run migrations (npm run migrate) and restart the server.";
+    } else {
+      message =
+        "Unable to reach the database. Verify DATABASE_URL and that the database server is running.";
+    }
+  }
+
   if (err instanceof multer.MulterError) {
     status = 400;
     if (err.code === 'LIMIT_FILE_SIZE') message = 'File too large';

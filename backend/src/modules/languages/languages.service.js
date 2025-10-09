@@ -1,12 +1,5 @@
 const db = require("../../config/database");
-const AppError = require("../../utils/AppError");
-const logger = require("../../utils/logger.js");
-
-const databaseUnavailableError = () =>
-  new AppError(
-    "Unable to access the language catalog. Please try again after the database connection is restored.",
-    503
-  );
+const { isUndefinedTableError, logUndefinedTableWarning } = require("../../utils/dbErrors");
 
 exports.create = async (data) => {
   try {
@@ -26,18 +19,24 @@ exports.create = async (data) => {
 exports.list = async () => {
   try {
     return await db("languages").select("*").orderBy("name");
-  } catch (err) {
-    logger.error("[languages] Failed to list languages", err);
-    throw databaseUnavailableError();
+  } catch (error) {
+    if (isUndefinedTableError(error, "languages")) {
+      logUndefinedTableWarning("languages", "languages.list");
+      return [];
+    }
+    throw error;
   }
 };
 
 exports.getById = async (id) => {
   try {
     return await db("languages").where({ id }).first();
-  } catch (err) {
-    logger.error("[languages] Failed to load language", err);
-    throw databaseUnavailableError();
+  } catch (error) {
+    if (isUndefinedTableError(error, "languages")) {
+      logUndefinedTableWarning("languages", "languages.getById");
+      return null;
+    }
+    throw error;
   }
 };
 
