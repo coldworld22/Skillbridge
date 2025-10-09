@@ -18,6 +18,9 @@ const defaultApiBase = resolveDefaultApiBase();
 const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
 let apiBase = apiBaseEnv || defaultApiBase;
 const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
+const isProduction = process.env.NODE_ENV === 'production';
+const internalApiBase =
+  process.env.INTERNAL_API_BASE_URL || 'http://backend:5002/api';
 
 let protocol, hostname, port;
 try {
@@ -103,16 +106,20 @@ const nextConfig = {
         : false,
   },
   async rewrites() {
-    return [
-      {
+    const rules = [];
+    if (!isProduction) {
+      rules.push({
         source: '/api/pgadmin/:path*',
         destination: `${pgAdminBase}/:path*`,
-      },
-      {
-        source: '/api/:path*',
-        destination: `${apiBase}/:path*`,
-      },
-    ];
+      });
+    }
+    rules.push({
+      source: '/api/:path*',
+      destination: `${
+        isProduction ? internalApiBase : apiBase
+      }/:path*`,
+    });
+    return rules;
   },
 };
 
