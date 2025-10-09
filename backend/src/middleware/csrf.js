@@ -16,6 +16,8 @@ const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const exemptPaths = [
   '/api/auth/login',
   '/api/auth/register',
+  '/api/auth/refresh',
+  '/api/auth/logout',
   '/api/auth/request-reset',
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
