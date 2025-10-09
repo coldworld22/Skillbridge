@@ -66,6 +66,7 @@ describe('Class enrollment routes', () => {
     db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
+      access_type: 'paid',
     });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
@@ -79,6 +80,7 @@ describe('Class enrollment routes', () => {
     db.first.mockResolvedValueOnce({
       status: 'draft',
       moderation_status: 'Approved',
+      access_type: 'paid',
     });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
@@ -88,6 +90,7 @@ describe('Class enrollment routes', () => {
     db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Pending',
+      access_type: 'paid',
     });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
@@ -98,6 +101,7 @@ describe('Class enrollment routes', () => {
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,
+      access_type: 'paid',
     });
     service.countEnrollments.mockResolvedValue(1);
     const res = await request(app).post('/classes/enroll/abc');
@@ -110,6 +114,7 @@ describe('Class enrollment routes', () => {
         status: 'published',
         moderation_status: 'Approved',
         price: 50,
+        access_type: 'paid',
       })
       .mockResolvedValueOnce(null); // payment check
     service.countEnrollments.mockResolvedValue(0);
@@ -123,8 +128,9 @@ describe('Class enrollment routes', () => {
     db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
-      price: 50,
+      price: 0,
       included_plans: ['plan1'],
+      access_type: 'free',
     });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
@@ -155,15 +161,30 @@ describe('Class enrollment routes', () => {
       .mockResolvedValueOnce({
         status: 'published',
         moderation_status: 'Approved',
-        price: 50,
+        price: 0,
         included_plans: ['plan2'],
-      })
-      .mockResolvedValueOnce(null); // payment check
+        access_type: 'free',
+      });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     getActiveStudentPlanId.mockResolvedValue('plan1');
     const res = await request(app).post('/classes/enroll/abc');
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('reject enrollment when free class lacks subscription', async () => {
+    db.first.mockResolvedValueOnce({
+      status: 'published',
+      moderation_status: 'Approved',
+      price: 0,
+      included_plans: ['plan1'],
+      access_type: 'free',
+    });
+    service.countEnrollments.mockResolvedValue(0);
+    service.findEnrollment.mockResolvedValue(null);
+    getActiveStudentPlanId.mockResolvedValue(null);
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(403);
   });
 
   test('reactivate cancelled enrollment when capacity available', async () => {
@@ -171,6 +192,7 @@ describe('Class enrollment routes', () => {
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,
+      access_type: 'paid',
     });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue({
@@ -195,6 +217,7 @@ describe('Class enrollment routes', () => {
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,
+      access_type: 'paid',
     });
     service.countEnrollments.mockResolvedValue(1);
     service.findEnrollment.mockResolvedValue({

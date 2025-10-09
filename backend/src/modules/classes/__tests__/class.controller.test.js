@@ -104,7 +104,7 @@ describe('class.controller createClass', () => {
     service.createClass.mockImplementation(async (data) => data);
 
     const req = {
-      body: { title: 'Test', included_plans: ['student-slug'] },
+      body: { title: 'Test', included_plans: ['student-slug'], access_type: 'free' },
       user: { id: 'admin1', role: 'admin' },
       files: {},
     };
@@ -129,7 +129,11 @@ describe('class.controller createClass', () => {
     expect(next).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ included_plans: ['plan-student'] })
+        data: expect.objectContaining({
+          included_plans: ['plan-student'],
+          access_type: 'free',
+          price: 0,
+        }),
       })
     );
   });
@@ -138,7 +142,7 @@ describe('class.controller createClass', () => {
     service.createClass.mockImplementation(async (data) => data);
 
     const req = {
-      body: { title: 'Test', included_plans: ['inst-slug'] },
+      body: { title: 'Test', included_plans: ['inst-slug'], access_type: 'free' },
       user: { id: 'admin1', role: 'admin' },
       files: {},
     };
@@ -158,6 +162,62 @@ describe('class.controller createClass', () => {
 
     expect(next).toHaveBeenCalled();
     expect(next.mock.calls[0][0].message).toBe('Invalid included plan');
+  });
+
+  test('rejects free class without included plans', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: { title: 'Test', access_type: 'free' },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).toHaveBeenCalled();
+    expect(next.mock.calls[0][0].message).toBe(
+      'Free classes must include at least one student plan'
+    );
+  });
+
+  test('rejects paid class with included plans', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: { title: 'Test', included_plans: ['student-slug'], access_type: 'paid' },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).toHaveBeenCalled();
+    expect(next.mock.calls[0][0].message).toBe(
+      'Paid classes cannot include student plans'
+    );
   });
 });
 

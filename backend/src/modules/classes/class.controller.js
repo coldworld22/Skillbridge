@@ -18,6 +18,40 @@ const db = require("../../config/database");
 const fs = require("fs");
 const path = require("path");
 
+const resolveStudentPlanIds = async (plansList) => {
+  if (plansList === undefined) return undefined;
+
+  let parsed = plansList;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      parsed = [parsed];
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    parsed = [parsed];
+  }
+
+  const cleaned = parsed.filter((value) => value !== null && value !== undefined && `${value}`.trim() !== "");
+  if (!cleaned.length) return [];
+
+  const ids = [];
+  for (const ref of cleaned) {
+    let plan = await db("plans").where({ id: ref }).first();
+    if (!plan) {
+      plan = await db("plans").where({ slug: ref }).first();
+    }
+    if (!plan || plan.target_role !== "student") {
+      throw new AppError("Invalid included plan", 400);
+    }
+    ids.push(plan.id);
+  }
+
+  return Array.from(new Set(ids));
+};
+
 const generateUniqueSlug = async (title) => {
   const base = slugify(title, { lower: true, strict: true });
   let slug = base;
@@ -38,31 +72,23 @@ exports.createClass = catchAsync(async (req, res) => {
     status: status === "published" ? "published" : "draft",
     moderation_status: "Pending",
   };
-  if (included_plans) {
-    let plansList = included_plans;
-    if (typeof plansList === "string") {
-      try {
-        plansList = JSON.parse(plansList);
-      } catch {
-        plansList = [plansList];
-      }
+  const planIds = await resolveStudentPlanIds(included_plans);
+  const accessType = access_type || "paid";
+
+  if (accessType === "free") {
+    const included = planIds ?? [];
+    if (!included.length) {
+      throw new AppError("Free classes must include at least one student plan", 400);
     }
-    if (!Array.isArray(plansList)) plansList = [plansList];
-    const ids = [];
-    for (const ref of plansList) {
-      let plan = await db("plans").where({ id: ref }).first();
-      if (!plan) {
-        plan = await db("plans").where({ slug: ref }).first();
-      }
-      if (!plan || plan.target_role !== "student") {
-        throw new AppError("Invalid included plan", 400);
-      }
-      ids.push(plan.id);
+    data.access_type = "free";
+    data.included_plans = included;
+    data.price = 0;
+  } else {
+    if (planIds?.length) {
+      throw new AppError("Paid classes cannot include student plans", 400);
     }
-    data.included_plans = ids;
-  }
-  if (access_type) {
-    data.access_type = access_type;
+    data.access_type = "paid";
+    data.included_plans = [];
   }
   if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
@@ -221,31 +247,38 @@ exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
   const { tags: rawTags, included_plans, access_type, ...body } = req.body;
   let data = { ...body };
-  if (included_plans !== undefined) {
-    let plansList = included_plans;
-    if (typeof plansList === "string") {
-      try {
-        plansList = JSON.parse(plansList);
-      } catch {
-        plansList = [plansList];
-      }
-    }
-    if (!Array.isArray(plansList)) plansList = [plansList];
-    const ids = [];
-    for (const ref of plansList) {
-      let plan = await db("plans").where({ id: ref }).first();
-      if (!plan) {
-        plan = await db("plans").where({ slug: ref }).first();
-      }
-      if (!plan || plan.target_role !== "student") {
-        throw new AppError("Invalid included plan", 400);
-      }
-      ids.push(plan.id);
-    }
-    data.included_plans = ids;
+  const planIds = await resolveStudentPlanIds(included_plans);
+  if (planIds !== undefined) {
+    data.included_plans = planIds;
   }
-  if (access_type !== undefined) {
-    data.access_type = access_type;
+  const nextAccessType = access_type ?? existing.access_type ?? "paid";
+  if (access_type !== undefined || planIds !== undefined) {
+    data.access_type = nextAccessType;
+  }
+  if (nextAccessType === "free") {
+    const included = planIds !== undefined
+      ? planIds
+      : Array.isArray(existing.included_plans)
+        ? existing.included_plans
+        : [];
+    if (!included.length) {
+      throw new AppError("Free classes must include at least one student plan", 400);
+    }
+    data.access_type = "free";
+    data.included_plans = included;
+    data.price = 0;
+  } else {
+    if (planIds?.length) {
+      throw new AppError("Paid classes cannot include student plans", 400);
+    }
+    if (access_type === "paid") {
+      data.included_plans = [];
+    } else if (planIds !== undefined) {
+      data.included_plans = [];
+    }
+    if (data.access_type) {
+      data.access_type = "paid";
+    }
   }
   if (data.title && data.title !== existing.title) {
     data.slug = await generateUniqueSlug(data.title);

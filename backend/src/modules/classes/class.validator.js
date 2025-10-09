@@ -41,13 +41,37 @@ const includedPlans = z.preprocess(
   message: "Included plans must exist and target students",
 });
 
+const requirePlansForFreeAccess = (schema) =>
+  schema
+    .refine(
+      (data) =>
+        data.access_type !== "free" ||
+        (Array.isArray(data.included_plans) && data.included_plans.length > 0),
+      {
+        message: "Free classes must include at least one student plan",
+        path: ["included_plans"],
+      }
+    )
+    .refine(
+      (data) =>
+        data.access_type !== "paid" ||
+        data.included_plans === undefined ||
+        data.included_plans.length === 0,
+      {
+        message: "Paid classes cannot include student plans",
+        path: ["included_plans"],
+      }
+    );
+
 exports.create = z.object({
-  body: z.object({
-    instructor_id: z.string().uuid().optional(),
-    title: z.string().min(3).max(255),
-    description: z.string().optional(),
-    level: z.string().optional(),
-    cover_image: z.string().optional(),
+  body: requirePlansForFreeAccess(
+    z
+      .object({
+        instructor_id: z.string().uuid().optional(),
+        title: z.string().min(3).max(255),
+        description: z.string().optional(),
+        level: z.string().optional(),
+        cover_image: z.string().optional(),
     start_date: z
       .string()
       .refine((val) => !isNaN(Date.parse(val)), {
@@ -73,27 +97,29 @@ exports.create = z.object({
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
     access_type: z.enum(["paid", "free"]).optional(),
-    included_plans: includedPlans,
-  })
-    .refine(
-      (data) =>
-        !data.start_date ||
-        !data.end_date ||
-        new Date(data.end_date) >= new Date(data.start_date),
-      {
-        message: "end_date cannot be earlier than start_date",
-        path: ["end_date"],
-      }
-    )
+        included_plans: includedPlans,
+      })
+      .refine(
+        (data) =>
+          !data.start_date ||
+          !data.end_date ||
+          new Date(data.end_date) >= new Date(data.start_date),
+        {
+          message: "end_date cannot be earlier than start_date",
+          path: ["end_date"],
+        }
+      )
+  ),
 });
 
 exports.update = z.object({
-  body: z
-    .object({
-      title: z.string().min(3).max(255).optional(),
-      description: z.string().optional(),
-      level: z.string().optional(),
-      cover_image: z.string().optional(),
+  body: requirePlansForFreeAccess(
+    z
+      .object({
+        title: z.string().min(3).max(255).optional(),
+        description: z.string().optional(),
+        level: z.string().optional(),
+        cover_image: z.string().optional(),
       start_date: z
         .string()
         .refine((val) => !isNaN(Date.parse(val)), {
@@ -119,27 +145,29 @@ exports.update = z.object({
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       access_type: z.enum(["paid", "free"]).optional(),
-      included_plans: includedPlans,
-    })
-    .refine(
-      (data) =>
-        !data.start_date ||
-        !data.end_date ||
-        new Date(data.end_date) >= new Date(data.start_date),
-      {
-        message: "end_date cannot be earlier than start_date",
-        path: ["end_date"],
-      }
-    )
+        included_plans: includedPlans,
+      })
+      .refine(
+        (data) =>
+          !data.start_date ||
+          !data.end_date ||
+          new Date(data.end_date) >= new Date(data.start_date),
+        {
+          message: "end_date cannot be earlier than start_date",
+          path: ["end_date"],
+        }
+      )
+  ),
 });
 
 exports.adminUpdate = z.object({
-  body: z
-    .object({
-      instructor_id: z.string().uuid().optional(),
-      title: z.string().min(3).max(255).optional(),
-      description: z.string().optional(),
-      level: z.string().optional(),
+  body: requirePlansForFreeAccess(
+    z
+      .object({
+        instructor_id: z.string().uuid().optional(),
+        title: z.string().min(3).max(255).optional(),
+        description: z.string().optional(),
+        level: z.string().optional(),
       cover_image: z.string().optional(),
       start_date: z
         .string()
@@ -166,18 +194,19 @@ exports.adminUpdate = z.object({
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       access_type: z.enum(["paid", "free"]).optional(),
-      included_plans: includedPlans,
-    })
-    .refine(
-      (data) =>
-        !data.start_date ||
-        !data.end_date ||
-        new Date(data.end_date) >= new Date(data.start_date),
-      {
-        message: "end_date cannot be earlier than start_date",
-        path: ["end_date"],
-      }
-    )
+        included_plans: includedPlans,
+      })
+      .refine(
+        (data) =>
+          !data.start_date ||
+          !data.end_date ||
+          new Date(data.end_date) >= new Date(data.start_date),
+        {
+          message: "end_date cannot be earlier than start_date",
+          path: ["end_date"],
+        }
+      )
+  ),
 });
 
 exports.reject = z.object({

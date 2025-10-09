@@ -39,8 +39,16 @@ exports.enroll = catchAsync(async (req, res) => {
 
     const activePlanId = await getActiveStudentPlanId(user_id);
     const includedPlans = Array.isArray(cls.included_plans) ? cls.included_plans : [];
+    const requiresPlan = cls.access_type === "free";
     const coveredBySubscription =
       activePlanId && includedPlans.includes(activePlanId);
+
+    if (requiresPlan && !coveredBySubscription) {
+      throw new AppError(
+        "An active student plan that includes this class is required",
+        403
+      );
+    }
 
     if (coveredBySubscription) {
       const usage = await trx("plan_usage_metrics")

@@ -75,4 +75,18 @@ describe('included_plans validation', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  test('requires included plans when access type is free', async () => {
+    const result = await validator.create.safeParseAsync({
+      body: { ...base, access_type: 'free' }
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test('rejects student plans on paid classes', async () => {
+    const result = await validator.create.safeParseAsync({
+      body: { ...base, access_type: 'paid', included_plans: ['student-id'] }
+    });
+    expect(result.success).toBe(false);
+  });
 });
