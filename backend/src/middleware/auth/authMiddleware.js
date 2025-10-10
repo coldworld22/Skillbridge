@@ -11,6 +11,8 @@ const ONBOARDING_ALLOWED_PATTERNS = [
   /^\/api\/users\/profile$/i,
   /^\/api\/users\/me\/full-profile$/i,
   /^\/api\/users\/[^/]+\/(avatar|demo-video)$/i,
+  /^\/api\/users\/student\/profile$/i,
+  /^\/api\/users\/student\/[^/]+\/(avatar|identity)$/i,
   /^\/api\/users\/instructor\/profile(?:\/status)?$/i,
   /^\/api\/users\/instructor\/[^/]+\/(avatar|demo)$/i,
   /^\/api\/users\/instructor\/certificates(?:\/[^/]+)?$/i,
