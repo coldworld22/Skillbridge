@@ -414,6 +414,7 @@ export default function TutorialDetail() {
             onEnded={(idx) => {
               completeChapter(idx);
             }}
+            storageKey={tutorial?.id ? `tutorial-${tutorial.id}` : undefined}
           />
         ) : (
           <div

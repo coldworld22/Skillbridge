@@ -96,6 +96,7 @@ function AdminClassDetailPage() {
                 </div>
                 <CustomVideoPlayer
                   videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
+                  storageKey={details?.id ? `admin-class-${details.id}` : undefined}
                 />
               </div>
             )}

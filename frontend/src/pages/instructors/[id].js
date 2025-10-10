@@ -170,7 +170,10 @@ export default function InstructorProfilePage({ initialInstructor, initialStats 
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-3">Demo Video</h2>
                 <div className="rounded-lg overflow-hidden shadow-md">
-                  <CustomVideoPlayer videos={[{ src: safeEncodeURI(instructor.demo_video_url) }]} />
+                  <CustomVideoPlayer
+                    videos={[{ src: safeEncodeURI(instructor.demo_video_url) }]}
+                    storageKey={instructor?.id ? `instructor-profile-${instructor.id}` : undefined}
+                  />
                 </div>
               </div>
             )}

@@ -220,9 +220,11 @@ const OnlineClasses = () => {
       if (likedIds.includes(classItem.id)) {
         await unlikeClass(classItem.id);
         setLikedIds((prev) => prev.filter((i) => i !== classItem.id));
+        toast.info(t("class_unliked"));
       } else {
         await likeClass(classItem.id);
         setLikedIds((prev) => [...prev, classItem.id]);
+        toast.success(t("class_liked"));
       }
     } catch (err) {
       console.error("Failed to toggle class like", err);
@@ -247,9 +249,11 @@ const OnlineClasses = () => {
       if (wishlistIds.includes(classItem.id)) {
         await removeClassFromWishlist(classItem.id);
         setWishlistIds((prev) => prev.filter((i) => i !== classItem.id));
+        toast.info(t("class_removed_wishlist"));
       } else {
         await addClassToWishlist(classItem.id);
         setWishlistIds((prev) => [...prev, classItem.id]);
+        toast.success(t("class_saved_wishlist"));
       }
     } catch (err) {
       console.error("Failed to toggle class wishlist", err);

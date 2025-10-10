@@ -47,7 +47,10 @@ function InstructorClassDetailPage() {
           )}
           {details?.demo_video_url && (
             <div className="mt-4">
-              <CustomVideoPlayer videos={[{ src: safeEncodeURI(details.demo_video_url) }]} />
+              <CustomVideoPlayer
+                videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
+                storageKey={details?.id ? `instructor-class-${details.id}` : undefined}
+              />
             </div>
           )}
 

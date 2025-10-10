@@ -1,5 +1,14 @@
-import { useRef, useState, useEffect } from "react";
-import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaVolumeUp, FaVolumeMute, FaDownload, FaExpand } from "react-icons/fa";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import {
+  FaPlay,
+  FaPause,
+  FaStepBackward,
+  FaStepForward,
+  FaVolumeUp,
+  FaVolumeMute,
+  FaDownload,
+  FaExpand,
+} from "react-icons/fa";
 import { MdSpeed, MdReplay10, MdForward10 } from "react-icons/md";
 
 export default function CustomVideoPlayer({
@@ -8,10 +17,10 @@ export default function CustomVideoPlayer({
   onTimeUpdate,
   onEnded,
   locked = false,
-  className = '',
-  videoClassName = '',
+  className = "",
+  videoClassName = "",
+  storageKey,
 }) {
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
@@ -20,10 +29,72 @@ export default function CustomVideoPlayer({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState(false);
+  const [resumePositions, setResumePositions] = useState({});
+
   const videoRef = useRef(null);
   const playerRef = useRef(null);
+  const lastSavedTimesRef = useRef({});
 
+  const isBrowser = typeof window !== "undefined";
   const currentVideo = videos[currentIndex]?.src;
+
+  const getResumeTime = useMemo(() => {
+    const saved = resumePositions[currentIndex];
+    if (typeof saved === "number" && saved > 0) return saved;
+    if (startTime > 0) return startTime;
+    return 0;
+  }, [currentIndex, resumePositions, startTime]);
+
+  const updateResumePosition = useCallback(
+    (index, time) => {
+      if (!storageKey || !isBrowser) return;
+      setResumePositions((prev) => {
+        const next = { ...prev };
+        if (!time || Number.isNaN(time) || time <= 0) {
+          delete next[index];
+        } else {
+          next[index] = time;
+        }
+        try {
+          const sanitized = Object.fromEntries(
+            Object.entries(next).filter(
+              ([, value]) => typeof value === "number" && value > 0
+            )
+          );
+          if (Object.keys(sanitized).length === 0) {
+            localStorage.removeItem(storageKey);
+          } else {
+            localStorage.setItem(storageKey, JSON.stringify(sanitized));
+          }
+        } catch (err) {
+          console.warn("Failed to persist playback position", err);
+        }
+        return next;
+      });
+      lastSavedTimesRef.current[index] = time;
+    },
+    [storageKey, isBrowser]
+  );
+
+  useEffect(() => {
+    if (!storageKey || !isBrowser) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          const mapped = Object.fromEntries(
+            Object.entries(parsed)
+              .map(([key, value]) => [Number(key), Number(value)])
+              .filter(([, value]) => !Number.isNaN(value) && value > 0)
+          );
+          setResumePositions(mapped);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to restore playback position", err);
+    }
+  }, [storageKey, isBrowser]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,149 +102,175 @@ export default function CustomVideoPlayer({
 
     const playIfNeeded = () => {
       if (isPlaying) {
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {});
+        const p = video.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
         }
       }
     };
 
-    video.addEventListener('loadeddata', playIfNeeded);
+    video.addEventListener("loadeddata", playIfNeeded);
     video.load();
     setProgress(0);
 
-    return () => {
-      video.removeEventListener('loadeddata', playIfNeeded);
-    };
-  }, [currentVideo, isPlaying]);
-
-  // Seek to provided start time whenever it changes and metadata is already loaded
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (startTime > 0 && video.readyState >= 1) {
-      video.currentTime = startTime;
-      if (video.duration) {
-        setProgress((startTime / video.duration) * 100);
+    const initialTime = getResumeTime;
+    if (initialTime > 0) {
+      const seek = () => {
+        video.currentTime = initialTime;
+        if (video.duration) {
+          setProgress((initialTime / video.duration) * 100);
+        }
+      };
+      if (video.readyState >= 1) {
+        seek();
+      } else {
+        video.addEventListener("loadedmetadata", seek, { once: true });
       }
     }
-  }, [startTime, currentVideo]);
+
+    return () => {
+      video.removeEventListener("loadeddata", playIfNeeded);
+    };
+  }, [currentVideo, isPlaying, getResumeTime]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleLoaded = () => {
-      if (startTime > 0) {
-        video.currentTime = startTime;
-        setProgress((startTime / video.duration) * 100);
+      const resumeTime = getResumeTime;
+      if (resumeTime > 0 && video.duration) {
+        video.currentTime = resumeTime;
+        setProgress((resumeTime / video.duration) * 100);
       }
     };
 
     const handleTimeUpdate = () => {
-      setProgress((video.currentTime / video.duration) * 100);
+      if (!video.duration) return;
+      const current = video.currentTime;
+      setProgress((current / video.duration) * 100);
       if (onTimeUpdate) {
-        onTimeUpdate(video.currentTime, currentIndex);
+        onTimeUpdate(current, currentIndex);
+      }
+      if (storageKey) {
+        const lastSaved = lastSavedTimesRef.current[currentIndex] || 0;
+        if (Math.abs(lastSaved - current) >= 1) {
+          updateResumePosition(currentIndex, current);
+        }
       }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
+      if (storageKey) {
+        updateResumePosition(currentIndex, 0);
+      }
       if (onEnded) onEnded(currentIndex);
     };
 
-    video.addEventListener('loadedmetadata', handleLoaded);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', handleEnded);
+    video.addEventListener("loadedmetadata", handleLoaded);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("ended", handleEnded);
 
     return () => {
-      video.removeEventListener('loadedmetadata', handleLoaded);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener("loadedmetadata", handleLoaded);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("ended", handleEnded);
     };
-  }, [currentVideo, startTime, onTimeUpdate]);
+  }, [currentVideo, getResumeTime, currentIndex, storageKey, onTimeUpdate, onEnded, updateResumePosition]);
 
   const togglePlay = () => {
+    if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
     } else {
       videoRef.current.play();
     }
-    setIsPlaying(!isPlaying);
+    setIsPlaying((prev) => !prev);
   };
 
   const handleVolumeChange = (e) => {
-    const newVolume = e.target.value;
+    const newVolume = Number(e.target.value);
     setVolume(newVolume);
-    videoRef.current.volume = newVolume;
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
     if (newVolume > 0) {
       setIsMuted(false);
     }
   };
 
   const toggleMute = () => {
+    if (!videoRef.current) return;
     videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    setIsMuted((prev) => !prev);
   };
 
   const handleProgressChange = (e) => {
-    const newProgress = e.target.value;
+    if (!videoRef.current || !videoRef.current.duration) return;
+    const newProgress = Number(e.target.value);
     setProgress(newProgress);
-    videoRef.current.currentTime = (newProgress / 100) * videoRef.current.duration;
+    videoRef.current.currentTime =
+      (newProgress / 100) * videoRef.current.duration;
   };
 
   const changeSpeed = () => {
+    if (!videoRef.current) return;
     const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-    const currentIndex = speeds.indexOf(playbackRate);
-    const nextIndex = (currentIndex + 1) % speeds.length;
+    const idx = speeds.indexOf(playbackRate);
+    const nextIndex = (idx + 1) % speeds.length;
     const newSpeed = speeds[nextIndex];
     videoRef.current.playbackRate = newSpeed;
     setPlaybackRate(newSpeed);
   };
 
   const skip = (seconds) => {
+    if (!videoRef.current) return;
     videoRef.current.currentTime += seconds;
   };
 
-  const handleKeyDown = (e, action) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+  const handleKeyDown = (event, action) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
       action();
     }
   };
 
   const handleNext = () => {
     if (currentIndex < videos.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex((prev) => prev + 1);
+      setIsPlaying(false);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      setCurrentIndex((prev) => prev - 1);
+      setIsPlaying(false);
     }
   };
 
   const toggleFullscreen = () => {
+    if (!playerRef.current) return;
     if (!document.fullscreenElement) {
-      playerRef.current.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      playerRef.current.requestFullscreen().catch((err) => {
+        console.error(`Failed to enter fullscreen: ${err.message}`);
       });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
+      document.exitFullscreen().catch(() => {});
       setIsFullscreen(false);
     }
   };
 
   const downloadVideo = async () => {
-    if (!currentVideo) return;
+    if (!currentVideo || !isBrowser) return;
     try {
-      const res = await fetch(currentVideo);
+      const res = await fetch(currentVideo, { credentials: "include" });
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const ext = currentVideo.split('.').pop().split(/[?#]/)[0] || 'mp4';
-      const link = document.createElement('a');
+      const ext = currentVideo.split(".").pop().split(/[?#]/)[0] || "mp4";
+      const link = document.createElement("a");
       link.href = url;
       link.download = `video-${currentIndex + 1}.${ext}`;
       document.body.appendChild(link);
@@ -181,7 +278,7 @@ export default function CustomVideoPlayer({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Failed to download video', err);
+      console.error("Failed to download video", err);
     }
   };
 
@@ -195,8 +292,27 @@ export default function CustomVideoPlayer({
     if (!video) return;
     setError(false);
     video.load();
-    video.play().then(() => setIsPlaying(true)).catch(() => {});
+    video
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {});
   };
+
+  const formatTimestamp = (time = 0) => {
+    if (!Number.isFinite(time) || time < 0) return "0:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
+
+  const currentTimeLabel = videoRef.current
+    ? formatTimestamp(videoRef.current.currentTime)
+    : "0:00";
+  const durationLabel = videoRef.current
+    ? formatTimestamp(videoRef.current.duration)
+    : "0:00";
 
   return (
     <div
@@ -216,6 +332,7 @@ export default function CustomVideoPlayer({
         muted={isMuted}
         preload="metadata"
         crossOrigin="anonymous"
+        onError={handleError}
       />
 
       {locked && (
@@ -228,17 +345,11 @@ export default function CustomVideoPlayer({
         <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center p-4">
           <p>Video unavailable</p>
           <div className="mt-2 space-x-2">
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 bg-yellow-500 rounded"
-            >
+            <button onClick={handleRetry} className="px-4 py-2 bg-yellow-500 rounded">
               Retry
             </button>
             {currentVideo && (
-              <button
-                onClick={downloadVideo}
-                className="px-4 py-2 bg-gray-700 rounded"
-              >
+              <button onClick={downloadVideo} className="px-4 py-2 bg-gray-700 rounded">
                 Download
               </button>
             )}
@@ -246,9 +357,7 @@ export default function CustomVideoPlayer({
         </div>
       )}
 
-      {/* Video Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-        {/* Progress Bar */}
         <input
           type="range"
           min="0"
@@ -258,13 +367,12 @@ export default function CustomVideoPlayer({
           className="w-full h-1.5 mb-3 appearance-none bg-gray-600 rounded-full cursor-pointer"
           aria-label="Video progress"
           style={{
-            background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progress}%, #4b5563 ${progress}%, #4b5563 100%)`
+            background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progress}%, #4b5563 ${progress}%, #4b5563 100%)`,
           }}
         />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            {/* Play/Pause */}
             <button
               onClick={togglePlay}
               className="text-white hover:text-yellow-400 transition-colors"
@@ -275,7 +383,6 @@ export default function CustomVideoPlayer({
               {isPlaying ? <FaPause size={18} /> : <FaPlay size={18} />}
             </button>
 
-            {/* Skip Backward */}
             <button
               onClick={() => skip(-10)}
               className="text-white hover:text-yellow-400 transition-colors"
@@ -286,7 +393,6 @@ export default function CustomVideoPlayer({
               <MdReplay10 size={20} />
             </button>
 
-            {/* Skip Forward */}
             <button
               onClick={() => skip(10)}
               className="text-white hover:text-yellow-400 transition-colors"
@@ -297,7 +403,6 @@ export default function CustomVideoPlayer({
               <MdForward10 size={20} />
             </button>
 
-            {/* Volume Control */}
             <div className="flex items-center">
               <button
                 onClick={toggleMute}
@@ -320,20 +425,12 @@ export default function CustomVideoPlayer({
               />
             </div>
 
-            {/* Current Time */}
             <span className="text-white text-sm ml-2">
-              {videoRef.current ? 
-                `${Math.floor(videoRef.current.currentTime / 60)}:${Math.floor(videoRef.current.currentTime % 60).toString().padStart(2, '0')}` : 
-                "0:00"
-              } / {videoRef.current ? 
-                `${Math.floor(videoRef.current.duration / 60)}:${Math.floor(videoRef.current.duration % 60).toString().padStart(2, '0')}` : 
-                "0:00"
-              }
+              {currentTimeLabel} / {durationLabel}
             </span>
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* Playback Speed */}
             <button
               onClick={changeSpeed}
               className="text-white hover:text-yellow-400 transition-colors flex items-center"
@@ -345,12 +442,13 @@ export default function CustomVideoPlayer({
               <span className="text-sm">{playbackRate}x</span>
             </button>
 
-            {/* Previous Video */}
             {videos.length > 1 && (
               <button
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
-                className={`text-white hover:text-yellow-400 transition-colors ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`text-white hover:text-yellow-400 transition-colors ${
+                  currentIndex === 0 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 aria-label="Previous video"
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, handlePrev)}
@@ -359,12 +457,13 @@ export default function CustomVideoPlayer({
               </button>
             )}
 
-            {/* Next Video */}
             {videos.length > 1 && (
               <button
                 onClick={handleNext}
                 disabled={currentIndex === videos.length - 1}
-                className={`text-white hover:text-yellow-400 transition-colors ${currentIndex === videos.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`text-white hover:text-yellow-400 transition-colors ${
+                  currentIndex === videos.length - 1 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 aria-label="Next video"
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, handleNext)}
@@ -373,7 +472,6 @@ export default function CustomVideoPlayer({
               </button>
             )}
 
-            {/* Download */}
             <button
               onClick={downloadVideo}
               className="text-white hover:text-yellow-400 transition-colors"
@@ -384,7 +482,6 @@ export default function CustomVideoPlayer({
               <FaDownload size={16} />
             </button>
 
-            {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
               className="text-white hover:text-yellow-400 transition-colors"

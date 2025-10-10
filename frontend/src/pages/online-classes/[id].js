@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
-import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart, FaRegHeart, FaCalendarAlt, FaClock, FaTag, FaInfoCircle, FaUsers, FaDollarSign, FaStar } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart, FaRegHeart, FaCalendarAlt, FaClock, FaInfoCircle, FaUsers, FaStar } from 'react-icons/fa';
 import {
   enrollInClass,
   fetchClassDetails,
@@ -291,7 +291,47 @@ export default function ClassDetailsPage() {
     </div>
   );
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const isBrowser = typeof window !== 'undefined';
+  const shareUrl = isBrowser ? window.location.href : '';
+  const canShareNative = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else if (isBrowser) {
+        const tempInput = document.createElement('input');
+        tempInput.value = shareUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+      }
+      toast.success(t('link_copied'));
+    } catch (err) {
+      console.error('Failed to copy link', err);
+      toast.error(t('share_failed'));
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (!canShareNative || !shareUrl) {
+      handleCopyLink();
+      return;
+    }
+    try {
+      await navigator.share({
+        title: classInfo?.title || 'Skillbridge Class',
+        url: shareUrl,
+      });
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        console.error('Native share failed', err);
+        toast.error(t('share_failed'));
+      }
+    }
+  };
   const plainDescription = classInfo.description
     ? classInfo.description.replace(/<[^>]*>/g, '')
     : '';
@@ -404,17 +444,18 @@ export default function ClassDetailsPage() {
 
         {/* Video/Image Preview Section */}
         <div className="mb-10 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black aspect-video">
-          {classInfo.demo_video_url ? (
-            <CustomVideoPlayer
-              videos={[{ src: classInfo.demo_video_url }]}
-              className="w-full h-full"
-              videoClassName="h-full object-cover"
-            />
-          ) : (
-            <img
-              src={classInfo.cover_image}
-              alt={classInfo.title}
-              className="w-full h-full object-cover"
+        {classInfo.demo_video_url ? (
+          <CustomVideoPlayer
+            videos={[{ src: classInfo.demo_video_url }]}
+            className="w-full h-full"
+            videoClassName="h-full object-cover"
+            storageKey={`online-class-${classInfo.id}`}
+          />
+        ) : (
+          <img
+            src={classInfo.cover_image}
+            alt={classInfo.title}
+            className="w-full h-full object-cover"
             />
           )}
         </div>
@@ -482,11 +523,70 @@ export default function ClassDetailsPage() {
           </p>
         </div>
 
-        {/* Reviews Section */}
-        <ClassReviews classId={id} canReview={isEnrolled} />
-
-        {/* Comments Section */}
-        <ClassComments classId={id} canComment={isEnrolled} />
+        <section className="space-y-10 mb-10">
+          <ClassReviews classId={id} canReview={isEnrolled} />
+          <ClassComments classId={id} canComment={isEnrolled} />
+          <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 shadow-lg">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold text-yellow-400 mb-1">
+                  {t('share_class_heading')}
+                </h3>
+                <p className="text-sm text-gray-300">
+                  {t('share_class_intro')}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleCopyLink}
+                  className="px-4 py-2 bg-yellow-500 text-gray-900 font-semibold rounded-lg hover:bg-yellow-400 transition"
+                >
+                  {t('copy_link')}
+                </button>
+                {canShareNative && (
+                  <button
+                    onClick={handleNativeShare}
+                    className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition"
+                  >
+                    {t('share_native')}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center gap-4 text-gray-300">
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-full hover:bg-gray-700 transition"
+                aria-label={t('share_facebook')}
+              >
+                <FaFacebook size={18} />
+                <span className="text-sm font-medium">Facebook</span>
+              </a>
+              <a
+                href={`https://twitter.com/intent/tweet?url=${shareUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-full hover:bg-gray-700 transition"
+                aria-label={t('share_twitter')}
+              >
+                <FaTwitter size={18} />
+                <span className="text-sm font-medium">Twitter/X</span>
+              </a>
+              <a
+                href={`https://wa.me/?text=${shareUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-full hover:bg-gray-700 transition"
+                aria-label={t('share_whatsapp')}
+              >
+                <FaWhatsapp size={18} />
+                <span className="text-sm font-medium">WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </section>
 
         {/* Enrollment CTA Section */}
         <section className="mb-10 bg-gradient-to-r from-gray-800 to-gray-800/50 p-8 rounded-xl border border-gray-700 shadow-xl">
@@ -608,39 +708,6 @@ export default function ClassDetailsPage() {
           </div>
         </section>
 
-        {/* Share Section */}
-        <div className="flex flex-wrap items-center justify-center gap-6 text-gray-300 mb-10">
-          <span className="font-medium text-lg">Share this class:</span>
-          <div className="flex gap-4">
-            <a 
-              href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-blue-400 transition-colors p-2 bg-gray-800 rounded-full"
-              aria-label="Share on Facebook"
-            >
-              <FaFacebook size={20} />
-            </a>
-            <a 
-              href={`https://twitter.com/intent/tweet?url=${shareUrl}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-blue-400 transition-colors p-2 bg-gray-800 rounded-full"
-              aria-label="Share on Twitter"
-            >
-              <FaTwitter size={20} />
-            </a>
-            <a 
-              href={`https://wa.me/?text=${shareUrl}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-green-400 transition-colors p-2 bg-gray-800 rounded-full"
-              aria-label="Share on WhatsApp"
-            >
-              <FaWhatsapp size={20} />
-            </a>
-          </div>
-        </div>
       </main>
 
       <Footer />
