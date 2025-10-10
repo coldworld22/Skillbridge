@@ -533,9 +533,13 @@ export default function InstructorProfileEdit() {
                     const file = e.target.files[0];
                     if (!file) return;
                     if (file.size > MAX_DEMO_BYTES) return toast.error(t('demo_max_size', { size: MAX_DEMO_MB }));
+                    if (!user?.id) {
+                      toast.error(t('demo_upload_failed'));
+                      return;
+                    }
                     setIsSubmitting(true);
                     try {
-                      const res = await uploadInstructorDemo(user.id, file);
+                      const res = await uploadInstructorDemo(file, user?.id);
                       setFormData(prev => ({
                         ...prev,
                         demoPreview: `${BASE_URL}${res.demo_video_url}`

@@ -8,7 +8,6 @@ const router = express.Router();
 const controller = require("./instructor.controller");
 const { verifyToken, isInstructor } = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, demoUpload, certificateUpload } = require("./instructorUploadMiddleware");
-const db = require("../../../config/database");
 const { updateInstructorProfileSchema } = require("./instructor.validator");
 const validate = require("../../../middleware/validate");
 
@@ -104,7 +103,19 @@ router.patch(
 
 
 /**
- * @desc Upload demo video
+ * @desc Upload demo video (uses authenticated instructor id)
+ * @route PATCH /api/users/instructor/demo
+ */
+router.patch(
+  "/demo",
+  verifyToken,
+  isInstructor,
+  demoUpload.single("demo"),
+  controller.uploadDemoVideo
+);
+
+/**
+ * @desc Upload demo video for a specific instructor id
  * @route PATCH /api/users/instructor/:id/demo
  */
 router.patch(
@@ -112,43 +123,7 @@ router.patch(
   verifyToken,
   isInstructor,
   demoUpload.single("demo"),
-  async (req, res) => {
-    try {
-      const requestUserId = req.user.id;
-      const paramId = req.params.id;
-      const targetId =
-        paramId && paramId !== "undefined" ? paramId : requestUserId;
-
-      if (targetId !== requestUserId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
-      const existing = await db("instructor_profiles")
-        .where({ user_id: targetId })
-        .first();
-
-      if (existing) {
-        await db("instructor_profiles")
-          .where({ user_id: targetId })
-          .update({ demo_video_url: demoVideoUrl });
-      } else {
-        await db("instructor_profiles").insert({
-          user_id: targetId,
-          expertise: JSON.stringify([]),
-          demo_video_url: demoVideoUrl,
-        });
-      }
-      res.json({ demo_video_url: demoVideoUrl });
-    } catch (err) {
-      logger.error("Demo video upload error:", err);
-      res.status(500).json({ error: "Failed to upload demo video" });
-    }
-  }
+  controller.uploadDemoVideo
 );
 
 /**

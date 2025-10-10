@@ -27,10 +27,15 @@ export const deleteInstructorAvatar = async (id) => {
 };
 
 // 🔹 Upload instructor demo video
-export const uploadInstructorDemo = async (id, file) => {
+export const uploadInstructorDemo = async (file, id) => {
   const formData = new FormData();
   formData.append("demo", file);
-  const res = await api.patch(`/users/instructor/${id}/demo`, formData);
+  const endpoint = id
+    ? `/users/instructor/${id}/demo`
+    : "/users/instructor/demo";
+  const res = await api.patch(endpoint, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 };
 
