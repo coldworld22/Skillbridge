@@ -20,6 +20,24 @@ const formatBaseClass = (cls) => ({
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
 
+const formatClass = (cls = {}) => {
+  const base = formatBaseClass(cls);
+
+  const startDate = base.startDate || base.start_date || cls.startDate || cls.start_date;
+  const endDate = base.endDate || base.end_date || cls.endDate || cls.end_date;
+  const status = cls.status || base.status || base.enrollmentStatus;
+
+  return {
+    ...base,
+    startDate,
+    endDate,
+    enrollmentStatus: status,
+    scheduleStatus: computeScheduleStatus(startDate, endDate),
+    progress: typeof base.progress === "number" ? base.progress : status === "completed" ? 100 : 0,
+    tags: Array.isArray(base.tags) ? base.tags : Array.isArray(cls.tags) ? cls.tags : [],
+  };
+};
+
 const formatEnrolledClass = (cls) => {
   const base = formatBaseClass(cls);
   const {
