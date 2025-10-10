@@ -538,10 +538,17 @@ export default function InstructorProfileEdit() {
                       const res = await uploadInstructorDemo(user.id, file);
                       setFormData(prev => ({
                         ...prev,
-                        demoPreview: `${BASE_URL}${res.demo_video_url}`
+                        demoPreview: `${BASE_URL}${res.demo_video_url}`,
                       }));
                     } catch (error) {
-                      toast.error(t('demo_upload_failed'));
+                      if (error?.response?.status === 413) {
+                        toast.error(t('demo_max_size', { size: MAX_DEMO_MB }));
+                      } else {
+                        const serverMessage =
+                          error?.response?.data?.error ||
+                          error?.response?.data?.message;
+                        toast.error(serverMessage || t('demo_upload_failed'));
+                      }
                     } finally {
                       setIsSubmitting(false);
                     }
