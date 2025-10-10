@@ -1031,7 +1031,8 @@
     "failed_create": "Failed to create tutorial",
     "back": "⬅️ Back",
     "save_draft": "💾 Save Draft",
-    "next": "Next ➡️"
+    "next": "Next ➡️",
+    "plan_required_for_free": "Select at least one student plan when publishing a free tutorial."
   },
   "tutorialEditPage": {
     "loading": "Loading tutorial...",

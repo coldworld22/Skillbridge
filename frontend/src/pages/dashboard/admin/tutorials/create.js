@@ -19,6 +19,7 @@ import { buildTutorialFormData } from "@/utils/tutorialForm";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { fetchPlanIdentifiers } from "@/services/admin/planService";
 
 function CreateTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
@@ -58,9 +59,12 @@ function CreateTutorialPage() {
     language: "",
     price: "",
     isFree: false,
+    currency: "",
+    includedPlans: [],
   });
 
   const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
@@ -73,6 +77,10 @@ function CreateTutorialPage() {
           preview: null,
           language: draft.language || "",
           lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+          currency: draft.currency || "",
+          includedPlans: Array.isArray(draft.includedPlans)
+            ? draft.includedPlans
+            : [],
         });
       } catch (err) {
         console.error("Failed to parse tutorialDraft", err);
@@ -86,14 +94,24 @@ function CreateTutorialPage() {
 
         setCategories(result || []);
 
-      
       } catch (err) {
         console.error("Failed to load categories", err);
         toast.error(t('load_categories_failed'));
       }
     };
 
+    const loadPlans = async () => {
+      try {
+        const identifiers = await fetchPlanIdentifiers();
+        setPlans(Array.isArray(identifiers) ? identifiers : []);
+      } catch (err) {
+        console.error("Failed to load plans", err);
+        setPlans([]);
+      }
+    };
+
     loadCategories();
+    loadPlans();
   }, []);
 
   const nextStep = () => setStep((prev) => prev + 1);
@@ -103,6 +121,13 @@ function CreateTutorialPage() {
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
       toast.error(t('video_required'));
+      return;
+    }
+    if (
+      tutorialData.isFree &&
+      (!tutorialData.includedPlans || tutorialData.includedPlans.length === 0)
+    ) {
+      toast.error(t('plan_required_for_free'));
       return;
     }
 
@@ -160,6 +185,7 @@ function CreateTutorialPage() {
               setTutorialData={setTutorialData}
               onNext={nextStep}
               categories={categories}
+              plans={plans}
             />
           )}
           {step === 2 && (
@@ -181,6 +207,7 @@ function CreateTutorialPage() {
           {step === 4 && (
             <ReviewStep
               tutorialData={tutorialData}
+              plans={plans}
               onBack={prevStep}
               onPublish={publishTutorial}
             />

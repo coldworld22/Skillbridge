@@ -3,7 +3,13 @@ import { useTranslation } from "next-i18next";
 import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
 import { getCurrencies } from "@/services/currencyService";
 
-export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
+export default function BasicInfoStep({
+  tutorialData,
+  setTutorialData,
+  onNext,
+  categories = [],
+  plans = [],
+}) {
   const { t } = useTranslation("tutorials");
   const [errors, setErrors] = useState({});
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -106,6 +112,19 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
     }));
   };
 
+  const togglePlan = (planId) => {
+    setTutorialData((prev) => {
+      const current = Array.isArray(prev.includedPlans)
+        ? prev.includedPlans
+        : [];
+      const targetId = String(planId);
+      const next = current.some((id) => String(id) === targetId)
+        ? current.filter((id) => String(id) !== targetId)
+        : [...current, planId];
+      return { ...prev, includedPlans: next };
+    });
+  };
+
   const validateAndContinue = () => {
     const newErrors = {};
 
@@ -141,6 +160,12 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
         "create.basic.validation.currency_required",
         "Currency is required"
       );
+    }
+    if (
+      tutorialData.isFree &&
+      (!tutorialData.includedPlans || tutorialData.includedPlans.length === 0)
+    ) {
+      newErrors.includedPlans = t("create.basic.validation.plan_required");
     }
 
     setErrors(newErrors);
@@ -387,6 +412,65 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
           )}
         </div>
       )}
+
+      {/* Included Plans */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.plan_access_label", "Included Plans")}
+        </label>
+        {plans.length > 0 ? (
+          <div className="mt-2 space-y-3">
+            <p className="text-sm text-gray-600">
+              {tutorialData.isFree
+                ? t(
+                    "create.basic.plan_hint_free",
+                    "Select at least one student plan to grant free access."
+                  )
+                : t(
+                    "create.basic.plan_hint_paid",
+                    "Optional: limit this tutorial to specific student plans."
+                  )}
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {plans.map((plan) => (
+                <label key={plan.id} className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={
+                      Array.isArray(tutorialData.includedPlans) &&
+                      tutorialData.includedPlans.some(
+                        (id) => String(id) === String(plan.id)
+                      )
+                    }
+                    onChange={() => togglePlan(plan.id)}
+                    className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    {plan.name || plan.slug || plan.id}
+                    {plan.name && plan.slug ? (
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({plan.slug})
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 mt-1">
+            {t(
+              "create.basic.no_plans_hint",
+              "No student plans available yet. Create one to attach access."
+            )}
+          </p>
+        )}
+        {errors.includedPlans && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.includedPlans}
+          </p>
+        )}
+      </div>
 
       {/* NEXT BUTTON */}
       <div className="flex justify-end">

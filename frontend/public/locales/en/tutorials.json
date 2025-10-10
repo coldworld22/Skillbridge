@@ -65,6 +65,10 @@
       "is_free": "Is it Free?",
       "price_label": "Price (USD) *",
       "price_placeholder": "Enter price, e.g., 19.99",
+      "plan_access_label": "Included Student Plans",
+      "plan_hint_free": "Select at least one student plan to unlock this free tutorial.",
+      "plan_hint_paid": "Optional: limit this tutorial to specific student plans.",
+      "no_plans_hint": "No student plans available yet. Create one to attach access.",
       "next": "Next ➡️",
       "validation": {
         "title_required": "Title is required.",
@@ -73,7 +77,9 @@
         "level_required": "Level is required.",
         "language_required": "Tutorial language is required.",
         "lessons_required": "Number of lessons is required.",
-        "price_required": "Valid price is required."
+        "price_required": "Valid price is required.",
+        "currency_required": "Currency is required.",
+        "plan_required": "Select at least one plan for a free tutorial."
       }
     },
     "curriculum": {
@@ -110,7 +116,8 @@
         "basic_info": "Basic Info",
         "curriculum": "Curriculum",
         "media": "Media",
-        "pricing": "Pricing"
+        "pricing": "Pricing",
+        "access": "Access & Plans"
       },
       "labels": {
         "title": "Title:",
@@ -122,6 +129,7 @@
       "no_chapters": "No chapters added yet.",
       "free": "This tutorial will be FREE",
       "price_label": "Price:",
+      "no_plans": "No student plans selected. Tutorial will be publicly accessible.",
       "publish_tutorial": "Publish Tutorial"
     }
   }
@@ -181,4 +189,3 @@
     "remove": "Remove"
   }
 }
-

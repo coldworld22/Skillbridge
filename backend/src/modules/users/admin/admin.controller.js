@@ -73,11 +73,14 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
+    const normalizedPhone =
+      typeof phone === "string" && phone.trim().length > 0 ? phone.trim() : null;
+
     // 1. Update core user fields
     await db("users").where({ id: userId }).update({
       email,
       full_name,
-      phone,
+      phone: normalizedPhone,
       gender,
       date_of_birth,
       avatar_url,

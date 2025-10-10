@@ -38,7 +38,13 @@ const MAX_AVATAR_BYTES = MAX_AVATAR_MB * 1024 * 1024;
 const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
-  phone: z.string().min(8, "phone_min"),
+  phone: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.trim().length === 0 || val.trim().length >= 8,
+      "phone_min"
+    ),
   job_title: z.string().min(2),
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -138,7 +144,7 @@ useEffect(() => {
           ...prev,
           full_name,
           email: email || "",
-          phone,
+          phone: phone || "",
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           avatar_url,
@@ -258,10 +264,15 @@ useEffect(() => {
         .filter(([, url]) => url.trim() !== "")
         .map(([platform, url]) => ({ platform, url }));
 
+      const normalizedPhone =
+        typeof formData.phone === "string" && formData.phone.trim().length > 0
+          ? formData.phone.trim()
+          : "";
+
       await updateAdminProfile({
         full_name: formData.full_name,
         email: formData.email,
-        phone: formData.phone,
+        phone: normalizedPhone,
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         job_title: formData.job_title,
@@ -278,12 +289,16 @@ useEffect(() => {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: fresh.profile_complete,
+        profile_complete: true,
+        is_email_verified: fresh.is_email_verified,
+        job_title: fresh.job_title,
+        department: fresh.department,
       });
 
       setFormData((prev) => ({
         ...prev,
         email: fresh.email || "",
+        phone: fresh.phone || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
         avatarPreview: fresh.avatar_url
@@ -296,9 +311,10 @@ useEffect(() => {
       }));
 
       toast.success(t('profile_update_success'));
-      await fetchNotifications();
-      fetchMessages();
-      router.push("/dashboard/admin/profile/steps/Verification");
+      await fetchNotifications?.();
+      fetchMessages?.();
+      const nextRoute = fresh.is_email_verified ? "/dashboard/admin" : "/auth/verify-email";
+      router.push(nextRoute);
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
@@ -401,7 +417,7 @@ useEffect(() => {
                   {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">{t('phone')} *</label>
+                  <label className="block text-sm font-medium mb-1">{t('phone')}</label>
                   <input
                     name="phone"
                     value={formData.phone}

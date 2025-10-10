@@ -4,12 +4,23 @@ import { formatCurrency } from "@/utils/currency";
 
 export default function ReviewStep({
   tutorialData,
+  plans = [],
   onBack,
   onPublish,
   actionLabel,
 }) {
   const { t } = useTranslation("tutorials");
   const publishText = actionLabel || t("create.review.publish_tutorial");
+  const includedPlanNames = Array.isArray(tutorialData.includedPlans)
+    ? tutorialData.includedPlans.map((planId) => {
+        const match = plans.find((p) => String(p.id) === String(planId));
+        if (!match) return planId;
+        if (match.name && match.slug) {
+          return `${match.name} (${match.slug})`;
+        }
+        return match.name || match.slug || planId;
+      })
+    : [];
   return (
     <div className="space-y-8">
 
@@ -119,6 +130,27 @@ export default function ReviewStep({
               {formatCurrency(tutorialData.price, {
                 currency: tutorialData.currency,
               })}
+            </p>
+          )}
+        </div>
+
+        {/* Access */}
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-yellow-600 flex items-center gap-2">
+            <FaCheckCircle /> {t("create.review.sections.access")}
+          </h3>
+          {includedPlanNames.length > 0 ? (
+            <ul className="list-disc pl-5">
+              {includedPlanNames.map((name, idx) => (
+                <li key={idx}>{name}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">
+              {t(
+                "create.review.no_plans",
+                "No student plans selected. Tutorial will be publicly accessible."
+              )}
             </p>
           )}
         </div>

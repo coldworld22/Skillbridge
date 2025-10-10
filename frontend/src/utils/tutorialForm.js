@@ -13,6 +13,12 @@ export function buildTutorialFormData(tutorialData, status) {
   if (tutorialData.tags?.length) {
     formData.append("tags", JSON.stringify(tutorialData.tags));
   }
+  if (tutorialData.includedPlans?.length) {
+    formData.append(
+      "included_plans",
+      JSON.stringify(tutorialData.includedPlans)
+    );
+  }
   if (tutorialData.chapters?.length) {
     const chapters = tutorialData.chapters.map((ch, idx) => ({
       title: ch.title,
