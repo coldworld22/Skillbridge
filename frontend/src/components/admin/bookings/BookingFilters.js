@@ -1,5 +1,14 @@
 import { FaSearch, FaFilter } from 'react-icons/fa';
 
+const statusOptions = [
+  { label: 'All', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Approved', value: 'approved' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'Declined', value: 'declined' },
+];
+
 export default function BookingFilters({ search, onSearchChange, statusFilter, onStatusFilter }) {
   return (
     <div className="flex flex-wrap items-center gap-4 mb-6">
@@ -21,10 +30,11 @@ export default function BookingFilters({ search, onSearchChange, statusFilter, o
           onChange={(e) => onStatusFilter(e.target.value)}
           className="border px-3 py-2 rounded"
         >
-          <option value="all">All</option>
-          <option value="approved">Approved</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
     </div>
