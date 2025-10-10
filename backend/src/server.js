@@ -85,8 +85,12 @@ app.use(
   })
 );
 
-// Set reasonable body parser limits; routes needing more can override per-route
-const defaultBodyLimit = "10mb";
+// Set reasonable body parser limits; routes needing more can override per-route.
+// Large content editors (such as the admin class builder which can embed
+// sizeable HTML payloads) can legitimately exceed the old 10 MB default, so the
+// limit is now configurable via DEFAULT_BODY_LIMIT.  We default to 25 MB to
+// cover these cases while still protecting the server from unbounded payloads.
+const defaultBodyLimit = process.env.DEFAULT_BODY_LIMIT || "25mb";
 app.use(express.json({ limit: defaultBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 app.use(cookieParser());

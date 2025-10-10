@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   FaChalkboardTeacher,
   FaCalendarAlt,
@@ -18,30 +19,12 @@ import StudentLayout from '@/components/layouts/StudentLayout';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
 import { toast } from 'react-toastify';
 
-const STATUS_FILTERS = [
+const FILTER_OPTIONS = [
   { value: 'all', label: 'All' },
+  { value: 'ongoing', label: 'Live' },
   { value: 'upcoming', label: 'Upcoming' },
-  { value: 'ongoing', label: 'Ongoing' },
   { value: 'completed', label: 'Completed' },
 ];
-
-const STATUS_STYLES = {
-  Upcoming: 'bg-yellow-100 text-yellow-800',
-  Ongoing: 'bg-green-100 text-green-800',
-  Completed: 'bg-gray-200 text-gray-600',
-};
-
-const formatDate = (value) => {
-  if (!value) return 'Schedule TBA';
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value));
-  } catch (err) {
-    return value;
-  }
-};
 
 export default function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
@@ -51,65 +34,80 @@ export default function MyEnrolledClassesPage() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [subscribingId, setSubscribingId] = useState(null);
+  const [reminderStatus, setReminderStatus] = useState({});
 
-  const loadClasses = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await fetchMyEnrolledClasses();
-      setClasses(list);
-    } catch (err) {
-      console.error('Failed to load classes', err);
-      setError('We could not load your classes. Please try again.');
-      toast.error('Failed to load enrolled classes');
-    } finally {
-      setLoading(false);
-    }
+  const router = useRouter();
+
+  const parseDate = useCallback((value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   }, []);
 
+  const formatDateTime = useCallback((value) => {
+    const date = parseDate(value);
+    return date ? date.toLocaleString() : 'To be announced';
+  }, [parseDate]);
+
   useEffect(() => {
-    loadClasses();
-  }, [loadClasses]);
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const list = await fetchMyEnrolledClasses();
+        setClasses(list);
+      } catch (err) {
+        console.error('Failed to load classes', err);
+        setError('We were unable to load your classes. Please try again later.');
+        toast.error('Unable to load your classes.');
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const filteredClasses = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
     return classes
-      .filter((cls) =>
-        filter === 'all' ? true : cls.scheduleStatus?.toLowerCase() === filter,
-      )
-      .filter((cls) =>
-        normalizedSearch
-          ? cls.title?.toLowerCase().includes(normalizedSearch)
-          : true,
-      )
-      .slice()
+      .filter((cls) => {
+        if (filter === 'all') return true;
+        const schedule = cls.scheduleStatus?.toLowerCase?.();
+        return schedule === filter;
+      })
+      .filter((cls) => (cls.title || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
-        const timeA = a.startDate ? new Date(a.startDate).getTime() : Infinity;
-        const timeB = b.startDate ? new Date(b.startDate).getTime() : Infinity;
+        const dateA = parseDate(a.startDate);
+        const dateB = parseDate(b.startDate);
 
-        const safeTimeA = Number.isFinite(timeA) ? timeA : Infinity;
-        const safeTimeB = Number.isFinite(timeB) ? timeB : Infinity;
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return sortOrder === 'asc' ? 1 : -1;
+        if (!dateB) return sortOrder === 'asc' ? -1 : 1;
 
-        return sortOrder === 'asc' ? safeTimeA - safeTimeB : safeTimeB - safeTimeA;
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
       });
-  }, [classes, filter, search, sortOrder]);
+  }, [classes, filter, parseDate, search, sortOrder]);
 
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
 
-  const handleSubscribe = async (classId) => {
+  const handleReminderSubscribe = async (classId) => {
     try {
-      setSubscribingId(classId);
+      setReminderStatus((prev) => ({ ...prev, [classId]: 'loading' }));
       await subscribeToClassReminder(classId);
-      toast.success('You will be reminded before the class starts.');
+      setReminderStatus((prev) => ({ ...prev, [classId]: 'success' }));
+      toast.success('You will be reminded before this class starts.');
     } catch (err) {
       console.error('Failed to subscribe to reminder', err);
-      toast.error('Could not set a reminder right now.');
-    } finally {
-      setSubscribingId(null);
+      setReminderStatus((prev) => ({ ...prev, [classId]: 'idle' }));
+      toast.error('Could not subscribe to class reminder.');
     }
   };
+
+  const getReminderState = (classId) => reminderStatus[classId] || 'idle';
+
+  const getFilterCount = useCallback((status) => {
+    if (status === 'all') return classes.length;
+    return classes.filter((cls) => cls.scheduleStatus?.toLowerCase?.() === status).length;
+  }, [classes]);
 
   return (
     <StudentLayout>
@@ -117,19 +115,12 @@ export default function MyEnrolledClassesPage() {
         <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 My Enrolled Classes</h1>
 
         {loading && (
-          <div className="text-center text-gray-600 py-10">Loading your classes...</div>
+          <p className="text-gray-600">Loading your classes...</p>
         )}
 
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-            <p className="mb-3">{error}</p>
-            <button
-              type="button"
-              onClick={loadClasses}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Retry
-            </button>
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
           </div>
         )}
 
@@ -155,7 +146,7 @@ export default function MyEnrolledClassesPage() {
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {STATUS_FILTERS.map(({ value, label }) => (
+          {FILTER_OPTIONS.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
@@ -165,31 +156,55 @@ export default function MyEnrolledClassesPage() {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {label} ({
-                value === 'all'
-                  ? classes.length
-                  : classes.filter((c) => c.scheduleStatus?.toLowerCase() === value).length
-              })
+              {label} ({getFilterCount(value)})
             </button>
           ))}
         </div>
 
         {/* Class Cards */}
-        {!loading && visibleClasses.length === 0 ? (
-          <p className="text-gray-600 text-center">No classes found under this filter.</p>
+        {visibleClasses.length === 0 ? (
+          loading ? (
+            <p className="text-gray-600 text-center">Preparing your classes...</p>
+          ) : (
+            <div className="text-center text-gray-600">
+              <p>No classes found under this filter.</p>
+              <p className="text-sm mt-2">
+                Try adjusting your filters or <Link href="/dashboard/student">return to the dashboard</Link> to explore more learning options.
+              </p>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleClasses.map((cls) => (
-              <div key={cls.id} className="bg-gray-100 p-5 rounded-xl shadow-md">
+            {visibleClasses.map(cls => {
+              const reminderState = getReminderState(cls.id);
+              const isReminderLoading = reminderState === 'loading';
+              const reminderSubscribed = reminderState === 'success';
+              const scheduleStatusRaw = cls.scheduleStatus || 'Upcoming';
+              const normalizedSchedule = scheduleStatusRaw.toLowerCase();
+              const displaySchedule = normalizedSchedule === 'ongoing' ? 'Live' : scheduleStatusRaw;
+
+              return (
+                <div key={cls.id} className="bg-gray-100 p-5 rounded-xl shadow-md">
                 <div className="flex justify-between items-start">
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-gray-800">
                     <FaChalkboardTeacher className="text-yellow-500" /> {cls.title}
                   </h2>
-                  <FaEye className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1" title="Preview" />
+                  <FaEye
+                    className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1"
+                    title="Preview"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`/dashboard/student/online-classes/${cls.linkId || cls.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        router.push(`/dashboard/student/online-classes/${cls.linkId || cls.id}`);
+                      }
+                    }}
+                  />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Instructor: {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
-                  <FaCalendarAlt /> {formatDate(cls.startDate)}
+                  <FaCalendarAlt /> {formatDateTime(cls.startDate)}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
                   <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || 'General'}
@@ -199,23 +214,29 @@ export default function MyEnrolledClassesPage() {
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
 
-                <span
-                  className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                    STATUS_STYLES[cls.scheduleStatus] || 'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {cls.scheduleStatus || 'Upcoming'}
+                <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
+                  normalizedSchedule === 'ongoing'
+                    ? 'bg-green-100 text-green-800'
+                    : normalizedSchedule === 'upcoming'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {displaySchedule}
                 </span>
 
-                {cls.scheduleStatus === 'Upcoming' && (
+                {normalizedSchedule === 'upcoming' && (
                   <button
                     type="button"
-                    onClick={() => handleSubscribe(cls.id)}
-                    disabled={subscribingId === cls.id}
-                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isReminderLoading || reminderSubscribed}
+                    onClick={() => handleReminderSubscribe(cls.id)}
+                    className={`text-xs underline mb-2 flex items-center gap-1 ${
+                      reminderSubscribed
+                        ? 'text-green-600 cursor-default'
+                        : 'text-blue-600 hover:text-blue-700'
+                    } ${isReminderLoading ? 'opacity-70 cursor-wait' : ''}`}
                   >
                     <FaBell />
-                    {subscribingId === cls.id ? 'Subscribing...' : 'Notify Me'}
+                    {reminderSubscribed ? 'Reminder Set' : isReminderLoading ? 'Subscribing...' : 'Notify Me'}
                   </button>
                 )}
                 {cls.enrollmentStatus === 'completed' && (
@@ -232,14 +253,14 @@ export default function MyEnrolledClassesPage() {
                 >
                   <FaClipboardList className="inline mr-1" /> View Assignments
                 </Link>
-                {cls.scheduleStatus === 'Ongoing' && cls.joined ? (
+                {normalizedSchedule === 'ongoing' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
                   >
                     <FaVideo className="inline mr-2" /> Join Class
                   </Link>
-                ) : cls.scheduleStatus === 'Upcoming' ? (
+                ) : normalizedSchedule === 'upcoming' ? (
                   <p className="text-center text-sm text-yellow-600">
                     <FaHourglassHalf className="inline mr-1" /> Starts Soon
                   </p>
@@ -252,8 +273,9 @@ export default function MyEnrolledClassesPage() {
                     <FaHourglassHalf className="inline mr-1" /> Class Ended
                   </p>
                 )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
 
