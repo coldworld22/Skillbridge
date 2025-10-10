@@ -91,9 +91,15 @@ function CreateTutorialPage() {
     const loadCategories = async () => {
       try {
         const result = await fetchAllCategories();
+        const resolvedCategories = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+          ? result.data
+          : Array.isArray(result?.items)
+          ? result.items
+          : [];
 
-        setCategories(result || []);
-
+        setCategories(resolvedCategories);
       } catch (err) {
         console.error("Failed to load categories", err);
         toast.error(t('load_categories_failed'));
