@@ -1363,8 +1363,24 @@
     "download": "Download",
     "free": "Free",
     "purchased_for": "Purchased for ${{price}}",
+    "purchased_for_amount": "Purchased for {{price}}",
     "purchased_on": "Purchased on {{date}}",
-    "no_books": "No books in your library."
+    "no_books": "No books in your library.",
+    "empty_hint": "Purchased books will appear here once they're available.",
+    "error_loading": "We couldn't load your books right now.",
+    "retry": "Try again",
+    "unknown_author": "Unknown author",
+    "unknown_title": "Book cover",
+    "wishlist_add": "Add to wishlist",
+    "wishlist_remove": "Remove from wishlist"
+  },
+  "booksList": {
+    "showingRange": "Showing {{start}}-{{end}} of {{total}} books",
+    "filtersLabel": "Filters",
+    "noBooksFound": "No books found",
+    "tryAdjustingFilters": "Try adjusting your search or filter criteria",
+    "emptyState": "There are currently no books in the system",
+    "clearAllFilters": "Clear all filters"
   },
   "adminOffersPage": {
     "title": "Admin: Manage All Offers",

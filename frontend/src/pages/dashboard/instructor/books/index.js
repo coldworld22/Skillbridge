@@ -270,9 +270,13 @@ function InstructorBooksPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("Books")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("books")}</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              {t("Showing")} {books.length ? `${startIndex}-${endIndex}` : 0} {t("of")} {meta.total ?? 0} {t("books")}
+              {t("booksList.showingRange", {
+                start: books.length ? startIndex : 0,
+                end: books.length ? endIndex : 0,
+                total: meta.total ?? 0,
+              })}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -281,7 +285,7 @@ function InstructorBooksPage() {
               className="sm:hidden flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               <FiFilter className="text-lg" />
-              <span>{t("Filters")}</span>
+              <span>{t("booksList.filtersLabel")}</span>
             </button>
             <Link
               href="/dashboard/instructor/books/create"
@@ -485,7 +489,7 @@ function InstructorBooksPage() {
         {showMobileFilters && (
           <div className="sm:hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medium text-gray-700 dark:text-gray-300">{t("Filters")}</h3>
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">{t("booksList.filtersLabel")}</h3>
               <button 
                 onClick={() => setShowMobileFilters(false)}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -671,18 +675,18 @@ function InstructorBooksPage() {
             <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
               <FiSearch className="text-3xl text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">{t("No books found")}</h3>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">{t("booksList.noBooksFound")}</h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-              {filters.search || filters.category || filters.status 
-                ? t("Try adjusting your search or filter criteria")
-                : t("There are currently no books in the system")}
+              {filters.search || filters.category || filters.status
+                ? t("booksList.tryAdjustingFilters")
+                : t("booksList.emptyState")}
             </p>
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
                 className="mt-4 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                {t("Clear all filters")}
+                {t("booksList.clearAllFilters")}
               </button>
             )}
           </div>
