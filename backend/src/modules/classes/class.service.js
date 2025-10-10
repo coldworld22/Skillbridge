@@ -209,11 +209,18 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
 
   const rows = await db("online_classes as c")
     .leftJoin(subquery.as("e"), "e.class_id", "c.id")
+    .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("categories as cat", "c.category_id", "cat.id")
     .where({ "c.status": "published", "c.moderation_status": "Approved" })
     .select(
       "c.*",
+      "u.full_name as instructor",
+      "u.avatar_url as instructor_image",
+      "cat.name as category",
       db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments")
     )
+    .orderByRaw("COALESCE(e.recent_enrollments, 0) DESC")
+    .orderBy("c.start_date", "asc")
     .orderBy("c.created_at", "desc")
     .limit(lim)
     .offset(offset);

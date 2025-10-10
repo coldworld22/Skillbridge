@@ -103,12 +103,30 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
     }
 
     try {
-
+      const replySnapshot = replyingTo;
       const sent = await sendChatMessage(selectedChat.id, {
         ...newMessage,
-        replyId: replyingTo?.id,
+        replyId: replySnapshot?.id,
       });
-      setMessages((prev) => [...prev, sent]);
+      const enriched = {
+        ...sent,
+        reply_message:
+          sent.reply_message ??
+          replySnapshot?.message ??
+          replySnapshot?.text ??
+          null,
+        reply_file_url:
+          sent.reply_file_url ??
+          replySnapshot?.file_url ??
+          replySnapshot?.file ??
+          null,
+        reply_audio_url:
+          sent.reply_audio_url ??
+          replySnapshot?.audio_url ??
+          replySnapshot?.audio ??
+          null,
+      };
+      setMessages((prev) => [...prev, enriched]);
 
       setTyping(false);
       setReplyingTo(null);
@@ -359,8 +377,17 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
       {/* Reply Preview */}
       {replyingTo && (
         <div className="bg-gray-900 text-yellow-300 px-4 py-2 text-sm border-t border-gray-600">
-          Replying to: {replyingTo.text}
-          <button className="ml-2 text-red-400 hover:text-red-500" onClick={() => setReplyingTo(null)}>✖</button>
+          Replying to:{" "}
+          {replyingTo.message ||
+            replyingTo.text ||
+            replyingTo.file_url?.split("/").pop() ||
+            (replyingTo.audio_url ? "Voice message" : "Message")}
+          <button
+            className="ml-2 text-red-400 hover:text-red-500"
+            onClick={() => setReplyingTo(null)}
+          >
+            ✖
+          </button>
         </div>
       )}
 
@@ -370,6 +397,7 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
           sendMessage={sendMessage}
           replyTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
+          onTyping={setTyping}
         />
       </div>
     </div>

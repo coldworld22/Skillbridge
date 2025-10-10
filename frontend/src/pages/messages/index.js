@@ -13,31 +13,7 @@ import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 import { API_BASE_URL } from "@/config/config";
-import { toast } from "react-toastify";
-
-// Helper to merge unread counts from the message store into a user list
-export const computeUnreadCounts = (list = [], messages = []) => {
-  if (!Array.isArray(list)) return list;
-
-  const counts = messages.reduce((acc, msg) => {
-    if (msg && !msg.read) {
-      const senderId = Number(msg.sender_id);
-      if (!Number.isNaN(senderId)) {
-        acc[senderId] = (acc[senderId] || 0) + 1;
-      }
-    }
-    return acc;
-  }, {});
-
-  return list.map((user) => {
-    const unread = counts[user.id] || 0;
-    return {
-      ...user,
-      unread,
-      unreadMessages: unread,
-    };
-  });
-};
+import { computeUnreadCounts } from "./utils";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");

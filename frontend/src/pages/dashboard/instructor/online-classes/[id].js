@@ -124,7 +124,7 @@ function InstructorClassRoom() {
             <select
               className="mb-3 w-full bg-gray-700 text-white p-2 rounded"
               value={currentLessonId || ""}
-              onChange={(e) => setCurrentLessonId(Number(e.target.value))}
+              onChange={(e) => setCurrentLessonId(e.target.value)}
             >
               {lessons.map((lesson) => (
                 <option key={lesson.id} value={lesson.id}>
