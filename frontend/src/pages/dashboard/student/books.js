@@ -6,12 +6,20 @@ import { toast } from "react-hot-toast";
 import useLibraryStore from "@/store/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import { API_BASE_URL } from "@/config/config";
+import { buildUrl } from "@/utils/url";
 
 function BookCard({ book }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { wishlist, addToWishlist, removeFromWishlist } = useBookWishlistStore();
 
-  const cover = book.coverUrl || "/images/default-book-cover.jpg";
+  const cover =
+    book.coverUrl ||
+    buildUrl(book.cover_image_url) ||
+    "/images/default-book-cover.jpg";
+
+  const previewUrl = book.previewUrl || buildUrl(book.preview_url);
+  const downloadUrl = book.downloadUrl ||
+    (book.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
 
   const isWishlisted = wishlist.some((item) => item.book_id === book.id);
 
@@ -70,9 +78,9 @@ function BookCard({ book }) {
         )}
       </div>
       <div className="mt-4 flex gap-3 flex-wrap">
-        {book.preview_url && (
+        {previewUrl && (
           <a
-            href={book.preview_url}
+            href={previewUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-indigo-600 hover:underline"
@@ -80,16 +88,16 @@ function BookCard({ book }) {
             <FiEye className="text-lg" /> {t("preview")}
           </a>
         )}
-        {
+        {downloadUrl && (
           <a
-            href={`${API_BASE_URL}/library/download/${book.id}`}
+            href={downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-green-600 hover:underline"
           >
             <FiDownload className="text-lg" /> {t("download")}
           </a>
-        }
+        )}
         <button
           className={
             isWishlisted ? "text-red-500" : "text-red-400 hover:text-red-500"
