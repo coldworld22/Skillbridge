@@ -225,6 +225,7 @@ exports.updateAvatar = async (req, res) => {
             req.params?.id && req.params.id !== "undefined"
                 ? String(req.params.id)
                 : null;
+        const targetId = paramId || ownerId;
 
         if (!ownerId) {
             logger.error("❌ Avatar upload error: missing authenticated user id");
@@ -238,7 +239,7 @@ exports.updateAvatar = async (req, res) => {
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
         await db("users")
-            .where({ id: hasParamId ? paramId : ownerId })
+            .where({ id: targetId })
             .update({ avatar_url: avatarUrl });
 
         res.json({ avatar_url: avatarUrl });
