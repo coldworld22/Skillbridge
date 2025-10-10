@@ -134,11 +134,50 @@ function isCryptoMethod(methodOrIdentifier) {
   );
 }
 
+const normalizeBankDetails = (settings = {}) => {
+  const bankSource =
+    settings.bank_details || settings.bankDetails || settings.bank || {};
+  const pickValue = (keys) => {
+    for (const key of keys) {
+      if (bankSource[key] !== undefined && bankSource[key] !== null) {
+        return bankSource[key];
+      }
+      if (settings[key] !== undefined && settings[key] !== null) {
+        return settings[key];
+      }
+    }
+    return '';
+  };
+  const trimOrNull = (value) =>
+    typeof value === 'string' ? value.trim() : value ?? '';
+
+  const instructions =
+    trimOrNull(
+      bankSource.instructions ||
+        settings.instructions ||
+        settings.note ||
+        settings.details ||
+        ''
+    ) || '';
+
+  return {
+    bank_name: trimOrNull(pickValue(['bank_name', 'bankName'])),
+    account_holder_name: trimOrNull(
+      pickValue(['account_holder_name', 'accountHolderName', 'account_name'])
+    ),
+    account_number: trimOrNull(
+      pickValue(['account_number', 'accountNumber', 'iban'])
+    ),
+    swift_code: trimOrNull(pickValue(['swift_code', 'swiftCode', 'bic'])),
+    branch_address: trimOrNull(pickValue(['branch_address', 'branchAddress'])),
+    instructions,
+  };
+};
+
 export function filterEligibleMethods(methods) {
   return Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  return active;
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -392,7 +431,7 @@ export default function CheckoutPage() {
     return eligible.filter(
       (m) => getMethodIdentifier(m).toLowerCase() !== 'stripe'
     );
-  }, [methods, itemType, stripePromise]);
+  }, [methods, stripePromise]);
 
   const noPaymentMethods = filteredMethods.length === 0 && finalPrice > 0;
 
@@ -403,6 +442,19 @@ export default function CheckoutPage() {
     ? getMethodIdentifier(selectedMethodObj).toLowerCase()
     : normalizedMethod;
   const selectedMethodLabel = selectedMethodObj?.name || selectedMethod;
+  const methodSettings = useMemo(() => {
+    const raw = selectedMethodObj?.settings;
+    if (!raw || typeof raw !== 'object') return {};
+    return raw;
+  }, [selectedMethodObj]);
+  const bankDetails = useMemo(() => normalizeBankDetails(methodSettings), [methodSettings]);
+  const methodInstructions = useMemo(() => {
+    if (selectedMethodIdentifier === 'bank') return '';
+    if (typeof methodSettings.instructions === 'string') return methodSettings.instructions.trim();
+    if (typeof methodSettings.note === 'string') return methodSettings.note.trim();
+    if (typeof methodSettings.details === 'string') return methodSettings.details.trim();
+    return '';
+  }, [selectedMethodIdentifier, methodSettings.instructions, methodSettings.note, methodSettings.details]);
   const isCryptoSelected = isCryptoMethod(
     selectedMethodObj || selectedMethodIdentifier
   );
@@ -835,6 +887,17 @@ export default function CheckoutPage() {
         <div className="bg-gray-800 p-6 rounded-xl shadow-md">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('payment_details')}</h2>
 
+          {!isFree && methodInstructions && (
+            <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-100 rounded-lg p-4 whitespace-pre-line">
+              <h3 className="font-semibold text-yellow-300 mb-2">
+                {t('method_additional_instructions', {
+                  method: selectedMethodLabel || t('selected_method'),
+                })}
+              </h3>
+              {methodInstructions}
+            </div>
+          )}
+
           {isFree ? (
             <div className="text-center">
               <p className="mb-4">{t('free_item_notice')}</p>
@@ -865,7 +928,7 @@ export default function CheckoutPage() {
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
-              bankDetails={selectedMethodObj?.config || selectedMethodObj}
+              bankDetails={bankDetails}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />

@@ -97,5 +97,8 @@
   "branch_address": "Branch Address",
   "payment_reference_optional": "Reference / Notes (optional)",
   "payment_receipt_optional": "Payment Receipt (optional)",
-  "no_payment_methods_plan": "No hay métodos de pago disponibles para este plan"
+  "no_payment_methods_plan": "No hay métodos de pago disponibles para este plan",
+  "method_additional_instructions": "Additional instructions for {{method}}",
+  "selected_method": "selected method",
+  "bank_additional_instructions": "Please reference your payment details when uploading receipts so we can verify your transfer quickly."
 }

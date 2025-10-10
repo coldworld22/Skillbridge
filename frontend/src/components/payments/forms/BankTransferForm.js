@@ -61,6 +61,9 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
           />
         </label>
       )}
+      <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-100 text-sm rounded p-3">
+        {bankDetails.instructions || t('bank_additional_instructions')}
+        </div>
       <label className="block">
         <span className="text-sm">{t('payment_reference_optional')}</span>
         <input
@@ -83,9 +86,10 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice, ban
         disabled={processing}
         className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all"
       >
-        {processing ? 'Processing...' : t('pay_with_bank', { price: finalPrice })}
+        {processing
+          ? 'Processing...'
+          : t('pay_with_bank', { price: Number(finalPrice || 0).toFixed(2) })}
       </button>
     </form>
   );
 }
-

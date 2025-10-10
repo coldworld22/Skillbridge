@@ -1,4 +1,5 @@
 exports.seed = async function(knex) {
+  await knex('payments').del();
   await knex('payment_methods_config').del();
   const now = knex.fn.now();
   await knex('payment_methods_config').insert([
