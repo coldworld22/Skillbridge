@@ -114,10 +114,17 @@ router.patch(
   demoUpload.single("demo"),
   async (req, res) => {
     try {
-      const requestUserId = req.user.id;
-      const paramId = req.params.id;
-      const targetId =
-        paramId && paramId !== "undefined" ? paramId : requestUserId;
+      const requestUserId = req.user?.id ? String(req.user.id) : null;
+      const paramId =
+        req.params?.id && req.params.id !== "undefined"
+          ? String(req.params.id)
+          : null;
+      const targetId = paramId || requestUserId;
+
+      if (!requestUserId) {
+        logger.error("Demo video upload error: missing authenticated user id");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
 
       if (targetId !== requestUserId) {
         return res.status(403).json({ error: "Unauthorized" });
