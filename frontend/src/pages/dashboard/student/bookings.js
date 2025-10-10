@@ -1,6 +1,6 @@
 // pages/dashboard/student/bookings.js
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import {
   FaClock,
@@ -15,6 +15,8 @@ import {
   updateStudentBooking,
   deleteStudentBooking,
 } from '@/services/student/bookingService';
+import { API_BASE_URL } from '@/config/config';
+import { toast } from 'react-toastify';
 
 export default function StudentBookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -22,35 +24,99 @@ export default function StudentBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
+
+  const normalizeBooking = useCallback((booking) => {
+    if (!booking) return null;
+
+    const avatar = booking.instructor_avatar_url || booking.instructor_avatar;
+    const normalizedStatus = (booking.status || '').toLowerCase();
+
+    return {
+      ...booking,
+      instructor_avatar: avatar
+        ? avatar.startsWith('http')
+          ? avatar
+          : `${API_BASE_URL}${avatar}`
+        : 'https://via.placeholder.com/48x48?text=I',
+      status: normalizedStatus,
+    };
+  }, [API_BASE_URL]);
+
   const handleReschedule = async (booking) => {
-    const input = prompt('Enter new start time (YYYY-MM-DD HH:MM)');
+    const input = prompt('Enter new start time (YYYY-MM-DD HH:MM or YYYY-MM-DDTHH:MM)');
     if (!input) return;
-    const start = new Date(input);
+
+    const isoInput = input.includes('T') ? input : input.replace(' ', 'T');
+    const start = new Date(isoInput);
+
+    if (Number.isNaN(start.getTime())) {
+      toast.error('Invalid date/time. Please use the suggested format.');
+      return;
+    }
+
     const end = new Date(start.getTime() + 60 * 60 * 1000);
-    await updateStudentBooking(booking.id, {
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      status: 'pending',
-    });
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === booking.id
-          ? { ...b, start_time: start.toISOString(), end_time: end.toISOString(), status: 'pending' }
-          : b
-      )
-    );
+
+    try {
+      await updateStudentBooking(booking.id, {
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        status: 'pending',
+      });
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === booking.id
+            ? normalizeBooking({
+                ...b,
+                start_time: start.toISOString(),
+                end_time: end.toISOString(),
+                status: 'pending',
+              })
+            : b
+        )
+      );
+      toast.success('Booking rescheduled');
+    } catch (error) {
+      console.error('Failed to reschedule booking', error);
+      toast.error('Unable to reschedule booking. Please try again.');
+    }
   };
 
   useEffect(() => {
-    fetchStudentBookings()
-      .then(setBookings)
-      .finally(() => setLoading(false));
-  }, []);
+    let isMounted = true;
 
-  const filtered =
-    activeTab === 'All'
-      ? bookings
-      : bookings.filter((b) => b.status === activeTab);
+    const loadBookings = async () => {
+      try {
+        const data = await fetchStudentBookings();
+        if (!isMounted) return;
+        setBookings((data || []).map(normalizeBooking));
+      } catch (error) {
+        console.error('Failed to load student bookings', error);
+        if (isMounted) {
+          toast.error('Failed to load bookings. Please refresh the page.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadBookings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [normalizeBooking]);
+
+  const tabs = useMemo(
+    () => ['All', 'pending', 'approved', 'completed', 'cancelled', 'declined'],
+    []
+  );
+
+  const filtered = useMemo(() => {
+    if (activeTab === 'All') return bookings;
+    return bookings.filter((b) => (b.status || '').toLowerCase() === activeTab);
+  }, [activeTab, bookings]);
 
   const statusIcons = {
     pending: <FaClock className="text-yellow-500" />,
@@ -62,19 +128,34 @@ export default function StudentBookingsPage() {
 
   const handleCancel = async () => {
     if (!bookingToCancel) return;
-    await updateStudentBooking(bookingToCancel.id, { status: 'cancelled' });
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b
-      )
-    );
-    setShowCancelModal(false);
+    try {
+      await updateStudentBooking(bookingToCancel.id, { status: 'cancelled' });
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingToCancel.id
+            ? normalizeBooking({ ...b, status: 'cancelled' })
+            : b
+        )
+      );
+      toast.success('Booking cancelled');
+    } catch (error) {
+      console.error('Failed to cancel booking', error);
+      toast.error('Unable to cancel booking. Please try again.');
+    } finally {
+      setShowCancelModal(false);
+    }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Delete this booking?')) {
+    if (!window.confirm('Delete this booking?')) return;
+
+    try {
       await deleteStudentBooking(id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
+      toast.success('Booking deleted');
+    } catch (error) {
+      console.error('Failed to delete booking', error);
+      toast.error('Unable to delete booking. Please try again.');
     }
   };
 
@@ -93,22 +174,20 @@ export default function StudentBookingsPage() {
       <section className="py-10 px-4 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">My Bookings</h1>
 
-        <div className="flex gap-3 mb-6">
-          {['All', 'pending', 'approved', 'completed', 'cancelled'].map(
-            (tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                  activeTab === tab
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            )
-          )}
+        <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition whitespace-nowrap ${
+                activeTab === tab
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-gray-100 text-gray-700 border-transparent'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
 
         {filtered.length === 0 ? (
@@ -131,18 +210,28 @@ export default function StudentBookingsPage() {
                       {booking.subject} with {booking.instructor_name}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {new Date(booking.start_time).toLocaleString(undefined, { timeZoneName: 'short' })}
-                      {booking.end_time &&
-                        ` - ${new Date(booking.end_time).toLocaleTimeString(undefined, {
-                          timeZoneName: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}`}
+                      {new Date(booking.start_time).toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
+                      {booking.end_time && (
+                        <>
+                          {' '}-{' '}
+                          {new Date(booking.end_time).toLocaleTimeString(undefined, {
+                            timeStyle: 'short',
+                          })}
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {statusIcons[booking.status]}
+                  <span className="flex items-center gap-2 text-sm font-medium capitalize">
+                    {(statusIcons[booking.status] ?? (
+                      <FaClock className="text-gray-400" />
+                    ))}
+                    {booking.status || 'pending'}
+                  </span>
                   {booking.status === 'approved' && (
                     <>
                       <button

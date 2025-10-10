@@ -1,14 +1,19 @@
 export default function BookingStats({ bookings }) {
   const total = bookings.length;
+  const pending = bookings.filter((b) => b.status === 'pending').length;
   const scheduled = bookings.filter((b) => b.status === 'approved').length;
   const completed = bookings.filter((b) => b.status === 'completed').length;
   const cancelled = bookings.filter((b) => b.status === 'cancelled').length;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
       <div className="bg-white p-4 rounded shadow text-center">
         <h4 className="text-lg font-semibold">Total</h4>
         <p className="text-2xl text-blue-600 font-bold">{total}</p>
+      </div>
+      <div className="bg-slate-50 p-4 rounded shadow text-center">
+        <h4 className="text-lg font-semibold">Pending</h4>
+        <p className="text-2xl text-slate-600 font-bold">{pending}</p>
       </div>
       <div className="bg-yellow-50 p-4 rounded shadow text-center">
         <h4 className="text-lg font-semibold">Approved</h4>
