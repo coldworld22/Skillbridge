@@ -24,9 +24,22 @@ const csrfCookieOptions = {
   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
 };
 
-if (process.env.COOKIE_DOMAIN) {
-  refreshCookieOptions.domain = process.env.COOKIE_DOMAIN;
-  csrfCookieOptions.domain = process.env.COOKIE_DOMAIN;
+const normalizeDomain = (domain) => {
+  if (!domain) return null;
+  const trimmed = domain.trim();
+  if (!trimmed) return null;
+  const withoutScheme = trimmed.replace(/^https?:\/\//i, '');
+  const clean = withoutScheme.replace(/\/.*$/, '');
+  if (!clean) return null;
+  return clean.startsWith('.') ? clean : `.${clean}`;
+};
+
+const cookieDomain =
+  normalizeDomain(process.env.COOKIE_DOMAIN) || normalizeDomain(process.env.APP_DOMAIN);
+
+if (cookieDomain) {
+  refreshCookieOptions.domain = cookieDomain;
+  csrfCookieOptions.domain = cookieDomain;
 }
 
 module.exports = { refreshCookieOptions, csrfCookieOptions };
