@@ -8,7 +8,6 @@ const router = express.Router();
 const controller = require("./instructor.controller");
 const { verifyToken, isInstructor } = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, demoUpload, certificateUpload } = require("./instructorUploadMiddleware");
-const db = require("../../../config/database");
 const { updateInstructorProfileSchema } = require("./instructor.validator");
 const validate = require("../../../middleware/validate");
 
@@ -104,7 +103,19 @@ router.patch(
 
 
 /**
- * @desc Upload demo video
+ * @desc Upload demo video (uses authenticated instructor id)
+ * @route PATCH /api/users/instructor/demo
+ */
+router.patch(
+  "/demo",
+  verifyToken,
+  isInstructor,
+  demoUpload.single("demo"),
+  controller.uploadDemoVideo
+);
+
+/**
+ * @desc Upload demo video for a specific instructor id
  * @route PATCH /api/users/instructor/:id/demo
  */
 router.patch(
@@ -114,13 +125,17 @@ router.patch(
   demoUpload.single("demo"),
   async (req, res) => {
     try {
-      const requestUserId = req.user.id;
-      const paramId = req.params.id;
-      const hasParamId = paramId && paramId !== "undefined";
-      const normalizedRequestId = String(requestUserId);
-      const normalizedTargetId = hasParamId
-        ? String(paramId)
-        : normalizedRequestId;
+      const requestUserId = req.user?.id ? String(req.user.id) : null;
+      const paramId =
+        req.params?.id && req.params.id !== "undefined"
+          ? String(req.params.id)
+          : null;
+      const targetId = paramId || requestUserId;
+
+      if (!requestUserId) {
+        logger.error("Demo video upload error: missing authenticated user id");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
 
       if (normalizedTargetId !== normalizedRequestId) {
         return res.status(403).json({ error: "Unauthorized" });

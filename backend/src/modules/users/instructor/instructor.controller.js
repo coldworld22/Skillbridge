@@ -220,11 +220,18 @@ exports.updateAvatar = async (req, res) => {
             return res.status(400).json({ error: "No file uploaded" });
         }
 
-        const ownerId = req.user.id;
-        const paramId = req.params.id;
-        const hasParamId = paramId && paramId !== "undefined";
+        const ownerId = req.user?.id ? String(req.user.id) : null;
+        const paramId =
+            req.params?.id && req.params.id !== "undefined"
+                ? String(req.params.id)
+                : null;
 
-        if (hasParamId && String(paramId) !== String(ownerId)) {
+        if (!ownerId) {
+            logger.error("❌ Avatar upload error: missing authenticated user id");
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        if (paramId && paramId !== ownerId) {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
@@ -264,6 +271,47 @@ exports.deleteAvatar = async (req, res) => {
     await db("users").where({ id: userId }).update({ avatar_url: null });
 
     res.json({ message: "Avatar deleted successfully." });
+};
+
+/**
+ * @desc Upload instructor demo video
+ * @route PATCH /api/users/instructor/:id?/demo
+ * @access Instructor
+ */
+exports.uploadDemoVideo = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+        const ownerId = req.user.id;
+        const paramId = req.params?.id;
+        const targetId = paramId && paramId !== "undefined" ? paramId : ownerId;
+
+        if (targetId !== ownerId) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+        const existing = await db("instructor_profiles").where({ user_id: ownerId }).first();
+
+        if (existing) {
+            await db("instructor_profiles")
+                .where({ user_id: ownerId })
+                .update({ demo_video_url: demoVideoUrl });
+        } else {
+            await db("instructor_profiles").insert({
+                user_id: ownerId,
+                expertise: JSON.stringify([]),
+                demo_video_url: demoVideoUrl,
+            });
+        }
+
+        return res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+        logger.error("Demo video upload error:", err);
+        return res.status(500).json({ error: "Failed to upload demo video" });
+    }
 };
 
 /**
