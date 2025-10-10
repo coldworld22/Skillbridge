@@ -192,7 +192,7 @@ describe('class.controller createClass', () => {
     );
   });
 
-  test('rejects paid class with included plans', async () => {
+  test('allows paid class to include student plans for subscribers', async () => {
     service.createClass.mockImplementation(async (data) => data);
 
     const req = {
@@ -207,6 +207,10 @@ describe('class.controller createClass', () => {
     const next = jest.fn();
 
     await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
       next.mockImplementation((err) => {
         resolve();
         return err;
@@ -214,9 +218,14 @@ describe('class.controller createClass', () => {
       controller.createClass(req, res, next);
     });
 
-    expect(next).toHaveBeenCalled();
-    expect(next.mock.calls[0][0].message).toBe(
-      'Paid classes cannot include student plans'
+    expect(next).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          access_type: 'paid',
+          included_plans: ['plan-student'],
+        }),
+      })
     );
   });
 });
@@ -250,6 +259,10 @@ describe('class.controller updateClass', () => {
       res.json.mockImplementation((data) => {
         resolve();
         return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
       });
       controller.updateClass(req, res, next);
     });
@@ -300,6 +313,56 @@ describe('class.controller updateClass', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ instructor_id: 'newInst' }),
+      })
+    );
+  });
+
+  test('updates paid class with included plans for subscribers', async () => {
+    service.getClassById.mockResolvedValue({
+      id: 'class1',
+      instructor_id: 'admin1',
+      title: 'Title',
+      access_type: 'free',
+      included_plans: ['plan-student'],
+    });
+    service.updateClass.mockImplementation(async (_id, data) => data);
+
+    const req = {
+      params: { id: 'class1' },
+      body: { access_type: 'paid', included_plans: ['student-slug'], price: 50 },
+      user: { id: 'admin1', role: 'admin', full_name: 'Admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      controller.updateClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(service.updateClass).toHaveBeenCalledWith(
+      'class1',
+      expect.objectContaining({
+        access_type: 'paid',
+        included_plans: ['plan-student'],
+        price: 50,
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          access_type: 'paid',
+          included_plans: ['plan-student'],
+          price: 50,
+        }),
       })
     );
   });

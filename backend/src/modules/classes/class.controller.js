@@ -73,22 +73,19 @@ exports.createClass = catchAsync(async (req, res) => {
     moderation_status: "Pending",
   };
   const planIds = await resolveStudentPlanIds(included_plans);
+  const resolvedPlans = Array.isArray(planIds) ? planIds : [];
   const accessType = access_type || "paid";
 
   if (accessType === "free") {
-    const included = planIds ?? [];
-    if (!included.length) {
+    if (!resolvedPlans.length) {
       throw new AppError("Free classes must include at least one student plan", 400);
     }
     data.access_type = "free";
-    data.included_plans = included;
+    data.included_plans = resolvedPlans;
     data.price = 0;
   } else {
-    if (planIds?.length) {
-      throw new AppError("Paid classes cannot include student plans", 400);
-    }
     data.access_type = "paid";
-    data.included_plans = [];
+    data.included_plans = resolvedPlans;
   }
   if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
@@ -248,19 +245,21 @@ exports.updateClass = catchAsync(async (req, res) => {
   const { tags: rawTags, included_plans, access_type, ...body } = req.body;
   let data = { ...body };
   const planIds = await resolveStudentPlanIds(included_plans);
+  const existingPlans = Array.isArray(existing.included_plans)
+    ? existing.included_plans
+    : [];
+  const nextAccessType = access_type ?? existing.access_type ?? "paid";
+
   if (planIds !== undefined) {
     data.included_plans = planIds;
   }
-  const nextAccessType = access_type ?? existing.access_type ?? "paid";
-  if (access_type !== undefined || planIds !== undefined) {
+  if (access_type !== undefined) {
     data.access_type = nextAccessType;
   }
+
   if (nextAccessType === "free") {
-    const included = planIds !== undefined
-      ? planIds
-      : Array.isArray(existing.included_plans)
-        ? existing.included_plans
-        : [];
+    const included =
+      planIds !== undefined ? planIds : existingPlans;
     if (!included.length) {
       throw new AppError("Free classes must include at least one student plan", 400);
     }
@@ -268,16 +267,11 @@ exports.updateClass = catchAsync(async (req, res) => {
     data.included_plans = included;
     data.price = 0;
   } else {
-    if (planIds?.length) {
-      throw new AppError("Paid classes cannot include student plans", 400);
-    }
-    if (access_type === "paid") {
-      data.included_plans = [];
-    } else if (planIds !== undefined) {
-      data.included_plans = [];
-    }
-    if (data.access_type) {
+    if (access_type !== undefined) {
       data.access_type = "paid";
+    }
+    if (planIds !== undefined) {
+      data.included_plans = planIds;
     }
   }
   if (data.title && data.title !== existing.title) {

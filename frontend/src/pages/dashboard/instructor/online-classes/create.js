@@ -258,11 +258,11 @@ function CreateOnlineClass() {
 
         if (formData.isFree) {
           payload.append('price', '0');
-          if (formData.includedPlans.length) {
-            payload.append('included_plans', JSON.stringify(formData.includedPlans));
-          }
         } else if (formData.price || formData.price === 0) {
           payload.append('price', Number(formData.price).toFixed(2));
+        }
+        if (formData.isFree || formData.includedPlans.length > 0) {
+          payload.append('included_plans', JSON.stringify(formData.includedPlans));
         }
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
@@ -538,16 +538,17 @@ function CreateOnlineClass() {
                           <span className="ml-2 text-sm text-gray-700">Publish Immediately</span>
                         </label>
                       </div>
-                      {formData.isFree && (
-                        <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
-                          <p className="text-sm font-semibold text-gray-800 mb-2">
-                            Select student plans that unlock this class
+                      <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50 space-y-2">
+                        <p className="text-sm font-semibold text-gray-800">
+                          {formData.isFree
+                            ? 'Select student plans that unlock this class (required for free access).'
+                            : 'Optionally include this class in student plans so subscribers can join without paying.'}
+                        </p>
+                        {plans.length === 0 ? (
+                          <p className="text-xs text-gray-500">
+                            No student plans available yet. Please contact an administrator.
                           </p>
-                          {plans.length === 0 && (
-                            <p className="text-xs text-gray-500">
-                              No student plans available yet. Please contact an administrator.
-                            </p>
-                          )}
+                        ) : (
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {plans.map((plan) => {
                               const planKey = plan.id || plan.slug;
@@ -569,11 +570,13 @@ function CreateOnlineClass() {
                               );
                             })}
                           </div>
-                          <p className="text-xs text-gray-600 mt-2">
-                            At least one plan must be selected for free classes.
-                          </p>
-                        </div>
-                      )}
+                        )}
+                        <p className="text-xs text-gray-600">
+                          {formData.isFree
+                            ? 'At least one plan must be selected for free classes.'
+                            : 'Leave all unchecked if this class is only available through direct purchase.'}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Full-width fields */}

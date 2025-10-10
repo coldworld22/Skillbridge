@@ -84,12 +84,12 @@ describe('included_plans validation', () => {
     expect(result.success).toBe(false);
   });
 
-  test('rejects student plans on paid classes', async () => {
+  test('allows student plans on paid classes', async () => {
     const result = await validator.create.body.safeParseAsync({
       ...base,
       access_type: 'paid',
       included_plans: ['student-id'],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });

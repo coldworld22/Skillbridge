@@ -94,6 +94,10 @@ function EditClassPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.access_type === 'free' && formData.included_plans.length === 0) {
+      toast.error(t('free_class_plan_required'));
+      return;
+    }
     try {
       const payload = new FormData();
       if (formData.title) payload.append('title', formData.title);
@@ -106,11 +110,10 @@ function EditClassPage() {
       payload.append('access_type', formData.access_type);
       if (formData.access_type === 'free') {
         payload.append('price', '0');
-        if (formData.included_plans.length)
-          payload.append('included_plans', JSON.stringify(formData.included_plans));
       } else if (formData.price || formData.price === 0) {
         payload.append('price', formData.price);
       }
+      payload.append('included_plans', JSON.stringify(formData.included_plans || []));
       await updateAdminClass(id, payload);
       toast.success(t('class_updated'));
       fetchNotifications();
@@ -204,28 +207,34 @@ function EditClassPage() {
               <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
             </label>
           </div>
-          {formData.access_type === 'free' && plans.length > 0 && (
-            <div className="flex flex-wrap gap-4">
-              {plans.map((p) => (
-                <label key={p.id} className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    value={p.id}
-                    checked={formData.included_plans.includes(p.id)}
-                    onChange={() => togglePlan(p.id)}
-                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    {p.name || p.slug}
-                    {p.name && p.slug ? (
-                      <span className="ml-1 text-xs text-gray-500">({p.slug})</span>
-                    ) : null}
-                  </span>
-                </label>
-              ))}
+          {plans.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                {formData.access_type === 'free'
+                  ? t('class_plan_selection_hint_free')
+                  : t('class_plan_selection_hint_paid')}
+              </p>
+              <div className="flex flex-wrap gap-4">
+                {plans.map((p) => (
+                  <label key={p.id} className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      value={p.id}
+                      checked={formData.included_plans.includes(p.id)}
+                      onChange={() => togglePlan(p.id)}
+                      className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">
+                      {p.name || p.slug}
+                      {p.name && p.slug ? (
+                        <span className="ml-1 text-xs text-gray-500">({p.slug})</span>
+                      ) : null}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
-          )}
-          {formData.access_type === 'free' && plans.length === 0 && (
+          ) : (
             <p className="text-sm text-gray-500">
               {t('no_student_plans_hint', {
                 defaultValue: 'No student plans available yet. Create one to attach access.',

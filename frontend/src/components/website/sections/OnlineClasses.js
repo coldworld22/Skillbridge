@@ -260,7 +260,7 @@ const OnlineClasses = () => {
   };
 
   const renderPrice = (classItem) => {
-    if (classItem.access_type === "free") return freeLabel;
+    if (classItem.access_type === "free") return t("plan_members_only");
     const priceValue = Number(classItem.price);
     if (!priceValue) return freeLabel;
     const currencyCode = classItem.currency || classItem.currency_code;
@@ -363,6 +363,10 @@ const OnlineClasses = () => {
                         : "";
                       const classStatus = classItem.status;
                       const isLive = classStatus === "Live";
+                      const hasPlanCoverage =
+                        Array.isArray(classItem.included_plans) &&
+                        classItem.included_plans.length > 0;
+                      const requiresPlanOnly = classItem.access_type === "free";
 
                       return (
                         <motion.div
@@ -402,6 +406,13 @@ const OnlineClasses = () => {
                               >
                                 {classStatus}
                               </span>
+                              {hasPlanCoverage && (
+                                <span className="bg-blue-500 text-white px-3 py-1 text-xs font-bold rounded-full shadow-sm">
+                                  {requiresPlanOnly
+                                    ? t("plan_required_badge")
+                                    : t("plan_included_badge")}
+                                </span>
+                              )}
                             </div>
                             <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
                               <button
@@ -470,12 +481,21 @@ const OnlineClasses = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="mt-auto flex items-center justify-between pt-4">
-                              <span className="text-lg font-semibold text-yellow-400">
-                                {renderPrice(classItem)}
-                              </span>
+                            <div className="mt-auto pt-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-semibold text-yellow-400">
+                                  {renderPrice(classItem)}
+                                </span>
+                              </div>
+                              {hasPlanCoverage && (
+                                <p className="text-xs text-yellow-200 text-left">
+                                  {requiresPlanOnly
+                                    ? t("plan_required_hint")
+                                    : t("plan_optional_hint")}
+                                </p>
+                              )}
                               <button
-                                className="bg-yellow-500 text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-yellow-600 transition"
+                                className="bg-yellow-500 text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-yellow-600 transition w-full"
                                 onClick={() => router.push(`/online-classes/${classItem.id}`)}
                               >
                                 {isLive

@@ -1,6 +1,6 @@
 // pages/online-classes/[id].js
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
@@ -16,10 +16,12 @@ import {
 } from '@/services/classService';
 import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
+import useSubscriptionStore from '@/store/subscriptionStore';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
+import { formatCurrency } from '@/utils/currency';
 
 const computeScheduleStatus = (start, end) => {
   const now = new Date();
@@ -59,6 +61,9 @@ export default function ClassDetailsPage() {
   const [instructorRating, setInstructorRating] = useState(null);
   const { user, isAuthenticated } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
+  const subscriptionPlan = useSubscriptionStore((state) => state.plan);
+  const subscriptionLoading = useSubscriptionStore((state) => state.loading);
+  const fetchSubscription = useSubscriptionStore((state) => state.fetch);
 
   const isGuest = !isAuthenticated();
   const isStudent = user?.role?.toLowerCase() === 'student';
@@ -72,7 +77,12 @@ export default function ClassDetailsPage() {
     toast.error(t('only_students_enroll'));
   };
 
+  const handleViewPlans = () => {
+    router.push('/website/student-plans');
+  };
+
   const handleAddToCart = async () => {
+    if (!classInfo) return;
     if (isGuest) {
       handleGuestRedirect();
       return;
@@ -83,6 +93,14 @@ export default function ClassDetailsPage() {
     }
     if (isEnrolled) {
       toast.info(t('already_enrolled_class'));
+      return;
+    }
+    if (requiresPlanOnly) {
+      toast.info(t('plan_required_to_enroll'));
+      return;
+    }
+    if (hasPlanCoverage && isPlanCovered) {
+      toast.info(t('plan_included_you_are_covered'));
       return;
     }
 
@@ -97,6 +115,7 @@ export default function ClassDetailsPage() {
   };
 
   const handleProceed = async () => {
+    if (!classInfo) return;
     if (isGuest) {
       handleGuestRedirect();
       return;
@@ -110,14 +129,30 @@ export default function ClassDetailsPage() {
       return;
     }
 
-    if (classInfo.price === 0) {
+    if (requiresPlanOnly && !isPlanCovered) {
+      toast.error(t('plan_required_to_enroll'));
+      return;
+    }
+
+    const needsPayment =
+      classInfo.access_type !== 'free' &&
+      hasNumericPrice &&
+      !isPlanCovered;
+
+    if (!needsPayment) {
       try {
         await enrollInClass(classInfo.id);
-        toast.success(t('tutorials:enroll_success'));
+        toast.success(
+          isPlanCovered ? t('plan_enrolled_success') : t('tutorials:enroll_success')
+        );
         router.push(`/payments/success?classId=${classInfo.id}`);
       } catch (err) {
         console.error('Failed to enroll', err);
-        toast.error(t('failed_to_enroll'));
+        if (err.response?.status === 403) {
+          toast.error(t('plan_required_to_enroll'));
+        } else {
+          toast.error(t('failed_to_enroll'));
+        }
       }
     } else {
       router.push(`/payments/checkout?itemId=${classInfo.id}&itemType=class`);
@@ -188,6 +223,48 @@ export default function ClassDetailsPage() {
     };
     load();
   }, [id, isAuthenticated]);
+
+  useEffect(() => {
+    if (!user || !isStudent) return;
+    if (!subscriptionPlan && !subscriptionLoading) {
+      fetchSubscription();
+    }
+  }, [user, isStudent, subscriptionPlan, subscriptionLoading, fetchSubscription]);
+
+  const includedPlanIds = useMemo(
+    () =>
+      Array.isArray(classInfo?.included_plans)
+        ? classInfo.included_plans.map((plan) => String(plan))
+        : [],
+    [classInfo]
+  );
+  const hasPlanCoverage = includedPlanIds.length > 0;
+  const activePlanId = subscriptionPlan?.plan_id
+    ? String(subscriptionPlan.plan_id)
+    : null;
+  const isPlanCovered = Boolean(
+    activePlanId && includedPlanIds.includes(activePlanId)
+  );
+  const requiresPlanOnly = classInfo?.access_type === 'free';
+  const currencyCode = classInfo?.currency || classInfo?.currency_code;
+  const numericPrice = Number(classInfo?.price ?? 0);
+  const hasNumericPrice = Number.isFinite(numericPrice) && numericPrice > 0;
+  const priceLabel = requiresPlanOnly
+    ? t('plan_members_only')
+    : hasNumericPrice
+    ? formatCurrency(numericPrice, currencyCode ? { currency: currencyCode } : undefined)
+    : t('free');
+  const planStatusMessage = hasPlanCoverage
+    ? requiresPlanOnly
+      ? isPlanCovered
+        ? t('plan_included_you_are_covered')
+        : t('plan_required_to_join')
+      : isPlanCovered
+      ? t('plan_included_you_are_covered')
+      : t('plan_optional_hint')
+    : null;
+  const planRequiredNotCovered = requiresPlanOnly && !isPlanCovered;
+  const allowAddToCart = classInfo?.access_type !== 'free' && !isPlanCovered;
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center">
@@ -262,7 +339,7 @@ export default function ClassDetailsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl font-bold text-yellow-400">
-                    {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}
+                    {priceLabel}
                   </span>
                   <button
                     onClick={handleToggleWishlist}
@@ -276,6 +353,15 @@ export default function ClassDetailsPage() {
                     )}
                   </button>
                 </div>
+                {planStatusMessage && (
+                  <p
+                    className={`text-xs mt-1 ${
+                      isPlanCovered ? 'text-green-300' : 'text-yellow-200'
+                    }`}
+                  >
+                    {planStatusMessage}
+                  </p>
+                )}
               </div>
               
               <div className="mt-4 flex items-center gap-4">
@@ -423,6 +509,22 @@ export default function ClassDetailsPage() {
               </p>
             )}
 
+            {!isEnrolled && isStudent && (
+              <>
+                {planRequiredNotCovered ? (
+                  <p className="text-sm text-yellow-200 mb-4">
+                    {t('plan_required_to_join')}
+                  </p>
+                ) : (
+                  isPlanCovered && (
+                    <p className="text-sm text-green-300 mb-4">
+                      {t('plan_included_you_are_covered')}
+                    </p>
+                  )
+                )}
+              </>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isEnrolled ? (
                 <button
@@ -445,32 +547,59 @@ export default function ClassDetailsPage() {
                         onClick={isGuest ? handleGuestRedirect : handleRoleBlocked}
                         className="px-6 py-3 bg-gray-700 text-gray-300 font-medium rounded-lg cursor-not-allowed"
                       >
-                        {classInfo.price === 0 ? 'Enroll for Free' : 'Proceed to Payment'}
+                        {planRequiredNotCovered
+                          ? t('plan_members_only')
+                          : hasNumericPrice
+                          ? 'Proceed to Payment'
+                          : 'Enroll for Free'}
                       </button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={handleAddToCart}
-                        className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-300"
-                      >
-                        Add to Cart
-                      </button>
-                      <button
-                        onClick={handleProceed}
-                        disabled={classFull}
-                        className={`px-8 py-3 font-bold rounded-lg transition-all duration-300 ${
-                          classFull
-                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 hover:shadow-lg'
-                        }`}
-                      >
-                        {classFull
-                          ? 'Class Full'
-                          : classInfo.price === 0
-                          ? 'Enroll for Free'
-                          : 'Proceed to Payment'}
-                      </button>
+                      {planRequiredNotCovered ? (
+                        <>
+                          <button
+                            onClick={handleViewPlans}
+                            className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold rounded-lg transition-all duration-300 hover:shadow-lg"
+                          >
+                            {t('plan_view_plans')}
+                          </button>
+                          <button
+                            disabled
+                            className="px-6 py-3 bg-gray-700 text-gray-400 font-medium rounded-lg cursor-not-allowed"
+                          >
+                            {t('plan_members_only')}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {allowAddToCart && (
+                            <button
+                              onClick={handleAddToCart}
+                              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-300"
+                            >
+                              Add to Cart
+                            </button>
+                          )}
+                          <button
+                            onClick={handleProceed}
+                            disabled={classFull}
+                            className={`px-8 py-3 font-bold rounded-lg transition-all duration-300 ${
+                              classFull
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 hover:shadow-lg'
+                            }`}
+                          >
+                            {classFull
+                              ? 'Class Full'
+                              : isPlanCovered
+                              ? t('join_with_plan')
+                              : hasNumericPrice
+                              ? 'Proceed to Payment'
+                              : 'Enroll for Free'}
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </>

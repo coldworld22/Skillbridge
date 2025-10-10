@@ -42,26 +42,15 @@ const includedPlans = z.preprocess(
 });
 
 const requirePlansForFreeAccess = (schema) =>
-  schema
-    .refine(
-      (data) =>
-        data.access_type !== "free" ||
-        (Array.isArray(data.included_plans) && data.included_plans.length > 0),
-      {
-        message: "Free classes must include at least one student plan",
-        path: ["included_plans"],
-      }
-    )
-    .refine(
-      (data) =>
-        data.access_type !== "paid" ||
-        data.included_plans === undefined ||
-        data.included_plans.length === 0,
-      {
-        message: "Paid classes cannot include student plans",
-        path: ["included_plans"],
-      }
-    );
+  schema.refine(
+    (data) =>
+      data.access_type !== "free" ||
+      (Array.isArray(data.included_plans) && data.included_plans.length > 0),
+    {
+      message: "Free classes must include at least one student plan",
+      path: ["included_plans"],
+    }
+  );
 
 const createSchema = requirePlansForFreeAccess(
   z
