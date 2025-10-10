@@ -13,7 +13,7 @@ import {
   FaEye,
   FaClipboardList,
   FaSearch,
-  FaSortAmountDown
+  FaSortAmountDown,
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
@@ -137,7 +137,7 @@ export default function MyEnrolledClassesPage() {
             />
           </div>
           <button
-            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
             className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm"
           >
             <FaSortAmountDown /> Sort by Date ({sortOrder.toUpperCase()})
@@ -264,16 +264,14 @@ export default function MyEnrolledClassesPage() {
                   <p className="text-center text-sm text-yellow-600">
                     <FaHourglassHalf className="inline mr-1" /> Starts Soon
                   </p>
+                ) : cls.enrollmentStatus === 'completed' ? (
+                  <p className="text-center text-sm text-gray-500">
+                    <FaCheckCircle className="inline mr-1" /> Completed
+                  </p>
                 ) : (
-                  cls.enrollmentStatus === 'completed' ? (
-                    <p className="text-center text-sm text-gray-500">
-                      <FaCheckCircle className="inline mr-1" /> Completed
-                    </p>
-                  ) : (
-                    <p className="text-center text-sm text-gray-500">
-                      <FaHourglassHalf className="inline mr-1" /> Class Ended
-                    </p>
-                  )
+                  <p className="text-center text-sm text-gray-500">
+                    <FaHourglassHalf className="inline mr-1" /> Class Ended
+                  </p>
                 )}
                 </div>
               );
@@ -281,9 +279,9 @@ export default function MyEnrolledClassesPage() {
           </div>
         )}
 
-        {hasMore && (
+        {hasMore && !loading && (
           <button
-            onClick={() => setVisibleCount(prev => prev + 6)}
+            onClick={() => setVisibleCount((prev) => prev + 6)}
             className="mt-10 block mx-auto bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 rounded-full"
           >
             Load More
