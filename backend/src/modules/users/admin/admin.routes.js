@@ -28,7 +28,17 @@ router.use(verifyToken, isAdmin);
 // ─────────────────────────────────────────────
 // 📤 Avatar Upload (FormData: avatar)
 // ─────────────────────────────────────────────
-router.patch("/:id/avatar", upload.single("avatar"), controller.updateAvatar);
+router.patch(
+  "/:id/avatar",
+  (req, res, next) => {
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized avatar update" });
+    }
+    next();
+  },
+  upload.single("avatar"),
+  controller.updateAvatar
+);
 
 
 

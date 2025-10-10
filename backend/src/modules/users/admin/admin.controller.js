@@ -175,9 +175,22 @@ exports.updateAvatar = async (req, res) => {
   }
 
   const filePath = `/uploads/admin/avatars/${req.file.filename}`;
+  const targetId = req.params.id || req.user.id;
+
+  const [existing] = await db("users")
+    .where({ id: targetId })
+    .select("id");
+
+  if (!existing) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (!existing.id || existing.id !== req.user.id) {
+    return res.status(403).json({ message: "Unauthorized avatar update" });
+  }
 
   await db("users")
-    .where({ id: req.params.id })
+    .where({ id: existing.id })
     .update({ avatar_url: filePath, updated_at: new Date() });
 
   res.json({ message: "Avatar updated", avatar_url: filePath });
