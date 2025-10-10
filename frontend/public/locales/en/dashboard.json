@@ -1029,6 +1029,7 @@
     "draft_saved": "Tutorial saved as draft!",
     "submitted_success": "Tutorial submitted successfully! Waiting for admin approval.",
     "failed_create": "Failed to create tutorial",
+    "load_categories_failed": "Failed to load categories.",
     "back": "⬅️ Back",
     "save_draft": "💾 Save Draft",
     "next": "Next ➡️",

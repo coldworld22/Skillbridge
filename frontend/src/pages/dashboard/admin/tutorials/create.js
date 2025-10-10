@@ -39,7 +39,7 @@ function CreateTutorialPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || t('creation_failed');
+      const msg = err.response?.data?.message || t('failed_create');
       toast.error(msg);
     }
   };
@@ -126,7 +126,7 @@ function CreateTutorialPage() {
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error(t('video_required'));
+      toast.error(t('upload_video_each_lesson'));
       return;
     }
     if (
@@ -142,7 +142,7 @@ function CreateTutorialPage() {
     try {
       await createTutorial(formData);
       toast.success(
-        status === "draft" ? t('draft_success') : t('submit_success')
+        status === "draft" ? t('draft_saved') : t('submitted_success')
       );
       const msg =
         status === "draft"
@@ -156,7 +156,7 @@ function CreateTutorialPage() {
       if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else {
-        toast.error(t('creation_failed'));
+        toast.error(t('failed_create'));
       }
     }
   };
@@ -172,10 +172,10 @@ function CreateTutorialPage() {
         {/* Step Progress */}
         <StepProgressBar
           steps={[
-            t('basic_info'),
-            t('curriculum'),
-            t('media'),
-            t('pricing_publish'),
+            t('step_basic_info'),
+            t('step_curriculum'),
+            t('step_media'),
+            t('step_pricing_publish'),
           ]}
           currentStep={step}
           onStepClick={(s) => {
