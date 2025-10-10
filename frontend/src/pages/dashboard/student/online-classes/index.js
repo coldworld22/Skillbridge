@@ -12,7 +12,8 @@ import {
   FaEye,
   FaClipboardList,
   FaSearch,
-  FaSortAmountDown
+  FaSortAmountDown,
+  FaCheck
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
@@ -24,6 +25,7 @@ export default function MyEnrolledClassesPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [subscribingId, setSubscribingId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -32,13 +34,54 @@ export default function MyEnrolledClassesPage() {
         setClasses(list);
       } catch (err) {
         console.error('Failed to load classes', err);
+        toast.error('Unable to load your classes right now.');
       }
     };
     load();
   }, []);
 
+  const handleSubscribe = async (classId) => {
+    setSubscribingId(classId);
+    try {
+      await subscribeToClassReminder(classId);
+      setClasses((prev) =>
+        prev.map((item) =>
+          item.id === classId
+            ? { ...item, reminderSubscribed: true }
+            : item
+        )
+      );
+      toast.success('You will be notified when this class goes live.');
+    } catch (err) {
+      console.error('Failed to subscribe to reminder', err);
+      const message = err?.response?.data?.message || 'Could not set the reminder. Please try again.';
+      toast.error(message);
+    } finally {
+      setSubscribingId(null);
+    }
+  };
+
+  const statusFilters = [
+    { value: 'all', label: 'All' },
+    { value: 'ongoing', label: 'Live Now' },
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'completed', label: 'Completed' }
+  ];
+
+  const scheduleBadgeClasses = {
+    Ongoing: 'bg-green-100 text-green-800',
+    Upcoming: 'bg-yellow-100 text-yellow-800',
+    Completed: 'bg-gray-200 text-gray-600'
+  };
+
+  const scheduleLabel = (status) => {
+    if (!status) return 'Upcoming';
+    if (status === 'Ongoing') return 'Live Now';
+    return status;
+  };
+
   const filteredClasses = classes
-    .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
+    .filter(cls => filter === 'all' || cls.scheduleStatus?.toLowerCase() === filter)
     .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       const dateA = new Date(a.startDate);
@@ -76,20 +119,20 @@ export default function MyEnrolledClassesPage() {
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {['all', 'live', 'upcoming', 'completed'].map((status) => (
+          {statusFilters.map(({ value, label }) => (
             <button
-              key={status}
-              onClick={() => setFilter(status)}
+              key={value}
+              onClick={() => setFilter(value)}
               className={`px-4 py-2 rounded-full font-medium text-sm transition-all ${
-                filter === status
+                filter === value
                   ? 'bg-yellow-500 text-black'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)} ({
-                status === 'all'
+              {label} ({
+                value === 'all'
                   ? classes.length
-                  : classes.filter(c => c.scheduleStatus.toLowerCase() === status).length
+                  : classes.filter(c => c.scheduleStatus?.toLowerCase() === value).length
               })
             </button>
           ))}
@@ -121,19 +164,27 @@ export default function MyEnrolledClassesPage() {
                 <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
 
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                  cls.scheduleStatus === 'Live'
-                    ? 'bg-green-100 text-green-800'
-                    : cls.scheduleStatus === 'Upcoming'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-200 text-gray-600'
+                  scheduleBadgeClasses[cls.scheduleStatus] || 'bg-gray-200 text-gray-600'
                 }`}>
-                  {cls.scheduleStatus}
+                  {scheduleLabel(cls.scheduleStatus)}
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
-                    <FaBell /> Notify Me
-                  </button>
+                  <div className="text-center mb-2">
+                    {cls.reminderSubscribed ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-600 font-semibold">
+                        <FaCheck /> Reminder set
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleSubscribe(cls.id)}
+                        disabled={subscribingId === cls.id}
+                        className="text-xs text-blue-600 underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <FaBell /> {subscribingId === cls.id ? 'Setting...' : 'Notify Me'}
+                      </button>
+                    )}
+                  </div>
                 )}
                 {cls.enrollmentStatus === 'completed' && (
                   <Link
@@ -149,7 +200,7 @@ export default function MyEnrolledClassesPage() {
                 >
                   <FaClipboardList className="inline mr-1" /> View Assignments
                 </Link>
-                {cls.scheduleStatus === 'Live' && cls.joined ? (
+                {cls.scheduleStatus === 'Ongoing' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"

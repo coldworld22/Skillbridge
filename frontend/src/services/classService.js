@@ -22,7 +22,18 @@ const formatBaseClass = (cls) => ({
 
 const formatEnrolledClass = (cls) => {
   const base = formatBaseClass(cls);
-  const { start_date, end_date, status, ...rest } = base;
+  const {
+    start_date,
+    end_date,
+    status,
+    reminder_subscribed,
+    reminderSubscribed,
+    ...rest
+  } = base;
+  const isReminderSubscribed =
+    typeof reminderSubscribed !== "undefined"
+      ? Boolean(reminderSubscribed)
+      : Boolean(reminder_subscribed);
   return {
     ...rest,
     startDate: start_date,
@@ -30,6 +41,7 @@ const formatEnrolledClass = (cls) => {
     enrollmentStatus: status,
     scheduleStatus: computeScheduleStatus(start_date, end_date),
     progress: status === "completed" ? 100 : 0,
+    reminderSubscribed: isReminderSubscribed,
   };
 };
 
