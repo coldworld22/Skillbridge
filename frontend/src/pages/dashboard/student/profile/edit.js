@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -20,6 +21,7 @@ import {
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -259,6 +261,11 @@ export default function StudentProfileEdit() {
       const fresh = await getStudentProfile();
       logger.log("[StudentProfileEdit] Updated profile", fresh);
 
+      const refreshedSocialLinks = {};
+      fresh.social_links?.forEach((link) => {
+        refreshedSocialLinks[link.platform] = link.url;
+      });
+
       setUser({
         ...user,
         full_name: fresh.full_name,
@@ -267,11 +274,26 @@ export default function StudentProfileEdit() {
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
         profile_complete: true,
+        is_email_verified: fresh.is_email_verified,
       });
 
-      setTimeout(() => {
-        router.push("/dashboard/student/profile/steps/Verification");
-      }, 1500);
+      setFormData((prev) => ({
+        ...prev,
+        full_name: fresh.full_name || "",
+        phone: fresh.phone || "",
+        gender: fresh.gender || "male",
+        date_of_birth: fresh.date_of_birth?.split("T")[0] || "",
+        education_level: fresh.student?.education_level || "",
+        topics: fresh.student?.topics || [],
+        learning_goals: fresh.student?.learning_goals || "",
+        socialLinks: refreshedSocialLinks,
+        avatar_url: fresh.avatar_url || null,
+        avatarPreview: fresh.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fresh.avatar_url}?v=${Date.now()}`
+          : null,
+      }));
+
+      const nextRoute = fresh.is_email_verified ? "/dashboard/student" : "/auth/verify-email";
 
       try {
         const message = "Your student profile was updated.";
@@ -279,16 +301,14 @@ export default function StudentProfileEdit() {
           createNotification({ user_id: user.id, type: "profile_update", message }),
           sendChatMessage(user.id, { text: message }),
         ]);
-        refreshNotifications?.();
-        refreshMessages?.();
       } catch (err) {
         logger.error("[StudentProfileEdit] notification error", err);
+      } finally {
+        refreshNotifications?.();
+        refreshMessages?.();
       }
 
-
-
-
-
+      router.push(nextRoute);
     } catch (err) {
       logger.error("[StudentProfileEdit] update error", err);
       const msg = err.response?.data?.message || err.message || "Failed to update profile";
@@ -649,4 +669,16 @@ export default function StudentProfileEdit() {
       </form>
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
