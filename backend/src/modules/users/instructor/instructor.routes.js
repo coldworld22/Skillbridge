@@ -137,7 +137,7 @@ router.patch(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      if (targetId !== requestUserId) {
+      if (normalizedTargetId !== normalizedRequestId) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
@@ -146,6 +146,7 @@ router.patch(
       }
 
       const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+      const targetId = hasParamId ? paramId : requestUserId;
       const existing = await db("instructor_profiles")
         .where({ user_id: targetId })
         .first();

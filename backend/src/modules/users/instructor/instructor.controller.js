@@ -237,7 +237,9 @@ exports.updateAvatar = async (req, res) => {
 
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
-        await db("users").where({ id: ownerId }).update({ avatar_url: avatarUrl });
+        await db("users")
+            .where({ id: hasParamId ? paramId : ownerId })
+            .update({ avatar_url: avatarUrl });
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
