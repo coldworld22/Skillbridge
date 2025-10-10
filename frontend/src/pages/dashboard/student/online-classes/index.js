@@ -255,10 +255,10 @@ export default function MyEnrolledClassesPage() {
                 </Link>
                 {normalizedSchedule === 'ongoing' && cls.joined ? (
                   <Link
-                    href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
-                    className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
+                    href={`/dashboard/student/assignments/${cls.id}`}
+                    className="text-xs text-blue-600 underline mb-3 block text-center"
                   >
-                    <FaVideo className="inline mr-2" /> Join Class
+                    <FaClipboardList className="inline mr-1" /> View Assignments
                   </Link>
                 ) : normalizedSchedule === 'upcoming' ? (
                   <p className="text-center text-sm text-yellow-600">
