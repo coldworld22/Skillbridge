@@ -1,4 +1,4 @@
-import { computeUnreadCounts } from '@/pages/messages/utils';
+import { computeUnreadCounts } from '@/utils/messages/computeUnreadCounts';
 
 describe('computeUnreadCounts', () => {
   it('updates user unread counts when new messages arrive', () => {

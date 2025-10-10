@@ -13,7 +13,7 @@ import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 import { API_BASE_URL } from "@/config/config";
-import { computeUnreadCounts } from "./utils";
+import { computeUnreadCounts } from "@/utils/messages/computeUnreadCounts";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");
