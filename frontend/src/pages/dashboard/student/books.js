@@ -87,6 +87,21 @@ function BookCard({ book }) {
 
   const isWishlisted = wishlist.some((item) => item.book_id === book.id);
 
+  const price = book.price_paid ?? book.price ?? 0;
+  const currency = book.currency || "USD";
+  const formattedPrice = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(Number(price || 0));
+    } catch (err) {
+      return `$${Number(price || 0).toFixed(2)}`;
+    }
+  }, [currency, price]);
+
   const handleWishlist = () => {
     if (isWishlisted) {
       removeFromWishlist(book.id);
@@ -115,10 +130,13 @@ function BookCard({ book }) {
         width={400}
         height={192}
         className="w-full h-48 object-cover rounded-lg mb-4"
+        onError={() => setImageSrc("/images/default-book-cover.jpg")}
       />
       <div className="flex-1">
         <h3 className="text-lg font-semibold mb-1 line-clamp-2">{book.title}</h3>
-        <p className="text-sm text-gray-600 mb-2 line-clamp-2">{book.shortDescription}</p>
+        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+          {book.shortDescription || book.short_description || book.description}
+        </p>
         <p className="text-sm text-gray-500 mb-1">
           {t("by_author", { author: authorLabel })}
         </p>
@@ -130,11 +148,11 @@ function BookCard({ book }) {
           ))}
         </div>
         <div className="flex items-center gap-2 text-sm">
-          {book.isFree ? (
+          {book.isFree || Number(price) === 0 ? (
             <span className="text-green-600 font-medium">{t("free")}</span>
           ) : (
             <span className="text-blue-600 font-medium">
-              {t("purchased_for", { price: book.price_paid })}
+              {t("purchased_for_amount", { price: formattedPrice })}
             </span>
           )}
         </div>
@@ -168,11 +186,15 @@ function BookCard({ book }) {
           </a>
         )}
         <button
-          className={
+          className={`flex items-center gap-1 ${
             isWishlisted ? "text-red-500" : "text-red-400 hover:text-red-500"
-          }
+          }`}
           onClick={handleWishlist}
-          aria-label={t("wishlist", { ns: "common" })}
+          aria-label={
+            isWishlisted
+              ? t("wishlist_remove")
+              : t("wishlist_add")
+          }
         >
           <FiHeart />
         </button>
