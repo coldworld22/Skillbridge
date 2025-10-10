@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
@@ -824,3 +826,11 @@ const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['instr
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard', 'common'], nextI18NextConfig)),
+    },
+  };
+}
