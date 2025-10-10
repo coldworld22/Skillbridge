@@ -23,27 +23,27 @@ describe('calculateInstructorAmount', () => {
 
   it('uses plan commission rate when available', async () => {
     db.first
-      .mockResolvedValueOnce({ usage_count: 2 })
+      .mockResolvedValueOnce({ usage_count: 2, instructor_amount: 20 })
       .mockResolvedValueOnce({ price_monthly: 100 });
     db.select.mockResolvedValueOnce([
       { feature_key: 'commission_rate', value: '0.3' },
     ]);
 
     const amt = await calculateInstructorAmount('plan1', 'item1');
-    expect(amt).toBeCloseTo(35);
+    expect(amt).toBeCloseTo(15);
     expect(calculatePlatformFee).not.toHaveBeenCalled();
   });
 
   it('handles different commission rates', async () => {
     db.first
-      .mockResolvedValueOnce({ usage_count: 4 })
+      .mockResolvedValueOnce({ usage_count: 4, instructor_amount: 40 })
       .mockResolvedValueOnce({ price_monthly: 200 });
     db.select.mockResolvedValueOnce([
       { feature_key: 'commission_rate', value: '0.1' },
     ]);
 
     const amt = await calculateInstructorAmount('plan2', 'item2');
-    expect(amt).toBeCloseTo(45);
+    expect(amt).toBeCloseTo(5);
   });
 
   it('returns 0 when plan not found', async () => {

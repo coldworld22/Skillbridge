@@ -67,8 +67,8 @@ function InstructorClassDetailPage() {
 
           <div className="grid md:grid-cols-2 gap-6 pt-4 text-sm">
             <div className="space-y-1">
-              <p><strong>🗓️ Start Date:</strong> {details?.start_date}</p>
-              <p><strong>🗖 End Date:</strong> {details?.end_date || '-'}</p>
+              <p><strong>🗓️ Start Date:</strong> {details?.startDateInput || details?.start_date || '-'}</p>
+              <p><strong>🗖 End Date:</strong> {details?.endDateInput || details?.end_date || '-'}</p>
               <p><strong>🏷️ Category:</strong> {details?.category || '-'}</p>
             </div>
             <div className="space-y-1">

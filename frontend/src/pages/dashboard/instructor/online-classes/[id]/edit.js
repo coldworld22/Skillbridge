@@ -16,6 +16,7 @@ import {
 } from '@/services/instructor/classService';
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { fetchClassTags } from '@/services/instructor/classTagService';
+import { fetchStudentPlanIdentifiers } from '@/services/instructor/planService';
 import useAuthStore from '@/store/auth/authStore';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -47,6 +48,7 @@ function EditInstructorClass() {
     imagePreview: '',
     demoVideo: null,
     demoPreview: '',
+    includedPlans: [],
   });
   const [categories, setCategories] = useState([]);
   const [allTags, setAllTags] = useState([]);
@@ -55,6 +57,7 @@ function EditInstructorClass() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [plans, setPlans] = useState([]);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -74,6 +77,9 @@ function EditInstructorClass() {
     fetchClassTags()
       .then(setAllTags)
       .catch(() => setAllTags([]));
+    fetchStudentPlanIdentifiers()
+      .then((items) => setPlans(items || []))
+      .catch(() => setPlans([]));
   }, []);
 
   useEffect(() => {
@@ -96,15 +102,16 @@ function EditInstructorClass() {
             level: data.level || '',
             language: data.language || '',
             description: data.description || '',
-            startDate: data.start_date || '',
-            endDate: data.end_date || '',
+            startDate: data.startDateInput || data.start_date || '',
+            endDate: data.endDateInput || data.end_date || '',
             price: data.price ?? '',
             maxStudents: data.max_students ?? '',
-            isFree: data.price === 0,
+            isFree: data.access_type === 'free' || data.price === 0,
             allowInstallments: Boolean(data.allow_installments),
             isPublished: data.publishStatus === 'published',
             imagePreview: data.cover_image || '',
             demoPreview: data.demo_video_url || '',
+            includedPlans: Array.isArray(data.included_plans) ? data.included_plans : [],
           }));
           if (Array.isArray(data.tags)) {
             setSelectedTags(data.tags.map((t) => t.name));
@@ -161,9 +168,22 @@ function EditInstructorClass() {
     setSelectedTags(selectedTags.filter((tag) => tag !== tagToRemove));
   };
 
+  const togglePlan = (planId) => {
+    setFormData((prev) => ({
+      ...prev,
+      includedPlans: prev.includedPlans.includes(planId)
+        ? prev.includedPlans.filter((id) => id !== planId)
+        : [...prev.includedPlans, planId],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!id) return;
+    if (formData.isFree && formData.includedPlans.length === 0) {
+      toast.error('Select at least one student plan for free access');
+      return;
+    }
     try {
       setIsSubmitting(true);
       setUploadProgress(0);
@@ -174,8 +194,12 @@ function EditInstructorClass() {
       if (formData.language) payload.append('language', formData.language);
       if (formData.startDate) payload.append('start_date', formData.startDate);
       if (formData.endDate) payload.append('end_date', formData.endDate);
+      payload.append('access_type', formData.isFree ? 'free' : 'paid');
       if (formData.isFree) {
         payload.append('price', '0');
+        if (formData.includedPlans.length) {
+          payload.append('included_plans', JSON.stringify(formData.includedPlans));
+        }
       } else if (formData.price || formData.price === 0) {
         payload.append('price', Number(formData.price).toFixed(2));
       }
@@ -346,6 +370,42 @@ function EditInstructorClass() {
                   <span className="ml-2 text-sm text-gray-700">Publish Immediately</span>
                 </label>
               </div>
+              {formData.isFree && (
+                <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                  <p className="text-sm font-semibold text-gray-800 mb-2">
+                    Select student plans that unlock this class
+                  </p>
+                  {plans.length === 0 && (
+                    <p className="text-xs text-gray-500">
+                      No student plans available yet. Please contact an administrator.
+                    </p>
+                  )}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {plans.map((plan) => {
+                      const planKey = plan.id || plan.slug;
+                      return (
+                        <label key={planKey} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                            checked={formData.includedPlans.includes(planKey)}
+                            onChange={() => togglePlan(planKey)}
+                          />
+                          <span>
+                            {plan.name || plan.slug}
+                            {plan.slug ? (
+                              <span className="ml-2 text-xs text-gray-500">({plan.slug})</span>
+                            ) : null}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    At least one plan must be selected for free classes.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">

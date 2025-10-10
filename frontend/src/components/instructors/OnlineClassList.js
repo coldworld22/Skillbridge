@@ -109,8 +109,8 @@ export default function OnlineClassList() {
               </h2>
               <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
                 <FaCalendarAlt />
-                {cls.start_date || "-"}
-                {cls.end_date ? ` - ${cls.end_date}` : ""}
+                {cls.startDateInput || cls.start_date || "-"}
+                {cls.endDateInput ? ` - ${cls.endDateInput}` : cls.end_date ? ` - ${cls.end_date}` : ""}
               </p>
               <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
                 <FaClock /> Schedule: {cls.scheduleStatus}

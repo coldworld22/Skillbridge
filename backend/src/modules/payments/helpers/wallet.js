@@ -32,9 +32,9 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
   try {
     const amount = await calculateInstructorAmount(
       planId,
-      classId,
+      item_id,
       trx,
-      "class"
+      item_type
     );
     if (amount <= 0) return;
 

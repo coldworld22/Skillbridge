@@ -17,6 +17,7 @@ exports.calculateInstructorAmount = async (
       .where({ plan_id: planId, item_type: itemType, item_id: itemId })
       .first();
 
+    let previousAmount = 0;
     if (!row) {
       await query("plan_usage_metrics").insert({
         plan_id: planId,
@@ -25,8 +26,9 @@ exports.calculateInstructorAmount = async (
         usage_count: 1,
         instructor_amount: 0,
       });
-      row = { usage_count: 1 };
+      row = { usage_count: 1, instructor_amount: 0 };
     }
+    previousAmount = Number(row.instructor_amount) || 0;
 
     const plan = await query("plans").where({ id: planId }).first();
     if (!plan) return 0;
@@ -50,7 +52,8 @@ exports.calculateInstructorAmount = async (
       .where({ plan_id: planId, item_type: itemType, item_id: itemId })
       .update({ instructor_amount: amount });
 
-    return Number(amount);
+    const delta = amount - previousAmount;
+    return delta > 0 ? Number(delta.toFixed(2)) : 0;
   } catch (err) {
     // If metrics table missing or query fails, do not block enrollment
     return 0;

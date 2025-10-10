@@ -13,6 +13,7 @@ import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
 import { fetchClassTags, createClassTag } from '@/services/instructor/classTagService';
+import { fetchStudentPlanIdentifiers } from '@/services/instructor/planService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
@@ -50,7 +51,8 @@ function CreateOnlineClass() {
     demoVideo: null,
     demoPreview: '',
     lessons: [],
-    lessonCount: ''
+    lessonCount: '',
+    includedPlans: []
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
@@ -59,6 +61,7 @@ function CreateOnlineClass() {
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
@@ -93,6 +96,12 @@ function CreateOnlineClass() {
       setFormData((prev) => ({ ...prev, instructor: user.full_name }));
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchStudentPlanIdentifiers()
+      .then((items) => setPlans(items || []))
+      .catch(() => setPlans([]));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -187,6 +196,15 @@ function CreateOnlineClass() {
     setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
   };
 
+  const togglePlan = (planId) => {
+    setFormData((prev) => ({
+      ...prev,
+      includedPlans: prev.includedPlans.includes(planId)
+        ? prev.includedPlans.filter((id) => id !== planId)
+        : [...prev.includedPlans, planId],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
@@ -215,6 +233,10 @@ function CreateOnlineClass() {
         toast.error('User information unavailable');
         return;
       }
+      if (formData.isFree && formData.includedPlans.length === 0) {
+        toast.error('Select at least one student plan for free access');
+        return;
+      }
       try {
         setIsSubmitting(true);
         setUploadProgress(0);
@@ -230,8 +252,13 @@ function CreateOnlineClass() {
         if (formData.endDate)
           payload.append('end_date', toDateTimeISO(formData.endDate));
 
+        payload.append('access_type', formData.isFree ? 'free' : 'paid');
+
         if (formData.isFree) {
           payload.append('price', '0');
+          if (formData.includedPlans.length) {
+            payload.append('included_plans', JSON.stringify(formData.includedPlans));
+          }
         } else if (formData.price || formData.price === 0) {
           payload.append('price', Number(formData.price).toFixed(2));
         }
@@ -509,6 +536,42 @@ function CreateOnlineClass() {
                           <span className="ml-2 text-sm text-gray-700">Publish Immediately</span>
                         </label>
                       </div>
+                      {formData.isFree && (
+                        <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                          <p className="text-sm font-semibold text-gray-800 mb-2">
+                            Select student plans that unlock this class
+                          </p>
+                          {plans.length === 0 && (
+                            <p className="text-xs text-gray-500">
+                              No student plans available yet. Please contact an administrator.
+                            </p>
+                          )}
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {plans.map((plan) => {
+                              const planKey = plan.id || plan.slug;
+                              return (
+                                <label key={planKey} className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                                    checked={formData.includedPlans.includes(planKey)}
+                                    onChange={() => togglePlan(planKey)}
+                                  />
+                                  <span>
+                                    {plan.name || plan.slug}
+                                    {plan.slug ? (
+                                      <span className="ml-2 text-xs text-gray-500">({plan.slug})</span>
+                                    ) : null}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-gray-600 mt-2">
+                            At least one plan must be selected for free classes.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Full-width fields */}

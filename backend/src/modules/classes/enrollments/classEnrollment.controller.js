@@ -8,7 +8,6 @@ const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
-const planRevenue = require("../../payments/helpers/planRevenue");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -38,7 +37,17 @@ exports.enroll = catchAsync(async (req, res) => {
     }
 
     const activePlanId = await getActiveStudentPlanId(user_id);
-    const includedPlans = Array.isArray(cls.included_plans) ? cls.included_plans : [];
+    let includedPlans = [];
+    if (Array.isArray(cls.included_plans)) {
+      includedPlans = cls.included_plans;
+    } else if (cls.included_plans) {
+      try {
+        const parsed = JSON.parse(cls.included_plans);
+        includedPlans = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        includedPlans = [];
+      }
+    }
     const requiresPlan = cls.access_type === "free";
     const coveredBySubscription =
       activePlanId && includedPlans.includes(activePlanId);
@@ -68,20 +77,14 @@ exports.enroll = catchAsync(async (req, res) => {
         });
       }
 
-      await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        classId,
-        trx,
-        "class"
-      );
-
-      await creditInstructorSubscription("class", classId, activePlanId, trx);
-
       await trx("payments").insert({
         user_id,
+        method_id: null,
         item_id: classId,
         item_type: "class",
         source: "subscription",
+        status: paymentsService.STATUS.PAID,
+        paid_at: new Date(),
         amount: 0,
       });
       // Credit the instructor for subscription-based enrollments so that
@@ -150,4 +153,3 @@ exports.getStudent = catchAsync(async (req, res) => {
   const data = await service.getStudent(classId, studentId);
   sendSuccess(res, data);
 });
-

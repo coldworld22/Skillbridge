@@ -148,9 +148,12 @@ describe('Class enrollment routes', () => {
     expect(db.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'test-user',
+        method_id: null,
         item_id: 'abc',
         item_type: 'class',
         source: 'subscription',
+        status: 'paid',
+        paid_at: expect.any(Date),
         amount: 0,
       }),
     );

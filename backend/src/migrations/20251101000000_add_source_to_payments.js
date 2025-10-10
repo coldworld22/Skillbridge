@@ -1,6 +1,11 @@
-/**
- * Placeholder migration retained for historic compatibility.
- */
+exports.up = async function up(knex) {
+  return knex.schema.alterTable("payments", (table) => {
+    table.string("source");
+  });
+};
 
-exports.up = async function up() {};
-exports.down = async function down() {};
+exports.down = async function down(knex) {
+  return knex.schema.alterTable("payments", (table) => {
+    table.dropColumn("source");
+  });
+};

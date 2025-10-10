@@ -3,11 +3,13 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
-const formatClass = (cls) => {
-  const { status, ...rest } = cls;
+const formatClass = (cls = {}) => {
+  const startRaw = cls.start_date || "";
+  const endRaw = cls.end_date || "";
+
   return {
-    ...rest,
-    publishStatus: status,
+    ...cls,
+    publishStatus: cls.status,
     cover_image: cls.cover_image
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
       : null,
@@ -20,13 +22,23 @@ const formatClass = (cls) => {
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
       : null,
     trending: Boolean(cls.trending),
-
-    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
-
+    start_date: startRaw,
+    end_date: endRaw,
+    startDateInput: startRaw ? toDateInput(startRaw) : "",
+    endDateInput: endRaw ? toDateInput(endRaw) : "",
     approvalStatus: cls.moderation_status || "Pending",
-    scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+    scheduleStatus: computeScheduleStatus(startRaw, endRaw),
     views: cls.views || 0,
+    included_plans: (() => {
+      if (Array.isArray(cls.included_plans)) return cls.included_plans;
+      if (!cls.included_plans) return [];
+      try {
+        const parsed = JSON.parse(cls.included_plans);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [cls.included_plans];
+      }
+    })(),
   };
 };
 
