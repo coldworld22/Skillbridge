@@ -220,10 +220,18 @@ exports.updateAvatar = async (req, res) => {
             return res.status(400).json({ error: "No file uploaded" });
         }
 
-        const ownerId = req.user.id;
-        const paramId = req.params.id;
+        const ownerId = req.user?.id ? String(req.user.id) : null;
+        const paramId =
+            req.params?.id && req.params.id !== "undefined"
+                ? String(req.params.id)
+                : null;
 
-        if (paramId && paramId !== "undefined" && paramId !== ownerId) {
+        if (!ownerId) {
+            logger.error("❌ Avatar upload error: missing authenticated user id");
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        if (paramId && paramId !== ownerId) {
             return res.status(403).json({ error: "Unauthorized" });
         }
 

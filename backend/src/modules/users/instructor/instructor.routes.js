@@ -123,7 +123,50 @@ router.patch(
   verifyToken,
   isInstructor,
   demoUpload.single("demo"),
-  controller.uploadDemoVideo
+  async (req, res) => {
+    try {
+      const requestUserId = req.user?.id ? String(req.user.id) : null;
+      const paramId =
+        req.params?.id && req.params.id !== "undefined"
+          ? String(req.params.id)
+          : null;
+      const targetId = paramId || requestUserId;
+
+      if (!requestUserId) {
+        logger.error("Demo video upload error: missing authenticated user id");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      if (targetId !== requestUserId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+      const existing = await db("instructor_profiles")
+        .where({ user_id: targetId })
+        .first();
+
+      if (existing) {
+        await db("instructor_profiles")
+          .where({ user_id: targetId })
+          .update({ demo_video_url: demoVideoUrl });
+      } else {
+        await db("instructor_profiles").insert({
+          user_id: targetId,
+          expertise: JSON.stringify([]),
+          demo_video_url: demoVideoUrl,
+        });
+      }
+      res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+      logger.error("Demo video upload error:", err);
+      res.status(500).json({ error: "Failed to upload demo video" });
+    }
+  }
 );
 
 /**
