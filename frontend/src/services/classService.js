@@ -20,9 +20,38 @@ const formatBaseClass = (cls) => ({
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
 
+const formatClass = (cls = {}) => {
+  const base = formatBaseClass(cls);
+
+  const startDate = base.startDate || base.start_date || cls.startDate || cls.start_date;
+  const endDate = base.endDate || base.end_date || cls.endDate || cls.end_date;
+  const status = cls.status || base.status || base.enrollmentStatus;
+
+  return {
+    ...base,
+    startDate,
+    endDate,
+    enrollmentStatus: status,
+    scheduleStatus: computeScheduleStatus(startDate, endDate),
+    progress: typeof base.progress === "number" ? base.progress : status === "completed" ? 100 : 0,
+    tags: Array.isArray(base.tags) ? base.tags : Array.isArray(cls.tags) ? cls.tags : [],
+  };
+};
+
 const formatEnrolledClass = (cls) => {
   const base = formatBaseClass(cls);
-  const { start_date, end_date, status, ...rest } = base;
+  const {
+    start_date,
+    end_date,
+    status,
+    reminder_subscribed,
+    reminderSubscribed,
+    ...rest
+  } = base;
+  const isReminderSubscribed =
+    typeof reminderSubscribed !== "undefined"
+      ? Boolean(reminderSubscribed)
+      : Boolean(reminder_subscribed);
   return {
     ...rest,
     startDate: start_date,
@@ -30,6 +59,7 @@ const formatEnrolledClass = (cls) => {
     enrollmentStatus: status,
     scheduleStatus: computeScheduleStatus(start_date, end_date),
     progress: status === "completed" ? 100 : 0,
+    reminderSubscribed: isReminderSubscribed,
   };
 };
 

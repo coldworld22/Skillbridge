@@ -9,16 +9,7 @@ import {
   fetchClassLessons,
   fetchClassAssignments,
 } from "@/services/classService";
-
-const computeScheduleStatus = (start, end) => {
-  const now = new Date();
-  const s = start ? new Date(start) : null;
-  const e = end ? new Date(end) : null;
-  if (s && now < s) return "Upcoming";
-  if (s && e && now >= s && now <= e) return "Ongoing";
-  if (e && now > e) return "Completed";
-  return "Upcoming";
-};
+import { computeScheduleStatus } from "@/utils/classSchedule";
 
 export default function StudentClassRoom() {
   const router = useRouter();
@@ -61,7 +52,10 @@ export default function StudentClassRoom() {
   };
 
   const showCertificate =
-    classData && classData.lessons && completedLessons.length === classData.lessons.length;
+    classData &&
+    Array.isArray(classData.lessons) &&
+    classData.lessons.length > 0 &&
+    completedLessons.length === classData.lessons.length;
 
   if (!id) return <div className="text-white p-10">Loading class...</div>;
   if (!classData) return <div className="text-red-400 p-10">❌ Class not found</div>;

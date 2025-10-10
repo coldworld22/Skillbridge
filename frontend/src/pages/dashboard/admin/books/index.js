@@ -12,7 +12,18 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
+import {
+  FiAlertTriangle,
+  FiPlus,
+  FiSearch,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiFilter,
+  FiX,
+  FiEdit,
+  FiEye,
+} from "react-icons/fi";
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
@@ -28,6 +39,7 @@ function AdminBooksPage() {
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -93,7 +105,9 @@ function AdminBooksPage() {
         setCategories(cats);
         setLanguages(langs);
       } catch (err) {
-        toast.error(t("Failed to load data"));
+        const message = t("Failed to load data", { defaultValue: "Failed to load data" });
+        toast.error(message);
+        setError(message);
       }
     };
     loadCategories();
@@ -144,6 +158,7 @@ function AdminBooksPage() {
       booksAbortRef.current = controller;
       try {
         setLoading(true);
+        setError(null);
         const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
           if (
             value === "" ||
@@ -169,8 +184,10 @@ function AdminBooksPage() {
         setMeta(meta);
       } catch (err) {
         if (err.name !== "CanceledError" && err.name !== "AbortError") {
-          toast.error(t("Failed to load data"));
+          const message = t("Failed to load data", { defaultValue: "Failed to load data" });
+          toast.error(message);
           console.error("Error loading:", err);
+          setError(message);
         }
       } finally {
         setLoading(false);
@@ -289,6 +306,24 @@ function AdminBooksPage() {
             </Link>
           </div>
         </div>
+
+        {!loading && error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+            <div className="flex items-start gap-2">
+              <FiAlertTriangle className="mt-0.5 shrink-0 text-lg" />
+              <div>
+                <p className="font-medium">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => loadBooks(page)}
+                  className="mt-3 inline-flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-800/40"
+                >
+                  {t("Retry", { defaultValue: "Retry" })}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters - Desktop */}
         <div className={`hidden sm:block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm`}>

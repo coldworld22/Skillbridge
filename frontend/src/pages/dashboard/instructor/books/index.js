@@ -13,7 +13,18 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
+import {
+  FiAlertTriangle,
+  FiPlus,
+  FiSearch,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiFilter,
+  FiX,
+  FiEdit,
+  FiEye,
+} from "react-icons/fi";
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
@@ -93,6 +104,13 @@ function InstructorBooksPage() {
       }),
     [books, sortBy]
   );
+
+  useEffect(() => {
+    setVisibleCount((prev) => {
+      const limit = Math.min(perPage, sortedBooks.length || perPage);
+      return prev !== limit ? limit : prev;
+    });
+  }, [perPage, sortedBooks.length]);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -187,22 +205,33 @@ function InstructorBooksPage() {
     };
   }, [loadBooks]);
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
+    if (selectedBooks.length === 0) return;
+    const idsToDelete = [...selectedBooks];
+    const currentPageCount = books.length;
     openConfirmModal({
       title: t("Confirm Deletion"),
       message: t("Are you sure you want to delete selected books?"),
       onConfirm: async () => {
         try {
-          const deletePromises = selectedBooks.map(id => deleteBook(id));
-          await Promise.all(deletePromises);
-          setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
-          setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
+          await Promise.all(idsToDelete.map((id) => deleteBook(id)));
+          const deleteCount = idsToDelete.length;
+          const newTotal = Math.max(0, (meta.total ?? 0) - deleteCount);
+          const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
+          setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
           setSelectedBooks([]);
           toast.success(t("Books deleted successfully"));
+
+          const nextPage = currentPageCount === deleteCount && page > 1 ? page - 1 : page;
+          if (nextPage !== page) {
+            setPage(nextPage);
+          } else {
+            await loadBooks(nextPage);
+          }
         } catch (err) {
           toast.error(t("Failed to delete some books"));
         }
-      }
+      },
     });
   };
 
@@ -261,9 +290,6 @@ function InstructorBooksPage() {
     return () => loader.current && observer.unobserve(loader.current);
   }, [loader, sortedBooks.length]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-yellow-400">⏳ Loading books...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
-
   return (
     <>
       <section className="py-8 px-4 max-w-7xl mx-auto">
@@ -296,6 +322,25 @@ function InstructorBooksPage() {
             </Link>
           </div>
         </div>
+
+        {!loading && error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+            <div className="flex items-start gap-2">
+              <FiAlertTriangle className="mt-0.5 shrink-0 text-lg" />
+              <div>
+                <p className="font-medium">{t("Failed to load data", { defaultValue: "Failed to load data" })}</p>
+                <p className="mt-1">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => loadBooks(page)}
+                  className="mt-3 inline-flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-800/40"
+                >
+                  {t("Retry", { defaultValue: "Retry" })}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters - Desktop */}
         <div className={`hidden sm:block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm`}>
