@@ -222,14 +222,17 @@ exports.updateAvatar = async (req, res) => {
 
         const ownerId = req.user.id;
         const paramId = req.params.id;
+        const hasParamId = paramId && paramId !== "undefined";
 
-        if (paramId && paramId !== "undefined" && paramId !== ownerId) {
+        if (hasParamId && String(paramId) !== String(ownerId)) {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
-        await db("users").where({ id: ownerId }).update({ avatar_url: avatarUrl });
+        await db("users")
+            .where({ id: hasParamId ? paramId : ownerId })
+            .update({ avatar_url: avatarUrl });
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
