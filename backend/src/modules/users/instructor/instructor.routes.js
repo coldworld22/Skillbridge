@@ -8,7 +8,6 @@ const router = express.Router();
 const controller = require("./instructor.controller");
 const { verifyToken, isInstructor } = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, demoUpload, certificateUpload } = require("./instructorUploadMiddleware");
-const db = require("../../../config/database");
 const { updateInstructorProfileSchema } = require("./instructor.validator");
 const validate = require("../../../middleware/validate");
 
@@ -104,7 +103,19 @@ router.patch(
 
 
 /**
- * @desc Upload demo video
+ * @desc Upload demo video (uses authenticated instructor id)
+ * @route PATCH /api/users/instructor/demo
+ */
+router.patch(
+  "/demo",
+  verifyToken,
+  isInstructor,
+  demoUpload.single("demo"),
+  controller.uploadDemoVideo
+);
+
+/**
+ * @desc Upload demo video for a specific instructor id
  * @route PATCH /api/users/instructor/:id/demo
  */
 router.patch(

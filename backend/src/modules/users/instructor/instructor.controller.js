@@ -272,6 +272,47 @@ exports.deleteAvatar = async (req, res) => {
 };
 
 /**
+ * @desc Upload instructor demo video
+ * @route PATCH /api/users/instructor/:id?/demo
+ * @access Instructor
+ */
+exports.uploadDemoVideo = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+        const ownerId = req.user.id;
+        const paramId = req.params?.id;
+        const targetId = paramId && paramId !== "undefined" ? paramId : ownerId;
+
+        if (targetId !== ownerId) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+        const existing = await db("instructor_profiles").where({ user_id: ownerId }).first();
+
+        if (existing) {
+            await db("instructor_profiles")
+                .where({ user_id: ownerId })
+                .update({ demo_video_url: demoVideoUrl });
+        } else {
+            await db("instructor_profiles").insert({
+                user_id: ownerId,
+                expertise: JSON.stringify([]),
+                demo_video_url: demoVideoUrl,
+            });
+        }
+
+        return res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+        logger.error("Demo video upload error:", err);
+        return res.status(500).json({ error: "Failed to upload demo video" });
+    }
+};
+
+/**
  * @desc Delete instructor demo video
  * @route DELETE /api/users/instructor/:id/demo
  * @access Instructor
