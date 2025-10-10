@@ -4,9 +4,17 @@ exports.seed = async function (knex) {
 
   const now = knex.fn.now();
 
+  const planIds = {
+    basic: '00000000-0000-0000-0000-0000000000b1',
+    regular: '00000000-0000-0000-0000-0000000000b2',
+    prime: '00000000-0000-0000-0000-0000000000b3',
+    instructorBasic: '00000000-0000-0000-0000-0000000000i1',
+    instructorPro: '00000000-0000-0000-0000-0000000000i2',
+  };
+
   const plans = [
     {
-      id: knex.raw('uuid_generate_v4()'),
+      id: planIds.basic,
       name: 'Basic',
       slug: 'basic',
       price_monthly: 0,
@@ -26,7 +34,7 @@ exports.seed = async function (knex) {
       updated_at: now
     },
     {
-      id: knex.raw('uuid_generate_v4()'),
+      id: planIds.regular,
       name: 'Regular',
       slug: 'regular',
       price_monthly: 9.99,
@@ -46,7 +54,7 @@ exports.seed = async function (knex) {
       updated_at: now
     },
     {
-      id: knex.raw('uuid_generate_v4()'),
+      id: planIds.prime,
       name: 'Prime',
       slug: 'prime',
       price_monthly: 19.99,
@@ -66,7 +74,7 @@ exports.seed = async function (knex) {
       updated_at: now
     },
     {
-      id: knex.raw('uuid_generate_v4()'),
+      id: planIds.instructorBasic,
       name: 'Instructor Basic',
       slug: 'instructor-basic',
       price_monthly: 0,
@@ -88,7 +96,7 @@ exports.seed = async function (knex) {
       updated_at: now
     },
     {
-      id: knex.raw('uuid_generate_v4()'),
+      id: planIds.instructorPro,
       name: 'Instructor Pro',
       slug: 'instructor-pro',
       price_monthly: 29.99,
@@ -382,4 +390,3 @@ exports.seed = async function (knex) {
     }
   ]);
 };
-

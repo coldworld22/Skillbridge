@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchPublicPlans } from "@/services/public/planService";
+import { formatCurrency } from "@/utils/currency";
 
 const SubscriptionPlans = ({ role = "student" }) => {
   const { t } = useTranslation("website");
@@ -92,7 +93,18 @@ const SubscriptionPlans = ({ role = "student" }) => {
               if (styleConf.buttonTextColor) buttonStyles.color = styleConf.buttonTextColor;
             }
 
-            const cardClasses = `p-6 rounded-lg shadow-2xl transition-all duration-300 ${isMiddle ? "md:scale-105" : ""} relative`;
+            const cardClasses = `p-6 rounded-lg shadow-2xl transition-all duration-300 ${
+              isMiddle ? "md:scale-105" : ""
+            } relative flex flex-col h-full`;
+            const includedClasses = Array.isArray(plan.included_classes)
+              ? plan.included_classes
+              : [];
+            const monthlyLabel = formatCurrency(plan.price_monthly || 0, {
+              currency: plan.currency,
+            });
+            const yearlyLabel = formatCurrency(plan.price_yearly || 0, {
+              currency: plan.currency,
+            });
 
             return (
               <motion.div
@@ -110,8 +122,8 @@ const SubscriptionPlans = ({ role = "student" }) => {
                 <h3 className="text-2xl font-extrabold mb-2">{plan.name}</h3>
                 <p className="text-3xl font-bold mb-4">
                   {interval === "monthly"
-                    ? `${plan.price_monthly} ${plan.currency}/mo`
-                    : `${plan.price_yearly} ${plan.currency}/yr`}
+                    ? `${monthlyLabel}/mo`
+                    : `${yearlyLabel}/yr`}
                 </p>
 
                 <ul className="space-y-2 text-gray-300">
@@ -121,6 +133,54 @@ const SubscriptionPlans = ({ role = "student" }) => {
                     </li>
                   ))}
                 </ul>
+
+                {includedClasses.length > 0 && (
+                  <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
+                      {t("plan_included_classes_title")}
+                    </h4>
+                    <ul className="space-y-3">
+                      {includedClasses.slice(0, 3).map((cls) => (
+                        <li key={cls.id} className="flex items-center gap-3">
+                          {cls.cover_image ? (
+                            <img
+                              src={cls.cover_image}
+                              alt={cls.title}
+                              className="w-12 h-12 rounded object-cover border border-white/30"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
+                              {t("plan_class_placeholder")}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <a
+                              href={`/online-classes/${cls.id}`}
+                              className="font-semibold text-white line-clamp-1 hover:underline"
+                            >
+                              {cls.title}
+                            </a>
+                            <p className="text-xs text-gray-200/80">
+                              {cls.access_type === "free"
+                                ? t("plan_class_access_plan")
+                                : t("plan_class_access_paid", {
+                                    price: formatCurrency(cls.price || 0, {
+                                      currency: plan.currency,
+                                    }),
+                                  })}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    {includedClasses.length > 3 && (
+                      <p className="text-xs text-gray-200/70">
+                        {t("plan_more_classes", { count: includedClasses.length - 3 })}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <button
                   className="mt-6 px-6 py-3 rounded-lg font-semibold hover:opacity-90"

@@ -17,9 +17,52 @@ exports.getPlans = async (role) => {
   if (role) query = query.where({ target_role: role });
   const plans = await query;
   const features = await db("plan_features").select("*");
+
+  const rawClasses = await db("online_classes")
+    .select(
+      "id",
+      "title",
+      "slug",
+      "cover_image",
+      "start_date",
+      "end_date",
+      "price",
+      "access_type",
+      "included_plans"
+    )
+    .whereRaw("included_plans <> '[]'::jsonb");
+
+  const classesByPlan = {};
+  rawClasses.forEach((cls) => {
+    let planIds = [];
+    if (Array.isArray(cls.included_plans)) planIds = cls.included_plans;
+    else if (cls.included_plans) {
+      try {
+        const parsed = JSON.parse(cls.included_plans);
+        planIds = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        planIds = [];
+      }
+    }
+    planIds.forEach((planId) => {
+      if (!classesByPlan[planId]) classesByPlan[planId] = [];
+      classesByPlan[planId].push({
+        id: cls.id,
+        title: cls.title,
+        slug: cls.slug,
+        cover_image: cls.cover_image,
+        start_date: cls.start_date,
+        end_date: cls.end_date,
+        price: cls.price,
+        access_type: cls.access_type,
+      });
+    });
+  });
+
   return plans.map((p) => ({
     ...p,
     features: features.filter((f) => f.plan_id === p.id),
+    included_classes: classesByPlan[p.id] || [],
   }));
 };
 
