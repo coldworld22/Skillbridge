@@ -25,6 +25,7 @@
 - [Class Plan Coverage](class-plan-coverage.md) — overview of plan coverage.
 - [Student Registration Guide](student-registration-guide.md) — steps for new student sign-up.
 - [Student Enrollment Workflow](student-enrollment-workflow.md) — enroll students into classes.
+- [Student Online Class Journey](student-online-class-journey.md) — end-to-end learner experience from exploration to payment.
 
 ## Reference
 - [API Documentation](api-docs.md) — REST API endpoints.
