@@ -43,7 +43,8 @@ module.exports = (err, req, res, next) => {
 
   if (err.type === 'entity.too.large') {
     status = 413;
-    message = 'Payload too large';
+    const limit = process.env.DEFAULT_BODY_LIMIT || '25mb';
+    message = `Payload too large. Reduce the request body below ${limit} or increase DEFAULT_BODY_LIMIT.`;
   }
 
   logger.error(`❌ ${status} - ${message}`);

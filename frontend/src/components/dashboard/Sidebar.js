@@ -49,17 +49,23 @@ export default function Sidebar({ role = 'admin' }) {
     setActiveDropdown((prev) => (prev === label ? null : label));
   };
 
+  const appName = isHydrated && settings.appName ? settings.appName : 'SkillBridge';
+  const logoUrl =
+    isHydrated && settings.logo_url
+      ? `${API_BASE_URL}${settings.logo_url}`
+      : logo.src || logo;
+
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 shadow-lg p-6 flex flex-col justify-between">
       <div>
         <div className="flex items-center gap-3 mb-8">
           <img
-            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo.src || logo}
-            alt={`${settings.appName || 'SkillBridge'} Logo`}
+            src={logoUrl}
+            alt={`${appName} Logo`}
             className="w-12 h-12 rounded-full object-contain shadow"
           />
           <h2 className="text-2xl font-extrabold text-yellow-500">
-            {settings.appName || 'SkillBridge'}
+            {appName}
           </h2>
         </div>
 
@@ -151,7 +157,7 @@ export default function Sidebar({ role = 'admin' }) {
       )}
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}
+        &copy; {new Date().getFullYear()} {appName}
       </div>
     </aside>
   );
