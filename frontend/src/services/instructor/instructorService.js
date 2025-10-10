@@ -16,9 +16,7 @@ export const updateInstructorProfile = async (data) => {
 export const uploadInstructorAvatar = async (id, file) => {
   const formData = new FormData();
   formData.append("avatar", file);
-  const res = await api.patch(`/users/instructor/${id}/avatar`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.patch(`/users/instructor/${id}/avatar`, formData);
   return res.data;
 };
 
@@ -32,9 +30,7 @@ export const deleteInstructorAvatar = async (id) => {
 export const uploadInstructorDemo = async (id, file) => {
   const formData = new FormData();
   formData.append("demo", file);
-  const res = await api.patch(`/users/instructor/${id}/demo`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.patch(`/users/instructor/${id}/demo`, formData);
   return res.data;
 };
 
@@ -46,9 +42,7 @@ export const deleteInstructorDemo = async (id) => {
 
 // 🔹 Upload instructor certificate (PDF or image)
 export const uploadCertificateFile = async (formData) => {
-  const res = await api.post("/users/instructor/certificates", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.post("/users/instructor/certificates", formData);
   return res.data;
 };
 

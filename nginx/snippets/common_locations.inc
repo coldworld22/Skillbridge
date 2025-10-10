@@ -20,7 +20,7 @@
   }
 
   # Forward Socket.IO traffic to backend and enable WebSocket upgrades
-  location /socket.io/ {
+  location ^~ /socket.io {
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
