@@ -7,6 +7,7 @@ const tagService = require("./classTag.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
+const resourceService = require("./resources/classResource.service");
 const { getActiveInstructorPlan } = require("../plans/instructor.helper");
 const planService = require("../plans/plans.service");
 const AppError = require("../../utils/AppError");
@@ -472,5 +473,6 @@ exports.getManagementData = catchAsync(async (req, res) => {
   const assignments = await require("./assignments/classAssignment.service").getByClass(
     classId
   );
-  sendSuccess(res, { class: cls, lessons, assignments });
+  const resources = await resourceService.listByClass(classId);
+  sendSuccess(res, { class: cls, lessons, assignments, resources });
 });

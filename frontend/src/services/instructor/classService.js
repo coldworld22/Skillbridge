@@ -42,6 +42,17 @@ const formatClass = (cls = {}) => {
   };
 };
 
+const formatResource = (resource = {}) => {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  return {
+    ...resource,
+    downloadUrl:
+      resource.resource_type === "file" && resource.resource_url
+        ? safeEncodeURI(`${base}${resource.resource_url}`)
+        : resource.resource_url,
+  };
+};
+
 export const fetchInstructorClasses = async () => {
   // Fetch only classes belonging to the current instructor
   // using the dedicated "/instructor/my" endpoint
@@ -92,6 +103,9 @@ export const fetchClassManagementData = async (id) => {
     class: data.data.class ? formatClass(data.data.class) : null,
     lessons: data.data.lessons || [],
     assignments: data.data.assignments || [],
+    resources: Array.isArray(data.data.resources)
+      ? data.data.resources.map(formatResource)
+      : [],
   };
 };
 

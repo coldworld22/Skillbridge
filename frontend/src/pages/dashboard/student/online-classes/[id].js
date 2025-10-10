@@ -2,6 +2,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
+import { formatDistanceToNow } from 'date-fns';
 import VideoCallScreen from "@/components/video-call/VideoCallScreen";
 import StudentScoreSummary from "@/components/students/StudentScoreSummary";
 import {
@@ -10,6 +11,7 @@ import {
   fetchClassAssignments,
 } from "@/services/classService";
 import { computeScheduleStatus } from "@/utils/classSchedule";
+import { fetchClassResources } from "@/services/classResourceService";
 
 export default function StudentClassRoom() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function StudentClassRoom() {
   const [chatInput, setChatInput] = useState("");
   const [assignments, setAssignments] = useState([]);
   const [scheduleStatus, setScheduleStatus] = useState(null);
+  const [resources, setResources] = useState([]);
   const isLive = scheduleStatus === 'Ongoing';
 
   useEffect(() => {
@@ -33,6 +36,8 @@ export default function StudentClassRoom() {
         setClassData({ ...details, lessons, scheduleStatus: status });
         setScheduleStatus(status);
         setAssignments(assigns);
+        const materials = await fetchClassResources(id);
+        setResources(materials);
       } catch (err) {
         console.error('Failed to load class', err);
       }
@@ -160,17 +165,57 @@ export default function StudentClassRoom() {
       {/* Certificate Message */}
       {showCertificate && (
         <div className="bg-green-700 text-white p-4 rounded-lg mt-6 text-center shadow">
-          🎉 You've completed all lessons! 🎓 <a href="#" className="underline text-yellow-300">Download your certificate</a>.
+          🎉 You&apos;ve completed all lessons! 🎓 <a href="#" className="underline text-yellow-300">Download your certificate</a>.
         </div>
       )}
 
       {/* Resources */}
       <div className="bg-gray-800 rounded-lg p-6 shadow-md mt-10 mb-6">
         <h2 className="text-xl font-semibold mb-4">📥 Resources</h2>
-        <ul className="list-disc list-inside text-gray-300">
-          <li><a href="#" className="text-yellow-400 hover:underline">React Cheatsheet (PDF)</a></li>
-          <li><a href="#" className="text-yellow-400 hover:underline">Component Design Guide</a></li>
-        </ul>
+        {resources.length === 0 ? (
+          <p className="text-gray-400 text-sm">Your instructor hasn&apos;t shared any materials yet.</p>
+        ) : (
+          <ul className="space-y-3 text-gray-200">
+            {resources.map((resource) => (
+              <li key={resource.id} className="bg-gray-900 px-4 py-3 rounded border border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <p className="font-medium flex items-center gap-2">
+                    {resource.title}
+                    <span className="text-xs uppercase tracking-wide px-2 py-0.5 rounded bg-gray-800 text-gray-400">
+                      {resource.resource_type === 'file' ? 'File' : 'Link'}
+                    </span>
+                  </p>
+                  {resource.created_at && (
+                    <p className="text-xs text-gray-500">
+                      Shared {formatDistanceToNow(new Date(resource.created_at), { addSuffix: true })}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  {resource.resource_type === 'file' ? (
+                    <a
+                      href={resource.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-yellow-400 hover:underline"
+                    >
+                      Download
+                    </a>
+                  ) : (
+                    <a
+                      href={resource.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-yellow-400 hover:underline"
+                    >
+                      Open Link
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Live Chat */}
