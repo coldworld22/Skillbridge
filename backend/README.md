@@ -29,6 +29,10 @@ The `/api/system-errors` route reads the latest lines from `logs/error.log` and 
 
 Students can upload proof of manual transfers via `POST /api/payments/student/receipts` using a multipart form field named `receipt`. The uploaded file URL can then be referenced by admins when recording payments. Each payment may optionally store this URL in the new `receipt_url` column.
 
+### Request body limits
+
+The Express server parses JSON and URL-encoded bodies with a configurable size cap.  By default the limit is set to **25 MB**, which is large enough for the admin class builder (rich text descriptions can embed sizable HTML payloads).  If you need to accept larger requests set the `DEFAULT_BODY_LIMIT` environment variable to a higher value understood by [`bytes`](https://www.npmjs.com/package/bytes) (for example `50mb`).
+
 ### PayPal and crypto payments
 
 - Students can initiate PayPal payments via `POST /api/payments/paypal/create`. The endpoint returns an approval URL and records the pending payment. PayPal redirects to `/api/payments/paypal/callback` after approval.

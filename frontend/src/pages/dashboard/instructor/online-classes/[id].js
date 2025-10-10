@@ -8,6 +8,7 @@ import BreakoutRoomControl from "@/components/instructors/BreakoutRoomControl";
 import CertificateIssuancePanel from "@/components/instructors/CertificateIssuancePanel";
 import AssignmentManager from "@/components/instructors/AssignmentManager"; // ✅ Assignment Manager added
 import StudentProgressPanel from "@/components/instructors/StudentProgressPanel";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchClassManagementData } from "@/services/instructor/classService";
 import useAuthStore from "@/store/auth/authStore";
 import withAuthProtection from "@/hooks/withAuthProtection";
@@ -158,6 +159,10 @@ function InstructorClassRoom() {
     </div>
   );
 }
+
+InstructorClassRoom.getLayout = function getLayout(page) {
+  return <InstructorLayout>{page}</InstructorLayout>;
+};
 
 const ProtectedInstructorClassRoom = withAuthProtection(
   InstructorClassRoom,
