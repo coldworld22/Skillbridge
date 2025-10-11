@@ -1827,6 +1827,7 @@
     "plan": "Plan",
     "class": "Class",
     "tutorial": "Tutorial",
+    "book": "Book",
     "saving": "Saving...",
     "save": "Speichern",
     "code_required": "Code is required",

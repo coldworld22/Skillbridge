@@ -1813,6 +1813,7 @@
     "plan": "Plan",
     "class": "Class",
     "tutorial": "Tutorial",
+    "book": "Book",
     "saving": "Saving...",
     "save": "Enregistrer",
     "code_required": "Code is required",

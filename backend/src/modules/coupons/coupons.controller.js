@@ -46,10 +46,10 @@ exports.validateCode = catchAsync(async (req, res) => {
   const { code, item_type, item_id } = req.params;
   const coupon = await service.findByCode(code);
   if (!coupon) throw new AppError("Invalid coupon", 404);
-  if (coupon.applies_to && coupon.applies_to !== item_type) {
+  if (item_type && coupon.applies_to && coupon.applies_to !== item_type) {
     throw new AppError("Coupon not valid for this item type", 400);
   }
-  if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
+  if (item_id && coupon.applies_to_id && coupon.applies_to_id !== item_id) {
     throw new AppError("Coupon not valid for this item", 400);
   }
   if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {

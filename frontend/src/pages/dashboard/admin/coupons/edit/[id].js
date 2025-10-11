@@ -64,6 +64,7 @@ export default function EditCouponPage() {
             <option value="plan">Plan</option>
             <option value="class">Class</option>
             <option value="tutorial">Tutorial</option>
+            <option value="book">Book</option>
           </select>
           <input value={appliesToId} onChange={(e) => setAppliesToId(e.target.value)} placeholder="Target ID" className="border p-2 w-full" />
           <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Save</button>

@@ -1,7 +1,7 @@
 exports.up = function(knex) {
   return knex.schema.alterTable('coupons', function(table) {
     table.timestamp('starts_at');
-    table.enum('applies_to', ['tutorial', 'class', 'plan']);
+    table.enum('applies_to', ['tutorial', 'class', 'plan', 'book']);
     table.uuid('applies_to_id');
   });
 };

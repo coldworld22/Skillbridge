@@ -51,7 +51,7 @@ const createCouponSchema = (t) =>
             : Number(val),
         z.number().int().positive().optional()
       ),
-      applies_to: z.enum(["plan", "class", "tutorial"]),
+      applies_to: z.enum(["plan", "class", "tutorial", "book"]),
       applies_to_id: z.string().optional(),
     })
     .refine(
@@ -184,6 +184,7 @@ export default function NewCouponPage() {
               <option value="plan">{t("plan")}</option>
               <option value="class">{t("class")}</option>
               <option value="tutorial">{t("tutorial")}</option>
+              <option value="book">{t("book")}</option>
             </select>
           </div>
           <div>
@@ -218,4 +219,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-

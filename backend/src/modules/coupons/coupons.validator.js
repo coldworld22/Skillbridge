@@ -7,7 +7,7 @@ exports.create = z.object({
     starts_at: z.string().optional(),
     expires_at: z.string().optional(),
     usage_limit: z.number().min(1).optional(),
-    applies_to: z.enum(["tutorial", "class", "plan"]).optional(),
+    applies_to: z.enum(["tutorial", "class", "plan", "book"]).optional(),
     applies_to_id: z.string().uuid().optional(),
     instructor_id: z.string().uuid().optional(),
   }),
@@ -19,7 +19,7 @@ exports.update = z.object({
     starts_at: z.string().optional(),
     expires_at: z.string().optional(),
     usage_limit: z.number().min(1).optional(),
-    applies_to: z.enum(["tutorial", "class", "plan"]).optional(),
+    applies_to: z.enum(["tutorial", "class", "plan", "book"]).optional(),
     applies_to_id: z.string().uuid().optional(),
   }),
 });
