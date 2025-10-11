@@ -17,4 +17,21 @@ describe('tutorial validator', () => {
 
     expect(() => validator.create.parse(sample)).not.toThrow();
   });
+
+  test('treats empty numeric fields as optional', () => {
+    const sample = {
+      body: {
+        title: 'Optional Fields',
+        category_id: 'cat',
+        level: 'beginner',
+        price: '',
+        duration: '',
+        chapters: JSON.stringify([
+          { title: 'Intro', order: 1, duration: '', video_url: '/uploads/tutorials/chapters/admin/video.mp4' }
+        ])
+      }
+    };
+
+    expect(() => validator.create.parse(sample)).not.toThrow();
+  });
 });

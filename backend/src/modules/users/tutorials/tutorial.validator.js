@@ -32,12 +32,12 @@ exports.create = z.object({
     status: z.enum(["draft", "published", "archived"]).optional(),
     price: z.preprocess(
       (val) => (val === '' || val === undefined ? undefined : Number(val)),
-      z.number().nonnegative()
-    ).optional(),
+      z.number().nonnegative().optional()
+    ),
     duration: z.preprocess(
       (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
-      z.number().int().nonnegative()
-    ).optional(),
+      z.number().int().nonnegative().optional()
+    ),
     is_paid: z.preprocess(toBoolean, z.boolean().optional()),
     included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
     tags: z.preprocess(parseJson, z.array(z.string()).optional()),
@@ -52,8 +52,8 @@ exports.create = z.object({
               video_url: urlOrPath.optional(),
               duration: z.preprocess(
                 (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
-                z.number().int().nonnegative()
-              ).optional(),
+                z.number().int().nonnegative().optional()
+              ),
               order: z.number(),
               is_preview: z.boolean().optional(),
             })

@@ -9,6 +9,9 @@ export function buildTutorialFormData(tutorialData, status) {
   formData.append("is_paid", (!tutorialData.isFree).toString());
   if (!tutorialData.isFree) {
     formData.append("price", tutorialData.price);
+    if (tutorialData.currency) {
+      formData.append("currency", tutorialData.currency);
+    }
   }
   if (tutorialData.tags?.length) {
     formData.append("tags", JSON.stringify(tutorialData.tags));

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
-import { createTutorial } from "@/services/admin/tutorialService";
+import { createTutorial } from "@/services/instructor/tutorialService";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
@@ -12,6 +12,8 @@ import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { fetchStudentPlanIdentifiers } from "@/services/instructor/planService";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 export default function CreateTutorialPage() {
   const [step, setStep] = useState(1);
@@ -32,36 +34,64 @@ export default function CreateTutorialPage() {
     price: "",
     currency: "",
     isFree: false,
+    includedPlans: [],
   });
 
   const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      setTutorialData({
-        ...draft,
-        thumbnail: null,
-        preview: null,
-        language: draft.language || "",
-        lessonCount: draft.lessonCount || 1,
-        currency: draft.currency || "",
-      });
+      try {
+        const draft = JSON.parse(savedDraft);
+        setTutorialData({
+          ...draft,
+          thumbnail: null,
+          preview: null,
+          language: draft.language || "",
+          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+          currency: draft.currency || "",
+          includedPlans: Array.isArray(draft.includedPlans)
+            ? draft.includedPlans
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
+            : [],
+        });
+      } catch (err) {
+        console.error("Failed to parse tutorialDraft", err);
+        localStorage.removeItem("tutorialDraft");
+      }
     }
 
     const loadCategories = async () => {
       try {
         const result = await fetchAllCategories();
-
-        setCategories(result?.data || []);
-
+        const resolvedCategories = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+          ? result.data
+          : Array.isArray(result?.items)
+          ? result.items
+          : [];
+        setCategories(resolvedCategories);
       } catch (err) {
         console.error(t('tutorialCreatePage.load_categories_failed', { ns: 'dashboard' }), err);
       }
     };
 
+    const loadPlans = async () => {
+      try {
+        const identifiers = await fetchStudentPlanIdentifiers();
+        setPlans(Array.isArray(identifiers) ? identifiers : []);
+      } catch (err) {
+        console.error("Failed to load plans", err);
+        setPlans([]);
+      }
+    };
+
     loadCategories();
+    loadPlans();
   }, [t]);
 
   const nextStep = () => setStep((prev) => prev + 1);
@@ -72,35 +102,14 @@ export default function CreateTutorialPage() {
       toast.error(t("dashboard:tutorialCreatePage.upload_video_each_lesson"));
       return;
     }
-    const formData = new FormData();
-    formData.append("title", tutorialData.title);
-    formData.append("description", tutorialData.shortDescription);
-    formData.append("category_id", tutorialData.category);
-    formData.append("level", tutorialData.level);
-    formData.append("language", tutorialData.language);
-    formData.append("status", status);
-    formData.append("is_paid", (!tutorialData.isFree).toString());
-    if (!tutorialData.isFree) {
-      formData.append("price", tutorialData.price);
-      if (tutorialData.currency) {
-        formData.append("currency", tutorialData.currency);
-      }
+    if (
+      tutorialData.isFree &&
+      (!tutorialData.includedPlans || tutorialData.includedPlans.length === 0)
+    ) {
+      toast.error(t("dashboard:tutorialCreatePage.plan_required_for_free"));
+      return;
     }
-    if (tutorialData.tags.length) {
-      formData.append("tags", JSON.stringify(tutorialData.tags));
-    }
-    if (tutorialData.chapters.length) {
-      const chapters = tutorialData.chapters.map((ch, idx) => ({
-        title: ch.title,
-        duration: ch.duration,
-        video_url: ch.videoUrl,
-        order: idx + 1,
-        is_preview: ch.preview,
-      }));
-      formData.append("chapters", JSON.stringify(chapters));
-    }
-    if (tutorialData.thumbnail) formData.append("thumbnail", tutorialData.thumbnail);
-    if (tutorialData.preview) formData.append("preview", tutorialData.preview);
+    const formData = buildTutorialFormData(tutorialData, status);
 
     try {
       await createTutorial(formData);
@@ -148,6 +157,7 @@ export default function CreateTutorialPage() {
               setTutorialData={setTutorialData}
               onNext={nextStep}
               categories={categories}
+              plans={plans}
             />
           )}
           {step === 2 && (
@@ -169,6 +179,7 @@ export default function CreateTutorialPage() {
           {step === 4 && (
             <ReviewStep
               tutorialData={tutorialData}
+              plans={plans}
               onBack={prevStep}
               onPublish={publishTutorial}
             />
