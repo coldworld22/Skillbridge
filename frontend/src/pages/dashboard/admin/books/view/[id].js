@@ -120,7 +120,16 @@ function AdminViewBookPage() {
   const downloadUrl =
     book?.pdf_download_url ||
     book?.pdfDownloadUrl ||
+    book?.pdf_url ||
     (book?.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
+  const coverImage =
+    book?.coverUrl ||
+    book?.cover_image_url ||
+    book?.cover_image ||
+    "/images/default-book-cover.jpg";
+  const previewPages = Array.isArray(book?.preview_pages)
+    ? book.preview_pages
+    : [];
 
   return (
     <AdminLayout>
@@ -139,10 +148,10 @@ function AdminViewBookPage() {
 
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6">
-              {book.cover_image_url ? (
+              {coverImage ? (
                 <div className="flex-shrink-0 w-full md:w-48 lg:w-56 h-64 md:h-auto">
                   <img
-                    src={book.cover_image_url}
+                    src={coverImage}
                     alt={book.title}
                     className="w-full h-full object-cover rounded-lg shadow-sm"
                   />
@@ -253,7 +262,7 @@ function AdminViewBookPage() {
               </div>
             )}
 
-            {(book.pdf_url || book.preview_url) && (
+            {(book.pdf_url || book.preview_url || previewPages.length > 0) && (
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">{t("booksView.documents")}</h3>
                 <div className="flex flex-wrap gap-4">
@@ -278,6 +287,40 @@ function AdminViewBookPage() {
                       <FiEye className="text-green-600" />
                       <span>{t("booksView.preview")}</span>
                     </a>
+                  )}
+                  {previewPages.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {t("booksView.preview_pages", {
+                          defaultValue: "Preview pages",
+                        })}
+                      </span>
+                      <ul className="space-y-1 text-sm">
+                        {previewPages.map((page, idx) => {
+                          const href =
+                            typeof page === "string"
+                              ? page
+                              : page?.url || page?.href || null;
+                          if (!href) return null;
+                          const label = t("booksView.preview_page_label", {
+                            defaultValue: `Page ${idx + 1}`,
+                            index: idx + 1,
+                          });
+                          return (
+                            <li key={`${href}-${idx}`}>
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                {label}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   )}
                 </div>
               </div>
