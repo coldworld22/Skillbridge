@@ -6,7 +6,6 @@ const AppError = require("../../utils/AppError");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
-const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const fs = require("fs");
 
@@ -77,9 +76,6 @@ exports.createBook = catchAsync(async (req, res) => {
             html: `<p>${userMessage} We will notify you when it is published.</p>`,
           })
         : Promise.resolve(),
-      req.user.phone
-        ? smsService.sendSMS({ to: req.user.phone, text: userMessage })
-        : Promise.resolve(),
       ...admins.map((admin) =>
         Promise.all([
           notificationService.createNotification({
@@ -99,9 +95,6 @@ exports.createBook = catchAsync(async (req, res) => {
                 html: `<p>${adminMessage}</p>`,
               })
             : Promise.resolve(),
-          admin.phone
-            ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
-            : Promise.resolve(),
         ])
       ),
     ]);
@@ -111,6 +104,7 @@ exports.createBook = catchAsync(async (req, res) => {
     await removeUploadedFiles(req.files);
     throw error;
   }
+  sendSuccess(res, book, "Book status updated");
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
@@ -287,12 +281,6 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
                 html: `<p>${instructorMessage}</p>`,
               })
             : Promise.resolve(),
-          instructor.phone
-            ? smsService.sendSMS({
-                to: instructor.phone,
-                text: instructorMessage,
-              })
-            : Promise.resolve(),
         ])
       : Promise.resolve(),
     ...admins.map((admin) =>
@@ -308,14 +296,11 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
           message: adminMessage,
         }),
         admin.email
-          ? mailService.sendMail({
-              to: admin.email,
-              subject: "Book status updated",
-              html: `<p>${adminMessage}</p>`,
-            })
-          : Promise.resolve(),
-        admin.phone
-          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
+            ? mailService.sendMail({
+                to: admin.email,
+                subject: "Book status updated",
+                html: `<p>${adminMessage}</p>`,
+              })
           : Promise.resolve(),
       ])
     ),

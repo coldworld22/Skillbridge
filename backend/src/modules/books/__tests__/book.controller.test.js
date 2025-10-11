@@ -21,9 +21,6 @@ jest.mock('../../messages/messages.service', () => ({
 jest.mock('../../../services/mailService', () => ({
   sendMail: jest.fn(),
 }));
-jest.mock('../../../services/smsService', () => ({
-  sendSMS: jest.fn(),
-}));
 jest.mock('../../users/user.model', () => ({
   findAdmins: jest.fn(),
   findInstructors: jest.fn(),
