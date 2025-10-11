@@ -13,9 +13,17 @@ export function safeEncodeURI(url) {
 export function buildUrl(path) {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
+  const uploadsPattern = /^\/?uploads\//i;
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
+  if (!API_BASE) {
+    const shouldProxy = uploadsPattern.test(relative) || normalized.startsWith("/api/");
+    if (shouldProxy && !normalized.startsWith("/api/")) {
+      return `/api${normalized}`;
+    }
+    return normalized;
+  }
   return `${API_BASE}${normalized}`;
 }
 
