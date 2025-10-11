@@ -6,11 +6,67 @@ const { withTransaction } = require("../../../services/transaction.service");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 
+const generateUniqueSlug = async (title, trx) => {
+  const base = slugify(title || "", { lower: true, strict: true }) || uuidv4();
+  let candidate = base;
+  let suffix = 1;
+  // ensure slug is unique across tutorials
+  while (await trx("tutorials").where({ slug: candidate }).first()) {
+    candidate = `${base}-${suffix++}`;
+  }
+  return candidate;
+};
+
 exports.createTutorial = async (data, trx = db) => {
   const insertData = { included_plans: [], ...data };
   if (!insertData.included_plans) insertData.included_plans = [];
   const [tutorial] = await trx("tutorials").insert(insertData).returning("*");
   return tutorial;
+};
+
+exports.createTutorialWithRelations = async (data, tags = [], chapters = []) => {
+  return withTransaction(async (trx) => {
+    const payload = { ...data };
+    payload.slug = await generateUniqueSlug(payload.title, trx);
+    if (!payload.id) payload.id = uuidv4();
+    payload.included_plans =
+      Array.isArray(payload.included_plans) && payload.included_plans.length
+        ? payload.included_plans
+        : [];
+
+    const tutorial = await exports.createTutorial(payload, trx);
+
+    if (Array.isArray(tags) && tags.length) {
+      await exports.updateTutorialTags(tutorial.id, tags, trx);
+      tutorial.tags = await exports.getTutorialTags(tutorial.id, trx);
+    } else {
+      tutorial.tags = [];
+    }
+
+    if (Array.isArray(chapters) && chapters.length) {
+      const normalizedChapters = chapters.map((chapter, index) => ({
+        id: uuidv4(),
+        tutorial_id: tutorial.id,
+        title: chapter.title,
+        video_url: chapter.video_url || null,
+        duration:
+          chapter.duration === undefined || chapter.duration === null
+            ? null
+            : chapter.duration,
+        order: chapter.order || index + 1,
+        is_preview: Boolean(chapter.is_preview),
+      }));
+
+      for (const chapter of normalizedChapters) {
+        await chapterService.create(chapter, trx);
+      }
+      tutorial.chapters = normalizedChapters;
+    } else {
+      tutorial.chapters = [];
+    }
+
+    return tutorial;
+  });
 };
 
 exports.countPublishedTutorials = async (instructorId) => {
