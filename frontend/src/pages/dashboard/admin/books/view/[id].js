@@ -131,7 +131,7 @@ function AdminViewBookPage() {
 
   const downloadUrl =
     buildUrl(book?.pdf_download_url || book?.pdfDownloadUrl) ||
-    (book?.id ? buildUrl(`${API_BASE_URL}/library/download/${book.id}`) : null);
+    (book?.id ? buildUrl(`${API_BASE_URL}/books/${book.id}/pdf`) : null);
 
   const previewPages = useMemo(() => {
     if (!book?.preview_pages || !Array.isArray(book.preview_pages)) return [];
@@ -247,14 +247,14 @@ function AdminViewBookPage() {
               </div>
             </div>
 
-            {(book.tags?.length > 0 || book.categories?.length > 0) && (
+            {(Array.isArray(book.tags) && book.tags.length > 0) || (Array.isArray(book.categories) && book.categories.length > 0) ? (
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
                 <div className="flex flex-col sm:flex-row gap-6">
-                  {book.tags?.length > 0 && (
+                  {Array.isArray(book.tags) && book.tags.length > 0 && (
                     <div className="flex-1">
                       <h3 className="text-sm font-medium text-gray-500 mb-2">{t("booksView.tags")}</h3>
                       <div className="flex flex-wrap gap-2">
-                        {book.tags.map((tag) => (
+                        {(Array.isArray(book.tags) ? book.tags : []).map((tag) => (
                           <span 
                             key={tag.id || tag} 
                             className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
@@ -265,11 +265,11 @@ function AdminViewBookPage() {
                       </div>
                     </div>
                   )}
-                  {book.categories?.length > 0 && (
+                  {Array.isArray(book.categories) && book.categories.length > 0 && (
                     <div className="flex-1">
                       <h3 className="text-sm font-medium text-gray-500 mb-2">{t("booksView.categories")}</h3>
                       <div className="flex flex-wrap gap-2">
-                        {book.categories.map((cat) => (
+                        {(Array.isArray(book.categories) ? book.categories : []).map((cat) => (
                           <span 
                             key={cat.id || cat} 
                             className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium"
@@ -282,7 +282,7 @@ function AdminViewBookPage() {
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {hasDocuments && (
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
