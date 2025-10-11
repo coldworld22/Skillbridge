@@ -259,7 +259,11 @@ export default withAuthProtection(CreateTutorialPage, {
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
     },
   };
 }
