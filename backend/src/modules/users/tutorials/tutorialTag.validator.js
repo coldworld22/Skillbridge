@@ -1,7 +1,7 @@
 const { z } = require("zod");
 
-exports.create = z.object({
-  body: z.object({
-    name: z.string().min(1),
-  }),
+const tagSchema = z.object({
+  name: z.string().min(1),
 });
+
+exports.create = { body: tagSchema };

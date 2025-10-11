@@ -15,7 +15,7 @@ describe('tutorial validator', () => {
       }
     };
 
-    expect(() => validator.create.parse(sample)).not.toThrow();
+    expect(() => validator.create.body.parse(sample.body)).not.toThrow();
   });
 
   test('treats empty numeric fields as optional', () => {
@@ -32,7 +32,7 @@ describe('tutorial validator', () => {
       }
     };
 
-    expect(() => validator.create.parse(sample)).not.toThrow();
+    expect(() => validator.create.body.parse(sample.body)).not.toThrow();
   });
 
   test('coerces numeric strings and nulls in chapters', () => {
@@ -48,6 +48,6 @@ describe('tutorial validator', () => {
       }
     };
 
-    expect(() => validator.create.parse(sample)).not.toThrow();
+    expect(() => validator.create.body.parse(sample.body)).not.toThrow();
   });
 });

@@ -34,51 +34,50 @@ const parseJson = (val) => {
 // Accept either a full URL (http/https) or a server-relative path
 const urlOrPath = z.string().url().or(z.string().startsWith("/"));
 
-exports.create = z.object({
-  body: z.object({
-    title: z.string().min(3),
-    description: z.string().optional(),
-    category_id: z.string(), // assuming UUID
-    instructor_id: z.string().uuid().optional(),
-    level: z.string(),
-    language: z.string().optional(),
-    status: z.enum(["draft", "published", "archived"]).optional(),
-    price: z.preprocess(toOptionalNumber, z.number().nonnegative().optional()),
-    duration: z.preprocess(toOptionalInt, z.number().int().nonnegative().optional()),
-    is_paid: z.preprocess(toBoolean, z.boolean().optional()),
-    included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
-    tags: z.preprocess(parseJson, z.array(z.string()).optional()),
-    chapters: z
-      .preprocess(
-        parseJson,
-        z
-          .array(
-            z.object({
-              title: z.string(),
-              content: z.string().optional(),
-              video_url: urlOrPath.optional(),
-              duration: z.preprocess(
-                toOptionalInt,
-                z.number().int().nonnegative().optional()
-              ),
-              order: z.preprocess(
-                toOptionalInt,
-                z.number().int().positive().optional()
-              ),
-              is_preview: z.boolean().optional(),
-            })
-          )
-          .optional()
-      ),
-    cover_image: urlOrPath.optional(),
-    preview_video: urlOrPath.optional(),
-  }),
+const tutorialSchema = z.object({
+  title: z.string().min(3),
+  description: z.string().optional(),
+  category_id: z.string(), // assuming UUID
+  instructor_id: z.string().uuid().optional(),
+  level: z.string(),
+  language: z.string().optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  price: z.preprocess(toOptionalNumber, z.number().nonnegative().optional()),
+  duration: z.preprocess(toOptionalInt, z.number().int().nonnegative().optional()),
+  is_paid: z.preprocess(toBoolean, z.boolean().optional()),
+  included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
+  tags: z.preprocess(parseJson, z.array(z.string()).optional()),
+  chapters: z
+    .preprocess(
+      parseJson,
+      z
+        .array(
+          z.object({
+            title: z.string(),
+            content: z.string().optional(),
+            video_url: urlOrPath.optional(),
+            duration: z.preprocess(
+              toOptionalInt,
+              z.number().int().nonnegative().optional()
+            ),
+            order: z.preprocess(
+              toOptionalInt,
+              z.number().int().positive().optional()
+            ),
+            is_preview: z.boolean().optional(),
+          })
+        )
+        .optional()
+    ),
+  cover_image: urlOrPath.optional(),
+  preview_video: urlOrPath.optional(),
 });
 
-exports.update = exports.create;
+exports.create = { body: tutorialSchema };
+exports.update = { body: tutorialSchema };
 
-exports.reject = z.object({
+exports.reject = {
   body: z.object({
     reason: z.string().min(3)
-  })
-});
+  }),
+};
