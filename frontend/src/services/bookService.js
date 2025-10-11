@@ -18,6 +18,10 @@ export const formatBook = (book) => {
     previewUrl = previewPages[0];
   }
 
+  const rawDownloadPath =
+    book?.pdf_download_url || (book?.id ? `/api/books/${book.id}/pdf` : null);
+  const resolvedDownloadUrl = buildUrl(rawDownloadPath);
+
   const formatted = {
     ...book,
     cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
@@ -29,6 +33,8 @@ export const formatBook = (book) => {
       book?.cover_image_url ||
       book?.cover_image,
     pdf_url: buildUrl(book?.pdf_url),
+    pdf_download_url: resolvedDownloadUrl,
+    pdfDownloadUrl: resolvedDownloadUrl,
     preview_url: previewUrl,
     preview_pages: previewPages,
   };

@@ -86,9 +86,10 @@ function InstructorBookDetailPage() {
     );
   }, [book?.status, t]);
 
-  const downloadUrl = book?.id
-    ? `${API_BASE_URL}/library/download/${book.id}`
-    : null;
+  const downloadUrl =
+    book?.pdf_download_url ||
+    book?.pdfDownloadUrl ||
+    (book?.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
 
   const previewUrl = book?.preview_url || null;
   const formattedPrice = useMemo(() => {
@@ -276,9 +277,9 @@ function InstructorBookDetailPage() {
                       <FiEye /> {t("booksView.preview")}
                     </a>
                   )}
-                  {book.pdf_url && (
+                  {downloadUrl && (
                     <Link
-                      href={book.pdf_url}
+                      href={downloadUrl}
                       target="_blank"
                       className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
                     >

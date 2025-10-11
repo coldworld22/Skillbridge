@@ -117,6 +117,11 @@ function AdminViewBookPage() {
     );
   }
 
+  const downloadUrl =
+    book?.pdf_download_url ||
+    book?.pdfDownloadUrl ||
+    (book?.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
+
   return (
     <AdminLayout>
       <Head>
@@ -252,9 +257,9 @@ function AdminViewBookPage() {
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">{t("booksView.documents")}</h3>
                 <div className="flex flex-wrap gap-4">
-                  {book.pdf_url && (
+                  {downloadUrl && (
                     <a
-                      href={`${API_BASE_URL}/library/download/${book.id}`}
+                      href={downloadUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"

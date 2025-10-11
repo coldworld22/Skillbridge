@@ -8,6 +8,10 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
 const fs = require("fs");
+const {
+  resolveUploadFilePath,
+  buildDownloadFilename,
+} = require("../../utils/uploads");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 const isAdminRole = (roles = []) => {
@@ -99,12 +103,11 @@ exports.createBook = catchAsync(async (req, res) => {
       ),
     ]);
 
-    sendSuccess(res, book, "Book submitted for review");
+    return sendSuccess(res, book, "Book submitted for review");
   } catch (error) {
     await removeUploadedFiles(req.files);
     throw error;
   }
-  sendSuccess(res, book, "Book status updated");
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
@@ -307,6 +310,45 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
   ]);
 
 sendSuccess(res, book, "Book status updated");
+});
+
+exports.downloadBookFile = catchAsync(async (req, res) => {
+  const book = await service.getBookById(req.params.id);
+  if (!book) {
+    throw new AppError("Book not found", 404);
+  }
+
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
+  const isOwner = book.instructor_id && book.instructor_id === req.user.id;
+  if (!isAdmin && !isOwner) {
+    throw new AppError("Access denied", 403);
+  }
+  if (!book.pdf_url) {
+    throw new AppError("File not found", 404);
+  }
+
+  const filePath = resolveUploadFilePath(book.pdf_url);
+  if (!filePath) {
+    throw new AppError("File not found", 404);
+  }
+
+  try {
+    await fs.promises.access(filePath, fs.constants.R_OK);
+  } catch {
+    throw new AppError("File not found", 404);
+  }
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${buildDownloadFilename(book.title)}"`
+  );
+
+  const stream = fs.createReadStream(filePath);
+  stream.on("error", () => {
+    res.status(500).end();
+  });
+  stream.pipe(res);
 });
 
 exports.updateCart = catchAsync(async (req, res) => {

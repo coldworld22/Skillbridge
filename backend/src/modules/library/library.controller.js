@@ -1,10 +1,13 @@
 const service = require("./library.service");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
-const path = require("path");
 const fs = require("fs");
 const planService = require("../plans/plans.service");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
+const {
+  resolveUploadFilePath,
+  buildDownloadFilename,
+} = require("../../utils/uploads");
 
 exports.listLibrary = catchAsync(async (req, res) => {
   const items = await service.listForStudent(req.user.id);
@@ -24,20 +27,27 @@ exports.downloadBook = catchAsync(async (req, res) => {
   if (!book) {
     return res.status(403).json({ message: "Access denied" });
   }
-  const filePath = path.join(
-    __dirname,
-    "../../../uploads",
-    path.basename(book.pdf_url)
-  );
-  if (!fs.existsSync(filePath)) {
+
+  const filePath = resolveUploadFilePath(book.pdf_url);
+  if (!filePath) {
+    return res.status(404).json({ message: "File not found" });
+  }
+
+  try {
+    await fs.promises.access(filePath, fs.constants.R_OK);
+  } catch {
     return res.status(404).json({ message: "File not found" });
   }
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename="${(book.title || "book").replace(/"/g, '')}.pdf"`
+    `attachment; filename="${buildDownloadFilename(book.title)}"`
   );
+
   const stream = fs.createReadStream(filePath);
+  stream.on("error", () => {
+    res.status(500).end();
+  });
   stream.pipe(res);
 });
