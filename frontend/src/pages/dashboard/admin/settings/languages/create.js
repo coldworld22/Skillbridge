@@ -225,7 +225,19 @@ export default function CreateLanguagePage() {
                     <p className="font-bold mb-1">{t('preview_of', { ns })}:</p>
                     {Object.entries(jsonPreviews[ns]).slice(0, 5).map(([key, val]) => (
                       <div key={key} className="text-gray-800">
-                        {key}: <span className="text-gray-600">{val}</span>
+                        {key}:{" "}
+                        <span className="text-gray-600">
+                          {typeof val === "object"
+                            ? (() => {
+                                try {
+                                  const str = JSON.stringify(val);
+                                  return str.length > 120 ? `${str.slice(0, 117)}...` : str;
+                                } catch {
+                                  return "[object]";
+                                }
+                              })()
+                            : String(val)}
+                        </span>
                       </div>
                     ))}
                   </div>
