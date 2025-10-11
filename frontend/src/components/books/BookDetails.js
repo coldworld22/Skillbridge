@@ -36,11 +36,45 @@ export default function BookDetails({ book }) {
     }
   };
 
-  let actionButtons = null;
-  const downloadUrl = `${API_BASE_URL}/library/download/${book.id}`;
+  const priceValue = Number(book?.price ?? 0);
+  const isPaid =
+    book?.is_paid !== undefined && book?.is_paid !== null
+      ? Boolean(book.is_paid)
+      : priceValue > 0;
+  const userHasAccess = Boolean(book?.user_has_access);
+  const downloadUrl = book?.id
+    ? `${API_BASE_URL}/library/download/${book.id}`
+    : null;
+  const hasPreview = Boolean(book?.preview_url);
 
-  if (book.is_paid) {
-    if (book.user_has_access) {
+  let actionButtons = null;
+  if (!isPaid) {
+    actionButtons = (
+      <div className="flex flex-wrap gap-4">
+        {hasPreview && (
+          <a
+            href={book.preview_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+          >
+            {t("preview")}
+          </a>
+        )}
+        {downloadUrl && (
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+          >
+            {t("read_now")}
+          </a>
+        )}
+      </div>
+    );
+  } else if (userHasAccess) {
+    if (downloadUrl) {
       actionButtons = (
         <a
           href={downloadUrl}
@@ -51,39 +85,28 @@ export default function BookDetails({ book }) {
           {t("download_book")}
         </a>
       );
-    } else {
-      actionButtons = (
-        <div className="flex flex-wrap gap-4">
-          {book.preview_url && (
-            <a
-              href={book.preview_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
-            >
-              {t("preview")}
-            </a>
-          )}
-          <button
-            onClick={handleAddToCart}
-            disabled={isAdding}
-            className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t("add_to_cart")}
-          </button>
-        </div>
-      );
     }
   } else {
     actionButtons = (
-      <a
-        href={downloadUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
-      >
-        {t("read_now")}
-      </a>
+      <div className="flex flex-wrap gap-4">
+        {hasPreview && (
+          <a
+            href={book.preview_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+          >
+            {t("preview")}
+          </a>
+        )}
+        <button
+          onClick={handleAddToCart}
+          disabled={isAdding}
+          className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t("add_to_cart")}
+        </button>
+      </div>
     );
   }
 

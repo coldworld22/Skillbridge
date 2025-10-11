@@ -88,23 +88,41 @@ exports.deleteChapter = catchAsync(async (req, res) => {
 // List chapters by tutorial
 exports.getChaptersByTutorial = catchAsync(async (req, res) => {
   const tutorialId = requireValidTutorialId(req);
+
   const tutorial = await db("tutorials")
-    .where({ id: tutorialId, status: "published" })
+    .select("id", "status", "moderation_status", "instructor_id")
+    .where({ id: tutorialId })
     .first();
 
-  if (!tutorial) throw new AppError("Tutorial not found or not published", 404);
+  if (!tutorial) throw new AppError("Tutorial not found", 404);
+
+  const role = req.user?.role?.toLowerCase();
+  const userId = req.user?.id;
+  const isAdmin = role && ["admin", "superadmin"].includes(role);
+  const isOwnerInstructor =
+    role === "instructor" && tutorial.instructor_id === userId;
+  const isPrivileged = Boolean(req.user && (isAdmin || isOwnerInstructor));
+
+  if (!isPrivileged && tutorial.status !== "published") {
+    throw new AppError("Tutorial not published", 404);
+  }
 
   let chapters = await service.getByTutorial(tutorialId);
 
-  if (req.user) {
-    const enrollment = await db("tutorial_enrollments")
-      .where({ tutorial_id: tutorialId, user_id: req.user.id })
-      .first();
-    if (!enrollment) {
-      chapters = chapters.filter((ch) => ch.is_preview);
+  if (!isPrivileged) {
+    let enrollment = null;
+    if (req.user) {
+      enrollment = await db("tutorial_enrollments")
+        .where({ tutorial_id: tutorialId, user_id: req.user.id })
+        .first();
     }
-  } else {
-    chapters = chapters.filter((ch) => ch.is_preview);
+
+    if (!enrollment) {
+      const firstChapterId = chapters[0]?.id;
+      chapters = chapters.filter(
+        (ch) => ch.is_preview || ch.id === firstChapterId
+      );
+    }
   }
 
   sendSuccess(res, chapters, "Chapters fetched");
@@ -126,4 +144,3 @@ exports.reorderChapters = catchAsync(async (req, res) => {
 
   sendSuccess(res, null, "Chapters reordered");
 });
-

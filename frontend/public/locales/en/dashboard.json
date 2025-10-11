@@ -1460,6 +1460,8 @@
     "previewPagesLabel": "Preview Pages (optional)",
     "clearPreviewPages": "Clear preview pages",
     "allowPreview": "Allow Preview",
+    "includedPlansLabel": "Included student plans",
+    "includedPlansHelp": "Students subscribed to these plans can access the book without an extra payment.",
     "priceLabel": "Price",
     "priceRequired": "Price is required",
     "languageLabel": "Language",

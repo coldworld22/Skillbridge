@@ -7,6 +7,7 @@ import BookForm from "@/components/books/BookForm";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
+import { fetchStudentPlanIdentifiers } from "@/services/instructor/planService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -20,6 +21,7 @@ function CreateBookPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "validation", "errors"]);
   const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -34,11 +36,18 @@ function CreateBookPage() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadInitialData = async () => {
       try {
         setIsLoading(true);
-        const result = await fetchAllCategories();
-        setCategories(result?.data || result || []);
+        const [categoryResult, planResult] = await Promise.all([
+          fetchAllCategories(),
+          fetchStudentPlanIdentifiers().catch((planErr) => {
+            console.error("Failed to load student plans", planErr);
+            return [];
+          }),
+        ]);
+        setCategories(categoryResult?.data || categoryResult || []);
+        setPlans(Array.isArray(planResult) ? planResult : planResult || []);
       } catch (err) {
         console.error("Failed to load categories", err);
         setError(t("errors.categoryLoad"));
@@ -48,7 +57,7 @@ function CreateBookPage() {
       }
     };
 
-    loadCategories();
+    loadInitialData();
   }, [t]);
 
   const handleSubmit = async (formData, setProgress) => {
@@ -215,6 +224,7 @@ function CreateBookPage() {
               <BookForm
                 onSubmit={handleSubmit}
                 categories={categories}
+                plans={plans}
                 showCoverImage={false}
                 submitText={t("booksCreate.save")}
                 cancelText={t("common.cancel")}

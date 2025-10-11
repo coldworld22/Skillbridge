@@ -57,7 +57,11 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
       handleChange(index, "videoUrl", serverPath);
       toast.success(t("create.curriculum.video_upload_success"));
     } catch (err) {
-      toast.error(t("create.curriculum.video_upload_error"));
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        t("create.curriculum.video_upload_error");
+      toast.error(message);
     } finally {
       setUploadingIndex(null);
       setUploadProgress(0);

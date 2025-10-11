@@ -12,9 +12,11 @@ jest.mock('next/router', () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-jest.mock('react-hot-toast', () => ({
-  toast: { info: jest.fn(), error: jest.fn(), success: jest.fn() },
-}));
+jest.mock(
+  'react-hot-toast',
+  () => ({ toast: { info: jest.fn(), error: jest.fn(), success: jest.fn() } }),
+  { virtual: true }
+);
 
 describe('BookDetails', () => {
   beforeEach(() => {
@@ -24,19 +26,19 @@ describe('BookDetails', () => {
   });
 
   it('displays rating even when zero', () => {
-    const book = { id: 1, title: 'Test', rating: 0, is_paid: false, pdf_url: null };
+    const book = { id: 1, title: 'Test', rating: 0, price: 0, pdf_url: null };
     render(<BookDetails book={book} />);
     expect(screen.getByText('⭐ 0.0 / 5')).toBeInTheDocument();
   });
 
   it('formats price in USD', () => {
-    const book = { id: 1, title: 'Test', price: 10, is_paid: true, user_has_access: false };
+    const book = { id: 1, title: 'Test', price: 10, user_has_access: false };
     render(<BookDetails book={book} />);
     expect(screen.getByText('$10.00')).toBeInTheDocument();
   });
 
   it('formats price based on locale and currency', () => {
-    const book = { id: 1, title: 'Test', price: 10, is_paid: true, user_has_access: false };
+    const book = { id: 1, title: 'Test', price: 10, user_has_access: false };
     useAppConfigStore.setState({ settings: { currency: 'GBP' } });
     mockI18n.language = 'en-GB';
     render(<BookDetails book={book} />);

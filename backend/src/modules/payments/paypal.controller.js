@@ -10,6 +10,7 @@ const paypalService = require('../../services/paypalService');
 const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
+const { creditInstructorFromPayment } = require('./helpers/wallet');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -123,6 +124,10 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
 
   if (updated.status === STATUS.PAID) {
     await grantAccess(updated);
+    const refreshed = await paymentsService.getById(updated.id);
+    if (refreshed?.status === STATUS.PAID) {
+      await creditInstructorFromPayment(refreshed);
+    }
   }
 
   if (process.env.FRONTEND_URL) {
@@ -131,4 +136,3 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   }
   sendSuccess(res, updated, 'PayPal payment processed');
 });
-

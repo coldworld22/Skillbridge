@@ -6,21 +6,23 @@ const logger = require("../../../utils/logger.js");
 const { calculateInstructorAmount } = require("./planRevenue");
 
 async function creditInstructorWallet(item_type, item_id, amount) {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) return;
   try {
     if (item_type === "book") {
       const book = await bookService.getBookById(item_id);
       if (book?.instructor_id) {
-        await walletService.increment(book.instructor_id, amount);
+        await walletService.increment(book.instructor_id, numericAmount);
       }
     } else if (item_type === "class") {
       const cls = await classService.getClassById(item_id);
       if (cls?.instructor_id) {
-        await walletService.increment(cls.instructor_id, amount);
+        await walletService.increment(cls.instructor_id, numericAmount);
       }
     } else if (item_type === "tutorial") {
       const tut = await tutorialService.getTutorialById(item_id);
       if (tut?.instructor_id) {
-        await walletService.increment(tut.instructor_id, amount);
+        await walletService.increment(tut.instructor_id, numericAmount);
       }
     }
   } catch (err) {
@@ -76,8 +78,16 @@ async function creditTutorialSubscription(tutorialId, planId, trx) {
   }
 }
 
+async function creditInstructorFromPayment(payment) {
+  if (!payment) return;
+  const amount = Number(payment.instructor_amount);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  await creditInstructorWallet(payment.item_type, payment.item_id, amount);
+}
+
 module.exports = {
   creditInstructorWallet,
   creditInstructorSubscription,
   creditTutorialSubscription,
+  creditInstructorFromPayment,
 };

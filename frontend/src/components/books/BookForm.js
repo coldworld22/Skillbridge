@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast";
 export default function BookForm({
   onSubmit,
   categories = [],
+  plans = [],
   showCoverImage = true,
   defaultValues = null,
   isEdit = false,
@@ -42,6 +43,49 @@ export default function BookForm({
   const [bookFileName, setBookFileName] = useState("");
   const [previewFiles, setPreviewFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const normalizePlanSelection = (rawPlans) => {
+    if (!rawPlans) return [];
+    const ensureArray = () => {
+      if (Array.isArray(rawPlans)) return rawPlans;
+      if (typeof rawPlans === "string") {
+        try {
+          const parsed = JSON.parse(rawPlans);
+          return Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+        } catch {
+          return [rawPlans];
+        }
+      }
+      return [rawPlans];
+    };
+    const arr = ensureArray();
+    const values = arr
+      .map((plan) => {
+        if (plan == null) return null;
+        if (typeof plan === "string" || typeof plan === "number") return plan;
+        if (typeof plan === "object") {
+          return (
+            plan.id ??
+            plan.plan_id ??
+            plan.planId ??
+            plan.slug ??
+            plan.value ??
+            null
+          );
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .map((value) => {
+        const asNumber = Number(value);
+        return Number.isFinite(asNumber) && `${asNumber}` === `${value}`
+          ? `${asNumber}`
+          : `${value}`;
+      });
+    return Array.from(new Set(values));
+  };
+  const [selectedPlans, setSelectedPlans] = useState(() =>
+    normalizePlanSelection(defaultValues?.included_plans)
+  );
 
   useEffect(() => {
     if (defaultValues) {
@@ -73,11 +117,20 @@ export default function BookForm({
       validate: (value) =>
         value && value.length > 0 ? true : t("booksCreate.tagsRequired"),
     });
+    register("included_plans");
   }, [register, t]);
 
   useEffect(() => {
     setValue("tags", tags);
   }, [tags, setValue]);
+
+  useEffect(() => {
+    setSelectedPlans(normalizePlanSelection(defaultValues?.included_plans));
+  }, [defaultValues]);
+
+  useEffect(() => {
+    setValue("included_plans", selectedPlans);
+  }, [selectedPlans, setValue]);
 
   const tagAbortRef = useRef(null);
 
@@ -115,6 +168,32 @@ export default function BookForm({
       debouncedFetchTags.cancel();
     };
   }, [tagInput, debouncedFetchTags]);
+
+  const planOptions = useMemo(
+    () =>
+      Array.isArray(plans)
+        ? plans.map((plan) => {
+            const valueRaw =
+              plan.id ?? plan.plan_id ?? plan.slug ?? plan.value ?? null;
+            const value = valueRaw != null ? `${valueRaw}` : null;
+            return {
+              value,
+              name: plan.name || plan.title || plan.slug || value || "",
+              slug: plan.slug,
+            };
+          })
+        : [],
+    [plans]
+  );
+
+  const togglePlan = (planValue) => {
+    if (!planValue) return;
+    setSelectedPlans((prev) =>
+      prev.includes(planValue)
+        ? prev.filter((id) => id !== planValue)
+        : [...prev, planValue]
+    );
+  };
 
   const addTag = (name) => {
     const value = name.trim();
@@ -158,6 +237,13 @@ export default function BookForm({
     formData.append("license_type", data.license_type);
     formData.append("allow_preview", data.allow_preview ? 1 : 0);
     formData.append("status", data.status);
+    const plansPayload = selectedPlans.map((value) => {
+      const asNumber = Number(value);
+      return Number.isFinite(asNumber) && `${asNumber}` === value
+        ? asNumber
+        : value;
+    });
+    formData.append("included_plans", JSON.stringify(plansPayload));
     setUploadProgress(0);
     onSubmit(formData, setUploadProgress);
   };
@@ -304,57 +390,57 @@ export default function BookForm({
         )}
       </div>
 
-        {showCoverImage && (
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          {t("booksCreate.coverImage")}
-        </label>
-        {(() => {
-          const reg = register("cover_image", {
-            required: !isEdit && t("booksCreate.coverImageRequired"),
-            validate: {
-              fileType: (files) =>
-                !files[0] ||
-                [
-                  "image/png",
-                  "image/jpeg",
-                  "image/webp",
-                ].includes(files[0].type) ||
-                t("validation.pngJpgWebpOnly"),
-              fileSize: (files) =>
-                !files[0] ||
-                files[0].size <= MAX_IMAGE_SIZE ||
-                t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` }),
-            },
-          });
-          return (
-            <input
-              type="file"
-              accept=".png,.jpg,.jpeg,.webp"
-              {...reg}
-              onChange={(e) => {
-                reg.onChange(e);
-                const file = e.target.files?.[0];
-                setCoverPreview(file ? URL.createObjectURL(file) : null);
-              }}
-              className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      {showCoverImage && (
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t("booksCreate.coverImage")}
+          </label>
+          {(() => {
+            const reg = register("cover_image", {
+              required: !isEdit && t("booksCreate.coverImageRequired"),
+              validate: {
+                fileType: (files) =>
+                  !files[0] ||
+                  ["image/png", "image/jpeg", "image/webp"].includes(
+                    files[0].type
+                  ) ||
+                  t("validation.pngJpgWebpOnly"),
+                fileSize: (files) =>
+                  !files[0] ||
+                  files[0].size <= MAX_IMAGE_SIZE ||
+                  t("validation.fileTooLarge", {
+                    size: `${MAX_IMAGE_SIZE_MB}MB`,
+                  }),
+              },
+            });
+            return (
+              <input
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp"
+                {...reg}
+                onChange={(e) => {
+                  reg.onChange(e);
+                  const file = e.target.files?.[0];
+                  setCoverPreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+            );
+          })()}
+          {coverPreview && (
+            <img
+              src={coverPreview}
+              alt="Cover preview"
+              className="mt-2 h-32 object-cover"
             />
-          );
-        })()}
-        {coverPreview && (
-          <img
-            src={coverPreview}
-            alt="Cover preview"
-            className="mt-2 h-32 object-cover"
-          />
-        )}
-        {errors.cover_image && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.cover_image.message}
-          </p>
-        )}
-      </div>
-        )}
+          )}
+          {errors.cover_image && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.cover_image.message}
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium mb-1">
@@ -477,22 +563,64 @@ export default function BookForm({
           </div>
         )}
       </div>
-        <div className="flex items-center gap-2">
-          {(() => {
-            const reg = register("allow_preview");
-            return (
-              <input
-                type="checkbox"
-                {...reg}
-                className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
-              />
-            );
-          })()}
-          <label className="text-sm font-medium">
-            {t("booksCreate.allowPreview")}
-          </label>
-        </div>
 
+      <div className="flex items-center gap-2">
+        {(() => {
+          const reg = register("allow_preview");
+          return (
+            <input
+              type="checkbox"
+              {...reg}
+              className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+            />
+          );
+        })()}
+        <label className="text-sm font-medium">
+          {t("booksCreate.allowPreview")}
+        </label>
+      </div>
+
+      {planOptions.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t("booksCreate.includedPlansLabel", {
+              defaultValue: "Included student plans",
+            })}
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            {t("booksCreate.includedPlansHelp", {
+              defaultValue:
+                "Students subscribed to any selected plan can access the book without an extra payment.",
+            })}
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {planOptions.map((plan) => {
+              if (!plan.value) return null;
+              const checked = selectedPlans.includes(plan.value);
+              return (
+                <label
+                  key={plan.value}
+                  className={`flex items-center justify-between rounded border px-3 py-2 text-sm ${
+                    checked
+                      ? "border-yellow-400 bg-yellow-50"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <span className="font-medium text-gray-700">
+                    {plan.name}
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400"
+                    checked={checked}
+                    onChange={() => togglePlan(plan.value)}
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium mb-1">

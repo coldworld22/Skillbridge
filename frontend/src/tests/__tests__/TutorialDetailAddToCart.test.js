@@ -4,6 +4,7 @@ import useAuthStore from '@/store/auth/authStore';
 import * as tutorialService from '../../services/tutorialService';
 
 const addItem = jest.fn();
+let mockCartItems = [];
 
 function createMock(name) {
   function Mock() {
@@ -56,7 +57,7 @@ jest.mock('../../services/tutorialService');
 
 jest.mock('../../store/cart/cartStore', () => ({
   __esModule: true,
-  default: (selector) => selector({ addItem, items: [{ id: 1 }] }),
+  default: (selector) => selector({ addItem, items: mockCartItems }),
 }));
 
 const { fetchTutorialDetails, fetchPublishedTutorials, fetchTutorialAssignments } = tutorialService;
@@ -64,6 +65,7 @@ const { fetchTutorialDetails, fetchPublishedTutorials, fetchTutorialAssignments 
 describe('TutorialDetail add to cart', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCartItems = [{ id: 1 }];
     useAuthStore.setState({ user: { id: 1, role: 'student' }, accessToken: 'token' });
     fetchPublishedTutorials.mockResolvedValue([]);
     fetchTutorialAssignments.mockResolvedValue([]);
@@ -84,5 +86,17 @@ describe('TutorialDetail add to cart', () => {
     const toast = require('react-hot-toast').default;
     expect(toast.error).toHaveBeenCalledWith('Already in cart');
   });
-});
 
+  it('adds tutorial to cart with tutorial item_type', async () => {
+    mockCartItems = [];
+    addItem.mockResolvedValue(true);
+    render(<TutorialDetail />);
+    const button = await screen.findByRole('button', { name: /add to cart/i });
+    fireEvent.click(button);
+    await waitFor(() =>
+      expect(addItem).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, item_type: 'tutorial' })
+      )
+    );
+  });
+});

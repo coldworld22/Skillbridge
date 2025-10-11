@@ -32,6 +32,12 @@
     "share": "Partager",
     "share_message": "Découvrez ce tutoriel sur SkillBridge !",
     "share_success": "Partagé avec succès !",
+    "preview_video_title": "Vidéo d'aperçu",
+    "lessons_heading": "Leçons",
+    "video_locked": "Verrouillée",
+    "preview_badge": "Aperçu",
+    "unlock_badge": "Inscrivez-vous pour débloquer",
+    "video_locked_toast": "Inscrivez-vous pour débloquer cette leçon",
     "quiz_locked": "Quiz verrouillé",
     "enroll_to_access_quiz": "Inscrivez-vous pour accéder au quiz",
     "start_assignment": "Commencer le devoir",
@@ -181,4 +187,3 @@
     "remove": "Supprimer"
   }
 }
-

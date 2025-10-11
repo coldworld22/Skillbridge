@@ -9,7 +9,6 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
-const walletService = require("../payouts/wallet.service");
 const classService = require("../classes/class.service");
 const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
@@ -19,6 +18,7 @@ const tutorialService = require("../users/tutorials/tutorial.service");
 const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
+const { creditInstructorFromPayment } = require("./helpers/wallet");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -275,42 +275,9 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   );
 
   await grantAccess(payment);
-  if (payment.item_type === "class") {
-    try {
-      const cls = await classService.getClassById(payment.item_id);
-      if (cls?.instructor_id) {
-        await walletService.increment(
-          cls.instructor_id,
-          payment.instructor_amount
-        );
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-  } else if (payment.item_type === "book") {
-    try {
-      const book = await bookService.getBookById(payment.item_id);
-      if (book?.instructor_id) {
-        await walletService.increment(
-          book.instructor_id,
-          payment.instructor_amount
-        );
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-  } else if (payment.item_type === "tutorial") {
-    try {
-      const tut = await tutorialService.getTutorialById(payment.item_id);
-      if (tut?.instructor_id) {
-        await walletService.increment(
-          tut.instructor_id,
-          payment.instructor_amount
-        );
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
+  const refreshedPayment = await paymentsService.getById(payment.id);
+  if (refreshedPayment?.status === STATUS.PAID) {
+    await creditInstructorFromPayment(refreshedPayment);
   }
   let user;
   try {
@@ -358,4 +325,3 @@ exports.rejectBankPayment = catchAsync(async (req, res) => {
   );
   sendSuccess(res, payment, "Bank payment rejected");
 });
-

@@ -10,6 +10,7 @@ const coinbaseService = require('../../services/coinbaseService');
 const { v4: uuidv4 } = require('uuid');
 const { grantAccess } = require('./paymentAccess');
 const plansService = require('../plans/plans.service');
+const { creditInstructorFromPayment } = require('./helpers/wallet');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -134,8 +135,11 @@ exports.handleWebhook = catchAsync(async (req, res) => {
     const updated = await paymentsService.update(paymentId, statusUpdate);
     if (updated.status === STATUS.PAID) {
       await grantAccess(updated);
+      const refreshed = await paymentsService.getById(updated.id);
+      if (refreshed?.status === STATUS.PAID) {
+        await creditInstructorFromPayment(refreshed);
+      }
     }
   }
   res.json({ ok: true });
 });
-

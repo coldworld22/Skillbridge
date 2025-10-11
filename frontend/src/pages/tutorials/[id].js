@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
@@ -88,14 +88,42 @@ export default function TutorialDetail() {
   }));
   const isStudent = user?.role?.toLowerCase() === "student";
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
   const [inWishlist, setInWishlist] = useState(false);
   const [inFavorites, setInFavorites] = useState(false);
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
-    useTutorialProgress(id);
+    useTutorialProgress(id, tutorial?.chapters ?? []);
   const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
+  const playlist = useMemo(() => {
+    if (!tutorial) return [];
+    const items = [];
+    if (tutorial.preview) {
+      items.push({
+        id: "preview",
+        src: tutorial.preview,
+        title: t("preview_video_title", { defaultValue: "Preview Video" }),
+        chapterId: null,
+        isPreview: true,
+      });
+    }
+    (tutorial.chapters || []).forEach((ch) => {
+      items.push({
+        id: ch.id,
+        src: ch.videoUrl,
+        title: ch.title,
+        chapterId: ch.id,
+        isPreview: Boolean(ch.is_preview),
+        duration: ch.duration,
+      });
+    });
+    return items;
+  }, [tutorial, t]);
+  const previewOffset = tutorial?.preview ? 1 : 0;
+  const unlockedLimit = isEnrolled
+    ? playlist.length
+    : Math.min(playlist.length, tutorial?.preview ? 2 : 1);
 
   const enroll = async () => {
     if (!tutorial) return;
@@ -145,6 +173,7 @@ export default function TutorialDetail() {
         id: tutorial.id,
         name: tutorial.title,
         price: tutorial.price,
+        item_type: "tutorial",
       });
       toast.success("Added to cart");
       router.push("/cart");
@@ -177,7 +206,16 @@ export default function TutorialDetail() {
             videoUrl: url ? safeEncodeURI(url) : null,
           };
         });
-        setTutorial({ ...data, chapters });
+        const previewUrl = (() => {
+          if (!data.preview) return null;
+          const raw = data.preview;
+          const full = raw.startsWith("http")
+            ? raw
+            : `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${raw}`;
+          return safeEncodeURI(full);
+        })();
+
+        setTutorial({ ...data, chapters, preview: previewUrl });
         let enrolled = Boolean(
           data?.is_enrolled || data?.enrolled || data?.isEnrolled,
         );
@@ -263,22 +301,54 @@ export default function TutorialDetail() {
   }, [isEnrolled, tutorial]);
 
 
-
-
-  // Load saved progress when chapter changes
+  // Sync playback time with the current item
   useEffect(() => {
-    if (!tutorial || !tutorial.chapters[currentIndex]) return;
-    const ch = tutorial.chapters[currentIndex];
-    const time = startTimeFor(ch.id);
-    setStartTime(time);
-  }, [tutorial, currentIndex, startTimeFor]);
-
-  // Resume last position
-  useEffect(() => {
-    if (progress.lastIndex !== undefined && tutorial) {
-      setCurrentIndex(progress.lastIndex);
+    if (!playlist.length) {
+      setStartTime(0);
+      return;
     }
-  }, [progress.lastIndex, tutorial]);
+    const active = playlist[currentVideoIndex];
+    if (!active || !active.chapterId) {
+      setStartTime(0);
+      return;
+    }
+    const time = startTimeFor(active.chapterId);
+    setStartTime(time);
+  }, [playlist, currentVideoIndex, startTimeFor]);
+
+  // Restore last watched chapter when tutorial loads
+  useEffect(() => {
+    if (!tutorial) return;
+    if (!Array.isArray(tutorial.chapters) || !tutorial.chapters.length) {
+      if (tutorial?.preview && currentVideoIndex !== 0) {
+        setCurrentVideoIndex(0);
+      }
+      return;
+    }
+    if (typeof progress.lastIndex === "number" && progress.lastIndex >= 0) {
+      const clamped = Math.min(
+        progress.lastIndex,
+        tutorial.chapters.length - 1
+      );
+      const targetIndex = (tutorial.preview ? 1 : 0) + clamped;
+      if (currentVideoIndex !== targetIndex) {
+        setCurrentVideoIndex(targetIndex);
+      }
+    }
+  }, [progress.lastIndex, tutorial, currentVideoIndex]);
+
+  // Prevent unenrolled users from accessing locked videos
+  useEffect(() => {
+    if (isEnrolled) return;
+    if (!playlist.length) return;
+    if (unlockedLimit <= 0) {
+      if (currentVideoIndex !== 0) setCurrentVideoIndex(0);
+      return;
+    }
+    if (currentVideoIndex >= unlockedLimit) {
+      setCurrentVideoIndex(unlockedLimit - 1);
+    }
+  }, [isEnrolled, unlockedLimit, currentVideoIndex, playlist]);
 
 
   if (loading) {
@@ -311,29 +381,69 @@ export default function TutorialDetail() {
     return <LoginPrompt />;
   }
 
-  const accessibleChapters = isEnrolled
-    ? tutorial.chapters
-    : tutorial.chapters.slice(0, 1);
-
-  const videoList = accessibleChapters.map((ch) => ({
-    id: ch.id,
-    src: ch.videoUrl,
-    title: ch.title,
+  const currentItem = playlist[currentVideoIndex] || null;
+  const isCurrentLocked =
+    !isEnrolled &&
+    (unlockedLimit <= 0 || currentVideoIndex >= unlockedLimit);
+  const videoList = playlist.map((item, idx) => ({
+    id: item.chapterId ?? item.id ?? idx,
+    src: item.src,
+    title: item.title,
+    isPreview: item.isPreview,
+    locked: !isEnrolled && idx >= unlockedLimit,
   }));
-  const currentVideoObj = videoList[currentIndex];
-  const currentVideo = currentVideoObj?.src || null;
+  const currentVideo = !isCurrentLocked ? currentItem?.src : null;
   const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
   const progressPercentage = tutorial.chapters.length
     ? (progress.completedChapters.length / tutorial.chapters.length) * 100
     : 0;
 
-  const handleVideoTimeUpdate = (time) => {
-    const ch = tutorial.chapters[currentIndex];
-    if (!ch) return;
-    saveTime(ch.id, time);
-    setIndex(currentIndex);
+  const handleSelectVideo = (index) => {
+    if (!isEnrolled && index >= unlockedLimit) {
+      toast.error(
+        t("video_locked_toast", {
+          defaultValue: "Enroll to unlock this lesson",
+        })
+      );
+      return;
+    }
+    setCurrentVideoIndex(index);
   };
+
+  const handleVideoTimeUpdate = (time) => {
+    if (!currentItem?.chapterId) return;
+    saveTime(currentItem.chapterId, time);
+    if (Array.isArray(tutorial.chapters)) {
+      const chapterIndex = tutorial.chapters.findIndex(
+        (ch) => ch.id === currentItem.chapterId
+      );
+      if (chapterIndex >= 0) {
+        setIndex(chapterIndex);
+      }
+    }
+  };
+
+  const handleVideoEnded = () => {
+    if (!currentItem?.chapterId) return;
+    if (!Array.isArray(tutorial.chapters)) return;
+    const chapterIndex = tutorial.chapters.findIndex(
+      (ch) => ch.id === currentItem.chapterId
+    );
+    if (chapterIndex >= 0) {
+      completeChapter(chapterIndex, currentItem.chapterId);
+    }
+  };
+
+  const currentChapterIndex = (() => {
+    if (!Array.isArray(tutorial.chapters) || !tutorial.chapters.length) {
+      return 0;
+    }
+    const idx = tutorial.chapters.findIndex(
+      (ch) => ch.id === currentItem?.chapterId
+    );
+    return idx >= 0 ? idx : 0;
+  })();
 
   const handleToggleWishlist = async () => {
     if (!user) {
@@ -406,14 +516,12 @@ export default function TutorialDetail() {
 
         {playerVideos.length > 0 ? (
           <CustomVideoPlayer
-            key={currentIndex}
+            key={currentVideoIndex}
             videos={playerVideos}
             startTime={startTime}
             onTimeUpdate={handleVideoTimeUpdate}
-            locked={!isEnrolled}
-            onEnded={(idx) => {
-              completeChapter(idx);
-            }}
+            locked={isCurrentLocked}
+            onEnded={handleVideoEnded}
             storageKey={tutorial?.id ? `tutorial-${tutorial.id}` : undefined}
           />
         ) : (
@@ -427,9 +535,9 @@ export default function TutorialDetail() {
 
         <VideoPreviewList
           videos={videoList}
-          currentIndex={currentIndex}
+          currentIndex={currentVideoIndex}
           completed={progress.completedChapters}
-          onSelect={(index) => setCurrentIndex(index)}
+          onSelect={handleSelectVideo}
         />
 
         <div className="flex justify-end mb-4 gap-3">
@@ -484,9 +592,9 @@ export default function TutorialDetail() {
 
         <ChapterList
           chapters={tutorial.chapters}
-          currentIndex={currentIndex}
+          currentIndex={currentChapterIndex}
           completedChapters={progress.completedChapters}
-          onSelect={(index) => setCurrentIndex(index)}
+          onSelect={(index) => handleSelectVideo(index + previewOffset)}
           isEnrolled={isEnrolled}
         />
 

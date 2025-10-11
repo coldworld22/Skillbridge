@@ -32,6 +32,12 @@
     "share": "مشاركة",
     "share_message": "اطلع على هذا الدرس على SkillBridge!",
     "share_success": "تمت المشاركة بنجاح!",
+    "preview_video_title": "فيديو تمهيدي",
+    "lessons_heading": "الدروس",
+    "video_locked": "مقفلة",
+    "preview_badge": "معاينة",
+    "unlock_badge": "سجّل لفتحها",
+    "video_locked_toast": "سجّل في الدرس لفتح هذا الدرس",
     "quiz_locked": "الاختبار مقفل",
     "enroll_to_access_quiz": "سجّل للوصول إلى الاختبار",
     "start_assignment": "بدء الواجب",
@@ -181,4 +187,3 @@
     "remove": "إزالة"
   }
 }
-

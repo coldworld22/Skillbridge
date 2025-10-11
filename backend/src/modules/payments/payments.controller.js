@@ -18,6 +18,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
+const { creditInstructorFromPayment } = require("./helpers/wallet");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -290,6 +291,7 @@ exports.updatePayment = catchAsync(async (req, res) => {
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
         }
+        await creditInstructorFromPayment(payment);
       } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;
         subject = "Payment Rejected";

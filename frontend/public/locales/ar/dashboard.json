@@ -1426,6 +1426,8 @@
     "previewPagesLabel": "صفحات المعاينة (اختياري)",
     "clearPreviewPages": "مسح صفحات المعاينة",
     "allowPreview": "السماح للمعاينة",
+    "includedPlansLabel": "الخطط الطلابية المشمولة",
+    "includedPlansHelp": "يمكن للطلاب المشتركين في هذه الخطط الوصول إلى الكتاب بدون دفع إضافي.",
     "priceLabel": "سعر",
     "priceRequired": "السعر مطلوب",
     "languageLabel": "لغة",

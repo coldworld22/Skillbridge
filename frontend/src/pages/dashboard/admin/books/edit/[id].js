@@ -6,6 +6,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import BookForm from "@/components/books/BookForm";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchAllCategories } from "@/services/admin/categoryService";
+import { fetchPlanIdentifiers } from "@/services/admin/planService";
 import { fetchBook, updateBook } from "@/services/bookService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -22,6 +23,7 @@ function AdminEditBookPage() {
   const { t } = useTranslation(["common", "dashboard", "validation", "errors"]);
 
   const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [book, setBook] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,17 +45,34 @@ function AdminEditBookPage() {
     const load = async () => {
       try {
         setIsLoading(true);
-        const [catRes, bookData] = await Promise.all([
+        const [catRes, planRes, bookData] = await Promise.all([
           fetchAllCategories(),
+          fetchPlanIdentifiers().catch((planErr) => {
+            console.error("Failed to load plans", planErr);
+            return [];
+          }),
           fetchBook(id, { admin: true }),
         ]);
         setCategories(catRes?.data || catRes || []);
+        setPlans(Array.isArray(planRes) ? planRes : planRes || []);
+        let includedPlans = [];
+        if (Array.isArray(bookData?.included_plans)) {
+          includedPlans = bookData.included_plans;
+        } else if (typeof bookData?.included_plans === "string") {
+          try {
+            const parsed = JSON.parse(bookData.included_plans);
+            includedPlans = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+          } catch {
+            includedPlans = [];
+          }
+        }
         const parsedBook = {
           ...bookData,
           tags: bookData?.tags?.map((t) => t.name || t) || [],
           allow_preview:
             bookData?.allow_preview === 1 ||
             bookData?.allow_preview === true,
+          included_plans: includedPlans,
         };
         setBook(parsedBook);
         setCoverPreview(bookData?.cover_image_url || null);
@@ -238,6 +257,7 @@ function AdminEditBookPage() {
                 key={book?.id || 'form'}
                 onSubmit={handleSubmit}
                 categories={categories}
+                plans={plans}
                 showCoverImage={false}
                 defaultValues={book}
                 isEdit
