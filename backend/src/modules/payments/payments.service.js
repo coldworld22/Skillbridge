@@ -194,16 +194,7 @@ exports.getByInstructor = async (
       "p.source",
       "m.name as method_name",
       "u.full_name as student_name",
-      db.raw("COALESCE(c.title, tut.title, b.title) as item_title"),
-      db.raw(`
-        CASE
-          WHEN c.id IS NOT NULL THEN c.slug
-          WHEN tut.id IS NOT NULL THEN tut.slug
-          ELSE NULL
-        END as item_slug
-      `),
-      db.raw("COALESCE(c.price, tut.price, b.price) as item_price"),
-      db.raw("COALESCE(c.language, b.language) as item_language")
+      db.raw("COALESCE(c.title, tut.title, b.title) as item_title")
     )
     .where(function () {
       this.where("c.instructor_id", instructorId)
