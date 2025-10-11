@@ -34,4 +34,20 @@ describe('tutorial validator', () => {
 
     expect(() => validator.create.parse(sample)).not.toThrow();
   });
+
+  test('coerces numeric strings and nulls in chapters', () => {
+    const sample = {
+      body: {
+        title: 'Coerce Chapter Order',
+        category_id: 'cat',
+        level: 'beginner',
+        chapters: JSON.stringify([
+          { title: 'One', order: '1', duration: null, video_url: '/uploads/tutorials/chapters/admin/video.mp4' },
+          { title: 'Two', order: 2, duration: '5', video_url: '/uploads/tutorials/chapters/admin/video2.mp4' }
+        ])
+      }
+    };
+
+    expect(() => validator.create.parse(sample)).not.toThrow();
+  });
 });

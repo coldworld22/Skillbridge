@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
@@ -39,6 +39,22 @@ export default function CreateTutorialPage() {
 
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
+  const fieldLabels = useMemo(
+    () => ({
+      title: t("tutorials:create.basic.title_label", "Title"),
+      shortDescription: t("tutorials:create.basic.short_desc_label", "Short Description"),
+      description: t("tutorials:create.basic.short_desc_label", "Description"),
+      category_id: t("tutorials:create.basic.category_label", "Category"),
+      level: t("tutorials:create.basic.level_label", "Level"),
+      language: t("tutorials:create.basic.language_label", "Language"),
+      price: t("tutorials:create.basic.price_label", "Price"),
+      currency: t("tutorials:create.basic.select_currency", "Currency"),
+      tags: t("tutorials:create.basic.tags_label", "Tags"),
+      included_plans: t("tutorials:create.basic.plan_access_label", "Included Plans"),
+      status: t("dashboard:tutorialCreatePage.step_pricing_publish"),
+    }),
+    [t]
+  );
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
@@ -122,6 +138,73 @@ export default function CreateTutorialPage() {
       router.push("/dashboard/instructor/tutorials");
     } catch (err) {
       console.error(err);
+      const apiErrors = err.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        const formatIssue = (issue) => {
+          if (!issue) return null;
+          const pathSegments = Array.isArray(issue.path)
+            ? issue.path.filter((seg) => seg !== "body")
+            : [];
+          let label = "";
+          if (pathSegments.length === 0 && issue.path?.length === 1 && issue.path[0] !== "body") {
+            const key = issue.path[0];
+            label = fieldLabels[key] || key;
+          } else if (pathSegments.length) {
+            if (pathSegments[0] === "chapters") {
+              const chapterIndex = Number(pathSegments[1]);
+              const chapterNumber = Number.isFinite(chapterIndex)
+                ? chapterIndex + 1
+                : undefined;
+              const chapterField = pathSegments[2] || pathSegments[1];
+              if (chapterField === "title") {
+                label = chapterNumber
+                  ? `${t("tutorials:create.curriculum.chapter_title")} #${chapterNumber}`
+                  : t("tutorials:create.curriculum.chapter_title");
+              } else if (chapterField === "video_url") {
+                label = chapterNumber
+                  ? `${t("tutorials:create.curriculum.upload_video")} #${chapterNumber}`
+                  : t("tutorials:create.curriculum.upload_video");
+              } else if (chapterField === "duration") {
+                label = chapterNumber
+                  ? `${t("tutorials:create.curriculum.duration_label")} #${chapterNumber}`
+                  : t("tutorials:create.curriculum.duration_label");
+              } else {
+                label = pathSegments.join(".");
+              }
+            } else {
+              const topKey = pathSegments[0];
+              const joined = pathSegments.join(".");
+              label = fieldLabels[topKey] || fieldLabels[joined] || joined;
+            }
+          }
+          const message = issue.message || issue.msg || issue.code || t("dashboard:tutorialCreatePage.failed_create");
+          if (label) return `${label}: ${message}`;
+          return message;
+        };
+        const details = apiErrors.map(formatIssue).filter(Boolean).join("\n");
+        toast.error(details || err.response?.data?.message || t("dashboard:tutorialCreatePage.failed_create"));
+        return;
+      }
+      if (apiErrors && typeof apiErrors === "object") {
+        const details = Object.entries(apiErrors)
+          .map(([key, value]) => {
+            if (!value) return null;
+            const msg =
+              typeof value === "string"
+                ? value
+                : Array.isArray(value)
+                ? value.join(", ")
+                : JSON.stringify(value);
+            const label = fieldLabels[key] || key;
+            return `${label}: ${msg}`;
+          })
+          .filter(Boolean)
+          .join("\n");
+        if (details) {
+          toast.error(details);
+          return;
+        }
+      }
       toast.error(err.response?.data?.message || t("dashboard:tutorialCreatePage.failed_create"));
     }
   };

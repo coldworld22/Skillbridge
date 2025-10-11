@@ -6,6 +6,19 @@ const toBoolean = (val) => {
   return val;
 };
 
+// Helper to normalize optional numeric fields
+const toOptionalNumber = (val) => {
+  if (val === "" || val === undefined || val === null) return undefined;
+  const num = typeof val === "number" ? val : Number(val);
+  return Number.isFinite(num) ? num : undefined;
+};
+
+const toOptionalInt = (val) => {
+  if (val === "" || val === undefined || val === null) return undefined;
+  const num = typeof val === "number" ? val : Number(val);
+  return Number.isInteger(num) ? num : undefined;
+};
+
 // Helper preprocessor to safely parse JSON strings
 const parseJson = (val) => {
   if (typeof val === "string") {
@@ -30,14 +43,8 @@ exports.create = z.object({
     level: z.string(),
     language: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
-    price: z.preprocess(
-      (val) => (val === '' || val === undefined ? undefined : Number(val)),
-      z.number().nonnegative().optional()
-    ),
-    duration: z.preprocess(
-      (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
-      z.number().int().nonnegative().optional()
-    ),
+    price: z.preprocess(toOptionalNumber, z.number().nonnegative().optional()),
+    duration: z.preprocess(toOptionalInt, z.number().int().nonnegative().optional()),
     is_paid: z.preprocess(toBoolean, z.boolean().optional()),
     included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
     tags: z.preprocess(parseJson, z.array(z.string()).optional()),
@@ -51,10 +58,13 @@ exports.create = z.object({
               content: z.string().optional(),
               video_url: urlOrPath.optional(),
               duration: z.preprocess(
-                (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
+                toOptionalInt,
                 z.number().int().nonnegative().optional()
               ),
-              order: z.number(),
+              order: z.preprocess(
+                toOptionalInt,
+                z.number().int().positive()
+              ),
               is_preview: z.boolean().optional(),
             })
           )
