@@ -9,7 +9,8 @@ exports.up = async function (knex) {
       JOIN pg_class c ON c.oid = a.attrelid
       JOIN pg_namespace ns ON ns.oid = c.relnamespace
       WHERE c.relname = 'coupons'
-        AND a.attname = 'applies_to';
+        AND a.attname = 'applies_to'
+        AND t.typtype = 'e';
 
       IF enum_type IS NOT NULL THEN
         EXECUTE format(
