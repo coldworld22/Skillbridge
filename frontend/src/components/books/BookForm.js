@@ -6,6 +6,7 @@ import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 import { toast } from "react-hot-toast";
+import { FiFileText } from "react-icons/fi";
 
 const extractTagName = (tag) => {
   if (!tag) return "";
@@ -55,6 +56,7 @@ export default function BookForm({
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm({
     defaultValues: {
       tags: [],
@@ -69,8 +71,11 @@ export default function BookForm({
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
+  const [existingBookFileUrl, setExistingBookFileUrl] = useState(null);
+  const [existingBookFileName, setExistingBookFileName] = useState("");
   const [bookFileName, setBookFileName] = useState("");
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [existingPreviewPages, setExistingPreviewPages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
   const normalizePlanSelection = (rawPlans) => {
     if (!rawPlans) return [];
@@ -126,6 +131,33 @@ export default function BookForm({
         status: defaultValues.status ?? "pending",
       });
       setTags(normalizeTagList(defaultValues.tags));
+      const cover =
+        defaultValues.coverUrl ||
+        defaultValues.cover_image_url ||
+        defaultValues.cover_image ||
+        null;
+      setCoverPreview(cover || null);
+
+      const fileUrl =
+        defaultValues.pdf_download_url ||
+        defaultValues.pdfDownloadUrl ||
+        defaultValues.pdf_url ||
+        null;
+      setExistingBookFileUrl(fileUrl);
+      if (fileUrl) {
+        const cleaned = fileUrl.split("?")[0] || fileUrl;
+        const parts = cleaned.split("/");
+        setExistingBookFileName(decodeURIComponent(parts[parts.length - 1] || cleaned));
+      } else {
+        setExistingBookFileName("");
+      }
+
+      const previews = Array.isArray(defaultValues.preview_pages)
+        ? defaultValues.preview_pages.filter(Boolean)
+        : [];
+      setExistingPreviewPages(previews);
+      setPreviewFiles([]);
+      setBookFileName("");
     }
   }, [defaultValues, reset]);
 
@@ -160,6 +192,48 @@ export default function BookForm({
   useEffect(() => {
     setValue("included_plans", selectedPlans);
   }, [selectedPlans, setValue]);
+
+  const removePreviewPages = watch("remove_preview_pages");
+
+  const renderPreviewItem = (url, index) => {
+    if (!url) return null;
+    const normalized = typeof url === "string" ? url : "";
+    const isPdf = normalized.split("?")[0]?.toLowerCase().endsWith(".pdf");
+    const label = `${t("booksCreate.previewPageLabel", {
+      defaultValue: "Preview",
+    })} ${index + 1}`;
+
+    if (isPdf) {
+      return (
+        <a
+          key={`${normalized}-${index}`}
+          href={normalized}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+        >
+          <FiFileText className="text-blue-600" />
+          <span className="truncate">{label}</span>
+        </a>
+      );
+    }
+
+    return (
+      <a
+        key={`${normalized}-${index}`}
+        href={normalized}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block overflow-hidden rounded-md border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+      >
+        <img
+          src={normalized}
+          alt={label}
+          className="h-24 w-24 object-cover"
+        />
+      </a>
+    );
+  };
 
   const tagAbortRef = useRef(null);
 
@@ -522,6 +596,19 @@ export default function BookForm({
         {bookFileName && (
           <p className="text-sm mt-1">{bookFileName}</p>
         )}
+        {!bookFileName && existingBookFileUrl && (
+          <p className="text-sm mt-1">
+            {t("booksCreate.currentFile", { defaultValue: "Current file:" })}{" "}
+            <a
+              href={existingBookFileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              {existingBookFileName || existingBookFileUrl}
+            </a>
+          </p>
+        )}
         {errors.book_file && (
           <p className="text-red-500 text-sm mt-1">
             {errors.book_file.message}
@@ -584,6 +671,18 @@ export default function BookForm({
               <li key={idx}>{file.name}</li>
             ))}
           </ul>
+        )}
+        {!removePreviewPages && existingPreviewPages.length > 0 && (
+          <div className="mt-3">
+            <p className="text-sm font-medium text-gray-600 mb-2">
+              {t("booksCreate.currentPreviewPages", {
+                defaultValue: "Current preview pages",
+              })}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {existingPreviewPages.map((url, index) => renderPreviewItem(url, index))}
+            </div>
+          </div>
         )}
         {errors.preview_pages && (
           <p className="text-red-500 text-sm mt-1">
