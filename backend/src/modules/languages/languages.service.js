@@ -1,5 +1,17 @@
 const db = require("../../config/database");
+const AppError = require("../../utils/AppError");
+const logger = require("../../utils/logger");
 const { isUndefinedTableError, logUndefinedTableWarning } = require("../../utils/dbErrors");
+
+const DUPLICATE_ERROR_CODE = "23505";
+
+const parseDbError = (err, context) => {
+  if (err?.code === DUPLICATE_ERROR_CODE) {
+    throw new AppError("Duplicate language code", 409);
+  }
+  logger.error(`[languages] ${context}`, err);
+  throw new AppError("Database temporarily unavailable", 503);
+};
 
 exports.create = async (data) => {
   try {
@@ -11,8 +23,7 @@ exports.create = async (data) => {
       return row;
     });
   } catch (err) {
-    logger.error("[languages] Failed to create language", err);
-    throw databaseUnavailableError();
+    parseDbError(err, "Failed to create language");
   }
 };
 
@@ -50,8 +61,7 @@ exports.update = async (id, data) => {
       return row;
     });
   } catch (err) {
-    logger.error("[languages] Failed to update language", err);
-    throw databaseUnavailableError();
+    parseDbError(err, "Failed to update language");
   }
 };
 
@@ -59,7 +69,6 @@ exports.remove = async (id) => {
   try {
     return await db("languages").where({ id }).del();
   } catch (err) {
-    logger.error("[languages] Failed to delete language", err);
-    throw databaseUnavailableError();
+    parseDbError(err, "Failed to delete language");
   }
 };

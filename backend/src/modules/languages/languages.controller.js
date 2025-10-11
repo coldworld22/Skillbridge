@@ -8,10 +8,22 @@ const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
+const toBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "off"].includes(normalized)) return false;
+  }
+  return Boolean(value);
+};
+
 exports.createLanguage = catchAsync(async (req, res) => {
   const data = { ...req.body };
   if (data.name) data.name = data.name.trim();
   if (data.code) data.code = data.code.trim();
+  if (data.is_active !== undefined) data.is_active = toBoolean(data.is_active);
+  if (data.is_default !== undefined) data.is_default = toBoolean(data.is_default);
   if (req.file) {
     data.icon_url = `/uploads/languages/${req.file.filename}`;
   }
@@ -32,6 +44,8 @@ exports.updateLanguage = catchAsync(async (req, res) => {
   const data = { ...req.body };
   if (data.name) data.name = data.name.trim();
   if (data.code) data.code = data.code.trim();
+  if (data.is_active !== undefined) data.is_active = toBoolean(data.is_active);
+  if (data.is_default !== undefined) data.is_default = toBoolean(data.is_default);
   if (req.file) {
     if (existing.icon_url) {
       const oldPath = path.join(__dirname, "../../../", existing.icon_url);
