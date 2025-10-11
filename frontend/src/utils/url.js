@@ -17,11 +17,22 @@ export function buildUrl(path) {
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  if (!API_BASE) {
-    const shouldProxy = uploadsPattern.test(relative) || normalized.startsWith("/api/");
-    if (shouldProxy && !normalized.startsWith("/api/")) {
-      return `/api${normalized}`;
+  // Prefer routing uploads via the API prefix so Nginx setups that only proxy
+  // `/api` still serve media correctly. When a public API base is available,
+  // use RAW_API_BASE (which includes `/api`) for uploads to yield
+  // `https://domain/api/uploads/...`.
+  if (uploadsPattern.test(relative)) {
+    if (RAW_API_BASE) {
+      const base = RAW_API_BASE.replace(/\/$/, "");
+      return `${base}${normalized}`; // e.g. https://domain/api/uploads/...
     }
+    // No base configured: ensure `/api/uploads/...` so Next/Nginx rewrites pick it up
+    return normalized.startsWith("/api/") ? normalized : `/api${normalized}`;
+  }
+
+  if (!API_BASE) {
+    const shouldProxy = normalized.startsWith("/api/");
+    if (shouldProxy) return normalized;
     return normalized;
   }
   return `${API_BASE}${normalized}`;
