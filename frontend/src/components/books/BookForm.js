@@ -6,6 +6,7 @@ import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 import { toast } from "react-hot-toast";
+import { buildUrl } from "@/utils/url";
 
 const extractTagName = (tag) => {
   if (!tag) return "";
@@ -118,7 +119,7 @@ export default function BookForm({
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
   const [bookFileName, setBookFileName] = useState("");
-  const [bookFileUrl, setBookFileUrl] = useState(null);
+  const [existingFileUrl, setExistingFileUrl] = useState(null);
   const [previewFiles, setPreviewFiles] = useState([]);
   const [existingPreviewPages, setExistingPreviewPages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -180,26 +181,66 @@ export default function BookForm({
   }, [defaultValues, reset]);
 
   useEffect(() => {
-    if (!defaultValues) return;
-    const cover =
-      defaultValues.coverUrl ||
-      defaultValues.cover_image_url ||
-      defaultValues.cover_image ||
-      null;
-    setCoverPreview(cover || null);
+    if (!defaultValues) {
+      if (showCoverImage) {
+        setCoverPreview(null);
+      }
+      setExistingFileUrl(null);
+      setBookFileName("");
+      setExistingPreviewPages([]);
+      return;
+    }
 
-    const existingFileUrl =
-      extractFileUrl(defaultValues.pdf_url) ||
-      extractFileUrl(defaultValues.pdfDownloadUrl) ||
-      extractFileUrl(defaultValues.pdf_download_url) ||
-      null;
-    setBookFileUrl(existingFileUrl);
-    setBookFileName(
-      existingFileUrl ? getFileNameFromUrl(existingFileUrl) : ""
-    );
+    if (showCoverImage) {
+      const rawCover =
+        defaultValues.coverUrl ||
+        defaultValues.cover_image_url ||
+        defaultValues.cover_image;
+      const normalizedCover = buildUrl(rawCover) || rawCover || null;
+      setCoverPreview(normalizedCover);
+    }
 
-    setExistingPreviewPages(normalizePreviewPages(defaultValues.preview_pages));
-  }, [defaultValues]);
+    const rawFileUrl =
+      defaultValues.pdf_download_url ||
+      defaultValues.pdfDownloadUrl ||
+      defaultValues.pdf_url ||
+      defaultValues.book_file_url;
+    if (rawFileUrl) {
+      const normalizedUrl = buildUrl(rawFileUrl) || rawFileUrl;
+      setExistingFileUrl(normalizedUrl);
+      try {
+        const cleaned = normalizedUrl.split("?")[0].split("#")[0];
+        const segments = cleaned.split("/").filter(Boolean);
+        const name = decodeURIComponent(segments[segments.length - 1] || "");
+        setBookFileName(name || normalizedUrl);
+      } catch {
+        setBookFileName(normalizedUrl);
+      }
+    } else {
+      setExistingFileUrl(null);
+      setBookFileName("");
+    }
+
+    if (Array.isArray(defaultValues.preview_pages) && defaultValues.preview_pages.length > 0) {
+      const normalizedPages = defaultValues.preview_pages
+        .map((page) => {
+          const url = buildUrl(page) || page;
+          if (!url) return null;
+          try {
+            const cleaned = url.split("?")[0].split("#")[0];
+            const segments = cleaned.split("/").filter(Boolean);
+            const name = decodeURIComponent(segments[segments.length - 1] || "");
+            return { url, name: name || url };
+          } catch {
+            return { url, name: url };
+          }
+        })
+        .filter(Boolean);
+      setExistingPreviewPages(normalizedPages);
+    } else {
+      setExistingPreviewPages([]);
+    }
+  }, [defaultValues, showCoverImage]);
 
   useEffect(() => {
     const load = async () => {
@@ -587,27 +628,32 @@ export default function BookForm({
                 const file = e.target.files?.[0];
                 setBookFileUrl(null);
                 setBookFileName(file ? file.name : "");
+                if (file) {
+                  setExistingFileUrl(null);
+                }
               }}
               className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
           );
         })()}
-        {bookFileUrl ? (
-          <p className="text-sm mt-1">
-            {t("booksCreate.currentBookFile", {
-              defaultValue: "Current file:",
-            })}{" "}
-            <a
-              href={bookFileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-600 hover:text-yellow-700 underline"
-            >
-              {bookFileName || t("booksCreate.viewFile", { defaultValue: "View file" })}
-            </a>
-          </p>
-        ) : (
-          bookFileName && <p className="text-sm mt-1">{bookFileName}</p>
+        {bookFileName && (
+          existingFileUrl ? (
+            <p className="text-sm mt-1">
+              <span className="font-medium">
+                {t("booksCreate.currentFile", { defaultValue: "Current file" })}:
+              </span>{" "}
+              <a
+                href={existingFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {bookFileName}
+              </a>
+            </p>
+          ) : (
+            <p className="text-sm mt-1">{bookFileName}</p>
+          )
         )}
         {errors.book_file && (
           <p className="text-red-500 text-sm mt-1">
@@ -660,6 +706,9 @@ export default function BookForm({
                 reg.onChange(e);
                 const files = Array.from(e.target.files || []);
                 setPreviewFiles(files);
+                if (files.length > 0) {
+                  setExistingPreviewPages([]);
+                }
               }}
               className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
@@ -699,6 +748,27 @@ export default function BookForm({
           <p className="text-red-500 text-sm mt-1">
             {errors.preview_pages.message}
           </p>
+        )}
+        {existingPreviewPages.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm font-medium text-gray-700">
+              {t("booksCreate.currentPreviewPages", { defaultValue: "Current preview pages" })}
+            </p>
+            <ul className="list-disc pl-5 text-sm space-y-1">
+              {existingPreviewPages.map((file) => (
+                <li key={file.url}>
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {file.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {isEdit && defaultValues?.preview_pages?.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
