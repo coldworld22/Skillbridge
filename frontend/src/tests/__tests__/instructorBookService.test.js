@@ -38,6 +38,49 @@ describe("instructor bookService", () => {
     });
   });
 
+  it("omits inactive filter defaults when fetching instructor books", async () => {
+    api.get.mockResolvedValueOnce({ data: { data: [], meta: {} } });
+    await fetchInstructorBooks({
+      filters: {
+        search: "",
+        status: "",
+        priceRange: 0,
+        language: null,
+        tags: [],
+      },
+    });
+    expect(api.get).toHaveBeenCalledWith("/instructor/books");
+  });
+
+  it("passes normalized filters to the instructor books endpoint", async () => {
+    api.get.mockResolvedValueOnce({ data: { data: [], meta: {} } });
+    await fetchInstructorBooks({
+      page: 2,
+      perPage: 5,
+      filters: {
+        search: "React",
+        priceRange: "15",
+        tags: ["frontend", ""],
+      },
+      sort: { sortBy: "title" },
+      status: "approved",
+    });
+    expect(api.get).toHaveBeenCalledWith(
+      "/instructor/books",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          page: 2,
+          perPage: 5,
+          search: "React",
+          priceRange: 15,
+          tags: ["frontend"],
+          sortBy: "title",
+          status: "approved",
+        }),
+      })
+    );
+  });
+
   it("creates a book", async () => {
     const apiData = { id: 1 };
     api.post.mockResolvedValueOnce({ data: { data: apiData } });

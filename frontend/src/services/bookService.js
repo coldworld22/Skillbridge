@@ -1,6 +1,51 @@
 import api from "@/services/api/api";
 import { buildUrl } from "@/utils/url";
 
+const normalizeArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) =>
+      typeof item === "string" ? item.trim() : item
+    )
+    .filter((item) => item !== "" && item !== null && item !== undefined);
+};
+
+export const normalizeBookFilters = (filters = {}) => {
+  return Object.entries(filters).reduce((acc, [key, value]) => {
+    if (value === null || value === undefined) {
+      return acc;
+    }
+
+    if (key === "priceRange") {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric) && numeric > 0) {
+        acc[key] = numeric;
+      }
+      return acc;
+    }
+
+    if (Array.isArray(value)) {
+      const cleaned = normalizeArray(value);
+      if (cleaned.length > 0) {
+        acc[key] = cleaned;
+      }
+      return acc;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return acc;
+      }
+      acc[key] = trimmed;
+      return acc;
+    }
+
+    acc[key] = value;
+    return acc;
+  }, {});
+};
+
 export const formatBook = (book) => {
   const normalizeArrayInput = (value) => {
     if (!value) return [];
@@ -42,10 +87,6 @@ export const formatBook = (book) => {
         extractPath(value.href) ||
         extractPath(value.src) ||
         extractPath(value.file) ||
-        extractPath(value.original_url) ||
-        extractPath(value.thumbnail_url) ||
-        extractPath(value.preview_url) ||
-        extractPath(value.secure_url) ||
         null
       );
     }
@@ -81,7 +122,7 @@ export const formatBook = (book) => {
     return results;
   };
 
-  const coverCandidates = collectPaths(
+  const coverCandidates = [
     book?.coverUrl,
     book?.cover_url,
     book?.cover_image_url,
@@ -92,9 +133,9 @@ export const formatBook = (book) => {
     book?.media?.cover,
     book?.media?.cover_image,
     book?.files?.cover,
-    book?.files?.cover_image
-  );
-  const rawCoverPath = coverCandidates.find(Boolean);
+    book?.files?.cover_image,
+  ];
+  const rawCoverPath = coverCandidates.map(extractPath).find(Boolean);
   const normalizedCoverPath = buildUrl(rawCoverPath) || rawCoverPath;
 
   const previewPagesRaw = collectPaths(
@@ -209,17 +250,22 @@ export const fetchBooks = async ({
   admin = false,
   ...config
 } = {}) => {
+  const normalizedFilters = normalizeBookFilters(filters);
+  const normalizedSort = normalizeBookFilters(sort);
   const params = {
     ...(page !== undefined && { page }),
     ...(perPage !== undefined && { perPage }),
-    ...filters,
-    ...sort,
+    ...normalizedFilters,
+    ...normalizedSort,
   };
   if (!admin && params.status === undefined) {
     params.status = "active";
   }
   const endpoint = admin ? "/books/admin" : "/books";
-  const { data } = await api.get(endpoint, { params, ...config });
+  const requestConfig = Object.keys(params).length
+    ? { params, ...config }
+    : { ...config };
+  const { data } = await api.get(endpoint, requestConfig);
   const list = data?.data ? data.data.map(formatBook) : [];
   return {
     books: list,

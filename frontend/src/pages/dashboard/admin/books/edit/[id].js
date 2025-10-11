@@ -75,7 +75,12 @@ function AdminEditBookPage() {
           included_plans: includedPlans,
         };
         setBook(parsedBook);
-        setCoverPreview(bookData?.cover_image_url || null);
+        const cover =
+          bookData?.coverUrl ||
+          bookData?.cover_image_url ||
+          bookData?.cover_image ||
+          null;
+        setCoverPreview(cover);
       } catch (err) {
         console.error("Failed to load book", err);
         setError(t("errors.bookLoad"));
