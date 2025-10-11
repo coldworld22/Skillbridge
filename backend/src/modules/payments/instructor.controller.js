@@ -3,6 +3,7 @@ const { sendSuccess } = require("../../utils/response");
 const paymentsService = require("./payments.service");
 const walletService = require("../payouts/wallet.service");
 const payoutsService = require("../payouts/payouts.service");
+const logger = require("../../utils/logger.js");
 
 const toNumber = (value) =>
   value === null || value === undefined || Number.isNaN(Number(value))
@@ -12,11 +13,22 @@ const toNumber = (value) =>
 exports.getSummary = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
 
-  const [totals, wallet, payouts] = await Promise.all([
-    paymentsService.getInstructorTotals(instructorId),
-    walletService.getByInstructor(instructorId),
-    payoutsService.getByInstructor(instructorId),
-  ]);
+  const totals = await paymentsService.getInstructorTotals(instructorId);
+
+  let wallet = null;
+  let payouts = [];
+
+  try {
+    wallet = await walletService.getByInstructor(instructorId);
+  } catch (err) {
+    logger.warn("Wallet lookup failed for instructor summary:", err.message);
+  }
+
+  try {
+    payouts = await payoutsService.getByInstructor(instructorId);
+  } catch (err) {
+    logger.warn("Payout history lookup failed for instructor summary:", err.message);
+  }
 
   const withdrawnTotal = (payouts || [])
     .filter((payout) => payout.status === "approved")

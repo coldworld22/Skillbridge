@@ -16,9 +16,11 @@ const getPaymentColumnInfo = async () => {
     paymentColumnInfoPromise = Promise.all([
       db.schema.hasColumn("payments", "platform_fee"),
       db.schema.hasColumn("payments", "instructor_amount"),
-    ]).then(([hasPlatformFee, hasInstructorAmount]) => ({
+      db.schema.hasColumn("payments", "source"),
+    ]).then(([hasPlatformFee, hasInstructorAmount, hasSource]) => ({
       hasPlatformFee,
       hasInstructorAmount,
+      hasSource,
     }));
   }
   return paymentColumnInfoPromise;
@@ -168,7 +170,8 @@ exports.getByInstructor = async (
   instructorId,
   { status, itemType } = {}
 ) => {
-  const { hasPlatformFee, hasInstructorAmount } = await getPaymentColumnInfo();
+  const { hasPlatformFee, hasInstructorAmount, hasSource } =
+    await getPaymentColumnInfo();
 
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
@@ -205,7 +208,6 @@ exports.getByInstructor = async (
       "p.method_id",
       "p.paid_at",
       "p.created_at",
-      "p.source",
       "m.name as method_name",
       "u.full_name as student_name",
       db.raw("COALESCE(c.title, tut.title, b.title) as item_title"),
@@ -236,6 +238,12 @@ exports.getByInstructor = async (
     query.select("p.instructor_amount");
   } else {
     query.select(db.raw("NULL as instructor_amount"));
+  }
+
+  if (hasSource) {
+    query.select("p.source");
+  } else {
+    query.select(db.raw("NULL as source"));
   }
 
   return query;
