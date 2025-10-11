@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -19,6 +19,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { API_BASE_URL } from "@/config/config";
+import { buildUrl } from "@/utils/url";
 
 function AdminViewBookPage() {
   const router = useRouter();
@@ -117,10 +118,40 @@ function AdminViewBookPage() {
     );
   }
 
+  const coverUrl =
+    buildUrl(book?.coverUrl) ||
+    buildUrl(book?.cover_image_url) ||
+    buildUrl(book?.cover_image) ||
+    book?.coverUrl ||
+    book?.cover_image_url ||
+    book?.cover_image ||
+    "/images/default-book-cover.jpg";
+
+  const normalizedPreviewUrl = buildUrl(book?.preview_url) || book?.preview_url;
+
   const downloadUrl =
-    book?.pdf_download_url ||
-    book?.pdfDownloadUrl ||
-    (book?.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
+    buildUrl(book?.pdf_download_url || book?.pdfDownloadUrl) ||
+    (book?.id ? buildUrl(`${API_BASE_URL}/library/download/${book.id}`) : null);
+
+  const previewPages = useMemo(() => {
+    if (!book?.preview_pages || !Array.isArray(book.preview_pages)) return [];
+    return book.preview_pages
+      .map((page) => {
+        const url = buildUrl(page) || page;
+        if (!url) return null;
+        try {
+          const cleaned = url.split("?")[0].split("#")[0];
+          const segments = cleaned.split("/").filter(Boolean);
+          const name = decodeURIComponent(segments[segments.length - 1] || "");
+          return { url, name: name || url };
+        } catch {
+          return { url, name: url };
+        }
+      })
+      .filter(Boolean);
+  }, [book?.preview_pages]);
+
+  const hasDocuments = Boolean(downloadUrl || normalizedPreviewUrl || previewPages.length > 0);
 
   return (
     <AdminLayout>
@@ -139,10 +170,10 @@ function AdminViewBookPage() {
 
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6">
-              {book.cover_image_url ? (
+              {coverUrl ? (
                 <div className="flex-shrink-0 w-full md:w-48 lg:w-56 h-64 md:h-auto">
                   <img
-                    src={book.cover_image_url}
+                    src={coverUrl}
                     alt={book.title}
                     className="w-full h-full object-cover rounded-lg shadow-sm"
                   />
@@ -253,7 +284,7 @@ function AdminViewBookPage() {
               </div>
             )}
 
-            {(book.pdf_url || book.preview_url) && (
+            {hasDocuments && (
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">{t("booksView.documents")}</h3>
                 <div className="flex flex-wrap gap-4">
@@ -268,9 +299,9 @@ function AdminViewBookPage() {
                       <span>{t("booksView.full_pdf")}</span>
                     </a>
                   )}
-                  {book.preview_url && (
+                  {normalizedPreviewUrl && (
                     <a
-                      href={book.preview_url}
+                      href={normalizedPreviewUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
@@ -280,6 +311,27 @@ function AdminViewBookPage() {
                     </a>
                   )}
                 </div>
+                {previewPages.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">
+                      {t("booksView.previewPages", { defaultValue: "Preview pages" })}
+                    </h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm">
+                      {previewPages.map((page) => (
+                        <li key={page.url}>
+                          <a
+                            href={page.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {page.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>
