@@ -175,10 +175,26 @@ function InstructorBooksPage() {
       try {
         setLoading(true);
         setError(null);
+        const activeFilters = Object.entries(filters).reduce(
+          (acc, [key, value]) => {
+            if (
+              value === "" ||
+              value === null ||
+              value === undefined ||
+              (Array.isArray(value) && value.length === 0) ||
+              (key === "priceRange" && (value === null || value <= 0))
+            ) {
+              return acc;
+            }
+            acc[key] = value;
+            return acc;
+          },
+          {}
+        );
         const { books: list, meta } = await fetchInstructorBooks({
           page: currentPage,
           perPage,
-          filters,
+          filters: activeFilters,
           sort: { sortBy },
           signal: controller.signal,
         });
