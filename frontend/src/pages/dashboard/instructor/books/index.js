@@ -30,6 +30,11 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
 import useBookTable from "@/hooks/useBookTable";
 
+const envPriceMax = Number(process.env.NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX);
+const DEFAULT_MAX_PRICE = Number.isFinite(envPriceMax) && envPriceMax > 0
+  ? envPriceMax
+  : 500;
+
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");
   const router = useRouter();
@@ -72,7 +77,7 @@ function InstructorBooksPage() {
       search: "",
       category: "",
       status: "",
-      priceRange: 0,
+      priceRange: DEFAULT_MAX_PRICE,
       language: "",
       tags: [],
     },
@@ -118,6 +123,10 @@ function InstructorBooksPage() {
     message: "",
     onConfirm: null,
   });
+
+  const priceRangeValue = Number.isFinite(Number(filters.priceRange))
+    ? Number(filters.priceRange)
+    : DEFAULT_MAX_PRICE;
 
   const openConfirmModal = ({ title, message, onConfirm }) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm });
@@ -175,24 +184,22 @@ function InstructorBooksPage() {
       try {
         setLoading(true);
         setError(null);
-        const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
-          if (
-            value === "" ||
-            value === null ||
-            value === undefined ||
-            (Array.isArray(value) && value.length === 0) ||
-            (key === "priceRange" && (value === null || value <= 0))
-          ) {
-            return acc;
-          }
-          acc[key] = value;
-          return acc;
-        }, {});
+        const sanitizedFilters = { ...filters };
+        const parsedPriceRange = Number(sanitizedFilters.priceRange);
+        if (!Number.isFinite(parsedPriceRange)) {
+          delete sanitizedFilters.priceRange;
+        } else if (parsedPriceRange <= 0) {
+          sanitizedFilters.priceRange = 0;
+        } else if (parsedPriceRange >= DEFAULT_MAX_PRICE) {
+          delete sanitizedFilters.priceRange;
+        } else {
+          sanitizedFilters.priceRange = parsedPriceRange;
+        }
 
         const { books: list, meta } = await fetchInstructorBooks({
           page: currentPage,
           perPage,
-          filters: activeFilters,
+          filters: sanitizedFilters,
           sort: { sortBy },
           signal: controller.signal,
         });
@@ -425,14 +432,14 @@ function InstructorBooksPage() {
 
             <div className="min-w-[180px]">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("Max Price")}: ${filters.priceRange}
+                {t("Max Price")}: ${priceRangeValue}
               </label>
               <input
                 type="range"
                 min="0"
-                max="500"
+                max={DEFAULT_MAX_PRICE}
                 step="10"
-                value={filters.priceRange}
+                value={priceRangeValue}
                 onChange={(e) => {
                   setFilters({ ...filters, priceRange: Number(e.target.value) });
                   setPage(1);
@@ -614,14 +621,14 @@ function InstructorBooksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t("Max Price")}: ${filters.priceRange}
+                  {t("Max Price")}: ${priceRangeValue}
                 </label>
                 <input
                   type="range"
                   min="0"
-                  max="500"
+                  max={DEFAULT_MAX_PRICE}
                   step="10"
-                  value={filters.priceRange}
+                  value={priceRangeValue}
                   onChange={(e) => {
                     setFilters({ ...filters, priceRange: Number(e.target.value) });
                     setPage(1);
