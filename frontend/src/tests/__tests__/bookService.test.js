@@ -38,18 +38,17 @@ describe("bookService", () => {
         status: "active",
       },
     });
-    expect(res).toEqual({
-      books: [
-        {
-          id: 1,
-          title: "A",
-          cover_image_url: null,
-          pdf_url: null,
-          preview_url: null,
-          preview_pages: [],
-        },
-      ],
-      meta,
+    expect(res.meta).toBe(meta);
+    expect(res.books).toHaveLength(1);
+    expect(res.books[0]).toMatchObject({
+      id: 1,
+      title: "A",
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
+      preview_url: null,
+      preview_pages: [],
     });
   });
 
@@ -59,18 +58,17 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchBooks({ admin: true });
     expect(api.get).toHaveBeenCalledWith("/books/admin", { params: {} });
-    expect(res).toEqual({
-      books: [
-        {
-          id: 1,
-          title: "A",
-          cover_image_url: null,
-          pdf_url: null,
-          preview_url: null,
-          preview_pages: [],
-        },
-      ],
-      meta,
+    expect(res.meta).toBe(meta);
+    expect(res.books).toHaveLength(1);
+    expect(res.books[0]).toMatchObject({
+      id: 1,
+      title: "A",
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
+      preview_url: null,
+      preview_pages: [],
     });
   });
 
@@ -79,11 +77,13 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1);
     expect(api.get).toHaveBeenCalledWith("/books/1");
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 1,
       title: "A",
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
       preview_url: null,
       preview_pages: [],
     });
@@ -94,11 +94,13 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1, { admin: true });
     expect(api.get).toHaveBeenCalledWith("/books/admin/1");
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 1,
       title: "A",
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
       preview_url: null,
       preview_pages: [],
     });
@@ -112,11 +114,13 @@ describe("bookService", () => {
     const book = await fetchBook(1, { admin: true });
     expect(api.get).toHaveBeenNthCalledWith(1, "/books/admin/1");
     expect(api.get).toHaveBeenNthCalledWith(2, "/books/1");
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 1,
       title: "A",
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
       preview_url: null,
       preview_pages: [],
     });
@@ -131,13 +135,55 @@ describe("bookService", () => {
     };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(3);
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 3,
       price: 19.99,
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
-      preview_url: "/uploads/p.pdf",
-      preview_pages: ["/uploads/a.png"],
+      pdf_download_url: "/api/books/3/pdf",
+      preview_url: "/api/uploads/p.pdf",
+      preview_pages: ["/api/uploads/a.png"],
+    });
+  });
+
+  it("parses stringified cover arrays and nested objects", async () => {
+    const apiData = [{
+      id: 7,
+      cover_image_url: '[{"url":"/uploads/cover-a.jpg"}]',
+      media: {
+        cover: { original_url: "/uploads/cover-b.jpg" },
+      },
+    }];
+    api.get.mockResolvedValueOnce({ data: { data: apiData, meta: {} } });
+    const { books } = await fetchBooks({ admin: true });
+    expect(books[0]).toMatchObject({
+      coverUrl: "/api/uploads/cover-a.jpg",
+      cover_image_url: "/api/uploads/cover-a.jpg",
+      cover_image: "/api/uploads/cover-a.jpg",
+    });
+  });
+
+  it("handles camelCase media fields", async () => {
+    const apiData = [{
+      id: 5,
+      title: "Camel",
+      coverImageUrl: "/uploads/camel.jpg",
+      previewPagesUrls: '["/uploads/camel-preview.png"]',
+      previewUrl: "/uploads/camel-preview.pdf",
+      pdfDownloadUrl: "/uploads/camel-download.pdf",
+      pdfUrl: "/uploads/camel-full.pdf",
+    }];
+    const meta = { total: 1 };
+    api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
+    const res = await fetchBooks({ admin: true });
+    expect(res.books[0]).toMatchObject({
+      coverUrl: "/api/uploads/camel.jpg",
+      cover_image_url: "/api/uploads/camel.jpg",
+      preview_pages: ["/api/uploads/camel-preview.png"],
+      preview_url: "/api/uploads/camel-preview.pdf",
+      pdf_download_url: "/api/uploads/camel-download.pdf",
+      pdf_url: "/api/uploads/camel-full.pdf",
     });
   });
 
@@ -149,8 +195,8 @@ describe("bookService", () => {
     };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(4);
-    expect(book.preview_pages).toEqual(["/uploads/a.png", "/uploads/b.png"]);
-    expect(book.preview_url).toBe("/uploads/a.png");
+    expect(book.preview_pages).toEqual(["/api/uploads/a.png", "/api/uploads/b.png"]);
+    expect(book.preview_url).toBe("/api/uploads/a.png");
   });
 
   it("returns null when book is not found", async () => {
@@ -171,10 +217,12 @@ describe("bookService", () => {
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 1,
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
+      pdf_download_url: "/api/books/1/pdf",
       preview_url: null,
       preview_pages: [],
     });
@@ -190,10 +238,12 @@ describe("bookService", () => {
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
-    expect(book).toEqual({
+    expect(book).toMatchObject({
       id: 2,
-      cover_image_url: null,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
       pdf_url: null,
+      pdf_download_url: "/api/books/2/pdf",
       preview_url: null,
       preview_pages: [],
     });
@@ -216,7 +266,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       process.env.NEXT_PUBLIC_API_BASE_URL = "/api";
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/api/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
@@ -226,7 +276,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/api/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });

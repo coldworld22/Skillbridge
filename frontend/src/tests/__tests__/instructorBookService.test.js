@@ -26,9 +26,15 @@ describe("instructor bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchInstructorBooks();
     expect(api.get).toHaveBeenCalledWith("/instructor/books");
-    expect(res).toEqual({
-      books: [{ ...apiData[0], cover_image_url: null }],
-      meta,
+    expect(res.meta).toBe(meta);
+    expect(res.books[0]).toMatchObject({
+      id: 1,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_download_url: "/api/books/1/pdf",
+      pdf_url: null,
+      preview_pages: [],
+      preview_url: null,
     });
   });
 
@@ -46,7 +52,15 @@ describe("instructor bookService", () => {
         onUploadProgress: cb,
       })
     );
-    expect(res).toEqual(apiData);
+    expect(res).toMatchObject({
+      id: 1,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_download_url: "/api/books/1/pdf",
+      pdf_url: null,
+      preview_pages: [],
+      preview_url: null,
+    });
   });
 
   it("updates a book", async () => {
@@ -63,7 +77,15 @@ describe("instructor bookService", () => {
         onUploadProgress: cb,
       })
     );
-    expect(res).toEqual(apiData);
+    expect(res).toMatchObject({
+      id: 1,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_download_url: "/api/books/1/pdf",
+      pdf_url: null,
+      preview_pages: [],
+      preview_url: null,
+    });
   });
 
   it("deletes a book", async () => {
@@ -78,7 +100,15 @@ describe("instructor bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const res = await fetchBook(1);
     expect(api.get).toHaveBeenCalledWith("/books/1");
-    expect(res).toEqual({ ...apiData, cover_image_url: null });
+    expect(res).toMatchObject({
+      id: 1,
+      coverUrl: "/images/default-book-cover.jpg",
+      cover_image_url: "/images/default-book-cover.jpg",
+      pdf_download_url: "/api/books/1/pdf",
+      pdf_url: null,
+      preview_pages: [],
+      preview_url: null,
+    });
   });
 
   it("fetches analytics", async () => {
