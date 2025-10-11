@@ -10,6 +10,20 @@ const STATUS = {
 
 exports.STATUS = STATUS;
 
+let paymentColumnInfoPromise;
+const getPaymentColumnInfo = async () => {
+  if (!paymentColumnInfoPromise) {
+    paymentColumnInfoPromise = Promise.all([
+      db.schema.hasColumn("payments", "platform_fee"),
+      db.schema.hasColumn("payments", "instructor_amount"),
+    ]).then(([hasPlatformFee, hasInstructorAmount]) => ({
+      hasPlatformFee,
+      hasInstructorAmount,
+    }));
+  }
+  return paymentColumnInfoPromise;
+};
+
 exports.create = async (data, schedules = [], trx) => {
   const run = async (transaction) => {
     const [row] = await transaction("payments").insert(data).returning("*");
@@ -154,6 +168,8 @@ exports.getByInstructor = async (
   instructorId,
   { status, itemType } = {}
 ) => {
+  const { hasPlatformFee, hasInstructorAmount } = await getPaymentColumnInfo();
+
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
     .leftJoin("online_classes as c", function () {
@@ -185,8 +201,6 @@ exports.getByInstructor = async (
       "p.status",
       "p.amount",
       "p.currency",
-      "p.platform_fee",
-      "p.instructor_amount",
       "p.reference_id",
       "p.method_id",
       "p.paid_at",
@@ -194,7 +208,8 @@ exports.getByInstructor = async (
       "p.source",
       "m.name as method_name",
       "u.full_name as student_name",
-      db.raw("COALESCE(c.title, tut.title, b.title) as item_title")
+      db.raw("COALESCE(c.title, tut.title, b.title) as item_title"),
+      db.raw("COALESCE(c.price, tut.price, b.price) as item_price")
     )
     .where(function () {
       this.where("c.instructor_id", instructorId)
@@ -211,10 +226,26 @@ exports.getByInstructor = async (
     query.andWhere("p.item_type", itemType);
   }
 
+  if (hasPlatformFee) {
+    query.select("p.platform_fee");
+  } else {
+    query.select(db.raw("NULL as platform_fee"));
+  }
+
+  if (hasInstructorAmount) {
+    query.select("p.instructor_amount");
+  } else {
+    query.select(db.raw("NULL as instructor_amount"));
+  }
+
   return query;
 };
 
 exports.getInstructorTotals = async (instructorId) => {
+  const { hasPlatformFee, hasInstructorAmount } = await getPaymentColumnInfo();
+  const instructorColumn = hasInstructorAmount
+    ? "p.instructor_amount"
+    : "p.amount";
   const [row] = await db({ p: "payments" })
     .leftJoin("online_classes as c", function () {
       this.on("p.item_id", "=", "c.id").andOn(
@@ -244,15 +275,17 @@ exports.getInstructorTotals = async (instructorId) => {
     })
     .select(
       db.raw(
-        "COALESCE(SUM(CASE WHEN p.status = ? THEN p.instructor_amount ELSE 0 END), 0) as total_paid",
+        `COALESCE(SUM(CASE WHEN p.status = ? THEN ${instructorColumn} ELSE 0 END), 0) as total_paid`,
         [STATUS.PAID]
       ),
       db.raw(
-        "COALESCE(SUM(CASE WHEN p.status <> ? THEN p.instructor_amount ELSE 0 END), 0) as total_pending",
+        `COALESCE(SUM(CASE WHEN p.status <> ? THEN ${instructorColumn} ELSE 0 END), 0) as total_pending`,
         [STATUS.PAID]
       ),
-      db.raw("COALESCE(SUM(p.instructor_amount), 0) as total_instructor_amount"),
-      db.raw("COALESCE(SUM(p.platform_fee), 0) as total_platform_fee"),
+      db.raw(`COALESCE(SUM(${instructorColumn}), 0) as total_instructor_amount`),
+      hasPlatformFee
+        ? db.raw("COALESCE(SUM(p.platform_fee), 0) as total_platform_fee")
+        : db.raw("0 as total_platform_fee"),
       db.raw("COALESCE(SUM(p.amount), 0) as total_gross")
     );
 
