@@ -191,9 +191,8 @@ exports.getByInstructor = async (
     })
     // Cast IDs to text so UUID payment references can match integer book IDs
     .leftJoin("books as b", function () {
-      this.on(db.raw("p.item_type = ?", ["book"])).andOnRaw(
-        "p.item_id::text = b.id::text"
-      );
+      this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
+      this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
     })
     .leftJoin("users as u", "p.user_id", "u.id")
     .select(
@@ -270,9 +269,8 @@ exports.getInstructorTotals = async (instructorId) => {
     })
     // Cast IDs to text so UUID payment references can match integer book IDs
     .leftJoin("books as b", function () {
-      this.on(db.raw("p.item_type = ?", ["book"])).andOnRaw(
-        "p.item_id::text = b.id::text"
-      );
+      this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
+      this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
     })
     .where(function () {
       this.where("c.instructor_id", instructorId)
