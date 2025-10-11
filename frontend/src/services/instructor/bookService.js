@@ -1,5 +1,5 @@
 import api from "@/services/api/api";
-import { formatBook } from "@/services/bookService";
+import { formatBook, normalizeBookFilters } from "@/services/bookService";
 
 // Fetch books belonging to the current instructor with
 // optional pagination, filtering and status parameters
@@ -11,11 +11,13 @@ export const fetchInstructorBooks = async ({
   status,
   ...config
 } = {}) => {
+  const normalizedFilters = normalizeBookFilters(filters);
+  const normalizedSort = normalizeBookFilters(sort);
   const params = {
     ...(page !== undefined && { page }),
     ...(perPage !== undefined && { perPage }),
-    ...filters,
-    ...sort,
+    ...normalizedFilters,
+    ...normalizedSort,
     ...(status ? { status } : {}),
   };
 

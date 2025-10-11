@@ -57,7 +57,7 @@ describe("bookService", () => {
     const meta = { total: 1 };
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchBooks({ admin: true });
-    expect(api.get).toHaveBeenCalledWith("/books/admin", { params: {} });
+    expect(api.get).toHaveBeenCalledWith("/books/admin", {});
     expect(res.meta).toBe(meta);
     expect(res.books).toHaveLength(1);
     expect(res.books[0]).toMatchObject({
@@ -69,6 +69,23 @@ describe("bookService", () => {
       pdf_download_url: "/api/books/1/pdf",
       preview_url: null,
       preview_pages: [],
+    });
+  });
+
+  it("omits empty filter defaults when fetching books", async () => {
+    api.get.mockResolvedValueOnce({ data: { data: [], meta: {} } });
+    await fetchBooks({
+      filters: {
+        search: "   ",
+        category: "",
+        priceRange: 0,
+        language: undefined,
+        tags: [],
+        status: "",
+      },
+    });
+    expect(api.get).toHaveBeenCalledWith("/books", {
+      params: { status: "active" },
     });
   });
 
