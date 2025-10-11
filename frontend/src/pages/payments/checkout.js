@@ -298,8 +298,13 @@ export async function handleCryptoPayment({
         ? initiateCoinbasePayment
         : initiateCryptoPayment;
     const data = await initFn(payload);
-    if (data?.invoice_url) {
-      window.location.href = data.invoice_url;
+    const redirectUrl =
+      data?.invoice_url ||
+      data?.hosted_url ||
+      data?.payment?.receipt_url ||
+      data?.payment?.hosted_url;
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
     } else {
       toast.error(t('payment_crypto_failure'));
       setPaymentStatus('idle');

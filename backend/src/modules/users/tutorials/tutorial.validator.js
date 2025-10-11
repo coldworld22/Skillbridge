@@ -63,7 +63,7 @@ exports.create = z.object({
               ),
               order: z.preprocess(
                 toOptionalInt,
-                z.number().int().positive()
+                z.number().int().positive().optional()
               ),
               is_preview: z.boolean().optional(),
             })

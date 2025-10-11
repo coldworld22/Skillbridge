@@ -5,7 +5,7 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
-const planRevenue = require("../../../payments/helpers/planRevenue");
+const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -55,12 +55,7 @@ exports.enroll = catchAsync(async (req, res) => {
         });
       }
 
-      await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        tutorialId,
-        trx,
-        "tutorial"
-      );
+      await creditTutorialSubscription(tutorialId, activePlanId, trx);
 
       await trx("payments").insert({
         user_id,

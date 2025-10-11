@@ -46,14 +46,20 @@ exports.calculateInstructorAmount = async (
     } else {
       ({ instructor_amount: net } = await calculatePlatformFee(itemType, price));
     }
-    const amount = row.usage_count > 0 ? net / row.usage_count : 0;
+    const usageCount = Math.max(Number(row.usage_count) || 0, 1);
+    const share = usageCount > 0 ? net / usageCount : 0;
+    const roundedShare = Number(share.toFixed(2));
+    if (roundedShare <= 0) {
+      return 0;
+    }
+
+    const newTotal = Number((previousAmount + roundedShare).toFixed(2));
 
     await query("plan_usage_metrics")
       .where({ plan_id: planId, item_type: itemType, item_id: itemId })
-      .update({ instructor_amount: amount });
+      .update({ instructor_amount: newTotal });
 
-    const delta = amount - previousAmount;
-    return delta > 0 ? Number(delta.toFixed(2)) : 0;
+    return roundedShare;
   } catch (err) {
     // If metrics table missing or query fails, do not block enrollment
     return 0;

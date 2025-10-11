@@ -149,3 +149,121 @@ exports.rejectBankPayment = async (
     return row;
   });
 };
+
+exports.getByInstructor = async (
+  instructorId,
+  { status, itemType } = {}
+) => {
+  const query = db({ p: "payments" })
+    .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
+    .leftJoin("online_classes as c", function () {
+      this.on("p.item_id", "=", "c.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["class"])
+      );
+    })
+    .leftJoin("tutorials as tut", function () {
+      this.on("p.item_id", "=", "tut.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["tutorial"])
+      );
+    })
+    .leftJoin("books as b", function () {
+      this.on("p.item_id", "=", "b.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["book"])
+      );
+    })
+    .leftJoin("users as u", "p.user_id", "u.id")
+    .select(
+      "p.id",
+      "p.item_type",
+      "p.item_id",
+      "p.status",
+      "p.amount",
+      "p.currency",
+      "p.platform_fee",
+      "p.instructor_amount",
+      "p.reference_id",
+      "p.method_id",
+      "p.paid_at",
+      "p.created_at",
+      "p.source",
+      "m.name as method_name",
+      "u.full_name as student_name",
+      db.raw("COALESCE(c.title, tut.title, b.title) as item_title"),
+      db.raw("COALESCE(c.slug, tut.slug, b.slug) as item_slug"),
+      db.raw("COALESCE(c.price, tut.price, b.price) as item_price"),
+      db.raw("COALESCE(c.language, tut.language, b.language) as item_language")
+    )
+    .where(function () {
+      this.where("c.instructor_id", instructorId)
+        .orWhere("tut.instructor_id", instructorId)
+        .orWhere("b.instructor_id", instructorId);
+    })
+    .orderBy("p.created_at", "desc");
+
+  if (status) {
+    query.andWhere("p.status", status);
+  }
+
+  if (itemType) {
+    query.andWhere("p.item_type", itemType);
+  }
+
+  return query;
+};
+
+exports.getInstructorTotals = async (instructorId) => {
+  const [row] = await db({ p: "payments" })
+    .leftJoin("online_classes as c", function () {
+      this.on("p.item_id", "=", "c.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["class"])
+      );
+    })
+    .leftJoin("tutorials as tut", function () {
+      this.on("p.item_id", "=", "tut.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["tutorial"])
+      );
+    })
+    .leftJoin("books as b", function () {
+      this.on("p.item_id", "=", "b.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["book"])
+      );
+    })
+    .where(function () {
+      this.where("c.instructor_id", instructorId)
+        .orWhere("tut.instructor_id", instructorId)
+        .orWhere("b.instructor_id", instructorId);
+    })
+    .select(
+      db.raw(
+        "COALESCE(SUM(CASE WHEN p.status = ? THEN p.instructor_amount ELSE 0 END), 0) as total_paid",
+        [STATUS.PAID]
+      ),
+      db.raw(
+        "COALESCE(SUM(CASE WHEN p.status <> ? THEN p.instructor_amount ELSE 0 END), 0) as total_pending",
+        [STATUS.PAID]
+      ),
+      db.raw("COALESCE(SUM(p.instructor_amount), 0) as total_instructor_amount"),
+      db.raw("COALESCE(SUM(p.platform_fee), 0) as total_platform_fee"),
+      db.raw("COALESCE(SUM(p.amount), 0) as total_gross")
+    );
+
+  return {
+    totalPaid: Number(row?.total_paid || 0),
+    totalPending: Number(row?.total_pending || 0),
+    totalInstructorAmount: Number(row?.total_instructor_amount || 0),
+    totalPlatformFee: Number(row?.total_platform_fee || 0),
+    totalGross: Number(row?.total_gross || 0),
+  };
+};

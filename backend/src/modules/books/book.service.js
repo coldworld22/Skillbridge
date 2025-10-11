@@ -11,6 +11,7 @@ const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
 const { getActiveStudentPlanId } = require("../plans/subscription.helper");
+const walletService = require("../payouts/wallet.service");
 const planRevenue = require("../payments/helpers/planRevenue");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
@@ -294,7 +295,7 @@ exports.checkout = async (studentId) => {
     const books = await trx('books')
       .whereIn('id', bookIds)
       .where('status', 'active')
-      .select('id', 'price', 'included_plans');
+      .select('id', 'price', 'included_plans', 'instructor_id');
 
     if (books.length !== bookIds.length) {
       const validIds = books.map((b) => b.id);
@@ -331,7 +332,15 @@ exports.checkout = async (studentId) => {
           });
         }
 
-        await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
+        const amount = await planRevenue.calculateInstructorAmount(
+          activePlanId,
+          b.id,
+          trx,
+          'book'
+        );
+        if (amount > 0 && b.instructor_id) {
+          await walletService.increment(b.instructor_id, amount, trx);
+        }
 
         const [payment] = await trx('payments')
           .insert({
@@ -405,4 +414,3 @@ exports.addToWishlist = async (studentId, bookId) => {
 
 exports.removeFromWishlist = (studentId, bookId) =>
   db('book_wishlist').where({ student_id: studentId, book_id: bookId }).del();
-

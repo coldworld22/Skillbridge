@@ -937,6 +937,7 @@
     "config_saved": "कॉन्फ़िगरेशन सफलतापूर्वक सहेजा गया!",
     "config_save_failed": "कॉन्फ़िगरेशन को बचाने में विफल",
     "status_updated": "अद्यतन की गई स्थिति",
+    "update_failed": "स्थिति अपडेट करने में विफल",
     "default_updated": "डिफ़ॉल्ट स्थिति अद्यतन की गई",
     "method_deleted": "भुगतान विधि हटा दी गई",
     "delete_failed": "विधि को हटाने में विफल",
@@ -1183,7 +1184,6 @@
     "popups_alerts": "पॉपअप / अलर्ट",
     "certificate_templates": "प्रमाणपत्र टेम्पलेट्स",
     "third_parties_config": "तृतीय पक्ष विन्यास",
-    "clear_cache": "कैश साफ करें",
     "cache_cleared": "कैश साफ़ किया गया",
     "cache_clear_failed": "कैश साफ़ करने में विफल",
     "create_class": "कक्षा बनाएँ",
@@ -1211,8 +1211,7 @@
     "offers_groups": "प्रस्ताव और समूह",
     "payments_social": "भुगतान और सोशल",
     "payments": "भुगतान",
-    "my_reviews": "मेरी समीक्षाएँ",
-    "clear_cache": "कैश साफ़ करें"
+    "my_reviews": "मेरी समीक्षाएँ"
   },
   "emailConfigPage": {
     "title": "ईमेल विन्यास",
@@ -1237,6 +1236,7 @@
   },
   "messagesConfigPage": {
     "title": "संदेश प्रदाता विन्यास",
+    "subtitle": "उपलब्ध मैसेजिंग प्रदाताओं को तैयार रखें। एकीकरण तैयार होते ही आप उन्हें कॉन्फ़िगर कर सकेंगे।",
     "sms_providers": "एसएमएस प्रदाता",
     "otp_provider": "ओटीपी प्रदाता",
     "api_key": "एपीआई कुंजी",
@@ -1244,7 +1244,21 @@
     "region": "आधार url / क्षेत्र",
     "no_app_prefix": "`ऐप` उपसर्ग शामिल न करें।",
     "firebase_hint": "लॉगिन के दौरान फोन नंबर ओटीपी के लिए फायरबेस ऑट का उपयोग किया जाता है। ",
-    "default": "गलती करना"
+    "default": "गलती करना",
+    "add_gateway_provider": "SMS प्रदाता जोड़ें",
+    "add_otp_provider": "OTP प्रदाता जोड़ें",
+    "otp_provider_singleton_hint": "एक समय में केवल एक OTP प्रदाता सक्रिय हो सकता है।",
+    "saving_state": "सहेजा जा रहा है...",
+    "save_changes": "परिवर्तन सहेजें",
+    "loading_state": "वर्तमान विन्यास लोड किया जा रहा है...",
+    "empty_state_title": "अभी तक कोई मैसेजिंग प्रदाता कॉन्फ़िगर नहीं किया गया",
+    "empty_state_description": "इंटीग्रेशन से पहले इस अनुभाग को तैयार रखने के लिए एक प्रदाता जोड़ें। क्रेडेंशियल आप बाद में भी भर सकते हैं।",
+    "no_sms_providers": "अभी तक कोई SMS प्रदाता नहीं है। डिफ़ॉल्ट गेटवे तय करने के लिए एक जोड़ें।",
+    "no_otp_provider": "अभी तक कोई OTP प्रदाता कॉन्फ़िगर नहीं किया गया है।",
+    "provider_name": "प्रदाता का नाम",
+    "remove_provider": "हटाएं",
+    "status_active": "सक्रिय",
+    "status_inactive": "निष्क्रिय"
   },
   "languageConfigPage": {
     "title": "भाषा विन्यास",

@@ -18,7 +18,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
-const { creditInstructorFromPayment } = require("./helpers/wallet");
+const { creditInstructorFromPayment, creditInstructorSubscription } = require("./helpers/wallet");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -121,13 +121,7 @@ exports.createPayment = catchAsync(async (req, res) => {
           usage_count: 1,
         });
       }
-      const planRevenue = require("./helpers/planRevenue");
-      await planRevenue.calculateInstructorAmount(
-        subscriptionPlanId,
-        item_id,
-        null,
-        "book"
-      );
+      await creditInstructorSubscription("book", item_id, subscriptionPlanId);
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
     }

@@ -1,4 +1,4 @@
-const { parseTags } = require('../src/modules/users/tutorials/tutorial.helpers');
+const { parseTags, parseChapters } = require('../src/modules/users/tutorials/tutorial.helpers');
 const AppError = require('../src/utils/AppError');
 
 describe('parseTags', () => {
@@ -23,5 +23,38 @@ describe('parseTags', () => {
   test('throws AppError when JSON is not an array', () => {
     expect(() => parseTags('{"a":1}')).toThrow(AppError);
     expect(() => parseTags({ a: 1 })).toThrow(AppError);
+  });
+});
+
+describe('parseChapters', () => {
+  test('returns empty array for invalid input', () => {
+    expect(parseChapters('not-json')).toEqual([]);
+    expect(parseChapters({})).toEqual([]);
+  });
+
+  test('normalizes numeric fields and defaults order', () => {
+    const raw = JSON.stringify([
+      { title: 'Intro', order: '', duration: '5', video_url: '/path/vid.mp4', is_preview: 'true' },
+      { title: 'Second', video_url: '/path/vid2.mp4', duration: null, is_preview: 'false' },
+    ]);
+    const chapters = parseChapters(raw);
+    expect(chapters).toEqual([
+      {
+        title: 'Intro',
+        content: undefined,
+        video_url: '/path/vid.mp4',
+        duration: 5,
+        order: 1,
+        is_preview: true,
+      },
+      {
+        title: 'Second',
+        content: undefined,
+        video_url: '/path/vid2.mp4',
+        duration: undefined,
+        order: 2,
+        is_preview: false,
+      },
+    ]);
   });
 });

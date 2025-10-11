@@ -951,6 +951,7 @@
     "config_saved": "Configuration saved successfully!",
     "config_save_failed": "Failed to save configuration",
     "status_updated": "Status updated",
+    "update_failed": "Failed to update status",
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
@@ -1179,7 +1180,7 @@
     "ads_manager": "Ads Manager",
     "offers": "Offers",
     "support": "Support",
-    "clear_cache": "Cache leeren",
+    "clear_cache": "Cache löschen",
     "settings": "Settings",
     "language_manager": "Sprachverwaltung",
     "language_config": "Sprachkonfiguration",
@@ -1197,7 +1198,6 @@
     "popups_alerts": "Popups / Alerts",
     "certificate_templates": "Certificate Templates",
     "third_parties_config": "Third Parties Config",
-    "clear_cache": "Cache leeren",
     "cache_cleared": "Cache geleert",
     "cache_clear_failed": "Cache konnte nicht geleert werden",
     "create_class": "Create Class",
@@ -1225,8 +1225,7 @@
     "offers_groups": "Offers & Groups",
     "payments_social": "Payments & Social",
     "payments": "Payments",
-    "my_reviews": "My Reviews",
-    "clear_cache": "Cache löschen"
+    "my_reviews": "My Reviews"
   },
   "emailConfigPage": {
     "title": "Email Configuration",
@@ -1251,6 +1250,7 @@
   },
   "messagesConfigPage": {
     "title": "Messaging Providers Configuration",
+    "subtitle": "Bereite verfügbare Messaging-Anbieter vor. Du kannst sie konfigurieren, sobald die Integrationen bereit sind.",
     "sms_providers": "SMS Providers",
     "otp_provider": "OTP Provider",
     "api_key": "API Key",
@@ -1258,7 +1258,21 @@
     "region": "Base URL / Region",
     "no_app_prefix": "Do not include the `App` prefix.",
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
-    "default": "Default"
+    "default": "Default",
+    "add_gateway_provider": "SMS-Anbieter hinzufügen",
+    "add_otp_provider": "OTP-Anbieter hinzufügen",
+    "otp_provider_singleton_hint": "Es kann jeweils nur ein OTP-Anbieter aktiv sein.",
+    "saving_state": "Speichern...",
+    "save_changes": "Änderungen speichern",
+    "loading_state": "Aktuelle Konfiguration wird geladen...",
+    "empty_state_title": "Noch keine Messaging-Anbieter konfiguriert",
+    "empty_state_description": "Füge einen Anbieter hinzu, um diesen Bereich vor den Integrationen vorzubereiten. Zugangsdaten kannst du später ergänzen.",
+    "no_sms_providers": "Noch keine SMS-Anbieter. Füge einen hinzu, um ein Standard-Gateway festzulegen.",
+    "no_otp_provider": "Noch kein OTP-Anbieter konfiguriert.",
+    "provider_name": "Anbietername",
+    "remove_provider": "Entfernen",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv"
   },
   "languageConfigPage": {
     "title": "Language Configuration",

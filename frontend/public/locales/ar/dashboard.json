@@ -937,6 +937,7 @@
     "config_saved": "تم حفظ الإعدادات بنجاح!",
     "config_save_failed": "فشل حفظ الإعدادات",
     "status_updated": "تم تحديث الحالة",
+    "update_failed": "فشل تحديث الحالة",
     "default_updated": "تم تحديث الحالة الافتراضية",
     "method_deleted": "تم حذف طريقة الدفع",
     "delete_failed": "فشل حذف الطريقة",
@@ -1185,7 +1186,6 @@
     "popups_alerts": "النوافذ المنبثقة / التنبيهات",
     "certificate_templates": "قوالب الشهادات",
     "third_parties_config": "إعدادات الجهات الخارجية",
-    "clear_cache": "مسح التخزين المؤقت",
     "cache_cleared": "تم مسح التخزين المؤقت",
     "cache_clear_failed": "فشل مسح التخزين المؤقت",
     "create_class": "إنشاء صف",
@@ -1213,8 +1213,7 @@
     "offers_groups": "العروض والمجموعات",
     "payments_social": "المدفوعات والشبكات الاجتماعية",
     "payments": "المدفوعات",
-    "my_reviews": "تقييماتي",
-    "clear_cache": "مسح ذاكرة التخزين المؤقت"
+    "my_reviews": "تقييماتي"
   },
   "emailConfigPage": {
     "title": "تكوين البريد الإلكتروني",
@@ -1239,6 +1238,7 @@
   },
   "messagesConfigPage": {
     "title": "تكوين مقدمي الرسائل",
+    "subtitle": "جهّز مزوّدي الرسائل المتاحين. يمكنك ضبط الإعدادات فور جاهزية عمليات التكامل.",
     "sms_providers": "مقدمي الرسائل القصيرة",
     "otp_provider": "مزود OTP",
     "api_key": "مفتاح API",
@@ -1246,7 +1246,21 @@
     "region": "عنوان URL / المنطقة الأساسية",
     "no_app_prefix": "لا تتضمن بادئة \"التطبيق\".",
     "firebase_hint": "يستخدم Firebase Auth لرقم الهاتف OTP أثناء تسجيل الدخول.لا يلزم تبديل.",
-    "default": "تقصير"
+    "default": "تقصير",
+    "add_gateway_provider": "إضافة مزوّد SMS",
+    "add_otp_provider": "إضافة مزوّد OTP",
+    "otp_provider_singleton_hint": "يمكن تفعيل مزوّد OTP واحد فقط في نفس الوقت.",
+    "saving_state": "جارٍ الحفظ...",
+    "save_changes": "حفظ التغييرات",
+    "loading_state": "جارٍ تحميل الإعدادات الحالية...",
+    "empty_state_title": "لم يتم إعداد مزوّدي الرسائل بعد",
+    "empty_state_description": "أضف مزوّدًا لتهيئة هذا القسم مسبقًا قبل عمليات التكامل. يمكنك تعبئة بيانات الاعتماد لاحقًا.",
+    "no_sms_providers": "لا يوجد مزوّدو SMS بعد. أضف واحدًا لتحديد البوابة الافتراضية.",
+    "no_otp_provider": "لم يتم إعداد مزوّد OTP بعد.",
+    "provider_name": "اسم المزوّد",
+    "remove_provider": "إزالة",
+    "status_active": "مفعل",
+    "status_inactive": "معطّل"
   },
   "languageConfigPage": {
     "title": "إعداد اللغة",

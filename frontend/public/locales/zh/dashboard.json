@@ -937,6 +937,7 @@
     "config_saved": "配置成功保存了！",
     "config_save_failed": "无法保存配置",
     "status_updated": "状态更新",
+    "update_failed": "状态更新失败",
     "default_updated": "默认状态已更新",
     "method_deleted": "付款方式已删除",
     "delete_failed": "无法删除方法",
@@ -1183,7 +1184,6 @@
     "popups_alerts": "弹出 /警报",
     "certificate_templates": "证书模板",
     "third_parties_config": "第三方配置",
-    "clear_cache": "清除缓存",
     "cache_cleared": "缓存已清除",
     "cache_clear_failed": "清除缓存失败",
     "create_class": "创建类",
@@ -1211,8 +1211,7 @@
     "offers_groups": "优惠和团体",
     "payments_social": "付款和社交",
     "payments": "付款",
-    "my_reviews": "我的评论",
-    "clear_cache": "清除缓存"
+    "my_reviews": "我的评论"
   },
   "emailConfigPage": {
     "title": "电子邮件配置",
@@ -1237,6 +1236,7 @@
   },
   "messagesConfigPage": {
     "title": "消息传递提供商配置",
+    "subtitle": "预先准备可用的消息服务提供商，一旦集成就绪即可进行配置。",
     "sms_providers": "SMS提供商",
     "otp_provider": "OTP提供商",
     "api_key": "API键",
@@ -1244,7 +1244,21 @@
     "region": "基础网址 /区域",
     "no_app_prefix": "不包括“应用程序”前缀。",
     "firebase_hint": "Firebase Auth在登录过程中用于电话号码OTP。无需切换。",
-    "default": "默认"
+    "default": "默认",
+    "add_gateway_provider": "添加SMS提供商",
+    "add_otp_provider": "添加OTP提供商",
+    "otp_provider_singleton_hint": "同一时间只能启用一个OTP提供商。",
+    "saving_state": "正在保存...",
+    "save_changes": "保存更改",
+    "loading_state": "正在加载当前配置...",
+    "empty_state_title": "尚未配置消息服务提供商",
+    "empty_state_description": "添加一个提供商，在集成完成前就准备好此区域。凭据可以稍后再填写。",
+    "no_sms_providers": "暂无SMS提供商。添加一个以设置默认网关。",
+    "no_otp_provider": "尚未配置OTP提供商。",
+    "provider_name": "提供商名称",
+    "remove_provider": "移除",
+    "status_active": "启用",
+    "status_inactive": "停用"
   },
   "languageConfigPage": {
     "title": "语言配置",

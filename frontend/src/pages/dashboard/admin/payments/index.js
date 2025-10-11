@@ -74,6 +74,10 @@ export default function AdminPaymentsPage() {
   ];
 
   const notifyUser = async (userId, type, message) => {
+    if (!userId) {
+      console.warn('Attempted to notify without a valid user id.');
+      return;
+    }
     try {
       await createNotification({ user_id: userId, type, message });
       await sendChatMessage(userId, { text: message });
@@ -96,7 +100,7 @@ export default function AdminPaymentsPage() {
   const loadBankTransfers = async () => {
     try {
       const data = await fetchBankTransfers();
-      setBankTransfers(data);
+      setBankTransfers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load bank transfers', err);
     }
@@ -111,8 +115,12 @@ export default function AdminPaymentsPage() {
           fetchPaymentConfig(),
           fetchPayouts(),
         ]);
+        const safeTxns = Array.isArray(txns) ? txns : [];
+        const safeMethods = Array.isArray(mths) ? mths : [];
+        const safePayouts = Array.isArray(pouts) ? pouts : [];
+
         setTransactions(
-          txns.map((t) => ({
+          safeTxns.map((t) => ({
             ...t,
             date: t.paid_at || t.created_at,
             user: t.user_name,
@@ -126,13 +134,13 @@ export default function AdminPaymentsPage() {
           }))
         );
         setMethods(
-          mths.map((m) => ({
+          safeMethods.map((m) => ({
             ...m,
             configurable: true,
             configPath: `/dashboard/admin/payments/methods/configure/${m.id}`,
           }))
         );
-        setPayouts(pouts);
+        setPayouts(safePayouts);
 
         if (cfg) {
           const merged = {
@@ -173,10 +181,16 @@ export default function AdminPaymentsPage() {
       const action = method.active ? 'deactivated' : 'activated';
       toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" status changed`;
-      notify('payment_method_status_changed', msg);
+      if (user?.id) {
+        try {
+          await notify('payment_method_status_changed', msg);
+        } catch (err) {
+          console.error('Failed to send payment method status notice', err);
+        }
+      }
     } catch (err) {
       console.error('Failed to update method', err);
-      toast.error(t('update_failed'));
+      toast.error(t('paymentsPage.update_failed'));
     }
   };
 
@@ -198,10 +212,16 @@ export default function AdminPaymentsPage() {
       const action = newState ? 'set as default' : 'removed from default';
       toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" set as default`;
-      notify('payment_method_default_changed', msg);
+      if (user?.id) {
+        try {
+          await notify('payment_method_default_changed', msg);
+        } catch (err) {
+          console.error('Failed to send payment method default notice', err);
+        }
+      }
     } catch (err) {
       console.error('Failed to update default method', err);
-      toast.error(t('update_failed'));
+      toast.error(t('paymentsPage.update_failed'));
     }
   };
 
@@ -212,7 +232,13 @@ export default function AdminPaymentsPage() {
       setMethods((prev) => prev.filter((m) => m.id !== id));
       toast.success(`Payment method "${methodName}" deleted`);
       const msg = `Payment method "${methodName}" deleted.`;
-      notify('payment_method_deleted', msg);
+      if (user?.id) {
+        try {
+          await notify('payment_method_deleted', msg);
+        } catch (err) {
+          console.error('Failed to send payment method deleted notice', err);
+        }
+      }
     } catch (err) {
       console.error('Failed to delete method', err);
       toast.error(t('paymentsPage.delete_failed'));
@@ -280,6 +306,8 @@ export default function AdminPaymentsPage() {
 
   const [payouts, setPayouts] = useState([]);
 
+  const handleViewAllTransactions = () => setActiveTab('transactions');
+
 
   const updateStatus = async (id, newStatus) => {
     try {
@@ -289,12 +317,14 @@ export default function AdminPaymentsPage() {
         prev.map((p) => (p.id === id ? { ...p, status: updated.status } : p))
       );
       toast.success(t('paymentsPage.payout_status_updated'));
-      notifyUser(
-        user.id,
-        "payout_status_changed",
-        `Payout ${id} marked as ${updated.status}.`
-      );
-      if (payout?.instructor_id && payout.instructor_id !== user.id) {
+      if (user?.id) {
+        await notifyUser(
+          user.id,
+          "payout_status_changed",
+          `Payout ${id} marked as ${updated.status}.`
+        );
+      }
+      if (payout?.instructor_id && payout.instructor_id !== user?.id) {
         notifyUser(
           payout.instructor_id,
           "payout_status_changed",
@@ -314,7 +344,7 @@ export default function AdminPaymentsPage() {
       loadBankTransfers();
     } catch (err) {
       console.error(err);
-      toast.error(t('update_failed'));
+      toast.error(t('paymentsPage.update_failed'));
     }
   };
 
@@ -325,7 +355,7 @@ export default function AdminPaymentsPage() {
       loadBankTransfers();
     } catch (err) {
       console.error(err);
-      toast.error(t('update_failed'));
+      toast.error(t('paymentsPage.update_failed'));
     }
   };
 
@@ -337,7 +367,7 @@ export default function AdminPaymentsPage() {
             transactions={transactions}
             methods={methods}
             payouts={payouts}
-            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
+            onViewAll={handleViewAllTransactions}
           />
         );
 

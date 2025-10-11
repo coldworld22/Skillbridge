@@ -937,6 +937,7 @@
     "config_saved": "¡Configuración guardada correctamente!",
     "config_save_failed": "No se pudo guardar la configuración",
     "status_updated": "Estado actualizado",
+    "update_failed": "No se pudo actualizar el estado",
     "default_updated": "Estado predeterminado actualizado",
     "method_deleted": "Método de pago eliminado",
     "delete_failed": "No se pudo eliminar el método",
@@ -1165,7 +1166,7 @@
     "ads_manager": "Gerente de anuncios",
     "offers": "Oferta",
     "support": "Apoyo",
-    "clear_cache": "Limpiar caché",
+    "clear_cache": "Borrar caché",
     "settings": "Ajustes",
     "language_manager": "Administrador de idiomas",
     "language_config": "Configuración del lenguaje",
@@ -1183,7 +1184,6 @@
     "popups_alerts": "Ventanas emergentes / alertas",
     "certificate_templates": "Plantillas de certificado",
     "third_parties_config": "Configuración de terceros",
-    "clear_cache": "Limpiar caché",
     "cache_cleared": "Caché limpiada",
     "cache_clear_failed": "No se pudo limpiar la caché",
     "create_class": "Crear clase",
@@ -1211,8 +1211,7 @@
     "offers_groups": "Ofertas y grupos",
     "payments_social": "Pagos y sociales",
     "payments": "Pagos",
-    "my_reviews": "Mis reseñas",
-    "clear_cache": "Borrar caché"
+    "my_reviews": "Mis reseñas"
   },
   "emailConfigPage": {
     "title": "Configuración de correo electrónico",
@@ -1237,6 +1236,7 @@
   },
   "messagesConfigPage": {
     "title": "Configuración de los proveedores de mensajería",
+    "subtitle": "Prepare los proveedores de mensajería disponibles. Podrá configurarlos en cuanto las integraciones estén listas.",
     "sms_providers": "Proveedores de SMS",
     "otp_provider": "Proveedor de OTP",
     "api_key": "Llave de API",
@@ -1244,7 +1244,21 @@
     "region": "URL / región base",
     "no_app_prefix": "No incluya el prefijo `APP`.",
     "firebase_hint": "Firebase Auth se usa para el número de teléfono OTP durante el inicio de sesión. ",
-    "default": "Por defecto"
+    "default": "Por defecto",
+    "add_gateway_provider": "Agregar proveedor de SMS",
+    "add_otp_provider": "Agregar proveedor de OTP",
+    "otp_provider_singleton_hint": "Solo se puede activar un proveedor de OTP a la vez.",
+    "saving_state": "Guardando...",
+    "save_changes": "Guardar cambios",
+    "loading_state": "Cargando la configuración actual...",
+    "empty_state_title": "Todavía no hay proveedores de mensajería configurados",
+    "empty_state_description": "Agregue un proveedor para dejar esta sección lista antes de las integraciones. Podrá completar las credenciales más adelante.",
+    "no_sms_providers": "Todavía no hay proveedores de SMS. Agregue uno para definir un gateway predeterminado.",
+    "no_otp_provider": "Todavía no hay un proveedor de OTP configurado.",
+    "provider_name": "Nombre del proveedor",
+    "remove_provider": "Eliminar",
+    "status_active": "Activo",
+    "status_inactive": "Inactivo"
   },
   "languageConfigPage": {
     "title": "Configuración del lenguaje",

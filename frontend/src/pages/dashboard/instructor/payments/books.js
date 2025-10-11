@@ -30,13 +30,12 @@ const formatCurrency = (value, currency = "USD") => {
 
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
-export default function InstructorClassEarningsPage() {
+export default function InstructorBookEarningsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [activeTab, setActiveTab] = useState("classes");
 
   useEffect(() => {
     let active = true;
@@ -44,11 +43,11 @@ export default function InstructorClassEarningsPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchInstructorPayments({ itemType: "class" });
+        const data = await fetchInstructorPayments({ itemType: "book" });
         if (active) setPayments(data || []);
       } catch (err) {
-        console.error("Failed to load class earnings", err);
-        if (active) setError("Unable to load class earnings right now.");
+        console.error("Failed to load book earnings", err);
+        if (active) setError("Unable to load book earnings right now.");
       } finally {
         if (active) setLoading(false);
       }
@@ -79,18 +78,17 @@ export default function InstructorClassEarningsPage() {
     });
   }, [payments, startDate, endDate]);
 
-  const classSummaries = useMemo(() => {
+  const bookSummaries = useMemo(() => {
     const map = new Map();
     filteredPayments.forEach((payment) => {
       const key = payment.item_id || payment.id;
       const existing = map.get(key) || {
         id: key,
-        title: payment.item_title || "Untitled class",
-        price: payment.item_price,
-        students: 0,
+        title: payment.item_title || "Untitled book",
         totalGross: 0,
         totalNet: 0,
         commission: 0,
+        sales: 0,
         currency: payment.currency || "USD",
       };
 
@@ -102,7 +100,7 @@ export default function InstructorClassEarningsPage() {
           : gross - net;
 
       if (payment.status === "paid") {
-        existing.students += 1;
+        existing.sales += 1;
       }
 
       existing.totalGross += gross;
@@ -116,27 +114,27 @@ export default function InstructorClassEarningsPage() {
   }, [filteredPayments]);
 
   const chartData = {
-    labels: classSummaries.map((cls) => cls.title),
+    labels: bookSummaries.map((item) => item.title),
     datasets: [
       {
         label: "Commission",
-        data: classSummaries.map((cls) => cls.commission),
-        backgroundColor: "#f87171",
+        data: bookSummaries.map((item) => item.commission),
+        backgroundColor: "#fb7185",
       },
       {
         label: "Net Earnings",
-        data: classSummaries.map((cls) => cls.totalNet),
-        backgroundColor: "#60a5fa",
+        data: bookSummaries.map((item) => item.totalNet),
+        backgroundColor: "#38bdf8",
       },
     ],
   };
 
-  const totalCommission = classSummaries.reduce(
-    (sum, cls) => sum + cls.commission,
+  const totalCommission = bookSummaries.reduce(
+    (sum, item) => sum + item.commission,
     0
   );
-  const totalNet = classSummaries.reduce(
-    (sum, cls) => sum + cls.totalNet,
+  const totalNet = bookSummaries.reduce(
+    (sum, item) => sum + item.totalNet,
     0
   );
   const commissionPercent =
@@ -147,27 +145,25 @@ export default function InstructorClassEarningsPage() {
 
   const exportCSV = () => {
     const headers = [
-      "Class",
-      "Students",
+      "Book",
+      "Sales",
       "Gross Amount",
       "Platform Fee",
       "Net Earnings",
-      "Average Price",
     ];
-    const rows = classSummaries.map((cls) => [
-      cls.title,
-      cls.students,
-      cls.totalGross.toFixed(2),
-      cls.commission.toFixed(2),
-      cls.totalNet.toFixed(2),
-      cls.price !== undefined ? Number(cls.price ?? 0).toFixed(2) : "",
+    const rows = bookSummaries.map((item) => [
+      item.title,
+      item.sales,
+      item.totalGross.toFixed(2),
+      item.commission.toFixed(2),
+      item.totalNet.toFixed(2),
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "class_earnings.csv";
+    link.download = "book_earnings.csv";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -183,7 +179,7 @@ export default function InstructorClassEarningsPage() {
   if (loading) {
     return (
       <InstructorLayout>
-        <div className="p-6">Loading class earnings...</div>
+        <div className="p-6">Loading book earnings...</div>
       </InstructorLayout>
     );
   }
@@ -200,7 +196,7 @@ export default function InstructorClassEarningsPage() {
     <InstructorLayout>
       <div className="p-6 text-gray-800 space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🎥 Class Earnings</h1>
+          <h1 className="text-2xl font-bold">📚 Book Earnings</h1>
           <div className="flex gap-2">
             <button
               onClick={exportCSV}
@@ -238,108 +234,69 @@ export default function InstructorClassEarningsPage() {
           </div>
         </div>
 
-        <div className="flex space-x-4 mb-4 border-b pb-2">
-          <button
-            className={`font-medium ${
-              activeTab === "classes"
-                ? "text-yellow-600 border-b-2 border-yellow-600"
-                : "text-gray-500"
-            }`}
-            onClick={() => setActiveTab("classes")}
-          >
-            Online Classes
-          </button>
-          <button
-            className={`font-medium ${
-              activeTab === "policy"
-                ? "text-yellow-600 border-b-2 border-yellow-600"
-                : "text-gray-500"
-            }`}
-            onClick={() => setActiveTab("policy")}
-          >
-            Commission Policy
-          </button>
+        <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="p-3">Title</th>
+                <th className="p-3">Sales</th>
+                <th className="p-3">Gross Earned</th>
+                <th className="p-3">Commission</th>
+                <th className="p-3">Net Earnings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookSummaries.length > 0 ? (
+                bookSummaries.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="p-3 font-medium">{item.title}</td>
+                    <td className="p-3">{item.sales}</td>
+                    <td className="p-3 text-gray-700">
+                      {formatCurrency(item.totalGross, item.currency)}
+                    </td>
+                    <td className="p-3 text-red-500">
+                      {formatCurrency(item.commission, item.currency)}
+                    </td>
+                    <td className="p-3 text-blue-600 font-semibold">
+                      {formatCurrency(item.totalNet, item.currency)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-gray-500">
+                    No book earnings available for the selected period.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {activeTab === "classes" && (
-          <>
-            <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-gray-100 text-left">
-                    <th className="p-3">Title</th>
-                    <th className="p-3">Students</th>
-                    <th className="p-3">Avg Price</th>
-                    <th className="p-3">Gross Earned</th>
-                    <th className="p-3">Commission</th>
-                    <th className="p-3">Net Earnings</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {classSummaries.length > 0 ? (
-                    classSummaries.map((cls) => {
-                      const avgPrice =
-                        cls.students > 0
-                          ? cls.totalGross / cls.students
-                          : cls.price ?? 0;
-                      return (
-                        <tr key={cls.id} className="border-b hover:bg-gray-50">
-                          <td className="p-3 font-medium">{cls.title}</td>
-                          <td className="p-3">{cls.students}</td>
-                          <td className="p-3">
-                            {formatCurrency(avgPrice, cls.currency)}
-                          </td>
-                          <td className="p-3 text-gray-700">
-                            {formatCurrency(cls.totalGross, cls.currency)}
-                          </td>
-                          <td className="p-3 text-red-500">
-                            {formatCurrency(cls.commission, cls.currency)}
-                          </td>
-                          <td className="p-3 text-blue-600 font-semibold">
-                            {formatCurrency(cls.totalNet, cls.currency)}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="p-6 text-center text-gray-500">
-                        No class earnings available for the selected period.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">
+            📊 Commission vs Net Earnings
+          </h2>
+          <Bar data={chartData} />
+          <p className="mt-4 text-sm text-gray-500">
+            Commission: {commissionPercent}% | Net: {netPercent}%
+          </p>
+        </div>
 
-            <div className="bg-white rounded-xl shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                📊 Commission vs Net Earnings
-              </h2>
-              <Bar data={chartData} />
-              <p className="mt-4 text-sm text-gray-500">
-                Commission: {commissionPercent}% | Net: {netPercent}%
-              </p>
-            </div>
-          </>
-        )}
-
-        {activeTab === "policy" && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md text-sm text-yellow-900 flex gap-2">
-            <FaInfoCircle className="mt-0.5" />
-            <p>
-              Platform commission is calculated per enrollment and may vary if
-              coupons or special pricing are applied. Please refer to our{" "}
-              <a
-                href="/help/payments"
-                className="underline hover:text-yellow-600"
-              >
-                payout policy
-              </a>{" "}
-              for complete details.
-            </p>
-          </div>
-        )}
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md text-sm text-yellow-900 flex gap-2 mt-6">
+          <FaInfoCircle className="mt-0.5" />
+          <p>
+            Book earnings include both direct purchases and plan-covered access
+            where applicable. Review the{" "}
+            <a
+              href="/help/payments"
+              className="underline hover:text-yellow-600"
+            >
+              payout policy
+            </a>{" "}
+            for more information on how book revenue is calculated.
+          </p>
+        </div>
       </div>
     </InstructorLayout>
   );

@@ -937,6 +937,7 @@
     "config_saved": "Configuration enregistrée avec succès !",
     "config_save_failed": "Échec de l'enregistrement de la configuration",
     "status_updated": "Statut mis à jour",
+    "update_failed": "Échec de la mise à jour du statut",
     "default_updated": "Statut par défaut mis à jour",
     "method_deleted": "Moyen de paiement supprimé",
     "delete_failed": "Échec de la suppression du moyen",
@@ -1183,7 +1184,6 @@
     "popups_alerts": "Pop-ups / Alertes",
     "certificate_templates": "Modèles de certificat",
     "third_parties_config": "Configuration des services tiers",
-    "clear_cache": "Vider le cache",
     "cache_cleared": "Cache effacé",
     "cache_clear_failed": "Échec de l'effacement du cache",
     "create_class": "Créer un cours",
@@ -1211,8 +1211,7 @@
     "offers_groups": "Offres & Groupes",
     "payments_social": "Paiements & Réseaux",
     "payments": "Paiements",
-    "my_reviews": "Mes avis",
-    "clear_cache": "Vider le cache"
+    "my_reviews": "Mes avis"
   },
   "emailConfigPage": {
     "title": "Configuration des e-mails",
@@ -1237,6 +1236,7 @@
   },
   "messagesConfigPage": {
     "title": "Configuration des fournisseurs de messagerie",
+    "subtitle": "Préparez les fournisseurs de messagerie disponibles. Vous pourrez les configurer dès que les intégrations seront prêtes.",
     "sms_providers": "Fournisseurs SMS",
     "otp_provider": "Fournisseur OTP",
     "api_key": "Clé API",
@@ -1244,7 +1244,21 @@
     "region": "URL de base / Région",
     "no_app_prefix": "N'incluez pas le préfixe `App`.",
     "firebase_hint": "Firebase Auth est utilisé pour l'OTP téléphone lors de la connexion. Aucun commutateur requis.",
-    "default": "Par défaut"
+    "default": "Par défaut",
+    "add_gateway_provider": "Ajouter un fournisseur SMS",
+    "add_otp_provider": "Ajouter un fournisseur OTP",
+    "otp_provider_singleton_hint": "Un seul fournisseur OTP peut être actif à la fois.",
+    "saving_state": "Enregistrement...",
+    "save_changes": "Enregistrer les modifications",
+    "loading_state": "Chargement de la configuration en cours...",
+    "empty_state_title": "Aucun fournisseur de messagerie configuré pour le moment",
+    "empty_state_description": "Ajoutez un fournisseur pour préparer cette section avant les intégrations. Vous pourrez saisir les identifiants plus tard.",
+    "no_sms_providers": "Aucun fournisseur SMS pour le moment. Ajoutez-en un pour définir une passerelle par défaut.",
+    "no_otp_provider": "Aucun fournisseur OTP configuré pour le moment.",
+    "provider_name": "Nom du fournisseur",
+    "remove_provider": "Supprimer",
+    "status_active": "Actif",
+    "status_inactive": "Inactif"
   },
   "languageConfigPage": {
     "title": "Configuration de la langue",

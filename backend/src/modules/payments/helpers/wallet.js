@@ -47,6 +47,9 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
     } else if (item_type === "tutorial") {
       const tut = await tutorialService.getTutorialById(item_id);
       instructorId = tut?.instructor_id;
+    } else if (item_type === "book") {
+      const book = await bookService.getBookById(item_id);
+      instructorId = book?.instructor_id;
     }
 
     if (instructorId) {

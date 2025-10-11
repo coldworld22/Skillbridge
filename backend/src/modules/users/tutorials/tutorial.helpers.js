@@ -39,6 +39,25 @@ function parseTags(rawTags) {
  * @param {string|string[]|undefined|null} rawChapters
  * @returns {Array<{title:string, video_url?:string, duration?:number, order?:number, is_preview?:boolean}>}
  */
+const normalizeInt = (value, { positive = false } = {}) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num) || !Number.isInteger(num)) return undefined;
+  if (positive && num <= 0) return undefined;
+  return num;
+};
+
+const normalizeBoolean = (value) => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const lowered = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(lowered)) return true;
+    if (["false", "0", "no", "off"].includes(lowered)) return false;
+  }
+  return Boolean(value);
+};
+
 function parseChapters(rawChapters) {
   if (rawChapters === undefined || rawChapters === null || rawChapters === "") {
     return [];
@@ -55,7 +74,22 @@ function parseChapters(rawChapters) {
 
   if (!Array.isArray(parsed)) return [];
 
-  return parsed.filter((ch) => ch && ch.title);
+  return parsed
+    .filter((ch) => ch && ch.title)
+    .map((ch, index) => {
+      const duration = normalizeInt(ch.duration);
+      let order = normalizeInt(ch.order, { positive: true });
+      if (!order) order = index + 1;
+
+      return {
+        title: ch.title,
+        content: ch.content || undefined,
+        video_url: typeof ch.video_url === "string" ? ch.video_url : undefined,
+        duration,
+        order,
+        is_preview: normalizeBoolean(ch.is_preview),
+      };
+    });
 }
 
 module.exports = { parseTags, parseChapters };

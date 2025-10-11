@@ -28,6 +28,9 @@ jest.mock('../../plans/subscription.helper', () => ({
 jest.mock('../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn().mockResolvedValue(0),
 }));
+jest.mock('../../payouts/wallet.service', () => ({
+  increment: jest.fn().mockResolvedValue({}),
+}));
 jest.mock('../../payments/payments.service', () => ({
   create: jest.fn(async (data) => ({ ...data, status: 'awaiting_approval' })),
   approveBankPayment: jest.fn(async (id, payload) => ({

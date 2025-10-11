@@ -39,6 +39,7 @@ router.use(
   require('../modules/paymentMethods/paymentMethods.public.routes')
 );
 router.use('/api/payments/student', require('../modules/payments/student.routes'));
+router.use('/api/payments/instructor', require('../modules/payments/instructor.routes'));
 router.use('/api/payments/bank', require('../modules/payments/bank.routes'));
 router.use('/api/payments/crypto', require('../modules/payments/crypto.routes'));
 router.use('/api/payments/coinbase', require('../modules/payments/coinbase.routes'));

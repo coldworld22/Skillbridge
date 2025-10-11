@@ -955,6 +955,7 @@
     "config_saved": "Configuration saved successfully!",
     "config_save_failed": "Failed to save configuration",
     "status_updated": "Status updated",
+    "update_failed": "Failed to update status",
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
@@ -1203,7 +1204,6 @@
     "popups_alerts": "Popups / Alerts",
     "certificate_templates": "Certificate Templates",
     "third_parties_config": "Third Parties Config",
-    "clear_cache": "Clear Cache",
     "cache_cleared": "Cache cleared",
     "cache_clear_failed": "Failed to clear cache",
     "create_class": "Create Class",
@@ -1231,8 +1231,7 @@
     "offers_groups": "Offers & Groups",
     "payments_social": "Payments & Social",
     "payments": "Payments",
-    "my_reviews": "My Reviews",
-    "clear_cache": "Clear Cache"
+    "my_reviews": "My Reviews"
   },
   "emailConfigPage": {
     "title": "Email Configuration",
@@ -1257,6 +1256,7 @@
   },
   "messagesConfigPage": {
     "title": "Messaging Providers Configuration",
+    "subtitle": "Prepare available messaging providers. You can configure them as soon as integrations are ready.",
     "sms_providers": "SMS Providers",
     "otp_provider": "OTP Provider",
     "api_key": "API Key",
@@ -1264,7 +1264,21 @@
     "region": "Base URL / Region",
     "no_app_prefix": "Do not include the `App` prefix.",
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
-    "default": "Default"
+    "default": "Default",
+    "add_gateway_provider": "Add SMS Provider",
+    "add_otp_provider": "Add OTP Provider",
+    "otp_provider_singleton_hint": "Only one OTP provider can be active at a time.",
+    "saving_state": "Saving...",
+    "save_changes": "Save Changes",
+    "loading_state": "Loading current configuration...",
+    "empty_state_title": "No messaging providers configured yet",
+    "empty_state_description": "Add a provider to get this section ready ahead of integrations. You can fill in credentials later.",
+    "no_sms_providers": "No SMS providers yet. Add one to define a default gateway.",
+    "no_otp_provider": "No OTP provider configured yet.",
+    "provider_name": "Provider Name",
+    "remove_provider": "Remove",
+    "status_active": "Active",
+    "status_inactive": "Inactive"
   },
   "languageConfigPage": {
     "title": "Language Configuration",

@@ -951,6 +951,7 @@
     "config_saved": "Configurazione salvata correttamente!",
     "config_save_failed": "Impossibile salvare la configurazione",
     "status_updated": "Stato aggiornato",
+    "update_failed": "Impossibile aggiornare lo stato",
     "default_updated": "Stato predefinito aggiornato",
     "method_deleted": "Metodo di pagamento eliminato",
     "delete_failed": "Impossibile eliminare il metodo",
@@ -1179,7 +1180,7 @@
     "ads_manager": "Gestore annunci",
     "offers": "Offerte",
     "support": "Supporto",
-    "clear_cache": "Svuota cache",
+    "clear_cache": "Cancella cache",
     "settings": "Impostazioni",
     "language_manager": "Direttore linguistico",
     "language_config": "Configurazione del linguaggio",
@@ -1197,7 +1198,6 @@
     "popups_alerts": "Popup / avvisi",
     "certificate_templates": "Modelli di certificato",
     "third_parties_config": "Configurazione di terze parti",
-    "clear_cache": "Pulisci cache",
     "cache_cleared": "Cache pulita",
     "cache_clear_failed": "Impossibile pulire la cache",
     "create_class": "Crea classe",
@@ -1225,8 +1225,7 @@
     "offers_groups": "Offerte e gruppi",
     "payments_social": "Pagamenti e social",
     "payments": "Pagamenti",
-    "my_reviews": "Le mie recensioni",
-    "clear_cache": "Cancella cache"
+    "my_reviews": "Le mie recensioni"
   },
   "emailConfigPage": {
     "title": "Configurazione e -mail",
@@ -1251,6 +1250,7 @@
   },
   "messagesConfigPage": {
     "title": "Configurazione dei provider di messaggistica",
+    "subtitle": "Prepara i provider di messaggistica disponibili. Potrai configurarli non appena le integrazioni saranno pronte.",
     "sms_providers": "Provider SMS",
     "otp_provider": "Provider OTP",
     "api_key": "Chiave API",
@@ -1258,7 +1258,21 @@
     "region": "URL / regione di base",
     "no_app_prefix": "Non includere il prefisso `app\".",
     "firebase_hint": "Firebase Auth viene utilizzato per il numero di telefono OTP durante l'accesso. Non è richiesto nessun interruttore.",
-    "default": "Predefinito"
+    "default": "Predefinito",
+    "add_gateway_provider": "Aggiungi provider SMS",
+    "add_otp_provider": "Aggiungi provider OTP",
+    "otp_provider_singleton_hint": "È possibile avere attivo un solo provider OTP alla volta.",
+    "saving_state": "Salvataggio in corso...",
+    "save_changes": "Salva modifiche",
+    "loading_state": "Caricamento della configurazione attuale...",
+    "empty_state_title": "Nessun provider di messaggistica configurato",
+    "empty_state_description": "Aggiungi un provider per preparare questa sezione in anticipo rispetto alle integrazioni. Potrai inserire le credenziali più tardi.",
+    "no_sms_providers": "Nessun provider SMS al momento. Aggiungine uno per definire il gateway predefinito.",
+    "no_otp_provider": "Nessun provider OTP configurato al momento.",
+    "provider_name": "Nome del provider",
+    "remove_provider": "Rimuovi",
+    "status_active": "Attivo",
+    "status_inactive": "Inattivo"
   },
   "languageConfigPage": {
     "title": "Configurazione del linguaggio",

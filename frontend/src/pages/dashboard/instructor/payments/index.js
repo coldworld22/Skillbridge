@@ -1,42 +1,164 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { FaDollarSign, FaClock, FaWallet, FaArrowDown, FaFileExport } from "react-icons/fa";
+import {
+  FaArrowDown,
+  FaClock,
+  FaDollarSign,
+  FaFileExport,
+  FaWallet,
+} from "react-icons/fa";
+import {
+  fetchInstructorPaymentSummary,
+  fetchInstructorPayments,
+} from "@/services/instructor/paymentService";
 
-const mockPayments = [
-  { id: 1, title: "React Basics", amount: 120, date: "2025-04-10", status: "Paid", method: "PayPal" },
-  { id: 2, title: "Next.js Bootcamp", amount: 200, date: "2025-04-20", status: "Pending", method: "Visa" },
-  { id: 3, title: "Node.js Fundamentals", amount: 150, date: "2025-05-01", status: "Paid", method: "Apple Pay" },
-];
+const STATUS_LABELS = {
+  paid: "Paid",
+  awaiting_approval: "Awaiting Approval",
+  pending_payment: "Pending",
+  rejected: "Rejected",
+};
+
+const STATUS_COLORS = {
+  paid: "text-green-600",
+  awaiting_approval: "text-yellow-600",
+  pending_payment: "text-yellow-600",
+  rejected: "text-red-500",
+};
+
+const formatCurrency = (value, currency = "USD") => {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric)) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+    }).format(numeric);
+  } catch {
+    return `$${numeric.toFixed(2)}`;
+  }
+};
+
+const formatDate = (value) => {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleDateString();
+  } catch {
+    return value;
+  }
+};
+
+const getMethodLabel = (payment) => {
+  if (payment?.method_name) return payment.method_name;
+  if (payment?.source === "subscription") return "Subscription";
+  if (payment?.status === "awaiting_approval" && payment?.reference_id)
+    return "Manual Review";
+  return payment?.currency ? `${payment.currency} Payment` : "Payment";
+};
 
 export default function InstructorPaymentsPage() {
   const router = useRouter();
   const [payments, setPayments] = useState([]);
+  const [summary, setSummary] = useState({
+    walletBalance: 0,
+    totalPaid: 0,
+    totalPending: 0,
+    lifetimeEarnings: 0,
+    withdrawnTotal: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isPushing, setIsPushing] = useState(false);
   const [methodFilter, setMethodFilter] = useState("all");
 
   useEffect(() => {
-    setPayments(mockPayments);
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [summaryData, paymentData] = await Promise.all([
+          fetchInstructorPaymentSummary(),
+          fetchInstructorPayments(),
+        ]);
+        if (!active) {
+          return;
+        }
+        setSummary({
+          walletBalance: summaryData?.walletBalance ?? 0,
+          totalPaid: summaryData?.totalPaid ?? 0,
+          totalPending: summaryData?.totalPending ?? 0,
+          lifetimeEarnings: summaryData?.lifetimeEarnings ?? 0,
+          withdrawnTotal: summaryData?.withdrawnTotal ?? 0,
+        });
+        setPayments(paymentData || []);
+      } catch (err) {
+        console.error("Failed to load instructor payments", err);
+        if (active) {
+          setError("Failed to load payments. Please try again later.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
-  const currentBalance = payments.filter(p => p.status === "Pending").reduce((sum, p) => sum + p.amount, 0);
-  const withdrawn = totalEarnings - currentBalance;
+  const methodOptions = useMemo(() => {
+    const set = new Set();
+    payments.forEach((payment) => {
+      const label = getMethodLabel(payment);
+      if (label) set.add(label);
+    });
+    return Array.from(set);
+  }, [payments]);
+
+  const filteredPayments = useMemo(() => {
+    if (methodFilter === "all") return payments;
+    return payments.filter(
+      (payment) => getMethodLabel(payment) === methodFilter
+    );
+  }, [methodFilter, payments]);
+
+  const totalEarnings = summary.lifetimeEarnings ?? 0;
+  const pendingBalance = summary.totalPending ?? 0;
+  const withdrawn = summary.withdrawnTotal ?? 0;
+  const walletBalance = summary.walletBalance ?? 0;
 
   const redirectToNewWithdrawal = () => {
-    if (!isPushing) {
-      setIsPushing(true);
-      router.push("/dashboard/instructor/payments/withdrawals/new");
-    }
+    if (isPushing) return;
+    setIsPushing(true);
+    router
+      .push("/dashboard/instructor/payments/withdrawals/new")
+      .finally(() => setIsPushing(false));
   };
 
-  const filteredPayments = methodFilter === "all" ? payments : payments.filter(p => p.method === methodFilter);
-
   const exportCSV = () => {
-    const headers = ["Course", "Amount", "Date", "Status", "Method"];
-    const rows = filteredPayments.map(({ title, amount, date, status, method }) => [title, amount, date, status, method]);
-    const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
+    const headers = [
+      "Item",
+      "Gross Amount",
+      "Platform Fee",
+      "Net Amount",
+      "Date",
+      "Status",
+      "Method",
+    ];
+    const rows = filteredPayments.map((payment) => [
+      payment.item_title || payment.item_type,
+      Number(payment.amount ?? 0).toFixed(2),
+      Number(payment.platform_fee ?? 0).toFixed(2),
+      Number(payment.instructor_amount ?? 0).toFixed(2),
+      formatDate(payment.paid_at || payment.created_at),
+      STATUS_LABELS[payment.status] || payment.status,
+      getMethodLabel(payment),
+    ]);
+    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -48,6 +170,22 @@ export default function InstructorPaymentsPage() {
     URL.revokeObjectURL(url);
   };
 
+  if (loading) {
+    return (
+      <InstructorLayout>
+        <div className="p-6">Loading payment data...</div>
+      </InstructorLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <InstructorLayout>
+        <div className="p-6 text-red-600">{error}</div>
+      </InstructorLayout>
+    );
+  }
+
   return (
     <InstructorLayout>
       <div className="p-6 space-y-6 text-gray-800">
@@ -58,59 +196,101 @@ export default function InstructorPaymentsPage() {
             <FaDollarSign className="text-2xl text-green-500" />
             <div>
               <p className="text-sm text-gray-500">Total Earnings</p>
-              <h2 className="text-xl font-semibold">${totalEarnings}</h2>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(totalEarnings)}
+              </h2>
             </div>
           </div>
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaClock className="text-2xl text-yellow-500" />
             <div>
-              <p className="text-sm text-gray-500">Pending Balance</p>
-              <h2 className="text-xl font-semibold">${currentBalance}</h2>
+              <p className="text-sm text-gray-500">Pending Earnings</p>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(pendingBalance)}
+              </h2>
             </div>
           </div>
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaWallet className="text-2xl text-blue-500" />
             <div>
               <p className="text-sm text-gray-500">Total Withdrawn</p>
-              <h2 className="text-xl font-semibold">${withdrawn}</h2>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(withdrawn)}
+              </h2>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow grid sm:grid-cols-3 gap-4">
-          <Link href="/dashboard/instructor/payments/history" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
+        <div className="bg-blue-50 border border-blue-100 text-blue-800 p-4 rounded-lg flex items-center gap-3">
+          <FaWallet />
+          <div>
+            <p className="text-sm uppercase tracking-wide">Current Wallet Balance</p>
+            <p className="text-lg font-semibold">
+              {formatCurrency(walletBalance)}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/dashboard/instructor/payments/history"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
             📜 Payment History
           </Link>
-          <Link href="/dashboard/instructor/payments/withdrawals" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
+          <Link
+            href="/dashboard/instructor/payments/withdrawals"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
             🧾 Withdrawals
           </Link>
-          <Link href="/dashboard/instructor/payments/settings" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
+          <Link
+            href="/dashboard/instructor/payments/settings"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
             ⚙️ Payment Settings
           </Link>
-          <Link href="/dashboard/instructor/payments/commissions" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
-            📉 Commission & Deductions
+          <Link
+            href="/dashboard/instructor/payments/commissions"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
+            📉 Commission &amp; Deductions
           </Link>
-          <Link href="/dashboard/instructor/payments/classes" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
+          <Link
+            href="/dashboard/instructor/payments/classes"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
             🎥 Online Class Earnings
           </Link>
-          <Link href="/dashboard/instructor/payments/tutorials" className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center">
+          <Link
+            href="/dashboard/instructor/payments/tutorials"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
             📘 Tutorial Earnings
+          </Link>
+          <Link
+            href="/dashboard/instructor/payments/books"
+            className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
+          >
+            📚 Book Earnings
           </Link>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Transaction History</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <select
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
               >
                 <option value="all">All Methods</option>
-                <option value="PayPal">PayPal</option>
-                <option value="Visa">Visa</option>
-                <option value="Apple Pay">Apple Pay</option>
+                {methodOptions.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
               </select>
               <button
                 onClick={exportCSV}
@@ -119,8 +299,9 @@ export default function InstructorPaymentsPage() {
                 <FaFileExport /> Export CSV
               </button>
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded"
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded disabled:opacity-60"
                 onClick={redirectToNewWithdrawal}
+                disabled={isPushing}
               >
                 <FaArrowDown /> Request Withdrawal
               </button>
@@ -130,23 +311,63 @@ export default function InstructorPaymentsPage() {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Course</th>
-                <th className="p-3">Amount</th>
+                <th className="p-3">Item</th>
+                <th className="p-3">Net Amount</th>
+                <th className="p-3">Gross</th>
+                <th className="p-3">Platform Fee</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Method</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPayments.map((p) => (
-                <tr key={p.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{p.title}</td>
-                  <td className="p-3">${p.amount}</td>
-                  <td className="p-3">{p.date}</td>
-                  <td className={`p-3 font-medium ${p.status === "Paid" ? "text-green-600" : "text-yellow-600"}`}>{p.status}</td>
-                  <td className="p-3">{p.method}</td>
+              {filteredPayments.length > 0 ? (
+                filteredPayments.map((payment) => {
+                  const method = getMethodLabel(payment);
+                  const statusLabel =
+                    STATUS_LABELS[payment.status] || payment.status;
+                  const statusClass =
+                    STATUS_COLORS[payment.status] || "text-gray-600";
+                  const displayDate = payment.paid_at || payment.created_at;
+                  return (
+                    <tr key={payment.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {payment.item_title || "Untitled"}
+                          </span>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">
+                            {payment.item_type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-3 font-semibold text-green-600">
+                        {formatCurrency(
+                          payment.instructor_amount,
+                          payment.currency
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </td>
+                      <td className="p-3 text-red-500">
+                        {formatCurrency(payment.platform_fee, payment.currency)}
+                      </td>
+                      <td className="p-3">{formatDate(displayDate)}</td>
+                      <td className={`p-3 font-medium ${statusClass}`}>
+                        {statusLabel}
+                      </td>
+                      <td className="p-3">{method}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-gray-500">
+                    No transactions found yet.
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

@@ -15,6 +15,10 @@ jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
 }));
 const planRevenue = require('../src/modules/payments/helpers/planRevenue');
 
+jest.mock('../src/modules/payouts/wallet.service', () => ({
+  increment: jest.fn().mockResolvedValue({}),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -268,4 +272,3 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
     expect(res.status).toBe(400);
   });
 });
-

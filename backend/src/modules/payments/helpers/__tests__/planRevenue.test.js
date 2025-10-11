@@ -30,7 +30,7 @@ describe('calculateInstructorAmount', () => {
     ]);
 
     const amt = await calculateInstructorAmount('plan1', 'item1');
-    expect(amt).toBeCloseTo(15);
+    expect(amt).toBeCloseTo(35);
     expect(calculatePlatformFee).not.toHaveBeenCalled();
   });
 
@@ -43,7 +43,7 @@ describe('calculateInstructorAmount', () => {
     ]);
 
     const amt = await calculateInstructorAmount('plan2', 'item2');
-    expect(amt).toBeCloseTo(5);
+    expect(amt).toBeCloseTo(45);
   });
 
   it('returns 0 when plan not found', async () => {

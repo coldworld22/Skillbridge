@@ -1,5 +1,5 @@
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaInfoCircle, FaDownload, FaFilePdf } from "react-icons/fa";
 import { Bar } from "react-chartjs-2";
 import {
@@ -10,34 +10,156 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { fetchInstructorPayments } from "@/services/instructor/paymentService";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-const mockTutorialEarnings = [
-  { id: 1, title: "Intro to Python", students: 40, price: 15, total: 600, commission: 120, date: "2025-05-01" },
-  { id: 2, title: "Advanced CSS", students: 30, price: 20, total: 600, commission: 120, date: "2025-05-02" },
-];
+const formatCurrency = (value, currency = "USD") => {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric)) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+    }).format(numeric);
+  } catch {
+    return `$${numeric.toFixed(2)}`;
+  }
+};
+
+const extractDate = (payment) => payment.paid_at || payment.created_at;
 
 export default function InstructorTutorialEarningsPage() {
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const filteredEarnings = mockTutorialEarnings.filter((tut) => {
-    const date = new Date(tut.date);
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? new Date(endDate) : null;
-    return (!start || date >= start) && (!end || date <= end);
-  });
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchInstructorPayments({ itemType: "tutorial" });
+        if (active) setPayments(data || []);
+      } catch (err) {
+        console.error("Failed to load tutorial earnings", err);
+        if (active) setError("Unable to load tutorial earnings right now.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filteredPayments = useMemo(() => {
+    return payments.filter((payment) => {
+      const dateValue = extractDate(payment);
+      if (!dateValue) return true;
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return true;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        if (date < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (date > end) return false;
+      }
+      return true;
+    });
+  }, [payments, startDate, endDate]);
+
+  const tutorialSummaries = useMemo(() => {
+    const map = new Map();
+    filteredPayments.forEach((payment) => {
+      const key = payment.item_id || payment.id;
+      const existing = map.get(key) || {
+        id: key,
+        title: payment.item_title || "Untitled tutorial",
+        price: payment.item_price,
+        students: 0,
+        totalGross: 0,
+        totalNet: 0,
+        commission: 0,
+        currency: payment.currency || "USD",
+      };
+
+      const gross = Number(payment.amount ?? 0);
+      const net = Number(payment.instructor_amount ?? 0);
+      const fee =
+        payment.platform_fee !== undefined
+          ? Number(payment.platform_fee ?? 0)
+          : gross - net;
+
+      if (payment.status === "paid") {
+        existing.students += 1;
+      }
+
+      existing.totalGross += gross;
+      existing.totalNet += net;
+      existing.commission += fee;
+      existing.currency = payment.currency || existing.currency;
+
+      map.set(key, existing);
+    });
+    return Array.from(map.values());
+  }, [filteredPayments]);
+
+  const chartData = {
+    labels: tutorialSummaries.map((item) => item.title),
+    datasets: [
+      {
+        label: "Commission",
+        data: tutorialSummaries.map((item) => item.commission),
+        backgroundColor: "#fbbf24",
+      },
+      {
+        label: "Net Earnings",
+        data: tutorialSummaries.map((item) => item.totalNet),
+        backgroundColor: "#34d399",
+      },
+    ],
+  };
+
+  const totalCommission = tutorialSummaries.reduce(
+    (sum, item) => sum + item.commission,
+    0
+  );
+  const totalNet = tutorialSummaries.reduce(
+    (sum, item) => sum + item.totalNet,
+    0
+  );
+  const commissionPercent =
+    totalCommission + totalNet === 0
+      ? 0
+      : ((totalCommission / (totalCommission + totalNet)) * 100).toFixed(1);
+  const netPercent = (100 - Number(commissionPercent)).toFixed(1);
 
   const exportCSV = () => {
-    const headers = ["Title", "Students", "Price", "Total Earned", "Commission Deducted", "Net Earnings"];
-    const rows = filteredEarnings.map(({ title, students, price, total, commission }) => [
-      title,
-      students,
-      `$${price}`,
-      `$${total}`,
-      `$${commission}`,
-      `$${total - commission}`
+    const headers = [
+      "Tutorial",
+      "Students",
+      "Gross Amount",
+      "Platform Fee",
+      "Net Earnings",
+      "Average Price",
+    ];
+    const rows = tutorialSummaries.map((item) => [
+      item.title,
+      item.students,
+      item.totalGross.toFixed(2),
+      item.commission.toFixed(2),
+      item.totalNet.toFixed(2),
+      item.price !== undefined ? Number(item.price ?? 0).toFixed(2) : "",
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -52,29 +174,26 @@ export default function InstructorTutorialEarningsPage() {
   };
 
   const downloadPDF = () => {
-    alert("📄 PDF tax statement downloaded (mocked). Add actual PDF logic here.");
+    alert(
+      "📄 PDF export is not yet implemented. Please contact support if you need a statement."
+    );
   };
 
-  const chartData = {
-    labels: filteredEarnings.map((tut) => tut.title),
-    datasets: [
-      {
-        label: "Commission ($)",
-        data: filteredEarnings.map((tut) => tut.commission),
-        backgroundColor: "#fbbf24",
-      },
-      {
-        label: "Net Earnings ($)",
-        data: filteredEarnings.map((tut) => tut.total - tut.commission),
-        backgroundColor: "#34d399",
-      },
-    ],
-  };
+  if (loading) {
+    return (
+      <InstructorLayout>
+        <div className="p-6">Loading tutorial earnings...</div>
+      </InstructorLayout>
+    );
+  }
 
-  const totalCommission = filteredEarnings.reduce((sum, tut) => sum + tut.commission, 0);
-  const totalNet = filteredEarnings.reduce((sum, tut) => sum + (tut.total - tut.commission), 0);
-  const commissionPercent = ((totalCommission / (totalCommission + totalNet)) * 100).toFixed(1);
-  const netPercent = (100 - commissionPercent).toFixed(1);
+  if (error) {
+    return (
+      <InstructorLayout>
+        <div className="p-6 text-red-600">{error}</div>
+      </InstructorLayout>
+    );
+  }
 
   return (
     <InstructorLayout>
@@ -100,11 +219,21 @@ export default function InstructorTutorialEarningsPage() {
         <div className="flex gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium mb-1">Start Date</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 rounded" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border p-2 rounded"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">End Date</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 rounded" />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border p-2 rounded"
+            />
           </div>
         </div>
 
@@ -114,38 +243,71 @@ export default function InstructorTutorialEarningsPage() {
               <tr className="bg-gray-100 text-left">
                 <th className="p-3">Title</th>
                 <th className="p-3">Students</th>
-                <th className="p-3">Price</th>
-                <th className="p-3">Total Earned</th>
+                <th className="p-3">Avg Price</th>
+                <th className="p-3">Gross Earned</th>
                 <th className="p-3">Commission</th>
                 <th className="p-3">Net Earnings</th>
               </tr>
             </thead>
             <tbody>
-              {filteredEarnings.map((tut) => (
-                <tr key={tut.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 font-medium">{tut.title}</td>
-                  <td className="p-3">{tut.students}</td>
-                  <td className="p-3">${tut.price}</td>
-                  <td className="p-3 text-green-600 font-semibold">${tut.total}</td>
-                  <td className="p-3 text-red-500 font-medium">-${tut.commission}</td>
-                  <td className="p-3 text-blue-600 font-semibold">${tut.total - tut.commission}</td>
+              {tutorialSummaries.length > 0 ? (
+                tutorialSummaries.map((item) => {
+                  const avgPrice =
+                    item.students > 0
+                      ? item.totalGross / item.students
+                      : item.price ?? 0;
+                  return (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">{item.title}</td>
+                      <td className="p-3">{item.students}</td>
+                      <td className="p-3">
+                        {formatCurrency(avgPrice, item.currency)}
+                      </td>
+                      <td className="p-3 text-gray-700">
+                        {formatCurrency(item.totalGross, item.currency)}
+                      </td>
+                      <td className="p-3 text-red-500">
+                        {formatCurrency(item.commission, item.currency)}
+                      </td>
+                      <td className="p-3 text-blue-600 font-semibold">
+                        {formatCurrency(item.totalNet, item.currency)}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-gray-500">
+                    No tutorial earnings available for the selected period.
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">📊 Commission vs Net Earnings</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            📊 Commission vs Net Earnings
+          </h2>
           <Bar data={chartData} />
-          <p className="mt-4 text-sm text-gray-500">Commission: {commissionPercent}% | Net: {netPercent}%</p>
+          <p className="mt-4 text-sm text-gray-500">
+            Commission: {commissionPercent}% | Net: {netPercent}%
+          </p>
         </div>
 
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md text-sm text-yellow-900 flex gap-2 mt-6">
           <FaInfoCircle className="mt-0.5" />
           <p>
-            Platform commission is fixed at <strong>20%</strong>. Additional fees may apply based on your chosen payout method.
-            Please refer to our <a href="/help/payments" className="underline hover:text-yellow-600">payout policy</a> for full details.
+            Platform commission is calculated per tutorial purchase and may vary
+            when coupons or plans are used. Review the{" "}
+            <a
+              href="/help/payments"
+              className="underline hover:text-yellow-600"
+            >
+              payout policy
+            </a>{" "}
+            for more details.
           </p>
         </div>
       </div>

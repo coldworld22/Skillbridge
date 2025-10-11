@@ -8,6 +8,7 @@ import {
   initiateBankPayment,
   initiatePayPalPayment,
   initiateCryptoPayment,
+  initiateCoinbasePayment,
 } from '../../services/paymentService';
 import { createPayment } from '../../services/student/paymentService';
 import { toast } from 'react-toastify';
@@ -16,6 +17,7 @@ jest.mock('../../services/paymentService', () => ({
   initiateBankPayment: jest.fn(),
   initiatePayPalPayment: jest.fn(),
   initiateCryptoPayment: jest.fn(),
+  initiateCoinbasePayment: jest.fn(),
 }));
 
 jest.mock('../../services/student/paymentService', () => ({
@@ -86,6 +88,18 @@ test('crypto payment redirects to invoice and handles errors', async () => {
   expect(args.setPaymentStatus).toHaveBeenCalledWith('idle');
 });
 
+test('coinbase payment redirects when hosted url provided', async () => {
+  initiateCoinbasePayment.mockResolvedValue({ hosted_url: 'http://coinbase' });
+  const args = { ...baseArgs(), method: { type: 'coinbase' } };
+  await handleCryptoPayment(args);
+  expect(window.location.href).toBe('http://coinbase');
+
+  initiateCoinbasePayment.mockResolvedValue({});
+  await handleCryptoPayment(args);
+  expect(toast.error).toHaveBeenCalled();
+  expect(args.setPaymentStatus).toHaveBeenCalledWith('idle');
+});
+
 test('includes interval for plan payments', async () => {
   // Bank
   initiateBankPayment.mockResolvedValue({ id: 55 });
@@ -129,4 +143,3 @@ test('default payment completes on success and handles errors', async () => {
   expect(toast.error).toHaveBeenCalled();
   expect(errArgs.setPaymentStatus).toHaveBeenCalledWith('idle');
 });
-
