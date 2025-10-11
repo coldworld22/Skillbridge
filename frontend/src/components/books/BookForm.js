@@ -37,6 +37,54 @@ const normalizeTagList = (raw) => {
   return result;
 };
 
+const extractFileUrl = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return (
+      value.url ||
+      value.href ||
+      value.link ||
+      value.value ||
+      null
+    );
+  }
+  return null;
+};
+
+const getFileNameFromUrl = (url = "") => {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url, "http://placeholder");
+    const pathname = parsed.pathname || url;
+    const segments = pathname.split("/").filter(Boolean);
+    return decodeURIComponent(segments.pop() || "");
+  } catch {
+    const parts = `${url}`.split("/");
+    return decodeURIComponent(parts.pop() || "");
+  }
+};
+
+const normalizePreviewPages = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => extractFileUrl(item) || (typeof item === "string" ? item : null))
+      .filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.map((item) => extractFileUrl(item) || (typeof item === "string" ? item : null)).filter(Boolean)
+        : [];
+    } catch {
+      return [raw];
+    }
+  }
+  return [];
+};
+
 export default function BookForm({
   onSubmit,
   categories = [],
@@ -525,27 +573,27 @@ export default function BookForm({
                   }),
               },
             });
-            return (
-              <input
-                type="file"
-                accept=".png,.jpg,.jpeg,.webp"
-                {...reg}
-                onChange={(e) => {
-                  reg.onChange(e);
-                  const file = e.target.files?.[0];
-                  setCoverPreview(file ? URL.createObjectURL(file) : null);
-                }}
-                className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-            );
-          })()}
-          {coverPreview && (
-            <img
-              src={coverPreview}
-              alt="Cover preview"
-              className="mt-2 h-32 object-cover"
+          return (
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,.webp"
+              {...reg}
+              onChange={(e) => {
+                reg.onChange(e);
+                const file = e.target.files?.[0];
+                setCoverPreview(file ? URL.createObjectURL(file) : null);
+              }}
+              className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
-          )}
+          );
+        })()}
+        {coverPreview && (
+          <img
+            src={coverPreview}
+            alt="Cover preview"
+            className="mt-2 h-32 object-cover"
+          />
+        )}
           {errors.cover_image && (
             <p className="text-red-500 text-sm mt-1">
               {errors.cover_image.message}
@@ -578,6 +626,7 @@ export default function BookForm({
               onChange={(e) => {
                 reg.onChange(e);
                 const file = e.target.files?.[0];
+                setBookFileUrl(null);
                 setBookFileName(file ? file.name : "");
                 if (file) {
                   setExistingFileUrl(null);
@@ -671,6 +720,29 @@ export default function BookForm({
               <li key={idx}>{file.name}</li>
             ))}
           </ul>
+        )}
+        {isEdit && existingPreviewPages.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-600">
+              {t("booksCreate.currentPreviewFiles", {
+                defaultValue: "Current preview files:",
+              })}
+            </p>
+            <ul className="mt-1 list-disc pl-5 text-sm">
+              {existingPreviewPages.map((url, idx) => (
+                <li key={`${url}-${idx}`}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-yellow-600 hover:text-yellow-700 underline"
+                  >
+                    {getFileNameFromUrl(url) || t("booksCreate.viewFile", { defaultValue: "View file" })}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {errors.preview_pages && (
           <p className="text-red-500 text-sm mt-1">

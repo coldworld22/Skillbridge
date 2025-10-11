@@ -310,6 +310,40 @@ function AdminViewBookPage() {
                       <span>{t("booksView.preview")}</span>
                     </a>
                   )}
+                  {previewPages.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {t("booksView.preview_pages", {
+                          defaultValue: "Preview pages",
+                        })}
+                      </span>
+                      <ul className="space-y-1 text-sm">
+                        {previewPages.map((page, idx) => {
+                          const href =
+                            typeof page === "string"
+                              ? page
+                              : page?.url || page?.href || null;
+                          if (!href) return null;
+                          const label = t("booksView.preview_page_label", {
+                            defaultValue: `Page ${idx + 1}`,
+                            index: idx + 1,
+                          });
+                          return (
+                            <li key={`${href}-${idx}`}>
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                {label}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 {previewPages.length > 0 && (
                   <div className="mt-4">
