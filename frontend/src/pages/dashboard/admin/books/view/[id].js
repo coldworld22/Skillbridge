@@ -368,6 +368,56 @@ function AdminViewBookPage() {
                 )}
               </div>
             )}
+
+            {Array.isArray(book.preview_pages) && book.preview_pages.length > 0 && (
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+                <h3 className="text-sm font-medium text-gray-500 mb-3">
+                  {t("booksView.preview_pages", { defaultValue: "Preview pages" })}
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  {book.preview_pages.map((page, index) => {
+                    if (!page) return null;
+                    const normalized = typeof page === "string" ? page : "";
+                    const basePath = normalized.split("?")[0] || normalized;
+                    const isPdf = basePath.toLowerCase().endsWith(".pdf");
+                    const label = `${t("booksView.preview_page_label", {
+                      defaultValue: "Preview",
+                    })} ${index + 1}`;
+
+                    if (isPdf) {
+                      return (
+                        <a
+                          key={`${normalized}-${index}`}
+                          href={normalized}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <FiFileText className="text-blue-600" />
+                          <span>{label}</span>
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <a
+                        key={`${normalized}-${index}`}
+                        href={normalized}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block overflow-hidden rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <img
+                          src={normalized}
+                          alt={label}
+                          className="h-32 w-32 object-cover"
+                        />
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end">
