@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { FiAlertTriangle, FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
@@ -84,6 +84,13 @@ function BookCard({ book }) {
   const wishlist = useBookWishlistStore((state) => state.wishlist);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const removeFromWishlist = useBookWishlistStore((state) => state.removeFromWishlist);
+  const [imageSrc, setImageSrc] = useState(
+    book.coverUrl || book.cover_image_url || "/images/default-book-cover.jpg"
+  );
+
+  useEffect(() => {
+    setImageSrc(book.coverUrl || book.cover_image_url || "/images/default-book-cover.jpg");
+  }, [book.coverUrl, book.cover_image_url]);
 
   const isWishlisted = wishlist.some((item) => item.book_id === book.id);
 
@@ -125,7 +132,7 @@ function BookCard({ book }) {
   return (
     <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
       <Image
-        src={book.coverUrl}
+        src={imageSrc}
         alt={book.title}
         width={400}
         height={192}

@@ -37,6 +37,16 @@ export const formatBook = (book) => {
     formatted.price = Number(book.price);
   }
 
+  if (!formatted.coverUrl) {
+    formatted.coverUrl = "/images/default-book-cover.jpg";
+  }
+  if (!formatted.cover_image_url) {
+    formatted.cover_image_url = formatted.coverUrl;
+  }
+  if (!formatted.cover_image) {
+    formatted.cover_image = formatted.coverUrl;
+  }
+
   return formatted;
 };
 
