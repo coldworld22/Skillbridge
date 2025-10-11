@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -49,6 +49,24 @@ function AdminViewBookPage() {
     active: { label: t("booksView.status.active"), className: 'bg-blue-100 text-blue-800' },
     inactive: { label: t("booksView.status.inactive"), className: 'bg-gray-100 text-gray-800' },
     rejected: { label: t("booksView.status.rejected"), className: 'bg-red-100 text-red-800' },
+  };
+
+  const computePreviewPages = (pages) => {
+    if (!pages || !Array.isArray(pages)) return [];
+    return pages
+      .map((page) => {
+        const maybeUrl = buildUrl(page) || (typeof page === "string" ? page : null);
+        if (!maybeUrl || typeof maybeUrl !== "string") return null;
+        try {
+          const cleaned = maybeUrl.split("?")[0].split("#")[0];
+          const segments = cleaned.split("/").filter(Boolean);
+          const name = decodeURIComponent(segments[segments.length - 1] || "");
+          return { url: maybeUrl, name: name || maybeUrl };
+        } catch {
+          return { url: maybeUrl, name: maybeUrl };
+        }
+      })
+      .filter(Boolean);
   };
 
   useEffect(() => {
@@ -128,28 +146,12 @@ function AdminViewBookPage() {
     "/images/default-book-cover.jpg";
 
   const normalizedPreviewUrl = buildUrl(book?.preview_url) || book?.preview_url;
+  const previewPages = computePreviewPages(book?.preview_pages);
 
   const downloadUrl =
     buildUrl(book?.pdf_download_url || book?.pdfDownloadUrl) ||
     (book?.id ? buildUrl(`${API_BASE_URL}/books/${book.id}/pdf`) : null);
 
-  const previewPages = useMemo(() => {
-    if (!book?.preview_pages || !Array.isArray(book.preview_pages)) return [];
-    return book.preview_pages
-      .map((page) => {
-        const url = buildUrl(page) || page;
-        if (!url) return null;
-        try {
-          const cleaned = url.split("?")[0].split("#")[0];
-          const segments = cleaned.split("/").filter(Boolean);
-          const name = decodeURIComponent(segments[segments.length - 1] || "");
-          return { url, name: name || url };
-        } catch {
-          return { url, name: url };
-        }
-      })
-      .filter(Boolean);
-  }, [book?.preview_pages]);
 
   const hasDocuments = Boolean(downloadUrl || normalizedPreviewUrl || previewPages.length > 0);
 

@@ -1,5 +1,5 @@
 // src/hooks/withAuthProtection.js
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
@@ -14,10 +14,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const { user, accessToken, logout } = useAuthStore();
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
-    const normalizedRoles = useMemo(
-      () => allowedRoles.map((role) => role.toLowerCase()),
-      [allowedRoles]
-    );
+    const normalizedRoles = allowedRoles.map((role) => role.toLowerCase());
 
     useEffect(() => {
       setHydrated(true);
@@ -67,15 +64,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       ) {
         router.replace("/error/403");
       }
-    }, [
-      hydrated,
-      user,
-      accessToken,
-      logout,
-      router,
-      normalizedRoles,
-      allowedPerms,
-    ]);
+    }, [hydrated, user, accessToken, logout, router, allowedPerms]);
 
     const role = user?.role?.toLowerCase();
     const profilePaths = {
