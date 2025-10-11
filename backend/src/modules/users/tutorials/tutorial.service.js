@@ -17,10 +17,28 @@ const generateUniqueSlug = async (title, trx) => {
   return candidate;
 };
 
+const normalizeIncludedPlans = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((id) => {
+      if (id === null || id === undefined) return null;
+      const str = `${id}`.trim();
+      return str.length ? str : null;
+    })
+    .filter(Boolean);
+};
+
 exports.createTutorial = async (data, trx = db) => {
-  const insertData = { included_plans: [], ...data };
-  if (!insertData.included_plans) insertData.included_plans = [];
+  const plans = normalizeIncludedPlans(data.included_plans);
+  const insertData = {
+    ...data,
+    included_plans:
+      Array.isArray(plans) && plans.length
+        ? JSON.stringify(plans)
+        : JSON.stringify([]),
+  };
   const [tutorial] = await trx("tutorials").insert(insertData).returning("*");
+  tutorial.included_plans = plans;
   return tutorial;
 };
 
@@ -29,12 +47,11 @@ exports.createTutorialWithRelations = async (data, tags = [], chapters = []) => 
     const payload = { ...data };
     payload.slug = await generateUniqueSlug(payload.title, trx);
     if (!payload.id) payload.id = uuidv4();
-    payload.included_plans =
-      Array.isArray(payload.included_plans) && payload.included_plans.length
-        ? payload.included_plans
-        : [];
+    const plans = normalizeIncludedPlans(payload.included_plans);
+    payload.included_plans = plans;
 
     const tutorial = await exports.createTutorial(payload, trx);
+    tutorial.included_plans = plans;
 
     if (Array.isArray(tags) && tags.length) {
       await exports.updateTutorialTags(tutorial.id, tags, trx);
@@ -267,6 +284,12 @@ exports.updateTutorial = async (id, data) => {
   const updateData = { ...data };
   if (updateData.included_plans === undefined) {
     delete updateData.included_plans;
+  } else {
+    const plans = normalizeIncludedPlans(updateData.included_plans);
+    updateData.included_plans =
+      Array.isArray(plans) && plans.length
+        ? JSON.stringify(plans)
+        : JSON.stringify([]);
   }
   const [updated] = await db("tutorials")
     .where({ id })

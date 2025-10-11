@@ -18,10 +18,90 @@ const { STATUS: PAYMENT_STATUS } = paymentsService;
 
 const DEFAULT_PLATFORM_CUT = { book: 10 };
 
+const ensureArrayValues = (input, { splitComma = false } = {}) => {
+  const result = [];
+
+  const addValue = (value) => {
+    if (value === null || value === undefined) return;
+    const str = `${value}`.trim();
+    if (!str) return;
+    result.push(str);
+  };
+
+  const visit = (value) => {
+    if (value === null || value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      try {
+        visit(JSON.parse(trimmed));
+        return;
+      } catch {
+        if (splitComma && trimmed.includes(",")) {
+          trimmed.split(",").forEach((part) => addValue(part));
+          return;
+        }
+      }
+      addValue(trimmed);
+      return;
+    }
+    addValue(value);
+  };
+
+  visit(input);
+  return Array.from(new Set(result));
+};
+
+const serializeJsonArray = (value, { allowNull = false, splitComma = false } = {}) => {
+  if (value === undefined) {
+    return allowNull ? undefined : JSON.stringify([]);
+  }
+  if (value === null) {
+    return allowNull ? null : JSON.stringify([]);
+  }
+  const array = ensureArrayValues(value, { splitComma });
+  return JSON.stringify(array);
+};
+
+const parseJsonArray = (value, fallback = []) => {
+  if (value === null || value === undefined) return fallback;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
 exports.createBook = async (data) => {
-  const insertData = { included_plans: [], ...data };
-  if (!insertData.included_plans) insertData.included_plans = [];
+  const insertData = { ...data };
+  insertData.included_plans = serializeJsonArray(insertData.included_plans, {
+    splitComma: true,
+  });
+
+  if (Object.prototype.hasOwnProperty.call(insertData, "preview_pages")) {
+    const serializedPreviews = serializeJsonArray(insertData.preview_pages, {
+      allowNull: true,
+    });
+    if (serializedPreviews === undefined) {
+      delete insertData.preview_pages;
+    } else {
+      insertData.preview_pages = serializedPreviews;
+    }
+  }
+
   const [row] = await db("books").insert(insertData).returning("*");
+  row.included_plans = parseJsonArray(row.included_plans);
+  row.preview_pages =
+    row.preview_pages === null ? null : parseJsonArray(row.preview_pages);
   return row;
 };
 
@@ -212,8 +292,30 @@ exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
   }
 
   const updateData = { ...data };
-  if (updateData.included_plans === undefined) delete updateData.included_plans;
+  if (updateData.included_plans !== undefined) {
+    updateData.included_plans = serializeJsonArray(
+      updateData.included_plans,
+      { splitComma: true }
+    );
+  } else {
+    delete updateData.included_plans;
+  }
+  if (updateData.preview_pages !== undefined) {
+    const serializedPreviews = serializeJsonArray(updateData.preview_pages, {
+      allowNull: true,
+    });
+    if (serializedPreviews === undefined) {
+      delete updateData.preview_pages;
+    } else {
+      updateData.preview_pages = serializedPreviews;
+    }
+  }
   const [row] = await db("books").where({ id }).update(updateData).returning("*");
+  if (row) {
+    row.included_plans = parseJsonArray(row.included_plans);
+    row.preview_pages =
+      row.preview_pages === null ? null : parseJsonArray(row.preview_pages);
+  }
   return row;
 };
 
