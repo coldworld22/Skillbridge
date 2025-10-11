@@ -113,14 +113,14 @@ export default function BasicInfoStep({
   };
 
   const togglePlan = (planId) => {
+    const normalizedId = String(planId);
     setTutorialData((prev) => {
       const current = Array.isArray(prev.includedPlans)
-        ? prev.includedPlans
+        ? prev.includedPlans.map((id) => String(id))
         : [];
-      const targetId = String(planId);
-      const next = current.some((id) => String(id) === targetId)
-        ? current.filter((id) => String(id) !== targetId)
-        : [...current, planId];
+      const next = current.includes(normalizedId)
+        ? current.filter((id) => id !== normalizedId)
+        : [...current, normalizedId];
       return { ...prev, includedPlans: next };
     });
   };

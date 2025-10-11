@@ -14,10 +14,12 @@ export function buildTutorialFormData(tutorialData, status) {
     formData.append("tags", JSON.stringify(tutorialData.tags));
   }
   if (tutorialData.includedPlans?.length) {
-    formData.append(
-      "included_plans",
-      JSON.stringify(tutorialData.includedPlans)
-    );
+    const includedPlans = tutorialData.includedPlans
+      .filter((id) => id !== null && id !== undefined && `${id}`.trim() !== "")
+      .map((id) => String(id));
+    if (includedPlans.length) {
+      formData.append("included_plans", JSON.stringify(includedPlans));
+    }
   }
   if (tutorialData.chapters?.length) {
     const chapters = tutorialData.chapters.map((ch, idx) => ({

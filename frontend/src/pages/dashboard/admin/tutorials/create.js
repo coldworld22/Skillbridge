@@ -80,6 +80,8 @@ function CreateTutorialPage() {
           currency: draft.currency || "",
           includedPlans: Array.isArray(draft.includedPlans)
             ? draft.includedPlans
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
             : [],
         });
       } catch (err) {
@@ -153,7 +155,19 @@ function CreateTutorialPage() {
       router.push("/dashboard/admin/tutorials");
     } catch (err) {
       console.error(err);
-      if (err.response?.data?.message) {
+      const apiErrors = err.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        const details = apiErrors
+          .map((e) => e?.message || e?.msg || e?.path?.join(".") || "")
+          .filter(Boolean)
+          .join(", ");
+        toast.error(details || err.response?.data?.message || t('failed_create'));
+      } else if (apiErrors && typeof apiErrors === "object") {
+        const details = Object.values(apiErrors)
+          .map((msg) => (typeof msg === "string" ? msg : JSON.stringify(msg)))
+          .join(", ");
+        toast.error(details || err.response?.data?.message || t('failed_create'));
+      } else if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else {
         toast.error(t('failed_create'));
