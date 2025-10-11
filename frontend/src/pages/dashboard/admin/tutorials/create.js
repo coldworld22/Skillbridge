@@ -158,13 +158,33 @@ function CreateTutorialPage() {
       const apiErrors = err.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length > 0) {
         const details = apiErrors
-          .map((e) => e?.message || e?.msg || e?.path?.join(".") || "")
+          .map((e) => {
+            if (!e) return null;
+            const pathSegments = Array.isArray(e.path)
+              ? e.path.filter((seg) => seg !== "body")
+              : [];
+            const path = pathSegments.join(".") || e.field || "";
+            const message = e.message || e.msg || "";
+            if (path && message) return `${path}: ${message}`;
+            if (path) return path;
+            return message || null;
+          })
           .filter(Boolean)
           .join(", ");
         toast.error(details || err.response?.data?.message || t('failed_create'));
       } else if (apiErrors && typeof apiErrors === "object") {
-        const details = Object.values(apiErrors)
-          .map((msg) => (typeof msg === "string" ? msg : JSON.stringify(msg)))
+        const details = Object.entries(apiErrors)
+          .map(([key, value]) => {
+            if (!value) return null;
+            const msg =
+              typeof value === "string"
+                ? value
+                : Array.isArray(value)
+                ? value.join(", ")
+                : JSON.stringify(value);
+            return `${key}: ${msg}`;
+          })
+          .filter(Boolean)
           .join(", ");
         toast.error(details || err.response?.data?.message || t('failed_create'));
       } else if (err.response?.data?.message) {
