@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 import { buildUrl } from "@/utils/url";
 
-const formatBook = (book) => {
+export const formatBook = (book) => {
   let previewPages = [];
   if (Array.isArray(book?.preview_pages)) {
     previewPages = book.preview_pages.map((p) => buildUrl(p));
@@ -21,6 +21,13 @@ const formatBook = (book) => {
   const formatted = {
     ...book,
     cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
+    cover_image: buildUrl(book?.cover_image) || book?.cover_image,
+    coverUrl:
+      buildUrl(book?.coverUrl) ||
+      buildUrl(book?.cover_image_url || book?.cover_image) ||
+      book?.coverUrl ||
+      book?.cover_image_url ||
+      book?.cover_image,
     pdf_url: buildUrl(book?.pdf_url),
     preview_url: previewUrl,
     preview_pages: previewPages,

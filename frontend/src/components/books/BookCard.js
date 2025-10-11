@@ -27,6 +27,7 @@ export default function BookCard({
   const { t } = useTranslation("website");
 
   const coverUrl =
+    book.coverUrl ||
     book.cover_image_url ||
     buildUrl(book.cover_image) ||
     "/images/default-book-cover.jpg";

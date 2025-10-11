@@ -1,5 +1,5 @@
 import api from "@/services/api/api";
-import { buildUrl } from "@/utils/url";
+import { formatBook } from "@/services/bookService";
 
 // Fetch books belonging to the current instructor with
 // optional pagination, filtering and status parameters
@@ -25,12 +25,7 @@ export const fetchInstructorBooks = async ({
   const { data } = Object.keys(requestConfig).length
     ? await api.get("/instructor/books", requestConfig)
     : await api.get("/instructor/books");
-  const list = data?.data
-    ? data.data.map((book) => ({
-        ...book,
-        cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
-      }))
-    : [];
+  const list = data?.data ? data.data.map(formatBook) : [];
   return { books: list, meta: data?.meta ?? {} };
 
 };
@@ -40,7 +35,7 @@ export const createBook = async (formData, onUploadProgress) => {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
-  return data?.data;
+  return data?.data ? formatBook(data.data) : null;
 };
 
 export const updateBook = async (id, formData, onUploadProgress) => {
@@ -48,7 +43,7 @@ export const updateBook = async (id, formData, onUploadProgress) => {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress,
   });
-  return data?.data;
+  return data?.data ? formatBook(data.data) : null;
 };
 
 export const deleteBook = async (id) => {
@@ -60,12 +55,7 @@ export const deleteBook = async (id) => {
 export const fetchBook = async (id) => {
   const { data } = await api.get(`/books/${id}`);
   const book = data?.data || null;
-  return book
-    ? {
-        ...book,
-        cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
-      }
-    : null;
+  return book ? formatBook(book) : null;
 };
 
 // Fetch aggregated analytics about the instructor's books

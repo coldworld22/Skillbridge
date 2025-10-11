@@ -7,6 +7,35 @@ import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 import { toast } from "react-hot-toast";
 
+const extractTagName = (tag) => {
+  if (!tag) return "";
+  if (typeof tag === "string") return tag.trim();
+  if (typeof tag === "object") {
+    return (
+      (typeof tag.name === "string" && tag.name.trim()) ||
+      (typeof tag.label === "string" && tag.label.trim()) ||
+      (typeof tag.value === "string" && tag.value.trim()) ||
+      ""
+    );
+  }
+  return "";
+};
+
+const normalizeTagList = (raw) => {
+  const items = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const seen = new Set();
+  const result = [];
+  for (const item of items) {
+    const name = extractTagName(item);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(name);
+  }
+  return result;
+};
+
 export default function BookForm({
   onSubmit,
   categories = [],
@@ -36,7 +65,7 @@ export default function BookForm({
     },
   });
   const [languages, setLanguages] = useState([]);
-  const [tags, setTags] = useState(defaultValues?.tags || []);
+  const [tags, setTags] = useState(() => normalizeTagList(defaultValues?.tags));
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
@@ -90,13 +119,13 @@ export default function BookForm({
   useEffect(() => {
     if (defaultValues) {
       reset({
-        tags: defaultValues.tags || [],
+        tags: normalizeTagList(defaultValues.tags),
         allow_preview: defaultValues.allow_preview ?? false,
         remove_preview_pages: false,
         ...defaultValues,
         status: defaultValues.status ?? "pending",
       });
-      setTags(defaultValues.tags || []);
+      setTags(normalizeTagList(defaultValues.tags));
     }
   }, [defaultValues, reset]);
 
@@ -195,24 +224,42 @@ export default function BookForm({
     );
   };
 
-  const addTag = (name) => {
-    const value = name.trim();
+  const addTag = (input) => {
+    const value = extractTagName(input);
     if (!value) return;
-    if (!tags.includes(value)) {
-      setTags([...tags, value]);
-      if (!tagSuggestions.find((t) => t.name === value)) {
-        createBookTag({ name: value })
-          .then((newTag) =>
-            setTagSuggestions((prev) => [...prev, newTag])
-          )
-          .catch(() => toast.error("Failed to create tag"));
+    const key = value.toLowerCase();
+
+    setTags((prev) => {
+      if (prev.some((tag) => tag.toLowerCase() === key)) return prev;
+      return [...prev, value];
+    });
+
+    const hasSuggestion = tagSuggestions.some((suggestion) => {
+      if (!suggestion) return false;
+      if (typeof suggestion === "string") {
+        return suggestion.toLowerCase() === key;
       }
+      if (typeof suggestion.name === "string") {
+        return suggestion.name.toLowerCase() === key;
+      }
+      return false;
+    });
+
+    if (!hasSuggestion) {
+      createBookTag({ name: value })
+        .then((newTag) =>
+          setTagSuggestions((prev) => [...prev, newTag])
+        )
+        .catch(() => toast.error("Failed to create tag"));
     }
     setTagInput("");
   };
 
   const removeTag = (name) => {
-    setTags(tags.filter((t) => t !== name));
+    const key = typeof name === "string" ? name.toLowerCase() : "";
+    setTags((prev) =>
+      key ? prev.filter((tag) => tag.toLowerCase() !== key) : prev
+    );
   };
 
   const handleFormSubmit = (data) => {
