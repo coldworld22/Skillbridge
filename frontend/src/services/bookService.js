@@ -135,8 +135,7 @@ export const formatBook = (book) => {
     book?.files?.cover,
     book?.files?.cover_image,
   ];
-  const rawCoverPath = coverCandidates.map(extractPath).find(Boolean);
-  const normalizedCoverPath = buildUrl(rawCoverPath) || rawCoverPath;
+  let rawCoverPath = coverCandidates.map(extractPath).find(Boolean);
 
   const previewPagesRaw = collectPaths(
     book?.preview_pages,
@@ -151,6 +150,12 @@ export const formatBook = (book) => {
   const previewPages = previewPagesRaw
     .map((page) => buildUrl(page) || page)
     .filter(Boolean);
+
+  // If no explicit cover, fall back to first preview page image
+  if (!rawCoverPath && previewPages.length > 0) {
+    rawCoverPath = previewPages[0];
+  }
+  const normalizedCoverPath = buildUrl(rawCoverPath) || rawCoverPath;
 
   const previewUrlCandidates = collectPaths(
     book?.preview_url,

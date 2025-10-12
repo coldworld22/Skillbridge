@@ -111,9 +111,18 @@ export default function BookDetails({ book }) {
     );
   }
 
-  const [coverSrc, setCoverSrc] = useState(
-    buildUrl(book?.cover_image_url) || book?.cover_image_url || "/images/default-book-cover.jpg"
-  );
+  const [coverSrc, setCoverSrc] = useState(() => {
+    const previewFirst = Array.isArray(book?.preview_pages) && book.preview_pages.length > 0
+      ? book.preview_pages[0]
+      : book?.preview_url;
+    return (
+      buildUrl(book?.cover_image_url) ||
+      book?.cover_image_url ||
+      buildUrl(previewFirst) ||
+      previewFirst ||
+      "/images/default-book-cover.jpg"
+    );
+  });
 
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">

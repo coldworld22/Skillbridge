@@ -28,7 +28,10 @@ export default function BookCard({
   const { t } = useTranslation("website");
 
   const initialCover = useMemo(() => {
-    const candidates = [book.coverUrl, book.cover_image_url, book.cover_image];
+    const previewFirst = Array.isArray(book.preview_pages) && book.preview_pages.length > 0
+      ? book.preview_pages[0]
+      : book.preview_url;
+    const candidates = [book.coverUrl, book.cover_image_url, book.cover_image, previewFirst];
     for (const c of candidates) {
       const u = buildUrl(c) || c;
       if (u) return u;
