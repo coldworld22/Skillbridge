@@ -54,8 +54,8 @@ export const deleteBook = async (id) => {
 };
 
 // Fetch a single book by ID for the current instructor
-export const fetchBook = async (id) => {
-  const { data } = await api.get(`/books/${id}`);
+export const fetchBook = async (id, config = {}) => {
+  const { data } = await api.get(`/instructor/books/${id}`, config);
   const book = data?.data || null;
   return book ? formatBook(book) : null;
 };

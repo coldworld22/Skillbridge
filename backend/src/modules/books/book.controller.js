@@ -153,6 +153,20 @@ exports.getBookAdmin = catchAsync(async (req, res) => {
   sendSuccess(res, book);
 });
 
+exports.getInstructorBook = catchAsync(async (req, res) => {
+  const book = await service.getBookById(req.params.id);
+  if (!book) {
+    throw new AppError("Book not found", 404);
+  }
+  const roles = req.user.roles || req.user.role;
+  const admin = isAdminRole(roles);
+  if (!admin && book.instructor_id !== req.user.id) {
+    throw new AppError("Access denied", 403);
+  }
+  book.tags = await service.getBookTags(book.id);
+  sendSuccess(res, book);
+});
+
 exports.updateBook = catchAsync(async (req, res) => {
   try {
     const existing = await service.getBookById(req.params.id);

@@ -869,7 +869,7 @@ function InstructorBooksPage() {
                             </button>
                           )}
                           <Link
-                            href={`/books/${book.slug}`}
+                            href={`/marketplace/books/${book.slug || book.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"

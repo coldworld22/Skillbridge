@@ -12,6 +12,7 @@ router.use(verifyToken, isInstructorOrAdmin);
 
 router.get("/analytics", controller.getInstructorBookAnalytics);
 router.get("/", controller.listInstructorBooks);
+router.get("/:id", controller.getInstructorBook);
 router.post(
   "/",
   upload,

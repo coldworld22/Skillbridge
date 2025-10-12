@@ -14,7 +14,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { fetchBook } from "@/services/bookService";
+import { fetchBook } from "@/services/instructor/bookService";
 import { formatCurrency } from "@/utils/currency";
 import { API_BASE_URL } from "@/config/config";
 import { downloadBookPdf } from "@/services/bookService";
@@ -38,10 +38,7 @@ function InstructorBookDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchBook(id, {
-          admin: true,
-          signal: controller.signal,
-        });
+        const data = await fetchBook(id, { signal: controller.signal });
         if (!data) {
           setError(t("booksView.not_found"));
           setBook(null);
