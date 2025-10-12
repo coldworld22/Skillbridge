@@ -756,12 +756,10 @@ export default function BookForm({
             validate: {
               fileType: (files) => {
                 if (!files || files.length === 0) return true;
+                const allowed = ["image/jpeg", "image/png", "image/webp"];
                 return (
-                  Array.from(files).every(
-                    (file) =>
-                      file.type === "application/pdf" ||
-                      file.type.startsWith("image/")
-                  ) || t("validation.pdfOrImageOnly")
+                  Array.from(files).every((file) => allowed.includes(file.type)) ||
+                  t("validation.pngJpgWebpOnly")
                 );
               },
               fileSize: (files) => {
@@ -784,7 +782,7 @@ export default function BookForm({
           return (
             <input
               type="file"
-              accept=".pdf,image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               {...reg}
               onChange={(e) => {

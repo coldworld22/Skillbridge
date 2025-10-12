@@ -17,7 +17,7 @@ export default function useCoverImageUpload(t) {
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        setFileError(t('validation.invalidFileType'));
+        setFileError(t('validation.pngJpgWebpOnly'));
         return;
       }
 

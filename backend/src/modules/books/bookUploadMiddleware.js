@@ -27,27 +27,38 @@ const storage = multer.diskStorage({
 });
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const hasAllowedImageExtension = (filename = '') => /\.(jpe?g|png|webp)$/i.test(filename);
 const fileFilter = (_req, file, cb) => {
   const { fieldname, mimetype } = file;
 
   if (fieldname === 'cover_image') {
-    if (imageTypes.includes(mimetype)) return cb(null, true);
-    return cb(new Error('Invalid file type'), false);
+    if (imageTypes.includes(mimetype) && hasAllowedImageExtension(file.originalname)) {
+      return cb(null, true);
+    }
+    const err = new Error('Cover image must be JPEG, PNG, or WEBP');
+    err.status = 400;
+    return cb(err, false);
   }
 
   if (fieldname === 'preview_pages') {
-    if (imageTypes.includes(mimetype) || mimetype === 'application/pdf') {
+    if (imageTypes.includes(mimetype)) {
       return cb(null, true);
     }
-    return cb(new Error('Invalid file type'), false);
+    const err = new Error('Preview pages must be images (JPEG/PNG/WebP)');
+    err.status = 400;
+    return cb(err, false);
   }
 
   if (fieldname === 'book_file') {
     if (mimetype === 'application/pdf') return cb(null, true);
-    return cb(new Error('Invalid file type'), false);
+    const err = new Error('Book file must be a PDF');
+    err.status = 400;
+    return cb(err, false);
   }
 
-  return cb(new Error('Invalid file field'), false);
+  const err = new Error('Invalid file field');
+  err.status = 400;
+  return cb(err, false);
 };
 
 const upload = multer({
