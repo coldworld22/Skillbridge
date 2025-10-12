@@ -13,29 +13,24 @@ export function safeEncodeURI(url) {
 export function buildUrl(path) {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
-  const uploadsPattern = /^\/?uploads\//i;
+  // Normalize to root-relative
   const uploadsIndex = path.indexOf("/uploads");
-  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
-  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  // Prefer routing uploads via the API prefix so Nginx setups that only proxy
-  // `/api` still serve media correctly. When a public API base is available,
-  // use RAW_API_BASE (which includes `/api`) for uploads to yield
-  // `https://domain/api/uploads/...`.
-  if (uploadsPattern.test(relative)) {
+  const rel = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const normalized = rel.startsWith("/") ? rel : `/${rel}`;
+
+  // Only prefix uploads with the API base so they proxy through Nginx/backend.
+  if (/^\/uploads\//i.test(normalized)) {
     if (RAW_API_BASE) {
       const base = RAW_API_BASE.replace(/\/$/, "");
-      return `${base}${normalized}`; // e.g. https://domain/api/uploads/...
+      return `${base}${normalized}`; // e.g., https://domain/api/uploads/...
     }
-    // No base configured: ensure `/api/uploads/...` so Next/Nginx rewrites pick it up
     return normalized.startsWith("/api/") ? normalized : `/api${normalized}`;
   }
 
-  if (!API_BASE) {
-    const shouldProxy = normalized.startsWith("/api/");
-    if (shouldProxy) return normalized;
-    return normalized;
-  }
-  return `${API_BASE}${normalized}`;
+  // For non-uploads (e.g., /images, /_next, other public assets), keep
+  // root-relative so they resolve on the current origin and avoid accidental
+  // cross-origin hosts if NEXT_PUBLIC_API_BASE_URL is misconfigured.
+  return normalized;
 }
 
 export function joinUrl(base, path) {
