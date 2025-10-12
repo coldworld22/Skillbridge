@@ -45,7 +45,18 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-app.use(helmet());
+// Security headers
+// By default, Helmet sets Cross-Origin-Resource-Policy: same-origin which blocks
+// loading images/files from api.<domain> on www.<domain>. Since we legitimately
+// serve public assets from the API domain to the web app domain, relax CORP to
+// "cross-origin" and disable COEP (not needed here) to prevent
+// ERR_BLOCKED_BY_RESPONSE.NotSameOrigin on images/videos.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // 🌐 Fix CORS (must be very early)
 let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";

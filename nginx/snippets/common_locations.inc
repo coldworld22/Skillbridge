@@ -39,6 +39,22 @@
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+    # Ensure resources can be embedded cross-origin from the web app domain
+    proxy_hide_header Cross-Origin-Resource-Policy;
+    add_header Cross-Origin-Resource-Policy "cross-origin" always;
+  }
+
+  # Serve uploaded assets under /api/uploads with explicit CORP override
+  location ^~ /api/uploads/ {
+    proxy_pass http://backend:5002;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # Ensure resources can be embedded cross-origin from the web app domain
+    proxy_hide_header Cross-Origin-Resource-Policy;
+    add_header Cross-Origin-Resource-Policy "cross-origin" always;
   }
 
   location ^~ /api/ {
