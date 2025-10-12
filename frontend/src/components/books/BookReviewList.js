@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchReviews } from "@/services/bookReviewService";
 import { useTranslation } from "next-i18next";
+import RatingStars from "@/components/common/RatingStars";
 
 export default function BookReviewList({ bookId, version = 0 }) {
   const { t } = useTranslation(["website", "common"]);
@@ -22,13 +23,17 @@ export default function BookReviewList({ bookId, version = 0 }) {
 
   return (
     <div className="mt-12">
-      <h2 className="text-xl font-semibold mb-4">
-        {t("reviews")}: {average.toFixed(1)} / 5
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">{t("reviews")}</h2>
+        <RatingStars value={average} showValue />
+      </div>
       <div className="space-y-4">
         {reviews.map((r) => (
           <div key={r.id} className="bg-gray-800 p-4 rounded">
-            <p className="text-yellow-400">⭐ {r.rating}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <RatingStars value={Number(r.rating)} size={16} />
+              <span className="text-sm text-gray-300">{Number(r.rating).toFixed(1)}</span>
+            </div>
             {r.comment && <p className="mt-1">{r.comment}</p>}
           </div>
         ))}

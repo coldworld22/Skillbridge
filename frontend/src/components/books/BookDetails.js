@@ -9,6 +9,7 @@ import { formatCurrency } from "@/utils/currency";
 import { mapBookForCart } from "@/utils/bookMapping";
 import { API_BASE_URL } from "@/config/config";
 import { buildUrl } from "@/utils/url";
+import RatingStars from "@/components/common/RatingStars";
 
 export default function BookDetails({ book }) {
   const { t } = useTranslation(["website", "common"]);
@@ -153,7 +154,7 @@ export default function BookDetails({ book }) {
           <p className="text-yellow-400 mb-4">{t("by_author", { author: book.author })}</p>
         )}
 
-        <div className="flex flex-wrap gap-3 mb-4 text-xs">
+        <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
           {book.category_name && (
             <span className="px-2 py-1 rounded bg-gray-700/60 text-gray-300 uppercase tracking-wide">
               {book.category_name}
@@ -165,17 +166,54 @@ export default function BookDetails({ book }) {
             </span>
           )}
           {book.rating != null && (
-            <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400">
-              ⭐ {Number(book.rating).toFixed(1)} / 5
+            <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400 inline-flex items-center gap-2">
+              <RatingStars value={Number(book.rating)} size={16} />
+              <span className="text-yellow-300/90">{Number(book.rating).toFixed(1)} / 5</span>
             </span>
           )}
         </div>
 
-        <div className="prose prose-invert max-w-none mb-6">
-          <p>
-            {book.detailed_description || book.short_description || book.description}
-          </p>
-        </div>
+        {/* Descriptions: show short first, then detailed if present */}
+        {(book.short_description || book.detailed_description || book.description) && (
+          <div className="prose prose-invert max-w-none mb-6">
+            {book.short_description && (
+              <p className="text-gray-300">{book.short_description}</p>
+            )}
+            {(book.detailed_description || (!book.short_description && book.description)) && (
+              <p className="mt-3">{book.detailed_description || (!book.short_description && book.description)}</p>
+            )}
+          </div>
+        )}
+
+        {Array.isArray(book.preview_pages) && book.preview_pages.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3">{t("preview")}</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {book.preview_pages.slice(0, 10).map((p, idx) => {
+                const src = buildUrl(p) || p;
+                return (
+                  <a
+                    key={idx}
+                    href={src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                    title={`${book.title || book.name} preview ${idx + 1}`}
+                  >
+                    <Image
+                      src={src}
+                      alt={`${book.title || book.name} preview ${idx + 1}`}
+                      width={200}
+                      height={260}
+                      sizes="(max-width: 640px) 33vw, 20vw"
+                      className="w-full h-auto rounded-md object-cover ring-1 ring-black/10"
+                    />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
           <p className="text-2xl font-bold">
