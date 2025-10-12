@@ -321,6 +321,32 @@ export const updateBookStatus = async (id, status) => {
   return data?.data ? formatBook(data.data) : null;
 };
 
+export const downloadBookPdf = async (id, suggestedTitle) => {
+  const res = await api.get(`/books/${id}/pdf`, { responseType: "blob" });
+  const blob = new Blob([res.data], { type: "application/pdf" });
+  const url = window.URL.createObjectURL(blob);
+  try {
+    const dispo = res.headers?.["content-disposition"] || res.headers?.["Content-Disposition"]; 
+    let filename = null;
+    if (typeof dispo === "string") {
+      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+      filename = decodeURIComponent(match?.[1] || match?.[2] || "").trim();
+    }
+    if (!filename) {
+      const base = (suggestedTitle || "book").toString().trim() || "book";
+      filename = base.replace(/[^a-z0-9_\-]+/gi, "_") + ".pdf";
+    }
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+};
+
 export default {
   fetchBooks,
   fetchBook,
@@ -328,6 +354,7 @@ export default {
   createBook,
   updateBook,
   updateBookStatus,
+  downloadBookPdf,
 };
 
 // Re-export for testing and external usage

@@ -788,6 +788,11 @@ function InstructorBooksPage() {
                         src={coverUrl}
                         alt={book.title}
                         className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          if (e.currentTarget.dataset.fallbacked) return;
+                          e.currentTarget.src = "/images/default-book-cover.jpg";
+                          e.currentTarget.dataset.fallbacked = "1";
+                        }}
                       />
                       <div className="absolute top-3 right-3">
                         <select
@@ -848,16 +853,20 @@ function InstructorBooksPage() {
                           >
                             <FiEdit className="text-lg" />
                           </Link>
-                          {(book.pdfDownloadUrl || book.pdf_download_url || book.id) && (
-                            <a
-                              href={book.pdfDownloadUrl || book.pdf_download_url || `/api/books/${book.id}/pdf`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          {(book.id) && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await downloadBookPdf(book.id, book.title);
+                                } catch (err) {
+                                  console.error('Download failed', err);
+                                }
+                              }}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors"
                               title={t("Download")}
                             >
                               <FiDownload className="text-lg" />
-                            </a>
+                            </button>
                           )}
                           <Link
                             href={`/books/${book.slug}`}

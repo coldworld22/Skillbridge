@@ -17,6 +17,7 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchBook } from "@/services/bookService";
 import { formatCurrency } from "@/utils/currency";
 import { API_BASE_URL } from "@/config/config";
+import { downloadBookPdf } from "@/services/bookService";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import BookReviewList from "@/components/books/BookReviewList";
@@ -258,15 +259,20 @@ function InstructorBookDetailPage() {
                 )}
 
                 <div className="flex flex-wrap gap-3 pt-4">
-                  {downloadUrl && (
-                    <a
-                      href={downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {book?.id && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await downloadBookPdf(book.id, book.title);
+                        } catch (err) {
+                          console.error('Download failed', err);
+                        }
+                      }}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                     >
                       <FiDownload /> {t("booksView.full_pdf")}
-                    </a>
+                    </button>
                   )}
                   {previewUrl && (
                     <a
