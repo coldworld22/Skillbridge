@@ -760,10 +760,11 @@ function InstructorBooksPage() {
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleBooks.map((book) => {
+                const coverCandidate =
+                  book.coverUrl || book.cover_image_url || book.cover_image || null;
                 const coverUrl =
-                  book.coverUrl ||
-                  book.cover_image_url ||
-                  buildUrl(book.cover_image) ||
+                  buildUrl(coverCandidate) ||
+                  buildUrl(book?.cover_image) ||
                   "/images/default-book-cover.jpg";
                 return (
                   <div

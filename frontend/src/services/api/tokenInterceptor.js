@@ -55,8 +55,16 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
+    
+    // Ignore aborted/cancelled requests to avoid noisy toasts during route changes
+    const isCanceled =
+      error?.code === "ERR_CANCELED" ||
+      error?.name === "CanceledError" ||
+      error?.name === "AbortError" ||
+      /cancell?ed/i.test(error?.message || "");
 
     if (
+      !isCanceled &&
       (error.code === "ERR_NETWORK" || !error.response) &&
       Date.now() - lastNetworkToast > 5000
     ) {
