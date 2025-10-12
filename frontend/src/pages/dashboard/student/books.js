@@ -8,6 +8,8 @@ import { API_BASE_URL } from "@/config/config";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
 import { mapBookForWishlist } from "@/utils/bookMapping";
 import { buildUrl } from "@/utils/url";
+import withAuthProtection from "@/hooks/withAuthProtection";
+import StudentLayout from "@/components/layouts/StudentLayout";
 
 const normalizeLibraryBook = (book = {}) => {
   const rawCover =
@@ -207,7 +209,7 @@ function BookCard({ book }) {
   );
 }
 
-export default function BooksPage() {
+function BooksPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { books, loading, error, fetchLibrary } = useLibraryStore((state) => ({
     books: state.books,
@@ -279,3 +281,8 @@ export default function BooksPage() {
     </div>
   );
 }
+
+const ProtectedBooksPage = withAuthProtection(BooksPage, ["student"]);
+ProtectedBooksPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
+
+export default ProtectedBooksPage;

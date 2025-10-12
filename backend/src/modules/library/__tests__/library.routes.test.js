@@ -15,11 +15,20 @@ jest.mock('../../../middleware/auth/authMiddleware', () => ({
 jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
 
-jest.mock('fs', () => ({
-  constants: { R_OK: 4 },
-  promises: { access: jest.fn(() => Promise.resolve()) },
-  createReadStream: jest.fn(() => ({ on: jest.fn(), pipe: jest.fn() })),
-}));
+jest.mock('fs', () => {
+  const stream = require('stream');
+  return {
+    constants: { R_OK: 4 },
+    promises: { access: jest.fn(() => Promise.resolve()) },
+    createReadStream: jest.fn(() => {
+      // Minimal readable stream that immediately ends, so supertest closes.
+      const readable = new stream.Readable({ read() {} });
+      // Push no data and end the stream on next tick
+      process.nextTick(() => readable.push(null));
+      return readable;
+    }),
+  };
+});
 
 const routes = require('../library.routes');
 const app = express();
