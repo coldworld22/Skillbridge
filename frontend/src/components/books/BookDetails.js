@@ -8,6 +8,7 @@ import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
 import { mapBookForCart } from "@/utils/bookMapping";
 import { API_BASE_URL } from "@/config/config";
+import { buildUrl } from "@/utils/url";
 
 export default function BookDetails({ book }) {
   const { t } = useTranslation(["website", "common"]);
@@ -111,7 +112,7 @@ export default function BookDetails({ book }) {
   }
 
   const [coverSrc, setCoverSrc] = useState(
-    book?.cover_image_url || "/images/default-book-cover.jpg"
+    buildUrl(book?.cover_image_url) || book?.cover_image_url || "/images/default-book-cover.jpg"
   );
 
   return (
@@ -130,7 +131,7 @@ export default function BookDetails({ book }) {
       />
 
       <div className="flex-1">
-        <h1 className="text-3xl font-bold mb-2">{book.title}</h1>
+        <h1 className="text-3xl font-bold mb-2">{book.title || book.name}</h1>
         {book.author && (
           <p className="text-yellow-400 mb-4">{t("by_author", { author: book.author })}</p>
         )}
