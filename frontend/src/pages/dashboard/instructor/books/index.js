@@ -24,6 +24,7 @@ import {
   FiX,
   FiEdit,
   FiEye,
+  FiDownload,
 } from "react-icons/fi";
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -847,6 +848,17 @@ function InstructorBooksPage() {
                           >
                             <FiEdit className="text-lg" />
                           </Link>
+                          {(book.pdfDownloadUrl || book.pdf_download_url || book.id) && (
+                            <a
+                              href={book.pdfDownloadUrl || book.pdf_download_url || `/api/books/${book.id}/pdf`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors"
+                              title={t("Download")}
+                            >
+                              <FiDownload className="text-lg" />
+                            </a>
+                          )}
                           <Link
                             href={`/books/${book.slug}`}
                             target="_blank"

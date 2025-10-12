@@ -19,6 +19,7 @@ import { formatCurrency } from "@/utils/currency";
 import { API_BASE_URL } from "@/config/config";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import BookReviewList from "@/components/books/BookReviewList";
 
 function InstructorBookDetailPage() {
   const router = useRouter();
@@ -290,6 +291,12 @@ function InstructorBookDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+      {/* Reviews */}
+      <section className="px-4 pb-12">
+        <div className="mx-auto w-full max-w-5xl">
+          <BookReviewList bookId={book?.id} />
         </div>
       </section>
     </>
