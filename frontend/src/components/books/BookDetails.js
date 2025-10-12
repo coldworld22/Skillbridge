@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import { useState } from "react";
 import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
@@ -110,17 +111,24 @@ export default function BookDetails({ book }) {
     );
   }
 
+  const [coverSrc, setCoverSrc] = useState(
+    book?.cover_image_url || "/images/default-book-cover.jpg"
+  );
+
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
-      {book.cover_image_url && (
-        <Image
-          src={book.cover_image_url}
-          alt={book.title}
-          width={400}
-          height={600}
-          className="w-full md:w-1/3 rounded-lg object-cover"
-        />
-      )}
+      <Image
+        src={coverSrc}
+        alt={book.title}
+        width={400}
+        height={600}
+        className="w-full md:w-1/3 rounded-lg object-cover"
+        onError={() => {
+          if (coverSrc !== "/images/default-book-cover.jpg") {
+            setCoverSrc("/images/default-book-cover.jpg");
+          }
+        }}
+      />
 
       <div className="flex-1">
         <h1 className="text-3xl font-bold mb-2">{book.title}</h1>

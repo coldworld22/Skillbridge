@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import {
@@ -26,11 +27,13 @@ export default function BookCard({
 }) {
   const { t } = useTranslation("website");
 
-  const coverUrl =
+  const initialCover = useMemo(() => (
     book.coverUrl ||
     book.cover_image_url ||
     buildUrl(book.cover_image) ||
-    "/images/default-book-cover.jpg";
+    "/images/default-book-cover.jpg"
+  ), [book.coverUrl, book.cover_image_url, book.cover_image]);
+  const [coverSrc, setCoverSrc] = useState(initialCover);
 
   const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -60,31 +63,36 @@ export default function BookCard({
         </span>
       )}
       <Image
-        src={coverUrl}
+        src={coverSrc}
         alt={book.title}
         width={400}
         height={160}
         loading="lazy"
         className="w-full h-40 object-cover"
+        onError={() => {
+          if (coverSrc !== "/images/default-book-cover.jpg") {
+            setCoverSrc("/images/default-book-cover.jpg");
+          }
+        }}
       />
-      <div className="p-4">
-        <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
+      <div className="p-4 text-gray-900 dark:text-gray-100">
+        <h3 className="font-semibold mb-1 line-clamp-1 text-gray-900 dark:text-gray-100">{book.title}</h3>
         {(book.uploaded_by?.name || book.author) && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
             {t("by_author", { author: book.uploaded_by?.name || book.author })}
           </p>
         )}
         {book.category_name && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
             {book.category_name}
           </p>
         )}
         {book.rating != null && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <p className="text-sm text-yellow-600 dark:text-yellow-400 mb-2">
             ⭐ {Number(book.rating).toFixed(1)} / 5
           </p>
         )}
-        <p className="text-sm mb-3">{formatCurrency(book.price)}</p>
+        <p className="text-sm mb-3 text-gray-900 dark:text-gray-100">{formatCurrency(book.price)}</p>
         <div className="flex gap-2">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
