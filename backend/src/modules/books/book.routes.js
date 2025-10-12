@@ -11,8 +11,9 @@ const {
   isInstructorOrAdmin,
 } = require("../../middleware/auth/authMiddleware");
 
-router.get("/tags", verifyToken, isAdmin, tagController.listTags);
-router.post("/tags", verifyToken, isAdmin, tagController.createTag);
+// Allow instructors to search and create tags (consistent with classes)
+router.get("/tags", verifyToken, isInstructorOrAdmin, tagController.listTags);
+router.post("/tags", verifyToken, isInstructorOrAdmin, tagController.createTag);
 router.get("/", controller.listBooks);
 router.get("/admin", verifyToken, isAdmin, controller.listBooksAdmin);
 router.get("/admin/:id", verifyToken, isAdmin, controller.getBookAdmin);
