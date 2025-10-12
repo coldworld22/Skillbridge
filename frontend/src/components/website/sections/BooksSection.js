@@ -3,9 +3,17 @@ import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
 import BookCard from "@/components/books/BookCard";
 import { fetchBooks } from "@/services/bookService";
+import { useRouter } from "next/router";
+import { toast } from "react-hot-toast";
+import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
+import { mapBookForCart } from "@/utils/bookMapping";
 
 const BooksSection = () => {
   const { t } = useTranslation("website");
+  const router = useRouter();
+  const addItem = useCartStore((s) => s.addItem);
+  const { isAuthenticated, user } = useAuthStore();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -37,6 +45,21 @@ const BooksSection = () => {
     return () => controller.abort();
   }, []);
 
+  const handleAddToCart = async (book) => {
+    if (!isAuthenticated()) {
+      toast.info(t("please_login_to_purchase"));
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role?.toLowerCase() !== "student") {
+      toast.error(t("only_students_can_purchase"));
+      return;
+    }
+    const ok = await addItem(mapBookForCart(book));
+    if (ok) toast.success(t("added_to_cart"));
+    else toast.error(t("failed_to_add_to_cart"));
+  };
+
   return (
     <section id="books" className="bg-gray-950 py-16 text-white text-center">
       <motion.h2
@@ -56,7 +79,12 @@ const BooksSection = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
           {books.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard
+              key={book.id}
+              book={book}
+              onAddToCart={() => handleAddToCart(book)}
+              cornerAddToCart
+            />
           ))}
         </div>
       )}
@@ -74,4 +102,3 @@ const BooksSection = () => {
 };
 
 export default BooksSection;
-

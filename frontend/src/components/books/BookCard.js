@@ -11,6 +11,7 @@ import {
   FiShoppingCart,
 } from "react-icons/fi";
 import { buildUrl } from "@/utils/url";
+import RatingStars from "@/components/common/RatingStars";
 import { formatCurrency } from "@/utils/currency";
 import { API_BASE_URL } from "@/config/config";
 
@@ -24,6 +25,7 @@ export default function BookCard({
   viewLink,
   onAddToWishlist,
   onAddToCart,
+  cornerAddToCart = false,
 }) {
   const { t } = useTranslation("website");
 
@@ -60,12 +62,23 @@ export default function BookCard({
       )}
       {book.status && (
         <span
-          className={`absolute top-2 right-2 px-2 py-0.5 rounded text-xs font-medium ${
+          className={`absolute top-2 ${cornerAddToCart ? "left-2" : "right-2"} px-2 py-0.5 rounded text-xs font-medium ${
             statusClasses[book.status] || "bg-gray-100 text-gray-800"
           }`}
         >
           {t(book.status)}
         </span>
+      )}
+      {cornerAddToCart && onAddToCart && (
+        <button
+          type="button"
+          onClick={onAddToCart}
+          className="absolute top-2 right-2 p-2 rounded-full bg-yellow-500 text-gray-900 hover:bg-yellow-400 transition-colors shadow-md"
+          aria-label={t("add_to_cart")}
+          title={t("add_to_cart")}
+        >
+          <FiShoppingCart />
+        </button>
       )}
       <Image
         src={coverSrc}
@@ -93,9 +106,9 @@ export default function BookCard({
           </p>
         )}
         {book.rating != null && (
-          <p className="text-sm text-yellow-600 dark:text-yellow-400 mb-2">
-            ⭐ {Number(book.rating).toFixed(1)} / 5
-          </p>
+          <div className="mb-2">
+            <RatingStars value={Number(book.rating)} showValue valueClassName="text-xs text-yellow-500 dark:text-yellow-400" />
+          </div>
         )}
         <p className="text-sm mb-3 text-gray-900 dark:text-gray-100">{formatCurrency(book.price)}</p>
         <div className="flex gap-2">
@@ -130,7 +143,7 @@ export default function BookCard({
               <span className="sr-only">{t("wishlist")}</span>
             </button>
           )}
-          {onAddToCart && (
+          {onAddToCart && !cornerAddToCart && (
             <button
               type="button"
               onClick={onAddToCart}

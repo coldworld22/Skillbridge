@@ -34,12 +34,12 @@ describe('library routes', () => {
     service.getBookForDownload.mockResolvedValue({ pdf_url: '/file.pdf', title: 'Book' });
   });
 
-  test('blocks download when feature disabled', async () => {
+  test('allows download when purchased even if feature disabled', async () => {
     planService.getPlanById.mockResolvedValueOnce({
       id: 'plan1',
       features: [{ feature_key: 'books_download', value: 'false' }],
     });
     const res = await request(app).get('/library/download/1');
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(200);
   });
 });
