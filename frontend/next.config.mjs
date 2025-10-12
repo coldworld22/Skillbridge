@@ -113,11 +113,12 @@ const nextConfig = {
         destination: `${pgAdminBase}/:path*`,
       });
     }
+    // In production, prefer the publicly reachable API base when provided,
+    // otherwise fall back to the internal Docker host.
+    const rewriteBase = isProduction && apiBaseEnv ? apiBase : (isProduction ? internalApiBase : apiBase);
     rules.push({
       source: '/api/:path*',
-      destination: `${
-        isProduction ? internalApiBase : apiBase
-      }/:path*`,
+      destination: `${rewriteBase}/:path*`,
     });
     return rules;
   },

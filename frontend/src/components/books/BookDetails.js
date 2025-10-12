@@ -115,53 +115,74 @@ export default function BookDetails({ book }) {
     const previewFirst = Array.isArray(book?.preview_pages) && book.preview_pages.length > 0
       ? book.preview_pages[0]
       : book?.preview_url;
-    return (
-      buildUrl(book?.cover_image_url) ||
-      book?.cover_image_url ||
-      buildUrl(previewFirst) ||
-      previewFirst ||
-      "/images/default-book-cover.jpg"
-    );
+    const candidates = [
+      book?.coverUrl,
+      book?.cover_image_url,
+      book?.cover_image,
+      previewFirst,
+    ];
+    for (const c of candidates) {
+      const u = buildUrl(c) || c;
+      if (u) return u;
+    }
+    return "/images/default-book-cover.jpg";
   });
 
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
-      <Image
-        src={coverSrc}
-        alt={book.title}
-        width={400}
-        height={600}
-        className="w-full md:w-1/3 rounded-lg object-cover"
-        onError={() => {
-          if (coverSrc !== "/images/default-book-cover.jpg") {
-            setCoverSrc("/images/default-book-cover.jpg");
-          }
-        }}
-      />
+      <div className="md:w-1/3 w-full">
+        <Image
+          src={coverSrc}
+          alt={book.title || book.name}
+          width={600}
+          height={900}
+          priority
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="w-full rounded-lg object-cover shadow-md ring-1 ring-black/10"
+          onError={() => {
+            if (coverSrc !== "/images/default-book-cover.jpg") {
+              setCoverSrc("/images/default-book-cover.jpg");
+            }
+          }}
+        />
+      </div>
 
       <div className="flex-1">
-        <h1 className="text-3xl font-bold mb-2">{book.title || book.name}</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">{book.title || book.name}</h1>
         {book.author && (
           <p className="text-yellow-400 mb-4">{t("by_author", { author: book.author })}</p>
         )}
-        {book.category_name && (
-          <p className="text-sm uppercase tracking-wide text-gray-400 mb-2">
-            {book.category_name}
-          </p>
-        )}
-        {book.rating != null && (
-          <p className="mb-4 text-yellow-400">
-            ⭐ {Number(book.rating).toFixed(1)} / 5
-          </p>
-        )}
-        <p className="mb-6">
-          {book.detailed_description || book.short_description || book.description}
-        </p>
 
-        <p className="text-xl font-semibold mb-6">
-          {Number(book.price) > 0 ? formatCurrency(book.price) : t("free")}
-        </p>
-        {actionButtons}
+        <div className="flex flex-wrap gap-3 mb-4 text-xs">
+          {book.category_name && (
+            <span className="px-2 py-1 rounded bg-gray-700/60 text-gray-300 uppercase tracking-wide">
+              {book.category_name}
+            </span>
+          )}
+          {book.language && (
+            <span className="px-2 py-1 rounded bg-gray-700/60 text-gray-300 uppercase tracking-wide">
+              {book.language}
+            </span>
+          )}
+          {book.rating != null && (
+            <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400">
+              ⭐ {Number(book.rating).toFixed(1)} / 5
+            </span>
+          )}
+        </div>
+
+        <div className="prose prose-invert max-w-none mb-6">
+          <p>
+            {book.detailed_description || book.short_description || book.description}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+          <p className="text-2xl font-bold">
+            {Number(book.price) > 0 ? formatCurrency(book.price) : t("free")}
+          </p>
+          {actionButtons}
+        </div>
       </div>
     </div>
   );
