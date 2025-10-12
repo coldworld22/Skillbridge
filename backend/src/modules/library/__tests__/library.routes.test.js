@@ -16,8 +16,9 @@ jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../plans/plans.service');
 
 jest.mock('fs', () => ({
-  existsSync: jest.fn(() => true),
-  createReadStream: jest.fn(() => ({ pipe: jest.fn() })),
+  constants: { R_OK: 4 },
+  promises: { access: jest.fn(() => Promise.resolve()) },
+  createReadStream: jest.fn(() => ({ on: jest.fn(), pipe: jest.fn() })),
 }));
 
 const routes = require('../library.routes');
@@ -31,7 +32,7 @@ describe('library routes', () => {
       id: 'plan1',
       features: [{ feature_key: 'books_download', value: 'true' }],
     });
-    service.getBookForDownload.mockResolvedValue({ pdf_url: '/file.pdf', title: 'Book' });
+    service.getBookForDownload.mockResolvedValue({ pdf_url: '/uploads/books/file.pdf', title: 'Book' });
   });
 
   test('allows download when purchased even if feature disabled', async () => {
