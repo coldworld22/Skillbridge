@@ -30,6 +30,7 @@ import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
 import { API_BASE_URL } from "@/config/config";
+import { getCookie } from "@/utils/cookies";
 
 const langFetcher = () => getLanguages();
 
@@ -97,6 +98,10 @@ function MyApp({ Component, pageProps, router }) {
 
     const init = async () => {
       try {
+        // Avoid calling refresh endpoint if no refresh cookie exists
+        const hasRefresh = !!getCookie('refreshToken');
+        if (!hasRefresh) return;
+
         const { accessToken } = await authService.refreshAccessToken();
         useAuthStore.setState({ accessToken });
         const res = await getFullProfile();
@@ -214,6 +219,8 @@ function MyApp({ Component, pageProps, router }) {
             <Head>
               <title>{defaultTitle}</title>
               <meta name="viewport" content="width=device-width, initial-scale=1" />
+              {/* Default favicon to avoid 404s before settings load */}
+              <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
               {settings.metaDescription && (
                 <meta name="description" content={settings.metaDescription} />
               )}

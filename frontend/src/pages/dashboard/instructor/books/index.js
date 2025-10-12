@@ -974,7 +974,24 @@ ProtectedInstructorBooksPage.getLayout = (page) => (
 
 export default ProtectedInstructorBooksPage;
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps(ctx) {
+  const { req, locale, resolvedUrl } = ctx;
+
+  // Basic SSR auth gate: if no refresh token cookie, redirect to login
+  const cookieHeader = req?.headers?.cookie || "";
+  const hasRefresh = cookieHeader
+    .split(";")
+    .some((c) => c.trim().startsWith("refreshToken="));
+
+  if (!hasRefresh) {
+    return {
+      redirect: {
+        destination: `/auth/login?next=${encodeURIComponent(resolvedUrl || "/")}`,
+        permanent: false,
+      },
+    };
+  }
+
   return {
     props: {
       ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
