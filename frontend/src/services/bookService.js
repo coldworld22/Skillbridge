@@ -149,7 +149,19 @@ export const formatBook = (book) => {
     book?.media?.previewPages,
   );
   const previewPages = previewPagesRaw
-    .map((page) => buildUrl(page) || page)
+    .map((raw) => {
+      let page = raw;
+      try {
+        const lower = String(page).toLowerCase();
+        const isPdf = lower.split('?')[0].endsWith('.pdf');
+        const inPreviewsDir = lower.includes('/uploads/books/previews/');
+        if (isPdf && !inPreviewsDir) {
+          // Backward-compatibility: mark as preview so backend static middleware allows it
+          page = `${page}${String(page).includes('?') ? '&' : '?'}preview=1`;
+        }
+      } catch {}
+      return buildUrl(page) || page;
+    })
     .filter(Boolean);
 
   const previewUrlCandidates = collectPaths(

@@ -6,7 +6,19 @@ const uploadDir = path.join(__dirname, '../../../uploads/books');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
+  destination: (_req, file, cb) => {
+    try {
+      // Store preview files under a dedicated subfolder so we can safely allow
+      // serving preview PDFs without exposing full book files.
+      const dir = file.fieldname === 'preview_pages'
+        ? path.join(uploadDir, 'previews')
+        : uploadDir;
+      fs.mkdirSync(dir, { recursive: true });
+      return cb(null, dir);
+    } catch (err) {
+      return cb(err);
+    }
+  },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
     const base = path.basename(file.originalname, ext).replace(/\s+/g, '-');
@@ -18,8 +30,15 @@ const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const fileFilter = (_req, file, cb) => {
   const { fieldname, mimetype } = file;
 
-  if (['cover_image', 'preview_pages'].includes(fieldname)) {
+  if (fieldname === 'cover_image') {
     if (imageTypes.includes(mimetype)) return cb(null, true);
+    return cb(new Error('Invalid file type'), false);
+  }
+
+  if (fieldname === 'preview_pages') {
+    if (imageTypes.includes(mimetype) || mimetype === 'application/pdf') {
+      return cb(null, true);
+    }
     return cb(new Error('Invalid file type'), false);
   }
 

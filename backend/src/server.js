@@ -150,8 +150,17 @@ app.use(passport.session());
 const uploadsPath = path.join(__dirname, "../uploads");
 const serveUploads = express.static(uploadsPath);
 const blockPdfMiddleware = (req, res, next) => {
-  if (req.path.toLowerCase().endsWith(".pdf")) {
-    return res.status(403).json({ message: "Direct PDF access is forbidden" });
+  const lowerPath = (req.path || '').toLowerCase();
+  const isPdf = lowerPath.endsWith('.pdf');
+  // Allow preview PDFs under the dedicated previews folder or when explicitly marked
+  // as preview via query flag for backward compatibility with old paths.
+  const allowPreview =
+    lowerPath.includes('/books/previews/') ||
+    req.query?.preview === '1' ||
+    req.query?.preview === 'true';
+
+  if (isPdf && !allowPreview) {
+    return res.status(403).json({ message: 'Direct PDF access is forbidden' });
   }
   return serveUploads(req, res, next);
 };

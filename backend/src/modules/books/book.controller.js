@@ -42,7 +42,7 @@ exports.createBook = catchAsync(async (req, res) => {
       data.pdf_url = "/uploads/books/" + req.files.book_file[0].filename;
     if (req.files?.preview_pages?.length) {
       data.preview_pages = req.files.preview_pages.map(
-        (f) => "/uploads/books/" + f.filename
+        (f) => "/uploads/books/previews/" + f.filename
       );
     }
 
@@ -180,7 +180,7 @@ exports.updateBook = catchAsync(async (req, res) => {
     }
     if (req.files?.preview_pages?.length) {
       data.preview_pages = req.files.preview_pages.map(
-        (f) => "/uploads/books/" + f.filename
+        (f) => "/uploads/books/previews/" + f.filename
       );
     }
 
