@@ -30,6 +30,20 @@ const coerceText = (value, lang = "en") => {
   return "";
 };
 
+const coerceUrl = (value, lang = "en") => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    if (typeof value.url === "string") return value.url;
+    if (typeof value.href === "string") return value.href;
+    const localized = value[lang];
+    if (typeof localized === "string") return localized;
+    const english = value.en;
+    if (typeof english === "string") return english;
+  }
+  return coerceText(value, lang) || null;
+};
+
 const normalizeLibraryBook = (book = {}, lang = "en") => {
   const rawCover =
     book.cover_image_url ||
@@ -37,13 +51,25 @@ const normalizeLibraryBook = (book = {}, lang = "en") => {
     book.cover_url ||
     book.cover_image ||
     book.cover;
-  const normalizedCover = buildUrl(rawCover) || rawCover || "/images/default-book-cover.jpg";
+  const coverCandidate = coerceUrl(rawCover, lang);
+  const normalizedCover =
+    (typeof coverCandidate === "string" && buildUrl(coverCandidate)) ||
+    coverCandidate ||
+    "/images/default-book-cover.jpg";
 
   const rawPreview = book.preview_url || book.previewUrl;
-  const previewUrl = buildUrl(rawPreview) || rawPreview || null;
+  const previewCandidate = coerceUrl(rawPreview, lang);
+  const previewUrl =
+    (typeof previewCandidate === "string" && buildUrl(previewCandidate)) ||
+    previewCandidate ||
+    null;
 
   const rawDownload = book.download_url || book.pdf_url || book.file_url;
-  const downloadUrl = buildUrl(rawDownload) || rawDownload || null;
+  const downloadCandidate = coerceUrl(rawDownload, lang);
+  const downloadUrl =
+    (typeof downloadCandidate === "string" && buildUrl(downloadCandidate)) ||
+    downloadCandidate ||
+    null;
 
   const rawTags = Array.isArray(book.tags)
     ? book.tags
