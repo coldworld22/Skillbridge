@@ -250,6 +250,12 @@ function BooksPage() {
     fetchLibrary: state.fetchLibrary,
   }));
 
+  // Keep SSR/CSR markup consistent to avoid hydration errors.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isServer = typeof window === 'undefined';
+  const uiLoading = isServer || !mounted ? true : loading;
+
   useEffect(() => {
     fetchLibrary();
   }, [fetchLibrary]);
@@ -265,7 +271,7 @@ function BooksPage() {
 
   return (
     <div>
-      {!loading && error && (
+      {!uiLoading && error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
           <div className="flex items-start gap-2">
             <FiAlertTriangle className="mt-0.5 shrink-0 text-lg" />
@@ -273,7 +279,7 @@ function BooksPage() {
               <p className="font-medium">
                 {t("failed_to_load", { defaultValue: "Unable to load your library" })}
               </p>
-              <p className="mt-1">{error}</p>
+              <p className="mt-1">{String(error || "")}</p>
               <button
                 type="button"
                 onClick={handleRetry}
@@ -286,7 +292,7 @@ function BooksPage() {
         </div>
       )}
 
-      {loading ? (
+      {uiLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <BookCardSkeleton key={index} />
