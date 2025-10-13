@@ -12,6 +12,7 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
+import dynamic from "next/dynamic";
 
 const normalizeLibraryBook = (book = {}) => {
   const rawCover =
@@ -179,11 +180,17 @@ function BookCard({ book }) {
           {t("by_author", { author: authorLabel })}
         </p>
         <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
-          {book.tags?.map((tag, idx) => (
-            <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded">
-              {tag}
-            </span>
-          ))}
+          {book.tags?.map((tag, idx) => {
+            const label =
+              typeof tag === "string"
+                ? tag
+                : tag?.name || tag?.label || tag?.title || "";
+            return (
+              <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded">
+                {label}
+              </span>
+            );
+          })}
         </div>
         <div className="flex items-center gap-2 text-sm">
           {book.isFree || Number(price) === 0 ? (
@@ -230,8 +237,8 @@ function BookCard({ book }) {
           onClick={handleWishlist}
           aria-label={
             isWishlisted
-              ? t("wishlist_remove")
-              : t("wishlist_add")
+              ? t("wishlist_remove", { defaultValue: "Remove from wishlist" })
+              : t("wishlist_add", { defaultValue: "Add to wishlist" })
           }
         >
           <FiHeart />
@@ -329,7 +336,16 @@ function BooksPage() {
 const ProtectedBooksPage = withAuthProtection(BooksPage, ["student"]);
 ProtectedBooksPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
 
-export default ProtectedBooksPage;
+// Render this page purely on the client to avoid any potential
+// hydration mismatches from user/session-dependent stores.
+const ClientOnlyProtectedBooksPage = dynamic(
+  () => Promise.resolve(ProtectedBooksPage),
+  { ssr: false }
+);
+
+ClientOnlyProtectedBooksPage.getLayout = ProtectedBooksPage.getLayout;
+
+export default ClientOnlyProtectedBooksPage;
 
 export async function getServerSideProps(ctx) {
   const { req, locale, resolvedUrl } = ctx;
