@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { fetchLibrary as apiFetchLibrary } from "@/services/libraryService";
+
+const noopStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 const useLibraryStore = create(
   persist(
@@ -19,7 +25,13 @@ const useLibraryStore = create(
       },
       clear: () => set({ books: [] }),
     }),
-    { name: "library-store" }
+    {
+      name: "library-store",
+      storage:
+        typeof window !== "undefined"
+          ? createJSONStorage(() => window.localStorage)
+          : noopStorage,
+    }
   )
 );
 
