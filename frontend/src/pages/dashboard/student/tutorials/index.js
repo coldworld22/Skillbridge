@@ -5,8 +5,9 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
 import StudentTutorialCard from "@/components/tutorials/StudentTutorialCard";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function StudentTutorialsPage() {
+function StudentTutorialsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [tutorials, setTutorials] = useState([]);
@@ -85,99 +86,120 @@ export default function StudentTutorialsPage() {
 
   if (loading) {
     return (
-      <StudentLayout>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-48 bg-gray-200 rounded-md animate-pulse"
-            />
-          ))}
-        </div>
-      </StudentLayout>
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-48 bg-gray-200 rounded-md animate-pulse" />
+        ))}
+      </div>
     );
   }
 
   if (error) {
     return (
-      <StudentLayout>
-        <div className="p-6 text-red-500" role="alert">
-          {error}
-        </div>
-      </StudentLayout>
+      <div className="p-6 text-red-500" role="alert">
+        {error}
+      </div>
     );
   }
 
   return (
-    <StudentLayout>
-      <div className="p-6 space-y-6 text-gray-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{tr("studentPage.heading", "📚 My Tutorials")}</h1>
-            <span className="text-sm text-gray-500">({tr("studentPage.found", `${sorted.length} found`, { count: sorted.length })})</span>
-          </div>
-          <div className="flex gap-2 items-center">
-            <label htmlFor="student-tutorial-search" className="sr-only">
-              {tr("studentPage.search_label", "Search tutorials")}
-            </label>
-            <input
-              id="student-tutorial-search"
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={tr("studentPage.search_placeholder", "Search tutorials...")}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full md:w-64"
-            />
-            <label htmlFor="student-tutorial-filter" className="sr-only">
-              {tr("studentPage.filter_label", "Filter tutorials")}
-            </label>
-            <select
-              id="student-tutorial-filter"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border border-gray-300 px-2 py-2 rounded-md text-sm"
-            >
-              <option value="all">{tr("studentPage.filter.all", "All")}</option>
-              <option value="completed">{tr("studentPage.filter.completed", "Completed")}</option>
-              <option value="in-progress">{tr("studentPage.filter.in_progress", "In Progress")}</option>
-            </select>
-            <label htmlFor="student-tutorial-sort" className="sr-only">
-              {tr("studentPage.sort_label", "Sort tutorials")}
-            </label>
-            <select
-              id="student-tutorial-sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 px-2 py-2 rounded-md text-sm"
-            >
-              <option value="title">{tr("studentPage.sort.title", "Title")}</option>
-              <option value="rating">{tr("studentPage.sort.rating", "Rating")}</option>
-              <option value="progress">{tr("studentPage.sort.progress", "Progress")}</option>
-            </select>
-          </div>
+    <div className="p-6 space-y-6 text-gray-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">{tr("studentPage.heading", "📚 My Tutorials")}</h1>
+          <span className="text-sm text-gray-500">(
+            {tr("studentPage.found", `${sorted.length} found`, { count: sorted.length })}
+          )</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sorted.map((tut) => (
-            <StudentTutorialCard key={tut.id} tutorial={tut} />
-          ))}
+        <div className="flex gap-2 items-center">
+          <label htmlFor="student-tutorial-search" className="sr-only">
+            {tr("studentPage.search_label", "Search tutorials")}
+          </label>
+          <input
+            id="student-tutorial-search"
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tr("studentPage.search_placeholder", "Search tutorials...")}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full md:w-64"
+          />
+          <label htmlFor="student-tutorial-filter" className="sr-only">
+            {tr("studentPage.filter_label", "Filter tutorials")}
+          </label>
+          <select
+            id="student-tutorial-filter"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="border border-gray-300 px-2 py-2 rounded-md text-sm"
+          >
+            <option value="all">{tr("studentPage.filter.all", "All")}</option>
+            <option value="completed">{tr("studentPage.filter.completed", "Completed")}</option>
+            <option value="in-progress">{tr("studentPage.filter.in_progress", "In Progress")}</option>
+          </select>
+          <label htmlFor="student-tutorial-sort" className="sr-only">
+            {tr("studentPage.sort_label", "Sort tutorials")}
+          </label>
+          <select
+            id="student-tutorial-sort"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-gray-300 px-2 py-2 rounded-md text-sm"
+          >
+            <option value="title">{tr("studentPage.sort.title", "Title")}</option>
+            <option value="rating">{tr("studentPage.sort.rating", "Rating")}</option>
+            <option value="progress">{tr("studentPage.sort.progress", "Progress")}</option>
+          </select>
         </div>
-
-        {sorted.length === 0 && (
-          <div className="text-center text-gray-500">
-            <p>{tr("studentPage.no_match", "No tutorials match your criteria.")}</p>
-            <a href="/dashboard/student/tutorials" className="text-blue-600 hover:underline text-sm mt-2 inline-block">{tr("studentPage.browse_all", "Browse all tutorials")}</a>
-          </div>
-        )}
       </div>
-    </StudentLayout>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sorted.map((tut) => (
+          <StudentTutorialCard key={tut.id} tutorial={tut} />
+        ))}
+      </div>
+
+      {sorted.length === 0 && (
+        <div className="text-center text-gray-500">
+          <p>{tr("studentPage.no_match", "No tutorials match your criteria.")}</p>
+          <a
+            href="/dashboard/student/tutorials"
+            className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+          >
+            {tr("studentPage.browse_all", "Browse all tutorials")}
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
 
-export async function getServerSideProps({ locale }) {
+const ProtectedStudentTutorialsPage = withAuthProtection(StudentTutorialsPage, ["student"]);
+ProtectedStudentTutorialsPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
+
+export default ProtectedStudentTutorialsPage;
+
+export async function getServerSideProps(ctx) {
+  const { req, locale, resolvedUrl } = ctx;
+  const cookieHeader = req?.headers?.cookie || "";
+  const hasRefresh = cookieHeader.split(";").some((c) => c.trim().startsWith("refreshToken="));
+
+  if (!hasRefresh) {
+    return {
+      redirect: {
+        destination: `/auth/login?next=${encodeURIComponent(resolvedUrl || "/")}`,
+        permanent: false,
+      },
+    };
+  }
+
+  // Load all namespaces used by this page and its layout (Header/Sidebar)
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["tutorials"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ["tutorials", "dashboard", "common"],
+        nextI18NextConfig,
+      )),
     },
   };
 }
