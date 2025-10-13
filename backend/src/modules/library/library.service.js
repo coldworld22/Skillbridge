@@ -64,6 +64,12 @@ exports.listForStudent = async (studentId) => {
 };
 
 exports.recordPurchase = async (studentId, bookId, pricePaid) => {
+  // Avoid duplicate library rows if the same book is granted multiple times
+  // via different payment flows or repeated callbacks.
+  const existing = await db("book_purchases")
+    .where({ student_id: studentId, book_id: bookId })
+    .first();
+  if (existing) return existing;
   const [row] = await db("book_purchases")
     .insert({
       student_id: studentId,

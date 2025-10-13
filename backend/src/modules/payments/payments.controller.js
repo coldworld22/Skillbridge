@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
+const { grantAccess } = require("./paymentAccess");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
@@ -270,6 +271,14 @@ exports.updatePayment = catchAsync(async (req, res) => {
       let message = "";
       let subject = "";
       if (req.body.status === STATUS.PAID) {
+        // Ensure the user gets access to the purchased item when an admin
+        // marks a payment as PAID from the generic payments admin. Other
+        // payment flows (bank/PayPal/crypto) already call grantAccess.
+        try {
+          await grantAccess(payment);
+        } catch (err) {
+          logger.error("Failed to grant access after admin approval:", err);
+        }
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
         try {
