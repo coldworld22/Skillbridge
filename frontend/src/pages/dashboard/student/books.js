@@ -10,6 +10,8 @@ import { mapBookForWishlist } from "@/utils/bookMapping";
 import { buildUrl } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 const normalizeLibraryBook = (book = {}) => {
   const rawCover =
@@ -286,3 +288,26 @@ const ProtectedBooksPage = withAuthProtection(BooksPage, ["student"]);
 ProtectedBooksPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
 
 export default ProtectedBooksPage;
+
+export async function getServerSideProps(ctx) {
+  const { req, locale, resolvedUrl } = ctx;
+  const cookieHeader = req?.headers?.cookie || "";
+  const hasRefresh = cookieHeader
+    .split(";")
+    .some((c) => c.trim().startsWith("refreshToken="));
+
+  if (!hasRefresh) {
+    return {
+      redirect: {
+        destination: `/auth/login?next=${encodeURIComponent(resolvedUrl || "/")}`,
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}

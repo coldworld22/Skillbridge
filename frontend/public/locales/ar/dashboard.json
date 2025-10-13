@@ -1359,13 +1359,17 @@
     "no_tutorials": "لا توجد دروس في قائمة الأمنيات."
   },
   "booksPage": {
-    "by_author": "بواسطة {{uptor}}",
+    "by_author": "بواسطة {{author}}",
     "preview": "معاينة",
     "download": "تحميل",
     "free": "حر",
-    "purchased_for": "تم شراؤها مقابل $ {{price}}",
+    "purchased_for": "تم شراؤها مقابل ${{price}}",
+    "purchased_for_amount": "تم شراؤها مقابل {{price}}",
     "purchased_on": "تم شراؤها على {{date}}",
-    "no_books": "لا توجد كتب في مكتبتك."
+    "no_books": "لا توجد كتب في مكتبتك.",
+    "unknown_author": "مؤلف غير معروف",
+    "wishlist_add": "أضف إلى قائمة الرغبات",
+    "wishlist_remove": "إزالة من قائمة الرغبات"
   },
   "adminOffersPage": {
     "title": "المسؤول: إدارة جميع العروض",
