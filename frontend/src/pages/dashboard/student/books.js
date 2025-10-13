@@ -82,8 +82,46 @@ const normalizeLibraryBook = (book = {}) => {
   };
 };
 
+// Helpers to format values consistently for SSR/CSR to avoid hydration issues.
+function formatCurrencyStable(value, currency, locale) {
+  const num = Number(value || 0);
+  try {
+    return new Intl.NumberFormat(locale || "en", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(num);
+  } catch {
+    // Fallback: simple currency prefix
+    const safe = Number.isFinite(num) ? num.toFixed(2) : "0.00";
+    const symbol = currency === "USD" ? "$" : currency ? `${currency} ` : "$";
+    return `${symbol}${safe}`;
+  }
+}
+
+function formatDateUTC(dateInput, locale) {
+  if (!dateInput) return null;
+  const date = new Date(dateInput);
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return null;
+  try {
+    return new Intl.DateTimeFormat(locale || "en", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "UTC",
+    }).format(date);
+  } catch {
+    // YYYY-MM-DD (UTC)
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(date.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+}
+
 function BookCard({ book }) {
-  const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
+  const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const wishlist = useBookWishlistStore((state) => state.wishlist || []);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const removeFromWishlist = useBookWishlistStore((state) => state.removeFromWishlist);
@@ -100,17 +138,8 @@ function BookCard({ book }) {
   const price = book.price_paid ?? book.price ?? 0;
   const currency = book.currency || "USD";
   const formattedPrice = useMemo(() => {
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }).format(Number(price || 0));
-    } catch (err) {
-      return `$${Number(price || 0).toFixed(2)}`;
-    }
-  }, [currency, price]);
+    return formatCurrencyStable(price, currency, i18n?.language);
+  }, [currency, price, i18n?.language]);
 
   const handleWishlist = () => {
     if (isWishlisted) {
@@ -126,9 +155,10 @@ function BookCard({ book }) {
     API_BASE_URL && book.id ? `${API_BASE_URL}/library/download/${book.id}` : null;
   const downloadLink = book.downloadUrl || downloadFallback;
   const previewLink = book.preview_url || null;
-  const purchasedDate = book.purchasedAt ? new Date(book.purchasedAt) : null;
-  const hasValidPurchaseDate =
-    purchasedDate instanceof Date && !Number.isNaN(purchasedDate.valueOf());
+  const purchasedDateStr = book.purchasedAt
+    ? formatDateUTC(book.purchasedAt, i18n?.language)
+    : null;
+  const hasValidPurchaseDate = Boolean(purchasedDateStr);
   const authorLabel =
     book.author || t("unknown_author", { ns: "dashboard", defaultValue: "Unknown author" });
 
@@ -167,7 +197,7 @@ function BookCard({ book }) {
         {hasValidPurchaseDate && (
           <p className="text-xs text-gray-400 mt-1">
             {t("purchased_on", {
-              date: purchasedDate.toLocaleDateString(),
+              date: purchasedDateStr,
             })}
           </p>
         )}
