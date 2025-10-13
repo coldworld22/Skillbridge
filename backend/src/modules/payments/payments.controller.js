@@ -19,7 +19,11 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
-const { creditInstructorFromPayment, creditInstructorSubscription } = require("./helpers/wallet");
+const {
+  creditInstructorFromPayment,
+  creditInstructorSubscription,
+  creditInstructorWallet,
+} = require("./helpers/wallet");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -129,7 +133,6 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    const { creditInstructorWallet } = require("./helpers/wallet");
     await creditInstructorWallet(item_type, item_id, instructor_amount);
     await handleEnrollment(item_type, user_id, item_id);
   }
