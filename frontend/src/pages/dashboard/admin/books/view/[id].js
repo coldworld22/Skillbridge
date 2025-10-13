@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchBook, deleteBook } from "@/services/bookService";
+import { fetchBook, deleteBook, downloadBookPdf } from "@/services/bookService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   FiArrowLeft,
@@ -67,6 +67,17 @@ function AdminViewBookPage() {
         }
       })
       .filter(Boolean);
+  };
+
+  const handleAdminPdfDownload = async (e) => {
+    e?.preventDefault?.();
+    if (!book?.id) return;
+    try {
+      await downloadBookPdf(book.id, book.title);
+    } catch (err) {
+      console.error("Failed to download PDF", err);
+      toast.error(t("errors.download_failed", { defaultValue: "Failed to download file" }));
+    }
   };
 
   useEffect(() => {
@@ -292,9 +303,8 @@ function AdminViewBookPage() {
                 <div className="flex flex-wrap gap-4">
                   {downloadUrl && (
                     <a
-                      href={downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href="#"
+                      onClick={handleAdminPdfDownload}
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
                     >
                       <FiFileText className="text-blue-600" />
