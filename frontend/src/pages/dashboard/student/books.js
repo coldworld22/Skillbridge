@@ -44,7 +44,12 @@ const coerceUrl = (value, lang = "en") => {
   return coerceText(value, lang) || null;
 };
 
-const normalizeLibraryBook = (book = {}, lang = "en") => {
+const normalizeLibraryBook = (rawBook, lang = "en") => {
+  if (!rawBook || typeof rawBook !== "object" || Array.isArray(rawBook)) {
+    return null;
+  }
+
+  const book = rawBook;
   const rawCover =
     book.cover_image_url ||
     book.coverUrl ||
@@ -112,8 +117,17 @@ const normalizeLibraryBook = (book = {}, lang = "en") => {
     lang
   );
 
+  const id =
+    book.id ??
+    book.book_id ??
+    book.bookId ??
+    book.library_id ??
+    book.libraryId ??
+    null;
+
   return {
     ...book,
+    id,
     title,
     cover_image_url: normalizedCover,
     coverUrl: normalizedCover,
@@ -307,18 +321,23 @@ function BooksPage() {
 
   // Keep SSR/CSR markup consistent to avoid hydration errors.
   const [mounted, setMounted] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
   useEffect(() => setMounted(true), []);
-  const isServer = typeof window === 'undefined';
+  const isServer = typeof window === "undefined";
   const uiLoading = isServer || !mounted ? true : loading;
 
   useEffect(() => {
+    if (hasRequested) return;
+    setHasRequested(true);
     fetchLibrary();
-  }, [fetchLibrary]);
+  }, [hasRequested, fetchLibrary]);
 
   const normalizedBooks = useMemo(() => {
     if (!Array.isArray(books)) return [];
     const lang = i18n?.language;
-    return books.map((book) => normalizeLibraryBook(book, lang));
+    return books
+      .map((book) => normalizeLibraryBook(book, lang))
+      .filter(Boolean);
   }, [books, i18n?.language]);
 
   const handleRetry = () => {
