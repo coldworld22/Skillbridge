@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { fetchLibrary as apiFetchLibrary } from "@/services/libraryService";
 
 const createLibraryStore = (set) => ({
