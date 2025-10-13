@@ -343,7 +343,7 @@ export async function getServerSideProps(ctx) {
 
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["dashboard", "common"], nextI18NextConfig)),
     },
   };
 }
