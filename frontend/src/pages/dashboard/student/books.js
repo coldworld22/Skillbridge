@@ -11,7 +11,7 @@ import { buildUrl } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 const normalizeLibraryBook = (book = {}) => {
   const rawCover =
