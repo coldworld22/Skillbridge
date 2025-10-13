@@ -269,6 +269,12 @@ function BooksPage() {
     fetchLibrary();
   };
 
+  if (!mounted) {
+    // Avoid rendering on the server / before client hydration
+    // to prevent any SSR/CSR mismatches on this page.
+    return null;
+  }
+
   return (
     <div>
       {!uiLoading && error && (
