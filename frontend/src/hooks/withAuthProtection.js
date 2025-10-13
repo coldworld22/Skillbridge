@@ -1,5 +1,5 @@
 // src/hooks/withAuthProtection.js
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
@@ -11,17 +11,26 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       : rolesOrOptions || {};
 
   return function ProtectedPage(props) {
-    const { user, accessToken, logout } = useAuthStore();
+    const { user, accessToken, logout, hasHydrated } = useAuthStore((state) => ({
+      user: state.user,
+      accessToken: state.accessToken,
+      logout: state.logout,
+      hasHydrated: state.hasHydrated,
+    }));
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
-    const normalizedRoles = allowedRoles.map((role) => role.toLowerCase());
+    const normalizedRoles = useMemo(
+      () => allowedRoles.map((role) => role.toLowerCase()),
+      [allowedRoles]
+    );
+    const redirectGuardRef = useRef(false);
 
     useEffect(() => {
       setHydrated(true);
     }, []);
 
     useEffect(() => {
-      if (!hydrated) return;
+      if (!hydrated || !hasHydrated || redirectGuardRef.current) return;
 
       const role = user?.role?.toLowerCase();
       const profilePaths = {
@@ -36,22 +45,26 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
       if (!user) {
+        redirectGuardRef.current = true;
         router.replace("/auth/login");
         return;
       }
 
       if (!accessToken || isTokenExpired(accessToken)) {
+        redirectGuardRef.current = true;
         logout();
         router.replace("/auth/login");
         return;
       }
 
       if (!user.profile_complete && !onProfileCompletionRoute) {
+        redirectGuardRef.current = true;
         router.replace(profilePath);
         return;
       }
 
       if (user.profile_complete && !user.is_email_verified && !onEmailVerificationRoute) {
+        redirectGuardRef.current = true;
         router.replace("/auth/verify-email");
         return;
       }
@@ -62,9 +75,19 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
           role !== "superadmin" &&
           !allowedPerms.some((p) => user.permissions?.includes(p)))
       ) {
+        redirectGuardRef.current = true;
         router.replace("/error/403");
       }
-    }, [hydrated, user, accessToken, logout, router, allowedPerms]);
+    }, [
+      hydrated,
+      hasHydrated,
+      user,
+      accessToken,
+      logout,
+      router,
+      allowedPerms,
+      normalizedRoles,
+    ]);
 
     const role = user?.role?.toLowerCase();
     const profilePaths = {
@@ -78,7 +101,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const onProfileCompletionRoute = profilePath && currentPath.startsWith(profilePath);
     const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
-    if (!hydrated || !user) {
+    if (!hydrated || !hasHydrated || !user) {
       return null;
     }
 
