@@ -12,7 +12,7 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
-import dynamic from "next/dynamic";
+// dynamic rendering not required now; we handle hydration explicitly
 
 const coerceText = (value, lang = "en") => {
   if (value == null) return "";
@@ -387,16 +387,7 @@ function BooksPage() {
 const ProtectedBooksPage = withAuthProtection(BooksPage, ["student"]);
 ProtectedBooksPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
 
-// Render this page purely on the client to avoid any potential
-// hydration mismatches from user/session-dependent stores.
-const ClientOnlyProtectedBooksPage = dynamic(
-  () => Promise.resolve(ProtectedBooksPage),
-  { ssr: false }
-);
-
-ClientOnlyProtectedBooksPage.getLayout = ProtectedBooksPage.getLayout;
-
-export default ClientOnlyProtectedBooksPage;
+export default ProtectedBooksPage;
 
 export async function getServerSideProps(ctx) {
   const { req, locale, resolvedUrl } = ctx;
