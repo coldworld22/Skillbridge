@@ -18,15 +18,19 @@ import {
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 const FILTER_OPTIONS = [
-  { value: 'all', label: 'All' },
-  { value: 'ongoing', label: 'Live' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'all', labelKey: 'filter_all' },
+  { value: 'ongoing', labelKey: 'filter_live' },
+  { value: 'upcoming', labelKey: 'filter_upcoming' },
+  { value: 'completed', labelKey: 'filter_completed' },
 ];
 
 export default function MyEnrolledClassesPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'studentOnlineClassesPage' });
   const [classes, setClasses] = useState([]);
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(6);
@@ -46,8 +50,8 @@ export default function MyEnrolledClassesPage() {
 
   const formatDateTime = useCallback((value) => {
     const date = parseDate(value);
-    return date ? date.toLocaleString() : 'To be announced';
-  }, [parseDate]);
+    return date ? date.toLocaleString() : t('to_be_announced');
+  }, [parseDate, t]);
 
   useEffect(() => {
     const load = async () => {
@@ -58,8 +62,8 @@ export default function MyEnrolledClassesPage() {
         setClasses(list);
       } catch (err) {
         console.error('Failed to load classes', err);
-        setError('We were unable to load your classes. Please try again later.');
-        toast.error('Unable to load your classes.');
+        setError(t('error_generic'));
+        toast.error(t('toast_load_error'));
       }
       setLoading(false);
     };
@@ -94,11 +98,11 @@ export default function MyEnrolledClassesPage() {
       setReminderStatus((prev) => ({ ...prev, [classId]: 'loading' }));
       await subscribeToClassReminder(classId);
       setReminderStatus((prev) => ({ ...prev, [classId]: 'success' }));
-      toast.success('You will be reminded before this class starts.');
+      toast.success(t('reminder_success_message'));
     } catch (err) {
       console.error('Failed to subscribe to reminder', err);
       setReminderStatus((prev) => ({ ...prev, [classId]: 'idle' }));
-      toast.error('Could not subscribe to class reminder.');
+      toast.error(t('reminder_failure_message'));
     }
   };
 
@@ -112,10 +116,10 @@ export default function MyEnrolledClassesPage() {
   return (
     <StudentLayout>
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
-        <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 My Enrolled Classes</h1>
+        <h1 className="text-2xl font-bold text-yellow-500 mb-6">{t('title')}</h1>
 
         {loading && (
-          <p className="text-gray-600">Loading your classes...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         )}
 
         {error && !loading && (
@@ -130,7 +134,7 @@ export default function MyEnrolledClassesPage() {
             <FaSearch className="text-gray-500" />
             <input
               type="text"
-              placeholder="Search classes..."
+              placeholder={t('search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full outline-none"
@@ -140,13 +144,13 @@ export default function MyEnrolledClassesPage() {
             onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
             className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm"
           >
-            <FaSortAmountDown /> Sort by Date ({sortOrder.toUpperCase()})
+            <FaSortAmountDown /> {t('sort_by_date')} ({sortOrder === 'asc' ? t('sort_order_asc') : t('sort_order_desc')})
           </button>
         </div>
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {FILTER_OPTIONS.map(({ value, label }) => (
+          {FILTER_OPTIONS.map(({ value, labelKey }) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
@@ -156,7 +160,7 @@ export default function MyEnrolledClassesPage() {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {label} ({getFilterCount(value)})
+              {t(labelKey)} ({getFilterCount(value)})
             </button>
           ))}
         </div>
@@ -164,12 +168,12 @@ export default function MyEnrolledClassesPage() {
         {/* Class Cards */}
         {visibleClasses.length === 0 ? (
           loading ? (
-            <p className="text-gray-600 text-center">Preparing your classes...</p>
+            <p className="text-gray-600 text-center">{t('empty_preparing')}</p>
           ) : (
             <div className="text-center text-gray-600">
-              <p>No classes found under this filter.</p>
+              <p>{t('empty_no_results')}</p>
               <p className="text-sm mt-2">
-                Try adjusting your filters or <Link href="/dashboard/student">return to the dashboard</Link> to explore more learning options.
+                {t('empty_suggestion_prefix')} <Link href="/dashboard/student">{t('return_to_dashboard')}</Link> {t('empty_suggestion_suffix')}
               </p>
             </div>
           )
@@ -181,7 +185,11 @@ export default function MyEnrolledClassesPage() {
               const reminderSubscribed = reminderState === 'success';
               const scheduleStatusRaw = cls.scheduleStatus || 'Upcoming';
               const normalizedSchedule = scheduleStatusRaw.toLowerCase();
-              const displaySchedule = normalizedSchedule === 'ongoing' ? 'Live' : scheduleStatusRaw;
+              const displaySchedule = normalizedSchedule === 'ongoing'
+                ? t('status_live')
+                : normalizedSchedule === 'upcoming'
+                  ? t('status_upcoming')
+                  : t('status_completed');
 
               return (
                 <div key={cls.id} className="bg-gray-100 p-5 rounded-xl shadow-md">
@@ -191,7 +199,7 @@ export default function MyEnrolledClassesPage() {
                   </h2>
                   <FaEye
                     className="text-gray-500 hover:text-gray-800 cursor-pointer mt-1"
-                    title="Preview"
+                    title={t('preview')}
                     role="button"
                     tabIndex={0}
                     onClick={() => router.push(`/dashboard/student/online-classes/${cls.linkId || cls.id}`)}
@@ -202,17 +210,17 @@ export default function MyEnrolledClassesPage() {
                     }}
                   />
                 </div>
-                <p className="text-sm text-gray-600 mb-1">Instructor: {cls.instructor}</p>
+                <p className="text-sm text-gray-600 mb-1">{t('instructor_label')}: {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
                   <FaCalendarAlt /> {formatDateTime(cls.startDate)}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
-                  <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || 'General'}
+                  <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || t('tags_general')}
                 </p>
                 <div className="h-2 bg-gray-300 rounded-full mb-2">
                   <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${cls.progress || 0}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
+                <p className="text-xs text-gray-500 mb-2">{t('completed_percent', { percent: cls.progress || 0 })}</p>
 
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
                   normalizedSchedule === 'ongoing'
@@ -236,7 +244,7 @@ export default function MyEnrolledClassesPage() {
                     } ${isReminderLoading ? 'opacity-70 cursor-wait' : ''}`}
                   >
                     <FaBell />
-                    {reminderSubscribed ? 'Reminder Set' : isReminderLoading ? 'Subscribing...' : 'Notify Me'}
+                    {reminderSubscribed ? t('reminder_set') : isReminderLoading ? t('reminder_subscribing') : t('reminder_notify_me')}
                   </button>
                 )}
                 {cls.enrollmentStatus === 'completed' && (
@@ -244,33 +252,33 @@ export default function MyEnrolledClassesPage() {
                     href={`/dashboard/student/certificates/${cls.id}`}
                     className="text-xs text-green-600 underline mb-2 block text-center"
                   >
-                    <FaCertificate className="inline mr-1" /> View Certificate
+                    <FaCertificate className="inline mr-1" /> {t('certificate_view')}
                   </Link>
                 )}
                 <Link
                   href={`/dashboard/student/assignments/${cls.id}`}
                   className="text-xs text-blue-600 underline mb-3 block text-center"
                 >
-                  <FaClipboardList className="inline mr-1" /> View Assignments
+                  <FaClipboardList className="inline mr-1" /> {t('assignments_view')}
                 </Link>
                 {normalizedSchedule === 'ongoing' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/assignments/${cls.id}`}
                     className="text-xs text-blue-600 underline mb-3 block text-center"
                   >
-                    <FaClipboardList className="inline mr-1" /> View Assignments
+                    <FaClipboardList className="inline mr-1" /> {t('assignments_view')}
                   </Link>
                 ) : normalizedSchedule === 'upcoming' ? (
                   <p className="text-center text-sm text-yellow-600">
-                    <FaHourglassHalf className="inline mr-1" /> Starts Soon
+                    <FaHourglassHalf className="inline mr-1" /> {t('starts_soon')}
                   </p>
                 ) : cls.enrollmentStatus === 'completed' ? (
                   <p className="text-center text-sm text-gray-500">
-                    <FaCheckCircle className="inline mr-1" /> Completed
+                    <FaCheckCircle className="inline mr-1" /> {t('completed')}
                   </p>
                 ) : (
                   <p className="text-center text-sm text-gray-500">
-                    <FaHourglassHalf className="inline mr-1" /> Class Ended
+                    <FaHourglassHalf className="inline mr-1" /> {t('class_ended')}
                   </p>
                 )}
                 </div>
@@ -284,10 +292,18 @@ export default function MyEnrolledClassesPage() {
             onClick={() => setVisibleCount((prev) => prev + 6)}
             className="mt-10 block mx-auto bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 rounded-full"
           >
-            Load More
+            {t('load_more')}
           </button>
         )}
       </div>
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
