@@ -84,7 +84,7 @@ const normalizeLibraryBook = (book = {}) => {
 
 function BookCard({ book }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
-  const wishlist = useBookWishlistStore((state) => state.wishlist);
+  const wishlist = useBookWishlistStore((state) => state.wishlist || []);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const removeFromWishlist = useBookWishlistStore((state) => state.removeFromWishlist);
   const [imageSrc, setImageSrc] = useState(
@@ -224,10 +224,10 @@ function BooksPage() {
     fetchLibrary();
   }, [fetchLibrary]);
 
-  const normalizedBooks = useMemo(
-    () => books.map((book) => normalizeLibraryBook(book)),
-    [books]
-  );
+  const normalizedBooks = useMemo(() => {
+    if (!Array.isArray(books)) return [];
+    return books.map((book) => normalizeLibraryBook(book));
+  }, [books]);
 
   const handleRetry = () => {
     fetchLibrary();
