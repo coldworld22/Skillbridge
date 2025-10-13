@@ -287,6 +287,7 @@ export default function BooksPage() {
                     book={book}
                     onAddToWishlist={() => handleAddToWishlist(book)}
                     onAddToCart={() => handleAddToCart(book)}
+                    cornerAddToCart
                   />
                 ))}
               </div>

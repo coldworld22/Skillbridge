@@ -20,8 +20,8 @@ export function parseCheckoutItems(value) {
     return null;
   }
 
-  // Step 3: verify structure and required fields.
-  if (!Array.isArray(parsed) || parsed.length !== 1) return null;
+  // Step 3: verify structure and required fields. Accept the first item if multiple were passed.
+  if (!Array.isArray(parsed) || parsed.length < 1) return null;
   const item = parsed[0];
   if (!item || typeof item !== 'object' || !item.id) return null;
 

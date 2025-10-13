@@ -58,11 +58,11 @@ const CartPage = () => {
   // Calculate total price
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const totalPrice = Math.max(0, subtotal - discountAmount);
-  const checkoutQuery = encodeURIComponent(
-    JSON.stringify(
-      cartItems.map(({ id, item_type }) => ({ id, itemType: item_type }))
-    )
-  );
+  // Checkout supports a single item at a time. Use the first item by default.
+  const firstItem = cartItems[0] || null;
+  const checkoutHref = firstItem
+    ? `/payments/checkout?itemId=${encodeURIComponent(firstItem.id)}&itemType=${encodeURIComponent(firstItem.item_type || 'book')}`
+    : null;
 
   return (
     <div className="bg-black min-h-screen text-white">
@@ -149,8 +149,8 @@ const CartPage = () => {
 
             {/* Checkout Button */}
             <div className="mt-6 flex justify-end">
-              {cartItems.length > 0 && (
-                <Link href={`/payments/checkout?items=${checkoutQuery}`}>
+              {cartItems.length > 0 && checkoutHref && (
+                <Link href={checkoutHref}>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
