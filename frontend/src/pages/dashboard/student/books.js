@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiAlertTriangle, FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
@@ -14,7 +14,23 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import dynamic from "next/dynamic";
 
-const normalizeLibraryBook = (book = {}) => {
+const coerceText = (value, lang = "en") => {
+  if (value == null) return "";
+  const t = typeof value;
+  if (t === "string") return value;
+  if (t === "number" || t === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map((v) => coerceText(v, lang)).filter(Boolean).join(", ");
+  if (t === "object") {
+    if (value instanceof Date) return value.toISOString();
+    if (value[lang] && typeof value[lang] === "string") return value[lang];
+    if (value.en && typeof value.en === "string") return value.en;
+    const firstString = Object.values(value).find((v) => typeof v === "string");
+    if (firstString) return firstString;
+  }
+  return "";
+};
+
+const normalizeLibraryBook = (book = {}, lang = "en") => {
   const rawCover =
     book.cover_image_url ||
     book.coverUrl ||
@@ -55,18 +71,24 @@ const normalizeLibraryBook = (book = {}) => {
   const purchasedAt =
     book.purchasedAt || book.purchased_at || book.created_at || book.updated_at || null;
 
-  const shortDescription =
-    book.shortDescription ||
-    book.short_description ||
-    book.summary ||
-    book.description ||
-    "";
+  const title = coerceText(book.title || book.name || book.book_title, lang) || "";
 
-  const author =
-    book.author || book.instructor_name || book.creator || book.publisher || "";
+  const shortDescription = coerceText(
+    book.shortDescription ||
+      book.short_description ||
+      book.summary ||
+      book.description,
+    lang
+  );
+
+  const author = coerceText(
+    book.author || book.instructor_name || book.creator || book.publisher,
+    lang
+  );
 
   return {
     ...book,
+    title,
     cover_image_url: normalizedCover,
     coverUrl: normalizedCover,
     preview_url: previewUrl,
@@ -167,14 +189,14 @@ function BookCard({ book }) {
     <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
       <img
         src={imageSrc}
-        alt={book.title}
+        alt={coerceText(book.title, i18n?.language) || "Book"}
         className="w-full h-48 object-cover rounded-lg mb-4"
         onError={() => setImageSrc("/images/default-book-cover.jpg")}
       />
       <div className="flex-1">
-        <h3 className="text-lg font-semibold mb-1 line-clamp-2">{book.title}</h3>
+        <h3 className="text-lg font-semibold mb-1 line-clamp-2">{coerceText(book.title, i18n?.language) || t("unknown_title", { ns: "dashboard", defaultValue: "Untitled" })}</h3>
         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-          {book.shortDescription || book.short_description || book.description}
+          {coerceText(book.shortDescription || book.short_description || book.description, i18n?.language)}
         </p>
         <p className="text-sm text-gray-500 mb-1">
           {t("by_author", { author: authorLabel })}
@@ -249,7 +271,7 @@ function BookCard({ book }) {
 }
 
 function BooksPage() {
-  const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
+  const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { books, loading, error, fetchLibrary } = useLibraryStore((state) => ({
     books: state.books,
     loading: state.loading,
@@ -269,8 +291,9 @@ function BooksPage() {
 
   const normalizedBooks = useMemo(() => {
     if (!Array.isArray(books)) return [];
-    return books.map((book) => normalizeLibraryBook(book));
-  }, [books]);
+    const lang = i18n?.language;
+    return books.map((book) => normalizeLibraryBook(book, lang));
+  }, [books, i18n?.language]);
 
   const handleRetry = () => {
     fetchLibrary();
@@ -325,7 +348,9 @@ function BooksPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {normalizedBooks.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCardBoundary key={String(book.id)} book={book}>
+              <BookCard book={book} />
+            </BookCardBoundary>
           ))}
         </div>
       )}
@@ -368,4 +393,34 @@ export async function getServerSideProps(ctx) {
       ...(await serverSideTranslations(locale, ["dashboard", "common"], nextI18NextConfig)),
     },
   };
+}
+
+class BookCardBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    try {
+      // Log the whole book object to help trace invalid fields
+      // without breaking the page.
+      // eslint-disable-next-line no-console
+      console.error("Error rendering book card", { error, info, book: this.props.book });
+    } catch {}
+  }
+  render() {
+    if (this.state.hasError) {
+      const lang = this.props?.i18n?.language;
+      const title = coerceText(this.props.book?.title, lang) || "Invalid book";
+      return (
+        <div className="border rounded-xl shadow-sm p-4 bg-white text-sm text-red-600">
+          {title}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
