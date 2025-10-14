@@ -84,13 +84,9 @@ const normalizeLibraryBook = (rawBook, lang = "en") => {
   const tags = rawTags
     .map((tag) => {
       if (!tag) return null;
-      if (typeof tag === "string") return tag;
-      if (typeof tag === "object") {
-        return tag.name || tag.label || tag.title || null;
-      }
-      return null;
+      return coerceText(tag.name ?? tag.label ?? tag.title ?? tag, lang);
     })
-    .filter(Boolean);
+    .filter((tag) => typeof tag === "string" && tag.trim().length > 0);
 
   const price = Number(
     book.price !== undefined && book.price !== null ? book.price : book.price_paid ?? 0
@@ -240,7 +236,8 @@ function BookCard({ book }) {
     : null;
   const hasValidPurchaseDate = Boolean(purchasedDateStr);
   const authorLabel =
-    book.author || t("unknown_author", { ns: "dashboard", defaultValue: "Unknown author" });
+    coerceText(book.author, i18n?.language) ||
+    t("unknown_author", { ns: "dashboard", defaultValue: "Unknown author" });
 
   return (
     <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
@@ -259,11 +256,9 @@ function BookCard({ book }) {
           {t("by_author", { author: authorLabel })}
         </p>
         <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
-          {toArray(book.tags).map((tag, idx) => {
-            const label =
-              typeof tag === "string"
-                ? tag
-                : tag?.name || tag?.label || tag?.title || "";
+          {book.tags?.map((tag, idx) => {
+            const label = coerceText(tag, i18n?.language);
+            if (!label) return null;
             return (
               <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded">
                 {label}
@@ -329,12 +324,10 @@ function BookCard({ book }) {
 
 function BooksPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
-  const { books, loading, error, fetchLibrary } = useLibraryStore((state) => ({
-    books: state.books,
-    loading: state.loading,
-    error: state.error,
-    fetchLibrary: state.fetchLibrary,
-  }));
+  const books = useLibraryStore((state) => state.books);
+  const loading = useLibraryStore((state) => state.loading);
+  const error = useLibraryStore((state) => state.error);
+  const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
 
   // Keep SSR/CSR markup consistent to avoid hydration errors.
   const [mounted, setMounted] = useState(false);

@@ -13,12 +13,61 @@ export function safeEncodeURI(url) {
   return encodeURI(url).replace(/#/g, "%23");
 }
 
+function extractPathCandidate(path) {
+  if (path == null) return null;
+
+  if (typeof path === "string") {
+    const trimmed = path.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  if (typeof path === "number" || typeof path === "boolean") {
+    return String(path);
+  }
+
+  if (path instanceof URL) {
+    return path.toString();
+  }
+
+  if (Array.isArray(path)) {
+    for (const value of path) {
+      const candidate = extractPathCandidate(value);
+      if (candidate) return candidate;
+    }
+    return null;
+  }
+
+  if (typeof path === "object") {
+    if (typeof path.url === "string") return path.url;
+    if (typeof path.href === "string") return path.href;
+    if (typeof path.src === "string") return path.src;
+
+    const preferredKeys = ["en", "default", "value", "path"];
+    for (const key of preferredKeys) {
+      const val = path[key];
+      if (typeof val === "string" && val.trim()) {
+        return val;
+      }
+    }
+
+    for (const value of Object.values(path)) {
+      const candidate = extractPathCandidate(value);
+      if (candidate) return candidate;
+    }
+  }
+
+  return null;
+}
+
 export function buildUrl(path) {
-  if (!path) return null;
-  if (/^https?:/i.test(path)) return safeEncodeURI(path);
+  const candidate = extractPathCandidate(path);
+  if (!candidate) return null;
+
+  if (/^https?:/i.test(candidate)) return safeEncodeURI(candidate);
+
   // Normalize to root-relative
-  const uploadsIndex = path.indexOf("/uploads");
-  const rel = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const uploadsIndex = candidate.indexOf("/uploads");
+  const rel = uploadsIndex !== -1 ? candidate.substring(uploadsIndex) : candidate;
   const normalized = rel.startsWith("/") ? rel : `/${rel}`;
 
   // Only prefix uploads with the API base so they proxy through Nginx/backend.
