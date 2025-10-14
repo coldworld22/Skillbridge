@@ -70,9 +70,20 @@ function waitForAuthHydration() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    const state = useAuthStore.getState();
+
+    if (typeof window !== "undefined" && !state.hasHydrated) {
+      try {
+        await waitForAuthHydration();
+      } catch (err) {
+        logger.warn?.("Auth store hydration wait failed", err);
+      }
+    }
+
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
@@ -80,6 +91,7 @@ api.interceptors.request.use(
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
+        config.headers = config.headers || {};
         config.headers["x-csrf-token"] = csrfToken;
       }
     }
