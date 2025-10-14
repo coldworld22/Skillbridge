@@ -110,23 +110,37 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (subscriptionPlanId && item_type === "book") {
     try {
+      const normalizedItemId =
+        item_id === undefined || item_id === null ? item_id : String(item_id);
       const db = require("../../config/database");
       const usage = await db("plan_usage_metrics")
-        .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+        .where({
+          plan_id: subscriptionPlanId,
+          item_type: "book",
+          item_id: normalizedItemId,
+        })
         .first();
       if (usage) {
         await db("plan_usage_metrics")
-          .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+          .where({
+            plan_id: subscriptionPlanId,
+            item_type: "book",
+            item_id: normalizedItemId,
+          })
           .update({ usage_count: usage.usage_count + 1 });
       } else {
         await db("plan_usage_metrics").insert({
           plan_id: subscriptionPlanId,
           item_type: "book",
-          item_id,
+          item_id: normalizedItemId,
           usage_count: 1,
         });
       }
-      await creditInstructorSubscription("book", item_id, subscriptionPlanId);
+      await creditInstructorSubscription(
+        "book",
+        normalizedItemId,
+        subscriptionPlanId
+      );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
     }

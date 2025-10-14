@@ -29,12 +29,16 @@ exports.enroll = catchAsync(async (req, res) => {
   const id = uuidv4();
 
   const enroll = async (trx) => {
+    const tutorialItemId =
+      tutorialId === undefined || tutorialId === null
+        ? tutorialId
+        : String(tutorialId);
     if (coveredBySubscription) {
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
           item_type: "tutorial",
-          item_id: tutorialId,
+          item_id: tutorialItemId,
         })
         .first();
 
@@ -43,30 +47,34 @@ exports.enroll = catchAsync(async (req, res) => {
           .where({
             plan_id: activePlanId,
             item_type: "tutorial",
-            item_id: tutorialId,
+            item_id: tutorialItemId,
           })
           .update({ usage_count: usage.usage_count + 1 });
       } else {
         await trx("plan_usage_metrics").insert({
           plan_id: activePlanId,
           item_type: "tutorial",
-          item_id: tutorialId,
+          item_id: tutorialItemId,
           usage_count: 1,
         });
       }
 
-      await creditTutorialSubscription(tutorialId, activePlanId, trx);
+      await creditTutorialSubscription(tutorialItemId, activePlanId, trx);
 
       await trx("payments").insert({
         user_id,
-        item_id: tutorialId,
+        item_id: tutorialItemId,
         item_type: "tutorial",
         source: "subscription",
         amount: 0,
       });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
-        .where({ user_id, item_type: "tutorial", item_id: tutorialId })
+        .where({
+          user_id,
+          item_type: "tutorial",
+          item_id: tutorialItemId,
+        })
         .first();
       if (!payment) throw new AppError("Payment required", 402);
       const hasPlan = payment.installments > 1;

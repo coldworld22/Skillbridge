@@ -59,20 +59,31 @@ exports.enroll = catchAsync(async (req, res) => {
       );
     }
 
+    const classItemId =
+      classId === undefined || classId === null ? classId : String(classId);
+
     if (coveredBySubscription) {
       const usage = await trx("plan_usage_metrics")
-        .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
+        .where({
+          plan_id: activePlanId,
+          item_type: "class",
+          item_id: classItemId,
+        })
         .first();
 
       if (usage) {
         await trx("plan_usage_metrics")
-          .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
+          .where({
+            plan_id: activePlanId,
+            item_type: "class",
+            item_id: classItemId,
+          })
           .update({ usage_count: usage.usage_count + 1 });
       } else {
         await trx("plan_usage_metrics").insert({
           plan_id: activePlanId,
           item_type: "class",
-          item_id: classId,
+          item_id: classItemId,
           usage_count: 1,
         });
       }
@@ -80,7 +91,7 @@ exports.enroll = catchAsync(async (req, res) => {
       await trx("payments").insert({
         user_id,
         method_id: null,
-        item_id: classId,
+        item_id: classItemId,
         item_type: "class",
         source: "subscription",
         status: paymentsService.STATUS.PAID,
@@ -89,12 +100,17 @@ exports.enroll = catchAsync(async (req, res) => {
       });
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.
-      await creditInstructorSubscription("class", classId, activePlanId, trx);
+      await creditInstructorSubscription(
+        "class",
+        classItemId,
+        activePlanId,
+        trx
+      );
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({
           user_id,
-          item_id: classId,
+          item_id: classItemId,
           item_type: "class",
           status: paymentsService.STATUS.PAID,
         })

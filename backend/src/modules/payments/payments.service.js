@@ -27,8 +27,11 @@ const getPaymentColumnInfo = async () => {
 };
 
 exports.create = async (data, schedules = [], trx) => {
+  const normalizeItemId = (value) =>
+    value === undefined || value === null ? value : String(value);
+  const record = { ...data, item_id: normalizeItemId(data.item_id) };
   const run = async (transaction) => {
-    const [row] = await transaction("payments").insert(data).returning("*");
+    const [row] = await transaction("payments").insert(record).returning("*");
     if (schedules.length) {
       const records = schedules.map((s) => ({ ...s, payment_id: row.id }));
       await transaction("payment_schedules").insert(records);
