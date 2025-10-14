@@ -11,11 +11,10 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       : rolesOrOptions || {};
 
   return function ProtectedPage(props) {
-    const { user, accessToken, logout, hasHydrated } = useAuthStore((state) => ({
+    const { user, accessToken, logout } = useAuthStore((state) => ({
       user: state.user,
       accessToken: state.accessToken,
       logout: state.logout,
-      hasHydrated: state.hasHydrated,
     }));
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
@@ -30,7 +29,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     }, []);
 
     useEffect(() => {
-      if (!hydrated || !hasHydrated || redirectGuardRef.current) return;
+      if (!hydrated || redirectGuardRef.current) return;
 
       const role = user?.role?.toLowerCase();
       const profilePaths = {
@@ -78,16 +77,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         redirectGuardRef.current = true;
         router.replace("/error/403");
       }
-    }, [
-      hydrated,
-      hasHydrated,
-      user,
-      accessToken,
-      logout,
-      router,
-      allowedPerms,
-      normalizedRoles,
-    ]);
+    }, [hydrated, user, accessToken, logout, router, allowedPerms, normalizedRoles]);
 
     const role = user?.role?.toLowerCase();
     const profilePaths = {
@@ -101,7 +91,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const onProfileCompletionRoute = profilePath && currentPath.startsWith(profilePath);
     const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
-    if (!hydrated || !hasHydrated || !user) {
+    if (!hydrated || !user) {
       return null;
     }
 
