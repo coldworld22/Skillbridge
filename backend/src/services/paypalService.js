@@ -1,8 +1,15 @@
 const { Client, Environment, OrdersController, CheckoutPaymentIntent } = require('@paypal/paypal-server-sdk');
+const AppError = require('../utils/AppError');
+const logger = require('../utils/logger.js');
 const paymentMethodsService = require('../modules/paymentMethods/paymentMethods.service');
 
 let client;
 let ordersController;
+
+function resetClient() {
+  client = null;
+  ordersController = null;
+}
 
 async function getClient() {
   if (client) return client;
@@ -29,10 +36,42 @@ async function getOrdersController() {
   return ordersController;
 }
 
-exports.invalidateClient = () => {
-  client = null;
-  ordersController = null;
-};
+function mapPayPalSdkError(err, context) {
+  resetClient();
+  const status = err?.statusCode;
+  const details =
+    err?.result?.message ||
+    err?.result?.details?.[0]?.issue ||
+    err?.message ||
+    'Unknown PayPal error';
+
+  logger.error(
+    `PayPal SDK error while ${context}: ${details}`,
+    status ? `(status ${status})` : '',
+    err?.stack || ''
+  );
+
+  if (status === 401 || status === 403) {
+    return new AppError(
+      'PayPal payments are temporarily unavailable. Please contact support.',
+      502
+    );
+  }
+
+  if (status && status >= 400 && status < 500) {
+    return new AppError(
+      'PayPal rejected the request. Please try again or use a different payment method.',
+      400
+    );
+  }
+
+  return new AppError(
+    'Unable to reach PayPal right now. Please try again later.',
+    502
+  );
+}
+
+exports.invalidateClient = resetClient;
 
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
   const body = {
@@ -51,16 +90,24 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
     if (returnUrl) body.applicationContext.returnUrl = returnUrl;
     if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
   }
-  const orders = await getOrdersController();
-  const { result } = await orders.createOrder({
-    body,
-    prefer: 'return=representation',
-  });
-  return result;
+  try {
+    const orders = await getOrdersController();
+    const { result } = await orders.createOrder({
+      body,
+      prefer: 'return=representation',
+    });
+    return result;
+  } catch (err) {
+    throw mapPayPalSdkError(err, 'creating an order');
+  }
 };
 
 exports.captureOrder = async (orderId) => {
-  const orders = await getOrdersController();
-  const { result } = await orders.captureOrder({ id: orderId, body: {} });
-  return result;
+  try {
+    const orders = await getOrdersController();
+    const { result } = await orders.captureOrder({ id: orderId, body: {} });
+    return result;
+  } catch (err) {
+    throw mapPayPalSdkError(err, 'capturing an order');
+  }
 };

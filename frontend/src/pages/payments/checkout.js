@@ -232,6 +232,20 @@ export function resolveCheckoutItem(query, cartItems) {
   return null;
 }
 
+function resolveInstallmentMeta(allowInstallments, installments, totalAmount) {
+  if (!allowInstallments) {
+    return { enabled: false, count: 1, amountPerInstallment: totalAmount };
+  }
+  const parsedCount = Number(installments);
+  let count =
+    Number.isFinite(parsedCount) && parsedCount > 1
+      ? Math.floor(parsedCount)
+      : 2;
+  if (count < 2) count = 2;
+  const amountPerInstallment = Number((totalAmount / count).toFixed(2));
+  return { enabled: true, count, amountPerInstallment };
+}
+
 export async function handleBankPayment({
   itemInfo,
   itemType,
@@ -242,15 +256,26 @@ export async function handleBankPayment({
   t,
   setPaymentStatus,
   interval,
+  allowInstallments,
+  installments,
 }) {
   try {
     setPaymentStatus('processing');
+    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
+      allowInstallments,
+      installments,
+      finalPrice
+    );
     const payload = new FormData();
     payload.append('item_id', itemInfo.id);
     payload.append('item_type', itemType);
-    payload.append('amount', finalPrice);
+    payload.append('amount', amountPerInstallment.toFixed(2));
     if (couponId) payload.append('coupon_id', couponId);
     if (itemType === 'plan') payload.append('interval', interval);
+    if (enabled) {
+      payload.append('allow_installments', 'true');
+      payload.append('installments', String(count));
+    }
     if (formData.reference) payload.append('reference', formData.reference);
     if (formData.receipt) payload.append('receipt', formData.receipt);
     const payment = await initiateBankPayment(payload);
@@ -272,16 +297,27 @@ export async function handlePayPalPayment({
   t,
   setPaymentStatus,
   interval,
+  allowInstallments,
+  installments,
 }) {
   try {
     setPaymentStatus('processing');
+    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
+      allowInstallments,
+      installments,
+      finalPrice
+    );
     const payload = {
       item_id: itemInfo.id,
       item_type: itemType,
-      amount: finalPrice,
+      amount: amountPerInstallment,
     };
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
+    if (enabled) {
+      payload.allow_installments = true;
+      payload.installments = count;
+    }
     const data = await initiatePayPalPayment(payload);
     if (typeof window !== 'undefined' && data?.payment) {
       try {
@@ -319,17 +355,28 @@ export async function handleCryptoPayment({
   t,
   setPaymentStatus,
   interval,
+  allowInstallments,
+  installments,
 }) {
   try {
     setPaymentStatus('processing');
+    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
+      allowInstallments,
+      installments,
+      finalPrice
+    );
     const payload = {
       item_id: itemInfo.id,
       item_type: itemType,
-      amount: finalPrice,
+      amount: amountPerInstallment,
       method_type: method?.type || getMethodIdentifier(method),
     };
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
+    if (enabled) {
+      payload.allow_installments = true;
+      payload.installments = count;
+    }
     const initFn =
       getMethodIdentifier(method).toLowerCase() === 'coinbase'
         ? initiateCoinbasePayment
@@ -369,13 +416,18 @@ export async function handleDefaultPayment({
 }) {
   try {
     setPaymentStatus('processing');
+    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
+      allowInstallments,
+      installments,
+      finalPrice
+    );
     const payload = {
       method_id: method?.id,
       item_type: itemType,
       item_id: itemInfo.id,
-      amount: finalPrice,
-      allow_installments: allowInstallments,
-      installments,
+      amount: amountPerInstallment,
+      allow_installments: enabled,
+      installments: enabled ? count : 1,
     };
     if (formData.token) payload.token = formData.token;
     if (itemType === 'plan') payload.interval = interval;
@@ -457,11 +509,20 @@ export default function CheckoutPage() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
+  const [installments, setInstallments] = useState(1);
   const finalPrice = useMemo(
     () => Math.max((itemInfo?.price ?? 0) - discountAmount, 0),
     [itemInfo, discountAmount]
   );
   const isFree = finalPrice <= Number.EPSILON;
+  const installmentsAllowed = useMemo(() => {
+    if (existingPayment?.installments > 1) return true;
+    return Boolean(itemInfo?.allow_installments);
+  }, [existingPayment, itemInfo]);
+  const installmentsActive = useMemo(
+    () => installmentsAllowed && allowInstallments && installments > 1,
+    [installmentsAllowed, allowInstallments, installments]
+  );
   // Normalize the selected payment method to avoid case or whitespace mismatches
   const normalizedMethod = (selectedMethod || '')
     .toString()
@@ -542,6 +603,16 @@ export default function CheckoutPage() {
       active = false;
     };
   }, [paymentId]);
+
+  useEffect(() => {
+    if (!installmentsAllowed) {
+      setAllowInstallments(false);
+      return;
+    }
+    if (existingPayment?.installments > 1) {
+      setAllowInstallments(true);
+    }
+  }, [installmentsAllowed, existingPayment]);
 
   useEffect(() => {
     if (!itemId || !itemType) {
@@ -702,6 +773,11 @@ export default function CheckoutPage() {
         };
         if (defaultMethod?.id) payload.method_id = defaultMethod.id;
         if (couponId) payload.coupon_id = couponId;
+        if (installmentsActive) {
+          payload.allow_installments = true;
+          payload.installments = installments;
+          payload.amount = perInstallment;
+        }
         payment = await createPayment(payload);
       } catch (err) {
         console.error('Failed to create payment', err);
@@ -826,6 +902,9 @@ export default function CheckoutPage() {
         ? 'crypto'
         : 'default';
 
+    const useInstallments = installmentsActive;
+    const installmentsCount = useInstallments ? installments : 1;
+
     await handlers[key]({
       method,
       itemInfo,
@@ -836,28 +915,40 @@ export default function CheckoutPage() {
       router,
       t,
       setPaymentStatus,
-      allowInstallments,
-      installments,
+      allowInstallments: useInstallments,
+      installments: installmentsCount,
       interval,
       completePayment,
     });
   };
 
-  const [installments, setInstallments] = useState(1);
   useEffect(() => {
-    const count = Number(
-      existingPayment?.installments || itemInfo?.installments || 1
-    );
-    setInstallments(count);
+    const fallback =
+      existingPayment?.installments ||
+      itemInfo?.installments ||
+      (itemInfo?.allow_installments ? 2 : 1);
+    const parsed = Number(fallback);
+    const safeCount = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+    setInstallments(safeCount);
   }, [existingPayment, itemInfo]);
 
-  const perInstallment = useMemo(
-    () => finalPrice / installments,
-    [finalPrice, installments]
-  );
+  const perInstallment = useMemo(() => {
+    const divisor = installments > 0 ? installments : 1;
+    const raw = finalPrice / divisor;
+    if (!installmentsActive) return raw;
+    if (!Number.isFinite(raw)) return 0;
+    return Number(raw.toFixed(2));
+  }, [finalPrice, installments, installmentsActive]);
+  const payableAmountDisplay = useMemo(() => {
+    const base = installmentsActive ? perInstallment : finalPrice;
+    if (!Number.isFinite(base)) return '0.00';
+    return base.toFixed(2);
+  }, [installmentsActive, perInstallment, finalPrice]);
   const schedule = useMemo(() => {
-    if (!allowInstallments) return [];
-    const amount = finalPrice / installments;
+    if (!installmentsActive) {
+      return [];
+    }
+    const amount = perInstallment;
     return Array.from({ length: installments }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() + i);
@@ -867,7 +958,7 @@ export default function CheckoutPage() {
         amount: amount.toFixed(2),
       };
     });
-  }, [finalPrice, allowInstallments, installments]);
+  }, [perInstallment, installmentsActive, installments]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
@@ -952,14 +1043,19 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {!isFree && (
+        {!isFree && installmentsAllowed && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('installments')}</h2>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={allowInstallments} onChange={(e) => setAllowInstallments(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={allowInstallments}
+                onChange={(e) => setAllowInstallments(e.target.checked)}
+                disabled={existingPayment?.installments > 1}
+              />
               {t('pay_in_monthly_installments', { count: installments })}
             </label>
-            {allowInstallments && (
+            {installmentsActive && (
               <ul className="mt-4 text-sm text-gray-300">
                 {schedule.map((s) => (
                   <li key={s.number}>{t('installment_item', { number: s.number, amount: s.amount, date: s.date })}</li>
@@ -1008,26 +1104,26 @@ export default function CheckoutPage() {
             <PayPalForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
-              finalPrice={finalPrice}
+              finalPrice={payableAmountDisplay}
             />
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
               bankDetails={bankDetails}
               processing={paymentStatus === 'processing'}
-              finalPrice={finalPrice}
+              finalPrice={payableAmountDisplay}
             />
           ) : isCryptoSelected ? (
             <CryptoPaymentForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
-              finalPrice={finalPrice}
+              finalPrice={payableAmountDisplay}
             />
           ) : shouldRenderCardFormWithoutElements ? (
             <CardPaymentForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
-              allowInstallments={allowInstallments}
+              allowInstallments={installmentsActive}
               installments={installments}
               perInstallment={perInstallment}
               finalPrice={finalPrice}
@@ -1038,7 +1134,7 @@ export default function CheckoutPage() {
               <CardPaymentForm
                 onSubmit={handlePayment}
                 processing={paymentStatus === 'processing'}
-                allowInstallments={allowInstallments}
+                allowInstallments={installmentsActive}
                 installments={installments}
                 perInstallment={perInstallment}
                 finalPrice={finalPrice}

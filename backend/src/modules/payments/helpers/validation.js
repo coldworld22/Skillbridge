@@ -27,21 +27,13 @@ async function validatePaymentData(body, userId) {
     throw new AppError("Missing required fields", 400);
   }
 
+  const wantsInstallments = Boolean(allow_installments);
+  const requestedInstallments = Number(installments);
   let schedules = [];
   let next_due_date = null;
-  let totalInstallments = allow_installments ? installments || 1 : 1;
-  if (allow_installments && totalInstallments > 1) {
-    for (let i = 2; i <= totalInstallments; i++) {
-      const due = new Date();
-      due.setMonth(due.getMonth() + (i - 1));
-      schedules.push({
-        installment_number: i,
-        amount,
-        due_date: due,
-      });
-    }
-    next_due_date = schedules[0]?.due_date || null;
-  }
+  let totalInstallments = 1;
+  let itemAllowsInstallments = false;
+  let itemInstallmentsSetting = null;
 
   let method;
   if (method_id) {
@@ -135,10 +127,14 @@ async function validatePaymentData(body, userId) {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
     basePrice = Number(cls.price);
+    itemAllowsInstallments = Boolean(cls.allow_installments);
+    itemInstallmentsSetting = cls.installments ?? null;
   } else if (item_type === "book") {
     const book = await bookService.getBookById(item_id);
     if (!book) throw new AppError("Book not found", 404);
     basePrice = Number(book.price);
+    itemAllowsInstallments = Boolean(book.allow_installments);
+    itemInstallmentsSetting = book.installments ?? null;
     let activePlanId = null;
     if (userId) {
       try {
@@ -169,6 +165,8 @@ async function validatePaymentData(body, userId) {
     const tut = await tutorialService.getTutorialById(item_id);
     if (!tut) throw new AppError("Tutorial not found", 404);
     basePrice = Number(tut.price);
+    itemAllowsInstallments = Boolean(tut.allow_installments);
+    itemInstallmentsSetting = tut.installments ?? null;
   } else if (item_type === "plan") {
     const plan = await plansService.getPlanById(item_id);
     if (!plan) throw new AppError("Plan not found", 404);
@@ -192,6 +190,24 @@ async function validatePaymentData(body, userId) {
     basePrice = null;
   }
 
+  if (wantsInstallments) {
+    if (!itemAllowsInstallments) {
+      throw new AppError("Installment plan not available for this item", 400);
+    }
+    if (Number.isFinite(requestedInstallments) && requestedInstallments > 1) {
+      totalInstallments = Math.floor(requestedInstallments);
+    } else if (
+      Number.isFinite(Number(itemInstallmentsSetting)) &&
+      Number(itemInstallmentsSetting) > 1
+    ) {
+      totalInstallments = Math.floor(Number(itemInstallmentsSetting));
+    } else {
+      totalInstallments = 2;
+    }
+  } else {
+    totalInstallments = 1;
+  }
+
   if (basePrice !== null && basePrice !== undefined) {
     if (coupon) {
       basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
@@ -201,6 +217,21 @@ async function validatePaymentData(body, userId) {
     if (Math.abs(verifiedAmount - expected) >= EPS) {
       throw new AppError("Payment amount does not match item price", 400);
     }
+  }
+
+  if (wantsInstallments && totalInstallments > 1) {
+    const installmentAmount = verifiedAmount;
+    schedules = [];
+    for (let i = 2; i <= totalInstallments; i++) {
+      const due = new Date();
+      due.setMonth(due.getMonth() + (i - 1));
+      schedules.push({
+        installment_number: i,
+        amount: installmentAmount,
+        due_date: due,
+      });
+    }
+    next_due_date = schedules[0]?.due_date || null;
   }
 
   return {
@@ -219,4 +250,3 @@ async function validatePaymentData(body, userId) {
 }
 
 module.exports = { validatePaymentData };
-

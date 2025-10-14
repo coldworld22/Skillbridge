@@ -143,3 +143,44 @@ test('default payment completes on success and handles errors', async () => {
   expect(toast.error).toHaveBeenCalled();
   expect(errArgs.setPaymentStatus).toHaveBeenCalledWith('idle');
 });
+
+test('default payment sends installment payload when enabled', async () => {
+  createPayment.mockResolvedValue({ status: 'paid' });
+  const args = { ...baseArgs(), allowInstallments: true, installments: 2 };
+  await handleDefaultPayment(args);
+  expect(createPayment).toHaveBeenCalledWith(
+    expect.objectContaining({
+      amount: 50,
+      allow_installments: true,
+      installments: 2,
+    })
+  );
+});
+
+test('paypal payment sends installment meta when enabled', async () => {
+  initiatePayPalPayment.mockResolvedValue({ approval_url: 'http://paypal' });
+  const args = { ...baseArgs(), allowInstallments: true, installments: 2 };
+  await handlePayPalPayment(args);
+  expect(initiatePayPalPayment).toHaveBeenCalledWith(
+    expect.objectContaining({
+      amount: 50,
+      allow_installments: true,
+      installments: 2,
+    })
+  );
+});
+
+test('bank payment appends installment fields when enabled', async () => {
+  initiateBankPayment.mockResolvedValue({ id: 10 });
+  const args = {
+    ...baseArgs(),
+    allowInstallments: true,
+    installments: 2,
+    formData: {},
+  };
+  await handleBankPayment(args);
+  const formData = initiateBankPayment.mock.calls.pop()[0];
+  expect(formData.get('allow_installments')).toBe('true');
+  expect(formData.get('installments')).toBe('2');
+  expect(formData.get('amount')).toBe('50.00');
+});
