@@ -103,5 +103,8 @@
   "no_payment_methods_plan": "Für diesen Plan sind keine Zahlungsmethoden verfügbar",
   "method_additional_instructions": "Additional instructions for {{method}}",
   "selected_method": "selected method",
+  "loading_payment_methods": "Zahlungsmethoden werden geladen...",
+  "unsupported_payment_method": "{{method}} wird derzeit nicht unterstützt. Bitte wähle eine andere Zahlungsoption.",
+  "select_payment_method_prompt": "Wähle eine Zahlungsmethode, um fortzufahren.",
   "bank_additional_instructions": "Please reference your payment details when uploading receipts so we can verify your transfer quickly."
 }

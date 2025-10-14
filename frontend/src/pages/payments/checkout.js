@@ -68,6 +68,28 @@ function isTrustedIcon(url) {
   }
 }
 
+function normalizeValue(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function matchesPayPal(value) {
+  const normalized = normalizeValue(value);
+  if (!normalized) return false;
+  const condensed = normalized.replace(/[\s_-]+/g, '');
+  return normalized.includes('paypal') || condensed.includes('paypal');
+}
+
+export function isPayPalMethod(methodOrIdentifier) {
+  if (!methodOrIdentifier) return false;
+  if (typeof methodOrIdentifier === 'string') {
+    return matchesPayPal(methodOrIdentifier);
+  }
+  if (matchesPayPal(methodOrIdentifier.type)) return true;
+  if (matchesPayPal(methodOrIdentifier.name)) return true;
+  if (matchesPayPal(methodOrIdentifier.category)) return true;
+  return false;
+}
+
 export function TrustedIcon({ src, alt }) {
   const [error, setError] = useState(false);
   if (!src || error) return <FaMoneyCheckAlt aria-label={alt} role="img" />;
@@ -100,9 +122,10 @@ export function resolveIconElement(method) {
       // Invalid URLs fall through to the default icon
     }
   }
-  return (
-    iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
-  );
+  const identifier = getMethodIdentifier(method).toLowerCase();
+  if (iconMap[identifier]) return iconMap[identifier];
+  if (isPayPalMethod(method)) return iconMap.paypal;
+  return <FaMoneyCheckAlt />;
 }
 
 function getMethodIdentifier(method) {
@@ -391,6 +414,7 @@ export default function CheckoutPage() {
   }, [router.isReady, resolvedItem]);
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
   const [stripePromise, setStripePromise] = useState(null);
   useEffect(() => {
     const loadStripeKey = async () => {
@@ -460,9 +484,15 @@ export default function CheckoutPage() {
     if (typeof methodSettings.details === 'string') return methodSettings.details.trim();
     return '';
   }, [selectedMethodIdentifier, methodSettings.instructions, methodSettings.note, methodSettings.details]);
-  const isCryptoSelected = isCryptoMethod(
-    selectedMethodObj || selectedMethodIdentifier
-  );
+  const methodReference = selectedMethodObj || selectedMethodIdentifier;
+  const isCryptoSelected = isCryptoMethod(methodReference);
+  const isPayPalSelected = isPayPalMethod(methodReference);
+  const shouldRenderCardFormWithoutElements =
+    Boolean(selectedMethodIdentifier) &&
+    selectedMethodIdentifier !== 'stripe' &&
+    selectedMethodIdentifier !== 'bank' &&
+    !isPayPalSelected &&
+    !isCryptoSelected;
 
   useEffect(() => {
     if (
@@ -500,9 +530,14 @@ export default function CheckoutPage() {
   }, [paymentId]);
 
   useEffect(() => {
-    if (!itemId || !itemType) return;
+    if (!itemId || !itemType) {
+      setMethodsLoading(false);
+      return;
+    }
     let active = true;
     const load = async () => {
+      if (!active) return;
+      setMethodsLoading(true);
       let details;
       try {
         if (itemType === 'tutorial') {
@@ -516,6 +551,7 @@ export default function CheckoutPage() {
           const priceYearly = parseFloat(data.price_yearly);
           if (Number.isNaN(priceMonthly) || Number.isNaN(priceYearly)) {
             if (active) setCheckoutError('Plan unavailable');
+            if (active) setMethodsLoading(false);
             return;
           }
           const price = interval === 'yearly' ? priceYearly : priceMonthly;
@@ -534,6 +570,9 @@ export default function CheckoutPage() {
         console.error('Failed to load item', err);
         if (itemType === 'plan' && active) {
           setCheckoutError('Plan unavailable');
+        }
+        if (active) {
+          setMethodsLoading(false);
         }
         return;
       }
@@ -555,9 +594,19 @@ export default function CheckoutPage() {
           }
         } catch (err) {
           console.error('Failed to load payment methods', err);
+          if (active) {
+            setMethods([]);
+          }
+        } finally {
+          if (active) {
+            setMethodsLoading(false);
+          }
         }
       } else {
         setMethods([]);
+        if (active) {
+          setMethodsLoading(false);
+        }
       }
     };
     load();
@@ -745,6 +794,7 @@ export default function CheckoutPage() {
     }
     const identifier = getMethodIdentifier(method).toLowerCase();
     const isCrypto = isCryptoMethod(method || identifier);
+    const isPayPal = isPayPalMethod(method || identifier);
 
     const handlers = {
       bank: handleBankPayment,
@@ -756,7 +806,7 @@ export default function CheckoutPage() {
     const key =
       identifier === 'bank'
         ? 'bank'
-        : identifier === 'paypal'
+        : isPayPal
         ? 'paypal'
         : isCrypto
         ? 'crypto'
@@ -940,7 +990,7 @@ export default function CheckoutPage() {
                 {`Pay $${finalPrice}`}
               </button>
             </div>
-          ) : selectedMethodIdentifier === 'paypal' ? (
+          ) : isPayPalSelected ? (
             <PayPalForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
@@ -959,6 +1009,16 @@ export default function CheckoutPage() {
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
+          ) : shouldRenderCardFormWithoutElements ? (
+            <CardPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              allowInstallments={allowInstallments}
+              installments={installments}
+              perInstallment={perInstallment}
+              finalPrice={finalPrice}
+              selectedMethodLabel={selectedMethodLabel}
+            />
           ) : selectedMethodIdentifier === 'stripe' && stripePromise ? (
             <Elements stripe={stripePromise}>
               <CardPaymentForm
@@ -971,16 +1031,20 @@ export default function CheckoutPage() {
                 selectedMethodLabel={selectedMethodLabel}
               />
             </Elements>
+          ) : methodsLoading ? (
+            <p className="text-center text-gray-400">{t('loading_payment_methods')}</p>
+          ) : selectedMethodIdentifier === 'stripe' ? (
+            <p className="text-center text-gray-400">{t('loading')}</p>
+          ) : selectedMethodIdentifier ? (
+            <p className="text-center text-red-400">
+              {t('unsupported_payment_method', {
+                method: selectedMethodLabel || t('selected_method'),
+              })}
+            </p>
           ) : (
-            <CardPaymentForm
-              onSubmit={handlePayment}
-              processing={paymentStatus === 'processing'}
-              allowInstallments={allowInstallments}
-              installments={installments}
-              perInstallment={perInstallment}
-              finalPrice={finalPrice}
-              selectedMethodLabel={selectedMethodLabel}
-            />
+            <p className="text-center text-gray-400">
+              {t('select_payment_method_prompt')}
+            </p>
           )}
         </div>
       </main>

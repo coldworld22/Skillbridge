@@ -11,10 +11,16 @@ exports.calculateInstructorAmount = async (
   trx,
   itemType = "class"
 ) => {
+  const normalizedItemId =
+    itemId === undefined || itemId === null ? itemId : String(itemId);
   const query = trx || db;
   try {
     let row = await query("plan_usage_metrics")
-      .where({ plan_id: planId, item_type: itemType, item_id: itemId })
+      .where({
+        plan_id: planId,
+        item_type: itemType,
+        item_id: normalizedItemId,
+      })
       .first();
 
     let previousAmount = 0;
@@ -22,7 +28,7 @@ exports.calculateInstructorAmount = async (
       await query("plan_usage_metrics").insert({
         plan_id: planId,
         item_type: itemType,
-        item_id: itemId,
+        item_id: normalizedItemId,
         usage_count: 1,
         instructor_amount: 0,
       });
@@ -56,7 +62,11 @@ exports.calculateInstructorAmount = async (
     const newTotal = Number((previousAmount + roundedShare).toFixed(2));
 
     await query("plan_usage_metrics")
-      .where({ plan_id: planId, item_type: itemType, item_id: itemId })
+      .where({
+        plan_id: planId,
+        item_type: itemType,
+        item_id: normalizedItemId,
+      })
       .update({ instructor_amount: newTotal });
 
     return roundedShare;
