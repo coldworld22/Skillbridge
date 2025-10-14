@@ -25,8 +25,38 @@ exports.getById = (id) => {
   return db("payment_methods_config").where({ id }).first();
 };
 
-exports.getByType = (type) => {
-  return db("payment_methods_config").where({ type }).first();
+exports.getByType = async (type) => {
+  if (type === undefined || type === null) return null;
+
+  const normalized = String(type).trim().toLowerCase();
+  if (!normalized) return null;
+
+  const baseQuery = db("payment_methods_config")
+    .orderBy("is_default", "desc")
+    .orderBy("created_at", "asc");
+
+  const matchByType = await baseQuery
+    .clone()
+    .whereRaw("LOWER(type) = ?", [normalized])
+    .first();
+  if (matchByType) return matchByType;
+
+  const matchByName = await baseQuery
+    .clone()
+    .whereRaw("LOWER(name) = ?", [normalized])
+    .first();
+  if (matchByName) return matchByName;
+
+  if (normalized.includes("bank")) {
+    const bankLike = await baseQuery
+      .clone()
+      .whereRaw("LOWER(name) LIKE ?", ["%bank%"])
+      .orWhereRaw("LOWER(type) LIKE ?", ["%bank%"])
+      .first();
+    if (bankLike) return bankLike;
+  }
+
+  return null;
 };
 
 exports.update = async (id, data) => {
