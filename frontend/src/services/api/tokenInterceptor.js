@@ -13,6 +13,7 @@ import logger from "@/utils/logger";
 let isRefreshing = false;
 let failedQueue = [];
 let lastNetworkToast = 0;
+let hydrationWaiter = null;
 
 // Function to process the queue of failed requests
 const processQueue = (error, token = null) => {
@@ -21,6 +22,35 @@ const processQueue = (error, token = null) => {
   });
   failedQueue = [];
 };
+
+function waitForAuthHydration() {
+  if (hydrationWaiter) return hydrationWaiter;
+
+  const currentState = useAuthStore.getState();
+  if (currentState.hasHydrated) {
+    return Promise.resolve(currentState);
+  }
+
+  hydrationWaiter = new Promise((resolve) => {
+    let timeoutId;
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      if (state.hasHydrated) {
+        clearTimeout(timeoutId);
+        unsubscribe();
+        hydrationWaiter = null;
+        resolve(state);
+      }
+    });
+
+    timeoutId = setTimeout(() => {
+      unsubscribe();
+      hydrationWaiter = null;
+      resolve(useAuthStore.getState());
+    }, 1500);
+  });
+
+  return hydrationWaiter;
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Interceptor to add Authorization header with access token
@@ -54,7 +84,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const authStore = useAuthStore.getState();
+    let authStore = useAuthStore.getState();
     
     // Ignore aborted/cancelled requests to avoid noisy toasts during route changes
     const isCanceled =
@@ -82,11 +112,15 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       logger.warn("\u26A0\uFE0F Received 401 for", originalRequest?.url);
-      const refreshCookie = getCookie("refreshToken");
+      if (!authStore.hasHydrated) {
+        await waitForAuthHydration();
+        authStore = useAuthStore.getState();
+      }
+
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
 
-      if (!refreshCookie && !hasAuthState) {
-        logger.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
+      if (!hasAuthState) {
+        logger.warn("\u26A0\uFE0F Auth state missing after hydration; redirecting to login");
         authStore.logout(true);
         if (typeof window !== "undefined") {
           Router.push("/auth/login");
