@@ -104,6 +104,20 @@
         "favicon_upload_failed": "Échec du téléversement du favicon",
         "background_upload_success": "Arrière-plan téléversé avec succès",
         "background_upload_failed": "Échec du téléversement de l'arrière-plan"
+      },
+      "studentDashboardHome": {
+        "welcome_back": "Bon retour, {{name}} !",
+        "enrolled_classes": "Vous êtes inscrit·e à {{count}} cours",
+        "class_number": "Cours {{num}}",
+        "learning_progress": "Progression de l'apprentissage",
+        "upcoming_events": "Sessions à venir",
+        "no_upcoming_events": "Aucune session à venir planifiée",
+        "current_classes": "Cours en cours",
+        "progress": "Progression",
+        "next_session": "Prochaine session",
+        "view_class": "Voir le cours",
+        "no_classes": "Vous n'êtes inscrit à aucun cours pour le moment",
+        "no_session_scheduled": "Aucune date disponible"
       }
   }
 }

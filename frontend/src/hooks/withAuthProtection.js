@@ -14,15 +14,15 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
     const user = useAuthStore((state) => state.user);
     const accessToken = useAuthStore((state) => state.accessToken);
     const logout = useAuthStore((state) => state.logout);
+    const hasHydrated = useAuthStore((state) => state.hasHydrated);
     const router = useRouter();
-    const [hydrated, setHydrated] = useState(false);
-    const normalizedRoles = useMemo(
-      () => allowedRoles.map((role) => role.toLowerCase()),
-      [allowedRoles]
-    );
+    const [hydrated, setHydrated] = useState(hasHydrated);
+    const normalizedRoles = allowedRoles.map((role) => role.toLowerCase());
     useEffect(() => {
-      setHydrated(true);
-    }, []);
+      if (hasHydrated) {
+        setHydrated(true);
+      }
+    }, [hasHydrated]);
 
     const redirectDecision = useMemo(() => {
       if (!hydrated) return null;
@@ -64,8 +64,8 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         return { destination: "/error/403", logout: false };
       }
 
-      return null;
-    }, [hydrated, user, accessToken, allowedPerms, normalizedRoles, router.pathname]);
+        return null;
+    }, [hydrated, user, accessToken, normalizedRoles, router.pathname]);
 
     useEffect(() => {
       if (!redirectDecision) return;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { useTranslation } from "next-i18next";
@@ -23,45 +23,81 @@ function StudentDashboardHome() {
   const [hasMounted, setHasMounted] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [classes, setClasses] = useState([]);
-  const [progressData, setProgressData] = useState([]);
 
   useEffect(() => {
     setHasMounted(true);
+  }, []);
+
+  useEffect(() => {
     const load = async () => {
       try {
         const profile = await getStudentProfile();
-        setStudentName(profile.full_name);
+        if (active) {
+          setStudentName(profile?.full_name || profile?.first_name || "");
+        }
       } catch (err) {
         console.error("Failed to load profile", err);
       }
 
       try {
         const list = await fetchMyEnrolledClasses();
+        if (!active) return;
+
         const formatted = list.map((cls) => ({
           id: cls.id,
           title: cls.title,
-          progress: cls.progress,
-          nextSession: cls.startDate,
+          progress: normalizeProgress(cls.progress),
+          nextSession: cls.startDate || cls.nextSession || null,
         }));
         setClasses(formatted);
-
-        const progressChart = formatted.map((cls, index) => ({
-          date: cls.nextSession
-            ? new Date(cls.nextSession).toLocaleDateString(i18n.language, {
-                month: "short",
-                day: "numeric",
-              })
-            : t("class_number", { num: index + 1 }),
-          progress: cls.progress,
-        }));
-        setProgressData(progressChart);
       } catch (err) {
         console.error("Failed to load classes", err);
       }
     };
 
     load();
-  }, [t, i18n.language]);
+  }, []);
+
+  const formatDate = useCallback(
+    (value, options) => {
+      if (!value) return "";
+
+      try {
+        return new Date(value).toLocaleString(i18n.language, options);
+      } catch (err) {
+        console.warn("Failed to format date", err);
+        return value;
+      }
+    },
+    [i18n.language]
+  );
+
+  const progressData = useMemo(
+    () =>
+      classes.map((cls, index) => ({
+        date: cls.nextSession
+          ? formatDate(cls.nextSession, { month: "short", day: "numeric" })
+          : t("class_number", { num: index + 1 }),
+        progress: cls.progress ?? 0,
+      })),
+    [classes, formatDate, t]
+  );
+
+  const upcomingClasses = useMemo(
+    () =>
+      classes.map((cls) => ({
+        ...cls,
+        nextSessionLabel: cls.nextSession
+          ? formatDate(cls.nextSession, {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : t("no_session_scheduled"),
+      })),
+    [classes, formatDate, t]
+  );
 
   if (!hasMounted) return null;
 
@@ -110,10 +146,10 @@ function StudentDashboardHome() {
             {t("upcoming_events")}
           </h2>
           <div className="bg-white p-4 rounded-lg shadow max-h-48 overflow-y-auto divide-y">
-            {classes.length > 0 ? (
-              classes.map((cls) => (
+            {upcomingClasses.length > 0 ? (
+              upcomingClasses.map((cls) => (
                 <div key={cls.id} className="py-2 text-sm text-gray-800">
-                  {cls.nextSession} – <span className="font-semibold">{cls.title}</span>
+                  {cls.nextSessionLabel} – <span className="font-semibold">{cls.title}</span>
                 </div>
               ))
             ) : (
@@ -130,7 +166,7 @@ function StudentDashboardHome() {
             {t("current_classes")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {classes.map((cls) => (
+            {upcomingClasses.map((cls) => (
               <div
                 key={cls.id}
                 className="bg-white border rounded-lg shadow-sm p-4 space-y-2"
@@ -146,7 +182,7 @@ function StudentDashboardHome() {
                   {t("progress")}: {cls.progress}%
                 </p>
                 <p className="text-sm text-gray-600">
-                  {t("next_session")}: {cls.nextSession}
+                  {t("next_session")}: {cls.nextSessionLabel}
                 </p>
                 <a
                   href={`/dashboard/student/classes/${cls.id}`}
@@ -156,7 +192,7 @@ function StudentDashboardHome() {
                 </a>
               </div>
             ))}
-            {classes.length === 0 && (
+            {upcomingClasses.length === 0 && (
               <p className="text-sm text-gray-600">{t("no_classes")}</p>
             )}
           </div>

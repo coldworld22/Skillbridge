@@ -7,16 +7,15 @@ import useMessageStore from "@/store/messages/messageStore";
 import logger from "@/utils/logger";
 
 let rehydrateSet;
+const isClient = typeof window !== "undefined";
 
-const useAuthStore = create(
-  persist(
-    (set, get) => {
-      rehydrateSet = set;
-      return {
-      user: null,
-      accessToken: null,
-      onboarding: null,
-      hasHydrated: false,
+const createAuthStore = (set, get) => {
+  rehydrateSet = set;
+  return {
+    user: null,
+    accessToken: null,
+    onboarding: null,
+    hasHydrated: !isClient,
 
       setUser: (userData) =>
         set({
@@ -134,17 +133,20 @@ const useAuthStore = create(
         set({ accessToken: null, user: null, onboarding: null });
       },
     };
-    },
-    {
-      name: "auth",
-      onRehydrateStorage: () => {
-        return (state) => {
-          logger.log("🔥 Zustand hydrated");
-          rehydrateSet?.({ hasHydrated: true });
-        };
-      },
-    }
-  )
+};
+
+const useAuthStore = create(
+  isClient
+    ? persist(createAuthStore, {
+        name: "auth",
+        onRehydrateStorage: () => {
+          return () => {
+            logger.log("🔥 Zustand hydrated");
+            rehydrateSet?.({ hasHydrated: true });
+          };
+        },
+      })
+    : createAuthStore
 );
 
 export default useAuthStore;
