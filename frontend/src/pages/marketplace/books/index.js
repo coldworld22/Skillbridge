@@ -1,5 +1,5 @@
 // pages/website/books/index.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { FaSearch, FaFilter, FaArrowUp } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -9,6 +9,8 @@ import BookFilterSidebar from "@/components/books/FilterSidebar";
 import { fetchBooks } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
+import useLibraryStore from "@/store/libraryStore";
 // Use global react-hot-toast setup from _app.js
 import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
@@ -48,6 +50,43 @@ export default function BooksPage() {
   const loader = useRef(null);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const addItem = useCartStore((state) => state.addItem);
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const libraryBooks = useLibraryStore((state) => state.books);
+  const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
+  const hasLoadedLibrary = useRef(false);
+
+  const isLoggedInStudent = useMemo(() => {
+    if (!isAuthenticated()) return false;
+    const roles = Array.isArray(user?.roles)
+      ? user.roles
+      : [user?.role].filter(Boolean);
+    return roles.some(
+      (role) =>
+        typeof role === "string" && role.toLowerCase().trim() === "student"
+    );
+  }, [isAuthenticated, user?.roles, user?.role]);
+
+  useEffect(() => {
+    if (!isLoggedInStudent) return;
+    if (hasLoadedLibrary.current) return;
+    hasLoadedLibrary.current = true;
+    fetchLibrary();
+  }, [isLoggedInStudent, fetchLibrary]);
+
+  useEffect(() => {
+    if (!isLoggedInStudent) {
+      hasLoadedLibrary.current = false;
+    }
+  }, [isLoggedInStudent]);
+
+  const ownedBooksMap = useMemo(() => {
+    if (!Array.isArray(libraryBooks)) return new Map();
+    const entries = libraryBooks
+      .filter((item) => item && item.id != null)
+      .map((item) => [String(item.id), item]);
+    return new Map(entries);
+  }, [libraryBooks]);
 
   const searchDebounce = useRef(
     debounce((value) => {
@@ -281,15 +320,24 @@ export default function BooksPage() {
               <p className="text-gray-400">{t("no_books_found")}</p>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {books.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    book={book}
-                    onAddToWishlist={() => handleAddToWishlist(book)}
-                    onAddToCart={() => handleAddToCart(book)}
-                    cornerAddToCart
-                  />
-                ))}
+                {books.map((book) => {
+                  const ownedEntry = ownedBooksMap.get(String(book.id));
+                  const isOwned = Boolean(ownedEntry);
+                  return (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      onAddToWishlist={() => handleAddToWishlist(book)}
+                      onAddToCart={
+                        isOwned ? undefined : () => handleAddToCart(book)
+                      }
+                      cornerAddToCart={!isOwned}
+                      showReadLink={isOwned}
+                      owned={isOwned}
+                      downloadUrl={ownedEntry?.downloadUrl}
+                    />
+                  );
+                })}
               </div>
             )}
 

@@ -1,9 +1,10 @@
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
+import useLibraryStore from "@/store/libraryStore";
 import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
 import { mapBookForCart } from "@/utils/bookMapping";
@@ -17,6 +18,31 @@ export default function BookDetails({ book }) {
   const addItem = useCartStore((state) => state.addItem);
   const { isAuthenticated, user } = useAuthStore();
   const [isAdding, setIsAdding] = useState(false);
+  const libraryBooks = useLibraryStore((state) => state.books);
+  const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
+
+  const isStudent = useMemo(() => {
+    if (!isAuthenticated()) return false;
+    const roles = Array.isArray(user?.roles)
+      ? user.roles
+      : [user?.role].filter(Boolean);
+    return roles.some(
+      (role) =>
+        typeof role === "string" && role.toLowerCase().trim() === "student"
+    );
+  }, [isAuthenticated, user?.roles, user?.role]);
+
+  useEffect(() => {
+    if (!isStudent) return;
+    fetchLibrary();
+  }, [isStudent, fetchLibrary]);
+
+  const ownedEntry = useMemo(() => {
+    if (!Array.isArray(libraryBooks) || !book?.id) return null;
+    return (
+      libraryBooks.find((item) => String(item.id) === String(book.id)) || null
+    );
+  }, [libraryBooks, book?.id]);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated()) {
@@ -43,11 +69,11 @@ export default function BookDetails({ book }) {
     book?.is_paid !== undefined && book?.is_paid !== null
       ? Boolean(book.is_paid)
       : priceValue > 0;
-  const userHasAccess = Boolean(book?.user_has_access);
-  const downloadUrl = book?.id
-    ? `${API_BASE_URL}/library/download/${book.id}`
-    : null;
-  const hasPreview = Boolean(book?.preview_url);
+  const userHasAccess = Boolean(book?.user_has_access) || Boolean(ownedEntry);
+  const downloadUrl = ownedEntry?.downloadUrl
+    || (book?.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
+  const previewSource = book?.preview_url || ownedEntry?.preview_url;
+  const hasPreview = Boolean(previewSource);
 
   let actionButtons = null;
   if (!isPaid) {
@@ -55,7 +81,7 @@ export default function BookDetails({ book }) {
       <div className="flex flex-wrap gap-4">
         {hasPreview && (
           <a
-            href={book.preview_url}
+            href={previewSource}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
@@ -78,14 +104,21 @@ export default function BookDetails({ book }) {
   } else if (userHasAccess) {
     if (downloadUrl) {
       actionButtons = (
-        <a
-          href={downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
-        >
-          {t("download_book")}
-        </a>
+        <div className="flex flex-col gap-2">
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+          >
+            {t("download_book")}
+          </a>
+          <p className="text-sm text-green-300">
+            {t("book_owned_message", {
+              defaultValue: "Already in your library",
+            })}
+          </p>
+        </div>
       );
     }
   } else {
@@ -93,7 +126,7 @@ export default function BookDetails({ book }) {
       <div className="flex flex-wrap gap-4">
         {hasPreview && (
           <a
-            href={book.preview_url}
+            href={previewSource}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
