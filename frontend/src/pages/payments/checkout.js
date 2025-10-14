@@ -283,6 +283,20 @@ export async function handlePayPalPayment({
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const data = await initiatePayPalPayment(payload);
+    if (typeof window !== 'undefined' && data?.payment) {
+      try {
+        window.sessionStorage.setItem(
+          'pendingPayPalPayment',
+          JSON.stringify({
+            paymentId: data.payment.id,
+            itemType,
+            itemId: String(itemInfo.id),
+          })
+        );
+      } catch (_err) {
+        // sessionStorage might be unavailable in private browsing
+      }
+    }
     if (data?.approval_url) {
       window.location.href = data.approval_url;
     } else {

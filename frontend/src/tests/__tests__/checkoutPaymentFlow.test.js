@@ -111,6 +111,7 @@ jest.mock('next/link', () => ({
 }));
 
 beforeEach(() => {
+  window.sessionStorage.clear();
   mockUseRouter.mockReturnValue({
     query: { itemId: '1', itemType: 'class' },
     isReady: true,

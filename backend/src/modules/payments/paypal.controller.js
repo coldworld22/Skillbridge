@@ -36,7 +36,24 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new AppError('Amount must be a positive number', 400);
   }
-  const currencyCode = currency || 'USD';
+  const method = await paymentMethodsService.getByType('paypal');
+  if (!method) {
+    throw new AppError('PayPal payment method not configured', 400);
+  }
+
+  const methodSettings =
+    typeof method.settings === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(method.settings);
+          } catch (_err) {
+            return {};
+          }
+        })()
+      : method.settings || {};
+
+  const configuredCurrency = methodSettings.currency;
+  const currencyCode = (currency || configuredCurrency || 'USD').toUpperCase();
   if (!SUPPORTED_CURRENCIES.includes(currencyCode)) {
     throw new AppError('Unsupported currency', 400);
   }
@@ -54,11 +71,6 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     }
   }
 
-  const method = await paymentMethodsService.getByType('paypal');
-  if (!method) {
-    throw new AppError('PayPal payment method not configured', 400);
-  }
-
   let platform_fee = 0;
   let instructor_amount = numericAmount;
   try {
@@ -72,12 +84,18 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
 
   const paymentId = uuidv4();
 
+  const baseFrontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const cancelParams = new URLSearchParams({
+    itemType: item_type,
+    itemId: String(item_id),
+  });
+
   const order = await paypalService.createOrder({
     amount: numericAmount,
     currency: currencyCode,
     returnUrl: `${process.env.BACKEND_URL || ''}/api/payments/paypal/callback?payment_id=${paymentId}`,
-    cancelUrl: process.env.FRONTEND_URL
-      ? `${process.env.FRONTEND_URL}/payments/error`
+    cancelUrl: baseFrontendUrl
+      ? `${baseFrontendUrl}/payments/error?${cancelParams.toString()}`
       : undefined,
   });
   const approval = order.links?.find((l) => l.rel === 'approve')?.href;
@@ -131,7 +149,14 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   }
 
   if (process.env.FRONTEND_URL) {
-    const redirectUrl = `${process.env.FRONTEND_URL}/payments/${updated.status === STATUS.PAID ? 'success' : 'error'}`;
+    const baseFrontendUrl = process.env.FRONTEND_URL.replace(/\/$/, '');
+    const route = updated.status === STATUS.PAID ? 'success' : 'error';
+    const params = new URLSearchParams({
+      payment_id: updated.id,
+      itemType: updated.item_type,
+      itemId: String(updated.item_id || ''),
+    });
+    const redirectUrl = `${baseFrontendUrl}/payments/${route}?${params.toString()}`;
     return res.redirect(redirectUrl);
   }
   sendSuccess(res, updated, 'PayPal payment processed');

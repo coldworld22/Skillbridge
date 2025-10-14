@@ -23,7 +23,11 @@ import useSubscriptionStore from '@/store/subscriptionStore';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
-  const { itemType, itemId, payment_id } = router.query;
+  const {
+    itemType: queryItemType,
+    itemId: queryItemId,
+    payment_id: queryPaymentId,
+  } = router.query;
   const { t } = useTranslation('common');
   const [itemInfo, setItemInfo] = useState(null);
   const [invoiceInfo, setInvoiceInfo] = useState(null);
@@ -33,9 +37,32 @@ export default function PaymentSuccessPage() {
   const [subscriptionError, setSubscriptionError] = useState(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [bannerMessage, setBannerMessage] = useState(null);
+  const [pendingPaymentFallback, setPendingPaymentFallback] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.sessionStorage.getItem('pendingPayPalPayment');
+      if (!raw) {
+        setPendingPaymentFallback(null);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      setPendingPaymentFallback(parsed);
+      if (queryPaymentId || queryItemId || queryItemType) {
+        window.sessionStorage.removeItem('pendingPayPalPayment');
+      }
+    } catch (_err) {
+      setPendingPaymentFallback(null);
+    }
+  }, [queryPaymentId, queryItemId, queryItemType]);
+
+  const itemType = queryItemType || pendingPaymentFallback?.itemType || null;
+  const itemId = queryItemId || pendingPaymentFallback?.itemId || null;
+  const payment_id = queryPaymentId || pendingPaymentFallback?.paymentId || null;
 
   const confirmPlanSubscription = async () => {
     if (payment_id && paymentInfo?.status !== 'paid') return;
@@ -142,6 +169,19 @@ export default function PaymentSuccessPage() {
         await confirmPlanSubscription();
       }
     } finally {
+      if (
+        typeof window !== 'undefined' &&
+        pendingPaymentFallback &&
+        !queryPaymentId &&
+        !queryItemId &&
+        !queryItemType
+      ) {
+        try {
+          window.sessionStorage.removeItem('pendingPayPalPayment');
+        } catch (_err) {
+          // Ignore storage cleanup failures
+        }
+      }
       await fetchLibrary();
       setLoading(false);
     }
