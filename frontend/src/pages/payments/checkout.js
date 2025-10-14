@@ -604,9 +604,9 @@ export default function CheckoutPage() {
 
 
   const completePayment = async (existingPayment) => {
+    setPaymentStatus('processing');
     let payment = existingPayment;
     if (itemType === 'plan' && finalPrice <= Number.EPSILON) {
-      setPaymentStatus('processing');
       try {
         await subscribeToPlan(itemInfo.id, interval);
       } catch (err) {
@@ -622,7 +622,6 @@ export default function CheckoutPage() {
       return;
     }
     if (itemType === 'plan' && !payment) {
-      setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods);
       if (eligible.length === 0) {
         toast.error(t('no_payment_methods_plan'));
@@ -643,6 +642,23 @@ export default function CheckoutPage() {
         payment = await createPayment(payload);
       } catch (err) {
         console.error('Failed to create payment', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+    }
+    if (!payment && finalPrice <= Number.EPSILON && itemInfo?.id) {
+      try {
+        const payload = {
+          item_type: itemType,
+          item_id: itemInfo.id,
+          amount: 0,
+          status: 'paid',
+        };
+        if (couponId) payload.coupon_id = couponId;
+        payment = await createPayment(payload);
+      } catch (err) {
+        console.error('Failed to record free payment', err);
         toast.error(t('payment_generic_failure'));
         setPaymentStatus('idle');
         return;
