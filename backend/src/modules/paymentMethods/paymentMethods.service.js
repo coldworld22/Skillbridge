@@ -25,8 +25,21 @@ exports.getById = (id) => {
   return db("payment_methods_config").where({ id }).first();
 };
 
-exports.getByType = (type) => {
-  return db("payment_methods_config").where({ type }).first();
+exports.getByType = async (type) => {
+  const normalized = `${type ?? ""}`.trim();
+  if (!normalized) return null;
+  const lower = normalized.toLowerCase();
+
+  const byType = await db("payment_methods_config")
+    .whereRaw("LOWER(type) = ?", lower)
+    .first();
+  if (byType) return byType;
+
+  const byName = await db("payment_methods_config")
+    .whereRaw("LOWER(name) = ?", lower)
+    .first();
+
+  return byName || null;
 };
 
 exports.update = async (id, data) => {
