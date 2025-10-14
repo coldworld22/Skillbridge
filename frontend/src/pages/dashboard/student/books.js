@@ -80,7 +80,7 @@ const normalizeLibraryBook = (rawBook, lang = "en") => {
     ? book.tags
     : Array.isArray(book.book_tags)
     ? book.book_tags
-    : [];
+    : toArray(book.tags || book.book_tags);
   const tags = rawTags
     .map((tag) => {
       if (!tag) return null;
@@ -179,9 +179,26 @@ function formatDateUTC(dateInput, locale) {
   }
 }
 
+function toArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (value instanceof Set) return Array.from(value).filter(Boolean);
+  if (value instanceof Map) return Array.from(value.values()).filter(Boolean);
+  if (typeof value === "string") {
+    const parts = value
+      .split(/[,;]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return parts.length ? parts : [value];
+  }
+  return [value].filter(Boolean);
+}
+
 function BookCard({ book }) {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
-  const wishlist = useBookWishlistStore((state) => state.wishlist || []);
+  const wishlist = useBookWishlistStore((state) =>
+    Array.isArray(state.wishlist) ? state.wishlist : []
+  );
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const removeFromWishlist = useBookWishlistStore((state) => state.removeFromWishlist);
   const [imageSrc, setImageSrc] = useState(
@@ -192,7 +209,7 @@ function BookCard({ book }) {
     setImageSrc(book.coverUrl || book.cover_image_url || "/images/default-book-cover.jpg");
   }, [book.coverUrl, book.cover_image_url]);
 
-  const isWishlisted = wishlist.some((item) => item.book_id === book.id);
+  const isWishlisted = wishlist.some((item) => item?.book_id === book.id);
 
   const price = book.price_paid ?? book.price ?? 0;
   const currency = book.currency || "USD";
@@ -385,8 +402,8 @@ function BooksPage() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {normalizedBooks.map((book) => (
-            <BookCardBoundary key={String(book.id)} book={book}>
+          {normalizedBooks.map((book, index) => (
+            <BookCardBoundary key={String(book?.id ?? index)} book={book}>
               <BookCard book={book} />
             </BookCardBoundary>
           ))}
