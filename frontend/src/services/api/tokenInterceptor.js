@@ -13,6 +13,7 @@ import logger from "@/utils/logger";
 let isRefreshing = false;
 let failedQueue = [];
 let lastNetworkToast = 0;
+let hydrationWaiter = null;
 
 function hasPersistedAuthState() {
   if (typeof window === "undefined") return false;
@@ -34,6 +35,35 @@ const processQueue = (error, token = null) => {
   });
   failedQueue = [];
 };
+
+function waitForAuthHydration() {
+  if (hydrationWaiter) return hydrationWaiter;
+
+  const currentState = useAuthStore.getState();
+  if (currentState.hasHydrated) {
+    return Promise.resolve(currentState);
+  }
+
+  hydrationWaiter = new Promise((resolve) => {
+    let timeoutId;
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      if (state.hasHydrated) {
+        clearTimeout(timeoutId);
+        unsubscribe();
+        hydrationWaiter = null;
+        resolve(state);
+      }
+    });
+
+    timeoutId = setTimeout(() => {
+      unsubscribe();
+      hydrationWaiter = null;
+      resolve(useAuthStore.getState());
+    }, 1500);
+  });
+
+  return hydrationWaiter;
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Interceptor to add Authorization header with access token
@@ -67,7 +97,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const authStore = useAuthStore.getState();
+    let authStore = useAuthStore.getState();
     
     // Ignore aborted/cancelled requests to avoid noisy toasts during route changes
     const isCanceled =
