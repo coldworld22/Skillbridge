@@ -4,6 +4,7 @@ import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useLibraryStore from "@/store/libraryStore";
 import logger from "@/utils/logger";
 
 let rehydrateSet;
@@ -127,8 +128,19 @@ const createAuthStore = (set, get) => {
         const msgStop = useMessageStore.getState().stopPolling;
         notifStop?.();
         msgStop?.();
+        try {
+          const libraryState = useLibraryStore.getState?.();
+          libraryState?.clear?.();
+        } catch (err) {
+          logger.warn?.("Failed to reset library store during logout", err);
+        }
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth");
+          try {
+            localStorage.removeItem("library-store");
+          } catch (err) {
+            logger.warn?.("Failed to clear persisted library store", err);
+          }
         }
         set({ accessToken: null, user: null, onboarding: null });
       },

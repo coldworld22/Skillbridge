@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BookDetails from '@/components/books/BookDetails';
 import useAppConfigStore from '@/store/appConfigStore';
 import useAuthStore from '@/store/auth/authStore';
+import useLibraryStore from '@/store/libraryStore';
 
 const mockI18n = { language: 'en-US' };
 jest.mock('next-i18next', () => ({
@@ -29,6 +30,10 @@ describe('BookDetails', () => {
   beforeEach(() => {
     useAuthStore.setState({ user: { role: 'student' }, accessToken: 'token' });
     useAppConfigStore.setState({ settings: { currency: 'USD' } });
+    useLibraryStore.setState({
+      books: [],
+      fetchLibrary: jest.fn().mockResolvedValue([]),
+    });
     mockI18n.language = 'en-US';
     mockPush.mockReset();
     mockAddItem.mockReset();
@@ -38,7 +43,9 @@ describe('BookDetails', () => {
   it('displays rating even when zero', () => {
     const book = { id: 1, title: 'Test', rating: 0, price: 0, pdf_url: null };
     render(<BookDetails book={book} />);
-    expect(screen.getByLabelText('0.0 out of 5')).toBeInTheDocument();
+    expect(
+      screen.getByText((content) => /0\.0\s*\/\s*5/.test(content))
+    ).toBeInTheDocument();
   });
 
   it('formats price in USD', () => {
