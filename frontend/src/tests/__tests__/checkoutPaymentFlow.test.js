@@ -140,7 +140,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
     push,
   });
   fetchPaymentMethods.mockResolvedValue([
-    { id: 2, name: 'PayPal', type: null },
+    { id: 2, name: 'Pay Pal', type: 'manual' },
     {
       id: 3,
       name: 'Bank',
@@ -151,8 +151,11 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   initiateBankPayment.mockResolvedValue({ id: 42 });
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  fireEvent.click(screen.getByText('PayPal'));
+  fireEvent.click(screen.getByText('Pay Pal'));
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
+  expect(
+    screen.queryByText(/is not currently supported/i)
+  ).not.toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   await waitFor(() =>
     expect(screen.getByLabelText('Bank Name')).toHaveValue('Test Bank')

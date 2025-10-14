@@ -68,6 +68,28 @@ function isTrustedIcon(url) {
   }
 }
 
+function normalizeValue(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function matchesPayPal(value) {
+  const normalized = normalizeValue(value);
+  if (!normalized) return false;
+  const condensed = normalized.replace(/[\s_-]+/g, '');
+  return normalized.includes('paypal') || condensed.includes('paypal');
+}
+
+export function isPayPalMethod(methodOrIdentifier) {
+  if (!methodOrIdentifier) return false;
+  if (typeof methodOrIdentifier === 'string') {
+    return matchesPayPal(methodOrIdentifier);
+  }
+  if (matchesPayPal(methodOrIdentifier.type)) return true;
+  if (matchesPayPal(methodOrIdentifier.name)) return true;
+  if (matchesPayPal(methodOrIdentifier.category)) return true;
+  return false;
+}
+
 export function TrustedIcon({ src, alt }) {
   const [error, setError] = useState(false);
   if (!src || error) return <FaMoneyCheckAlt aria-label={alt} role="img" />;
@@ -100,9 +122,10 @@ export function resolveIconElement(method) {
       // Invalid URLs fall through to the default icon
     }
   }
-  return (
-    iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
-  );
+  const identifier = getMethodIdentifier(method).toLowerCase();
+  if (iconMap[identifier]) return iconMap[identifier];
+  if (isPayPalMethod(method)) return iconMap.paypal;
+  return <FaMoneyCheckAlt />;
 }
 
 function getMethodIdentifier(method) {
@@ -461,9 +484,15 @@ export default function CheckoutPage() {
     if (typeof methodSettings.details === 'string') return methodSettings.details.trim();
     return '';
   }, [selectedMethodIdentifier, methodSettings.instructions, methodSettings.note, methodSettings.details]);
-  const isCryptoSelected = isCryptoMethod(
-    selectedMethodObj || selectedMethodIdentifier
-  );
+  const methodReference = selectedMethodObj || selectedMethodIdentifier;
+  const isCryptoSelected = isCryptoMethod(methodReference);
+  const isPayPalSelected = isPayPalMethod(methodReference);
+  const shouldRenderCardFormWithoutElements =
+    Boolean(selectedMethodIdentifier) &&
+    selectedMethodIdentifier !== 'stripe' &&
+    selectedMethodIdentifier !== 'bank' &&
+    !isPayPalSelected &&
+    !isCryptoSelected;
 
   useEffect(() => {
     if (
@@ -765,6 +794,7 @@ export default function CheckoutPage() {
     }
     const identifier = getMethodIdentifier(method).toLowerCase();
     const isCrypto = isCryptoMethod(method || identifier);
+    const isPayPal = isPayPalMethod(method || identifier);
 
     const handlers = {
       bank: handleBankPayment,
@@ -776,7 +806,7 @@ export default function CheckoutPage() {
     const key =
       identifier === 'bank'
         ? 'bank'
-        : identifier === 'paypal'
+        : isPayPal
         ? 'paypal'
         : isCrypto
         ? 'crypto'
@@ -960,7 +990,7 @@ export default function CheckoutPage() {
                 {`Pay $${finalPrice}`}
               </button>
             </div>
-          ) : selectedMethodIdentifier === 'paypal' ? (
+          ) : isPayPalSelected ? (
             <PayPalForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
@@ -978,6 +1008,16 @@ export default function CheckoutPage() {
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
+            />
+          ) : shouldRenderCardFormWithoutElements ? (
+            <CardPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              allowInstallments={allowInstallments}
+              installments={installments}
+              perInstallment={perInstallment}
+              finalPrice={finalPrice}
+              selectedMethodLabel={selectedMethodLabel}
             />
           ) : selectedMethodIdentifier === 'stripe' && stripePromise ? (
             <Elements stripe={stripePromise}>
