@@ -108,5 +108,8 @@
   "no_payment_methods_plan": "इस योजना के लिए कोई भुगतान विधि उपलब्ध नहीं है",
   "method_additional_instructions": "Additional instructions for {{method}}",
   "selected_method": "selected method",
+  "loading_payment_methods": "भुगतान विधियाँ लोड हो रही हैं...",
+  "unsupported_payment_method": "{{method}} वर्तमान में समर्थित नहीं है। कृपया कोई अन्य भुगतान विकल्प चुनें।",
+  "select_payment_method_prompt": "जारी रखने के लिए एक भुगतान विधि चुनें।",
   "bank_additional_instructions": "Please reference your payment details when uploading receipts so we can verify your transfer quickly."
 }

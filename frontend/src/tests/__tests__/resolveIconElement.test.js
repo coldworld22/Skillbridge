@@ -30,6 +30,12 @@ describe('resolveIconElement', () => {
     expect(el.type.name).toBe(FaPaypal.name);
   });
 
+  it('returns PayPal icon when method name references PayPal', async () => {
+    const { resolveIconElement, FaPaypal } = await loadModule();
+    const el = resolveIconElement({ type: 'manual', name: 'Pay Pal' });
+    expect(el.type.name).toBe(FaPaypal.name);
+  });
+
   it('returns TrustedIcon for URLs from trusted hosts', async () => {
     process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS = 'example.com';
     const { resolveIconElement, TRUSTED_ICON_HOSTS, TrustedIcon } = await loadModule();

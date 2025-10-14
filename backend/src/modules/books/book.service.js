@@ -414,22 +414,31 @@ exports.checkout = async (studentId) => {
 
     const payments = [];
     for (const b of books) {
+      const bookItemId = b?.id === undefined || b?.id === null ? b.id : String(b.id);
       const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
       const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
 
       if (coveredBySubscription) {
         const usage = await trx('plan_usage_metrics')
-          .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+          .where({
+            plan_id: activePlanId,
+            item_type: 'book',
+            item_id: bookItemId,
+          })
           .first();
         if (usage) {
           await trx('plan_usage_metrics')
-            .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+            .where({
+              plan_id: activePlanId,
+              item_type: 'book',
+              item_id: bookItemId,
+            })
             .update({ usage_count: usage.usage_count + 1 });
         } else {
           await trx('plan_usage_metrics').insert({
             plan_id: activePlanId,
             item_type: 'book',
-            item_id: b.id,
+            item_id: bookItemId,
             usage_count: 1,
           });
         }
@@ -449,7 +458,7 @@ exports.checkout = async (studentId) => {
             id: uuidv4(),
             user_id: studentId,
             item_type: 'book',
-            item_id: b.id,
+            item_id: bookItemId,
             amount: 0,
             status: PAYMENT_STATUS.PAID,
             source: 'subscription',
@@ -480,7 +489,7 @@ exports.checkout = async (studentId) => {
         user_id: studentId,
         method_id: bankMethod.id,
         item_type: 'book',
-        item_id: b.id,
+        item_id: bookItemId,
         amount: b.price,
         status: PAYMENT_STATUS.AWAITING_APPROVAL,
         platform_fee,
