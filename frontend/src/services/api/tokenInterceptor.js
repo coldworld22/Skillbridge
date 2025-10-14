@@ -89,7 +89,7 @@ api.interceptors.request.use(
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
-        config.headers["x-csrf-token"] = csrfToken;
+        headers["x-csrf-token"] = csrfToken;
       }
     }
 
