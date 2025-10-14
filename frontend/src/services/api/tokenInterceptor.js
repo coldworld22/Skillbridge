@@ -70,17 +70,33 @@ function waitForAuthHydration() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 api.interceptors.request.use(
-  (config) => {
-    const { accessToken } = useAuthStore.getState();
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+  async (config) => {
+    const headers = config.headers || (config.headers = {});
+
+    try {
+      if (
+        typeof window !== "undefined" &&
+        !useAuthStore.getState().hasHydrated
+      ) {
+        const state = await waitForAuthHydration();
+        if (state?.accessToken) {
+          headers.Authorization = `Bearer ${state.accessToken}`;
+        }
+      } else {
+        const { accessToken } = useAuthStore.getState();
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        }
+      }
+    } catch (err) {
+      logger.warn?.("Failed to resolve auth state before request", err);
     }
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
-        config.headers["x-csrf-token"] = csrfToken;
+        headers["x-csrf-token"] = csrfToken;
       }
     }
 
