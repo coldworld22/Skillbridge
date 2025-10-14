@@ -71,14 +71,13 @@ function waitForAuthHydration() {
 
 api.interceptors.request.use(
   async (config) => {
-    const state = useAuthStore.getState();
-
-    if (typeof window !== "undefined" && !state.hasHydrated) {
-      try {
+    try {
+      const state = useAuthStore.getState();
+      if (!state?.hasHydrated) {
         await waitForAuthHydration();
-      } catch (err) {
-        logger.warn?.("Auth store hydration wait failed", err);
       }
+    } catch (err) {
+      logger.warn?.("Failed to wait for auth hydration", err);
     }
 
     const { accessToken } = useAuthStore.getState();
@@ -91,8 +90,7 @@ api.interceptors.request.use(
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
-        config.headers = config.headers || {};
-        config.headers["x-csrf-token"] = csrfToken;
+        headers["x-csrf-token"] = csrfToken;
       }
     }
 
