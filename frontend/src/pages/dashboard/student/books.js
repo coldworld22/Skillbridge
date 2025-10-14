@@ -312,12 +312,10 @@ function BookCard({ book }) {
 
 function BooksPage() {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
-  const { books, loading, error, fetchLibrary } = useLibraryStore((state) => ({
-    books: state.books,
-    loading: state.loading,
-    error: state.error,
-    fetchLibrary: state.fetchLibrary,
-  }));
+  const books = useLibraryStore((state) => state.books);
+  const loading = useLibraryStore((state) => state.loading);
+  const error = useLibraryStore((state) => state.error);
+  const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
 
   // Keep SSR/CSR markup consistent to avoid hydration errors.
   const [mounted, setMounted] = useState(false);
