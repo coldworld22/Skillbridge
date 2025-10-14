@@ -32,18 +32,22 @@ function StudentDashboardHome() {
     const load = async () => {
       try {
         const profile = await getStudentProfile();
-        setStudentName(profile.full_name);
+        if (active) {
+          setStudentName(profile?.full_name || profile?.first_name || "");
+        }
       } catch (err) {
         console.error("Failed to load profile", err);
       }
 
       try {
         const list = await fetchMyEnrolledClasses();
+        if (!active) return;
+
         const formatted = list.map((cls) => ({
           id: cls.id,
           title: cls.title,
-          progress: cls.progress,
-          nextSession: cls.startDate,
+          progress: normalizeProgress(cls.progress),
+          nextSession: cls.startDate || cls.nextSession || null,
         }));
         setClasses(formatted);
       } catch (err) {
