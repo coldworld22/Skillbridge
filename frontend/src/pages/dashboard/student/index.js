@@ -23,39 +23,12 @@ function StudentDashboardHome() {
   const [hasMounted, setHasMounted] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [classes, setClasses] = useState([]);
-  const normalizeProgress = useCallback((value) => {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) {
-      return Math.min(100, Math.max(0, numeric));
-    }
-    return 0;
-  }, []);
-
-  const formatSessionDate = useCallback(
-    (session, options, fallback = "TBD") => {
-      if (!session) return fallback;
-
-      const parsed = new Date(session);
-      if (Number.isNaN(parsed.getTime())) {
-        return fallback;
-      }
-
-      try {
-        return new Intl.DateTimeFormat(i18n.language, options).format(parsed);
-      } catch (_err) {
-        return fallback;
-      }
-    },
-    [i18n.language]
-  );
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
   useEffect(() => {
-    let active = true;
-
     const load = async () => {
       try {
         const profile = await getStudentProfile();
@@ -76,7 +49,6 @@ function StudentDashboardHome() {
           progress: normalizeProgress(cls.progress),
           nextSession: cls.startDate || cls.nextSession || null,
         }));
-
         setClasses(formatted);
       } catch (err) {
         console.error("Failed to load classes", err);
@@ -84,35 +56,48 @@ function StudentDashboardHome() {
     };
 
     load();
+  }, []);
 
-    return () => {
-      active = false;
-    };
-  }, [normalizeProgress]);
+  const formatDate = useCallback(
+    (value, options) => {
+      if (!value) return "";
+
+      try {
+        return new Date(value).toLocaleString(i18n.language, options);
+      } catch (err) {
+        console.warn("Failed to format date", err);
+        return value;
+      }
+    },
+    [i18n.language]
+  );
 
   const progressData = useMemo(
     () =>
       classes.map((cls, index) => ({
         date: cls.nextSession
-          ? formatSessionDate(cls.nextSession, { month: "short", day: "numeric" })
+          ? formatDate(cls.nextSession, { month: "short", day: "numeric" })
           : t("class_number", { num: index + 1 }),
-        progress: cls.progress,
+        progress: cls.progress ?? 0,
       })),
-    [classes, formatSessionDate, t]
+    [classes, formatDate, t]
   );
 
-  const formattedClasses = useMemo(() => {
-    const fallbackLabel = t("date_tbd", { defaultValue: "TBD" });
-
-    return classes.map((cls) => ({
-      ...cls,
-      displayDate: formatSessionDate(
-        cls.nextSession,
-        { month: "short", day: "numeric", year: "numeric" },
-        fallbackLabel
-      ),
-    }));
-  }, [classes, formatSessionDate, t]);
+  const upcomingClasses = useMemo(
+    () =>
+      classes.map((cls) => ({
+        ...cls,
+        nextSessionLabel: cls.nextSession
+          ? formatDate(cls.nextSession, {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : t("no_session_scheduled"),
+      })),
+    [classes, formatDate, t]
+  );
 
   if (!hasMounted) return null;
 
@@ -161,10 +146,10 @@ function StudentDashboardHome() {
             {t("upcoming_events")}
           </h2>
           <div className="bg-white p-4 rounded-lg shadow max-h-48 overflow-y-auto divide-y">
-            {formattedClasses.length > 0 ? (
-              formattedClasses.map((cls) => (
+            {upcomingClasses.length > 0 ? (
+              upcomingClasses.map((cls) => (
                 <div key={cls.id} className="py-2 text-sm text-gray-800">
-                  {cls.displayDate} – <span className="font-semibold">{cls.title}</span>
+                  {cls.nextSessionLabel} – <span className="font-semibold">{cls.title}</span>
                 </div>
               ))
             ) : (
@@ -181,7 +166,7 @@ function StudentDashboardHome() {
             {t("current_classes")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {formattedClasses.map((cls) => (
+            {upcomingClasses.map((cls) => (
               <div
                 key={cls.id}
                 className="bg-white border rounded-lg shadow-sm p-4 space-y-2"
@@ -197,7 +182,7 @@ function StudentDashboardHome() {
                   {t("progress")}: {cls.progress}%
                 </p>
                 <p className="text-sm text-gray-600">
-                  {t("next_session")}: {cls.displayDate}
+                  {t("next_session")}: {cls.nextSessionLabel}
                 </p>
                 <a
                   href={`/dashboard/student/classes/${cls.id}`}
@@ -207,7 +192,7 @@ function StudentDashboardHome() {
                 </a>
               </div>
             ))}
-            {classes.length === 0 && (
+            {upcomingClasses.length === 0 && (
               <p className="text-sm text-gray-600">{t("no_classes")}</p>
             )}
           </div>

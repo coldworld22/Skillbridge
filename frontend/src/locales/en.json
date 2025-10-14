@@ -104,6 +104,20 @@
         "favicon_upload_failed": "Favicon upload failed",
         "background_upload_success": "Background uploaded successfully",
         "background_upload_failed": "Background upload failed"
+      },
+      "studentDashboardHome": {
+        "welcome_back": "Welcome back, {{name}}!",
+        "enrolled_classes": "You are enrolled in {{count}} classes",
+        "class_number": "Class {{num}}",
+        "learning_progress": "Learning Progress",
+        "upcoming_events": "Upcoming Events",
+        "no_upcoming_events": "No upcoming sessions scheduled",
+        "current_classes": "Current Classes",
+        "progress": "Progress",
+        "next_session": "Next session",
+        "view_class": "View class",
+        "no_classes": "You are not enrolled in any classes yet",
+        "no_session_scheduled": "No date available"
       }
   }
 }
