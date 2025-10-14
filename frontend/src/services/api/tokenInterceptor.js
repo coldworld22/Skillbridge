@@ -15,6 +15,33 @@ let failedQueue = [];
 let lastNetworkToast = 0;
 let hydrationWaiter = null;
 
+function ensureHeaderContainer(target) {
+  if (!target.headers) {
+    target.headers = {};
+    return target.headers;
+  }
+
+  if (typeof target.headers.set === "function") {
+    return target.headers;
+  }
+
+  if (typeof target.headers !== "object") {
+    target.headers = {};
+  }
+
+  return target.headers;
+}
+
+function setHeader(target, name, value) {
+  const headers = ensureHeaderContainer(target);
+
+  if (typeof headers.set === "function") {
+    headers.set(name, value);
+  } else {
+    headers[name] = value;
+  }
+}
+
 function hasPersistedAuthState() {
   if (typeof window === "undefined") return false;
   try {
@@ -70,17 +97,27 @@ function waitForAuthHydration() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    const state = useAuthStore.getState();
+
+    if (typeof window !== "undefined" && !state.hasHydrated) {
+      try {
+        await waitForAuthHydration();
+      } catch (err) {
+        logger.warn?.("Auth store hydration wait failed", err);
+      }
+    }
+
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      setHeader(config, "Authorization", `Bearer ${accessToken}`);
     }
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
-        config.headers["x-csrf-token"] = csrfToken;
+        setHeader(config, "x-csrf-token", csrfToken);
       }
     }
 
@@ -142,7 +179,7 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          setHeader(originalRequest, "Authorization", `Bearer ${token}`);
           return api(originalRequest);
         });
       }
@@ -159,7 +196,7 @@ api.interceptors.response.use(
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        setHeader(originalRequest, "Authorization", `Bearer ${data.accessToken}`);
         return api(originalRequest);
       } catch (refreshErr) {
         logger.error("\u274C Refresh token request failed:", refreshErr);
