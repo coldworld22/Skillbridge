@@ -181,6 +181,20 @@
         "favicon_upload_failed": "فشل رفع الأيقونة",
         "background_upload_success": "تم رفع الخلفية بنجاح",
         "background_upload_failed": "فشل رفع الخلفية"
+      },
+      "studentDashboardHome": {
+        "welcome_back": "مرحباً بعودتك، {{name}}!",
+        "enrolled_classes": "أنت ملتحق في {{count}} من الصفوف",
+        "class_number": "الصف {{num}}",
+        "learning_progress": "تقدم التعلم",
+        "upcoming_events": "الجلسات القادمة",
+        "no_upcoming_events": "لا توجد جلسات قادمة مجدولة",
+        "current_classes": "الصفوف الحالية",
+        "progress": "التقدم",
+        "next_session": "الجلسة التالية",
+        "view_class": "عرض الصف",
+        "no_classes": "لم تلتحق بأي صفوف بعد",
+        "no_session_scheduled": "لا يوجد تاريخ متاح"
       }
   }
 }
