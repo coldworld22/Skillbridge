@@ -71,25 +71,18 @@ function waitForAuthHydration() {
 
 api.interceptors.request.use(
   async (config) => {
-    const headers = config.headers || (config.headers = {});
-
     try {
-      if (
-        typeof window !== "undefined" &&
-        !useAuthStore.getState().hasHydrated
-      ) {
-        const state = await waitForAuthHydration();
-        if (state?.accessToken) {
-          headers.Authorization = `Bearer ${state.accessToken}`;
-        }
-      } else {
-        const { accessToken } = useAuthStore.getState();
-        if (accessToken) {
-          headers.Authorization = `Bearer ${accessToken}`;
-        }
+      const state = useAuthStore.getState();
+      if (!state?.hasHydrated) {
+        await waitForAuthHydration();
       }
     } catch (err) {
-      logger.warn?.("Failed to resolve auth state before request", err);
+      logger.warn?.("Failed to wait for auth hydration", err);
+    }
+
+    const { accessToken } = useAuthStore.getState();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     const method = config.method?.toLowerCase();
