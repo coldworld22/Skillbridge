@@ -26,6 +26,8 @@ export default function BookCard({
   onAddToWishlist,
   onAddToCart,
   cornerAddToCart = false,
+  owned = false,
+  downloadUrl,
 }) {
   const { t } = useTranslation("website");
 
@@ -49,6 +51,9 @@ export default function BookCard({
     active: "bg-green-100 text-green-800",
     inactive: "bg-gray-100 text-gray-800",
   };
+
+  const finalDownloadUrl = downloadUrl ||
+    (book.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow relative">
@@ -110,7 +115,14 @@ export default function BookCard({
             <RatingStars value={Number(book.rating)} showValue valueClassName="text-xs text-yellow-500 dark:text-yellow-400" />
           </div>
         )}
-        <p className="text-sm mb-3 text-gray-900 dark:text-gray-100">{formatCurrency(book.price)}</p>
+        <p className="text-sm text-gray-900 dark:text-gray-100 mb-1">{formatCurrency(book.price)}</p>
+        {owned && (
+          <p className="mt-1 mb-2 text-xs font-medium text-green-600 dark:text-green-400">
+            {t("book_owned_message", {
+              defaultValue: "Already in your library",
+            })}
+          </p>
+        )}
         <div className="flex gap-2">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
@@ -120,9 +132,9 @@ export default function BookCard({
             <FiEye />
             <span className="sr-only">{t("view")}</span>
           </Link>
-          {showReadLink && book.id && (
+          {showReadLink && finalDownloadUrl && (
             <a
-              href={`${API_BASE_URL}/library/download/${book.id}`}
+              href={finalDownloadUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
