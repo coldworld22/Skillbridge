@@ -11,11 +11,9 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       : rolesOrOptions || {};
 
   return function ProtectedPage(props) {
-    const { user, accessToken, logout } = useAuthStore((state) => ({
-      user: state.user,
-      accessToken: state.accessToken,
-      logout: state.logout,
-    }));
+    const user = useAuthStore((state) => state.user);
+    const accessToken = useAuthStore((state) => state.accessToken);
+    const logout = useAuthStore((state) => state.logout);
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
     const normalizedRoles = useMemo(
