@@ -14,6 +14,19 @@ let isRefreshing = false;
 let failedQueue = [];
 let lastNetworkToast = 0;
 
+function hasPersistedAuthState() {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem("auth");
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    const state = parsed?.state || parsed;
+    return Boolean(state?.accessToken || state?.user);
+  } catch (_err) {
+    return true;
+  }
+}
+
 // Function to process the queue of failed requests
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
@@ -82,11 +95,11 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       logger.warn("\u26A0\uFE0F Received 401 for", originalRequest?.url);
-      const refreshCookie = getCookie("refreshToken");
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
+      const hasPersistedState = hasPersistedAuthState();
 
-      if (!refreshCookie && !hasAuthState) {
-        logger.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
+      if (!hasAuthState && !hasPersistedState) {
+        logger.warn("\u26A0\uFE0F No persisted auth state; redirecting to login");
         authStore.logout(true);
         if (typeof window !== "undefined") {
           Router.push("/auth/login");
