@@ -15,6 +15,33 @@ let failedQueue = [];
 let lastNetworkToast = 0;
 let hydrationWaiter = null;
 
+function ensureHeaderContainer(target) {
+  if (!target.headers) {
+    target.headers = {};
+    return target.headers;
+  }
+
+  if (typeof target.headers.set === "function") {
+    return target.headers;
+  }
+
+  if (typeof target.headers !== "object") {
+    target.headers = {};
+  }
+
+  return target.headers;
+}
+
+function setHeader(target, name, value) {
+  const headers = ensureHeaderContainer(target);
+
+  if (typeof headers.set === "function") {
+    headers.set(name, value);
+  } else {
+    headers[name] = value;
+  }
+}
+
 function hasPersistedAuthState() {
   if (typeof window === "undefined") return false;
   try {
@@ -152,7 +179,7 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          setHeader(originalRequest, "Authorization", `Bearer ${token}`);
           return api(originalRequest);
         });
       }
@@ -169,7 +196,7 @@ api.interceptors.response.use(
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        setHeader(originalRequest, "Authorization", `Bearer ${data.accessToken}`);
         return api(originalRequest);
       } catch (refreshErr) {
         logger.error("\u274C Refresh token request failed:", refreshErr);
