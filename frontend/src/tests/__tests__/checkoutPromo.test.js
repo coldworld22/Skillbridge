@@ -1,8 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { validateCode } from '../../services/couponService';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
+import { createPayment } from '../../services/student/paymentService';
 jest.mock('next-i18next', () => ({ useTranslation: () => ({ t: (key) => key }) }));
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
@@ -38,6 +39,11 @@ jest.mock('../../services/tutorialService', () => ({
 
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
+}));
+
+jest.mock('../../services/student/paymentService', () => ({
+  createPayment: jest.fn(),
+  fetchPayment: jest.fn(),
 }));
 
 jest.mock('../../components/payments/forms/CardPaymentForm', () => {
@@ -155,4 +161,38 @@ test('skips fetching payment methods for free items', async () => {
   await screen.findByText('free_item_notice');
   expect(screen.getByText('enroll_for_free')).toBeInTheDocument();
   expect(screen.queryByText('Stripe')).toBeNull();
+});
+
+test('records a free checkout using the payment API', async () => {
+  jest.useFakeTimers();
+  fetchClassDetails.mockResolvedValueOnce({
+    data: {
+      id: 1,
+      title: 'Free Class',
+      instructor: 'Inst',
+      price: 0,
+      cover_image: '',
+    },
+  });
+  createPayment.mockResolvedValue({ status: 'paid', id: 'free-payment' });
+
+  render(<CheckoutPage />);
+  await screen.findByText('checkout');
+  fireEvent.click(screen.getByText('enroll_for_free'));
+
+  await waitFor(() =>
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item_type: 'class',
+        item_id: 1,
+        amount: 0,
+        status: 'paid',
+      })
+    )
+  );
+
+  await act(async () => {
+    jest.runAllTimers();
+  });
+  jest.useRealTimers();
 });
