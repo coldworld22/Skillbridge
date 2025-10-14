@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
@@ -17,6 +17,7 @@ export default function BookDetails({ book }) {
   const addItem = useCartStore((state) => state.addItem);
   const { isAuthenticated, user } = useAuthStore();
   const [isAdding, setIsAdding] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated()) {
@@ -35,6 +36,43 @@ export default function BookDetails({ book }) {
       router.push("/cart");
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!isAuthenticated()) {
+      toast.info(t("please_login_to_purchase"));
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role?.toLowerCase() !== "student") {
+      toast.error(t("only_students_can_purchase"));
+      return;
+    }
+    if (!book?.id) {
+      toast.error(t("book_not_found"));
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      const added = await addItem(mapBookForCart(book));
+      if (!added) {
+        toast.error(t("failed_to_add_to_cart"));
+        return;
+      }
+
+      toast.success(t("book_ready_for_checkout"));
+      router.push(`/payments/checkout?itemId=${book.id}&itemType=book`);
+    } catch (error) {
+      console.error("Failed to initiate book checkout", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        t("book_purchase_failed");
+      toast.error(message);
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
@@ -103,16 +141,23 @@ export default function BookDetails({ book }) {
         )}
         <button
           onClick={handleAddToCart}
-          disabled={isAdding}
+          disabled={isAdding || isPurchasing}
           className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t("add_to_cart")}
+        </button>
+        <button
+          onClick={handleBuyNow}
+          disabled={isPurchasing || isAdding}
+          className="inline-block px-6 py-3 rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isPurchasing ? t("processing_purchase") : t("buy_now")}
         </button>
       </div>
     );
   }
 
-  const [coverSrc, setCoverSrc] = useState(() => {
+  const initialCover = useMemo(() => {
     const previewFirst = Array.isArray(book?.preview_pages) && book.preview_pages.length > 0
       ? book.preview_pages[0]
       : book?.preview_url;
@@ -127,7 +172,9 @@ export default function BookDetails({ book }) {
       if (u) return u;
     }
     return "/images/default-book-cover.jpg";
-  });
+  }, [book?.coverUrl, book?.cover_image_url, book?.cover_image, book?.preview_pages, book?.preview_url]);
+
+  const [coverSrc, setCoverSrc] = useState(initialCover);
 
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
