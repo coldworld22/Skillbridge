@@ -26,20 +26,37 @@ exports.getById = (id) => {
 };
 
 exports.getByType = async (type) => {
-  const normalized = `${type ?? ""}`.trim();
+  if (type === undefined || type === null) return null;
+
+  const normalized = String(type).trim().toLowerCase();
   if (!normalized) return null;
-  const lower = normalized.toLowerCase();
 
-  const byType = await db("payment_methods_config")
-    .whereRaw("LOWER(type) = ?", lower)
+  const baseQuery = db("payment_methods_config")
+    .orderBy("is_default", "desc")
+    .orderBy("created_at", "asc");
+
+  const matchByType = await baseQuery
+    .clone()
+    .whereRaw("LOWER(type) = ?", [normalized])
     .first();
-  if (byType) return byType;
+  if (matchByType) return matchByType;
 
-  const byName = await db("payment_methods_config")
-    .whereRaw("LOWER(name) = ?", lower)
+  const matchByName = await baseQuery
+    .clone()
+    .whereRaw("LOWER(name) = ?", [normalized])
     .first();
+  if (matchByName) return matchByName;
 
-  return byName || null;
+  if (normalized.includes("bank")) {
+    const bankLike = await baseQuery
+      .clone()
+      .whereRaw("LOWER(name) LIKE ?", ["%bank%"])
+      .orWhereRaw("LOWER(type) LIKE ?", ["%bank%"])
+      .first();
+    if (bankLike) return bankLike;
+  }
+
+  return null;
 };
 
 exports.update = async (id, data) => {
