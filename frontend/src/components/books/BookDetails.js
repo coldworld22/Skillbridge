@@ -18,6 +18,7 @@ export default function BookDetails({ book }) {
   const addItem = useCartStore((state) => state.addItem);
   const { isAuthenticated, user } = useAuthStore();
   const [isAdding, setIsAdding] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const libraryBooks = useLibraryStore((state) => state.books);
   const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
 
