@@ -16,6 +16,12 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       accessToken: state.accessToken,
       logout: state.logout,
     }));
+    if (typeof window !== "undefined") {
+      // Debug render frequency to trace potential infinite loops
+      console.count(
+        `withAuthProtection render (${Component.displayName || Component.name || "Anonymous"})`
+      );
+    }
     const router = useRouter();
     const [hydrated, setHydrated] = useState(false);
     const normalizedRoles = useMemo(
@@ -30,6 +36,15 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
 
     useEffect(() => {
       if (!hydrated || redirectGuardRef.current) return;
+      if (typeof window !== "undefined") {
+        console.log("[withAuthProtection] effect", {
+          page: Component.displayName || Component.name || "Anonymous",
+          hydrated,
+          hasUser: Boolean(user),
+          hasToken: Boolean(accessToken),
+          redirectGuard: redirectGuardRef.current,
+        });
+      }
 
       const role = user?.role?.toLowerCase();
       const profilePaths = {
@@ -44,12 +59,18 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
       if (!user) {
+        if (typeof window !== "undefined") {
+          console.warn("[withAuthProtection] redirecting to login - no user");
+        }
         redirectGuardRef.current = true;
         router.replace("/auth/login");
         return;
       }
 
       if (!accessToken || isTokenExpired(accessToken)) {
+        if (typeof window !== "undefined") {
+          console.warn("[withAuthProtection] redirecting to login - token missing/expired");
+        }
         redirectGuardRef.current = true;
         logout();
         router.replace("/auth/login");
@@ -57,12 +78,18 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       }
 
       if (!user.profile_complete && !onProfileCompletionRoute) {
+        if (typeof window !== "undefined") {
+          console.warn("[withAuthProtection] redirecting to profile completion");
+        }
         redirectGuardRef.current = true;
         router.replace(profilePath);
         return;
       }
 
       if (user.profile_complete && !user.is_email_verified && !onEmailVerificationRoute) {
+        if (typeof window !== "undefined") {
+          console.warn("[withAuthProtection] redirecting to email verification");
+        }
         redirectGuardRef.current = true;
         router.replace("/auth/verify-email");
         return;
@@ -74,6 +101,9 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
           role !== "superadmin" &&
           !allowedPerms.some((p) => user.permissions?.includes(p)))
       ) {
+        if (typeof window !== "undefined") {
+          console.warn("[withAuthProtection] redirecting to 403 - role/permissions mismatch");
+        }
         redirectGuardRef.current = true;
         router.replace("/error/403");
       }
