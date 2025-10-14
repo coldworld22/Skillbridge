@@ -67,8 +67,14 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     branch_address,
     extra_instructions,
     coupon_id,
+    reference,
+    reference_id,
   } = req.body;
   const user_id = req.user?.id;
+
+  const receiptUrl = req.file
+    ? `/uploads/payment-receipts/${req.file.filename}`
+    : undefined;
 
   if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError("Missing required fields", 400);
@@ -186,6 +192,10 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     instructor_amount,
     bank_details,
   };
+
+  const ref = reference || reference_id;
+  if (ref) paymentData.reference_id = ref;
+  if (receiptUrl) paymentData.receipt_url = receiptUrl;
 
   const payment = await paymentsService.create(paymentData);
 
