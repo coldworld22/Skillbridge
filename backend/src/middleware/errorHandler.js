@@ -48,5 +48,11 @@ module.exports = (err, req, res, next) => {
   }
 
   logger.error(`❌ ${status} - ${message}`);
-  res.status(status).json({ message });
+
+  const payload = { message };
+  if (err && typeof err.details === 'object' && err.details !== null) {
+    payload.details = err.details;
+  }
+
+  res.status(status).json(payload);
 };

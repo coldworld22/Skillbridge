@@ -120,6 +120,58 @@ function describeError(err) {
   return '';
 }
 
+function collectPayPalErrorDetails(err) {
+  if (!err || err instanceof AppError) {
+    return null;
+  }
+
+  const details = {};
+  const status = parseStatusCode(err);
+  if (status !== null) {
+    details.status = status;
+  }
+
+  const code = extractErrorCode(err);
+  if (code) {
+    details.code = code;
+  }
+
+  const debugId = err?.result?.debug_id;
+  if (typeof debugId === 'string' && debugId.trim()) {
+    details.debugId = debugId.trim();
+  }
+
+  const sdkMessage = err?.result?.message;
+  if (typeof sdkMessage === 'string' && sdkMessage.trim()) {
+    details.sdkMessage = sdkMessage.trim();
+  }
+
+  if (Array.isArray(err?.result?.details) && err.result.details.length) {
+    const issues = [];
+    const descriptions = [];
+    for (const item of err.result.details) {
+      const issue = typeof item?.issue === 'string' ? item.issue.trim() : null;
+      const description = typeof item?.description === 'string' ? item.description.trim() : null;
+      if (issue && !issues.includes(issue)) issues.push(issue);
+      if (description && !descriptions.includes(description)) {
+        descriptions.push(description);
+      }
+    }
+    if (issues.length) {
+      details.issues = issues;
+    }
+    if (descriptions.length) {
+      details.descriptions = descriptions;
+    }
+  }
+
+  if (isTransientPayPalError(err)) {
+    details.retryable = true;
+  }
+
+  return Object.keys(details).length ? details : null;
+}
+
 async function executeWithRetries(context, operation) {
   let attempt = 0;
   while (true) {
@@ -161,6 +213,8 @@ function mapPayPalSdkError(err, context) {
     err?.message ||
     'Unknown PayPal error';
 
+  const collectedDetails = collectPayPalErrorDetails(err);
+
   logger.error(
     `PayPal SDK error while ${context}: ${details}`,
     status ? `(status ${status})` : '',
@@ -170,14 +224,16 @@ function mapPayPalSdkError(err, context) {
   if (status === 401 || status === 403) {
     return new AppError(
       'PayPal payments are temporarily unavailable. Please contact support.',
-      502
+      502,
+      { details: collectedDetails || undefined }
     );
   }
 
   if (status && status >= 400 && status < 500) {
     return new AppError(
       'PayPal rejected the request. Please try again or use a different payment method.',
-      400
+      400,
+      { details: collectedDetails || undefined }
     );
   }
 
@@ -185,13 +241,15 @@ function mapPayPalSdkError(err, context) {
   if (code && TRANSIENT_PAYPAL_ERROR_CODES.has(code)) {
     return new AppError(
       `Unable to reach PayPal right now (${code}). Please verify outgoing network connectivity and try again.`,
-      502
+      502,
+      { details: collectedDetails || undefined }
     );
   }
 
   return new AppError(
     'Unable to reach PayPal right now. Please try again later.',
-    502
+    502,
+    { details: collectedDetails || undefined }
   );
 }
 

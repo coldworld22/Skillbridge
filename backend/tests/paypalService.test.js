@@ -127,9 +127,18 @@ describe('paypalService', () => {
     expect(Client).toHaveBeenCalledTimes(2);
   });
 
-  it('does not retry non-transient PayPal errors', async () => {
+  it('does not retry non-transient PayPal errors and surfaces details', async () => {
     const sdkError = Object.assign(new Error('Invalid request'), {
       statusCode: 400,
+      result: {
+        debug_id: 'XYZ123',
+        details: [
+          {
+            issue: 'INVALID_REQUEST',
+            description: 'Amount is invalid',
+          },
+        ],
+      },
     });
     mockCreateOrder.mockRejectedValueOnce(sdkError);
 
@@ -138,9 +147,36 @@ describe('paypalService', () => {
     ).rejects.toMatchObject({
       message: 'PayPal rejected the request. Please try again or use a different payment method.',
       statusCode: 400,
+      details: {
+        status: 400,
+        debugId: 'XYZ123',
+        issues: ['INVALID_REQUEST'],
+        descriptions: ['Amount is invalid'],
+      },
     });
 
     expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces contextual details for transient PayPal connectivity errors', async () => {
+    const networkError = Object.assign(new Error('getaddrinfo ENOTFOUND api.paypal.com'), {
+      code: 'ENOTFOUND',
+    });
+    mockCreateOrder.mockRejectedValue(networkError);
+
+    await expect(
+      paypalService.createOrder({ amount: 10, currency: 'USD' })
+    ).rejects.toMatchObject({
+      message:
+        'Unable to reach PayPal right now (ENOTFOUND). Please verify outgoing network connectivity and try again.',
+      statusCode: 502,
+      details: {
+        code: 'ENOTFOUND',
+        retryable: true,
+      },
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalledTimes(3);
   });
 
   it('captures an order', async () => {
