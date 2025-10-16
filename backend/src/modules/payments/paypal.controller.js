@@ -102,6 +102,20 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
 
   const paymentId = uuidv4();
 
+  const host = req.get('host');
+  const forwardedProto = req.get('x-forwarded-proto');
+  const protocol =
+    (forwardedProto && forwardedProto.split(',')[0]?.trim()) || req.protocol || 'http';
+  const backendBase =
+    (process.env.BACKEND_URL || '').replace(/\/$/, '') ||
+    (host ? `${protocol}://${host}` : '');
+  if (!backendBase) {
+    throw new AppError(
+      'Server is missing BACKEND_URL configuration for PayPal callbacks',
+      500
+    );
+  }
+
   const baseFrontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
   const cancelParams = new URLSearchParams({
     itemType: item_type,
@@ -111,7 +125,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   const order = await paypalService.createOrder({
     amount: numericAmount,
     currency: currencyCode,
-    returnUrl: `${process.env.BACKEND_URL || ''}/api/payments/paypal/callback?payment_id=${paymentId}`,
+    returnUrl: `${backendBase}/api/payments/paypal/callback?payment_id=${paymentId}`,
     cancelUrl: baseFrontendUrl
       ? `${baseFrontendUrl}/payments/error?${cancelParams.toString()}`
       : undefined,
