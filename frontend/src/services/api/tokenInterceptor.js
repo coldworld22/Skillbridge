@@ -109,8 +109,7 @@ api.interceptors.request.use(
 
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      setHeader(config, "Authorization", `Bearer ${accessToken}`);
     }
 
     const method = config.method?.toLowerCase();
