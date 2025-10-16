@@ -116,10 +116,14 @@ const PAYPAL_MODE_KEYS = [
   "paypalMode",
 ];
 
+const INVALID_PAYPAL_VALUE_STRINGS = new Set(["undefined", "null", "none"]);
+
 function trimValue(value) {
   if (value === undefined || value === null) return undefined;
   const trimmed = String(value).trim();
-  return trimmed === "" ? undefined : trimmed;
+  if (trimmed === "") return undefined;
+  if (INVALID_PAYPAL_VALUE_STRINGS.has(trimmed.toLowerCase())) return undefined;
+  return trimmed;
 }
 
 function pickFirstMatching(source, keys) {
@@ -206,7 +210,7 @@ exports.updatePayPalSettings = async (settings) => {
     ...current,
     ...updates,
   };
-  if (payload.mode !== null) {
+  if (payload.mode !== null && payload.mode !== undefined) {
     payload.mode = normalizePayPalMode(payload.mode);
   }
   const serializedPayload = JSON.stringify(payload);
