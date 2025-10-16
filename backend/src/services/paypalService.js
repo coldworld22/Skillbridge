@@ -49,20 +49,11 @@ const TRANSIENT_PAYPAL_ERROR_CODES = new Set([
   'EPIPE',
 ]);
 
-function isUndiciErrorCode(code) {
-  return typeof code === 'string' && code.startsWith('UND_ERR_');
-}
-
 const PAYPAL_RETRY_DELAYS_MS = [150, 350];
 
 function parseStatusCode(err) {
   if (!err) return null;
-  const status =
-    err.statusCode ??
-    err.status ??
-    err.httpStatusCode ??
-    err?.result?.statusCode ??
-    err?.result?.httpStatusCode;
+  const status = err.statusCode ?? err.status ?? err?.result?.statusCode;
   if (typeof status === 'number' && Number.isFinite(status)) {
     return status;
   }
@@ -101,7 +92,7 @@ function isTransientPayPalError(err) {
     }
   }
   const code = extractErrorCode(err);
-  if (code && (TRANSIENT_PAYPAL_ERROR_CODES.has(code) || isUndiciErrorCode(code))) {
+  if (code && TRANSIENT_PAYPAL_ERROR_CODES.has(code)) {
     return true;
   }
   const name = err.name;
@@ -223,19 +214,19 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
 
   const body = {
     intent: CheckoutPaymentIntent.Capture,
-    purchaseUnits: [
+    purchase_units: [
       {
         amount: {
-          currencyCode: normalizedCurrency,
-          value: formattedAmount,
+          currency_code: currency,
+          value: String(amount),
         },
       },
     ],
   };
   if (returnUrl || cancelUrl) {
-    body.applicationContext = {};
-    if (returnUrl) body.applicationContext.returnUrl = returnUrl;
-    if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
+    body.application_context = {};
+    if (returnUrl) body.application_context.return_url = returnUrl;
+    if (cancelUrl) body.application_context.cancel_url = cancelUrl;
   }
   try {
     const { result } = await executeWithRetries('creating an order', async () => {
