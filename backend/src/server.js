@@ -1,4 +1,5 @@
 const logger = require('./utils/logger.js');
+require('./utils/dns');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
 const express = require("express");

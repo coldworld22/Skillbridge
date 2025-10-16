@@ -181,6 +181,14 @@ function mapPayPalSdkError(err, context) {
     );
   }
 
+  const code = extractErrorCode(err);
+  if (code && TRANSIENT_PAYPAL_ERROR_CODES.has(code)) {
+    return new AppError(
+      `Unable to reach PayPal right now (${code}). Please verify outgoing network connectivity and try again.`,
+      502
+    );
+  }
+
   return new AppError(
     'Unable to reach PayPal right now. Please try again later.',
     502
