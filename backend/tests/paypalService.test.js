@@ -46,10 +46,60 @@ describe('paypalService', () => {
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
           purchaseUnits: [
-            { amount: { currencyCode: 'USD', value: '10' } },
+            { amount: { currencyCode: 'USD', value: '10.00' } },
           ],
         }),
         prefer: 'return=representation',
+      })
+    );
+  });
+
+  it('fails when PayPal credentials are missing', async () => {
+    paymentMethodsService.getPayPalSettings.mockResolvedValueOnce({});
+
+    await expect(
+      paypalService.createOrder({ amount: 10, currency: 'USD' })
+    ).rejects.toMatchObject({
+      message: 'PayPal payments are temporarily unavailable. Please contact support.',
+      statusCode: 503,
+    });
+  });
+
+  it('rounds the amount for two-decimal currencies', async () => {
+    await paypalService.createOrder({ amount: 12.3456, currency: 'USD' });
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'USD', value: '12.35' } },
+          ],
+        }),
+      })
+    );
+  });
+
+  it('applies the correct precision for zero and three decimal currencies', async () => {
+    await paypalService.createOrder({ amount: 99.6, currency: 'jpy' });
+    await paypalService.createOrder({ amount: 7.9876, currency: 'KWD' });
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'JPY', value: '100' } },
+          ],
+        }),
+      })
+    );
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'KWD', value: '7.988' } },
+          ],
+        }),
       })
     );
   });
@@ -73,9 +123,54 @@ describe('paypalService', () => {
     );
   });
 
+  it('retries transient PayPal errors when creating an order', async () => {
+    const transientError = Object.assign(new Error('Connection reset'), {
+      code: 'ECONNRESET',
+    });
+    mockCreateOrder
+      .mockRejectedValueOnce(transientError)
+      .mockResolvedValueOnce({ result: { id: 'order123' } });
+
+    const result = await paypalService.createOrder({ amount: 10, currency: 'USD' });
+
+    expect(result).toEqual({ id: 'order123' });
+    expect(mockCreateOrder).toHaveBeenCalledTimes(2);
+    expect(Client).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry non-transient PayPal errors', async () => {
+    const sdkError = Object.assign(new Error('Invalid request'), {
+      statusCode: 400,
+    });
+    mockCreateOrder.mockRejectedValueOnce(sdkError);
+
+    await expect(
+      paypalService.createOrder({ amount: 10, currency: 'USD' })
+    ).rejects.toMatchObject({
+      message: 'PayPal rejected the request. Please try again or use a different payment method.',
+      statusCode: 400,
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('captures an order', async () => {
     const capture = await paypalService.captureOrder('order123');
     expect(capture).toEqual({ id: 'capture123' });
     expect(mockCaptureOrder).toHaveBeenCalledWith({ id: 'order123', body: {} });
+  });
+
+  it('retries transient PayPal errors when capturing an order', async () => {
+    const timeoutError = Object.assign(new Error('Request timeout'), {
+      name: 'TimeoutError',
+    });
+    mockCaptureOrder
+      .mockRejectedValueOnce(timeoutError)
+      .mockResolvedValueOnce({ result: { id: 'capture123' } });
+
+    const capture = await paypalService.captureOrder('order123');
+
+    expect(capture).toEqual({ id: 'capture123' });
+    expect(mockCaptureOrder).toHaveBeenCalledTimes(2);
   });
 });
