@@ -112,9 +112,54 @@ describe('paypalService', () => {
     );
   });
 
+  it('retries transient PayPal errors when creating an order', async () => {
+    const transientError = Object.assign(new Error('Connection reset'), {
+      code: 'ECONNRESET',
+    });
+    mockCreateOrder
+      .mockRejectedValueOnce(transientError)
+      .mockResolvedValueOnce({ result: { id: 'order123' } });
+
+    const result = await paypalService.createOrder({ amount: 10, currency: 'USD' });
+
+    expect(result).toEqual({ id: 'order123' });
+    expect(mockCreateOrder).toHaveBeenCalledTimes(2);
+    expect(Client).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry non-transient PayPal errors', async () => {
+    const sdkError = Object.assign(new Error('Invalid request'), {
+      statusCode: 400,
+    });
+    mockCreateOrder.mockRejectedValueOnce(sdkError);
+
+    await expect(
+      paypalService.createOrder({ amount: 10, currency: 'USD' })
+    ).rejects.toMatchObject({
+      message: 'PayPal rejected the request. Please try again or use a different payment method.',
+      statusCode: 400,
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('captures an order', async () => {
     const capture = await paypalService.captureOrder('order123');
     expect(capture).toEqual({ id: 'capture123' });
     expect(mockCaptureOrder).toHaveBeenCalledWith({ id: 'order123', body: {} });
+  });
+
+  it('retries transient PayPal errors when capturing an order', async () => {
+    const timeoutError = Object.assign(new Error('Request timeout'), {
+      name: 'TimeoutError',
+    });
+    mockCaptureOrder
+      .mockRejectedValueOnce(timeoutError)
+      .mockResolvedValueOnce({ result: { id: 'capture123' } });
+
+    const capture = await paypalService.captureOrder('order123');
+
+    expect(capture).toEqual({ id: 'capture123' });
+    expect(mockCaptureOrder).toHaveBeenCalledTimes(2);
   });
 });
