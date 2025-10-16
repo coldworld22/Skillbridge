@@ -3,6 +3,11 @@ const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(),
+  STATUS: {
+    PENDING_PAYMENT: 'pending_payment',
+    PAID: 'paid',
+    REJECTED: 'rejected',
+  },
 }));
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({

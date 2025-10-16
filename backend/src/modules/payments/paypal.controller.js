@@ -117,6 +117,14 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   }
 
   const baseFrontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const inferredBackendUrl = (() => {
+    const host = req.get('host') || req.headers?.host;
+    if (!host) return null;
+    const protocol = req.protocol || 'http';
+    return `${protocol}://${host}`;
+  })();
+  const providedBackendUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');
+  const baseBackendUrl = (providedBackendUrl || inferredBackendUrl || 'http://localhost').replace(/\/$/, '');
   const cancelParams = new URLSearchParams({
     itemType: item_type,
     itemId: String(item_id),
