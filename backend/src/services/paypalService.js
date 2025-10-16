@@ -76,19 +76,19 @@ exports.invalidateClient = resetClient;
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
   const body = {
     intent: CheckoutPaymentIntent.Capture,
-    purchaseUnits: [
+    purchase_units: [
       {
         amount: {
-          currencyCode: currency,
+          currency_code: currency,
           value: String(amount),
         },
       },
     ],
   };
   if (returnUrl || cancelUrl) {
-    body.applicationContext = {};
-    if (returnUrl) body.applicationContext.returnUrl = returnUrl;
-    if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
+    body.application_context = {};
+    if (returnUrl) body.application_context.return_url = returnUrl;
+    if (cancelUrl) body.application_context.cancel_url = cancelUrl;
   }
   try {
     const orders = await getOrdersController();
