@@ -91,87 +91,9 @@ function parseSettings(rawSettings) {
   return {};
 }
 
-function normalizeCredential(...values) {
-  for (const value of values) {
-    if (typeof value !== "string") continue;
-    const trimmed = value.trim();
-    if (trimmed) return trimmed;
-  }
-  return undefined;
-}
-
-function normalizePayPalMode(...values) {
-  for (const value of values) {
-    if (typeof value !== "string") continue;
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "live" || normalized === "sandbox") {
-      return normalized;
-    }
-  }
-  return "sandbox";
-}
-
-function normalizePayPalSettingsInput(input = {}) {
-  const normalized = {};
-  const clientId = normalizeCredential(input.client_id, input.clientId);
-  if (clientId) normalized.client_id = clientId;
-
-  const clientSecret = normalizeCredential(
-    input.client_secret,
-    input.clientSecret
-  );
-  if (clientSecret) normalized.client_secret = clientSecret;
-
-  if (input.mode !== undefined) {
-    normalized.mode = normalizePayPalMode(input.mode);
-  }
-
-  return normalized;
-}
-
-function normalizeExistingPayPalSettings(settings = {}) {
-  if (!settings || typeof settings !== "object") return {};
-  const normalized = { ...settings };
-
-  const clientId = normalizeCredential(settings.client_id, settings.clientId);
-  if (clientId) {
-    normalized.client_id = clientId;
-  } else {
-    delete normalized.client_id;
-  }
-  delete normalized.clientId;
-
-  const clientSecret = normalizeCredential(
-    settings.client_secret,
-    settings.clientSecret
-  );
-  if (clientSecret) {
-    normalized.client_secret = clientSecret;
-  } else {
-    delete normalized.client_secret;
-  }
-  delete normalized.clientSecret;
-
-  if (settings.mode !== undefined) {
-    normalized.mode = normalizePayPalMode(settings.mode);
-  }
-
-  return normalized;
-}
-
 exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
   const settings = parseSettings(row?.settings);
-  const client_id = normalizeCredential(
-    settings.client_id,
-    settings.clientId,
-    process.env.PAYPAL_CLIENT_ID
-  );
-  const client_secret = normalizeCredential(
-    settings.client_secret,
-    settings.clientSecret,
-    process.env.PAYPAL_CLIENT_SECRET
-  );
   return {
     client_id,
     client_secret,
@@ -182,13 +104,7 @@ exports.getPayPalSettings = async () => {
 exports.updatePayPalSettings = async (settings) => {
   const row = await exports.getByType("paypal");
   if (!row) throw new Error("PayPal method not found");
-  const existing = normalizeExistingPayPalSettings(parseSettings(row.settings));
-  const normalizedInput = normalizePayPalSettingsInput(settings);
-  const newSettings = {
-    ...existing,
-    ...normalizedInput,
-  };
-  const payload = JSON.stringify(newSettings);
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: payload })
