@@ -91,32 +91,137 @@ function parseSettings(rawSettings) {
   return {};
 }
 
+const PAYPAL_CLIENT_ID_KEYS = [
+  "client_id",
+  "clientId",
+  "CLIENT_ID",
+  "paypal_client_id",
+  "paypalClientId",
+];
+
+const PAYPAL_CLIENT_SECRET_KEYS = [
+  "client_secret",
+  "clientSecret",
+  "CLIENT_SECRET",
+  "paypal_client_secret",
+  "paypalClientSecret",
+];
+
+const PAYPAL_MODE_KEYS = [
+  "mode",
+  "MODE",
+  "client_mode",
+  "clientMode",
+  "paypal_mode",
+  "paypalMode",
+];
+
+function trimValue(value) {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
+function pickFirstMatching(source, keys) {
+  if (!source) return undefined;
+  for (const key of keys) {
+    const value = trimValue(source[key]);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+function normalizePayPalMode(...candidates) {
+  for (const candidate of candidates) {
+    const value = trimValue(candidate);
+    if (!value) continue;
+    const normalized = value.toLowerCase();
+    if (normalized === "live" || normalized === "sandbox") return normalized;
+  }
+  return "sandbox";
+}
+
+function toCanonicalPayPalSettings(rawSettings, { fallbackToEnv = true } = {}) {
+  const source = rawSettings || {};
+  const env = fallbackToEnv ? process.env : {};
+
+  const clientId =
+    pickFirstMatching(source, PAYPAL_CLIENT_ID_KEYS) ||
+    trimValue(env?.PAYPAL_CLIENT_ID);
+  const clientSecret =
+    pickFirstMatching(source, PAYPAL_CLIENT_SECRET_KEYS) ||
+    trimValue(env?.PAYPAL_CLIENT_SECRET);
+  const modeCandidates = PAYPAL_MODE_KEYS.map((key) => trimValue(source[key]));
+  if (fallbackToEnv) {
+    modeCandidates.push(trimValue(env?.PAYPAL_MODE));
+  }
+  const hasModeCandidate = modeCandidates.some((value) => value !== undefined);
+  const mode = hasModeCandidate
+    ? normalizePayPalMode(...modeCandidates)
+    : fallbackToEnv
+    ? "sandbox"
+    : null;
+
+  return {
+    client_id: clientId || null,
+    client_secret: clientSecret || null,
+    mode,
+  };
+}
+
+function extractProvidedPayPalSettings(rawSettings) {
+  const source = rawSettings || {};
+  const provided = {};
+
+  const clientId = pickFirstMatching(source, PAYPAL_CLIENT_ID_KEYS);
+  if (clientId !== undefined) provided.client_id = clientId;
+
+  const clientSecret = pickFirstMatching(source, PAYPAL_CLIENT_SECRET_KEYS);
+  if (clientSecret !== undefined) provided.client_secret = clientSecret;
+
+  const modeCandidates = PAYPAL_MODE_KEYS.map((key) => trimValue(source[key])).filter(
+    (value) => value !== undefined
+  );
+  if (modeCandidates.length) {
+    provided.mode = normalizePayPalMode(...modeCandidates);
+  }
+
+  return provided;
+}
+
 exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
   const settings = parseSettings(row?.settings);
-  return {
-    client_id,
-    client_secret,
-    mode: normalizePayPalMode(settings.mode, process.env.PAYPAL_MODE),
-  };
+  return toCanonicalPayPalSettings(settings);
 };
 
 exports.updatePayPalSettings = async (settings) => {
   const row = await exports.getByType("paypal");
   if (!row) throw new Error("PayPal method not found");
-  const newSettings = { ...parseSettings(row.settings), ...settings };
+  const current = toCanonicalPayPalSettings(parseSettings(row.settings), {
+    fallbackToEnv: false,
+  });
+  const updates = extractProvidedPayPalSettings(settings);
+  const payload = {
+    ...current,
+    ...updates,
+  };
+  if (payload.mode !== null) {
+    payload.mode = normalizePayPalMode(payload.mode);
+  }
+  const serializedPayload = JSON.stringify(payload);
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
-    .update({ settings: payload })
+    .update({ settings: serializedPayload })
     .returning("settings");
   if (typeof updated === "string") {
     try {
       return JSON.parse(updated);
     } catch (err) {
-      return newSettings;
+      return payload;
     }
   }
-  return updated || newSettings;
+  return updated || payload;
 };
 
 exports.getPayPalClientId = async () => {
