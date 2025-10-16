@@ -225,8 +225,8 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
     purchase_units: [
       {
         amount: {
-          currency_code: currency,
-          value: String(amount),
+          currency_code: normalizedCurrency,
+          value: formattedAmount,
         },
       },
     ],
