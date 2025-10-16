@@ -78,9 +78,22 @@ exports.delete = (id) => {
   return db("payment_methods_config").where({ id }).del();
 };
 
+function parseSettings(rawSettings) {
+  if (!rawSettings) return {};
+  if (typeof rawSettings === "object") return rawSettings;
+  if (typeof rawSettings === "string") {
+    try {
+      return JSON.parse(rawSettings);
+    } catch (err) {
+      return {};
+    }
+  }
+  return {};
+}
+
 exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
   return {
     client_id: settings.client_id || process.env.PAYPAL_CLIENT_ID,
     client_secret: settings.client_secret || process.env.PAYPAL_CLIENT_SECRET,
@@ -91,7 +104,7 @@ exports.getPayPalSettings = async () => {
 exports.updatePayPalSettings = async (settings) => {
   const row = await exports.getByType("paypal");
   if (!row) throw new Error("PayPal method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: newSettings })
@@ -106,7 +119,7 @@ exports.getPayPalClientId = async () => {
 
 exports.getStripeSettings = async () => {
   const row = await exports.getByType("stripe");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
   return {
     publishable_key:
       settings.publishable_key || process.env.STRIPE_PUBLISHABLE_KEY,
@@ -117,7 +130,7 @@ exports.getStripeSettings = async () => {
 exports.updateStripeSettings = async (settings) => {
   const row = await exports.getByType("stripe");
   if (!row) throw new Error("Stripe method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: newSettings })
@@ -127,7 +140,7 @@ exports.updateStripeSettings = async (settings) => {
 
 exports.getCoinbaseSettings = async () => {
   const row = await exports.getByType("coinbase");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
   return {
     api_key: settings.api_key || process.env.COINBASE_API_KEY,
     api_secret: settings.api_secret || process.env.COINBASE_API_SECRET,
@@ -137,7 +150,7 @@ exports.getCoinbaseSettings = async () => {
 exports.updateCoinbaseSettings = async (settings) => {
   const row = await exports.getByType("coinbase");
   if (!row) throw new Error("Coinbase method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: newSettings })
