@@ -45,9 +45,7 @@ describe('paypalService', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
-          purchase_units: [
-            { amount: { currency_code: 'USD', value: '10' } },
-          ],
+          purchase_units: [{ amount: { currency_code: 'USD', value: '10.00' } }],
         }),
         prefer: 'return=representation',
       })
@@ -60,9 +58,7 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchaseUnits: [
-            { amount: { currencyCode: 'USD', value: '12.35' } },
-          ],
+          purchase_units: [{ amount: { currency_code: 'USD', value: '12.35' } }],
         }),
       })
     );
@@ -75,9 +71,7 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchaseUnits: [
-            { amount: { currencyCode: 'JPY', value: '100' } },
-          ],
+          purchase_units: [{ amount: { currency_code: 'JPY', value: '100' } }],
         }),
       })
     );
@@ -85,9 +79,7 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchaseUnits: [
-            { amount: { currencyCode: 'KWD', value: '7.988' } },
-          ],
+          purchase_units: [{ amount: { currency_code: 'KWD', value: '7.988' } }],
         }),
       })
     );
