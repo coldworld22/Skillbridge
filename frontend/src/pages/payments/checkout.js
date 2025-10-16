@@ -307,6 +307,8 @@ export async function handlePayPalPayment({
       item_type: itemType,
       amount: finalPrice,
     };
+    // eslint-disable-next-line no-console
+    console.log('PayPal payload', payload);
     if (itemType === 'plan') payload.interval = interval;
     const data = await initiatePayPalPayment(payload);
     if (typeof window !== 'undefined' && data?.payment) {
@@ -330,8 +332,8 @@ export async function handlePayPalPayment({
       setPaymentStatus('idle');
     }
   } catch (err) {
-    console.error('Failed to initiate PayPal payment', err);
-    toast.error(t('payment_paypal_failure'));
+    console.error('Failed to initiate PayPal payment', err?.response?.data || err);
+    toast.error(err?.response?.data?.message || t('payment_paypal_failure'));
     setPaymentStatus('idle');
   }
 }

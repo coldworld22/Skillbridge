@@ -9,7 +9,6 @@ const paymentMethodsService = require('../paymentMethods/paymentMethods.service'
 const paypalService = require('../../services/paypalService');
 const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
-const plansService = require('../plans/plans.service');
 const { creditInstructorFromPayment } = require('./helpers/wallet');
 const { loadAndValidateCoupon } = require('./helpers/coupon');
 const { ensurePlanAmountMatches } = require('./helpers/planPricing');
