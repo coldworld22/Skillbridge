@@ -18,6 +18,7 @@ export default function PaymentProviderConfig({ providerId }) {
   const [form, setForm] = useState({});
   const [mode, setMode] = useState("generic");
   const [loading, setLoading] = useState(true);
+  const [hasStoredPayPalSecret, setHasStoredPayPalSecret] = useState(false);
   const notify = useAdminNotice();
   const { t } = useTranslation('dashboard');
 
@@ -32,6 +33,7 @@ export default function PaymentProviderConfig({ providerId }) {
             client_secret: '',
             mode: creds.mode || 'sandbox',
           });
+          setHasStoredPayPalSecret(Boolean(creds.has_client_secret));
           setMode('paypal');
         } else if (providerId === 'stripe') {
           const creds = await fetchStripeSettings();
@@ -39,6 +41,7 @@ export default function PaymentProviderConfig({ providerId }) {
             publishable_key: creds.publishable_key || '',
             secret_key: '',
           });
+          setHasStoredPayPalSecret(false);
           setMode('stripe');
         } else if (providerId === 'coinbase') {
           const creds = await fetchCoinbaseSettings();
@@ -46,10 +49,12 @@ export default function PaymentProviderConfig({ providerId }) {
             api_key: creds.api_key || '',
             api_secret: '',
           });
+          setHasStoredPayPalSecret(false);
           setMode('coinbase');
         } else {
           const method = await fetchMethodById(providerId);
           setSettings(JSON.stringify(method?.settings || {}, null, 2));
+          setHasStoredPayPalSecret(false);
           setMode('generic');
         }
       } catch (err) {
@@ -71,7 +76,18 @@ export default function PaymentProviderConfig({ providerId }) {
 
     try {
       if (mode === 'paypal') {
-        await updatePayPalCredentials(form);
+        const payload = {};
+        if (form.client_id?.trim()) payload.client_id = form.client_id.trim();
+        if (form.client_secret?.trim()) payload.client_secret = form.client_secret.trim();
+        if (form.mode) payload.mode = form.mode;
+
+        const updated = await updatePayPalCredentials(payload);
+        setForm((prev) => ({
+          client_id: updated?.client_id ?? prev.client_id,
+          client_secret: '',
+          mode: updated?.mode ?? prev.mode,
+        }));
+        setHasStoredPayPalSecret(Boolean(updated?.has_client_secret));
       } else if (mode === 'stripe') {
         await updateStripeSettings(form);
       } else if (mode === 'coinbase') {
@@ -118,12 +134,18 @@ export default function PaymentProviderConfig({ providerId }) {
         <div>
           <label className="block text-sm font-medium">{t('client_secret')}</label>
           <input
-            type="text"
+            type="password"
             name="client_secret"
             value={form.client_secret}
             onChange={handleFieldChange}
             className="w-full border rounded p-2"
+            autoComplete="new-password"
           />
+          {hasStoredPayPalSecret && !form.client_secret && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t('paymentsPage.paypal_secret_hint')}
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium">Mode</label>

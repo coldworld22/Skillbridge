@@ -15,7 +15,10 @@ async function getClient() {
   if (client) return client;
   const settings = await paymentMethodsService.getPayPalSettings();
   if (!settings?.client_id || !settings?.client_secret) {
-    throw new Error('PayPal credentials are not configured');
+    throw new AppError(
+      'PayPal payments are temporarily unavailable. Please contact support.',
+      503
+    );
   }
   const environment =
     settings.mode === 'live' ? Environment.Production : Environment.Sandbox;
@@ -36,7 +39,129 @@ async function getOrdersController() {
   return ordersController;
 }
 
+const TRANSIENT_PAYPAL_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ECONNABORTED',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+]);
+
+function isUndiciErrorCode(code) {
+  return typeof code === 'string' && code.startsWith('UND_ERR_');
+}
+
+const PAYPAL_RETRY_DELAYS_MS = [150, 350];
+
+function parseStatusCode(err) {
+  if (!err) return null;
+  const status =
+    err.statusCode ??
+    err.status ??
+    err.httpStatusCode ??
+    err?.result?.statusCode ??
+    err?.result?.httpStatusCode;
+  if (typeof status === 'number' && Number.isFinite(status)) {
+    return status;
+  }
+  if (typeof status === 'string') {
+    const parsed = Number.parseInt(status, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (err.cause && err.cause !== err) {
+    return parseStatusCode(err.cause);
+  }
+  return null;
+}
+
+function extractErrorCode(err) {
+  if (!err) return null;
+  if (typeof err.code === 'string') return err.code;
+  if (err.cause && err.cause !== err) {
+    return extractErrorCode(err.cause);
+  }
+  return null;
+}
+
+function isTransientPayPalError(err) {
+  if (!err || err instanceof AppError) {
+    return false;
+  }
+  const status = parseStatusCode(err);
+  if (status !== null) {
+    if (status === 408 || status === 429) {
+      return true;
+    }
+    if (status >= 500 && status !== 501) {
+      return true;
+    }
+  }
+  const code = extractErrorCode(err);
+  if (code && (TRANSIENT_PAYPAL_ERROR_CODES.has(code) || isUndiciErrorCode(code))) {
+    return true;
+  }
+  const name = err.name;
+  if (name === 'AbortError' || name === 'TimeoutError') {
+    return true;
+  }
+  if (err.cause && err.cause !== err) {
+    return isTransientPayPalError(err.cause);
+  }
+  return false;
+}
+
+function describeError(err) {
+  const status = parseStatusCode(err);
+  if (status !== null) {
+    return `status ${status}`;
+  }
+  const code = extractErrorCode(err);
+  if (code) {
+    return `code ${code}`;
+  }
+  if (err?.message) {
+    return err.message;
+  }
+  return '';
+}
+
+async function executeWithRetries(context, operation) {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await operation();
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw err;
+      }
+      const shouldRetry =
+        attempt < PAYPAL_RETRY_DELAYS_MS.length && isTransientPayPalError(err);
+      if (!shouldRetry) {
+        throw err;
+      }
+      const delay = PAYPAL_RETRY_DELAYS_MS[attempt];
+      attempt += 1;
+      const details = describeError(err);
+      logger.warn(
+        `Transient PayPal error while ${context}${
+          details ? ` (${details})` : ''
+        }. Retrying in ${delay}ms...`
+      );
+      resetClient();
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
 function mapPayPalSdkError(err, context) {
+  if (err instanceof AppError) {
+    return err;
+  }
+
   resetClient();
   const status = err?.statusCode;
   const details =
@@ -73,14 +198,36 @@ function mapPayPalSdkError(err, context) {
 
 exports.invalidateClient = resetClient;
 
+const CURRENCY_DECIMALS = {
+  JPY: 0,
+  KRW: 0,
+  KWD: 3,
+};
+
+function normalizeAmount(amount, currency) {
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    throw new AppError('Invalid PayPal amount specified', 400);
+  }
+
+  const decimals = CURRENCY_DECIMALS[currency] ?? 2;
+  const factor = 10 ** decimals;
+  const rounded = Math.round((numeric + Number.EPSILON) * factor) / factor;
+
+  return rounded.toFixed(decimals);
+}
+
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
+  const normalizedCurrency = currency.toUpperCase();
+  const formattedAmount = normalizeAmount(amount, normalizedCurrency);
+
   const body = {
     intent: CheckoutPaymentIntent.Capture,
     purchaseUnits: [
       {
         amount: {
-          currencyCode: currency,
-          value: String(amount),
+          currencyCode: normalizedCurrency,
+          value: formattedAmount,
         },
       },
     ],
@@ -91,10 +238,12 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
     if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
   }
   try {
-    const orders = await getOrdersController();
-    const { result } = await orders.createOrder({
-      body,
-      prefer: 'return=representation',
+    const { result } = await executeWithRetries('creating an order', async () => {
+      const orders = await getOrdersController();
+      return orders.createOrder({
+        body,
+        prefer: 'return=representation',
+      });
     });
     return result;
   } catch (err) {
@@ -104,8 +253,10 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
 
 exports.captureOrder = async (orderId) => {
   try {
-    const orders = await getOrdersController();
-    const { result } = await orders.captureOrder({ id: orderId, body: {} });
+    const { result } = await executeWithRetries('capturing an order', async () => {
+      const orders = await getOrdersController();
+      return orders.captureOrder({ id: orderId, body: {} });
+    });
     return result;
   } catch (err) {
     throw mapPayPalSdkError(err, 'capturing an order');

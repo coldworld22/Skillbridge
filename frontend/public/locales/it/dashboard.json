@@ -950,6 +950,7 @@
     "payout_status_failed": "Impossibile aggiornare lo stato di pagamento",
     "config_saved": "Configurazione salvata correttamente!",
     "config_save_failed": "Impossibile salvare la configurazione",
+    "paypal_secret_hint": "Lascia vuoto per mantenere il segreto esistente.",
     "status_updated": "Stato aggiornato",
     "update_failed": "Impossibile aggiornare lo stato",
     "default_updated": "Stato predefinito aggiornato",
