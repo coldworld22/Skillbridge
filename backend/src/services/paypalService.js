@@ -73,22 +73,44 @@ function mapPayPalSdkError(err, context) {
 
 exports.invalidateClient = resetClient;
 
+const CURRENCY_DECIMALS = {
+  JPY: 0,
+  KRW: 0,
+  KWD: 3,
+};
+
+function normalizeAmount(amount, currency) {
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    throw new AppError('Invalid PayPal amount specified', 400);
+  }
+
+  const decimals = CURRENCY_DECIMALS[currency] ?? 2;
+  const factor = 10 ** decimals;
+  const rounded = Math.round((numeric + Number.EPSILON) * factor) / factor;
+
+  return rounded.toFixed(decimals);
+}
+
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
+  const normalizedCurrency = currency.toUpperCase();
+  const formattedAmount = normalizeAmount(amount, normalizedCurrency);
+
   const body = {
     intent: CheckoutPaymentIntent.Capture,
-    purchaseUnits: [
+    purchase_units: [
       {
         amount: {
-          currencyCode: currency,
+          currency_code: currency,
           value: String(amount),
         },
       },
     ],
   };
   if (returnUrl || cancelUrl) {
-    body.applicationContext = {};
-    if (returnUrl) body.applicationContext.returnUrl = returnUrl;
-    if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
+    body.application_context = {};
+    if (returnUrl) body.application_context.return_url = returnUrl;
+    if (cancelUrl) body.application_context.cancel_url = cancelUrl;
   }
   try {
     const orders = await getOrdersController();

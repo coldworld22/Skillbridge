@@ -45,11 +45,50 @@ describe('paypalService', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
-          purchaseUnits: [
-            { amount: { currencyCode: 'USD', value: '10' } },
+          purchase_units: [
+            { amount: { currency_code: 'USD', value: '10' } },
           ],
         }),
         prefer: 'return=representation',
+      })
+    );
+  });
+
+  it('rounds the amount for two-decimal currencies', async () => {
+    await paypalService.createOrder({ amount: 12.3456, currency: 'USD' });
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'USD', value: '12.35' } },
+          ],
+        }),
+      })
+    );
+  });
+
+  it('applies the correct precision for zero and three decimal currencies', async () => {
+    await paypalService.createOrder({ amount: 99.6, currency: 'jpy' });
+    await paypalService.createOrder({ amount: 7.9876, currency: 'KWD' });
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'JPY', value: '100' } },
+          ],
+        }),
+      })
+    );
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          purchaseUnits: [
+            { amount: { currencyCode: 'KWD', value: '7.988' } },
+          ],
+        }),
       })
     );
   });
@@ -64,9 +103,9 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          applicationContext: {
-            returnUrl: 'https://example.com/return',
-            cancelUrl: 'https://example.com/cancel',
+          application_context: {
+            return_url: 'https://example.com/return',
+            cancel_url: 'https://example.com/cancel',
           },
         }),
       })
