@@ -9,8 +9,9 @@ const paymentMethodsService = require('../paymentMethods/paymentMethods.service'
 const nowPayments = require('../../services/nowPaymentsService');
 const { v4: uuidv4 } = require('uuid');
 const { grantAccess } = require('./paymentAccess');
-const plansService = require('../plans/plans.service');
 const { creditInstructorFromPayment } = require('./helpers/wallet');
+const { loadAndValidateCoupon } = require('./helpers/coupon');
+const { ensurePlanAmountMatches } = require('./helpers/planPricing');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -25,7 +26,7 @@ const SUPPORTED_FIAT = [
 ];
 
 exports.initiateCryptoPayment = catchAsync(async (req, res) => {
-  const { item_type, item_id, amount, currency, method_type } = req.body;
+  const { item_type, item_id, amount, currency, method_type, coupon_id } = req.body;
   const user_id = req.user?.id;
   if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError('Missing required fields', 400);
@@ -41,18 +42,16 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
   if (!SUPPORTED_FIAT.includes(currencyCode)) {
     throw new AppError('Unsupported currency', 400);
   }
+  const coupon = await loadAndValidateCoupon(coupon_id, {
+    itemType: item_type,
+    itemId: item_id,
+  });
 
   // Validate plan payments to ensure the amount aligns with one of the plan's
   // published prices (monthly or yearly). This keeps plan validation consistent
   // with other item types.
   if (item_type === 'plan') {
-    const plan = await plansService.getPlanById(item_id);
-    if (!plan) throw new AppError('Plan not found', 404);
-    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
-    const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
-    if (!matched) {
-      throw new AppError('Payment amount does not match plan price', 400);
-    }
+    await ensurePlanAmountMatches(item_id, numericAmount, { coupon });
   }
 
   const method = await paymentMethodsService.getByType(method_type || 'crypto');

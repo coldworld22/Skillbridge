@@ -15,10 +15,10 @@ const { v4: uuidv4 } = require("uuid");
 const couponService = require("../coupons/coupons.service");
 const bookService = require("../books/book.service");
 const tutorialService = require("../users/tutorials/tutorial.service");
-const plansService = require("../plans/plans.service");
-
 const invoiceService = require("../invoices/invoices.service");
 const { creditInstructorFromPayment } = require("./helpers/wallet");
+const { loadAndValidateCoupon } = require("./helpers/coupon");
+const { ensurePlanAmountMatches } = require("./helpers/planPricing");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -99,32 +99,14 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     throw new AppError("Bank payment method not configured", 400);
   }
 
-  let coupon = null;
-  if (coupon_id) {
-    coupon = await couponService.getCouponById(coupon_id);
-    if (!coupon) throw new AppError("Invalid coupon", 400);
-    if (coupon.applies_to && coupon.applies_to !== item_type) {
-      throw new AppError("Coupon not valid for this item type", 400);
-    }
-    if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
-      throw new AppError("Coupon not valid for this item", 400);
-    }
-    if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
-      throw new AppError("Coupon not active", 400);
-    }
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-      throw new AppError("Coupon expired", 400);
-    }
-    if (
-      coupon.usage_limit !== null &&
-      coupon.times_used >= coupon.usage_limit
-    ) {
-      throw new AppError("Coupon usage limit reached", 400);
-    }
-  }
+  const coupon = await loadAndValidateCoupon(coupon_id, {
+    itemType: item_type,
+    itemId: item_id,
+  });
 
   // Verify amount matches catalog price
   let basePrice;
+  let discountApplied = false;
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
@@ -138,18 +120,13 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     if (!tut) throw new AppError("Tutorial not found", 404);
     basePrice = Number(tut.price);
   } else if (item_type === "plan") {
-    // Plans can be purchased either monthly or yearly. Ensure the submitted
-    // amount matches one of the plan's published prices before proceeding.
-    const plan = await plansService.getPlanById(item_id);
-    if (!plan) throw new AppError("Plan not found", 404);
-    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
-    const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
-    if (!matched) {
-      throw new AppError("Payment amount does not match plan price", 400);
-    }
-    basePrice = matched;
+    const match = await ensurePlanAmountMatches(item_id, numericAmount, {
+      coupon,
+    });
+    basePrice = match.normalizedAmount;
+    discountApplied = true;
   }
-  if (coupon) {
+  if (coupon && !discountApplied) {
     basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
   }
   if (Math.abs(numericAmount - basePrice) >= 0.01) {

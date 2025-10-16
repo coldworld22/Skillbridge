@@ -293,31 +293,21 @@ export async function handlePayPalPayment({
   itemInfo,
   itemType,
   finalPrice,
-  couponId,
+  couponId: _couponId,
   t,
   setPaymentStatus,
   interval,
-  allowInstallments,
-  installments,
+  allowInstallments: _allowInstallments,
+  installments: _installments,
 }) {
   try {
     setPaymentStatus('processing');
-    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
-      allowInstallments,
-      installments,
-      finalPrice
-    );
     const payload = {
       item_id: itemInfo.id,
       item_type: itemType,
-      amount: amountPerInstallment,
+      amount: finalPrice,
     };
     if (itemType === 'plan') payload.interval = interval;
-    if (couponId) payload.coupon_id = couponId;
-    if (enabled) {
-      payload.allow_installments = true;
-      payload.installments = count;
-    }
     const data = await initiatePayPalPayment(payload);
     if (typeof window !== 'undefined' && data?.payment) {
       try {
@@ -1022,46 +1012,6 @@ export default function CheckoutPage() {
                 );
               })}
             </div>
-          </div>
-        )}
-
-        <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('promo_code')}</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder={t('enter_promo_code')}
-              className="flex-1 p-2 rounded bg-gray-700 text-white"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-            />
-            <button
-              onClick={handleApplyPromo}
-              disabled={promoLoading}
-              className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >{promoLoading ? t('applying') : t('apply')}</button>
-          </div>
-        </div>
-
-        {!isFree && installmentsAllowed && (
-          <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('installments')}</h2>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={allowInstallments}
-                onChange={(e) => setAllowInstallments(e.target.checked)}
-                disabled={existingPayment?.installments > 1}
-              />
-              {t('pay_in_monthly_installments', { count: installments })}
-            </label>
-            {installmentsActive && (
-              <ul className="mt-4 text-sm text-gray-300">
-                {schedule.map((s) => (
-                  <li key={s.number}>{t('installment_item', { number: s.number, amount: s.amount, date: s.date })}</li>
-                ))}
-              </ul>
-            )}
           </div>
         )}
 

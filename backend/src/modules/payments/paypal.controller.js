@@ -11,6 +11,8 @@ const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
 const { creditInstructorFromPayment } = require('./helpers/wallet');
+const { loadAndValidateCoupon } = require('./helpers/coupon');
+const { ensurePlanAmountMatches } = require('./helpers/planPricing');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -24,7 +26,15 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 exports.createPayPalPayment = catchAsync(async (req, res) => {
-  const { item_type, item_id, amount, currency } = req.body;
+  const {
+    item_type,
+    item_id,
+    amount,
+    currency,
+    coupon_id,
+    allow_installments,
+    installments,
+  } = req.body;
   const user_id = req.user?.id;
   if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError('Missing required fields', 400);
@@ -36,6 +46,18 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new AppError('Amount must be a positive number', 400);
   }
+  const coupon = await loadAndValidateCoupon(coupon_id, {
+    itemType: item_type,
+    itemId: item_id,
+  });
+  const wantsInstallments = Boolean(allow_installments);
+  const requestedInstallments = Number(installments);
+  const totalInstallments =
+    wantsInstallments &&
+    Number.isFinite(requestedInstallments) &&
+    requestedInstallments > 1
+      ? Math.floor(requestedInstallments)
+      : 1;
   const method = await paymentMethodsService.getByType('paypal');
   if (!method) {
     throw new AppError('PayPal payment method not configured', 400);
@@ -62,13 +84,10 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   // published plan prices. This mirrors the validation applied to other
   // purchasable items like classes or books.
   if (item_type === 'plan') {
-    const plan = await plansService.getPlanById(item_id);
-    if (!plan) throw new AppError('Plan not found', 404);
-    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
-    const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
-    if (!matched) {
-      throw new AppError('Payment amount does not match plan price', 400);
-    }
+    await ensurePlanAmountMatches(item_id, numericAmount, {
+      coupon,
+      installments: totalInstallments,
+    });
   }
 
   let platform_fee = 0;
