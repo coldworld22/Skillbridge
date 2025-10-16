@@ -95,9 +95,9 @@ exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
   const settings = parseSettings(row?.settings);
   return {
-    client_id: settings.client_id || process.env.PAYPAL_CLIENT_ID,
-    client_secret: settings.client_secret || process.env.PAYPAL_CLIENT_SECRET,
-    mode: settings.mode || process.env.PAYPAL_MODE || "sandbox",
+    client_id,
+    client_secret,
+    mode: normalizePayPalMode(settings.mode, process.env.PAYPAL_MODE),
   };
 };
 
@@ -107,9 +107,16 @@ exports.updatePayPalSettings = async (settings) => {
   const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
-    .update({ settings: newSettings })
+    .update({ settings: payload })
     .returning("settings");
-  return updated;
+  if (typeof updated === "string") {
+    try {
+      return JSON.parse(updated);
+    } catch (err) {
+      return newSettings;
+    }
+  }
+  return updated || newSettings;
 };
 
 exports.getPayPalClientId = async () => {
