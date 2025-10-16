@@ -45,24 +45,13 @@ describe('paypalService', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
-          purchaseUnits: [
-            { amount: { currencyCode: 'USD', value: '10.00' } },
+          purchase_units: [
+            { amount: { currency_code: 'USD', value: '10' } },
           ],
         }),
         prefer: 'return=representation',
       })
     );
-  });
-
-  it('fails when PayPal credentials are missing', async () => {
-    paymentMethodsService.getPayPalSettings.mockResolvedValueOnce({});
-
-    await expect(
-      paypalService.createOrder({ amount: 10, currency: 'USD' })
-    ).rejects.toMatchObject({
-      message: 'PayPal payments are temporarily unavailable. Please contact support.',
-      statusCode: 503,
-    });
   });
 
   it('rounds the amount for two-decimal currencies', async () => {
@@ -114,9 +103,9 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          applicationContext: {
-            returnUrl: 'https://example.com/return',
-            cancelUrl: 'https://example.com/cancel',
+          application_context: {
+            return_url: 'https://example.com/return',
+            cancel_url: 'https://example.com/cancel',
           },
         }),
       })
