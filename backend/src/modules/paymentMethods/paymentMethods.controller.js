@@ -37,6 +37,17 @@ exports.createMethod = catchAsync(async (req, res) => {
     delete settings.has_client_secret;
     data.settings = settings;
   }
+  if ((data.type || "").toLowerCase() === "paypal") {
+    const envClientId = process.env.PAYPAL_CLIENT_ID;
+    const envClientSecret = process.env.PAYPAL_CLIENT_SECRET;
+    const envMode = process.env.PAYPAL_MODE;
+    data.settings = {
+      ...data.settings,
+      client_id: data.settings?.client_id || envClientId || null,
+      client_secret: data.settings?.client_secret || envClientSecret || null,
+      mode: (data.settings?.mode || envMode || "sandbox")?.toLowerCase?.() || "sandbox",
+    };
+  }
   if (req.file) {
     data.icon = `/uploads/payment-methods/${req.file.filename}`;
   }
