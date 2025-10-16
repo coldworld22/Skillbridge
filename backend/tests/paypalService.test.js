@@ -45,8 +45,8 @@ describe('paypalService', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
-          purchaseUnits: [
-            { amount: { currencyCode: 'USD', value: '10' } },
+          purchase_units: [
+            { amount: { currency_code: 'USD', value: '10' } },
           ],
         }),
         prefer: 'return=representation',
@@ -64,9 +64,9 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          applicationContext: {
-            returnUrl: 'https://example.com/return',
-            cancelUrl: 'https://example.com/cancel',
+          application_context: {
+            return_url: 'https://example.com/return',
+            cancel_url: 'https://example.com/cancel',
           },
         }),
       })
