@@ -936,6 +936,7 @@
     "payout_status_failed": "No se pudo actualizar el estado de pago",
     "config_saved": "¡Configuración guardada correctamente!",
     "config_save_failed": "No se pudo guardar la configuración",
+    "paypal_secret_hint": "Déjalo en blanco para mantener el secreto existente.",
     "status_updated": "Estado actualizado",
     "update_failed": "No se pudo actualizar el estado",
     "default_updated": "Estado predeterminado actualizado",

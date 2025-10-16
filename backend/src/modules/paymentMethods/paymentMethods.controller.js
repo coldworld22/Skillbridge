@@ -174,19 +174,45 @@ exports.getPayPalCredentials = catchAsync(async (_req, res) => {
   });
 });
 
+function normalizeString(value) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
 exports.updatePayPalCredentials = catchAsync(async (req, res) => {
-  const { client_id, client_secret, mode } = req.body;
-  if (!client_id || !client_secret) {
-    throw new AppError("Client ID and secret are required", 400);
-  }
-  if (mode && !["sandbox", "live"].includes(mode)) {
+  const { client_id, client_secret, mode } = req.body || {};
+
+  const normalizedMode = normalizeString(mode);
+  if (normalizedMode && !["sandbox", "live"].includes(normalizedMode.toLowerCase())) {
     throw new AppError("Invalid PayPal mode", 400);
   }
-  await service.updatePayPalSettings({ client_id, client_secret, mode });
+
+  const payload = {};
+  const normalizedClientId = normalizeString(client_id);
+  if (normalizedClientId) {
+    payload.client_id = normalizedClientId;
+  }
+
+  const normalizedClientSecret = normalizeString(client_secret);
+  if (normalizedClientSecret) {
+    payload.client_secret = normalizedClientSecret;
+  }
+
+  if (normalizedMode) {
+    payload.mode = normalizedMode;
+  }
+
+  const savedSettings = await service.updatePayPalSettings(payload);
   paypalService.invalidateClient();
+
   sendSuccess(
     res,
-    { client_id, has_client_secret: true, mode: mode || "sandbox" },
+    {
+      client_id: savedSettings?.client_id || null,
+      has_client_secret: Boolean(savedSettings?.client_secret),
+      mode: savedSettings?.mode || "sandbox",
+    },
     "PayPal credentials updated"
   );
 });

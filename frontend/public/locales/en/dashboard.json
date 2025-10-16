@@ -954,6 +954,7 @@
     "payout_status_failed": "Failed to update payout status",
     "config_saved": "Configuration saved successfully!",
     "config_save_failed": "Failed to save configuration",
+    "paypal_secret_hint": "Leave blank to keep the existing secret.",
     "status_updated": "Status updated",
     "update_failed": "Failed to update status",
     "default_updated": "Default status updated",

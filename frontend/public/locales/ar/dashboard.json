@@ -936,6 +936,7 @@
     "payout_status_failed": "فشل تحديث حالة الدفع",
     "config_saved": "تم حفظ الإعدادات بنجاح!",
     "config_save_failed": "فشل حفظ الإعدادات",
+    "paypal_secret_hint": "اتركه فارغًا للاحتفاظ بالمفتاح السري الحالي.",
     "status_updated": "تم تحديث الحالة",
     "update_failed": "فشل تحديث الحالة",
     "default_updated": "تم تحديث الحالة الافتراضية",

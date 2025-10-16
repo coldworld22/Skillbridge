@@ -146,4 +146,30 @@ describe('PayPal settings', () => {
       mode: 'live',
     });
   });
+
+  test('preserves stored secret when only updating other fields', async () => {
+    await db('payment_methods_config').insert({
+      id: 'paypal-4',
+      name: 'PayPal',
+      type: 'paypal',
+      settings: JSON.stringify({
+        client_id: 'existing-id',
+        client_secret: 'existing-secret',
+        mode: 'sandbox',
+      }),
+    });
+
+    await service.updatePayPalSettings({
+      client_id: 'updated-id',
+      mode: 'LIVE',
+    });
+
+    const savedSettings = await service.getPayPalSettings();
+
+    expect(savedSettings).toEqual({
+      client_id: 'updated-id',
+      client_secret: 'existing-secret',
+      mode: 'live',
+    });
+  });
 });

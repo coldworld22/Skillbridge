@@ -936,6 +936,7 @@
     "payout_status_failed": "无法更新支付状态",
     "config_saved": "配置成功保存了！",
     "config_save_failed": "无法保存配置",
+    "paypal_secret_hint": "留空即可保留现有密钥。",
     "status_updated": "状态更新",
     "update_failed": "状态更新失败",
     "default_updated": "默认状态已更新",
