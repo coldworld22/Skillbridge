@@ -109,15 +109,14 @@ api.interceptors.request.use(
 
     const { accessToken } = useAuthStore.getState();
     if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      setHeader(config, "Authorization", `Bearer ${accessToken}`);
     }
 
     const method = config.method?.toLowerCase();
     if (["post", "put", "patch", "delete"].includes(method)) {
       const csrfToken = getCookie("csrfToken");
       if (csrfToken) {
-        headers["x-csrf-token"] = csrfToken;
+        setHeader(config, "x-csrf-token", csrfToken);
       }
     }
 
