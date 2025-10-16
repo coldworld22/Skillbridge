@@ -78,25 +78,129 @@ exports.delete = (id) => {
   return db("payment_methods_config").where({ id }).del();
 };
 
+function parseSettings(rawSettings) {
+  if (!rawSettings) return {};
+  if (typeof rawSettings === "object") return rawSettings;
+  if (typeof rawSettings === "string") {
+    try {
+      return JSON.parse(rawSettings);
+    } catch (err) {
+      return {};
+    }
+  }
+  return {};
+}
+
+function normalizeCredential(...values) {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
+}
+
+function normalizePayPalMode(...values) {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "live" || normalized === "sandbox") {
+      return normalized;
+    }
+  }
+  return "sandbox";
+}
+
+function normalizePayPalSettingsInput(input = {}) {
+  const normalized = {};
+  const clientId = normalizeCredential(input.client_id, input.clientId);
+  if (clientId) normalized.client_id = clientId;
+
+  const clientSecret = normalizeCredential(
+    input.client_secret,
+    input.clientSecret
+  );
+  if (clientSecret) normalized.client_secret = clientSecret;
+
+  if (input.mode !== undefined) {
+    normalized.mode = normalizePayPalMode(input.mode);
+  }
+
+  return normalized;
+}
+
+function normalizeExistingPayPalSettings(settings = {}) {
+  if (!settings || typeof settings !== "object") return {};
+  const normalized = { ...settings };
+
+  const clientId = normalizeCredential(settings.client_id, settings.clientId);
+  if (clientId) {
+    normalized.client_id = clientId;
+  } else {
+    delete normalized.client_id;
+  }
+  delete normalized.clientId;
+
+  const clientSecret = normalizeCredential(
+    settings.client_secret,
+    settings.clientSecret
+  );
+  if (clientSecret) {
+    normalized.client_secret = clientSecret;
+  } else {
+    delete normalized.client_secret;
+  }
+  delete normalized.clientSecret;
+
+  if (settings.mode !== undefined) {
+    normalized.mode = normalizePayPalMode(settings.mode);
+  }
+
+  return normalized;
+}
+
 exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
+  const client_id = normalizeCredential(
+    settings.client_id,
+    settings.clientId,
+    process.env.PAYPAL_CLIENT_ID
+  );
+  const client_secret = normalizeCredential(
+    settings.client_secret,
+    settings.clientSecret,
+    process.env.PAYPAL_CLIENT_SECRET
+  );
   return {
-    client_id: settings.client_id || process.env.PAYPAL_CLIENT_ID,
-    client_secret: settings.client_secret || process.env.PAYPAL_CLIENT_SECRET,
-    mode: settings.mode || process.env.PAYPAL_MODE || "sandbox",
+    client_id,
+    client_secret,
+    mode: normalizePayPalMode(settings.mode, process.env.PAYPAL_MODE),
   };
 };
 
 exports.updatePayPalSettings = async (settings) => {
   const row = await exports.getByType("paypal");
   if (!row) throw new Error("PayPal method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const existing = normalizeExistingPayPalSettings(parseSettings(row.settings));
+  const normalizedInput = normalizePayPalSettingsInput(settings);
+  const newSettings = {
+    ...existing,
+    ...normalizedInput,
+  };
+  const payload = JSON.stringify(newSettings);
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
-    .update({ settings: newSettings })
+    .update({ settings: payload })
     .returning("settings");
-  return updated;
+  if (typeof updated === "string") {
+    try {
+      return JSON.parse(updated);
+    } catch (err) {
+      return newSettings;
+    }
+  }
+  return updated || newSettings;
 };
 
 exports.getPayPalClientId = async () => {
@@ -106,7 +210,7 @@ exports.getPayPalClientId = async () => {
 
 exports.getStripeSettings = async () => {
   const row = await exports.getByType("stripe");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
   return {
     publishable_key:
       settings.publishable_key || process.env.STRIPE_PUBLISHABLE_KEY,
@@ -117,7 +221,7 @@ exports.getStripeSettings = async () => {
 exports.updateStripeSettings = async (settings) => {
   const row = await exports.getByType("stripe");
   if (!row) throw new Error("Stripe method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: newSettings })
@@ -127,7 +231,7 @@ exports.updateStripeSettings = async (settings) => {
 
 exports.getCoinbaseSettings = async () => {
   const row = await exports.getByType("coinbase");
-  const settings = row?.settings || {};
+  const settings = parseSettings(row?.settings);
   return {
     api_key: settings.api_key || process.env.COINBASE_API_KEY,
     api_secret: settings.api_secret || process.env.COINBASE_API_SECRET,
@@ -137,7 +241,7 @@ exports.getCoinbaseSettings = async () => {
 exports.updateCoinbaseSettings = async (settings) => {
   const row = await exports.getByType("coinbase");
   if (!row) throw new Error("Coinbase method not found");
-  const newSettings = { ...(row.settings || {}), ...settings };
+  const newSettings = { ...parseSettings(row.settings), ...settings };
   const [updated] = await db("payment_methods_config")
     .where({ id: row.id })
     .update({ settings: newSettings })

@@ -11,6 +11,12 @@ jest.mock('../../../config/database', () => mockDb);
 const db = require('../../../config/database');
 const service = require('../paymentMethods.service');
 
+const originalEnv = {
+  PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
+  PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
+  PAYPAL_MODE: process.env.PAYPAL_MODE,
+};
+
 beforeAll(async () => {
   await db.schema.createTable('payment_methods_config', (table) => {
     table.string('id').primary();
@@ -26,10 +32,16 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.schema.dropTableIfExists('payment_methods_config');
   await db.destroy();
+  process.env.PAYPAL_CLIENT_ID = originalEnv.PAYPAL_CLIENT_ID;
+  process.env.PAYPAL_CLIENT_SECRET = originalEnv.PAYPAL_CLIENT_SECRET;
+  process.env.PAYPAL_MODE = originalEnv.PAYPAL_MODE;
 });
 
 beforeEach(async () => {
   await db('payment_methods_config').del();
+  process.env.PAYPAL_CLIENT_ID = originalEnv.PAYPAL_CLIENT_ID;
+  process.env.PAYPAL_CLIENT_SECRET = originalEnv.PAYPAL_CLIENT_SECRET;
+  process.env.PAYPAL_MODE = originalEnv.PAYPAL_MODE;
 });
 
 test('matches methods by type case-insensitively', async () => {
@@ -59,4 +71,79 @@ test('falls back to matching by name when type differs', async () => {
 test('returns null when no matching method exists', async () => {
   const method = await service.getByType('nonexistent');
   expect(method).toBeNull();
+});
+
+describe('PayPal settings', () => {
+  test('normalizes stored credentials and falls back to env values', async () => {
+    process.env.PAYPAL_CLIENT_ID = 'env-id';
+    process.env.PAYPAL_CLIENT_SECRET = 'env-secret';
+    process.env.PAYPAL_MODE = 'live';
+
+    await db('payment_methods_config').insert({
+      id: 'paypal-1',
+      name: 'PayPal',
+      type: 'paypal',
+      settings: JSON.stringify({
+        clientId: ' stored-id ',
+        clientSecret: ' stored-secret ',
+        mode: ' LIVE ',
+      }),
+    });
+
+    const settings = await service.getPayPalSettings();
+
+    expect(settings).toEqual({
+      client_id: 'stored-id',
+      client_secret: 'stored-secret',
+      mode: 'live',
+    });
+  });
+
+  test('uses environment variables when no stored credentials exist', async () => {
+    process.env.PAYPAL_CLIENT_ID = 'env-only-id';
+    process.env.PAYPAL_CLIENT_SECRET = 'env-only-secret';
+    process.env.PAYPAL_MODE = 'sandbox';
+
+    await db('payment_methods_config').insert({
+      id: 'paypal-2',
+      name: 'PayPal',
+      type: 'paypal',
+      settings: '{}',
+    });
+
+    const settings = await service.getPayPalSettings();
+
+    expect(settings).toEqual({
+      client_id: 'env-only-id',
+      client_secret: 'env-only-secret',
+      mode: 'sandbox',
+    });
+  });
+
+  test('stores normalized keys when updating credentials', async () => {
+    await db('payment_methods_config').insert({
+      id: 'paypal-3',
+      name: 'PayPal',
+      type: 'paypal',
+      settings: JSON.stringify({
+        clientId: 'legacy-id',
+        clientSecret: 'legacy-secret',
+        mode: 'LIVE',
+      }),
+    });
+
+    await service.updatePayPalSettings({
+      client_id: ' new-id ',
+      client_secret: ' new-secret ',
+      mode: 'LiVe',
+    });
+
+    const savedSettings = await service.getPayPalSettings();
+
+    expect(savedSettings).toEqual({
+      client_id: 'new-id',
+      client_secret: 'new-secret',
+      mode: 'live',
+    });
+  });
 });
