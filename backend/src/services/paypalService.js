@@ -15,7 +15,10 @@ async function getClient() {
   if (client) return client;
   const settings = await paymentMethodsService.getPayPalSettings();
   if (!settings?.client_id || !settings?.client_secret) {
-    throw new Error('PayPal credentials are not configured');
+    throw new AppError(
+      'PayPal payments are temporarily unavailable. Please contact support.',
+      503
+    );
   }
   const environment =
     settings.mode === 'live' ? Environment.Production : Environment.Sandbox;
@@ -37,6 +40,10 @@ async function getOrdersController() {
 }
 
 function mapPayPalSdkError(err, context) {
+  if (err instanceof AppError) {
+    return err;
+  }
+
   resetClient();
   const status = err?.statusCode;
   const details =
