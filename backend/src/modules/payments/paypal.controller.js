@@ -13,6 +13,34 @@ const { creditInstructorFromPayment } = require('./helpers/wallet');
 const { loadAndValidateCoupon } = require('./helpers/coupon');
 const { ensurePlanAmountMatches } = require('./helpers/planPricing');
 
+function splitAndTrim(value) {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function resolveConfiguredBaseUrl(value) {
+  const [first] = splitAndTrim(value);
+  if (!first) return null;
+  return first.replace(/\/+$/, '');
+}
+
+function buildAbsoluteUrl(base, relativePath) {
+  if (!base) return null;
+  const normalizedPath = relativePath.startsWith('/')
+    ? relativePath
+    : `/${relativePath}`;
+  try {
+    const baseUrl = new URL(base);
+    return new URL(normalizedPath, baseUrl).toString();
+  } catch (_err) {
+    const sanitizedBase = base.replace(/\/+$/, '');
+    return `${sanitizedBase}${normalizedPath}`;
+  }
+}
+
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
   book: 10,
@@ -107,7 +135,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   const protocol =
     (forwardedProto && forwardedProto.split(',')[0]?.trim()) || req.protocol || 'http';
   const backendBase =
-    (process.env.BACKEND_URL || '').replace(/\/$/, '') ||
+    resolveConfiguredBaseUrl(process.env.BACKEND_URL) ||
     (host ? `${protocol}://${host}` : '');
   if (!backendBase) {
     throw new AppError(
@@ -116,15 +144,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     );
   }
 
-  const baseFrontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
-  const inferredBackendUrl = (() => {
-    const host = req.get('host') || req.headers?.host;
-    if (!host) return null;
-    const protocol = req.protocol || 'http';
-    return `${protocol}://${host}`;
-  })();
-  const providedBackendUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');
-  const baseBackendUrl = (providedBackendUrl || inferredBackendUrl || 'http://localhost').replace(/\/$/, '');
+  const baseFrontendUrl = resolveConfiguredBaseUrl(process.env.FRONTEND_URL);
   const cancelParams = new URLSearchParams({
     itemType: item_type,
     itemId: String(item_id),
@@ -133,9 +153,15 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   const order = await paypalService.createOrder({
     amount: numericAmount,
     currency: currencyCode,
-    returnUrl: `${backendBase}/api/payments/paypal/callback?payment_id=${paymentId}`,
+    returnUrl: buildAbsoluteUrl(
+      backendBase,
+      `/api/payments/paypal/callback?payment_id=${paymentId}`
+    ),
     cancelUrl: baseFrontendUrl
-      ? `${baseFrontendUrl}/payments/error?${cancelParams.toString()}`
+      ? buildAbsoluteUrl(
+          baseFrontendUrl,
+          `/payments/error?${cancelParams.toString()}`
+        )
       : undefined,
   });
   const approval = order.links?.find((l) => l.rel === 'approve')?.href;
@@ -188,15 +214,18 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
     }
   }
 
-  if (process.env.FRONTEND_URL) {
-    const baseFrontendUrl = process.env.FRONTEND_URL.replace(/\/$/, '');
+  const frontendRedirectBase = resolveConfiguredBaseUrl(process.env.FRONTEND_URL);
+  if (frontendRedirectBase) {
     const route = updated.status === STATUS.PAID ? 'success' : 'error';
     const params = new URLSearchParams({
       payment_id: updated.id,
       itemType: updated.item_type,
       itemId: String(updated.item_id || ''),
     });
-    const redirectUrl = `${baseFrontendUrl}/payments/${route}?${params.toString()}`;
+    const redirectUrl = buildAbsoluteUrl(
+      frontendRedirectBase,
+      `/payments/${route}?${params.toString()}`
+    );
     return res.redirect(redirectUrl);
   }
   sendSuccess(res, updated, 'PayPal payment processed');
