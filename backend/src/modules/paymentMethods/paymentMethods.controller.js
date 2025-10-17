@@ -99,6 +99,22 @@ exports.updateMethod = catchAsync(async (req, res) => {
   // Merge existing settings with incoming settings to avoid dropping
   // secrets (e.g. client_secret) that are not returned to the client.
   if (data.settings) {
+    const existingSettings = (() => {
+      const current = existing.settings;
+      if (!current) return {};
+      if (typeof current === "string") {
+        try {
+          return JSON.parse(current) || {};
+        } catch (_err) {
+          return {};
+        }
+      }
+      if (typeof current === "object") {
+        return { ...current };
+      }
+      return {};
+    })();
+
     let incoming = data.settings;
     // If settings came in as a JSON string (e.g. multipart requests), parse it
     if (typeof incoming === "string") {
@@ -111,7 +127,7 @@ exports.updateMethod = catchAsync(async (req, res) => {
     if (incoming && typeof incoming === "object") {
       delete incoming.has_client_secret;
     }
-    data.settings = { ...(existing.settings || {}), ...(incoming || {}) };
+    data.settings = { ...existingSettings, ...(incoming || {}) };
   }
   if (req.file) {
     if (existing.icon) {
