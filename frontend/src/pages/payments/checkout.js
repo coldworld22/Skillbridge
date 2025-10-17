@@ -293,23 +293,33 @@ export async function handlePayPalPayment({
   itemInfo,
   itemType,
   finalPrice,
-  couponId: _couponId,
+  couponId,
   t,
   setPaymentStatus,
   interval,
-  allowInstallments: _allowInstallments,
-  installments: _installments,
+  allowInstallments,
+  installments,
 }) {
   try {
     setPaymentStatus('processing');
+    const { enabled, count, amountPerInstallment } = resolveInstallmentMeta(
+      allowInstallments,
+      installments,
+      finalPrice
+    );
     const payload = {
       item_id: itemInfo.id,
       item_type: itemType,
-      amount: finalPrice,
+      amount: amountPerInstallment,
     };
     // eslint-disable-next-line no-console
     console.log('PayPal payload', payload);
     if (itemType === 'plan') payload.interval = interval;
+    if (couponId) payload.coupon_id = couponId;
+    if (enabled) {
+      payload.allow_installments = true;
+      payload.installments = count;
+    }
     const data = await initiatePayPalPayment(payload);
     if (typeof window !== 'undefined' && data?.payment) {
       try {
