@@ -140,7 +140,12 @@ function normalizePayPalMode(...candidates) {
     const value = trimValue(candidate);
     if (!value) continue;
     const normalized = value.toLowerCase();
-    if (normalized === "live" || normalized === "sandbox") return normalized;
+    if (normalized === "live" || normalized === "production" || normalized === "prod") {
+      return "live";
+    }
+    if (normalized === "sandbox" || normalized === "test" || normalized === "testing") {
+      return "sandbox";
+    }
   }
   return "sandbox";
 }
