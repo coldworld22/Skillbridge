@@ -170,6 +170,15 @@ test('paypal payment sends installment meta when enabled', async () => {
   );
 });
 
+test('paypal payment forwards coupon identifiers when present', async () => {
+  initiatePayPalPayment.mockResolvedValue({ approval_url: 'http://paypal' });
+  const args = { ...baseArgs(), couponId: 'SAVE10' };
+  await handlePayPalPayment(args);
+  expect(initiatePayPalPayment).toHaveBeenCalledWith(
+    expect.objectContaining({ coupon_id: 'SAVE10' })
+  );
+});
+
 test('bank payment appends installment fields when enabled', async () => {
   initiateBankPayment.mockResolvedValue({ id: 10 });
   const args = {
