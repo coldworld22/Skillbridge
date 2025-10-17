@@ -172,4 +172,27 @@ describe('PayPal settings', () => {
       mode: 'live',
     });
   });
+
+  test('normalizes common PayPal mode synonyms', async () => {
+    process.env.PAYPAL_MODE = 'Production';
+
+    await db('payment_methods_config').insert({
+      id: 'paypal-5',
+      name: 'PayPal',
+      type: 'paypal',
+      settings: JSON.stringify({
+        client_id: 'id-1',
+        client_secret: 'secret-1',
+        mode: 'Production',
+      }),
+    });
+
+    const settings = await service.getPayPalSettings();
+    expect(settings.mode).toBe('live');
+
+    await service.updatePayPalSettings({ mode: 'TEST' });
+
+    const updated = await service.getPayPalSettings();
+    expect(updated.mode).toBe('sandbox');
+  });
 });
