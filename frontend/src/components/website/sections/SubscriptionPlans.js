@@ -99,6 +99,12 @@ const SubscriptionPlans = ({ role = "student" }) => {
             const includedClasses = Array.isArray(plan.included_classes)
               ? plan.included_classes
               : [];
+            const includedBooks = Array.isArray(plan.included_books)
+              ? plan.included_books
+              : [];
+            const includedTutorials = Array.isArray(plan.included_tutorials)
+              ? plan.included_tutorials
+              : [];
             const monthlyLabel = formatCurrency(plan.price_monthly || 0, {
               currency: plan.currency,
             });
@@ -177,6 +183,108 @@ const SubscriptionPlans = ({ role = "student" }) => {
                     {includedClasses.length > 3 && (
                       <p className="text-xs text-gray-200/70">
                         {t("plan_more_classes", { count: includedClasses.length - 3 })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {includedBooks.length > 0 && (
+                  <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
+                      {t("plan_included_books_title")}
+                    </h4>
+                    <ul className="space-y-3">
+                      {includedBooks.slice(0, 3).map((book) => {
+                        const hasPrice = Number(book.price) > 0;
+                        const priceLabel = hasPrice
+                          ? t("plan_book_access_plan", {
+                              price: formatCurrency(book.price || 0, {
+                                currency: plan.currency,
+                              }),
+                            })
+                          : t("plan_class_access_plan");
+                        return (
+                          <li key={book.id} className="flex items-center gap-3">
+                            {book.cover_image ? (
+                              <img
+                                src={book.cover_image}
+                                alt={book.title}
+                                className="w-12 h-12 rounded object-cover border border-white/30"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
+                                {t("plan_book_placeholder")}
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <a
+                                href={`/marketplace/books/${book.id}`}
+                                className="font-semibold text-white line-clamp-1 hover:underline"
+                              >
+                                {book.title}
+                              </a>
+                              <p className="text-xs text-gray-200/80">{priceLabel}</p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {includedBooks.length > 3 && (
+                      <p className="text-xs text-gray-200/70">
+                        {t("plan_more_books", { count: includedBooks.length - 3 })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {includedTutorials.length > 0 && (
+                  <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
+                      {t("plan_included_tutorials_title")}
+                    </h4>
+                    <ul className="space-y-3">
+                      {includedTutorials.slice(0, 3).map((tutorial) => {
+                        const hasPrice = Number(tutorial.price) > 0;
+                        const priceLabel = hasPrice
+                          ? t("plan_tutorial_access_plan", {
+                              price: formatCurrency(tutorial.price || 0, {
+                                currency: plan.currency,
+                              }),
+                            })
+                          : t("plan_class_access_plan");
+                        return (
+                          <li key={tutorial.id} className="flex items-center gap-3">
+                            {tutorial.cover_image ? (
+                              <img
+                                src={tutorial.cover_image}
+                                alt={tutorial.title}
+                                className="w-12 h-12 rounded object-cover border border-white/30"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
+                                {t("plan_tutorial_placeholder")}
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <a
+                                href={`/tutorials/${tutorial.id}`}
+                                className="font-semibold text-white line-clamp-1 hover:underline"
+                              >
+                                {tutorial.title}
+                              </a>
+                              <p className="text-xs text-gray-200/80">{priceLabel}</p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {includedTutorials.length > 3 && (
+                      <p className="text-xs text-gray-200/70">
+                        {t("plan_more_tutorials", {
+                          count: includedTutorials.length - 3,
+                        })}
                       </p>
                     )}
                   </div>

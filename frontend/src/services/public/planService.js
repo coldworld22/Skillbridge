@@ -8,13 +8,22 @@ const withBaseUrl = (url) => {
   return safeEncodeURI(`${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL || ""}${url}`);
 };
 
+const withCoverUrls = (items = [], field = "cover_image") =>
+  items.map((item) => ({
+    ...item,
+    [field]: withBaseUrl(item?.[field] || ""),
+  }));
+
 const formatPlan = (plan = {}) => {
   const copy = { ...plan };
   if (Array.isArray(copy.included_classes)) {
-    copy.included_classes = copy.included_classes.map((cls) => ({
-      ...cls,
-      cover_image: withBaseUrl(cls.cover_image || ""),
-    }));
+    copy.included_classes = withCoverUrls(copy.included_classes);
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = withCoverUrls(copy.included_books);
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = withCoverUrls(copy.included_tutorials);
   }
   return copy;
 };
