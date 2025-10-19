@@ -1,0 +1,339 @@
+{
+  "common": {
+    "status": {
+      "paid": "Paid",
+      "awaiting_approval": "Awaiting Approval",
+      "pending_payment": "Pending",
+      "rejected": "Rejected",
+      "pending": "Pending",
+      "approved": "Approved",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "methods": {
+      "subscription": "Subscription",
+      "manual_review": "Manual Review",
+      "currency_payment": "{{currency}} Payment",
+      "default": "Payment"
+    },
+    "filters": {
+      "all": "All",
+      "all_methods": "All Methods",
+      "all_statuses": "All Statuses",
+      "paid": "Paid",
+      "pending": "Pending",
+      "rejected": "Rejected",
+      "live": "Live",
+      "completed": "Completed",
+      "draft": "Draft"
+    },
+    "labels": {
+      "available_balance": "Available Balance",
+      "minimum_withdrawal": "Minimum withdrawal amount:",
+      "commission_vs_net": "📊 Commission vs Net Earnings",
+      "commission_net_ratio": "Commission: {{commission}}% | Net: {{net}}%",
+      "filter_status": "Filter by Status:",
+      "start_date": "Start Date",
+      "end_date": "End Date"
+    },
+    "buttons": {
+      "export_csv": "Export CSV",
+      "download_tax_pdf": "Download Tax PDF",
+      "request_withdrawal": "Request Withdrawal",
+      "save_settings": "Save Settings",
+      "submit_request": "Submit Request",
+      "submitting": "Submitting..."
+    },
+    "messages": {
+      "loading": {
+        "payments": "Loading payment data...",
+        "history": "Loading payment history...",
+        "classes": "Loading class earnings...",
+        "class_breakdown": "Loading class breakdown...",
+        "books": "Loading book earnings...",
+        "tutorials": "Loading tutorial earnings...",
+        "withdrawals": "Loading withdrawal history..."
+      },
+      "errors": {
+        "payments": "Failed to load payments. Please try again later.",
+        "history": "Unable to load payment history right now.",
+        "classes": "Unable to load class earnings right now.",
+        "class_breakdown": "Unable to load class breakdown right now.",
+        "books": "Unable to load book earnings right now.",
+        "tutorials": "Unable to load tutorial earnings right now.",
+        "withdrawals": "Unable to load withdrawals right now."
+      },
+      "info": {
+        "requests_above_balance": "Requests above your available wallet balance will be rejected.",
+        "below_minimum_notice": "Your current balance is below the minimum withdrawal amount. Keep earning to unlock withdrawals.",
+        "pdf_unavailable": "📄 PDF export is not yet implemented. Please contact support if you need a statement.",
+        "payout_policy_link": "payout policy"
+      },
+      "success": {
+        "withdrawal_submitted": "Withdrawal request submitted successfully."
+      },
+      "validation": {
+        "invalid_amount": "Please enter a valid amount.",
+        "exceeds_balance": "Requested amount exceeds your available wallet balance.",
+        "below_minimum": "Minimum withdrawal amount is {{amount}}.",
+        "at_least_amount": "Must be at least {{amount}}."
+      }
+    },
+    "tables": {
+      "item_type": "Item Type",
+      "orders": "Orders",
+      "gross": "Gross",
+      "net": "Net",
+      "net_earned": "Net Earned",
+      "platform_fees": "Platform Fees",
+      "item": "Item",
+      "gross_amount": "Gross Amount",
+      "platform_fee": "Platform Fee",
+      "net_amount": "Net Amount",
+      "date": "Date",
+      "method": "Method",
+      "status": "Status",
+      "title": "Title",
+      "students": "Students",
+      "avg_price": "Avg Price",
+      "gross_earned": "Gross Earned",
+      "net_earnings": "Net Earnings",
+      "commission": "Commission",
+      "sales": "Sales",
+      "notes": "Notes",
+      "requested": "Requested",
+      "processed": "Processed",
+      "amount": "Amount",
+      "class": "Class",
+      "students_paid": "Students (Paid)",
+      "schedule": "Schedule",
+      "publish": "Publish",
+      "last_payment": "Last Payment",
+      "currency": "Currency"
+    },
+    "empty": {
+      "transactions": "No transactions found yet.",
+      "payments": "No payments found for the selected filters.",
+      "class_earnings": "No class earnings available for the selected period.",
+      "classes_filter": "No classes match the selected filter.",
+      "book_earnings": "No book earnings available for the selected period.",
+      "tutorial_earnings": "No tutorial earnings available for the selected period.",
+      "withdrawals": "No withdrawal requests yet."
+    },
+    "placeholders": {
+      "paypal_email": "e.g., user@example.com",
+      "bank_details": "e.g., IBAN + SWIFT"
+    },
+    "itemTypes": {
+      "class": "Class",
+      "book": "Book",
+      "tutorial": "Tutorial",
+      "subscription": "Subscription",
+      "other": "Other"
+    }
+  },
+  "dashboard": {
+    "title": "💰 Instructor Payments",
+    "cards": {
+      "lifetime_earnings": "Lifetime Earnings",
+      "pending_earnings": "Pending Earnings",
+      "paid_to_wallet": "Paid to Wallet",
+      "total_withdrawn": "Total Withdrawn",
+      "platform_fees": "Platform Fees",
+      "gross_revenue": "Gross Revenue"
+    },
+    "wallet": {
+      "title": "Current Wallet Balance"
+    },
+    "earnings_by_type": {
+      "title": "Earnings by Item Type",
+      "description": "Track how each product contributes to your revenue."
+    },
+    "quick_links": {
+      "history": "📜 Payment History",
+      "withdrawals": "🧾 Withdrawals",
+      "settings": "⚙️ Payment Settings",
+      "commissions": "📉 Commission & Deductions",
+      "classes": "🎥 Online Class Earnings",
+      "tutorials": "📘 Tutorial Earnings",
+      "books": "📚 Book Earnings"
+    },
+    "transactions": {
+      "title": "Transaction History",
+      "stats": {
+        "filtered": "Filtered Transactions",
+        "net": "Net Earnings",
+        "fees": "Platform Fees",
+        "last_payment": "Last Payment"
+      },
+      "status_breakdown": {
+        "count": "{{count}} tx",
+        "net": "{{amount}} net"
+      },
+      "untitled": "Untitled"
+    },
+    "export": {
+      "filename": "payments.csv",
+      "headers": {
+        "item": "Item",
+        "gross_amount": "Gross Amount",
+        "platform_fee": "Platform Fee",
+        "net_amount": "Net Amount",
+        "date": "Date",
+        "status": "Status",
+        "method": "Method"
+      }
+    }
+  },
+  "history": {
+    "title": "📜 Payment History",
+    "filters": {
+      "all": "All",
+      "paid": "Paid",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "export": {
+      "filename": "payment_history.csv",
+      "headers": {
+        "item": "Item",
+        "gross_amount": "Gross Amount",
+        "platform_fee": "Platform Fee",
+        "net_amount": "Net Amount",
+        "date": "Date",
+        "method": "Method",
+        "status": "Status"
+      }
+    },
+    "table": {
+      "untitled": "Untitled"
+    }
+  },
+  "classes": {
+    "title": "🎥 Online Class Earnings",
+    "tabs": {
+      "classes": "Online Classes",
+      "policy": "Commission Policy"
+    },
+    "export": {
+      "filename": "class_earnings.csv"
+    },
+    "policy_notice": "Platform commission is calculated per enrollment and may vary if coupons or special pricing are applied.",
+    "policy_cta": "Please refer to our <link>payout policy</link> for complete details.",
+    "policy_link_href": "/help/payments"
+  },
+  "books": {
+    "title": "📚 Book Earnings",
+    "export": {
+      "filename": "book_earnings.csv"
+    },
+    "info_notice": "Book earnings include both direct purchases and plan-covered access where applicable.",
+    "info_cta": "Review the <link>payout policy</link> for more information on how book revenue is calculated.",
+    "policy_link_href": "/help/payments"
+  },
+  "tutorials": {
+    "title": "🎓 Tutorial Earnings",
+    "export": {
+      "filename": "tutorial_earnings.csv"
+    },
+    "info_notice": "Platform commission is calculated per tutorial purchase and may vary when coupons or plans are used.",
+    "info_cta": "Review the <link>payout policy</link> for more details.",
+    "policy_link_href": "/help/payments"
+  },
+  "classBreakdown": {
+    "title": "📚 Class-Level Earnings",
+    "filter_label": "Filter by Status:",
+    "filters": {
+      "all": "All",
+      "live": "Live",
+      "completed": "Completed",
+      "draft": "Draft"
+    },
+    "rows": {
+      "archived_title": "Archived Class",
+      "archived_status": "Archived"
+    }
+  },
+  "commissions": {
+    "title": "📉 Platform Commission & Deductions",
+    "summary": {
+      "commission_rate": "Platform Commission Rate",
+      "total_earnings": "Total Earnings Before Deductions",
+      "platform_cut": "Commission Deducted",
+      "net_earnings": "Net Earnings After Commission"
+    },
+    "info_note": "Platform commission is fixed at 20%. Transaction and tax fees may vary depending on your payout method and location.",
+    "breakdown": {
+      "title": "Class-by-Class Commission Breakdown",
+      "headers": {
+        "title": "Title",
+        "amount": "Amount",
+        "commission": "Commission"
+      }
+    },
+    "deductions": {
+      "title": "Additional Deductions"
+    },
+    "final_payout": "💵 Final Payout After All Deductions",
+    "export": {
+      "filename": "class_commission_breakdown.csv"
+    }
+  },
+  "settings": {
+    "title": "⚙️ Payment Settings",
+    "preferred_method": "Preferred Method",
+    "methods": {
+      "paypal": "PayPal",
+      "bank_transfer": "Bank Transfer",
+      "stripe": "Stripe",
+      "moyasar": "Moyasar",
+      "nft_wallet": "NFT Wallet"
+    },
+    "fields": {
+      "paypal_email": "PayPal Email",
+      "iban": "IBAN",
+      "swift": "SWIFT/BIC",
+      "bank_name": "Bank Name",
+      "account_holder": "Account Holder",
+      "stripe_account_id": "Stripe Account ID",
+      "moyasar_merchant_id": "Moyasar Merchant ID",
+      "wallet_address": "Ethereum Wallet Address"
+    },
+    "alert": {
+      "base": "Saved settings for {{method}}\n{{details}}",
+      "paypal": "Email: {{email}}",
+      "bank_transfer": "IBAN: {{iban}}\nSWIFT: {{swift}}",
+      "stripe": "Stripe Account ID: {{id}}",
+      "moyasar": "Merchant ID: {{id}}",
+      "nft_wallet": "Wallet Address: {{address}}",
+      "none": "(No details configured)"
+    }
+  },
+  "withdrawals": {
+    "title": "💸 Withdrawal Requests",
+    "stats": {
+      "approved": "Approved Withdrawals",
+      "pending": "Pending Requests"
+    },
+    "export": {
+      "filename": "withdrawals.csv"
+    }
+  },
+  "withdrawalsNew": {
+    "title": "📝 New Withdrawal Request",
+    "labels": {
+      "requests_above_balance": "Requests above your available wallet balance will be rejected.",
+      "minimum_withdrawal": "Minimum withdrawal amount:"
+    },
+    "form": {
+      "amount": "Amount",
+      "payment_method": "Payment Method",
+      "paypal_email": "PayPal Email",
+      "bank_details": "Bank Details (IBAN / SWIFT)"
+    },
+    "placeholders": {
+      "paypal_email": "e.g., user@example.com",
+      "bank_details": "e.g., IBAN + SWIFT"
+    }
+  }
+}

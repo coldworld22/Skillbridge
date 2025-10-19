@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
@@ -15,13 +15,9 @@ import {
 } from "@/services/instructor/paymentService";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
-
-const STATUS_LABELS = {
-  paid: "Paid",
-  awaiting_approval: "Awaiting Approval",
-  pending_payment: "Pending",
-  rejected: "Rejected",
-};
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const STATUS_COLORS = {
   paid: "text-green-600",
@@ -30,15 +26,8 @@ const STATUS_COLORS = {
   rejected: "text-red-500",
 };
 
-const getMethodLabel = (payment) => {
-  if (payment?.method_name) return payment.method_name;
-  if (payment?.source === "subscription") return "Subscription";
-  if (payment?.status === "awaiting_approval" && payment?.reference_id)
-    return "Manual Review";
-  return payment?.currency ? `${payment.currency} Payment` : "Payment";
-};
-
 export default function InstructorPaymentsPage() {
+  const { t } = useTranslation(["instructor-payments", "dashboard"]);
   const router = useRouter();
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState({
@@ -55,6 +44,48 @@ export default function InstructorPaymentsPage() {
   const [isPushing, setIsPushing] = useState(false);
   const [methodFilter, setMethodFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const statusLabels = useMemo(
+    () => ({
+      paid: t("instructor-payments:common.status.paid"),
+      awaiting_approval: t(
+        "instructor-payments:common.status.awaiting_approval"
+      ),
+      pending_payment: t(
+        "instructor-payments:common.status.pending_payment"
+      ),
+      rejected: t("instructor-payments:common.status.rejected"),
+    }),
+    [t]
+  );
+
+  const itemTypeLabels = useMemo(
+    () => ({
+      class: t("instructor-payments:common.itemTypes.class"),
+      book: t("instructor-payments:common.itemTypes.book"),
+      tutorial: t("instructor-payments:common.itemTypes.tutorial"),
+      subscription: t("instructor-payments:common.itemTypes.subscription"),
+      other: t("instructor-payments:common.itemTypes.other"),
+    }),
+    [t]
+  );
+
+  const getMethodLabel = useCallback(
+    (payment) => {
+      if (payment?.method_name) return payment.method_name;
+      if (payment?.source === "subscription")
+        return t("instructor-payments:common.methods.subscription");
+      if (payment?.status === "awaiting_approval" && payment?.reference_id)
+        return t("instructor-payments:common.methods.manual_review");
+      if (payment?.currency) {
+        return t("instructor-payments:common.methods.currency_payment", {
+          currency: payment.currency,
+        });
+      }
+      return t("instructor-payments:common.methods.default");
+    },
+    [t]
+  );
 
   useEffect(() => {
     let active = true;
@@ -83,7 +114,7 @@ export default function InstructorPaymentsPage() {
       } catch (err) {
         console.error("Failed to load instructor payments", err);
         if (active) {
-          setError("Failed to load payments. Please try again later.");
+          setError(t("instructor-payments:common.messages.errors.payments"));
         }
       } finally {
         if (active) setLoading(false);
@@ -93,7 +124,7 @@ export default function InstructorPaymentsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const methodOptions = useMemo(() => {
     const set = new Set();
@@ -102,7 +133,7 @@ export default function InstructorPaymentsPage() {
       if (label) set.add(label);
     });
     return Array.from(set);
-  }, [payments]);
+  }, [getMethodLabel, payments]);
 
   const statusOptions = useMemo(() => {
     const set = new Set();
@@ -120,7 +151,7 @@ export default function InstructorPaymentsPage() {
         statusFilter === "all" || payment.status === statusFilter;
       return matchesMethod && matchesStatus;
     });
-  }, [methodFilter, statusFilter, payments]);
+  }, [getMethodLabel, methodFilter, statusFilter, payments]);
 
   const statusBreakdown = useMemo(() => {
     return payments.reduce((acc, payment) => {
@@ -172,60 +203,6 @@ export default function InstructorPaymentsPage() {
     );
   }, [filteredPayments]);
 
-  const latestPaymentDate =
-    filteredTotals.latestTimestamp === -Infinity
-      ? null
-      : new Date(filteredTotals.latestTimestamp);
-  const filteredCurrency =
-    filteredTotals.latestCurrency || filteredPayments[0]?.currency;
-
-  const totalEarnings = summary.lifetimeEarnings ?? 0;
-  const pendingBalance = summary.totalPending ?? 0;
-  const withdrawn = summary.withdrawnTotal ?? 0;
-  const walletBalance = summary.walletBalance ?? 0;
-  const totalPaid = summary.totalPaid ?? 0;
-  const totalPlatformFees = summary.totalPlatformFees ?? 0;
-  const totalGross = summary.totalGross ?? totalEarnings;
-
-  const redirectToNewWithdrawal = () => {
-    if (isPushing) return;
-    setIsPushing(true);
-    router
-      .push("/dashboard/instructor/payments/withdrawals/new")
-      .finally(() => setIsPushing(false));
-  };
-
-  const exportCSV = () => {
-    const headers = [
-      "Item",
-      "Gross Amount",
-      "Platform Fee",
-      "Net Amount",
-      "Date",
-      "Status",
-      "Method",
-    ];
-    const rows = filteredPayments.map((payment) => [
-      payment.item_title || payment.item_type,
-      Number(payment.amount ?? 0).toFixed(2),
-      Number(payment.platform_fee ?? 0).toFixed(2),
-      Number(payment.instructor_amount ?? 0).toFixed(2),
-      formatDate(payment.paid_at || payment.created_at),
-      STATUS_LABELS[payment.status] || payment.status,
-      getMethodLabel(payment),
-    ]);
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "payments.csv";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
-
   const earningsByType = useMemo(() => {
     const map = new Map();
 
@@ -257,10 +234,66 @@ export default function InstructorPaymentsPage() {
     }));
   }, [payments]);
 
+  const latestPaymentDate =
+    filteredTotals.latestTimestamp === -Infinity
+      ? null
+      : new Date(filteredTotals.latestTimestamp);
+  const filteredCurrency =
+    filteredTotals.latestCurrency || filteredPayments[0]?.currency;
+
+  const totalEarnings = summary.lifetimeEarnings ?? 0;
+  const pendingBalance = summary.totalPending ?? 0;
+  const withdrawn = summary.withdrawnTotal ?? 0;
+  const walletBalance = summary.walletBalance ?? 0;
+  const totalPaid = summary.totalPaid ?? 0;
+  const totalPlatformFees = summary.totalPlatformFees ?? 0;
+  const totalGross = summary.totalGross ?? totalEarnings;
+
+  const redirectToNewWithdrawal = () => {
+    if (isPushing) return;
+    setIsPushing(true);
+    router
+      .push("/dashboard/instructor/payments/withdrawals/new")
+      .finally(() => setIsPushing(false));
+  };
+
+  const exportCSV = () => {
+    const headers = [
+      t("instructor-payments:dashboard.export.headers.item"),
+      t("instructor-payments:dashboard.export.headers.gross_amount"),
+      t("instructor-payments:dashboard.export.headers.platform_fee"),
+      t("instructor-payments:dashboard.export.headers.net_amount"),
+      t("instructor-payments:dashboard.export.headers.date"),
+      t("instructor-payments:dashboard.export.headers.status"),
+      t("instructor-payments:dashboard.export.headers.method"),
+    ];
+    const rows = filteredPayments.map((payment) => [
+      payment.item_title || payment.item_type,
+      Number(payment.amount ?? 0).toFixed(2),
+      Number(payment.platform_fee ?? 0).toFixed(2),
+      Number(payment.instructor_amount ?? 0).toFixed(2),
+      formatDate(payment.paid_at || payment.created_at),
+      statusLabels[payment.status] || payment.status,
+      getMethodLabel(payment),
+    ]);
+    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = t("instructor-payments:dashboard.export.filename");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <InstructorLayout>
-        <div className="p-6">Loading payment data...</div>
+        <div className="p-6">
+          {t("instructor-payments:common.messages.loading.payments")}
+        </div>
       </InstructorLayout>
     );
   }
@@ -276,13 +309,17 @@ export default function InstructorPaymentsPage() {
   return (
     <InstructorLayout>
       <div className="p-6 space-y-6 text-gray-800">
-        <h1 className="text-2xl font-bold">💰 Instructor Payments</h1>
+        <h1 className="text-2xl font-bold">
+          {t("instructor-payments:dashboard.title")}
+        </h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaDollarSign className="text-2xl text-green-500" />
             <div>
-              <p className="text-sm text-gray-500">Lifetime Earnings</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.lifetime_earnings")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(totalEarnings)}
               </h2>
@@ -291,7 +328,9 @@ export default function InstructorPaymentsPage() {
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaClock className="text-2xl text-yellow-500" />
             <div>
-              <p className="text-sm text-gray-500">Pending Earnings</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.pending_earnings")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(pendingBalance)}
               </h2>
@@ -300,7 +339,9 @@ export default function InstructorPaymentsPage() {
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaWallet className="text-2xl text-purple-500" />
             <div>
-              <p className="text-sm text-gray-500">Paid to Wallet</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.paid_to_wallet")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(totalPaid)}
               </h2>
@@ -309,7 +350,9 @@ export default function InstructorPaymentsPage() {
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaWallet className="text-2xl text-blue-500" />
             <div>
-              <p className="text-sm text-gray-500">Total Withdrawn</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.total_withdrawn")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(withdrawn)}
               </h2>
@@ -318,7 +361,9 @@ export default function InstructorPaymentsPage() {
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaDollarSign className="text-2xl text-red-500" />
             <div>
-              <p className="text-sm text-gray-500">Platform Fees</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.platform_fees")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(totalPlatformFees)}
               </h2>
@@ -327,7 +372,9 @@ export default function InstructorPaymentsPage() {
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaDollarSign className="text-2xl text-indigo-500" />
             <div>
-              <p className="text-sm text-gray-500">Gross Revenue</p>
+              <p className="text-sm text-gray-500">
+                {t("instructor-payments:dashboard.cards.gross_revenue")}
+              </p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(totalGross)}
               </h2>
@@ -338,7 +385,9 @@ export default function InstructorPaymentsPage() {
         <div className="bg-blue-50 border border-blue-100 text-blue-800 p-4 rounded-lg flex items-center gap-3">
           <FaWallet />
           <div>
-            <p className="text-sm uppercase tracking-wide">Current Wallet Balance</p>
+            <p className="text-sm uppercase tracking-wide">
+              {t("instructor-payments:dashboard.wallet.title")}
+            </p>
             <p className="text-lg font-semibold">
               {formatCurrency(walletBalance)}
             </p>
@@ -348,26 +397,41 @@ export default function InstructorPaymentsPage() {
         {earningsByType.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Earnings by Item Type</h2>
+              <h2 className="text-lg font-semibold">
+                {t("instructor-payments:dashboard.earnings_by_type.title")}
+              </h2>
               <p className="text-sm text-gray-500">
-                Track how each product contributes to your revenue.
+                {t(
+                  "instructor-payments:dashboard.earnings_by_type.description"
+                )}
               </p>
             </div>
             <table className="w-full table-auto">
               <thead>
                 <tr className="bg-gray-100 text-left">
-                  <th className="p-3">Item Type</th>
-                  <th className="p-3">Orders</th>
-                  <th className="p-3">Gross</th>
-                  <th className="p-3">Net Earned</th>
-                  <th className="p-3">Platform Fees</th>
+                  <th className="p-3">
+                    {t("instructor-payments:common.tables.item_type")}
+                  </th>
+                  <th className="p-3">
+                    {t("instructor-payments:common.tables.orders")}
+                  </th>
+                  <th className="p-3">
+                    {t("instructor-payments:common.tables.gross")}
+                  </th>
+                  <th className="p-3">
+                    {t("instructor-payments:common.tables.net_earned")}
+                  </th>
+                  <th className="p-3">
+                    {t("instructor-payments:common.tables.platform_fees")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {earningsByType.map((row) => (
                   <tr key={row.type} className="border-b last:border-b-0">
                     <td className="p-3 font-medium capitalize">
-                      {row.type.replace(/_/g, " ")}
+                      {itemTypeLabels[row.type] ||
+                        row.type.replace(/_/g, " ")}
                     </td>
                     <td className="p-3">{row.orders}</td>
                     <td className="p-3">
@@ -391,56 +455,60 @@ export default function InstructorPaymentsPage() {
             href="/dashboard/instructor/payments/history"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            📜 Payment History
+            {t("instructor-payments:dashboard.quick_links.history")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/withdrawals"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            🧾 Withdrawals
+            {t("instructor-payments:dashboard.quick_links.withdrawals")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/settings"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            ⚙️ Payment Settings
+            {t("instructor-payments:dashboard.quick_links.settings")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/commissions"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            📉 Commission &amp; Deductions
+            {t("instructor-payments:dashboard.quick_links.commissions")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/classes"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            🎥 Online Class Earnings
+            {t("instructor-payments:dashboard.quick_links.classes")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/tutorials"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            📘 Tutorial Earnings
+            {t("instructor-payments:dashboard.quick_links.tutorials")}
           </Link>
           <Link
             href="/dashboard/instructor/payments/books"
             className="block bg-gray-50 hover:bg-gray-100 p-4 rounded shadow text-center"
           >
-            📚 Book Earnings
+            {t("instructor-payments:dashboard.quick_links.books")}
           </Link>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Transaction History</h2>
+            <h2 className="text-lg font-semibold">
+              {t("instructor-payments:dashboard.transactions.title")}
+            </h2>
             <div className="flex gap-2 flex-wrap justify-end">
               <select
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
               >
-                <option value="all">All Methods</option>
+                <option value="all">
+                  {t("instructor-payments:common.filters.all_methods")}
+                </option>
                 {methodOptions.map((method) => (
                   <option key={method} value={method}>
                     {method}
@@ -452,10 +520,12 @@ export default function InstructorPaymentsPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
               >
-                <option value="all">All Statuses</option>
+                <option value="all">
+                  {t("instructor-payments:common.filters.all_statuses")}
+                </option>
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
-                    {STATUS_LABELS[status] || status}
+                    {statusLabels[status] || status}
                   </option>
                 ))}
               </select>
@@ -463,14 +533,16 @@ export default function InstructorPaymentsPage() {
                 onClick={exportCSV}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
               >
-                <FaFileExport /> Export CSV
+                <FaFileExport />{" "}
+                {t("instructor-payments:common.buttons.export_csv")}
               </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={redirectToNewWithdrawal}
                 disabled={isPushing}
               >
-                <FaArrowDown /> Request Withdrawal
+                <FaArrowDown />{" "}
+                {t("instructor-payments:common.buttons.request_withdrawal")}
               </button>
             </div>
           </div>
@@ -478,7 +550,7 @@ export default function InstructorPaymentsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Filtered Transactions
+                {t("instructor-payments:dashboard.transactions.stats.filtered")}
               </p>
               <p className="text-2xl font-semibold text-gray-800">
                 {filteredTotals.count}
@@ -486,7 +558,7 @@ export default function InstructorPaymentsPage() {
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Net Earnings
+                {t("instructor-payments:dashboard.transactions.stats.net")}
               </p>
               <p className="text-2xl font-semibold text-green-600">
                 {formatCurrency(filteredTotals.totalNet, filteredCurrency)}
@@ -494,7 +566,7 @@ export default function InstructorPaymentsPage() {
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Platform Fees
+                {t("instructor-payments:dashboard.transactions.stats.fees")}
               </p>
               <p className="text-2xl font-semibold text-red-500">
                 {formatCurrency(filteredTotals.totalFee, filteredCurrency)}
@@ -502,7 +574,9 @@ export default function InstructorPaymentsPage() {
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Last Payment
+                {t(
+                  "instructor-payments:dashboard.transactions.stats.last_payment"
+                )}
               </p>
               <p className="text-lg font-semibold text-gray-800">
                 {latestPaymentDate ? formatDate(latestPaymentDate) : "—"}
@@ -514,13 +588,23 @@ export default function InstructorPaymentsPage() {
             {Object.entries(statusBreakdown).map(([status, data]) => (
               <div key={status} className="bg-white border rounded-lg p-4 shadow-sm">
                 <p className="text-xs text-gray-500 uppercase tracking-wide">
-                  {STATUS_LABELS[status] || status}
+                  {statusLabels[status] || status}
                 </p>
                 <p className="text-xl font-semibold text-gray-800">
-                  {data.count} tx
+                  {t(
+                    "instructor-payments:dashboard.transactions.status_breakdown.count",
+                    {
+                      count: data.count,
+                    }
+                  )}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {formatCurrency(data.totalNet, data.currency)} net
+                  {t(
+                    "instructor-payments:dashboard.transactions.status_breakdown.net",
+                    {
+                      amount: formatCurrency(data.totalNet, data.currency),
+                    }
+                  )}
                 </p>
               </div>
             ))}
@@ -529,13 +613,27 @@ export default function InstructorPaymentsPage() {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Item</th>
-                <th className="p-3">Net Amount</th>
-                <th className="p-3">Gross</th>
-                <th className="p-3">Platform Fee</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Method</th>
+                <th className="p-3">
+                  {t("instructor-payments:dashboard.export.headers.item")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.net_amount")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.gross")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:dashboard.export.headers.platform_fee")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:dashboard.export.headers.date")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:dashboard.export.headers.status")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:dashboard.export.headers.method")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -543,7 +641,7 @@ export default function InstructorPaymentsPage() {
                 filteredPayments.map((payment) => {
                   const method = getMethodLabel(payment);
                   const statusLabel =
-                    STATUS_LABELS[payment.status] || payment.status;
+                    statusLabels[payment.status] || payment.status;
                   const statusClass =
                     STATUS_COLORS[payment.status] || "text-gray-600";
                   const displayDate = payment.paid_at || payment.created_at;
@@ -552,7 +650,8 @@ export default function InstructorPaymentsPage() {
                       <td className="p-3">
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {payment.item_title || "Untitled"}
+                            {payment.item_title ||
+                              t("instructor-payments:dashboard.transactions.untitled")}
                           </span>
                           <span className="text-xs text-gray-500 uppercase tracking-wide">
                             {payment.item_type}
@@ -585,7 +684,7 @@ export default function InstructorPaymentsPage() {
               ) : (
                 <tr>
                   <td colSpan={7} className="p-6 text-center text-gray-500">
-                    No transactions found yet.
+                    {t("instructor-payments:common.empty.transactions")}
                   </td>
                 </tr>
               )}
@@ -595,4 +694,16 @@ export default function InstructorPaymentsPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "instructor-payments"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }

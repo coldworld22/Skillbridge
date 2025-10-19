@@ -4,10 +4,14 @@ import { fetchInstructorClasses } from "@/services/instructor/classService";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
 export default function InstructorClassBreakdownPage() {
+  const { t } = useTranslation(["instructor-payments", "dashboard"]);
   const [classes, setClasses] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +33,10 @@ export default function InstructorClassBreakdownPage() {
         setPayments(paymentData || []);
       } catch (err) {
         console.error("Failed to load class breakdown", err);
-        if (active) setError("Unable to load class breakdown right now.");
+        if (active)
+          setError(
+            t("instructor-payments:common.messages.errors.class_breakdown")
+          );
       } finally {
         if (active) setLoading(false);
       }
@@ -38,7 +45,7 @@ export default function InstructorClassBreakdownPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const paymentSummary = useMemo(() => {
     const map = new Map();
@@ -91,7 +98,7 @@ export default function InstructorClassBreakdownPage() {
       };
       return {
         id: cls.id,
-        title: cls.title,
+        title: cls.title || t("instructor-payments:dashboard.transactions.untitled"),
         scheduleStatus: cls.scheduleStatus || "—",
         publishStatus: cls.publishStatus || "—",
         students: summary.paidStudents,
@@ -104,14 +111,17 @@ export default function InstructorClassBreakdownPage() {
       };
     });
 
-    // Include classes that may have payments but are no longer in the instructor list
     paymentSummary.forEach((summary, id) => {
       if (rows.find((row) => row.id === id)) return;
       rows.push({
         id,
-        title: "Archived Class",
-        scheduleStatus: "Archived",
-        publishStatus: "Archived",
+        title: t("instructor-payments:classBreakdown.rows.archived_title"),
+        scheduleStatus: t(
+          "instructor-payments:classBreakdown.rows.archived_status"
+        ),
+        publishStatus: t(
+          "instructor-payments:classBreakdown.rows.archived_status"
+        ),
         students: summary.paidStudents,
         price: "",
         gross: summary.gross,
@@ -123,7 +133,7 @@ export default function InstructorClassBreakdownPage() {
     });
 
     return rows;
-  }, [classes, paymentSummary]);
+  }, [classes, paymentSummary, t]);
 
   const filteredRows = useMemo(() => {
     if (filter === "all") return combinedRows;
@@ -147,7 +157,9 @@ export default function InstructorClassBreakdownPage() {
   if (loading) {
     return (
       <InstructorLayout>
-        <div className="p-6">Loading class breakdown...</div>
+        <div className="p-6">
+          {t("instructor-payments:common.messages.loading.class_breakdown")}
+        </div>
       </InstructorLayout>
     );
   }
@@ -163,19 +175,31 @@ export default function InstructorClassBreakdownPage() {
   return (
     <InstructorLayout>
       <div className="p-6 space-y-6 text-gray-800">
-        <h1 className="text-2xl font-bold">📚 Class-Level Earnings</h1>
+        <h1 className="text-2xl font-bold">
+          {t("instructor-payments:classBreakdown.title")}
+        </h1>
 
         <div className="flex gap-4 items-center">
-          <label className="font-medium">Filter by Status:</label>
+          <label className="font-medium">
+            {t("instructor-payments:classBreakdown.filter_label")}
+          </label>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="border px-3 py-2 rounded"
           >
-            <option value="all">All</option>
-            <option value="live">Live</option>
-            <option value="completed">Completed</option>
-            <option value="draft">Draft</option>
+            <option value="all">
+              {t("instructor-payments:classBreakdown.filters.all")}
+            </option>
+            <option value="live">
+              {t("instructor-payments:classBreakdown.filters.live")}
+            </option>
+            <option value="completed">
+              {t("instructor-payments:classBreakdown.filters.completed")}
+            </option>
+            <option value="draft">
+              {t("instructor-payments:classBreakdown.filters.draft")}
+            </option>
           </select>
         </div>
 
@@ -183,14 +207,30 @@ export default function InstructorClassBreakdownPage() {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Class</th>
-                <th className="p-3">Schedule</th>
-                <th className="p-3">Publish</th>
-                <th className="p-3">Students (Paid)</th>
-                <th className="p-3">Gross</th>
-                <th className="p-3">Commission</th>
-                <th className="p-3">Net</th>
-                <th className="p-3">Last Payment</th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.class")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.schedule")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.publish")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.students_paid")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.gross")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.commission")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.net")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:common.tables.last_payment")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -224,7 +264,7 @@ export default function InstructorClassBreakdownPage() {
               ) : (
                 <tr>
                   <td colSpan={8} className="p-6 text-center text-gray-500">
-                    No classes match the selected filter.
+                    {t("instructor-payments:common.empty.classes_filter")}
                   </td>
                 </tr>
               )}
@@ -234,4 +274,16 @@ export default function InstructorClassBreakdownPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "instructor-payments"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }

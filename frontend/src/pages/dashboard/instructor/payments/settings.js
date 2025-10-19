@@ -1,7 +1,11 @@
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function InstructorPaymentSettingsPage() {
+  const { t } = useTranslation(["instructor-payments", "dashboard"]);
   const [method, setMethod] = useState("PayPal");
   const [paypalEmail, setPaypalEmail] = useState("instructor@example.com");
   const [bankDetails, setBankDetails] = useState({
@@ -14,7 +18,17 @@ export default function InstructorPaymentSettingsPage() {
   const [moyasarId, setMoyasarId] = useState("moyasar_merchant_id");
   const [walletAddress, setWalletAddress] = useState("0xABC123...");
 
-  // Persist settings to localStorage for use in withdrawal form
+  const methodLabels = useMemo(
+    () => ({
+      PayPal: t("instructor-payments:settings.methods.paypal"),
+      "Bank Transfer": t("instructor-payments:settings.methods.bank_transfer"),
+      Stripe: t("instructor-payments:settings.methods.stripe"),
+      Moyasar: t("instructor-payments:settings.methods.moyasar"),
+      "NFT Wallet": t("instructor-payments:settings.methods.nft_wallet"),
+    }),
+    [t]
+  );
+
   useEffect(() => {
     const saved = localStorage.getItem("paymentSettings");
     if (saved) {
@@ -44,53 +58,76 @@ export default function InstructorPaymentSettingsPage() {
     };
     localStorage.setItem("paymentSettings", JSON.stringify(settings));
 
-    let message = `Saved settings for ${method}\n`;
-    switch (method) {
-      case "PayPal":
-        message += `Email: ${paypalEmail}`;
-        break;
-      case "Bank Transfer":
-        message += `IBAN: ${bankDetails.iban}\nSWIFT: ${bankDetails.swift}`;
-        break;
-      case "Stripe":
-        message += `Stripe Account ID: ${stripeAccountId}`;
-        break;
-      case "Moyasar":
-        message += `Merchant ID: ${moyasarId}`;
-        break;
-      case "NFT Wallet":
-        message += `Wallet Address: ${walletAddress}`;
-        break;
-      default:
-        message += "(No details configured)";
-    }
-    alert(message);
+    const detailsMap = {
+      PayPal: t("instructor-payments:settings.alert.paypal", {
+        email: paypalEmail,
+      }),
+      "Bank Transfer": t("instructor-payments:settings.alert.bank_transfer", {
+        iban: bankDetails.iban,
+        swift: bankDetails.swift,
+      }),
+      Stripe: t("instructor-payments:settings.alert.stripe", {
+        id: stripeAccountId,
+      }),
+      Moyasar: t("instructor-payments:settings.alert.moyasar", {
+        id: moyasarId,
+      }),
+      "NFT Wallet": t("instructor-payments:settings.alert.nft_wallet", {
+        address: walletAddress,
+      }),
+    };
+
+    const details =
+      detailsMap[method] || t("instructor-payments:settings.alert.none");
+
+    alert(
+      t("instructor-payments:settings.alert.base", {
+        method: methodLabels[method] || method,
+        details,
+      })
+    );
   };
 
   return (
     <InstructorLayout>
       <div className="p-6 max-w-2xl mx-auto text-gray-800">
-        <h1 className="text-2xl font-bold mb-6">⚙️ Payment Settings</h1>
+        <h1 className="text-2xl font-bold mb-6">
+          {t("instructor-payments:settings.title")}
+        </h1>
 
         <div className="space-y-6 bg-white p-6 rounded-xl shadow">
           <div>
-            <label className="block mb-1 font-medium">Preferred Method</label>
+            <label className="block mb-1 font-medium">
+              {t("instructor-payments:settings.preferred_method")}
+            </label>
             <select
               className="w-full border px-3 py-2 rounded"
               value={method}
               onChange={(e) => setMethod(e.target.value)}
             >
-              <option value="PayPal">PayPal</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Stripe">Stripe</option>
-              <option value="Moyasar">Moyasar</option>
-              <option value="NFT Wallet">NFT Wallet</option>
+              <option value="PayPal">
+                {t("instructor-payments:settings.methods.paypal")}
+              </option>
+              <option value="Bank Transfer">
+                {t("instructor-payments:settings.methods.bank_transfer")}
+              </option>
+              <option value="Stripe">
+                {t("instructor-payments:settings.methods.stripe")}
+              </option>
+              <option value="Moyasar">
+                {t("instructor-payments:settings.methods.moyasar")}
+              </option>
+              <option value="NFT Wallet">
+                {t("instructor-payments:settings.methods.nft_wallet")}
+              </option>
             </select>
           </div>
 
           {method === "PayPal" && (
             <div>
-              <label className="block mb-1 font-medium">PayPal Email</label>
+              <label className="block mb-1 font-medium">
+                {t("instructor-payments:settings.fields.paypal_email")}
+              </label>
               <input
                 type="email"
                 className="w-full border px-3 py-2 rounded"
@@ -103,7 +140,9 @@ export default function InstructorPaymentSettingsPage() {
           {method === "Bank Transfer" && (
             <>
               <div>
-                <label className="block mb-1 font-medium">IBAN</label>
+                <label className="block mb-1 font-medium">
+                  {t("instructor-payments:settings.fields.iban")}
+                </label>
                 <input
                   type="text"
                   name="iban"
@@ -113,7 +152,9 @@ export default function InstructorPaymentSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium">SWIFT/BIC</label>
+                <label className="block mb-1 font-medium">
+                  {t("instructor-payments:settings.fields.swift")}
+                </label>
                 <input
                   type="text"
                   name="swift"
@@ -123,7 +164,9 @@ export default function InstructorPaymentSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium">Bank Name</label>
+                <label className="block mb-1 font-medium">
+                  {t("instructor-payments:settings.fields.bank_name")}
+                </label>
                 <input
                   type="text"
                   name="bankName"
@@ -133,7 +176,9 @@ export default function InstructorPaymentSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium">Account Holder</label>
+                <label className="block mb-1 font-medium">
+                  {t("instructor-payments:settings.fields.account_holder")}
+                </label>
                 <input
                   type="text"
                   name="accountHolder"
@@ -147,7 +192,9 @@ export default function InstructorPaymentSettingsPage() {
 
           {method === "Stripe" && (
             <div>
-              <label className="block mb-1 font-medium">Stripe Account ID</label>
+              <label className="block mb-1 font-medium">
+                {t("instructor-payments:settings.fields.stripe_account_id")}
+              </label>
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded"
@@ -159,7 +206,9 @@ export default function InstructorPaymentSettingsPage() {
 
           {method === "Moyasar" && (
             <div>
-              <label className="block mb-1 font-medium">Moyasar Merchant ID</label>
+              <label className="block mb-1 font-medium">
+                {t("instructor-payments:settings.fields.moyasar_merchant_id")}
+              </label>
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded"
@@ -171,7 +220,9 @@ export default function InstructorPaymentSettingsPage() {
 
           {method === "NFT Wallet" && (
             <div>
-              <label className="block mb-1 font-medium">Ethereum Wallet Address</label>
+              <label className="block mb-1 font-medium">
+                {t("instructor-payments:settings.fields.wallet_address")}
+              </label>
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded"
@@ -185,10 +236,22 @@ export default function InstructorPaymentSettingsPage() {
             onClick={handleSave}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded font-medium"
           >
-            Save Settings
+            {t("instructor-payments:common.buttons.save_settings")}
           </button>
         </div>
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "instructor-payments"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }

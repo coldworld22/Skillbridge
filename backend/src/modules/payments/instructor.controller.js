@@ -4,6 +4,7 @@ const paymentsService = require("./payments.service");
 const walletService = require("../payouts/wallet.service");
 const payoutsService = require("../payouts/payouts.service");
 const logger = require("../../utils/logger.js");
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 
 const toNumber = (value) =>
   value === null || value === undefined || Number.isNaN(Number(value))
@@ -17,6 +18,7 @@ exports.getSummary = catchAsync(async (req, res) => {
 
   let wallet = null;
   let payouts = [];
+  let minimumWithdrawalAmount = 0;
 
   try {
     wallet = await walletService.getByInstructor(instructorId);
@@ -30,9 +32,47 @@ exports.getSummary = catchAsync(async (req, res) => {
     logger.warn("Payout history lookup failed for instructor summary:", err.message);
   }
 
-  const withdrawnTotal = (payouts || [])
+  try {
+    const config = await paymentConfigService.getSettings();
+    if (config) {
+      const rawMinimum =
+        config.minimumPayoutAmount ??
+        config.minimumWithdrawalAmount ??
+        config.withdrawalMinimum ??
+        0;
+      minimumWithdrawalAmount = toNumber(rawMinimum);
+    }
+  } catch (err) {
+    logger.warn(
+      "Payment config lookup failed for instructor summary:",
+      err.message
+    );
+  }
+
+  const normalizedPayouts = (payouts || []).map((payout) => ({
+    ...payout,
+    status: (payout.status || "").toLowerCase(),
+  }));
+
+  const withdrawnTotal = normalizedPayouts
     .filter((payout) => payout.status === "approved")
     .reduce((sum, payout) => sum + toNumber(payout.amount), 0);
+
+  const pendingPayoutTotal = normalizedPayouts
+    .filter((payout) =>
+      ["pending", "processing", "in_review"].includes(payout.status)
+    )
+    .reduce((sum, payout) => sum + toNumber(payout.amount), 0);
+
+  const reservedPayoutTotal = withdrawnTotal + pendingPayoutTotal;
+
+  const walletBalanceRaw = toNumber(wallet?.balance);
+  const computedAvailableBalance = Math.max(
+    0,
+    toNumber(totals.totalPaid) - reservedPayoutTotal
+  );
+  const walletBalance =
+    walletBalanceRaw > 0 ? walletBalanceRaw : computedAvailableBalance;
 
   sendSuccess(res, {
     totalPaid: toNumber(totals.totalPaid),
@@ -40,8 +80,15 @@ exports.getSummary = catchAsync(async (req, res) => {
     lifetimeEarnings: toNumber(totals.totalInstructorAmount),
     totalPlatformFees: toNumber(totals.totalPlatformFee),
     totalGross: toNumber(totals.totalGross),
-    walletBalance: toNumber(wallet?.balance),
+    walletBalance,
     withdrawnTotal,
+    pendingWithdrawalTotal: pendingPayoutTotal,
+    availableForWithdrawal: walletBalance,
+    meetsWithdrawalMinimum:
+      minimumWithdrawalAmount > 0
+        ? walletBalance >= minimumWithdrawalAmount
+        : true,
+    minimumWithdrawalAmount,
   });
 });
 

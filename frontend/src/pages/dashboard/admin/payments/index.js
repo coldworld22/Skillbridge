@@ -42,6 +42,7 @@ import useAdminNotice from '@/hooks/useAdminNotice';
 
 const defaultConfig = {
   currency: "USD",
+  minimumPayoutAmount: 100,
   platformCut: {
     class: 15,
     book: 10,
@@ -125,12 +126,20 @@ export default function AdminPaymentsPage() {
             date: t.paid_at || t.created_at,
             user: t.user_name,
             role: t.user_role,
+            email: t.user_email,
+            instructor: t.instructor_name,
+            instructorEmail: t.instructor_email,
             method: t.method_name,
             type: t.item_type,
+            itemTitle: t.item_title || t.item_type,
+            currency: t.currency || "USD",
+            reference: t.reference_id,
             // normalize status to a consistent lowercase value for easier comparisons
             status: ((t.status || "").toLowerCase() === "success" ? "paid" : (t.status || "").toLowerCase()),
             platformFee: parseFloat(t.platform_fee ?? 0),
             instructorAmount: parseFloat(t.instructor_amount ?? t.amount),
+            amount: parseFloat(t.amount ?? 0),
+            itemPrice: parseFloat(t.item_price ?? 0),
           }))
         );
         setMethods(
@@ -251,6 +260,11 @@ export default function AdminPaymentsPage() {
   const validate = (data) => {
     const errs = {};
     if (!data.currency) errs.currency = t('paymentsPage.currency_required');
+    if (data.minimumPayoutAmount === "" || isNaN(data.minimumPayoutAmount)) {
+      errs.minimumPayoutAmount = t('paymentsPage.required');
+    } else if (data.minimumPayoutAmount < 0) {
+      errs.minimumPayoutAmount = t('paymentsPage.must_be_positive');
+    }
     Object.entries(data.platformCut).forEach(([key, val]) => {
       if (val === "" || isNaN(val)) {
         errs[`platformCut.${key}`] = t('paymentsPage.required');
@@ -269,7 +283,12 @@ export default function AdminPaymentsPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name.includes("platformCut")) {
+    if (name === "minimumPayoutAmount") {
+      setForm((prev) => ({
+        ...prev,
+        minimumPayoutAmount: value === "" ? "" : parseFloat(value),
+      }));
+    } else if (name.includes("platformCut")) {
       const key = name.split(".")[1];
       setForm((prev) => ({
         ...prev,
@@ -405,8 +424,10 @@ export default function AdminPaymentsPage() {
                     <th className="px-4 py-2">{t('paymentsPage.date')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.user')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.type')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.item')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.method')}</th>
                       <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.currency')}</th>
                       <th className="px-4 py-2">{t('paymentsPage.platform_fee')}</th>
                       <th className="px-4 py-2">{t('paymentsPage.net_amount')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.status')}</th>
@@ -425,8 +446,10 @@ export default function AdminPaymentsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-2">{txn.type}</td>
+                      <td className="px-4 py-2">{txn.itemTitle || '—'}</td>
                       <td className="px-4 py-2">{txn.method}</td>
-                      <td className="px-4 py-2 font-semibold text-green-600">${parseFloat(txn.amount ?? 0).toFixed(2)}</td>
+                      <td className="px-4 py-2 font-semibold text-green-600">${(txn.amount ?? 0).toFixed(2)}</td>
+                      <td className="px-4 py-2">{txn.currency}</td>
                       <td className="px-4 py-2">${parseFloat(txn.platformFee ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-2">${parseFloat(txn.instructorAmount ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-2">
@@ -554,6 +577,26 @@ export default function AdminPaymentsPage() {
               </select>
               {errors.currency && (
                 <p className="text-red-500 text-sm mt-1">{errors.currency}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">{t('paymentsPage.minimum_payout_amount')}</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  name="minimumPayoutAmount"
+                  value={form.minimumPayoutAmount}
+                  min={0}
+                  step="0.01"
+                  onChange={handleChange}
+                  className="border px-3 py-2 rounded w-60"
+                />
+                <span className="text-sm text-gray-500">{form.currency}</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{t('paymentsPage.minimum_payout_hint')}</p>
+              {errors.minimumPayoutAmount && (
+                <p className="text-red-500 text-sm mt-1">{errors.minimumPayoutAmount}</p>
               )}
             </div>
 

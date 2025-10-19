@@ -4,6 +4,14 @@ const { sendSuccess } = require("../../utils/response");
 const service = require("./payouts.service");
 const { v4: uuidv4 } = require("uuid");
 const walletService = require("./wallet.service");
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
+const logger = require("../../utils/logger");
+const paymentsService = require("../payments/payments.service");
+
+const toNumber = (value) =>
+  value === null || value === undefined || Number.isNaN(Number(value))
+    ? 0
+    : Number(value);
 
 exports.createPayout = catchAsync(async (req, res) => {
   const { instructor_id, amount, currency, status, notes } = req.body;
@@ -77,20 +85,88 @@ exports.requestPayout = catchAsync(async (req, res) => {
     throw new AppError("Cannot request payout for another instructor", 403);
   }
 
-  if (!amount) {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new AppError("Amount is required", 400);
   }
 
+  let minimumWithdrawalAmount = 0;
+  try {
+    const config = await paymentConfigService.getSettings();
+    if (config) {
+      const rawMinimum =
+        config.minimumPayoutAmount ??
+        config.minimumWithdrawalAmount ??
+        config.withdrawalMinimum ??
+        0;
+      const parsed = Number(rawMinimum);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        minimumWithdrawalAmount = parsed;
+      }
+    }
+  } catch (err) {
+    logger.warn(
+      "Payment config lookup failed for payout request:",
+      err?.message
+    );
+  }
+
   const wallet = await walletService.getByInstructor(req.user.id);
-  const balance = wallet ? Number(wallet.balance) : 0;
-  if (balance < Number(amount)) {
+  const payouts = await service.getByInstructor(req.user.id);
+  const normalizedPayouts = (payouts || []).map((p) => ({
+    ...p,
+    status: (p.status || "").toLowerCase(),
+  }));
+  const withdrawnTotal = normalizedPayouts
+    .filter((payout) => payout.status === "approved")
+    .reduce((sum, payout) => sum + toNumber(payout.amount), 0);
+  const pendingPayoutTotal = normalizedPayouts
+    .filter((payout) =>
+      ["pending", "processing", "in_review"].includes(payout.status)
+    )
+    .reduce((sum, payout) => sum + toNumber(payout.amount), 0);
+  const reservedTotal = withdrawnTotal + pendingPayoutTotal;
+
+  const totals = await paymentsService.getInstructorTotals(req.user.id);
+  const totalPaid = toNumber(totals.totalPaid);
+
+  const computedAvailable = Math.max(0, totalPaid - reservedTotal);
+
+  let effectiveBalance = toNumber(wallet?.balance);
+  if (effectiveBalance <= 0) {
+    effectiveBalance = computedAvailable;
+  } else {
+    effectiveBalance = Math.min(effectiveBalance, computedAvailable || effectiveBalance);
+  }
+  effectiveBalance = Math.max(0, effectiveBalance);
+
+  const meetsMinimumBalance =
+    minimumWithdrawalAmount > 0
+      ? effectiveBalance >= minimumWithdrawalAmount
+      : true;
+
+  if (!meetsMinimumBalance) {
+    throw new AppError(
+      `Minimum withdrawal amount is ${minimumWithdrawalAmount}. Available balance is ${effectiveBalance}.`,
+      400
+    );
+  }
+
+  if (minimumWithdrawalAmount > 0 && numericAmount < minimumWithdrawalAmount) {
+    throw new AppError(
+      `Minimum withdrawal amount is ${minimumWithdrawalAmount}`,
+      400
+    );
+  }
+
+  if (!Number.isFinite(effectiveBalance) || effectiveBalance < numericAmount) {
     throw new AppError("Insufficient wallet balance", 400);
   }
 
   const payout = await service.create({
     id: uuidv4(),
     instructor_id: req.user.id,
-    amount,
+    amount: numericAmount,
     currency: currency || "USD",
     status: "pending",
     notes,

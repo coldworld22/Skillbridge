@@ -47,14 +47,57 @@ exports.create = async (data, schedules = [], trx) => {
 };
 
 exports.getAll = async (status, methodType) => {
+  const { hasPlatformFee, hasInstructorAmount, hasSource } =
+    await getPaymentColumnInfo();
+
   const query = db({ p: "payments" })
     .leftJoin("users as u", "p.user_id", "u.id")
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
+    .leftJoin("online_classes as c", function () {
+      this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["class"])
+      );
+    })
+    .leftJoin("tutorials as tut", function () {
+      this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["tutorial"])
+      );
+    })
+    .leftJoin("books as b", function () {
+      this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
+      this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
+    })
+    .leftJoin("users as inst_class", "c.instructor_id", "inst_class.id")
+    .leftJoin("users as inst_tut", "tut.instructor_id", "inst_tut.id")
+    .leftJoin("users as inst_book", "b.instructor_id", "inst_book.id")
     .select(
-      "p.*",
+      "p.id",
+      "p.user_id",
+      "p.method_id",
+      "p.item_type",
+      "p.item_id",
+      "p.amount",
+      "p.currency",
+      "p.status",
+      "p.reference_id",
+      "p.installments",
+      "p.installment_number",
+      "p.next_due_date",
+      "p.paid_at",
+      "p.created_at",
+      "p.updated_at",
       "u.full_name as user_name",
+      "u.email as user_email",
       "u.role as user_role",
-      "m.name as method_name"
+      "m.name as method_name",
+      db.raw("COALESCE(c.title, tut.title, b.title) as item_title"),
+      db.raw("COALESCE(c.price, tut.price, b.price) as item_price"),
+      db.raw("COALESCE(inst_class.full_name, inst_tut.full_name, inst_book.full_name) as instructor_name"),
+      db.raw("COALESCE(inst_class.email, inst_tut.email, inst_book.email) as instructor_email")
     )
     .orderBy("p.created_at", "desc");
 
@@ -64,6 +107,24 @@ exports.getAll = async (status, methodType) => {
 
   if (methodType) {
     query.andWhere("m.type", methodType);
+  }
+
+  if (hasPlatformFee) {
+    query.select("p.platform_fee");
+  } else {
+    query.select(db.raw("NULL as platform_fee"));
+  }
+
+  if (hasInstructorAmount) {
+    query.select("p.instructor_amount");
+  } else {
+    query.select(db.raw("NULL as instructor_amount"));
+  }
+
+  if (hasSource) {
+    query.select("p.source");
+  } else {
+    query.select(db.raw("NULL as source"));
   }
 
   return query;
@@ -179,20 +240,20 @@ exports.getByInstructor = async (
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
     .leftJoin("online_classes as c", function () {
-      this.on("p.item_id", "=", "c.id").andOn(
+      this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
         "p.item_type",
         "=",
         db.raw("?", ["class"])
       );
     })
     .leftJoin("tutorials as tut", function () {
-      this.on("p.item_id", "=", "tut.id").andOn(
+      this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
         "p.item_type",
         "=",
         db.raw("?", ["tutorial"])
       );
     })
-    // Cast IDs to text so UUID payment references can match integer book IDs
+    // Cast IDs to text so the payments.item_id text column can match the source tables
     .leftJoin("books as b", function () {
       this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
       this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
@@ -257,20 +318,20 @@ exports.getInstructorTotals = async (instructorId) => {
     : "p.amount";
   const [row] = await db({ p: "payments" })
     .leftJoin("online_classes as c", function () {
-      this.on("p.item_id", "=", "c.id").andOn(
+      this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
         "p.item_type",
         "=",
         db.raw("?", ["class"])
       );
     })
     .leftJoin("tutorials as tut", function () {
-      this.on("p.item_id", "=", "tut.id").andOn(
+      this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
         "p.item_type",
         "=",
         db.raw("?", ["tutorial"])
       );
     })
-    // Cast IDs to text so UUID payment references can match integer book IDs
+    // Cast IDs to text so the payments.item_id text column can match the source tables
     .leftJoin("books as b", function () {
       this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
       this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));

@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
-
-const STATUS_LABELS = {
-  paid: "Paid",
-  awaiting_approval: "Awaiting Approval",
-  pending_payment: "Pending",
-  rejected: "Rejected",
-};
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const matchesStatusFilter = (payment, filter) => {
   if (filter === "all") return true;
@@ -27,12 +23,44 @@ const matchesStatusFilter = (payment, filter) => {
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
 export default function InstructorPaymentsHistoryPage() {
+  const { t } = useTranslation(["instructor-payments", "dashboard"]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const statusLabels = useMemo(
+    () => ({
+      paid: t("instructor-payments:common.status.paid"),
+      awaiting_approval: t(
+        "instructor-payments:common.status.awaiting_approval"
+      ),
+      pending_payment: t(
+        "instructor-payments:common.status.pending_payment"
+      ),
+      rejected: t("instructor-payments:common.status.rejected"),
+    }),
+    [t]
+  );
+
+  const getMethodLabel = useCallback(
+    (payment) => {
+      if (payment?.method_name) return payment.method_name;
+      if (payment?.source === "subscription")
+        return t("instructor-payments:common.methods.subscription");
+      if (payment?.status === "awaiting_approval" && payment?.reference_id)
+        return t("instructor-payments:common.methods.manual_review");
+      if (payment?.currency) {
+        return t("instructor-payments:common.methods.currency_payment", {
+          currency: payment.currency,
+        });
+      }
+      return t("instructor-payments:common.methods.default");
+    },
+    [t]
+  );
 
   useEffect(() => {
     let active = true;
@@ -46,7 +74,10 @@ export default function InstructorPaymentsHistoryPage() {
         }
       } catch (err) {
         console.error("Failed to load payment history", err);
-        if (active) setError("Unable to load payment history right now.");
+        if (active)
+          setError(
+            t("instructor-payments:common.messages.errors.history")
+          );
       } finally {
         if (active) setLoading(false);
       }
@@ -55,7 +86,7 @@ export default function InstructorPaymentsHistoryPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const filteredHistory = useMemo(() => {
     return payments.filter((payment) => {
@@ -82,13 +113,13 @@ export default function InstructorPaymentsHistoryPage() {
 
   const exportCSV = () => {
     const headers = [
-      "Item",
-      "Gross Amount",
-      "Platform Fee",
-      "Net Amount",
-      "Date",
-      "Method",
-      "Status",
+      t("instructor-payments:history.export.headers.item"),
+      t("instructor-payments:history.export.headers.gross_amount"),
+      t("instructor-payments:history.export.headers.platform_fee"),
+      t("instructor-payments:history.export.headers.net_amount"),
+      t("instructor-payments:history.export.headers.date"),
+      t("instructor-payments:history.export.headers.method"),
+      t("instructor-payments:history.export.headers.status"),
     ];
     const rows = filteredHistory.map((payment) => [
       payment.item_title || payment.item_type,
@@ -97,14 +128,14 @@ export default function InstructorPaymentsHistoryPage() {
       Number(payment.instructor_amount ?? 0).toFixed(2),
       formatDate(extractDate(payment)),
       payment.method_name || "",
-      STATUS_LABELS[payment.status] || payment.status,
+      statusLabels[payment.status] || payment.status,
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "payment_history.csv";
+    link.download = t("instructor-payments:history.export.filename");
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -114,7 +145,9 @@ export default function InstructorPaymentsHistoryPage() {
   if (loading) {
     return (
       <InstructorLayout>
-        <div className="p-6">Loading payment history...</div>
+        <div className="p-6">
+          {t("instructor-payments:common.messages.loading.history")}
+        </div>
       </InstructorLayout>
     );
   }
@@ -131,31 +164,45 @@ export default function InstructorPaymentsHistoryPage() {
     <InstructorLayout>
       <div className="p-6 space-y-6 text-gray-800">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">📜 Payment History</h1>
+          <h1 className="text-2xl font-bold">
+            {t("instructor-payments:history.title")}
+          </h1>
           <button
             onClick={exportCSV}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded font-medium"
           >
-            Export CSV
+            {t("instructor-payments:common.buttons.export_csv")}
           </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block mb-1 font-medium">Filter by Status:</label>
+            <label className="block mb-1 font-medium">
+              {t("instructor-payments:common.labels.filter_status")}
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full border px-3 py-2 rounded"
             >
-              <option value="all">All</option>
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">
+                {t("instructor-payments:history.filters.all")}
+              </option>
+              <option value="paid">
+                {t("instructor-payments:history.filters.paid")}
+              </option>
+              <option value="pending">
+                {t("instructor-payments:history.filters.pending")}
+              </option>
+              <option value="rejected">
+                {t("instructor-payments:history.filters.rejected")}
+              </option>
             </select>
           </div>
           <div>
-            <label className="block mb-1 font-medium">Start Date:</label>
+            <label className="block mb-1 font-medium">
+              {t("instructor-payments:common.labels.start_date")}
+            </label>
             <input
               type="date"
               value={startDate}
@@ -164,7 +211,9 @@ export default function InstructorPaymentsHistoryPage() {
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">End Date:</label>
+            <label className="block mb-1 font-medium">
+              {t("instructor-payments:common.labels.end_date")}
+            </label>
             <input
               type="date"
               value={endDate}
@@ -178,13 +227,29 @@ export default function InstructorPaymentsHistoryPage() {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Item</th>
-                <th className="p-3">Gross Amount</th>
-                <th className="p-3">Platform Fee</th>
-                <th className="p-3">Net Amount</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Status</th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.item")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.gross_amount")}
+                </th>
+                <th className="p-3">
+                  {t(
+                    "instructor-payments:history.export.headers.platform_fee"
+                  )}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.net_amount")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.date")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.method")}
+                </th>
+                <th className="p-3">
+                  {t("instructor-payments:history.export.headers.status")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -194,7 +259,8 @@ export default function InstructorPaymentsHistoryPage() {
                     <td className="p-3">
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {payment.item_title || "Untitled"}
+                          {payment.item_title ||
+                            t("instructor-payments:history.table.untitled")}
                         </span>
                         <span className="text-xs text-gray-500 uppercase tracking-wide">
                           {payment.item_type}
@@ -221,14 +287,14 @@ export default function InstructorPaymentsHistoryPage() {
                       {payment.method_name || getMethodLabel(payment)}
                     </td>
                     <td className="p-3 font-medium">
-                      {STATUS_LABELS[payment.status] || payment.status}
+                      {statusLabels[payment.status] || payment.status}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={7} className="p-6 text-center text-gray-500">
-                    No payments found for the selected filters.
+                    {t("instructor-payments:common.empty.payments")}
                   </td>
                 </tr>
               )}
@@ -240,10 +306,14 @@ export default function InstructorPaymentsHistoryPage() {
   );
 }
 
-function getMethodLabel(payment) {
-  if (payment?.method_name) return payment.method_name;
-  if (payment?.source === "subscription") return "Subscription";
-  if (payment?.status === "awaiting_approval" && payment?.reference_id)
-    return "Manual Review";
-  return payment?.currency ? `${payment.currency} Payment` : "Payment";
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard", "instructor-payments"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
