@@ -1,4 +1,15 @@
 const db = require("../../config/database");
+const {
+  MODULE_ORDER,
+  SYNTHETIC_PLAN_FEATURES,
+  parseFeatureValue,
+  serializeFeatureValue,
+  getFeaturePresentation,
+} = require("./planFeatureMetadata");
+const {
+  createPlanReferenceResolver,
+  groupItemsByPlan,
+} = require("./planIncludedResources");
 
 exports.createPlan = async (data) => {
   const insertData = {
@@ -16,54 +27,169 @@ exports.getPlans = async (role) => {
   let query = db("plans").select("*").orderBy("id");
   if (role) query = query.where({ target_role: role });
   const plans = await query;
-  const features = await db("plan_features").select("*");
+  const resolvePlanId = createPlanReferenceResolver(plans);
 
-  const rawClasses = await db("online_classes")
-    .select(
-      "id",
-      "title",
-      "slug",
-      "cover_image",
-      "start_date",
-      "end_date",
-      "price",
-      "access_type",
-      "included_plans"
-    )
-    .whereRaw("included_plans <> '[]'::jsonb");
+  const [features, rawClasses, rawBooks, rawTutorials] = await Promise.all([
+    db("plan_features").select("*"),
+    db("online_classes")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "start_date",
+        "end_date",
+        "price",
+        "access_type",
+        "included_plans"
+      )
+      .where({ status: "published" })
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("books")
+      .select("id", "title", "cover_image_url", "price", "included_plans")
+      .where({ status: "active" })
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("tutorials")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "price",
+        "is_paid",
+        "included_plans"
+      )
+      .where({ status: "published" })
+      .whereRaw("included_plans <> '[]'::jsonb"),
+  ]);
 
-  const classesByPlan = {};
-  rawClasses.forEach((cls) => {
-    let planIds = [];
-    if (Array.isArray(cls.included_plans)) planIds = cls.included_plans;
-    else if (cls.included_plans) {
-      try {
-        const parsed = JSON.parse(cls.included_plans);
-        planIds = Array.isArray(parsed) ? parsed : [parsed];
-      } catch {
-        planIds = [];
-      }
-    }
-    planIds.forEach((planId) => {
-      if (!classesByPlan[planId]) classesByPlan[planId] = [];
-      classesByPlan[planId].push({
-        id: cls.id,
-        title: cls.title,
-        slug: cls.slug,
-        cover_image: cls.cover_image,
-        start_date: cls.start_date,
-        end_date: cls.end_date,
-        price: cls.price,
-        access_type: cls.access_type,
+  const classesByPlan = groupItemsByPlan(
+    rawClasses,
+    (cls) => ({
+      id: cls.id,
+      title: cls.title,
+      slug: cls.slug,
+      cover_image: cls.cover_image,
+      start_date: cls.start_date,
+      end_date: cls.end_date,
+      price: cls.price,
+      access_type: cls.access_type,
+    }),
+    resolvePlanId
+  );
+
+  const booksByPlan = groupItemsByPlan(
+    rawBooks,
+    (book) => ({
+      id: book.id,
+      title: book.title,
+      cover_image_url: book.cover_image_url,
+      price: book.price,
+    }),
+    resolvePlanId
+  );
+
+  const tutorialsByPlan = groupItemsByPlan(
+    rawTutorials,
+    (tutorial) => ({
+      id: tutorial.id,
+      title: tutorial.title,
+      slug: tutorial.slug,
+      cover_image: tutorial.cover_image,
+      price: tutorial.price,
+      is_paid: tutorial.is_paid,
+    }),
+    resolvePlanId
+  );
+
+  const modulePriority = (module) => {
+    if (!module) return MODULE_ORDER.length;
+    const idx = MODULE_ORDER.indexOf(module);
+    return idx === -1 ? MODULE_ORDER.length : idx;
+  };
+
+  return plans.map((plan) => {
+    const formattedFeatures = features
+      .filter((f) => f.plan_id === plan.id)
+      .map((feature) => {
+        const parsedValue = parseFeatureValue(feature.value);
+        const presentation = getFeaturePresentation(
+          feature.feature_key,
+          parsedValue
+        );
+        const valueString =
+          presentation.displayValue === null || presentation.displayValue === undefined
+            ? ""
+            : typeof presentation.displayValue === "string"
+              ? presentation.displayValue
+              : String(presentation.displayValue);
+        const description =
+          feature.description && feature.description.trim()
+            ? feature.description
+            : presentation.description && presentation.description.trim()
+              ? presentation.description
+              : valueString;
+
+        return {
+          ...feature,
+          value: valueString,
+          description,
+          label: presentation.label,
+          module: presentation.module,
+          raw_value: feature.value,
+          parsed_value: parsedValue,
+          source: "database",
+        };
       });
-    });
-  });
 
-  return plans.map((p) => ({
-    ...p,
-    features: features.filter((f) => f.plan_id === p.id),
-    included_classes: classesByPlan[p.id] || [],
-  }));
+    const syntheticFeatures = SYNTHETIC_PLAN_FEATURES.filter((def) =>
+      def.roles.includes(plan.target_role)
+    )
+      .map((def) => {
+        const built = def.build(plan);
+        if (!built) return null;
+        const valueString =
+          built.value === null || built.value === undefined
+            ? ""
+            : typeof built.value === "string"
+              ? built.value
+              : String(built.value);
+        const description =
+          built.description && built.description.trim()
+            ? built.description
+            : valueString;
+        return {
+          id: `synthetic:${plan.id}:${def.key}`,
+          plan_id: plan.id,
+          feature_key: def.key,
+          value: valueString,
+          description,
+          label: def.label,
+          module: def.module,
+          raw_value: built.raw ?? null,
+          parsed_value: built.parsed ?? built.raw ?? null,
+          source: "computed",
+        };
+      })
+      .filter(Boolean);
+
+    const combined = [...formattedFeatures, ...syntheticFeatures].sort((a, b) => {
+      const moduleDiff = modulePriority(a.module) - modulePriority(b.module);
+      if (moduleDiff !== 0) return moduleDiff;
+      return a.label.localeCompare(b.label);
+    });
+
+    const planIdKey =
+      resolvePlanId(plan.id) || (plan.id !== null && plan.id !== undefined ? `${plan.id}`.trim() : "");
+
+    return {
+      ...plan,
+      features: combined,
+      included_classes: (planIdKey && classesByPlan[planIdKey]) || [],
+      included_books: (planIdKey && booksByPlan[planIdKey]) || [],
+      included_tutorials: (planIdKey && tutorialsByPlan[planIdKey]) || [],
+    };
+  });
 };
 
 exports.getPlanById = async (id) => {
@@ -98,13 +224,30 @@ exports.setFeatures = async (planId, features = []) => {
   return db.transaction(async (trx) => {
     await trx("plan_features").where({ plan_id: planId }).del();
     if (features.length) {
-      const rows = features.map((f) => ({
-        plan_id: planId,
-        feature_key: f.feature_key,
-        value: f.value,
-        description: f.description || null,
-      }));
-      await trx("plan_features").insert(rows);
+      const rows = features
+        .filter((f) => f && f.feature_key)
+        .map((f) => {
+          const parsedValue = parseFeatureValue(f.value);
+          const storedValue = serializeFeatureValue(parsedValue);
+          const presentation = getFeaturePresentation(
+            f.feature_key,
+            parsedValue
+          );
+          const description =
+            f.description && f.description.trim()
+              ? f.description
+              : presentation.description;
+
+          return {
+            plan_id: planId,
+            feature_key: f.feature_key,
+            value: storedValue,
+            description: description || null,
+          };
+        });
+      if (rows.length) {
+        await trx("plan_features").insert(rows);
+      }
     }
     return trx("plan_features").where({ plan_id: planId }).select("*");
   });
