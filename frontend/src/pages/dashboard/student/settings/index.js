@@ -1,5 +1,5 @@
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
   FaUser,
@@ -18,10 +18,14 @@ export default function StudentSettingsPage() {
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
   const [invoices, setInvoices] = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [invoiceError, setInvoiceError] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+  const [paymentsError, setPaymentsError] = useState(null);
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
 
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     setLoadingInvoices(true);
     setInvoiceError(null);
     try {
@@ -34,12 +38,106 @@ export default function StudentSettingsPage() {
     } finally {
       setLoadingInvoices(false);
     }
-  };
+  }, []);
+
+  const loadPayments = useCallback(async () => {
+    setLoadingPayments(true);
+    setPaymentsError(null);
+    try {
+      const { data } = await api.get("/payments/student");
+      setPayments(data?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch payments", err);
+      setPaymentsError(err);
+      setPayments([]);
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchSubscription("student");
     loadInvoices();
-  }, [fetchSubscription]);
+    loadPayments();
+  }, [fetchSubscription, loadInvoices, loadPayments]);
+
+  const invoicesByPayment = useMemo(() => {
+    const map = new Map();
+    invoices.forEach((invoice) => {
+      if (invoice?.payment_id) {
+        map.set(invoice.payment_id, invoice);
+      }
+    });
+    return map;
+  }, [invoices]);
+
+  const formatAmount = (value, currency = "USD") => {
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) {
+      return value != null ? `${value} ${currency || ""}`.trim() : "-";
+    }
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "USD",
+      }).format(numeric);
+    } catch {
+      return `${numeric.toFixed(2)} ${currency || ""}`.trim();
+    }
+  };
+
+  const formatStatus = (status) => {
+    if (!status) return "-";
+    return status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const subscriptionEnd = subscription?.end_date
+    ? new Date(subscription.end_date)
+    : null;
+  const daysRemaining =
+    subscriptionEnd && !Number.isNaN(subscriptionEnd.getTime())
+      ? Math.ceil(
+          (subscriptionEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        )
+      : null;
+  const renewalClass =
+    daysRemaining === null
+      ? ""
+      : daysRemaining <= 0
+      ? "text-red-600"
+      : daysRemaining <= 7
+      ? "text-orange-500"
+      : "text-green-600";
+  const subscriptionStatusLabel = subscription?.status
+    ? formatStatus(subscription.status)
+    : null;
 
   const handleUpgrade = async () => {
     setUpgrading(true);
@@ -151,47 +249,156 @@ export default function StudentSettingsPage() {
           <div className="bg-white rounded-xl shadow p-6 space-y-6">
             <h2 className="text-lg font-semibold">Billing</h2>
 
-            {loadingSub ? (
-              <p>Loading subscription...</p>
-            ) : subscription ? (
-              <div className="space-y-2">
-                <p>
-                  <span className="font-medium">Plan:</span> {subscription.name}
-                </p>
-                <p>
-                  <span className="font-medium">Start:</span>{" "}
-                  {new Date(subscription.start_date).toLocaleDateString()}
-                </p>
-                <p>
-                  <span className="font-medium">End:</span>{" "}
-                  {new Date(subscription.end_date).toLocaleDateString()}
-                </p>
-                <div className="flex gap-4 pt-2">
+            <section className="space-y-2">
+              <h3 className="font-medium">Subscription</h3>
+              {loadingSub ? (
+                <p>Loading subscription...</p>
+              ) : subscription ? (
+                <div className="space-y-2">
+                  <p>
+                    <span className="font-medium">Plan:</span>{" "}
+                    {subscription.name}
+                  </p>
+                  {subscriptionStatusLabel && (
+                    <p>
+                      <span className="font-medium">Status:</span>{" "}
+                      {subscriptionStatusLabel}
+                    </p>
+                  )}
+                  <p>
+                    <span className="font-medium">Plan ID:</span>{" "}
+                    {subscription.plan_id}
+                  </p>
+                  {subscription.slug && (
+                    <p>
+                      <span className="font-medium">Plan Code:</span>{" "}
+                      {subscription.slug}
+                    </p>
+                  )}
+                  <p>
+                    <span className="font-medium">Current Period:</span>{" "}
+                    {formatDate(subscription.start_date)} –{" "}
+                    {formatDate(subscription.end_date)}
+                  </p>
+                  {daysRemaining !== null && (
+                    <p className={`font-medium ${renewalClass}`}>
+                      {daysRemaining > 0
+                        ? `Renews in ${daysRemaining} day${
+                            daysRemaining === 1 ? "" : "s"
+                          } (${formatDate(subscription.end_date)})`
+                        : `Plan expired on ${formatDate(
+                            subscription.end_date
+                          )}`}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-4 pt-2">
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={upgrading}
+                      className={`bg-yellow-500 px-4 py-2 rounded text-black font-medium hover:bg-yellow-600 ${
+                        upgrading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {upgrading ? "Upgrading..." : "Upgrade"}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={canceling}
+                      className={`bg-red-500 px-4 py-2 rounded text-white font-medium hover:bg-red-600 ${
+                        canceling ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {canceling ? "Cancelling..." : "Cancel"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p>No active subscription.</p>
+              )}
+            </section>
+
+            <section>
+              <h3 className="font-medium">Payment History</h3>
+              {loadingPayments ? (
+                <p>Loading payments...</p>
+              ) : paymentsError ? (
+                <div>
+                  <p className="text-red-600">Failed to load payments.</p>
                   <button
-                    onClick={handleUpgrade}
-                    disabled={upgrading}
-                    className={`bg-yellow-500 px-4 py-2 rounded text-black font-medium hover:bg-yellow-600 ${
-                      upgrading ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    onClick={loadPayments}
+                    className="text-blue-600 underline"
                   >
-                    Upgrade
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    disabled={canceling}
-                    className={`bg-red-500 px-4 py-2 rounded text-white font-medium hover:bg-red-600 ${
-                      canceling ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    Cancel
+                    Retry
                   </button>
                 </div>
-              </div>
-            ) : (
-              <p>No active subscription.</p>
-            )}
+              ) : payments.length ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                        <th className="py-2 pr-4">Date</th>
+                        <th className="py-2 pr-4">Item</th>
+                        <th className="py-2 pr-4">Amount</th>
+                        <th className="py-2 pr-4">Status</th>
+                        <th className="py-2 pr-4">Method</th>
+                        <th className="py-2 pr-4">Reference</th>
+                        <th className="py-2 pr-4">Invoice</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.map((payment) => {
+                        const label =
+                          payment.item_title ||
+                          payment.plan_name ||
+                          payment.class_title ||
+                          payment.tutorial_title ||
+                          payment.book_title ||
+                          payment.item_type;
+                        const invoice = invoicesByPayment.get(payment.id);
+                        return (
+                          <tr key={payment.id} className="border-t">
+                            <td className="py-2 pr-4">
+                              {formatDateTime(payment.created_at)}
+                            </td>
+                            <td className="py-2 pr-4">{label}</td>
+                            <td className="py-2 pr-4">
+                              {formatAmount(payment.amount, payment.currency)}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {formatStatus(payment.status)}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {payment.method_name || "—"}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {payment.reference_id || "—"}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {invoice ? (
+                                <a
+                                  href={invoice.pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline"
+                                >
+                                  Download
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p>No payments found.</p>
+              )}
+            </section>
 
-            <div>
+            <section>
               <h3 className="font-medium">Invoices</h3>
               {loadingInvoices ? (
                 <p>Loading invoices...</p>
@@ -206,16 +413,31 @@ export default function StudentSettingsPage() {
                   </button>
                 </div>
               ) : invoices.length ? (
-                <ul className="list-disc list-inside space-y-1">
+                <ul className="space-y-2">
                   {invoices.map((inv) => (
-                    <li key={inv.id}>
+                    <li
+                      key={inv.id}
+                      className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          Invoice {inv.id} •{" "}
+                          {formatAmount(inv.amount, inv.currency)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Payment {inv.payment_id}
+                          {inv.created_at
+                            ? ` • ${formatDate(inv.created_at)}`
+                            : ""}
+                        </p>
+                      </div>
                       <a
                         href={inv.pdf_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 underline"
                       >
-                        Invoice {inv.id}
+                        Download
                       </a>
                     </li>
                   ))}
@@ -223,7 +445,7 @@ export default function StudentSettingsPage() {
               ) : (
                 <p>No invoices found.</p>
               )}
-            </div>
+            </section>
           </div>
         )}
 

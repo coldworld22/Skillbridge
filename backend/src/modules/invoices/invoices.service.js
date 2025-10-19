@@ -5,10 +5,18 @@ const { v4: uuidv4 } = require("uuid");
 const model = require("./invoice.model");
 
 const uploadDir = path.join(__dirname, "../../../uploads/invoices");
+const projectRoot = path.join(__dirname, "../../../");
+
+const withFilePath = (invoice) => {
+  if (!invoice) return invoice;
+  const relative = invoice.pdf_url ? invoice.pdf_url.replace(/^\//, "") : null;
+  const filePath = relative ? path.join(projectRoot, relative) : null;
+  return { ...invoice, file_path: filePath };
+};
 
 exports.generateFromPayment = async (payment, user) => {
   const existing = await model.findByPayment(payment.id);
-  if (existing) return existing;
+  if (existing) return withFilePath(existing);
 
   await fs.promises.mkdir(uploadDir, { recursive: true });
 
@@ -56,11 +64,14 @@ exports.generateFromPayment = async (payment, user) => {
     },
   };
 
-  return model.create(data);
+  const created = await model.create(data);
+  return withFilePath({ ...created, pdf_url: data.pdf_url });
 };
 
-exports.getInvoices = () => model.getAll();
-exports.getInvoice = (id) => model.getById(id);
-exports.getInvoicesByUser = (user_id) => model.getByUser(user_id);
+exports.getInvoices = () =>
+  model.getAll().then((rows) => rows.map(withFilePath));
+exports.getInvoice = (id) => model.getById(id).then(withFilePath);
+exports.getInvoicesByUser = (user_id) =>
+  model.getByUser(user_id).then((rows) => rows.map(withFilePath));
 exports.getInvoiceByPaymentId = (payment_id) =>
-  model.findByPayment(payment_id);
+  model.findByPayment(payment_id).then(withFilePath);

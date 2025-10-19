@@ -8,6 +8,7 @@ const subscriptionService = require('../subscriptions/subscription.service');
 const classService = require('../classes/class.service');
 const paymentsService = require('./payments.service');
 const { STATUS } = paymentsService;
+const cartService = require('../cart/cart.service');
 
 exports.grantAccess = async (payment) => {
   try {
@@ -69,5 +70,15 @@ exports.grantAccess = async (payment) => {
     }
   } catch (err) {
     logger.error('Failed to finalize enrollment after payment:', err);
+  }
+
+  try {
+    const normalizedId =
+      payment.item_id === undefined || payment.item_id === null
+        ? payment.item_id
+        : String(payment.item_id);
+    await cartService.remove(payment.user_id, normalizedId, payment.item_type);
+  } catch (err) {
+    logger.error('Failed to clear cart item after payment:', err);
   }
 };

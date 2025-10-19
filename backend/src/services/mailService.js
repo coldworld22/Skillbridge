@@ -8,6 +8,12 @@ module.exports = {
   sendMail: async ({ to, subject, html, from, attachments }) => {
     const cfg = (await getSettings()) || {};
     const transporter = await createTransporter();
+    if (!transporter) {
+      logger.log(
+        `Email delivery skipped for ${to} (transporter not configured or emails disabled)`
+      );
+      return;
+    }
 
     const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
     const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();

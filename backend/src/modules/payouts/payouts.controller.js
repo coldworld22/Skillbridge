@@ -13,6 +13,28 @@ const toNumber = (value) =>
     ? 0
     : Number(value);
 
+const resolveMinimumWithdrawalAmount = (config) => {
+  if (!config) return 0;
+  const candidates = [
+    config.minimumWithdrawalAmount,
+    config.minimumPayoutAmount,
+    config.minimum_payout_amount,
+    config.withdrawalMinimum,
+    config.withdrawal_minimum,
+    config.withdrawals?.minimumAmount,
+    config.withdrawals?.minimumWithdrawalAmount,
+    config.payouts?.minimumAmount,
+    config.payoutSettings?.minimumAmount,
+  ];
+  for (const candidate of candidates) {
+    const num = Number(candidate);
+    if (Number.isFinite(num) && num > 0) {
+      return num;
+    }
+  }
+  return 0;
+};
+
 exports.createPayout = catchAsync(async (req, res) => {
   const { instructor_id, amount, currency, status, notes } = req.body;
   if (!instructor_id || !amount) {
@@ -93,19 +115,7 @@ exports.requestPayout = catchAsync(async (req, res) => {
   let minimumWithdrawalAmount = 0;
   try {
     const config = await paymentConfigService.getSettings();
-    if (config) {
-      const rawMinimum =
-        config.minimumPayoutAmount ??
-        config.minimumWithdrawalAmount ??
-        config.minimum_payout_amount ??
-        config.withdrawalMinimum ??
-        config.withdrawal_minimum ??
-        0;
-      const parsed = Number(rawMinimum);
-      if (Number.isFinite(parsed) && parsed > 0) {
-        minimumWithdrawalAmount = parsed;
-      }
-    }
+    minimumWithdrawalAmount = resolveMinimumWithdrawalAmount(config);
   } catch (err) {
     logger.warn(
       "Payment config lookup failed for payout request:",

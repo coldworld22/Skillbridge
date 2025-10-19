@@ -134,13 +134,47 @@ exports.getByUser = async (userId, status) => {
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
     .leftJoin("online_classes as c", function () {
-      this.on("p.item_id", "=", "c.id").andOn(
+      this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
         "p.item_type",
         "=",
         db.raw("?", ["class"])
       );
     })
-    .select("p.*", "m.name as method_name", "c.title as class_title")
+    .leftJoin("tutorials as tut", function () {
+      this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["tutorial"])
+      );
+    })
+    .leftJoin("books as b", function () {
+      this.on("p.item_id", "=", db.raw("b.id::text")).andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["book"])
+      );
+    })
+    .leftJoin("plans as pl", function () {
+      this.on("p.item_id", "=", db.raw("pl.id::text")).andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["plan"])
+      );
+    })
+    .select(
+      "p.*",
+      "m.name as method_name",
+      "c.title as class_title",
+      "tut.title as tutorial_title",
+      "b.title as book_title",
+      "pl.name as plan_name",
+      "pl.slug as plan_slug",
+      "pl.price_monthly",
+      "pl.price_yearly",
+      db.raw(
+        "COALESCE(c.title, tut.title, b.title, pl.name) as item_title"
+      )
+    )
     .where("p.user_id", userId)
     .orderBy("p.created_at", "desc");
 

@@ -22,7 +22,28 @@ exports.updateSettings = catchAsync(async (req, res) => {
     }
   }
 
-  const settings = await service.updateSettings(req.body);
+  const payload = { ...req.body };
+  if (payload.minimumPayoutAmount !== undefined) {
+    const parsed = Number(payload.minimumPayoutAmount);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return res
+        .status(400)
+        .json({ error: "Minimum payout amount must be zero or greater" });
+    }
+    payload.minimumPayoutAmount = parsed;
+    payload.minimumWithdrawalAmount = parsed;
+  } else if (payload.minimumWithdrawalAmount !== undefined) {
+    const parsed = Number(payload.minimumWithdrawalAmount);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return res
+        .status(400)
+        .json({ error: "Minimum payout amount must be zero or greater" });
+    }
+    payload.minimumWithdrawalAmount = parsed;
+    payload.minimumPayoutAmount = parsed;
+  }
+
+  const settings = await service.updateSettings(payload);
   sendSuccess(res, settings, "Settings updated");
 
   const admins = await userModel.findAdmins();

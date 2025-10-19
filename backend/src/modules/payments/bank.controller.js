@@ -1,3 +1,4 @@
+const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -289,13 +290,30 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   try {
     if (user) {
       const invoice = await invoiceService.generateFromPayment(payment, user);
-      if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
-        await mailService.sendMail({
+      if (user.email && !user.invoice_email_opt_out && invoice) {
+        const attachmentPath =
+          invoice.file_path ||
+          (invoice.pdf_url
+            ? path.join(
+                __dirname,
+                "../../../",
+                invoice.pdf_url.replace(/^\//, "")
+              )
+            : null);
+        const payload = {
           to: user.email,
           subject: "Payment Invoice",
           html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
-        });
+        };
+        if (attachmentPath) {
+          payload.attachments = [
+            {
+              path: attachmentPath,
+              filename: `invoice-${invoice.id}.pdf`,
+            },
+          ];
+        }
+        await mailService.sendMail(payload);
       }
     }
   } catch (err) {

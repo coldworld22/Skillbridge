@@ -1,3 +1,4 @@
+const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
@@ -16,6 +17,7 @@ const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
 const invoiceService = require("../invoices/invoices.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
+const cartService = require("../cart/cart.service");
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { handleEnrollment } = require("./helpers/enrollment");
@@ -24,6 +26,25 @@ const {
   creditInstructorSubscription,
   creditInstructorWallet,
 } = require("./helpers/wallet");
+const INVOICE_PATH_ROOT = path.join(__dirname, "../../../");
+
+const resolveInvoicePath = (invoice) => {
+  if (!invoice) return null;
+  if (invoice.file_path) return invoice.file_path;
+  if (!invoice.pdf_url) return null;
+  const relative = invoice.pdf_url.replace(/^\//, "");
+  return path.join(INVOICE_PATH_ROOT, relative);
+};
+
+const clearCartItem = async (userId, itemId, itemType) => {
+  try {
+    const normalizedId =
+      itemId === undefined || itemId === null ? itemId : String(itemId);
+    await cartService.remove(userId, normalizedId, itemType);
+  } catch (err) {
+    logger.error("Failed to clear cart item after payment:", err);
+  }
+};
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
@@ -149,6 +170,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   if (payment.status === STATUS.PAID) {
     await creditInstructorWallet(item_type, item_id, instructor_amount);
     await handleEnrollment(item_type, user_id, item_id);
+    await clearCartItem(user_id, item_id, item_type);
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {
@@ -199,13 +221,22 @@ exports.createPayment = catchAsync(async (req, res) => {
         user = await userModel.findById(user_id);
       }
       const invoice = await invoiceService.generateFromPayment(payment, user);
-      if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-        await mailService.sendMail({
+      if (user?.email && !user?.invoice_email_opt_out && invoice) {
+        const attachmentPath = resolveInvoicePath(invoice);
+        const payload = {
           to: user.email,
           subject: "Payment Invoice",
           html: `<p>Please find your invoice attached.</p>`,
-          attachments: [{ path: invoice.pdf_url }],
-        });
+        };
+        if (attachmentPath) {
+          payload.attachments = [
+            {
+              path: attachmentPath,
+              filename: `invoice-${invoice.id}.pdf`,
+            },
+          ];
+        }
+        await mailService.sendMail(payload);
       }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
@@ -293,6 +324,7 @@ exports.updatePayment = catchAsync(async (req, res) => {
         // payment flows (bank/PayPal/crypto) already call grantAccess.
         try {
           await grantAccess(payment);
+          await clearCartItem(payment.user_id, payment.item_id, payment.item_type);
         } catch (err) {
           logger.error("Failed to grant access after admin approval:", err);
         }
@@ -300,13 +332,22 @@ exports.updatePayment = catchAsync(async (req, res) => {
         subject = "Payment Approved";
         try {
           const invoice = await invoiceService.generateFromPayment(payment, user);
-          if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
-            await mailService.sendMail({
+          if (user?.email && !user?.invoice_email_opt_out && invoice) {
+            const attachmentPath = resolveInvoicePath(invoice);
+            const payload = {
               to: user.email,
               subject: "Payment Invoice",
               html: `<p>Please find your invoice attached.</p>`,
-              attachments: [{ path: invoice.pdf_url }],
-            });
+            };
+            if (attachmentPath) {
+              payload.attachments = [
+                {
+                  path: attachmentPath,
+                  filename: `invoice-${invoice.id}.pdf`,
+                },
+              ];
+            }
+            await mailService.sendMail(payload);
           }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
