@@ -66,13 +66,25 @@ exports.getSummary = catchAsync(async (req, res) => {
 
   const reservedPayoutTotal = withdrawnTotal + pendingPayoutTotal;
 
-  const walletBalanceRaw = toNumber(wallet?.balance);
+  const walletBalanceRaw = Math.max(0, toNumber(wallet?.balance));
   const computedAvailableBalance = Math.max(
     0,
     toNumber(totals.totalPaid) - reservedPayoutTotal
   );
-  const walletBalance =
-    walletBalanceRaw > 0 ? walletBalanceRaw : computedAvailableBalance;
+
+  let availableForWithdrawal = 0;
+  if (walletBalanceRaw <= 0) {
+    availableForWithdrawal = computedAvailableBalance;
+  } else if (computedAvailableBalance > 0) {
+    availableForWithdrawal = Math.min(
+      walletBalanceRaw,
+      computedAvailableBalance
+    );
+  } else {
+    availableForWithdrawal = walletBalanceRaw;
+  }
+
+  availableForWithdrawal = Math.max(0, availableForWithdrawal);
 
   sendSuccess(res, {
     totalPaid: toNumber(totals.totalPaid),
@@ -80,13 +92,13 @@ exports.getSummary = catchAsync(async (req, res) => {
     lifetimeEarnings: toNumber(totals.totalInstructorAmount),
     totalPlatformFees: toNumber(totals.totalPlatformFee),
     totalGross: toNumber(totals.totalGross),
-    walletBalance,
+    walletBalance: walletBalanceRaw,
+    availableForWithdrawal,
     withdrawnTotal,
     pendingWithdrawalTotal: pendingPayoutTotal,
-    availableForWithdrawal: walletBalance,
     meetsWithdrawalMinimum:
       minimumWithdrawalAmount > 0
-        ? walletBalance >= minimumWithdrawalAmount
+        ? availableForWithdrawal >= minimumWithdrawalAmount
         : true,
     minimumWithdrawalAmount,
   });
