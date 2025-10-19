@@ -13,6 +13,8 @@ import {
   fetchInstructorPaymentSummary,
   fetchInstructorPayments,
 } from "@/services/instructor/paymentService";
+import { formatCurrency } from "@/utils/currency";
+import { formatDate } from "@/utils/date";
 
 const STATUS_LABELS = {
   paid: "Paid",
@@ -26,29 +28,6 @@ const STATUS_COLORS = {
   awaiting_approval: "text-yellow-600",
   pending_payment: "text-yellow-600",
   rejected: "text-red-500",
-};
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleDateString();
-  } catch {
-    return value;
-  }
 };
 
 const getMethodLabel = (payment) => {
@@ -342,16 +321,19 @@ export default function InstructorPaymentsPage() {
                         </div>
                       </td>
                       <td className="p-3 font-semibold text-green-600">
-                        {formatCurrency(
-                          payment.instructor_amount,
-                          payment.currency
-                        )}
+                        {formatCurrency(payment.instructor_amount, {
+                          currency: payment.currency,
+                        })}
                       </td>
                       <td className="p-3">
-                        {formatCurrency(payment.amount, payment.currency)}
+                        {formatCurrency(payment.amount, {
+                          currency: payment.currency,
+                        })}
                       </td>
                       <td className="p-3 text-red-500">
-                        {formatCurrency(payment.platform_fee, payment.currency)}
+                        {formatCurrency(payment.platform_fee, {
+                          currency: payment.currency,
+                        })}
                       </td>
                       <td className="p-3">{formatDate(displayDate)}</td>
                       <td className={`p-3 font-medium ${statusClass}`}>

@@ -1,33 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorWithdrawals } from "@/services/instructor/paymentService";
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
-
-const formatDateTime = (value) => {
-  if (!value) return "—";
-  try {
-    const date = new Date(value);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-  } catch {
-    return value;
-  }
-};
+import { formatCurrency } from "@/utils/currency";
+import { formatDateTime } from "@/utils/date";
 
 const readableStatus = (status) => {
   if (!status) return "Pending";
@@ -164,10 +139,9 @@ export default function InstructorWithdrawalsPage() {
                 withdrawals.map((withdrawal) => (
                   <tr key={withdrawal.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 font-semibold text-gray-800">
-                      {formatCurrency(
-                        withdrawal.amount,
-                        withdrawal.currency || "USD"
-                      )}
+                      {formatCurrency(withdrawal.amount, {
+                        currency: withdrawal.currency || "USD",
+                      })}
                     </td>
                     <td className="p-3 font-medium">
                       {readableStatus(withdrawal.status)}

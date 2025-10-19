@@ -36,6 +36,14 @@ export const getCurrencyFormatter = (override = {}) => {
  * Format a numeric value as currency using locale and currency from
  * configuration or user settings.
  */
-export const formatCurrency = (value, override = {}) =>
-  getCurrencyFormatter(override).format(Number(value ?? 0));
+export const formatCurrency = (value, override = {}) => {
+  const { fallback, ...formatterOptions } = override;
+  const numeric = Number(value ?? 0);
+
+  if (!Number.isFinite(numeric)) {
+    return fallback ?? "—";
+  }
+
+  return getCurrencyFormatter(formatterOptions).format(numeric);
+};
 

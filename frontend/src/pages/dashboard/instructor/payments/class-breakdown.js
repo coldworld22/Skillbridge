@@ -2,20 +2,8 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useMemo, useState } from "react";
 import { fetchInstructorClasses } from "@/services/instructor/classService";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
+import { formatCurrency } from "@/utils/currency";
+import { formatDate } from "@/utils/date";
 
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
@@ -214,18 +202,22 @@ export default function InstructorClassBreakdownPage() {
                     <td className="p-3">{row.publishStatus}</td>
                     <td className="p-3">{row.students}</td>
                     <td className="p-3 text-gray-700">
-                      {formatCurrency(row.gross, row.currency)}
+                      {formatCurrency(row.gross, {
+                        currency: row.currency,
+                      })}
                     </td>
                     <td className="p-3 text-red-500">
-                      {formatCurrency(row.commission, row.currency)}
+                      {formatCurrency(row.commission, {
+                        currency: row.currency,
+                      })}
                     </td>
                     <td className="p-3 text-green-600 font-semibold">
-                      {formatCurrency(row.net, row.currency)}
+                      {formatCurrency(row.net, {
+                        currency: row.currency,
+                      })}
                     </td>
                     <td className="p-3 text-sm text-gray-500">
-                      {row.updatedAt
-                        ? new Date(row.updatedAt).toLocaleDateString()
-                        : "—"}
+                      {formatDate(row.updatedAt)}
                     </td>
                   </tr>
                 ))

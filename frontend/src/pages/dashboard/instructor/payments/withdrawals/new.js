@@ -5,20 +5,7 @@ import {
   fetchInstructorPaymentSummary,
   requestInstructorWithdrawal,
 } from "@/services/instructor/paymentService";
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
+import { formatCurrency } from "@/utils/currency";
 
 export default function InstructorNewWithdrawalPage() {
   const router = useRouter();
