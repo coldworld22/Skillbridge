@@ -143,7 +143,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
                 {includedClasses.length > 0 && (
                   <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
                     <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
-                      {t("plan_included_classes_title")}
+                      {t("plan_included_classes_title", { defaultValue: "Included Classes" })}
                     </h4>
                     <ul className="space-y-3">
                       {includedClasses.slice(0, 3).map((cls) => (
@@ -157,7 +157,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
                             />
                           ) : (
                             <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
-                              {t("plan_class_placeholder")}
+                              {t("plan_class_placeholder", { defaultValue: "Class" })}
                             </div>
                           )}
                           <div className="flex-1">
@@ -169,8 +169,9 @@ const SubscriptionPlans = ({ role = "student" }) => {
                             </a>
                             <p className="text-xs text-gray-200/80">
                               {cls.access_type === "free"
-                                ? t("plan_class_access_plan")
+                                ? t("plan_class_access_plan", { defaultValue: "Included with your plan" })
                                 : t("plan_class_access_paid", {
+                                    defaultValue: "Priced at {{price}}",
                                     price: formatCurrency(cls.price || 0, {
                                       currency: plan.currency,
                                     }),
@@ -182,7 +183,112 @@ const SubscriptionPlans = ({ role = "student" }) => {
                     </ul>
                     {includedClasses.length > 3 && (
                       <p className="text-xs text-gray-200/70">
-                        {t("plan_more_classes", { count: includedClasses.length - 3 })}
+                        {t("plan_more_classes", {
+                          count: includedClasses.length - 3,
+                          defaultValue: "+ {{count}} more classes",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {includedTutorials.length > 0 && (
+                  <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
+                      {t("plan_included_tutorials_title", { defaultValue: "Included Tutorials" })}
+                    </h4>
+                    <ul className="space-y-3">
+                      {includedTutorials.slice(0, 3).map((tutorial) => (
+                        <li key={tutorial.id} className="flex items-center gap-3">
+                          {tutorial.cover_image ? (
+                            <img
+                              src={tutorial.cover_image}
+                              alt={tutorial.title}
+                              className="w-12 h-12 rounded object-cover border border-white/30"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
+                              {t("plan_tutorial_placeholder", { defaultValue: "Tutorial" })}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <a
+                              href={`/tutorials/${tutorial.slug || tutorial.id}`}
+                              className="font-semibold text-white line-clamp-1 hover:underline"
+                            >
+                              {tutorial.title}
+                            </a>
+                            <p className="text-xs text-gray-200/80">
+                              {tutorial.is_paid
+                                ? t("plan_tutorial_access_paid", {
+                                    defaultValue: "Normally {{price}}, free with your plan",
+                                    price: formatCurrency(tutorial.price || 0, {
+                                      currency: plan.currency,
+                                    }),
+                                  })
+                                : t("plan_tutorial_access_plan", { defaultValue: "Included with your plan" })}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    {includedTutorials.length > 3 && (
+                      <p className="text-xs text-gray-200/70">
+                        {t("plan_more_tutorials", {
+                          defaultValue: "+ {{count}} more tutorials",
+                          count: includedTutorials.length - 3,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {includedBooks.length > 0 && (
+                  <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-yellow-200">
+                      {t("plan_included_books_title", { defaultValue: "Included Books" })}
+                    </h4>
+                    <ul className="space-y-3">
+                      {includedBooks.slice(0, 3).map((book) => (
+                        <li key={book.id} className="flex items-center gap-3">
+                          {book.cover_image ? (
+                            <img
+                              src={book.cover_image}
+                              alt={book.title}
+                              className="w-12 h-12 rounded object-cover border border-white/30"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-white/10 flex items-center justify-center text-xs text-white/60">
+                              {t("plan_book_placeholder", { defaultValue: "Book" })}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <a
+                              href={`/books/${book.id}`}
+                              className="font-semibold text-white line-clamp-1 hover:underline"
+                            >
+                              {book.title}
+                            </a>
+                            <p className="text-xs text-gray-200/80">
+                              {t("plan_book_access_paid", {
+                                defaultValue: "Normally {{price}}, free with your plan",
+                                price: formatCurrency(book.price || 0, {
+                                  currency: plan.currency,
+                                }),
+                              })}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    {includedBooks.length > 3 && (
+                      <p className="text-xs text-gray-200/70">
+                        {t("plan_more_books", {
+                          defaultValue: "+ {{count}} more books",
+                          count: includedBooks.length - 3,
+                        })}
                       </p>
                     )}
                   </div>

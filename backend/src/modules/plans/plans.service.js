@@ -89,6 +89,7 @@ exports.getPlans = async (role) => {
   if (role) query = query.where({ target_role: role });
   const plans = await query;
   const features = await db("plan_features").select("*");
+  const lookup = buildPlanIdLookup(plans);
 
   const { classesByPlan, booksByPlan, tutorialsByPlan } =
     await collectIncludedContent();
