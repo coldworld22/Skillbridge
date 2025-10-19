@@ -73,6 +73,7 @@ export default function InstructorPaymentsPage() {
   const [error, setError] = useState(null);
   const [isPushing, setIsPushing] = useState(false);
   const [methodFilter, setMethodFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -119,12 +120,80 @@ export default function InstructorPaymentsPage() {
     return Array.from(set);
   }, [payments]);
 
+  const statusOptions = useMemo(() => {
+    const set = new Set();
+    payments.forEach((payment) => {
+      if (payment.status) set.add(payment.status);
+    });
+    return Array.from(set);
+  }, [payments]);
+
   const filteredPayments = useMemo(() => {
-    if (methodFilter === "all") return payments;
-    return payments.filter(
-      (payment) => getMethodLabel(payment) === methodFilter
+    return payments.filter((payment) => {
+      const matchesMethod =
+        methodFilter === "all" || getMethodLabel(payment) === methodFilter;
+      const matchesStatus =
+        statusFilter === "all" || payment.status === statusFilter;
+      return matchesMethod && matchesStatus;
+    });
+  }, [methodFilter, statusFilter, payments]);
+
+  const statusBreakdown = useMemo(() => {
+    return payments.reduce((acc, payment) => {
+      const key = payment.status || "unknown";
+      if (!acc[key]) {
+        acc[key] = { count: 0, totalNet: 0, currency: payment.currency };
+      }
+      acc[key].count += 1;
+      acc[key].totalNet += Number(payment.instructor_amount ?? 0);
+      if (payment.currency) {
+        acc[key].currency = payment.currency;
+      }
+      return acc;
+    }, {});
+  }, [payments]);
+
+  const filteredTotals = useMemo(() => {
+    return filteredPayments.reduce(
+      (
+        acc,
+        { amount, instructor_amount, platform_fee, paid_at, created_at, currency }
+      ) => {
+        const gross = Number(amount ?? 0);
+        const net = Number(instructor_amount ?? 0);
+        const fee =
+          platform_fee !== undefined ? Number(platform_fee ?? 0) : gross - net;
+        acc.count += 1;
+        acc.totalGross += gross;
+        acc.totalNet += net;
+        acc.totalFee += fee;
+        const dateValue = paid_at || created_at;
+        if (dateValue) {
+          const timestamp = Date.parse(dateValue);
+          if (!Number.isNaN(timestamp) && timestamp > acc.latestTimestamp) {
+            acc.latestTimestamp = timestamp;
+            acc.latestCurrency = currency;
+          }
+        }
+        return acc;
+      },
+      {
+        count: 0,
+        totalGross: 0,
+        totalNet: 0,
+        totalFee: 0,
+        latestTimestamp: -Infinity,
+        latestCurrency: undefined,
+      }
     );
-  }, [methodFilter, payments]);
+  }, [filteredPayments]);
+
+  const latestPaymentDate =
+    filteredTotals.latestTimestamp === -Infinity
+      ? null
+      : new Date(filteredTotals.latestTimestamp);
+  const filteredCurrency =
+    filteredTotals.latestCurrency || filteredPayments[0]?.currency;
 
   const totalEarnings = summary.lifetimeEarnings ?? 0;
   const pendingBalance = summary.totalPending ?? 0;
@@ -292,6 +361,18 @@ export default function InstructorPaymentsPage() {
                   </option>
                 ))}
               </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="all">All Statuses</option>
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {STATUS_LABELS[status] || status}
+                  </option>
+                ))}
+              </select>
               <button
                 onClick={exportCSV}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
@@ -306,6 +387,57 @@ export default function InstructorPaymentsPage() {
                 <FaArrowDown /> Request Withdrawal
               </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Filtered Transactions
+              </p>
+              <p className="text-2xl font-semibold text-gray-800">
+                {filteredTotals.count}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Net Earnings
+              </p>
+              <p className="text-2xl font-semibold text-green-600">
+                {formatCurrency(filteredTotals.totalNet, filteredCurrency)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Platform Fees
+              </p>
+              <p className="text-2xl font-semibold text-red-500">
+                {formatCurrency(filteredTotals.totalFee, filteredCurrency)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Last Payment
+              </p>
+              <p className="text-lg font-semibold text-gray-800">
+                {latestPaymentDate ? formatDate(latestPaymentDate) : "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            {Object.entries(statusBreakdown).map(([status, data]) => (
+              <div key={status} className="bg-white border rounded-lg p-4 shadow-sm">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">
+                  {STATUS_LABELS[status] || status}
+                </p>
+                <p className="text-xl font-semibold text-gray-800">
+                  {data.count} tx
+                </p>
+                <p className="text-sm text-gray-500">
+                  {formatCurrency(data.totalNet, data.currency)} net
+                </p>
+              </div>
+            ))}
           </div>
 
           <table className="w-full table-auto">
