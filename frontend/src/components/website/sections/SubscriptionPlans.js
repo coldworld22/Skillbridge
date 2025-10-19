@@ -106,6 +106,19 @@ const SubscriptionPlans = ({ role = "student" }) => {
               currency: plan.currency,
             });
 
+            const sections = Array.isArray(plan.feature_sections) && plan.feature_sections.length
+              ? plan.feature_sections.filter((section) => Array.isArray(section.features) && section.features.length)
+              : [
+                  {
+                    module: null,
+                    module_label: null,
+                    features: Array.isArray(plan.features) ? plan.features : [],
+                  },
+                ];
+            const hasFeatures = sections.some(
+              (section) => Array.isArray(section.features) && section.features.length
+            );
+
             return (
               <motion.div
                 key={plan.id}
@@ -125,14 +138,52 @@ const SubscriptionPlans = ({ role = "student" }) => {
                     ? `${monthlyLabel}/mo`
                     : `${yearlyLabel}/yr`}
                 </p>
+                {hasFeatures && (
+                  <div className="space-y-4 text-gray-300">
+                    {sections.map((section, sectionIdx) => (
+                      <div
+                        key={section.module || `section-${sectionIdx}`}
+                        className="space-y-2"
+                      >
+                        {section.module_label && (
+                          <p className="text-xs uppercase tracking-wide text-yellow-300">
+                            {section.module_label}
+                          </p>
+                        )}
+                        <ul className="space-y-2 text-gray-300">
+                          {section.features.map((feature, featureIdx) => {
+                            const featureKey =
+                              feature.id ||
+                              `${feature.feature_key || feature.label || "feature"}-${featureIdx}`;
+                            const detail = (feature.description || feature.value || "").trim();
+                            const label = (feature.label || "").trim();
+                            const showDetail =
+                              !!detail && (!label || detail.toLowerCase() !== label.toLowerCase());
 
-                <ul className="space-y-2 text-gray-300">
-                  {plan.features?.map((feature, idx) => (
-                    <li key={idx} className="flex items-center justify-center gap-2">
-                      <FaCheck className="text-green-400" /> {feature.description || feature.value}
-                    </li>
-                  ))}
-                </ul>
+                            return (
+                              <li
+                                key={`${sectionIdx}-${featureKey}`}
+                                className="flex items-start gap-2 text-left"
+                              >
+                                <FaCheck className="mt-1 text-green-400" />
+                                <div className="space-y-1">
+                                  {label && (
+                                    <p className="text-sm font-semibold text-white">{label}</p>
+                                  )}
+                                  {showDetail && (
+                                    <p className="text-xs text-gray-300/90 leading-relaxed">
+                                      {detail}
+                                    </p>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {includedClasses.length > 0 && (
                   <div className="mt-6 bg-black/20 rounded-lg p-4 text-left space-y-3">

@@ -1,4 +1,12 @@
 const db = require("../../config/database");
+const {
+  MODULE_ORDER,
+  SYNTHETIC_PLAN_FEATURES,
+  parseFeatureValue,
+  serializeFeatureValue,
+  getFeaturePresentation,
+  getModuleLabel,
+} = require("./planFeatureMetadata");
 
 exports.createPlan = async (data) => {
   const insertData = {
@@ -59,11 +67,111 @@ exports.getPlans = async (role) => {
     });
   });
 
-  return plans.map((p) => ({
-    ...p,
-    features: features.filter((f) => f.plan_id === p.id),
-    included_classes: classesByPlan[p.id] || [],
-  }));
+  const modulePriority = (module) => {
+    if (!module) return MODULE_ORDER.length;
+    const idx = MODULE_ORDER.indexOf(module);
+    return idx === -1 ? MODULE_ORDER.length : idx;
+  };
+
+  return plans.map((plan) => {
+    const formattedFeatures = features
+      .filter((f) => f.plan_id === plan.id)
+      .map((feature) => {
+        const parsedValue = parseFeatureValue(feature.value);
+        const presentation = getFeaturePresentation(
+          feature.feature_key,
+          parsedValue
+        );
+        const valueString =
+          presentation.displayValue === null || presentation.displayValue === undefined
+            ? ""
+            : typeof presentation.displayValue === "string"
+              ? presentation.displayValue
+              : String(presentation.displayValue);
+        const description =
+          feature.description && feature.description.trim()
+            ? feature.description
+            : presentation.description && presentation.description.trim()
+              ? presentation.description
+              : valueString;
+
+        return {
+          ...feature,
+          value: valueString,
+          description,
+          label: presentation.label,
+          module: presentation.module,
+          module_label: presentation.moduleLabel,
+          raw_value: feature.value,
+          parsed_value: parsedValue,
+          source: "database",
+        };
+      });
+
+    const syntheticFeatures = SYNTHETIC_PLAN_FEATURES.filter((def) =>
+      def.roles.includes(plan.target_role)
+    )
+      .map((def) => {
+        const built = def.build(plan);
+        if (!built) return null;
+        const valueString =
+          built.value === null || built.value === undefined
+            ? ""
+            : typeof built.value === "string"
+              ? built.value
+              : String(built.value);
+        const description =
+          built.description && built.description.trim()
+            ? built.description
+            : valueString;
+        return {
+          id: `synthetic:${plan.id}:${def.key}`,
+          plan_id: plan.id,
+          feature_key: def.key,
+          value: valueString,
+          description,
+          label: def.label,
+          module: def.module,
+          module_label: getModuleLabel(def.module),
+          raw_value: built.raw ?? null,
+          parsed_value: built.parsed ?? built.raw ?? null,
+          source: "computed",
+        };
+      })
+      .filter(Boolean);
+
+    const combined = [...formattedFeatures, ...syntheticFeatures].sort((a, b) => {
+      const moduleDiff = modulePriority(a.module) - modulePriority(b.module);
+      if (moduleDiff !== 0) return moduleDiff;
+      return a.label.localeCompare(b.label);
+    });
+
+    const GENERAL_SECTION_KEY = "__general__";
+    const sections = [];
+    let currentKey = null;
+
+    combined.forEach((feature) => {
+      const key = feature.module || GENERAL_SECTION_KEY;
+      if (key !== currentKey) {
+        const moduleLabel =
+          key === GENERAL_SECTION_KEY ? "General" : feature.module_label || getModuleLabel(feature.module);
+        sections.push({
+          module: feature.module,
+          module_label: moduleLabel || null,
+          features: [],
+        });
+        currentKey = key;
+      }
+      sections[sections.length - 1].features.push(feature);
+    });
+
+    return {
+      ...plan,
+      features: combined,
+      feature_sections: sections,
+      included_classes: classesByPlan[plan.id] || [],
+    };
+  });
 };
 
 exports.getPlanById = async (id) => {
@@ -98,13 +206,30 @@ exports.setFeatures = async (planId, features = []) => {
   return db.transaction(async (trx) => {
     await trx("plan_features").where({ plan_id: planId }).del();
     if (features.length) {
-      const rows = features.map((f) => ({
-        plan_id: planId,
-        feature_key: f.feature_key,
-        value: f.value,
-        description: f.description || null,
-      }));
-      await trx("plan_features").insert(rows);
+      const rows = features
+        .filter((f) => f && f.feature_key)
+        .map((f) => {
+          const parsedValue = parseFeatureValue(f.value);
+          const storedValue = serializeFeatureValue(parsedValue);
+          const presentation = getFeaturePresentation(
+            f.feature_key,
+            parsedValue
+          );
+          const description =
+            f.description && f.description.trim()
+              ? f.description
+              : presentation.description;
+
+          return {
+            plan_id: planId,
+            feature_key: f.feature_key,
+            value: storedValue,
+            description: description || null,
+          };
+        });
+      if (rows.length) {
+        await trx("plan_features").insert(rows);
+      }
     }
     return trx("plan_features").where({ plan_id: planId }).select("*");
   });
