@@ -299,7 +299,7 @@ export default function InstructorPaymentsPage() {
                 <FaFileExport /> Export CSV
               </button>
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded disabled:opacity-60"
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={redirectToNewWithdrawal}
                 disabled={isPushing}
               >
