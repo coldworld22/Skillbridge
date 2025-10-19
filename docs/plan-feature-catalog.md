@@ -42,15 +42,6 @@ The catalog powers:
 All templates live alongside the feature definitions so any new feature only
 requires editing `planFeatureMetadata.js` (plus seed values where applicable).
 
-## Included resources in the plans API
-
-`plans.service.getPlans` also aggregates learning content that references
-subscription coverage. When a class, book, or tutorial lists a plan in its
-`included_plans` column, the `/plans` endpoint now surfaces that item under
-`included_classes`, `included_books`, or `included_tutorials` for the matching
-plan. Each list is derived dynamically, so marketing pages always reflect the
-latest perks without manual curation.
-
 ## Adding a new plan feature
 
 1. Append the feature definition to `FEATURE_METADATA` with its module, labels,
