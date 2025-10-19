@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { buildFeatureMap } = require("../../utils/planFeatures");
 
 exports.createPlan = async (data) => {
   const insertData = {
@@ -59,11 +60,15 @@ exports.getPlans = async (role) => {
     });
   });
 
-  return plans.map((p) => ({
-    ...p,
-    features: features.filter((f) => f.plan_id === p.id),
-    included_classes: classesByPlan[p.id] || [],
-  }));
+  return plans.map((p) => {
+    const planFeatures = features.filter((f) => f.plan_id === p.id);
+    return {
+      ...p,
+      features: planFeatures,
+      feature_map: buildFeatureMap(planFeatures),
+      included_classes: classesByPlan[p.id] || [],
+    };
+  });
 };
 
 exports.getPlanById = async (id) => {
@@ -71,6 +76,7 @@ exports.getPlanById = async (id) => {
   if (!plan) return null;
   const feats = await db("plan_features").where({ plan_id: id }).select("*");
   plan.features = feats;
+  plan.feature_map = buildFeatureMap(feats);
   return plan;
 };
 
