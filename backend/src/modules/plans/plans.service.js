@@ -1,5 +1,76 @@
 const db = require("../../config/database");
-const { buildFeatureMap } = require("../../utils/planFeatures");
+const { groupContentByPlan } = require("./planContent.helper");
+
+const collectIncludedContent = async () => {
+  const [rawClasses, rawBooks, rawTutorials] = await Promise.all([
+    db("online_classes")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "start_date",
+        "end_date",
+        "price",
+        "access_type",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("books")
+      .select(
+        "id",
+        "title",
+        "cover_image_url",
+        "price",
+        "status",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("tutorials")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "price",
+        "is_paid",
+        "status",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+  ]);
+
+  const classesByPlan = groupContentByPlan(rawClasses, (cls) => ({
+    id: cls.id,
+    title: cls.title,
+    slug: cls.slug,
+    cover_image: cls.cover_image,
+    start_date: cls.start_date,
+    end_date: cls.end_date,
+    price: cls.price,
+    access_type: cls.access_type,
+  }));
+
+  const booksByPlan = groupContentByPlan(rawBooks, (book) => ({
+    id: book.id,
+    title: book.title,
+    cover_image_url: book.cover_image_url,
+    price: book.price,
+    status: book.status,
+  }));
+
+  const tutorialsByPlan = groupContentByPlan(rawTutorials, (tutorial) => ({
+    id: tutorial.id,
+    title: tutorial.title,
+    slug: tutorial.slug,
+    cover_image: tutorial.cover_image,
+    price: tutorial.price,
+    is_paid: tutorial.is_paid,
+    status: tutorial.status,
+  }));
+
+  return { classesByPlan, booksByPlan, tutorialsByPlan };
+};
 
 exports.createPlan = async (data) => {
   const insertData = {
@@ -19,56 +90,16 @@ exports.getPlans = async (role) => {
   const plans = await query;
   const features = await db("plan_features").select("*");
 
-  const rawClasses = await db("online_classes")
-    .select(
-      "id",
-      "title",
-      "slug",
-      "cover_image",
-      "start_date",
-      "end_date",
-      "price",
-      "access_type",
-      "included_plans"
-    )
-    .whereRaw("included_plans <> '[]'::jsonb");
+  const { classesByPlan, booksByPlan, tutorialsByPlan } =
+    await collectIncludedContent();
 
-  const classesByPlan = {};
-  rawClasses.forEach((cls) => {
-    let planIds = [];
-    if (Array.isArray(cls.included_plans)) planIds = cls.included_plans;
-    else if (cls.included_plans) {
-      try {
-        const parsed = JSON.parse(cls.included_plans);
-        planIds = Array.isArray(parsed) ? parsed : [parsed];
-      } catch {
-        planIds = [];
-      }
-    }
-    planIds.forEach((planId) => {
-      if (!classesByPlan[planId]) classesByPlan[planId] = [];
-      classesByPlan[planId].push({
-        id: cls.id,
-        title: cls.title,
-        slug: cls.slug,
-        cover_image: cls.cover_image,
-        start_date: cls.start_date,
-        end_date: cls.end_date,
-        price: cls.price,
-        access_type: cls.access_type,
-      });
-    });
-  });
-
-  return plans.map((p) => {
-    const planFeatures = features.filter((f) => f.plan_id === p.id);
-    return {
-      ...p,
-      features: planFeatures,
-      feature_map: buildFeatureMap(planFeatures),
-      included_classes: classesByPlan[p.id] || [],
-    };
-  });
+  return plans.map((p) => ({
+    ...p,
+    features: features.filter((f) => f.plan_id === p.id),
+    included_classes: classesByPlan[p.id] || [],
+    included_books: booksByPlan[p.id] || [],
+    included_tutorials: tutorialsByPlan[p.id] || [],
+  }));
 };
 
 exports.getPlanById = async (id) => {
@@ -76,7 +107,11 @@ exports.getPlanById = async (id) => {
   if (!plan) return null;
   const feats = await db("plan_features").where({ plan_id: id }).select("*");
   plan.features = feats;
-  plan.feature_map = buildFeatureMap(feats);
+  const { classesByPlan, booksByPlan, tutorialsByPlan } =
+    await collectIncludedContent();
+  plan.included_classes = classesByPlan[id] || [];
+  plan.included_books = booksByPlan[id] || [];
+  plan.included_tutorials = tutorialsByPlan[id] || [];
   return plan;
 };
 

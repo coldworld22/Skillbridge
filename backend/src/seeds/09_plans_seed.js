@@ -320,6 +320,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
+      feature_key: 'tutorials_create',
+      value: 'true',
+      description: 'Can create tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
+      feature_key: 'tutorials_max_count',
+      value: '5',
+      description: 'Publish up to 5 tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids['instructor-pro'],
       feature_key: 'commission_rate',
       value: '0.1',
@@ -387,6 +401,20 @@ exports.seed = async function (knex) {
       feature_key: 'community_post',
       value: 'true',
       description: 'Can post in community'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'tutorials_create',
+      value: 'true',
+      description: 'Can create tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'tutorials_max_count',
+      value: 'null',
+      description: 'Unlimited tutorial publishing'
     }
   ]);
 };
