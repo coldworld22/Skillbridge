@@ -19,9 +19,6 @@ The catalog powers:
    supplies one based on the value.
 3. Seed data — default plans reuse the same metadata so website copy and runtime
    behaviour stay aligned.
-4. `/plans` also surfaces `included_classes`, `included_books`, and
-   `included_tutorials` so the marketing site can show which resources are
-   bundled with each subscription tier.
 
 ## Feature matrix
 
