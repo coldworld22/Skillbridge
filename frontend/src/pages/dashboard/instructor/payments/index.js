@@ -47,6 +47,8 @@ export default function InstructorPaymentsPage() {
     totalPending: 0,
     lifetimeEarnings: 0,
     withdrawnTotal: 0,
+    totalGross: 0,
+    totalPlatformFees: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,6 +75,9 @@ export default function InstructorPaymentsPage() {
           totalPending: summaryData?.totalPending ?? 0,
           lifetimeEarnings: summaryData?.lifetimeEarnings ?? 0,
           withdrawnTotal: summaryData?.withdrawnTotal ?? 0,
+          totalGross:
+            summaryData?.totalGross ?? summaryData?.lifetimeEarnings ?? 0,
+          totalPlatformFees: summaryData?.totalPlatformFees ?? 0,
         });
         setPayments(paymentData || []);
       } catch (err) {
@@ -178,6 +183,9 @@ export default function InstructorPaymentsPage() {
   const pendingBalance = summary.totalPending ?? 0;
   const withdrawn = summary.withdrawnTotal ?? 0;
   const walletBalance = summary.walletBalance ?? 0;
+  const totalPaid = summary.totalPaid ?? 0;
+  const totalPlatformFees = summary.totalPlatformFees ?? 0;
+  const totalGross = summary.totalGross ?? totalEarnings;
 
   const redirectToNewWithdrawal = () => {
     if (isPushing) return;
@@ -218,6 +226,37 @@ export default function InstructorPaymentsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const earningsByType = useMemo(() => {
+    const map = new Map();
+
+    payments.forEach((payment) => {
+      const type = payment.item_type || "other";
+      const entry = map.get(type) || {
+        orders: 0,
+        gross: 0,
+        net: 0,
+        fees: 0,
+        currency: payment.currency || "USD",
+      };
+
+      entry.orders += 1;
+      entry.gross += Number(payment.amount ?? 0);
+      entry.net += Number(payment.instructor_amount ?? 0);
+      entry.fees +=
+        payment.platform_fee !== undefined
+          ? Number(payment.platform_fee ?? 0)
+          : Number(payment.amount ?? 0) - Number(payment.instructor_amount ?? 0);
+      entry.currency = payment.currency || entry.currency;
+
+      map.set(type, entry);
+    });
+
+    return Array.from(map.entries()).map(([type, values]) => ({
+      type,
+      ...values,
+    }));
+  }, [payments]);
+
   if (loading) {
     return (
       <InstructorLayout>
@@ -239,11 +278,11 @@ export default function InstructorPaymentsPage() {
       <div className="p-6 space-y-6 text-gray-800">
         <h1 className="text-2xl font-bold">💰 Instructor Payments</h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaDollarSign className="text-2xl text-green-500" />
             <div>
-              <p className="text-sm text-gray-500">Total Earnings</p>
+              <p className="text-sm text-gray-500">Lifetime Earnings</p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(totalEarnings)}
               </h2>
@@ -259,11 +298,38 @@ export default function InstructorPaymentsPage() {
             </div>
           </div>
           <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
+            <FaWallet className="text-2xl text-purple-500" />
+            <div>
+              <p className="text-sm text-gray-500">Paid to Wallet</p>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(totalPaid)}
+              </h2>
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
             <FaWallet className="text-2xl text-blue-500" />
             <div>
               <p className="text-sm text-gray-500">Total Withdrawn</p>
               <h2 className="text-xl font-semibold">
                 {formatCurrency(withdrawn)}
+              </h2>
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
+            <FaDollarSign className="text-2xl text-red-500" />
+            <div>
+              <p className="text-sm text-gray-500">Platform Fees</p>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(totalPlatformFees)}
+              </h2>
+            </div>
+          </div>
+          <div className="bg-white p-4 shadow rounded-xl flex items-center gap-4">
+            <FaDollarSign className="text-2xl text-indigo-500" />
+            <div>
+              <p className="text-sm text-gray-500">Gross Revenue</p>
+              <h2 className="text-xl font-semibold">
+                {formatCurrency(totalGross)}
               </h2>
             </div>
           </div>
@@ -278,6 +344,47 @@ export default function InstructorPaymentsPage() {
             </p>
           </div>
         </div>
+
+        {earningsByType.length > 0 && (
+          <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Earnings by Item Type</h2>
+              <p className="text-sm text-gray-500">
+                Track how each product contributes to your revenue.
+              </p>
+            </div>
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="p-3">Item Type</th>
+                  <th className="p-3">Orders</th>
+                  <th className="p-3">Gross</th>
+                  <th className="p-3">Net Earned</th>
+                  <th className="p-3">Platform Fees</th>
+                </tr>
+              </thead>
+              <tbody>
+                {earningsByType.map((row) => (
+                  <tr key={row.type} className="border-b last:border-b-0">
+                    <td className="p-3 font-medium capitalize">
+                      {row.type.replace(/_/g, " ")}
+                    </td>
+                    <td className="p-3">{row.orders}</td>
+                    <td className="p-3">
+                      {formatCurrency(row.gross, row.currency)}
+                    </td>
+                    <td className="p-3">
+                      {formatCurrency(row.net, row.currency)}
+                    </td>
+                    <td className="p-3 text-red-500">
+                      {formatCurrency(row.fees, row.currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div className="bg-white p-6 rounded-xl shadow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
