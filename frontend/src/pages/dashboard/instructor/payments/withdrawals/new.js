@@ -18,7 +18,7 @@ export default function InstructorNewWithdrawalPage() {
     method: "Bank Transfer",
     details: "",
   });
-  const [walletBalance, setWalletBalance] = useState(0);
+  const [availableBalance, setAvailableBalance] = useState(0);
   const [minimumPayoutAmount, setMinimumPayoutAmount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -29,8 +29,10 @@ export default function InstructorNewWithdrawalPage() {
       .then((summary) => {
         if (!active) return;
 
-        const balance = Number(summary?.walletBalance ?? 0);
-        setWalletBalance(Number.isFinite(balance) ? balance : 0);
+        const balance = Number(
+          summary?.availableForWithdrawal ?? summary?.walletBalance ?? 0
+        );
+        setAvailableBalance(Number.isFinite(balance) ? balance : 0);
 
         const configuredMinimum = Number(
           summary?.minimumWithdrawalAmount ?? 0
@@ -63,7 +65,7 @@ export default function InstructorNewWithdrawalPage() {
       return;
     }
 
-    if (amountValue > walletBalance) {
+    if (amountValue > availableBalance) {
       setMessage({
         type: "error",
         text: t("instructor-payments:common.messages.validation.exceeds_balance"),
@@ -111,8 +113,8 @@ export default function InstructorNewWithdrawalPage() {
 
   const meetsMinimumRequirement =
     Number.isFinite(minimumPayoutAmount) && minimumPayoutAmount > 0
-      ? walletBalance >= minimumPayoutAmount
-      : walletBalance > 0;
+      ? availableBalance >= minimumPayoutAmount
+      : availableBalance > 0;
 
   return (
     <InstructorLayout>
@@ -126,7 +128,7 @@ export default function InstructorNewWithdrawalPage() {
             {t("instructor-payments:common.labels.available_balance")}
           </p>
           <p className="text-lg font-semibold">
-            {formatCurrency(walletBalance)}
+            {formatCurrency(availableBalance)}
           </p>
           <div className="space-y-1 mt-2 text-xs text-blue-600">
             <p>

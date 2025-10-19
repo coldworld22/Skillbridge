@@ -32,6 +32,7 @@ export default function InstructorPaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState({
     walletBalance: 0,
+    availableForWithdrawal: 0,
     totalPaid: 0,
     totalPending: 0,
     lifetimeEarnings: 0,
@@ -102,6 +103,10 @@ export default function InstructorPaymentsPage() {
         }
         setSummary({
           walletBalance: summaryData?.walletBalance ?? 0,
+          availableForWithdrawal:
+            summaryData?.availableForWithdrawal ??
+            summaryData?.walletBalance ??
+            0,
           totalPaid: summaryData?.totalPaid ?? 0,
           totalPending: summaryData?.totalPending ?? 0,
           lifetimeEarnings: summaryData?.lifetimeEarnings ?? 0,
@@ -245,6 +250,8 @@ export default function InstructorPaymentsPage() {
   const pendingBalance = summary.totalPending ?? 0;
   const withdrawn = summary.withdrawnTotal ?? 0;
   const walletBalance = summary.walletBalance ?? 0;
+  const availableBalance =
+    summary.availableForWithdrawal ?? walletBalance ?? 0;
   const totalPaid = summary.totalPaid ?? 0;
   const totalPlatformFees = summary.totalPlatformFees ?? 0;
   const totalGross = summary.totalGross ?? totalEarnings;
@@ -386,10 +393,10 @@ export default function InstructorPaymentsPage() {
           <FaWallet />
           <div>
             <p className="text-sm uppercase tracking-wide">
-              {t("instructor-payments:dashboard.wallet.title")}
+              {t("instructor-payments:common.labels.available_balance")}
             </p>
             <p className="text-lg font-semibold">
-              {formatCurrency(walletBalance)}
+              {formatCurrency(availableBalance)}
             </p>
           </div>
         </div>
