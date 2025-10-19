@@ -139,13 +139,30 @@ exports.setFeatures = async (planId, features = []) => {
   return db.transaction(async (trx) => {
     await trx("plan_features").where({ plan_id: planId }).del();
     if (features.length) {
-      const rows = features.map((f) => ({
-        plan_id: planId,
-        feature_key: f.feature_key,
-        value: f.value,
-        description: f.description || null,
-      }));
-      await trx("plan_features").insert(rows);
+      const rows = features
+        .filter((f) => f && f.feature_key)
+        .map((f) => {
+          const parsedValue = parseFeatureValue(f.value);
+          const storedValue = serializeFeatureValue(parsedValue);
+          const presentation = getFeaturePresentation(
+            f.feature_key,
+            parsedValue
+          );
+          const description =
+            f.description && f.description.trim()
+              ? f.description
+              : presentation.description;
+
+          return {
+            plan_id: planId,
+            feature_key: f.feature_key,
+            value: storedValue,
+            description: description || null,
+          };
+        });
+      if (rows.length) {
+        await trx("plan_features").insert(rows);
+      }
     }
     return trx("plan_features").where({ plan_id: planId }).select("*");
   });
