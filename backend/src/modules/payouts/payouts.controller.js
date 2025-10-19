@@ -131,12 +131,13 @@ exports.requestPayout = catchAsync(async (req, res) => {
   const totalPaid = toNumber(totals.totalPaid);
 
   const computedAvailable = Math.max(0, totalPaid - reservedTotal);
+  const normalizedComputedAvailable = Math.max(0, computedAvailable);
 
-  let effectiveBalance = toNumber(wallet?.balance);
+  let effectiveBalance = Math.max(0, toNumber(wallet?.balance));
   if (effectiveBalance <= 0) {
-    effectiveBalance = computedAvailable;
+    effectiveBalance = normalizedComputedAvailable;
   } else {
-    effectiveBalance = Math.min(effectiveBalance, computedAvailable || effectiveBalance);
+    effectiveBalance = Math.min(effectiveBalance, normalizedComputedAvailable);
   }
   effectiveBalance = Math.max(0, effectiveBalance);
 

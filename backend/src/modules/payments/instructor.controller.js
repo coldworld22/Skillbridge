@@ -66,25 +66,25 @@ exports.getSummary = catchAsync(async (req, res) => {
 
   const reservedPayoutTotal = withdrawnTotal + pendingPayoutTotal;
 
-  const walletBalanceRaw = toNumber(wallet?.balance);
+  const walletBalanceRaw = Math.max(0, toNumber(wallet?.balance));
   const computedAvailableBalance = Math.max(
     0,
     toNumber(totals.totalPaid) - reservedPayoutTotal
   );
 
-  let availableForWithdrawal = walletBalanceRaw;
-  if (availableForWithdrawal <= 0) {
+  let availableForWithdrawal = 0;
+  if (walletBalanceRaw <= 0) {
     availableForWithdrawal = computedAvailableBalance;
-  } else {
+  } else if (computedAvailableBalance > 0) {
     availableForWithdrawal = Math.min(
-      availableForWithdrawal,
-      computedAvailableBalance || availableForWithdrawal
+      walletBalanceRaw,
+      computedAvailableBalance
     );
+  } else {
+    availableForWithdrawal = walletBalanceRaw;
   }
-  availableForWithdrawal = Math.max(0, availableForWithdrawal);
 
-  const walletBalance =
-    walletBalanceRaw > 0 ? walletBalanceRaw : availableForWithdrawal;
+  availableForWithdrawal = Math.max(0, availableForWithdrawal);
 
   sendSuccess(res, {
     totalPaid: toNumber(totals.totalPaid),
@@ -92,10 +92,10 @@ exports.getSummary = catchAsync(async (req, res) => {
     lifetimeEarnings: toNumber(totals.totalInstructorAmount),
     totalPlatformFees: toNumber(totals.totalPlatformFee),
     totalGross: toNumber(totals.totalGross),
-    walletBalance,
+    walletBalance: walletBalanceRaw,
+    availableForWithdrawal,
     withdrawnTotal,
     pendingWithdrawalTotal: pendingPayoutTotal,
-    availableForWithdrawal,
     meetsWithdrawalMinimum:
       minimumWithdrawalAmount > 0
         ? availableForWithdrawal >= minimumWithdrawalAmount
