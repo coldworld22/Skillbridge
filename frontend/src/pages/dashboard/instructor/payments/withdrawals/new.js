@@ -33,7 +33,10 @@ export default function InstructorNewWithdrawalPage() {
         setWalletBalance(Number.isFinite(balance) ? balance : 0);
 
         const configuredMinimum = Number(
-          summary?.minimumWithdrawalAmount ?? 0
+          summary?.minimumWithdrawalAmount ??
+            summary?.minimumPayoutAmount ??
+            summary?.minimum_payout_amount ??
+            0
         );
         setMinimumPayoutAmount(
           Number.isFinite(configuredMinimum) ? configuredMinimum : 0

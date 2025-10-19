@@ -97,7 +97,9 @@ exports.requestPayout = catchAsync(async (req, res) => {
       const rawMinimum =
         config.minimumPayoutAmount ??
         config.minimumWithdrawalAmount ??
+        config.minimum_payout_amount ??
         config.withdrawalMinimum ??
+        config.withdrawal_minimum ??
         0;
       const parsed = Number(rawMinimum);
       if (Number.isFinite(parsed) && parsed > 0) {
