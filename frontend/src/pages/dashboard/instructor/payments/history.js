@@ -1,35 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
+import { formatCurrency } from "@/utils/currency";
+import { formatDate } from "@/utils/date";
 
 const STATUS_LABELS = {
   paid: "Paid",
   awaiting_approval: "Awaiting Approval",
   pending_payment: "Pending",
   rejected: "Rejected",
-};
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleDateString();
-  } catch {
-    return value;
-  }
 };
 
 const matchesStatusFilter = (payment, filter) => {
@@ -223,16 +202,19 @@ export default function InstructorPaymentsHistoryPage() {
                       </div>
                     </td>
                     <td className="p-3">
-                      {formatCurrency(payment.amount, payment.currency)}
+                      {formatCurrency(payment.amount, {
+                        currency: payment.currency,
+                      })}
                     </td>
                     <td className="p-3 text-red-500">
-                      {formatCurrency(payment.platform_fee, payment.currency)}
+                      {formatCurrency(payment.platform_fee, {
+                        currency: payment.currency,
+                      })}
                     </td>
                     <td className="p-3 text-green-600 font-semibold">
-                      {formatCurrency(
-                        payment.instructor_amount,
-                        payment.currency
-                      )}
+                      {formatCurrency(payment.instructor_amount, {
+                        currency: payment.currency,
+                      })}
                     </td>
                     <td className="p-3">{formatDate(extractDate(payment))}</td>
                     <td className="p-3">

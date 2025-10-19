@@ -11,22 +11,9 @@ import {
   Legend,
 } from "chart.js";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
+import { formatCurrency } from "@/utils/currency";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
 
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
@@ -261,16 +248,24 @@ export default function InstructorTutorialEarningsPage() {
                       <td className="p-3 font-medium">{item.title}</td>
                       <td className="p-3">{item.students}</td>
                       <td className="p-3">
-                        {formatCurrency(avgPrice, item.currency)}
+                        {formatCurrency(avgPrice, {
+                          currency: item.currency,
+                        })}
                       </td>
                       <td className="p-3 text-gray-700">
-                        {formatCurrency(item.totalGross, item.currency)}
+                        {formatCurrency(item.totalGross, {
+                          currency: item.currency,
+                        })}
                       </td>
                       <td className="p-3 text-red-500">
-                        {formatCurrency(item.commission, item.currency)}
+                        {formatCurrency(item.commission, {
+                          currency: item.currency,
+                        })}
                       </td>
                       <td className="p-3 text-blue-600 font-semibold">
-                        {formatCurrency(item.totalNet, item.currency)}
+                        {formatCurrency(item.totalNet, {
+                          currency: item.currency,
+                        })}
                       </td>
                     </tr>
                   );

@@ -11,22 +11,9 @@ import {
   Legend,
 } from "chart.js";
 import { fetchInstructorPayments } from "@/services/instructor/paymentService";
+import { formatCurrency } from "@/utils/currency";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
-
-const formatCurrency = (value, currency = "USD") => {
-  const numeric = Number(value ?? 0);
-  if (!Number.isFinite(numeric)) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(numeric);
-  } catch {
-    return `$${numeric.toFixed(2)}`;
-  }
-};
 
 const extractDate = (payment) => payment.paid_at || payment.created_at;
 
@@ -287,16 +274,24 @@ export default function InstructorClassEarningsPage() {
                           <td className="p-3 font-medium">{cls.title}</td>
                           <td className="p-3">{cls.students}</td>
                           <td className="p-3">
-                            {formatCurrency(avgPrice, cls.currency)}
+                            {formatCurrency(avgPrice, {
+                              currency: cls.currency,
+                            })}
                           </td>
                           <td className="p-3 text-gray-700">
-                            {formatCurrency(cls.totalGross, cls.currency)}
+                            {formatCurrency(cls.totalGross, {
+                              currency: cls.currency,
+                            })}
                           </td>
                           <td className="p-3 text-red-500">
-                            {formatCurrency(cls.commission, cls.currency)}
+                            {formatCurrency(cls.commission, {
+                              currency: cls.currency,
+                            })}
                           </td>
                           <td className="p-3 text-blue-600 font-semibold">
-                            {formatCurrency(cls.totalNet, cls.currency)}
+                            {formatCurrency(cls.totalNet, {
+                              currency: cls.currency,
+                            })}
                           </td>
                         </tr>
                       );
