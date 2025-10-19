@@ -10,6 +10,14 @@ jest.mock('../src/modules/payouts/payouts.service', () => ({
   getByInstructor: jest.fn(),
 }));
 
+jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
+  getSettings: jest.fn(),
+}));
+
+jest.mock('../src/modules/payments/payments.service', () => ({
+  getInstructorTotals: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'instr1' };
@@ -21,6 +29,8 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 
 const walletService = require('../src/modules/payouts/wallet.service');
 const payoutService = require('../src/modules/payouts/payouts.service');
+const paymentConfigService = require('../src/modules/paymentConfig/paymentConfig.service');
+const paymentsService = require('../src/modules/payments/payments.service');
 const routes = require('../src/modules/payouts/payouts.routes');
 
 const app = express();
@@ -54,11 +64,19 @@ describe('POST /api/payouts/request', () => {
   beforeEach(() => {
     walletService.getByInstructor.mockReset();
     payoutService.create.mockReset();
+    payoutService.getByInstructor.mockReset();
+    paymentConfigService.getSettings.mockReset();
+    paymentsService.getInstructorTotals.mockReset();
+
+    paymentConfigService.getSettings.mockResolvedValue({ minimumPayoutAmount: 0 });
+    paymentsService.getInstructorTotals.mockResolvedValue({ totalPaid: 0 });
+    payoutService.getByInstructor.mockResolvedValue([]);
   });
 
   it('creates payout request when funds sufficient', async () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 200 });
     payoutService.create.mockResolvedValue({ id: 'p1' });
+    paymentsService.getInstructorTotals.mockResolvedValue({ totalPaid: 200 });
 
     const res = await request(app)
       .post('/api/payouts/request')
@@ -84,12 +102,26 @@ describe('POST /api/payouts/request', () => {
 
   it('rejects when funds are insufficient', async () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 40 });
+    paymentsService.getInstructorTotals.mockResolvedValue({ totalPaid: 40 });
 
     const res = await request(app)
       .post('/api/payouts/request')
       .send({ amount: 50 });
 
     expect(res.status).toBe(400);
+    expect(payoutService.create).not.toHaveBeenCalled();
+  });
+  it('rejects when below minimum withdrawal amount', async () => {
+    paymentConfigService.getSettings.mockResolvedValue({ minimumPayoutAmount: 100 });
+    walletService.getByInstructor.mockResolvedValue({ balance: 500 });
+    paymentsService.getInstructorTotals.mockResolvedValue({ totalPaid: 500 });
+
+    const res = await request(app)
+      .post('/api/payouts/request')
+      .send({ amount: 50 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain('Minimum withdrawal amount is 100');
     expect(payoutService.create).not.toHaveBeenCalled();
   });
 });
