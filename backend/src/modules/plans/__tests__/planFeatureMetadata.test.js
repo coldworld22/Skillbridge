@@ -1,12 +1,10 @@
 const {
   FEATURE_METADATA,
-  MODULE_METADATA,
   MODULE_ORDER,
   SYNTHETIC_PLAN_FEATURES,
   parseFeatureValue,
   serializeFeatureValue,
   getFeaturePresentation,
-  getModuleLabel,
 } = require("../planFeatureMetadata");
 
 describe("plan feature metadata", () => {
@@ -37,7 +35,6 @@ describe("plan feature metadata", () => {
     expect(enabled.displayValue).toMatch(/create and manage groups/i);
     expect(disabled.displayValue).toMatch(/member only/i);
     expect(enabled.module).toBe("community");
-    expect(enabled.moduleLabel).toBe(getModuleLabel("community"));
   });
 
   test("getFeaturePresentation formats percent and count features", () => {
@@ -65,12 +62,5 @@ describe("plan feature metadata", () => {
   test("module order provides deterministic grouping", () => {
     expect(Array.isArray(MODULE_ORDER)).toBe(true);
     expect(MODULE_ORDER).toContain("ads");
-  });
-
-  test("module metadata exposes friendly labels", () => {
-    expect(MODULE_METADATA.ads.label).toMatch(/Advert/);
-    expect(getModuleLabel("ads")).toBe(MODULE_METADATA.ads.label);
-    expect(getModuleLabel("custom_module")).toBe("Custom Module");
-    expect(getModuleLabel()).toBeNull();
   });
 });

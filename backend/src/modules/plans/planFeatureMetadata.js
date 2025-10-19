@@ -99,15 +99,6 @@ const FEATURE_METADATA = {
   },
 };
 
-const MODULE_METADATA = {
-  commerce: { label: "Commerce & payments" },
-  community: { label: "Community" },
-  classes: { label: "Classes" },
-  tutorials: { label: "Tutorials" },
-  library: { label: "Library" },
-  ads: { label: "Advertising" },
-};
-
 const MODULE_ORDER = [
   "commerce",
   "community",
@@ -116,13 +107,6 @@ const MODULE_ORDER = [
   "library",
   "ads",
 ];
-
-const getModuleLabel = (moduleKey) => {
-  if (!moduleKey) return null;
-  const meta = MODULE_METADATA[moduleKey];
-  if (meta && meta.label) return meta.label;
-  return humanizeKey(moduleKey);
-};
 
 const parseFeatureValue = (raw) => {
   if (raw === undefined) return null;
@@ -247,14 +231,12 @@ const getFeaturePresentation = (key, value) => {
   const meta = FEATURE_METADATA[key];
   const label = meta?.label || humanizeKey(key);
   const module = meta?.module || null;
-  const moduleLabel = getModuleLabel(module);
   if (!meta) {
     const displayValue =
       value === null || value === undefined ? "" : typeof value === "string" ? value : String(value);
     return {
       label,
       module,
-      moduleLabel,
       displayValue,
       description: displayValue,
     };
@@ -305,7 +287,6 @@ const getFeaturePresentation = (key, value) => {
   return {
     label,
     module,
-    moduleLabel,
     displayValue: result.displayValue,
     description: result.description,
   };
@@ -368,11 +349,9 @@ const SYNTHETIC_PLAN_FEATURES = [
 
 module.exports = {
   FEATURE_METADATA,
-  MODULE_METADATA,
   MODULE_ORDER,
   SYNTHETIC_PLAN_FEATURES,
   parseFeatureValue,
   serializeFeatureValue,
   getFeaturePresentation,
-  getModuleLabel,
 };
