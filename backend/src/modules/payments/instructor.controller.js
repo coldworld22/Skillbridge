@@ -38,7 +38,9 @@ exports.getSummary = catchAsync(async (req, res) => {
       const rawMinimum =
         config.minimumPayoutAmount ??
         config.minimumWithdrawalAmount ??
+        config.minimum_payout_amount ??
         config.withdrawalMinimum ??
+        config.withdrawal_minimum ??
         0;
       minimumWithdrawalAmount = toNumber(rawMinimum);
     }
@@ -101,6 +103,7 @@ exports.getSummary = catchAsync(async (req, res) => {
         ? availableForWithdrawal >= minimumWithdrawalAmount
         : true,
     minimumWithdrawalAmount,
+    minimumPayoutAmount: minimumWithdrawalAmount,
   });
 });
 
