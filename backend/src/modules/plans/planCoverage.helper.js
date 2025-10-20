@@ -7,7 +7,9 @@ const normalizePlanId = (value) => {
 const parseIncludedPlanRefs = (raw) => {
   if (raw == null) return [];
   if (Array.isArray(raw)) {
-    return raw.map((value) => normalizePlanId(value)).filter(Boolean);
+    return raw
+      .map((value) => normalizePlanId(value))
+      .filter(Boolean);
   }
 
   if (typeof raw === "object") {
@@ -21,31 +23,21 @@ const parseIncludedPlanRefs = (raw) => {
       const parsed = JSON.parse(trimmed);
       return parseIncludedPlanRefs(parsed);
     } catch {
-      const normalized = normalizePlanId(trimmed);
-      return normalized ? [normalized] : [];
+      return [trimmed];
     }
   }
 
-  const normalized = normalizePlanId(raw);
-  return normalized ? [normalized] : [];
+  return [String(raw)];
 };
 
 const buildPlanIdLookup = (plans = []) => {
   const lookup = new Map();
   plans.forEach((plan) => {
-    const planId = plan?.id;
-    const normalizedId = normalizePlanId(planId);
-    if (!normalizedId) return;
-    lookup.set(normalizedId, planId);
-    const lowerId = normalizedId.toLowerCase();
-    if (lowerId !== normalizedId) lookup.set(lowerId, planId);
-
+    const id = normalizePlanId(plan?.id);
+    if (!id) return;
+    lookup.set(id, id);
     const slug = normalizePlanId(plan?.slug);
-    if (slug) {
-      lookup.set(slug, planId);
-      const lowerSlug = slug.toLowerCase();
-      if (lowerSlug !== slug) lookup.set(lowerSlug, planId);
-    }
+    if (slug) lookup.set(slug, id);
   });
   return lookup;
 };
@@ -60,12 +52,7 @@ const collectCoverageByPlan = (items = [], lookup, format) => {
     if (!planRefs.length) return;
 
     planRefs.forEach((ref) => {
-      const normalized = normalizePlanId(ref);
-      const lower = normalized ? normalized.toLowerCase() : null;
-      const key =
-        lookup.get(ref) ??
-        (normalized ? lookup.get(normalized) : undefined) ??
-        (lower ? lookup.get(lower) : undefined);
+      const key = lookup.get(ref) ?? lookup.get(normalizePlanId(ref));
       if (!key) return;
       const entry = formatter(item);
       if (!entry) return;

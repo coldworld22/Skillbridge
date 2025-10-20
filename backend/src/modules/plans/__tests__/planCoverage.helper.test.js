@@ -40,12 +40,11 @@ describe("plan coverage helper", () => {
     const rows = [
       { id: 1, included_plans: ["p1"] },
       { id: 2, included_plans: "[\"growth\"]" },
-      { id: 4, included_plans: "STARTER" },
       { id: 3, included_plans: null },
     ];
 
     const grouped = collectCoverageByPlan(rows, lookup, (row) => ({ id: row.id }));
-    expect(grouped.p1).toEqual([{ id: 1 }, { id: 4 }]);
+    expect(grouped.p1).toEqual([{ id: 1 }]);
     expect(grouped.p2).toEqual([{ id: 2 }]);
     expect(grouped.p3).toBeUndefined();
   });
