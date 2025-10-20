@@ -300,11 +300,7 @@ const SYNTHETIC_PLAN_FEATURES = [
     label: "Active class limit",
     build: (plan) => {
       const limit = plan.max_courses;
-      if (
-        limit === null ||
-        limit === undefined ||
-        (typeof limit === "string" && limit.trim() === "")
-      ) {
+      if (!limit) {
         const description = "Publish unlimited active classes";
         return {
           value: description,
@@ -314,24 +310,6 @@ const SYNTHETIC_PLAN_FEATURES = [
         };
       }
       const num = Number(limit);
-      if (!Number.isFinite(num)) {
-        const description = "Publish unlimited active classes";
-        return {
-          value: description,
-          description,
-          raw: limit,
-          parsed: null,
-        };
-      }
-      if (num <= 0) {
-        const description = "No active classes included";
-        return {
-          value: description,
-          description,
-          raw: limit,
-          parsed: 0,
-        };
-      }
       const text =
         num === 1
           ? "Publish 1 active class at a time"
@@ -340,7 +318,7 @@ const SYNTHETIC_PLAN_FEATURES = [
         value: text,
         description: text,
         raw: limit,
-        parsed: num,
+        parsed: Number.isFinite(num) ? num : limit,
       };
     },
   },

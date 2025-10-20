@@ -59,14 +59,6 @@ describe("plan feature metadata", () => {
     expect(adFeature.value).toMatch(/25/i);
   });
 
-  test("synthetic max_courses handles zero as no class slots", () => {
-    const builder = SYNTHETIC_PLAN_FEATURES.find((f) => f.key === "max_courses");
-    expect(builder).toBeDefined();
-    const entry = builder.build({ id: "p-zero", target_role: "instructor", max_courses: 0 });
-    expect(entry.value).toMatch(/no active classes/i);
-    expect(entry.parsed).toBe(0);
-  });
-
   test("module order provides deterministic grouping", () => {
     expect(Array.isArray(MODULE_ORDER)).toBe(true);
     expect(MODULE_ORDER).toContain("ads");

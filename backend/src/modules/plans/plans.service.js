@@ -1,15 +1,76 @@
 const db = require("../../config/database");
-const {
-  MODULE_ORDER,
-  SYNTHETIC_PLAN_FEATURES,
-  parseFeatureValue,
-  serializeFeatureValue,
-  getFeaturePresentation,
-} = require("./planFeatureMetadata");
-const {
-  buildPlanIdLookup,
-  collectCoverageByPlan,
-} = require("./planCoverage.helper");
+const { groupContentByPlan } = require("./planContent.helper");
+
+const collectIncludedContent = async () => {
+  const [rawClasses, rawBooks, rawTutorials] = await Promise.all([
+    db("online_classes")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "start_date",
+        "end_date",
+        "price",
+        "access_type",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("books")
+      .select(
+        "id",
+        "title",
+        "cover_image_url",
+        "price",
+        "status",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+    db("tutorials")
+      .select(
+        "id",
+        "title",
+        "slug",
+        "cover_image",
+        "price",
+        "is_paid",
+        "status",
+        "included_plans"
+      )
+      .whereRaw("included_plans <> '[]'::jsonb"),
+  ]);
+
+  const classesByPlan = groupContentByPlan(rawClasses, (cls) => ({
+    id: cls.id,
+    title: cls.title,
+    slug: cls.slug,
+    cover_image: cls.cover_image,
+    start_date: cls.start_date,
+    end_date: cls.end_date,
+    price: cls.price,
+    access_type: cls.access_type,
+  }));
+
+  const booksByPlan = groupContentByPlan(rawBooks, (book) => ({
+    id: book.id,
+    title: book.title,
+    cover_image_url: book.cover_image_url,
+    price: book.price,
+    status: book.status,
+  }));
+
+  const tutorialsByPlan = groupContentByPlan(rawTutorials, (tutorial) => ({
+    id: tutorial.id,
+    title: tutorial.title,
+    slug: tutorial.slug,
+    cover_image: tutorial.cover_image,
+    price: tutorial.price,
+    is_paid: tutorial.is_paid,
+    status: tutorial.status,
+  }));
+
+  return { classesByPlan, booksByPlan, tutorialsByPlan };
+};
 
 exports.createPlan = async (data) => {
   const insertData = {
@@ -30,151 +91,16 @@ exports.getPlans = async (role) => {
   const features = await db("plan_features").select("*");
   const lookup = buildPlanIdLookup(plans);
 
-  const rawClasses = await db("online_classes")
-    .select(
-      "id",
-      "title",
-      "slug",
-      "cover_image",
-      "start_date",
-      "end_date",
-      "price",
-      "access_type",
-      "included_plans"
-    )
-    .where({ status: "published", moderation_status: "Approved" })
-    .whereRaw("included_plans <> '[]'::jsonb");
+  const { classesByPlan, booksByPlan, tutorialsByPlan } =
+    await collectIncludedContent();
 
-  const classesByPlan = collectCoverageByPlan(rawClasses, lookup, (cls) => ({
-    id: cls.id,
-    title: cls.title,
-    slug: cls.slug,
-    cover_image: cls.cover_image,
-    start_date: cls.start_date,
-    end_date: cls.end_date,
-    price: cls.price,
-    access_type: cls.access_type,
+  return plans.map((p) => ({
+    ...p,
+    features: features.filter((f) => f.plan_id === p.id),
+    included_classes: classesByPlan[p.id] || [],
+    included_books: booksByPlan[p.id] || [],
+    included_tutorials: tutorialsByPlan[p.id] || [],
   }));
-
-  const rawTutorials = await db("tutorials")
-    .select(
-      "id",
-      "title",
-      "slug",
-      "cover_image",
-      "price",
-      "is_paid",
-      "included_plans"
-    )
-    .where({ status: "published", moderation_status: "Approved" })
-    .whereRaw("included_plans <> '[]'::jsonb");
-
-  const tutorialsByPlan = collectCoverageByPlan(rawTutorials, lookup, (tutorial) => ({
-    id: tutorial.id,
-    title: tutorial.title,
-    slug: tutorial.slug,
-    cover_image: tutorial.cover_image,
-    price: tutorial.price,
-    is_paid: Boolean(tutorial.is_paid),
-  }));
-
-  const rawBooks = await db("books")
-    .select("id", "title", "cover_image_url", "price", "included_plans")
-    .where({ status: "active" })
-    .whereRaw("included_plans <> '[]'::jsonb");
-
-  const booksByPlan = collectCoverageByPlan(rawBooks, lookup, (book) => ({
-    id: book.id,
-    title: book.title,
-    cover_image: book.cover_image_url,
-    price: book.price,
-  }));
-
-  const modulePriority = (module) => {
-    if (!module) return MODULE_ORDER.length;
-    const idx = MODULE_ORDER.indexOf(module);
-    return idx === -1 ? MODULE_ORDER.length : idx;
-  };
-
-  return plans.map((plan) => {
-    const formattedFeatures = features
-      .filter((f) => f.plan_id === plan.id)
-      .map((feature) => {
-        const parsedValue = parseFeatureValue(feature.value);
-        const presentation = getFeaturePresentation(
-          feature.feature_key,
-          parsedValue
-        );
-        const valueString =
-          presentation.displayValue === null || presentation.displayValue === undefined
-            ? ""
-            : typeof presentation.displayValue === "string"
-              ? presentation.displayValue
-              : String(presentation.displayValue);
-        const description =
-          feature.description && feature.description.trim()
-            ? feature.description
-            : presentation.description && presentation.description.trim()
-              ? presentation.description
-              : valueString;
-
-        return {
-          ...feature,
-          value: valueString,
-          description,
-          label: presentation.label,
-          module: presentation.module,
-          raw_value: feature.value,
-          parsed_value: parsedValue,
-          source: "database",
-        };
-      });
-
-    const syntheticFeatures = SYNTHETIC_PLAN_FEATURES.filter((def) =>
-      def.roles.includes(plan.target_role)
-    )
-      .map((def) => {
-        const built = def.build(plan);
-        if (!built) return null;
-        const valueString =
-          built.value === null || built.value === undefined
-            ? ""
-            : typeof built.value === "string"
-              ? built.value
-              : String(built.value);
-        const description =
-          built.description && built.description.trim()
-            ? built.description
-            : valueString;
-        return {
-          id: `synthetic:${plan.id}:${def.key}`,
-          plan_id: plan.id,
-          feature_key: def.key,
-          value: valueString,
-          description,
-          label: def.label,
-          module: def.module,
-          raw_value: built.raw ?? null,
-          parsed_value: built.parsed ?? built.raw ?? null,
-          source: "computed",
-        };
-      })
-      .filter(Boolean);
-
-    const combined = [...formattedFeatures, ...syntheticFeatures].sort((a, b) => {
-      const moduleDiff = modulePriority(a.module) - modulePriority(b.module);
-      if (moduleDiff !== 0) return moduleDiff;
-      return a.label.localeCompare(b.label);
-    });
-
-    return {
-      ...plan,
-      features: combined,
-      included_classes: classesByPlan[plan.id] || [],
-      included_tutorials: tutorialsByPlan[plan.id] || [],
-      included_books: booksByPlan[plan.id] || [],
-    };
-  });
 };
 
 exports.getPlanById = async (id) => {
@@ -182,6 +108,11 @@ exports.getPlanById = async (id) => {
   if (!plan) return null;
   const feats = await db("plan_features").where({ plan_id: id }).select("*");
   plan.features = feats;
+  const { classesByPlan, booksByPlan, tutorialsByPlan } =
+    await collectIncludedContent();
+  plan.included_classes = classesByPlan[id] || [];
+  plan.included_books = booksByPlan[id] || [];
+  plan.included_tutorials = tutorialsByPlan[id] || [];
   return plan;
 };
 
