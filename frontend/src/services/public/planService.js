@@ -37,6 +37,78 @@ const formatPlan = (plan = {}) => {
       "cover_image_url",
     ]);
   }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image: withBaseUrl(book.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image_url: withBaseUrl(book.cover_image_url || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image: withBaseUrl(book.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image: withBaseUrl(book.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image: withBaseUrl(book.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_tutorials)) {
+    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
+      ...tutorial,
+      cover_image: withBaseUrl(tutorial.cover_image || ""),
+    }));
+  }
+  if (Array.isArray(copy.included_books)) {
+    copy.included_books = copy.included_books.map((book) => ({
+      ...book,
+      cover_image: withBaseUrl(book.cover_image || ""),
+    }));
+  }
   return copy;
 };
 
