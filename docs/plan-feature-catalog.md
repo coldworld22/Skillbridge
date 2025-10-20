@@ -14,8 +14,7 @@ mapped to:
 The catalog powers:
 
 1. Automatic formatting of `/plans` responses — plan cards include labelled
-   features with marketing copy instead of raw values and expose curated
-   learning content (classes, tutorials, books) attached to each plan.
+   features with marketing copy instead of raw values.
 2. Admin defaults — when an admin omits a feature description, the metadata file
    supplies one based on the value.
 3. Seed data — default plans reuse the same metadata so website copy and runtime
@@ -53,13 +52,6 @@ requires editing `planFeatureMetadata.js` (plus seed values where applicable).
 4. (Optional) Add a synthetic feature entry in `SYNTHETIC_PLAN_FEATURES` if the
    value comes from a plan column instead of `plan_features`.
 
-The pricing endpoint also decorates each plan with arrays named
-`included_classes`, `included_tutorials`, and `included_books`, built via
-`planCoverage.helper.js`. These lists contain the most recent approved learning
-content that marks the plan as included, so marketing cards can highlight the
-real material members unlock.
-
 Because the formatter normalises booleans, numeric limits, durations, and
-percentages (and the coverage helper resolves plan IDs/slugs), the public
-pricing page automatically reflects the descriptive copy and curated content
+percentages, the public pricing page automatically reflects the descriptive copy
 without additional frontend changes.

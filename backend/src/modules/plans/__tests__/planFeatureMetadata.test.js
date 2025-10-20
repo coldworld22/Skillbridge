@@ -59,15 +59,6 @@ describe("plan feature metadata", () => {
     expect(adFeature.value).toMatch(/25/i);
   });
 
-  test("synthetic plan features report zero publishing allowance explicitly", () => {
-    const plan = { id: "p2", target_role: "instructor", max_courses: 0, ad_credits: 0 };
-    const builders = SYNTHETIC_PLAN_FEATURES.filter((f) => f.roles.includes("instructor"));
-    const mapped = builders.map((def) => def.build(plan));
-    const courseFeature = mapped.find((entry) => entry && /class publishing/i.test(entry.description));
-    expect(courseFeature.value).toMatch(/no active class publishing allowance/i);
-    expect(courseFeature.parsed).toBe(0);
-  });
-
   test("module order provides deterministic grouping", () => {
     expect(Array.isArray(MODULE_ORDER)).toBe(true);
     expect(MODULE_ORDER).toContain("ads");
