@@ -268,37 +268,37 @@ export default function TutorialDetail() {
     if (!isEnrolled || !tutorial?.title) return;
     const fetchNotifications = async () => {
       try {
-        const notes = await getNotifications();
-        const noteList = Array.isArray(notes)
-          ? notes
-          : Array.isArray(notes?.data)
-            ? notes.data
-            : Array.isArray(notes?.results)
-              ? notes.results
+        const raw = await getNotifications();
+        const notes = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.notifications)
+              ? raw.notifications
               : [];
-        const note = noteList.find(
+        if (!notes.length) return;
+        const note = notes.find(
           (n) =>
             n.type === "new_assignment" &&
             n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
         );
-        if (note) {
-          toast((t) => (
-            <span>
-              {note.message}{" "}
-              <Link
-                href="/dashboard/student/assignments"
-                className="underline text-blue-400"
-                onClick={() => toast.dismiss(t.id)}
-              >
-                View
-              </Link>
-            </span>
-          ));
-          try {
-            await markNotificationAsRead(note.id);
-          } catch (err) {
-            // ignore mark read errors
-          }
+        if (!note) return;
+        toast((t) => (
+          <span>
+            {note.message}{" "}
+            <Link
+              href="/dashboard/student/assignments"
+              className="underline text-blue-400"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              View
+            </Link>
+          </span>
+        ));
+        try {
+          await markNotificationAsRead(note.id);
+        } catch (err) {
+          // ignore mark read errors
         }
       } catch (err) {
         console.error("Failed to fetch notifications", err);
@@ -400,8 +400,11 @@ export default function TutorialDetail() {
   const currentVideo = !isCurrentLocked ? currentItem?.src : null;
   const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
-  const progressPercentage = tutorial.chapters.length
-    ? (progress.completedChapters.length / tutorial.chapters.length) * 100
+  const totalChapters = Array.isArray(tutorial.chapters)
+    ? tutorial.chapters.length
+    : 0;
+  const progressPercentage = totalChapters
+    ? (progress.completedChapters.length / totalChapters) * 100
     : 0;
 
   const handleSelectVideo = (index) => {
