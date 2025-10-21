@@ -269,10 +269,16 @@ export default function TutorialDetail() {
     const fetchNotifications = async () => {
       try {
         const notes = await getNotifications();
-        const note = notes.find(
+        const noteList = Array.isArray(notes)
+          ? notes
+          : Array.isArray(notes?.data)
+            ? notes.data
+            : [];
+        if (!noteList.length) return;
+        const note = noteList.find(
           (n) =>
-            n.type === "new_assignment" &&
-            n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
+            n?.type === "new_assignment" &&
+            n?.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
         );
         if (note) {
           toast((t) => (
@@ -393,7 +399,7 @@ export default function TutorialDetail() {
   const currentVideo = !isCurrentLocked ? currentItem?.src : null;
   const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
-  const progressPercentage = tutorial.chapters.length
+  const progressPercentage = Array.isArray(tutorial?.chapters) && tutorial.chapters.length
     ? (progress.completedChapters.length / tutorial.chapters.length) * 100
     : 0;
 
