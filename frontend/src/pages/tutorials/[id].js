@@ -269,7 +269,14 @@ export default function TutorialDetail() {
     const fetchNotifications = async () => {
       try {
         const notes = await getNotifications();
-        const note = notes.find(
+        const noteList = Array.isArray(notes)
+          ? notes
+          : Array.isArray(notes?.data)
+            ? notes.data
+            : Array.isArray(notes?.results)
+              ? notes.results
+              : [];
+        const note = noteList.find(
           (n) =>
             n.type === "new_assignment" &&
             n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
