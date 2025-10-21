@@ -18,6 +18,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -42,6 +43,19 @@ export default function EditTutorialPage() {
         ...parsed,
         language: parsed.language || "",
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+        allowInstallments: Boolean(
+          parsed.allowInstallments ?? parsed.allow_installments ?? false
+        ),
+        installments: parsed.installments
+          ? String(parsed.installments)
+          : parsed.allowInstallments || parsed.allow_installments
+          ? "2"
+          : "1",
+        includedPlans: Array.isArray(parsed.includedPlans)
+          ? parsed.includedPlans.map((id) => String(id))
+          : Array.isArray(parsed.included_plans)
+          ? parsed.included_plans.map((id) => String(id))
+          : [],
       });
 
       const loadCats = async () => {
@@ -71,6 +85,19 @@ export default function EditTutorialPage() {
             ...formatted,
             language: formatted.language || "",
             lessonCount: formatted.chapters?.length || 1,
+            allowInstallments: Boolean(
+              formatted.allowInstallments ?? formatted.allow_installments ?? false
+            ),
+            installments: formatted.installments
+              ? String(formatted.installments)
+              : formatted.allowInstallments || formatted.allow_installments
+              ? "2"
+              : "1",
+            includedPlans: Array.isArray(formatted.includedPlans)
+              ? formatted.includedPlans.map((id) => String(id))
+              : Array.isArray(formatted.included_plans)
+              ? formatted.included_plans.map((id) => String(id))
+              : [],
           });
         } else {
           setTutorialData(null);
@@ -132,34 +159,10 @@ export default function EditTutorialPage() {
             onBack={onBack}
             actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
-              const formData = new FormData();
-              formData.append("title", tutorialData.title);
-              formData.append("description", tutorialData.shortDescription);
-              formData.append("category_id", tutorialData.category);
-              formData.append("level", tutorialData.level);
-              formData.append("language", tutorialData.language);
-              formData.append("is_paid", (!tutorialData.isFree).toString());
-              if (!tutorialData.isFree) {
-                formData.append("price", tutorialData.price);
-              }
-              formData.append(
-                "tags",
-                JSON.stringify(tutorialData.tags || [])
+              const formData = buildTutorialFormData(
+                tutorialData,
+                tutorialData.status
               );
-              const chapters = (tutorialData.chapters || []).map((ch, idx) => ({
-                title: ch.title,
-                duration: ch.duration,
-                video_url: ch.videoUrl,
-                order: idx + 1,
-                is_preview: ch.preview,
-              }));
-              formData.append("chapters", JSON.stringify(chapters));
-              if (tutorialData.thumbnail instanceof File) {
-                formData.append("thumbnail", tutorialData.thumbnail);
-              }
-              if (tutorialData.preview instanceof File) {
-                formData.append("preview", tutorialData.preview);
-              }
 
               try {
                 await updateTutorial(id, formData);
@@ -202,5 +205,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-
-

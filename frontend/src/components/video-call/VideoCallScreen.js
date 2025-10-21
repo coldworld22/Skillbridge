@@ -51,6 +51,9 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
     audioOutputDevices,
     selectedAudioInput,
     selectedAudioOutput,
+    videoInputDevices,
+    selectedVideoInput,
+    changeVideoInput,
     isMuted: hookMuted,
     isVideoOff,
   } = useVideoCall(chatId, userName, userRole);
@@ -121,7 +124,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
                   <ParticipantList chatId={chatId} userRole={userRole} />
                 )}
                 {isChatOpen && (
-                  <ChatDuringCall chatId={`${chatId}-${currentRoom}`} />
+                  <ChatDuringCall chatId={chatId} currentUserId={user?.id} />
                 )}
               </div>
             )}
@@ -129,25 +132,25 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
 
           {/* Call Controls */}
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-          <CallControls
-            isMuted={hookMuted}
-            isVideoOff={isVideoOff}
-            isChatOpen={isChatOpen}
-            isParticipantsOpen={isParticipantsOpen}
-            onMuteToggle={toggleAudio}
-            onVideoToggle={toggleVideo}
-            onChatToggle={() => setIsChatOpen(!isChatOpen)}
-            onParticipantsToggle={() =>
-              setIsParticipantsOpen(!isParticipantsOpen)
-            }
-            onEndCall={() => setIsCallActive(false)}
-            onSettingsToggle={() => setIsSettingsOpen(!isSettingsOpen)}
-            userRole={userRole}
-            isRecording={isRecording}
-            startRecording={startRecording}
-            stopRecording={stopRecording}
-            downloadRecording={downloadRecording}
-          />
+            <CallControls
+              isMuted={hookMuted}
+              isVideoOff={isVideoOff}
+              isChatOpen={isChatOpen}
+              isParticipantsOpen={isParticipantsOpen}
+              onMuteToggle={toggleAudio}
+              onVideoToggle={toggleVideo}
+              onChatToggle={() => setIsChatOpen(!isChatOpen)}
+              onParticipantsToggle={() =>
+                setIsParticipantsOpen(!isParticipantsOpen)
+              }
+              onEndCall={() => setIsCallActive(false)}
+              onSettingsToggle={() => setIsSettingsOpen(!isSettingsOpen)}
+              userRole={userRole}
+              isRecording={isRecording}
+              startRecording={startRecording}
+              stopRecording={stopRecording}
+              downloadRecording={downloadRecording}
+            />
           </div>
 
           {isSettingsOpen && (
@@ -157,8 +160,11 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
                 audioOutputDevices={audioOutputDevices}
                 selectedAudioInput={selectedAudioInput}
                 selectedAudioOutput={selectedAudioOutput}
+                videoInputDevices={videoInputDevices}
+                selectedVideoInput={selectedVideoInput}
                 onSelectInput={changeAudioInput}
                 onSelectOutput={changeAudioOutput}
+                onSelectVideo={changeVideoInput}
               />
             </div>
           )}

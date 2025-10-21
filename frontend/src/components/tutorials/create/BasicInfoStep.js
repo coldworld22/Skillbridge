@@ -83,6 +83,26 @@ export default function BasicInfoStep({
     } else if (field === "price") {
       const clean = value.replace(/[^0-9.]/g, "");
       setTutorialData((prev) => ({ ...prev, price: clean }));
+    } else if (field === "installments") {
+      const clean = value.replace(/[^0-9]/g, "");
+      setTutorialData((prev) => ({ ...prev, installments: clean }));
+    } else if (field === "allowInstallments") {
+      setTutorialData((prev) => ({
+        ...prev,
+        allowInstallments: value,
+        installments: value
+          ? prev.installments && Number(prev.installments) > 1
+            ? prev.installments
+            : "2"
+          : "1",
+      }));
+    } else if (field === "isFree") {
+      setTutorialData((prev) => ({
+        ...prev,
+        isFree: value,
+        allowInstallments: value ? false : prev.allowInstallments,
+        installments: value ? "1" : prev.installments || "2",
+      }));
     } else {
       setTutorialData((prev) => ({ ...prev, [field]: value }));
     }
@@ -159,6 +179,17 @@ export default function BasicInfoStep({
       newErrors.currency = t(
         "create.basic.validation.currency_required",
         "Currency is required"
+      );
+    }
+    if (
+      !tutorialData.isFree &&
+      tutorialData.allowInstallments &&
+      (isNaN(Number(tutorialData.installments)) ||
+        Number(tutorialData.installments) < 2)
+    ) {
+      newErrors.installments = t(
+        "create.basic.validation.installments_required",
+        "Enter 2 or more installments when installments are enabled."
       );
     }
     if (
@@ -410,6 +441,42 @@ export default function BasicInfoStep({
           {errors.currency && (
             <p className="text-red-500 text-sm mt-1">{errors.currency}</p>
           )}
+
+          <div className="mt-6 space-y-2">
+            <label className="font-semibold flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="form-checkbox h-5 w-5 text-yellow-500"
+                checked={Boolean(tutorialData.allowInstallments)}
+                onChange={(e) => handleChange("allowInstallments", e.target.checked)}
+              />
+              {t("create.basic.allow_installments_label", "Offer installment payments")}
+            </label>
+            <p className="text-sm text-gray-600">
+              {t(
+                "create.basic.allow_installments_hint",
+                "Let students pay this tutorial fee over multiple monthly payments."
+              )}
+            </p>
+            {tutorialData.allowInstallments && (
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium" htmlFor="tutorial-installments">
+                  {t("create.basic.installments_label", "Number of installments")}
+                </label>
+                <input
+                  id="tutorial-installments"
+                  type="number"
+                  min={2}
+                  className="w-24 p-2 border rounded"
+                  value={tutorialData.installments ?? "2"}
+                  onChange={(e) => handleChange("installments", e.target.value)}
+                />
+              </div>
+            )}
+            {errors.installments && (
+              <p className="text-red-500 text-sm">{errors.installments}</p>
+            )}
+          </div>
         </div>
       )}
 

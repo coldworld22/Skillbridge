@@ -26,11 +26,53 @@ const formatClass = (cls = {}) => {
   const startDate = base.startDate || base.start_date || cls.startDate || cls.start_date;
   const endDate = base.endDate || base.end_date || cls.endDate || cls.end_date;
   const status = cls.status || base.status || base.enrollmentStatus;
+  const coverImage =
+    base.coverImage ||
+    base.cover_image ||
+    cls.coverImage ||
+    cls.cover_image ||
+    null;
+  const rawPrice =
+    base.price !== undefined && base.price !== null && base.price !== ""
+      ? base.price
+      : cls.price;
+  const price = rawPrice !== undefined && rawPrice !== null && rawPrice !== ""
+    ? Number(rawPrice)
+    : rawPrice ?? null;
+  const rawEnrolled =
+    base.enrolled_count !== undefined && base.enrolled_count !== null
+      ? base.enrolled_count
+      : cls.enrolled_count;
+  const enrolledCount = Number.isFinite(Number(rawEnrolled))
+    ? Number(rawEnrolled)
+    : 0;
+  const rawMax =
+    base.max_students !== undefined && base.max_students !== null
+      ? base.max_students
+      : cls.max_students;
+  const maxStudents = Number.isFinite(Number(rawMax))
+    ? Number(rawMax)
+    : null;
+  const rawSpots =
+    base.spots_left !== undefined && base.spots_left !== null
+      ? base.spots_left
+      : cls.spots_left;
+  const spotsLeft = Number.isFinite(Number(rawSpots))
+    ? Number(rawSpots)
+    : maxStudents === null
+    ? null
+    : Math.max(0, maxStudents - enrolledCount);
 
   return {
     ...base,
     startDate,
     endDate,
+    coverImage,
+    price,
+    max_students: maxStudents,
+    enrolled_count: enrolledCount,
+    spots_left: spotsLeft,
+    spotsLeft,
     enrollmentStatus: status,
     scheduleStatus: computeScheduleStatus(startDate, endDate),
     progress: typeof base.progress === "number" ? base.progress : status === "completed" ? 100 : 0,
@@ -205,3 +247,5 @@ export const subscribeToClassReminder = async (classId) => {
   const { data } = await api.post(`/users/classes/notifications/${classId}`);
   return data;
 };
+
+export { formatClass };

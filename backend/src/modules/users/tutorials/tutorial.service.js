@@ -49,6 +49,18 @@ exports.createTutorialWithRelations = async (data, tags = [], chapters = []) => 
     if (!payload.id) payload.id = uuidv4();
     const plans = normalizeIncludedPlans(payload.included_plans);
     payload.included_plans = plans;
+    const allowInstallments = Boolean(payload.allow_installments);
+    payload.allow_installments = allowInstallments;
+    payload.installments = allowInstallments
+      ? Math.max(
+          2,
+          Math.floor(
+            Number(
+              payload.installments === undefined ? 2 : payload.installments
+            )
+          )
+        )
+      : 1;
 
     const tutorial = await exports.createTutorial(payload, trx);
     tutorial.included_plans = plans;

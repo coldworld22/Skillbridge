@@ -9,16 +9,21 @@ import { API_BASE_URL } from "@/config/config";
 NProgress.configure({ showSpinner: false });
 
 const PageLoader = () => {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const settings = useAppConfigStore((s) => s.settings);
-  const loaded = useAppConfigStore((s) => s.loaded);
   const logoSrc = settings.logoUrl || settings.logo_url
     ? `${API_BASE_URL}${settings.logoUrl || settings.logo_url}`
     : null;
 
   useEffect(() => {
-    const handleStart = () => NProgress.start();
-    const handleEnd = () => NProgress.done();
+    const handleStart = () => {
+      setVisible(true);
+      NProgress.start();
+    };
+    const handleEnd = () => {
+      NProgress.done();
+      setVisible(false);
+    };
 
     Router.events.on("routeChangeStart", handleStart);
     Router.events.on("routeChangeComplete", handleEnd);
@@ -30,13 +35,6 @@ const PageLoader = () => {
       Router.events.off("routeChangeError", handleEnd);
     };
   }, []);
-
-  useEffect(() => {
-    if (loaded) {
-      const t = setTimeout(() => setVisible(false), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [loaded]);
 
   return (
     <div

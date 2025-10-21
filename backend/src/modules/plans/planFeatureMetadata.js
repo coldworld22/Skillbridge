@@ -65,6 +65,33 @@ const FEATURE_METADATA = {
     trueLabel: "Post and reply in discussions",
     falseLabel: "Read-only community access",
   },
+  messages_email_limit: {
+    module: "messaging",
+    label: "Direct email quota",
+    type: "count",
+    singular: "Send {count} direct email",
+    plural: "Send up to {count} direct emails",
+    unlimited: "Unlimited direct emails",
+    zero: "Direct email disabled",
+  },
+  messages_whatsapp_limit: {
+    module: "messaging",
+    label: "WhatsApp outreach quota",
+    type: "count",
+    singular: "Send {count} WhatsApp message",
+    plural: "Send up to {count} WhatsApp messages",
+    unlimited: "Unlimited WhatsApp messages",
+    zero: "WhatsApp messaging disabled",
+  },
+  messages_video_limit: {
+    module: "messaging",
+    label: "Video call quota",
+    type: "count",
+    singular: "Start {count} video call",
+    plural: "Start up to {count} video calls",
+    unlimited: "Unlimited video calls",
+    zero: "Video calls disabled",
+  },
   ads_max_ads: {
     module: "ads",
     label: "Active ad slots",
@@ -101,6 +128,7 @@ const FEATURE_METADATA = {
 
 const MODULE_ORDER = [
   "commerce",
+  "messaging",
   "community",
   "classes",
   "tutorials",

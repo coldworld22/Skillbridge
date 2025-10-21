@@ -12,6 +12,16 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyOg = { title: "", description: "", type: "website", image: "" };
   const [form, setForm] = useState(emptyOg);
+  const typeOptions = useMemo(
+    () => [
+      { value: "website", label: t("typeOptions.website") },
+      { value: "article", label: t("typeOptions.article") },
+      { value: "product", label: t("typeOptions.product") },
+      { value: "video", label: t("typeOptions.video") },
+      { value: "book", label: t("typeOptions.book") },
+    ],
+    [t]
+  );
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -24,7 +34,7 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
       const url = await uploadImage(file);
       handleChange("image", url);
     } catch {
-      toast.error("Upload failed");
+      toast.error(t("uploadFailed"));
     }
   };
 
@@ -101,8 +111,8 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
             onChange={(e) => handleChange("type", e.target.value)}
             className="border rounded px-3 py-2 w-full"
           >
-            {["website", "article", "product", "video", "book"].map((type) => (
-              <option key={type} value={type}>{type}</option>
+            {typeOptions.map((type) => (
+              <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
         </div>
@@ -111,7 +121,7 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
           <label className="block font-medium mb-1">{t("image")}</label>
           <input type="file" accept="image/*" onChange={handleImageUpload} />
           {form.image && (
-            <img src={form.image} alt="OG Preview" className="mt-2 w-48 rounded shadow" />
+            <img src={form.image} alt={t("imagePreviewAlt")} className="mt-2 w-48 rounded shadow" />
           )}
         </div>
       </div>

@@ -1,11 +1,33 @@
-import Image from 'next/image';
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
+const DEFAULT_AVATAR = "/images/default-avatar.png";
 
 const ChatImage = ({ src, alt, width = 40, height = 40, ...rest }) => {
+  const [imgSrc, setImgSrc] = useState(src || DEFAULT_AVATAR);
+
+  useEffect(() => {
+    setImgSrc(src || DEFAULT_AVATAR);
+  }, [src]);
+
   const isExternal =
-    typeof src === 'string' &&
-    (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'));
+    typeof imgSrc === "string" &&
+    (imgSrc.startsWith("http") || imgSrc.startsWith("blob:") || imgSrc.startsWith("data:"));
+
   return (
-    <Image src={src} alt={alt} width={width} height={height} unoptimized={isExternal} {...rest} />
+    <Image
+      src={imgSrc || DEFAULT_AVATAR}
+      alt={alt}
+      width={width}
+      height={height}
+      unoptimized={isExternal}
+      onError={() => {
+        if (imgSrc !== DEFAULT_AVATAR) {
+          setImgSrc(DEFAULT_AVATAR);
+        }
+      }}
+      {...rest}
+    />
   );
 };
 

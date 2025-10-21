@@ -6,9 +6,21 @@ import useAuthStore from "@/store/auth/authStore";
 import useMessageStore from "@/store/messages/messageStore";
 import socket from "@/services/socketService";
 
+export const getUsers = async (query) => {
+  const config = {};
+  if (query) {
+    const q =
+      typeof query === "string"
+        ? query.trim()
+        : typeof query.q === "string"
+        ? query.q.trim()
+        : "";
+    if (q) {
+      config.params = { q };
+    }
+  }
 
-export const getUsers = async () => {
-  const res = await api.get("/chat/users");
+  const res = await api.get("/chat/users", config);
   const data = res.data.data || res.data;
   return (data || []).map((u) => ({
     ...u,

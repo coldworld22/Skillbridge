@@ -13,6 +13,8 @@ const formatBase = (tut) => ({
     : null,
   instructor: tut.instructor_name || tut.instructor,
   tags: tut.tags || [],
+  allowInstallments: Boolean(tut.allow_installments ?? tut.allowInstallments ?? false),
+  installments: tut.installments ? String(tut.installments) : "1",
 });
 
 const mapStatus = (tut) =>
@@ -68,6 +70,18 @@ export const fetchInstructorTutorialById = async (id) => {
     rejection_reason: tut.rejection_reason,
     progress: tut.progress,
     chapters,
+    includedPlans: (() => {
+      if (Array.isArray(tut.included_plans)) return tut.included_plans;
+      if (typeof tut.included_plans === "string") {
+        try {
+          const parsed = JSON.parse(tut.included_plans);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      }
+      return [];
+    })(),
   };
 };
 

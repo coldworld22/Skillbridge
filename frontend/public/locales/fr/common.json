@@ -48,6 +48,8 @@
   "welcome_user": "Bienvenue, {{name}}",
   "dashboard_navigation": "Navigation du tableau de bord",
   "useful_links": "Liens utiles",
+  "quick_links_online": "Vos raccourcis",
+  "quick_links_offline": "Liens rapides",
   "explore_website_sections": "Explorer les sections du site web",
   "explore_courses": "Explorer les cours",
   "community_forum": "Forum de la communauté",

@@ -13,15 +13,19 @@ import {
   removeClassFromWishlist,
   getMyClassWishlist,
   fetchClassReviews,
+  formatClass,
 } from '@/services/classService';
 import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
 import useSubscriptionStore from '@/store/subscriptionStore';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
 import { formatCurrency } from '@/utils/currency';
+import { resolveApiBase } from '@/utils/serverApi';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 const computeScheduleStatus = (start, end) => {
   const now = new Date();
@@ -47,18 +51,22 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-export default function ClassDetailsPage() {
+export default function ClassDetailsPage({ initialClass = null, initialReviews = [] }) {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation(['website', 'tutorials']);
-  const [classInfo, setClassInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const initialAverageRating =
+    Array.isArray(initialReviews) && initialReviews.length
+      ? initialReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / initialReviews.length
+      : null;
+  const [classInfo, setClassInfo] = useState(initialClass || null);
+  const [loading, setLoading] = useState(!initialClass);
   const [error, setError] = useState(null);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
-  const [instructorRating, setInstructorRating] = useState(null);
+  const [instructorRating, setInstructorRating] = useState(initialAverageRating);
   const { user, isAuthenticated } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
   const subscriptionPlan = useSubscriptionStore((state) => state.plan);
@@ -80,6 +88,21 @@ export default function ClassDetailsPage() {
   const handleViewPlans = () => {
     router.push('/website/student-plans');
   };
+
+  useEffect(() => {
+    if (initialClass) {
+      setClassInfo(initialClass);
+      setLoading(false);
+    }
+  }, [initialClass]);
+
+  useEffect(() => {
+    setInstructorRating(
+      initialAverageRating !== null && !Number.isNaN(initialAverageRating)
+        ? initialAverageRating
+        : null
+    );
+  }, [initialAverageRating]);
 
   const handleAddToCart = async () => {
     if (!classInfo) return;
@@ -187,13 +210,26 @@ export default function ClassDetailsPage() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
+
+    const matchesInitial =
+      initialClass && String(initialClass.id) === String(id);
+
+    if (matchesInitial) {
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
         const details = await fetchClassDetails(id);
+        if (cancelled) return;
         setClassInfo(details?.data ?? details);
         const revs = await fetchClassReviews(id);
+        if (cancelled) return;
         if (revs.length) {
           const avg =
             revs.reduce((sum, r) => sum + (r.rating || 0), 0) / revs.length;
@@ -201,8 +237,31 @@ export default function ClassDetailsPage() {
         } else {
           setInstructorRating(null);
         }
-        if (isAuthenticated()) {
-          const enrolled = await fetchMyEnrolledClasses();
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load class', err);
+          setError('Failed to load class');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, initialClass]);
+
+  useEffect(() => {
+    if (!id || !isAuthenticated()) return;
+    let cancelled = false;
+    const loadPersonalized = async () => {
+      try {
+        const enrolled = await fetchMyEnrolledClasses();
+        if (!cancelled) {
           const record = enrolled.find((c) => String(c.id) === String(id));
           if (record) {
             setIsEnrolled(true);
@@ -211,17 +270,21 @@ export default function ClassDetailsPage() {
             setIsEnrolled(false);
             setEnrollmentStatus(null);
           }
-          const wishlist = await getMyClassWishlist();
+        }
+        const wishlist = await getMyClassWishlist();
+        if (!cancelled) {
           setInWishlist(wishlist.some((c) => String(c.id) === String(id)));
         }
       } catch (err) {
-        console.error('Failed to load class', err);
-        setError('Failed to load class');
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          console.error('Failed to load wishlist/enrolled classes', err);
+        }
       }
     };
-    load();
+    loadPersonalized();
+    return () => {
+      cancelled = true;
+    };
   }, [id, isAuthenticated]);
 
   useEffect(() => {
@@ -714,12 +777,51 @@ export default function ClassDetailsPage() {
     </div>
   );
 }
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
 
-export async function getServerSideProps({ locale }) {
+export async function getServerSideProps({ locale, params }) {
+  const apiBase = resolveApiBase(false).replace(/\/$/, '');
+  const { id } = params || {};
+  let initialClass = null;
+  let initialReviews = [];
+
+  if (id) {
+    try {
+      const classRes = await fetch(`${apiBase}/users/classes/${id}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (classRes.ok) {
+        const classJson = await classRes.json();
+        const raw = classJson?.data ?? classJson ?? null;
+        if (raw) {
+          initialClass = formatClass(raw);
+        }
+      } else if (classRes.status === 404) {
+        return { notFound: true };
+      }
+
+      const reviewsRes = await fetch(`${apiBase}/users/classes/reviews/${id}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (reviewsRes.ok) {
+        const reviewsJson = await reviewsRes.json();
+        const reviews = reviewsJson?.data ?? reviewsJson ?? [];
+        if (Array.isArray(reviews)) {
+          initialReviews = reviews;
+        }
+      }
+    } catch (err) {
+      console.warn(`Failed to preload class ${id} for SEO`, err);
+    }
+  }
+
+  if (!initialClass) {
+    return { notFound: true };
+  }
+
   return {
     props: {
+      initialClass,
+      initialReviews,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
   };

@@ -111,7 +111,7 @@ export default function MetaTagsManager({ config, update: updateConfig, availabl
             value={form.canonical}
             onChange={(e) => handleChange("canonical", e.target.value)}
             className="w-full border px-3 py-2 rounded"
-            placeholder="https://example.com/page"
+            placeholder={t("canonicalPlaceholder")}
           />
         </div>
 

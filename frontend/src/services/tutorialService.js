@@ -7,6 +7,14 @@ export const formatTutorial = (tut) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   const thumbnailPath = tut.thumbnail_url || tut.cover_image;
   const previewPath = tut.preview_video;
+  const allowInstallments = Boolean(
+    tut.allow_installments ?? tut.allowInstallments ?? false
+  );
+  const installmentCount = (() => {
+    const raw = tut.installments ?? tut.installment_count ?? 1;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+  })();
 
   const rawPrice =
     tut.price ??
@@ -65,6 +73,9 @@ export const formatTutorial = (tut) => {
     ratingCount,
     tags: tagArray,
     trending: Boolean(tut.trending),
+    allow_installments: allowInstallments,
+    allowInstallments,
+    installments: installmentCount,
     // Normalize category fields so components can filter reliably
     categoryId: (() => {
       const id =
@@ -199,7 +210,10 @@ export const fetchTutorialProgress = async (tutorialId) => {
     return data?.data ?? data ?? null;
   } catch (err) {
     // Ignore if API not supported
-    if (err.response && [404, 500, 501].includes(err.response.status)) {
+    if (
+      err.response &&
+      [401, 403, 404, 500, 501].includes(err.response.status)
+    ) {
       return null;
     }
     throw err;

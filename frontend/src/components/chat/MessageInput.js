@@ -87,14 +87,14 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
   }, []);
 
   return (
-    <div className="relative bg-gray-800/80 backdrop-blur-md px-3 py-2 border-t border-gray-700 rounded-b-xl shadow-inner">
+    <div className="relative rounded-lg border border-gray-200 bg-white px-3 py-3 shadow-sm">
       {/* Reply Preview */}
       {replyTo && (
-        <div className="mb-2 px-3 py-2 bg-gray-700 border-l-4 border-yellow-400 rounded flex justify-between items-start text-sm text-yellow-300 shadow-sm">
-          <span className="italic truncate">
-            Replying to: “{replyTo.message || replyTo.file_url?.split('/').pop() || 'audio'}”
+        <div className="mb-3 flex items-start justify-between rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm">
+          <span className="truncate italic text-yellow-700">
+            Replying to: “{replyTo.message || replyTo.file_url?.split("/").pop() || "audio"}”
           </span>
-          <button onClick={onCancelReply} className="ml-2 text-red-400 hover:text-red-600">
+          <button onClick={onCancelReply} className="ml-2 text-yellow-700 hover:text-yellow-600">
             <FaTimes size={12} />
           </button>
         </div>
@@ -107,27 +107,27 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
           {/* Audio */}
           <button
             onClick={recording ? stopRecording : startRecording}
-            className={`h-8 w-8 flex items-center justify-center rounded-md transition-all duration-200 ${
-              recording ? "bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-            } shadow-sm`}
+            className={`flex h-9 w-9 items-center justify-center rounded-md border transition ${
+              recording ? "border-red-200 bg-red-100" : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+            }`}
           >
-            <FaMicrophone className="text-yellow-400 text-sm" />
+            <FaMicrophone className={recording ? "text-red-600" : "text-yellow-600"} />
           </button>
 
           {/* Emoji */}
           <div className="relative">
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="h-8 w-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-gray-50 transition hover:bg-gray-100"
             >
-              <FaSmile className="text-yellow-400 text-sm" />
+              <FaSmile className="text-yellow-500" />
             </button>
             {showEmojiPicker && (
               <div
                 ref={emojiPickerRef}
-                className="absolute bottom-[50px] left-0 z-50 w-72 bg-gray-900 border border-gray-700 rounded-lg shadow-lg"
+                className="absolute bottom-[50px] left-0 z-50 w-72 rounded-lg border border-gray-200 bg-white shadow-lg"
               >
-                <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+                <EmojiPicker onEmojiClick={handleEmojiClick} theme="light" />
               </div>
             )}
           </div>
@@ -135,9 +135,9 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
           {/* Attachment */}
           <button
             onClick={() => fileInputRef.current.click()}
-            className="h-8 w-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-gray-50 transition hover:bg-gray-100"
           >
-            <FaPaperclip className="text-white text-xs" />
+            <FaPaperclip className="text-gray-600" />
           </button>
           <input
             type="file"
@@ -158,19 +158,19 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
             typingTimeout.current = setTimeout(() => onTyping?.(false), 1500);
           }}
           placeholder={t("type_message_placeholder")}
-          className="flex-1 px-2 py-[2px] text-xs bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-[1px] focus:ring-yellow-400 shadow-sm"
+          className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-200"
         />
 
         {/* Send */}
-       <button
+        <button
           onClick={handleSend}
-          className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+          className="flex h-9 w-9 items-center justify-center rounded-md bg-yellow-500 text-gray-900 transition hover:bg-yellow-400"
         >
           <FaPaperPlane />
         </button>
       </div>
 
-      <div className="flex items-center gap-3 mt-2 text-xs text-gray-300">
+      <div className="mt-2 flex items-center gap-3 text-xs text-gray-600">
         <label className="flex items-center gap-1">
           <input
             type="checkbox"
@@ -191,7 +191,7 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
 
       {/* File name preview */}
       {file && (
-        <div className="text-xs text-gray-400 mt-1 truncate">
+        <div className="mt-1 truncate text-xs text-gray-500">
           📎 Attached: <span className="italic">{file.name}</span>
         </div>
       )}

@@ -4,9 +4,28 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import {
-  FaBookOpen, FaChalkboardTeacher, FaGraduationCap,
-  FaCalendarAlt, FaPlus, FaChartLine, FaTimes, FaUserShield,
-  FaBullhorn, FaTachometerAlt
+  FaBookOpen,
+  FaChalkboardTeacher,
+  FaGraduationCap,
+  FaCalendarAlt,
+  FaPlus,
+  FaChartLine,
+  FaTimes,
+  FaUserShield,
+  FaBullhorn,
+  FaTachometerAlt,
+  FaUsers,
+  FaQuestionCircle,
+  FaHandsHelping,
+  FaLifeRing,
+  FaSignInAlt,
+  FaUserPlus,
+  FaPhone,
+  FaInfoCircle,
+  FaBell,
+  FaHeart,
+  FaUser,
+  FaEnvelope,
 } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import logger from "@/utils/logger";
@@ -85,6 +104,103 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   };
 
   const currentDashboard = dashboardConfig[userRole] || defaultDashboard;
+  const isOnline = Boolean(user);
+
+  const offlineQuickLinks = [
+    {
+      href: "/online-classes",
+      label: t("explore_courses"),
+      icon: <FaChalkboardTeacher />,
+    },
+    {
+      href: "/community",
+      label: t("community_forum"),
+      icon: <FaUsers />,
+    },
+    {
+      href: "/blog",
+      label: t("blog_news"),
+      icon: <FaBookOpen />,
+    },
+    {
+      href: "/support",
+      label: t("help_support"),
+      icon: <FaHandsHelping />,
+    },
+    {
+      href: "/faqs",
+      label: t("faqs"),
+      icon: <FaQuestionCircle />,
+    },
+    {
+      href: "/contact",
+      label: t("contact"),
+      icon: <FaPhone />,
+    },
+    {
+      href: "/about",
+      label: t("about"),
+      icon: <FaInfoCircle />,
+    },
+    {
+      href: "/auth/login",
+      label: t("login"),
+      icon: <FaSignInAlt />,
+    },
+    {
+      href: "/auth/register",
+      label: t("register"),
+      icon: <FaUserPlus />,
+    },
+  ];
+
+  const onlineQuickLinks = [
+    {
+      href: "/online-classes",
+      label: t("explore_courses"),
+      icon: <FaChalkboardTeacher />,
+    },
+    {
+      href: "/community",
+      label: t("community_forum"),
+      icon: <FaUsers />,
+    },
+    {
+      href: "/messages",
+      label: t("messages"),
+      icon: <FaEnvelope />,
+    },
+    {
+      href: "/notifications",
+      label: t("notifications"),
+      icon: <FaBell />,
+    },
+    {
+      href: "/wishlist",
+      label: t("wishlist"),
+      icon: <FaHeart />,
+    },
+    {
+      href: "/profile",
+      label: t("edit_profile"),
+      icon: <FaUser />,
+    },
+    {
+      href: "/support",
+      label: t("help_support"),
+      icon: <FaLifeRing />,
+    },
+    {
+      href: "/blog",
+      label: t("blog_news"),
+      icon: <FaBookOpen />,
+    },
+  ];
+
+  const quickLinks = isOnline ? onlineQuickLinks : offlineQuickLinks;
+  const quickLinksTitle = isOnline
+    ? t("quick_links_online")
+    : t("quick_links_offline");
 
   return (
     <AnimatePresence>
@@ -130,15 +246,20 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
                 </Link>
               )}
 
-              {/* Useful Links */}
+              {/* Quick Links */}
               <div>
-                <h4 className="font-bold text-lg mt-6 mb-2">{t('useful_links')}</h4>
+                <h4 className="font-bold text-lg mt-6 mb-2">{quickLinksTitle}</h4>
                 <ul className="space-y-2">
-                  <li>
-                    <Link href="/website" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaBookOpen /> {t('explore_website_sections')}
-                    </Link>
-                  </li>
+                  {quickLinks.map(({ href, label, icon }) => (
+                    <li key={`${href}-${label}`}>
+                      <Link
+                        href={href}
+                        className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition"
+                      >
+                        {icon} {label}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
 

@@ -28,7 +28,9 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
   return (
     <motion.div
-      className={`flex items-start gap-3 my-2 ${isSender ? "flex-row-reverse justify-start" : "justify-start"}`}
+      className={`my-2 flex items-start gap-3 ${
+        isSender ? "flex-row-reverse justify-start" : "justify-start"
+      }`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -37,37 +39,41 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
       <ChatImage
         src={message.avatar || '/images/default-avatar.png'}
         alt="avatar"
-        className="w-6 h-6 rounded-full border border-gray-500"
+        className="h-8 w-8 rounded-full border border-white shadow"
         width={24}
         height={24}
       />
 
       {/* Message Bubble */}
       <div
-        className={`relative group p-3 rounded-lg max-w-xs shadow-md ${
-          isSender ? "bg-yellow-500 text-gray-900" : "bg-gray-700 text-white"
+        className={`group relative max-w-xs rounded-lg border px-3 py-2 text-sm shadow ${
+          isSender ? "border-yellow-300 bg-yellow-400 text-gray-900" : "border-gray-200 bg-white text-gray-900"
         }`}
       >
         {/* Sender Name */}
-        <div className="text-xs font-semibold mb-1">
-          {isSender ? 'You' : message.sender}
+        <div
+          className={`mb-1 text-xs font-semibold ${
+            isSender ? "text-yellow-900" : "text-gray-500"
+          }`}
+        >
+          {isSender ? "You" : message.sender}
         </div>
         {/* 📌 Reply Preview */}
         {message.replyTo && (
-          <div className="text-sm italic text-yellow-300 mb-2 border-l-4 border-yellow-400 pl-2">
+          <div className="mb-2 border-l-2 border-yellow-300 pl-2 text-xs italic text-gray-500">
             Replying to: “{message.replyTo}”
           </div>
         )}
 
         {/* 📝 Message Text */}
-        {message.text && <p>{message.text}</p>}
+        {message.text && <p className="leading-snug">{message.text}</p>}
 
         {/* 📷 Image */}
         {message.file && isImage(message.file) && (
           <ChatImage
             src={getMediaUrl(message.file)}
             alt="Sent image"
-            className="rounded-md mt-2 max-w-full object-cover"
+            className="mt-2 max-w-full rounded-md object-cover"
             width={300}
             height={200}
           />
@@ -77,7 +83,7 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
             href={getMediaUrl(message.file)}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-200 text-xs break-all"
+            className="break-all text-xs text-yellow-700 underline"
           >
             {message.file.split('/').pop()}
           </a>
@@ -85,29 +91,29 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
         {/* 🎤 Audio */}
         {message.audio && (
-          <div className="mt-2 flex items-center gap-2 bg-gray-800 p-2 rounded-md">
-            <FaPlay className="text-yellow-300" />
+          <div className="mt-2 flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 p-2">
+            <FaPlay className="text-yellow-500" />
             <audio controls src={message.audio} className="w-40" />
           </div>
         )}
 
         {/* 🔧 Hover Actions */}
-        <div className="absolute top-1 right-1 hidden group-hover:flex gap-2 text-xs text-white">
-          <button onClick={onReply} title="Reply">
+        <div className="absolute top-1 right-1 hidden gap-2 text-xs text-gray-500 group-hover:flex">
+          <button onClick={onReply} title="Reply" className="hover:text-yellow-600">
             <FaReply />
           </button>
-          <button onClick={onPin} title="Pin">
+          <button onClick={onPin} title="Pin" className="hover:text-yellow-600">
             <FaThumbtack />
           </button>
-          <button onClick={onDelete} title="Delete">
+          <button onClick={onDelete} title="Delete" className="hover:text-red-500">
             <FaTrash />
           </button>
         </div>
 
         {/* ⏰ Timestamp + Seen */}
-        <div className="flex items-center justify-end mt-1 text-xs text-gray-300 gap-1">
+        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-gray-500">
           <span>{formatRelativeTime(message.timestamp)}</span>
-          {isSender && <FaCheckDouble className="text-blue-300" title="Sent" />}
+          {isSender && <FaCheckDouble className="text-yellow-600" title="Sent" />}
         </div>
       </div>
     </motion.div>

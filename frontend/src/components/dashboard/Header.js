@@ -8,7 +8,7 @@ import {
   Home,
   LogOut,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,9 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useAppConfigStore from "@/store/appConfigStore";
 import LinkText from "@/components/shared/LinkText";
+import { adminNavLinks } from "@/components/dashboard/SidebarLinks/adminLinks";
+import { instructorNavLinks } from "@/components/dashboard/SidebarLinks/instructorLinks";
+import { studentNavLinks } from "@/components/dashboard/SidebarLinks/studentLinks";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -34,10 +37,12 @@ export default function Header() {
   const [msgOpen, setMsgOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
@@ -102,6 +107,132 @@ export default function Header() {
     return t("dashboard");
   };
 
+  const navItems = useMemo(() => {
+    const translate = (key = "") => {
+      if (!key) return "";
+      return tDashboard(key, {
+        defaultValue: key
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase()),
+      });
+    };
+
+    const normalizedRole =
+      userRole === "superadmin" ? "admin" : userRole || "student";
+    const navMap = {
+      admin: adminNavLinks,
+      superadmin: adminNavLinks,
+      instructor: instructorNavLinks,
+      student: studentNavLinks,
+    };
+
+    const sections = navMap[normalizedRole] || studentNavLinks;
+    const items = [];
+
+    sections.forEach((section) => {
+      const sectionLabel = translate(section.title);
+      const sectionKey = section.title;
+
+      (section.items || []).forEach((item) => {
+        if (item?.isDropdown && Array.isArray(item.dropdown)) {
+          const parentLabel = translate(item.label);
+          const parentKey = item.label;
+          item.dropdown.forEach((child) => {
+            if (!child?.href || child.href === "#") return;
+            items.push({
+              id: `${sectionKey}-${parentKey}-${child.label}`,
+              labelKey: child.label,
+              label: translate(child.label),
+              href: child.href,
+              section: sectionLabel,
+              sectionKey,
+              parentLabel,
+              parentKey,
+            });
+          });
+          return;
+        }
+
+        if (!item?.href || item.href === "#") return;
+        items.push({
+          id: `${sectionKey}-${item.label}`,
+          labelKey: item.label,
+          label: translate(item.label),
+          href: item.href,
+          section: sectionLabel,
+          sectionKey,
+          parentLabel: null,
+          parentKey: null,
+        });
+      });
+    });
+
+    const unique = [];
+    const seen = new Set();
+    items.forEach((item) => {
+      const key = `${item.href}|${item.labelKey}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      unique.push(item);
+    });
+
+    return unique;
+  }, [userRole, tDashboard]);
+
+  const matchingNavItems = useMemo(() => {
+    const term = searchQuery.trim().toLowerCase();
+    if (!term) return [];
+
+    return navItems.filter((item) => {
+      const haystacks = [
+        item.label,
+        item.labelKey,
+        item.section,
+        item.sectionKey,
+        item.parentLabel,
+        item.parentKey,
+        item.href,
+      ]
+        .filter(Boolean)
+        .map((value) =>
+          `${value}`.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ")
+        );
+
+      return haystacks.some((text) => text.includes(term));
+    });
+  }, [searchQuery, navItems]);
+
+  const groupedNavResults = useMemo(() => {
+    return matchingNavItems.reduce((acc, item) => {
+      const group = item.section || t("dashboard");
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {});
+  }, [matchingNavItems, t]);
+
+  const firstSearchResult = matchingNavItems[0] || null;
+  const hasSearchResults = matchingNavItems.length > 0;
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === "Enter") {
+      if (!firstSearchResult?.href) return;
+      event.preventDefault();
+      router.push(firstSearchResult.href);
+      setSearchQuery("");
+      setShowSearchResults(false);
+    } else if (event.key === "Escape") {
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleResultClick = (item) => {
+    if (!item?.href) return;
+    router.push(item.href);
+    setSearchQuery("");
+    setShowSearchResults(false);
+  };
+
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "dark") {
@@ -120,6 +251,12 @@ export default function Header() {
       }
       if (msgRef.current && !msgRef.current.contains(event.target)) {
         setMsgOpen(false);
+      }
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setShowSearchResults(false);
       }
     };
 
@@ -159,15 +296,81 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 relative">
-        <div className="relative hidden md:block">
+        <div className="relative hidden md:block" ref={searchContainerRef}>
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchQuery(value);
+              setShowSearchResults(Boolean(value.trim()));
+            }}
+            onFocus={() => {
+              if (searchQuery.trim()) {
+                setShowSearchResults(true);
+              }
+            }}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t('search_placeholder')}
             className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
+          <AnimatePresence>
+            {showSearchResults && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 w-96 max-h-80 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50"
+              >
+                {hasSearchResults ? (
+                  Object.entries(groupedNavResults).map(([section, items]) => (
+                    <div
+                      key={section}
+                      className="border-b border-gray-100 dark:border-gray-700 last:border-none"
+                    >
+                      <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {section}
+                      </div>
+                      <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {items.map((item) => (
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => handleResultClick(item)}
+                              className="w-full text-left px-4 py-3 hover:bg-yellow-50 dark:hover:bg-gray-700 transition"
+                            >
+                              <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                  {item.label}
+                                </span>
+                                {item.parentLabel && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-300">
+                                    {item.parentLabel}
+                                  </span>
+                                )}
+                                <span className="text-[11px] text-yellow-600">
+                                  {item.href}
+                                </span>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-4 text-sm text-gray-500 dark:text-gray-300">
+                    {t('no_results_found', {
+                      defaultValue: `No matches for "${searchQuery.trim()}"`,
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <button

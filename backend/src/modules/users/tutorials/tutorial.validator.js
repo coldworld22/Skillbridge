@@ -45,6 +45,11 @@ const tutorialSchema = z.object({
   price: z.preprocess(toOptionalNumber, z.number().nonnegative().optional()),
   duration: z.preprocess(toOptionalInt, z.number().int().nonnegative().optional()),
   is_paid: z.preprocess(toBoolean, z.boolean().optional()),
+  allow_installments: z.preprocess(toBoolean, z.boolean().optional()),
+  installments: z.preprocess(
+    toOptionalInt,
+    z.number().int().min(1).max(36).optional()
+  ),
   included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
   tags: z.preprocess(parseJson, z.array(z.string()).optional()),
   chapters: z

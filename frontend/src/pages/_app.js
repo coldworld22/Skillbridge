@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -31,6 +31,9 @@ import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
 import { API_BASE_URL } from "@/config/config";
 import { getCookie } from "@/utils/cookies";
+import { SeoConfigContext } from "@/context/SeoConfigContext";
+import App from "next/app";
+import { resolveApiBase } from "@/utils/serverApi";
 
 const langFetcher = () => getLanguages();
 
@@ -44,6 +47,9 @@ const langFetcher = () => getLanguages();
  * - Includes global toast notifications
  */
 function MyApp({ Component, pageProps, router }) {
+  const { _seoSettings: initialSEOSettings, ...componentPageProps } = pageProps || {};
+  const [seoSettings, setSeoSettings] = useState(initialSEOSettings || null);
+
   // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
 
@@ -64,6 +70,7 @@ function MyApp({ Component, pageProps, router }) {
   const clearCallStatus = useCallStore((s) => s.clearStatus);
   const seoLoaded = useSEOConfigStore((s) => s.loaded);
   const fetchSEO = useSEOConfigStore((s) => s.fetch);
+  const storeSettings = useSEOConfigStore((s) => s.settings);
   
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
@@ -71,9 +78,33 @@ function MyApp({ Component, pageProps, router }) {
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    const local = localStorage.getItem("auth");
-    if (local) {
-      const parsed = JSON.parse(local)?.state;
+    if (typeof initialSEOSettings !== "undefined") {
+      setSeoSettings(initialSEOSettings || null);
+    }
+  }, [initialSEOSettings]);
+
+  useEffect(() => {
+    if (!seoSettings) return;
+    // Hydrate the SEO store on the client so admin pages keep working.
+    useSEOConfigStore.setState((state) => ({
+      settings: { ...state.settings, ...seoSettings },
+      loaded: true,
+    }));
+  }, [seoSettings]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const raw = localStorage.getItem("auth");
+    if (!raw) {
+      useAuthStore.setState({ hasHydrated: true });
+      return;
+    }
+
+    try {
+      const stored = JSON.parse(raw);
+      const parsed = stored?.state ?? stored;
+
       if (parsed?.user) {
         useAuthStore.setState({
           user: parsed.user,
@@ -89,8 +120,14 @@ function MyApp({ Component, pageProps, router }) {
             },
           hasHydrated: true, // ✅ manually set hydration flag
         });
+        return;
       }
+    } catch (err) {
+      console.warn("Failed to parse persisted auth state; clearing local copy.", err);
+      localStorage.removeItem("auth");
     }
+
+    useAuthStore.setState({ hasHydrated: true });
   }, []);
 
   useEffect(() => {
@@ -143,10 +180,10 @@ function MyApp({ Component, pageProps, router }) {
   }, []);
 
   useEffect(() => {
-    if (!seoLoaded) {
+    if (!seoLoaded && !seoSettings) {
       fetchSEO();
     }
-  }, [seoLoaded, fetchSEO]);
+  }, [seoLoaded, seoSettings, fetchSEO]);
 
   useEffect(() => {
     if (!user || !user.profile_complete || !user.is_email_verified) return;
@@ -204,64 +241,128 @@ function MyApp({ Component, pageProps, router }) {
   const appName = settings.appName || 'SkillBridge';
   const defaultTitle = `${appName} | ${getPageTitle()}`;
 
-    return (
-      <>
-        <PageLoader />
-        <AnimatePresence mode="wait">
-          {/* Motion wrapper for route transition */}
-          <motion.div
-            key={router.route}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Head>
-              <title>{defaultTitle}</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              {/* Default favicon to avoid 404s before settings load */}
-              <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-              {settings.metaDescription && (
-                <meta name="description" content={settings.metaDescription} />
-              )}
-              {settings.favicon_url && (
-                <link
-                  rel="icon"
-                  href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
-                />
-              )}
-            </Head>
-            <SeoTags />
-            <PopupAnnouncement />
-            {/* Render page with layout */}
-            {getLayout(<Component {...pageProps} />)}
+  const contextValue = useMemo(
+    () => ({
+      settings: seoLoaded ? storeSettings : seoSettings,
+      setSettings: setSeoSettings,
+    }),
+    [seoLoaded, storeSettings, seoSettings]
+  );
 
-            {(incomingCall || outgoingCall) && (
-              <CallOverlay
-                incoming={!!incomingCall}
-                name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
-                onAccept={incomingCall ? () => acceptCall() : undefined}
-                onDecline={incomingCall ? () => declineCall() : cancelCall}
+  return (
+    <SeoConfigContext.Provider value={contextValue}>
+      <PageLoader />
+      <AnimatePresence mode="wait">
+        {/* Motion wrapper for route transition */}
+        <motion.div
+          key={router.route}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Head>
+            <title>{defaultTitle}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            {/* Default favicon to avoid 404s before settings load */}
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+            <link rel="alternate icon" href="/favicon.ico" />
+            <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+            {settings.metaDescription && (
+              <meta name="description" content={settings.metaDescription} />
+            )}
+            {settings.favicon_url && (
+              <link
+                rel="icon"
+                href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
               />
             )}
+          </Head>
+          <SeoTags />
+          <PopupAnnouncement />
+          {/* Render page with layout */}
+          {getLayout(<Component {...componentPageProps} />)}
 
-            {/* Global Toast Message Containers */}
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: "#333",
-                  color: "#fff",
-                },
-              }}
+          {(incomingCall || outgoingCall) && (
+            <CallOverlay
+              incoming={!!incomingCall}
+              name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
+              onAccept={incomingCall ? () => acceptCall() : undefined}
+              onDecline={incomingCall ? () => declineCall() : cancelCall}
             />
-            {/* Display React Toastify notifications centered at the top */}
-            <ToastContainer position="top-center" autoClose={3000} />
-          </motion.div>
-        </AnimatePresence>
-      </>
-    );
+          )}
+
+          {/* Global Toast Message Containers */}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "#333",
+                color: "#fff",
+              },
+            }}
+          />
+          {/* Display React Toastify notifications centered at the top */}
+          <ToastContainer position="top-center" autoClose={3000} />
+        </motion.div>
+      </AnimatePresence>
+    </SeoConfigContext.Provider>
+  );
 }
+
+MyApp.getInitialProps = async (appContext) => {
+  const appProps = await App.getInitialProps(appContext);
+
+  let seoSettings = null;
+  const base = resolveApiBase(typeof window !== "undefined");
+  if (base) {
+    try {
+      const url = `${base.replace(/\/$/, "")}/seo-config`;
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (res.ok) {
+        const json = await res.json();
+        seoSettings = json?.data ?? json ?? null;
+      }
+    } catch (err) {
+      console.warn("Failed to preload SEO settings", err);
+    }
+  }
+
+  const ctx = appContext.ctx;
+  if (ctx?.res && seoSettings?.redirects?.length) {
+    const normalize = (value) => {
+      if (!value) return "/";
+      const prefixed = value.startsWith("/") ? value : `/${value}`;
+      if (prefixed === "/") return "/";
+      return prefixed.replace(/\/+$/, "") || "/";
+    };
+
+    const requestPath = normalize(ctx.asPath?.split("?")[0] || ctx.pathname || "/");
+    const redirectRule = seoSettings.redirects.find((rule) => {
+      if (!rule?.from || !rule?.to) return false;
+      const from = normalize(rule.from);
+      return from === requestPath;
+    });
+
+    if (
+      redirectRule &&
+      normalize(redirectRule.to) !== requestPath &&
+      !ctx.res.headersSent
+    ) {
+      const statusCode = Number(redirectRule.code) || 302;
+      ctx.res.writeHead(statusCode, { Location: redirectRule.to });
+      ctx.res.end();
+    }
+  }
+
+  return {
+    ...appProps,
+    pageProps: {
+      ...appProps.pageProps,
+      _seoSettings: seoSettings,
+    },
+  };
+};
 
 export default appWithTranslation(MyApp, nextI18NextConfig);

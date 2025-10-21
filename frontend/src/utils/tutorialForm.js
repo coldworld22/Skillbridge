@@ -13,6 +13,17 @@ export function buildTutorialFormData(tutorialData, status) {
       formData.append("currency", tutorialData.currency);
     }
   }
+  const allowInstallments = Boolean(tutorialData.allowInstallments);
+  formData.append("allow_installments", allowInstallments ? "true" : "false");
+  if (allowInstallments) {
+    const count = Math.max(
+      2,
+      Number.isFinite(Number(tutorialData.installments))
+        ? Math.floor(Number(tutorialData.installments))
+        : 2
+    );
+    formData.append("installments", String(count));
+  }
   if (tutorialData.tags?.length) {
     formData.append("tags", JSON.stringify(tutorialData.tags));
   }

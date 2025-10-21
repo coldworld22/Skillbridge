@@ -1,5 +1,5 @@
 // src/pages/online-classes/index.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import OnlineClassesHero from '@/components/online-classes/OnlineClassesHero';
@@ -50,29 +50,57 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
     setVisibleCount(6);
   }, [filters]);
 
-  const applyFilters = (cls) => {
-    if (filters.search) {
-      const term = filters.search.toLowerCase();
-      if (
-        !cls.title.toLowerCase().includes(term) &&
-        !cls.instructor.toLowerCase().includes(term)
-      )
-        return false;
-    }
-    if (filters.category && cls.category !== filters.category) return false;
-    if (filters.date && cls.start_date) {
-      const d = new Date(cls.start_date).toISOString().slice(0, 10);
-      if (d !== filters.date) return false;
-    }
-    if (filters.priceRange) {
-      if (filters.priceRange === 'free' && cls.price !== 0) return false;
-      if (filters.priceRange === 'under50' && cls.price >= 50) return false;
-      if (filters.priceRange === 'over50' && cls.price < 50) return false;
-    }
-    return true;
-  };
+  const availableCategories = useMemo(() => {
+    const set = new Set();
+    allClasses.forEach((cls) => {
+      if (cls?.category) {
+        set.add(cls.category);
+      }
+    });
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+  }, [allClasses]);
 
-  const filtered = allClasses.filter(applyFilters);
+  const filtered = useMemo(() => {
+    const searchTerm = (filters.search || '').trim().toLowerCase();
+    const categoryFilter = (filters.category || '').trim().toLowerCase();
+    const priceFilter = filters.priceRange || '';
+    const dateFilter = filters.date || '';
+
+    return allClasses.filter((cls) => {
+      if (searchTerm) {
+        const title = (cls.title || '').toLowerCase();
+        const instructorName = (cls.instructor || '').toLowerCase();
+        if (!title.includes(searchTerm) && !instructorName.includes(searchTerm)) {
+          return false;
+        }
+      }
+
+      if (categoryFilter) {
+        const classCategory = (cls.category || '').toLowerCase();
+        if (classCategory !== categoryFilter) return false;
+      }
+
+      if (dateFilter) {
+        const startValue = cls.startDate || cls.start_date;
+        if (!startValue) return false;
+        const parsed = new Date(startValue);
+        if (Number.isNaN(parsed.getTime())) return false;
+        const normalized = parsed.toISOString().slice(0, 10);
+        if (normalized !== dateFilter) return false;
+      }
+
+      if (priceFilter) {
+        const priceValue = Number(cls.price ?? 0);
+        if (priceFilter === 'free' && priceValue > Number.EPSILON) return false;
+        if (priceFilter === 'under50' && priceValue >= 50) return false;
+        if (priceFilter === 'over50' && priceValue < 50) return false;
+      }
+
+      return true;
+    });
+  }, [allClasses, filters]);
 
   const visibleClasses = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -106,7 +134,11 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
         ))}
 
         <section className="mt-10 space-y-10">
-          <ClassFilters filters={filters} onChange={setFilters} />
+          <ClassFilters
+            filters={filters}
+            onChange={setFilters}
+            categories={availableCategories}
+          />
           {loading ? (
             <p className="text-center text-gray-400">Loading...</p>
           ) : error ? (

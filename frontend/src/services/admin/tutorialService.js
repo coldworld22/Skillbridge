@@ -98,7 +98,22 @@ export const fetchTutorialById = async (id) => {
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.preview_video}`
       : null,
     price: t.price,
+    currency: t.currency,
     isFree: !t.is_paid,
+    allowInstallments: Boolean(t.allow_installments ?? t.allowInstallments ?? false),
+    installments: t.installments ? String(t.installments) : "1",
+    includedPlans: (() => {
+      if (Array.isArray(t.included_plans)) return t.included_plans;
+      if (typeof t.included_plans === "string") {
+        try {
+          const parsed = JSON.parse(t.included_plans);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      }
+      return [];
+    })(),
   };
 };
 

@@ -47,6 +47,8 @@
   "welcome_user": "مرحباً، {{name}}",
   "dashboard_navigation": "تنقل لوحة التحكم",
   "useful_links": "روابط مفيدة",
+  "quick_links_online": "اختصاراتك",
+  "quick_links_offline": "روابط سريعة",
   "explore_website_sections": "استكشاف أقسام الموقع",
   "explore_courses": "استكشاف الدورات",
   "community_forum": "منتدى المجتمع",

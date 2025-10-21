@@ -2,6 +2,7 @@ const service = require("./student.service");
 const { sendSuccess } = require("../../utils/response");
 const catchAsync = require("../../utils/catchAsync");
 const msgService = require("../messages/messages.service");
+const { prepareMessagingQuota } = require("../messages/messageQuota.helper");
 
 exports.list = async (_req, res) => {
   const data = await service.getPublicStudents();
@@ -27,11 +28,13 @@ exports.sendEmail = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Invalid student id" });
   }
 
+  const quota = await prepareMessagingQuota(req.user, "email");
   const data = await msgService.sendEmail({
     sender_id: req.user.id,
     receiver_id: id,
     subject: req.body.subject,
     message: req.body.message,
+    quota,
   });
   sendSuccess(res, data, "Email sent");
 });
@@ -42,10 +45,12 @@ exports.sendWhatsApp = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Invalid student id" });
   }
 
+  const quota = await prepareMessagingQuota(req.user, "whatsapp");
   const data = await msgService.sendWhatsApp({
     sender_id: req.user.id,
     receiver_id: id,
     message: req.body.message,
+    quota,
   });
   sendSuccess(res, data, "WhatsApp message sent");
 });
@@ -56,9 +61,11 @@ exports.startVideoCall = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Invalid student id" });
   }
 
+  const quota = await prepareMessagingQuota(req.user, "video");
   const data = await msgService.startVideoCall({
     sender_id: req.user.id,
     receiver_id: id,
+    quota,
   });
   sendSuccess(res, data, "Video call started");
 });

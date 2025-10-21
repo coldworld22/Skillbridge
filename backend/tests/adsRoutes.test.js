@@ -11,6 +11,11 @@ jest.mock('../src/config/database', () => ({
 jest.mock('../src/modules/plans/plans.service', () => ({
   consumeAdCredit: jest.fn(),
   getPlanById: jest.fn(),
+  getRemainingAdCredits: jest.fn().mockResolvedValue(1),
+}));
+
+jest.mock('../src/modules/plans/instructor.helper', () => ({
+  getActiveInstructorPlan: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock('../src/modules/ads/ads.service', () => ({
@@ -72,6 +77,7 @@ const {
 const notificationService = require('../src/modules/notifications/notifications.service');
 const messageService = require('../src/modules/messages/messages.service');
 const auth = require('../src/middleware/auth/authMiddleware');
+const instructorHelper = require('../src/modules/plans/instructor.helper');
 const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
@@ -83,6 +89,8 @@ app.use((err, _req, res, _next) => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  instructorHelper.getActiveInstructorPlan.mockResolvedValue(null);
+  planService.consumeAdCredit.mockResolvedValue({ consumed: true, remaining: 0 });
 });
 
 describe('GET /api/ads', () => {
@@ -236,6 +244,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true, target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-regular',
       ad_credits: 2,
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
@@ -244,12 +253,20 @@ describe('POST /api/ads/admin', () => {
     });
     service.getAds.mockResolvedValue({ data: [], meta: {} });
     service.createAd.mockResolvedValue({ id: '1', ...payload });
+    planService.consumeAdCredit.mockResolvedValue({ consumed: true, remaining: 1 });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
+    expect(planService.getRemainingAdCredits).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'plan1', ad_credits: 2 }),
+      'user1'
+    );
     expect(planService.consumeAdCredit).toHaveBeenCalledWith(
-      'plan1',
-      expect.anything()
+      expect.objectContaining({
+        planId: 'plan1',
+        userId: 'user1',
+        allowance: 2,
+      })
     );
     expect(sendAdSubmissionEmail).toHaveBeenCalledWith(
       'inst@example.com',
@@ -280,6 +297,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-regular',
       ad_credits: 1,
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
@@ -297,6 +315,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg' };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-regular',
       ad_credits: 2,
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
@@ -340,6 +359,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-regular',
       ad_credits: 0,
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
@@ -347,6 +367,7 @@ describe('POST /api/ads/admin', () => {
       ],
     });
     service.getAds.mockResolvedValue({ data: [], meta: {} });
+    planService.getRemainingAdCredits.mockResolvedValueOnce(0);
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
@@ -356,6 +377,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true, target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-basic',
       ad_credits: 2,
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
@@ -372,6 +394,7 @@ describe('POST /api/ads/admin', () => {
     const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-basic',
       ad_credits: 2,
       features: [
         { feature_key: 'ads_max_ads', value: '1' },
@@ -383,6 +406,33 @@ describe('POST /api/ads/admin', () => {
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
   });
+
+  it('rejects creation when instructor has no active plan', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
+    planService.getPlanById.mockResolvedValueOnce(null);
+    instructorHelper.getActiveInstructorPlan.mockResolvedValueOnce(null);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/plan/i);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when plan tier does not allow ads', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      slug: 'legacy-plan',
+      ad_credits: 5,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/does not include instructor ad tools/i);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
 });
 
 describe('PUT /api/ads/:id', () => {
@@ -391,6 +441,7 @@ describe('PUT /api/ads/:id', () => {
     service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-regular',
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
         { feature_key: 'ads_allow_branding', value: 'true' },
@@ -408,6 +459,7 @@ describe('PUT /api/ads/:id', () => {
     service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-basic',
       features: [
         { feature_key: 'ads_max_ads', value: '5' },
         { feature_key: 'ads_allow_branding', value: 'false' },
@@ -424,6 +476,7 @@ describe('PUT /api/ads/:id', () => {
     service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
+      slug: 'instructor-basic',
       features: [
         { feature_key: 'ads_max_ads', value: '1' },
         { feature_key: 'ads_allow_branding', value: 'true' },
@@ -451,6 +504,7 @@ describe('GET /api/ads/:id/analytics', () => {
     const analytics = { views: 5, ctr: 1, clicks: 2, unique_viewers: 3 };
     service.getAdAnalytics = jest.fn().mockResolvedValue(analytics);
     planService.getPlanById.mockResolvedValue({
+      slug: 'instructor-pro',
       features: [
         { feature_key: 'ads_show_analytics', value: true },
       ],
@@ -481,6 +535,7 @@ describe('GET /api/ads/:id/analytics', () => {
       next();
     });
     planService.getPlanById.mockResolvedValue({
+      slug: 'instructor-basic',
       features: [
         { feature_key: 'ads_show_analytics', value: false },
       ],

@@ -15,6 +15,7 @@ import {
 } from "@/services/offerResponseService";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import {
   FaArrowLeft,
   FaTag,
@@ -23,64 +24,114 @@ import {
   FaComment,
   FaPaperPlane,
 } from "react-icons/fa";
+import { resolveApiBase } from "@/utils/serverApi";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 
 dayjs.extend(relativeTime);
 
+const mapOffer = (offer) =>
+  offer
+    ? {
+        id: offer.id,
+        title: offer.title,
+        description: offer.description,
+        type: offer.offer_type === "class" ? "instructor" : "student",
+        price: offer.budget || "",
+        duration: offer.timeframe || "",
+        tags: offer.tags?.map((t) => t.name) || [],
+        date: offer.created_at || offer.updated_at,
+        expires_at: offer.expires_at,
+        owner: offer.student_name,
+        ownerRole: offer.student_role,
+      }
+    : null;
 
-const OfferDetailsPage = () => {
+const OfferDetailsPage = ({ initialOffer = null }) => {
   const router = useRouter();
   const { id } = router.query;
   const { user } = useAuthStore();
-  const [offer, setOffer] = useState(null);
+  const [offer, setOffer] = useState(initialOffer);
   const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatRef = useRef(null);
+  const [loading, setLoading] = useState(!initialOffer);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (initialOffer) {
+      setOffer(initialOffer);
+      setLoading(false);
+      setError(null);
+    }
+  }, [initialOffer]);
 
   useEffect(() => {
     if (!id) return;
-    fetchOfferById(id)
-      .then((o) =>
-        setOffer(
-          o
-            ? {
-                id: o.id,
-                title: o.title,
-                description: o.description,
-                type: o.offer_type === "class" ? "instructor" : "student",
-                price: o.budget || "",
-                duration: o.timeframe || "",
-                tags: o.tags?.map((t) => t.name) || [],
-                date: o.created_at || o.updated_at,
-                expires_at: o.expires_at,
-                owner: o.student_name,
-                ownerRole: o.student_role,
-              }
-            : null
-        )
-      )
-      .catch(() => setOffer(null));
-    fetchResponses(id)
-      .then((resps) => {
-        if (resps.length) {
-          const r = resps[0];
-          setResponse(r);
-          return fetchResponseMessages(id, r.id).then((msgs) =>
-            setMessages(
-              msgs.map((m) => ({
-                id: m.id,
-                sender: m.sender_name,
-                senderId: m.sender_id,
-                text: m.message,
-                time: m.sent_at,
-              }))
-            )
-          );
+    let cancelled = false;
+
+    const hydrateOffer = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchOfferById(id);
+        if (!cancelled) {
+          setOffer(mapOffer(data));
         }
-        setMessages([]);
-      })
-      .catch(() => setMessages([]));
-  }, [id]);
+      } catch (err) {
+        if (!cancelled) {
+          setOffer(null);
+          setError("Failed to load offer");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const hydrateResponses = async () => {
+      try {
+        const resps = await fetchResponses(id);
+        if (cancelled) return;
+        if (resps.length) {
+          const first = resps[0];
+          setResponse(first);
+          const msgs = await fetchResponseMessages(id, first.id);
+          if (cancelled) return;
+          setMessages(
+            msgs.map((m) => ({
+              id: m.id,
+              sender: m.sender_name,
+              senderId: m.sender_id,
+              text: m.message,
+              time: m.sent_at,
+            }))
+          );
+        } else {
+          setResponse(null);
+          setMessages([]);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setResponse(null);
+          setMessages([]);
+        }
+      }
+    };
+
+    if (!initialOffer || String(initialOffer.id) !== String(id)) {
+      hydrateOffer();
+    } else {
+      setLoading(false);
+    }
+
+    hydrateResponses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, initialOffer]);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -121,7 +172,9 @@ const OfferDetailsPage = () => {
   if (!offer) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
-        <p className="text-gray-400 text-lg">Loading offer details...</p>
+        <p className="text-gray-400 text-lg">
+          {error || (loading ? "Loading offer details..." : "Offer not found.")}
+        </p>
       </div>
     );
   }
@@ -244,12 +297,38 @@ const OfferDetailsPage = () => {
 };
 
 export default OfferDetailsPage;
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
 
-export async function getServerSideProps({ locale }) {
+export async function getServerSideProps({ locale, params }) {
+  const { id } = params || {};
+  const apiBase = resolveApiBase(false).replace(/\/$/, '');
+  let initialOffer = null;
+
+  if (id) {
+    try {
+      const res = await fetch(`${apiBase}/offers/${id}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json?.data ?? json ?? null;
+        if (raw) {
+          initialOffer = mapOffer(raw);
+        }
+      } else if (res.status === 404) {
+        return { notFound: true };
+      }
+    } catch (err) {
+      console.warn(`Failed to preload offer ${id}`, err);
+    }
+  }
+
+  if (!initialOffer) {
+    return { notFound: true };
+  }
+
   return {
     props: {
+      initialOffer,
       ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
     },
   };

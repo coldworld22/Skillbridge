@@ -50,43 +50,43 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
   }, [userId]);
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl shadow-lg text-white max-w-md w-full border border-yellow-600">
-      <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2 mb-2">
-        <FaBell /> {t('notifications_center')}
+    <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold text-gray-900">
+        <FaBell className="text-blue-500" /> {t("notifications_center")}
       </h3>
 
       {/* 🔔 System Alerts */}
       {systemNotifs.length > 0 && (
         <>
-          <div className="flex justify-between items-center mt-4">
-            <h4 className="text-yellow-400 font-semibold">{t('system_alerts')}</h4>
+          <div className="mt-4 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-700">{t("system_alerts")}</h4>
             <button
-              className="text-xs text-blue-400 hover:underline"
+              className="text-xs font-medium text-blue-600 hover:text-blue-500"
               onClick={() => setShowAlerts((s) => !s)}
             >
-              {showAlerts ? t('hide', 'Hide') : t('show', 'Show')}
+              {showAlerts ? t("hide", "Hide") : t("show", "Show")}
             </button>
           </div>
           {showAlerts && (
-            <ul className="space-y-2 max-h-40 overflow-y-auto mt-2 pr-1">
+            <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
               {systemNotifs.map((n) => (
                 <li
                   key={n.id}
-                  className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500 flex justify-between items-start"
+                  className="flex items-start justify-between rounded-lg border border-gray-200 bg-gray-50 p-3"
                 >
                   <div>
-                    <div className="text-sm">
+                    <div className="text-sm text-gray-800">
                       <LinkText text={n.message} />
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-500">
                       {formatRelativeTime(n.timestamp)}
                     </div>
                   </div>
                   <button
                     onClick={() => handleMarkRead(n.id)}
-                    className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                    className="ml-2 rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-blue-500"
                   >
-                    {t('mark_as_read')}
+                    {t("mark_as_read")}
                   </button>
                 </li>
               ))}
@@ -98,19 +98,19 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
       {/* 📩 Unread Direct Messages */}
       {users.length > 0 && (
         <>
-          <h4 className="text-yellow-400 font-semibold mt-4">{t('users')}</h4>
+          <h4 className="mt-4 text-sm font-semibold text-gray-700">{t("users")}</h4>
           <ul className="space-y-2">
             {users.map((user) => (
               <li
                 key={user.id}
-                className="p-3 bg-gray-700 rounded-lg cursor-pointer flex items-center gap-3 hover:bg-gray-600 transition"
+                className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 transition hover:border-blue-200 hover:bg-blue-50"
                 onClick={() => setSelectedChat(user)}
               >
-                <FaEnvelopeOpenText className="text-yellow-500" />
-                {user.name}
+                <FaEnvelopeOpenText className="text-blue-500" />
+                <span className="text-sm font-medium text-gray-900">{user.name}</span>
                 {user.unread > 0 && (
-                  <span className="ml-auto bg-red-500 text-xs px-2 py-1 rounded-full">
-                    {user.unread} {t('new')}
+                  <span className="ml-auto rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-600">
+                    {user.unread} {t("new")}
                   </span>
                 )}
               </li>
@@ -122,19 +122,21 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
       {/* 👥 Group Notifications */}
       {groups.length > 0 && (
         <>
-          <h4 className="text-yellow-400 font-semibold mt-4">{t('groups')}</h4>
+          <h4 className="mt-4 text-sm font-semibold text-gray-700">{t("groups")}</h4>
           <ul className="space-y-2">
             {groups.map((group) => (
               <li
                 key={group.id}
-                className="p-3 bg-gray-700 rounded-lg cursor-pointer flex items-center gap-3 hover:bg-gray-600 transition"
+                className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 transition hover:border-blue-200 hover:bg-blue-50"
                 onClick={() => setSelectedChat({ ...group, isGroup: true })}
               >
-                <FaUsers className="text-yellow-500" />
-                {group.name || group.groupName}
+                <FaUsers className="text-purple-500" />
+                <span className="text-sm font-medium text-gray-900">
+                  {group.name || group.groupName}
+                </span>
                 {group.unread > 0 && (
-                  <span className="ml-auto bg-red-500 text-xs px-2 py-1 rounded-full">
-                    {group.unread} {t('new')}
+                  <span className="ml-auto rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-600">
+                    {group.unread} {t("new")}
                   </span>
                 )}
               </li>
@@ -145,7 +147,9 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
 
       {/* 💤 Fallback */}
       {users.length === 0 && groups.length === 0 && systemNotifs.length === 0 && (
-        <p className="text-gray-400 mt-4 text-sm text-center">{t('no_new_notifications')}</p>
+        <p className="mt-4 text-center text-sm text-gray-500">
+          {t("no_new_notifications")}
+        </p>
       )}
     </div>
   );

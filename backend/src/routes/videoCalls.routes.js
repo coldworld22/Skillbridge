@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth/authMiddleware');
-const verifyEnrollment = require('../middleware/auth/verifyEnrollment');
+const verifyVideoCallAccess = require('../middleware/auth/verifyVideoCallAccess');
 const verifyHostRole = require('../middleware/auth/verifyHostRole');
 const db = require('../config/database');
 const { state } = require('../sockets');
 
-router.get('/:roomId/participants', verifyToken, verifyEnrollment, async (req, res) => {
+router.get('/:roomId/participants', verifyToken, verifyVideoCallAccess, async (req, res) => {
   try {
     const rows = await db('video_call_participants')
       .select('socket_id as id', 'name', 'role', 'is_muted as isMuted', 'joined_at')
@@ -18,7 +18,7 @@ router.get('/:roomId/participants', verifyToken, verifyEnrollment, async (req, r
   }
 });
 
-router.patch('/:roomId/participants/:id', verifyToken, verifyHostRole, async (req, res) => {
+router.patch('/:roomId/participants/:id', verifyToken, verifyVideoCallAccess, verifyHostRole, async (req, res) => {
   const { roomId, id } = req.params;
   const { isMuted, role } = req.body || {};
   const updateData = {};
@@ -49,7 +49,7 @@ router.patch('/:roomId/participants/:id', verifyToken, verifyHostRole, async (re
   }
 });
 
-router.delete('/:roomId/participants/:id', verifyToken, verifyHostRole, async (req, res) => {
+router.delete('/:roomId/participants/:id', verifyToken, verifyVideoCallAccess, verifyHostRole, async (req, res) => {
   const { roomId, id } = req.params;
   try {
     await db('video_call_participants')
@@ -66,7 +66,7 @@ router.delete('/:roomId/participants/:id', verifyToken, verifyHostRole, async (r
   }
 });
 
-router.get('/:roomId/messages', verifyToken, async (req, res) => {
+router.get('/:roomId/messages', verifyToken, verifyVideoCallAccess, async (req, res) => {
   try {
     const messages = await db('video_call_messages')
       .where({ room_id: req.params.roomId })
@@ -77,17 +77,18 @@ router.get('/:roomId/messages', verifyToken, async (req, res) => {
   }
 });
 
-router.post('/:roomId/messages', verifyToken, verifyEnrollment, async (req, res) => {
+router.post('/:roomId/messages', verifyToken, verifyVideoCallAccess, async (req, res) => {
   const { text } = req.body || {};
   const roomId = req.params.roomId;
   if (!text?.trim())
     return res.status(400).json({ message: 'Message text required' });
   try {
+    const senderName = req.user.full_name || req.user.name || req.user.email || 'Participant';
     const [message] = await db('video_call_messages')
       .insert({
         room_id: roomId,
         sender_id: req.user.id,
-        sender: req.user.full_name,
+        sender: senderName,
         text: text.trim(),
       })
       .returning('*');

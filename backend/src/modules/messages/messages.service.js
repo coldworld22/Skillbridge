@@ -12,13 +12,33 @@ const MESSAGE_RETENTION_MS =
   1000;
 
 exports.createMessage = async (
-  { sender_id, receiver_id, message, booking_id, type },
+  {
+    sender_id,
+    receiver_id,
+    message,
+    booking_id = null,
+    type = null,
+    file_url = null,
+    audio_url = null,
+    reply_to_id = null,
+  },
   trx = null,
   emit = true,
 ) => {
+  const payload = {
+    sender_id,
+    receiver_id,
+    message,
+    booking_id,
+    type,
+    file_url,
+    audio_url,
+    reply_to_id,
+  };
+
   const run = async (transaction) => {
     const [row] = await transaction("messages")
-      .insert({ sender_id, receiver_id, message, booking_id, type })
+      .insert(payload)
       .returning("*");
     try {
       if (emit && global.io && global.userSockets?.[receiver_id]) {
@@ -82,8 +102,13 @@ exports.deleteMessage = async (userId, id) => {
   return row;
 };
 
-exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
+exports.sendEmail = async ({ sender_id, receiver_id, subject, message, quota }) =>
   db.transaction(async (trx) => {
+    let quotaInfo = null;
+    if (quota?.consume) {
+      quotaInfo = await quota.consume(trx);
+    }
+
     const user = await trx("users")
       .select("email")
       .where({ id: receiver_id })
@@ -112,11 +137,20 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
       throw err;
     }
 
+    if (quotaInfo && typeof quotaInfo.remaining !== "undefined") {
+      msg.quota_remaining = quotaInfo.remaining;
+    }
+
     return msg;
   });
 
-exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
+exports.sendWhatsApp = async ({ sender_id, receiver_id, message, quota }) =>
   db.transaction(async (trx) => {
+    let quotaInfo = null;
+    if (quota?.consume) {
+      quotaInfo = await quota.consume(trx);
+    }
+
     const user = await trx("users")
       .select("phone")
       .where({ id: receiver_id })
@@ -145,11 +179,20 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
       throw err;
     }
 
+    if (quotaInfo && typeof quotaInfo.remaining !== "undefined") {
+      msg.quota_remaining = quotaInfo.remaining;
+    }
+
     return msg;
   });
 
-exports.startVideoCall = async ({ sender_id, receiver_id }) => {
+exports.startVideoCall = async ({ sender_id, receiver_id, quota }) => {
+  let quotaInfo = null;
   const { call, roomId } = await db.transaction(async (trx) => {
+    if (quota?.consume) {
+      quotaInfo = await quota.consume(trx);
+    }
+
     const sender = await trx("users")
       .select("id")
       .where({ id: sender_id })
@@ -211,7 +254,11 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
     logger.error("Failed to emit video call events", err);
   }
 
-  return { callId: call.id, roomId };
+  const payload = { callId: call.id, roomId };
+  if (quotaInfo && typeof quotaInfo.remaining !== "undefined") {
+    payload.quota_remaining = quotaInfo.remaining;
+  }
+  return payload;
 };
 
 exports.respondVideoCall = async ({ call_id, user_id, action }) => {

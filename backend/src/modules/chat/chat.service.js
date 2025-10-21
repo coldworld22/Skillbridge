@@ -2,6 +2,7 @@ const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const notificationService = require("../notifications/notifications.service");
 const userModel = require("../users/user.model");
+const messageService = require("../messages/messages.service");
 
 exports.searchUsers = async (currentUserId, term) => {
   const subquery = db("messages")
@@ -79,12 +80,22 @@ exports.getConversation = async (userId, otherId) => {
     .orderBy("m.sent_at");
 };
 
-exports.sendMessage = async ({ sender_id, receiver_id, message, file_url, audio_url, reply_to_id }) => {
-  const [row] = await db("messages")
-    .insert({ sender_id, receiver_id, message, file_url, audio_url, reply_to_id })
-    .returning("*");
-  return row;
-};
+exports.sendMessage = async ({
+  sender_id,
+  receiver_id,
+  message,
+  file_url,
+  audio_url,
+  reply_to_id,
+}) =>
+  messageService.createMessage({
+    sender_id,
+    receiver_id,
+    message,
+    file_url,
+    audio_url,
+    reply_to_id,
+  });
 
 exports.deleteMessage = async (userId, id) => {
   const [row] = await db("messages")

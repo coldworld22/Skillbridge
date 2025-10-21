@@ -10,13 +10,26 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
     return list.length ? list : ["/"];
   }, [availablePages, config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const emptyTwitter = {
-    title: "",
-    description: "",
-    cardType: "summary",
-    image: "",
-    handle: "@yourhandle",
-  };
+  const defaultHandle = t("defaultHandle");
+  const emptyTwitter = useMemo(
+    () => ({
+      title: "",
+      description: "",
+      cardType: "summary",
+      image: "",
+      handle: defaultHandle,
+    }),
+    [defaultHandle]
+  );
+  const cardTypeOptions = useMemo(
+    () => [
+      { value: "summary", label: t("cardTypeOptions.summary") },
+      { value: "summary_large_image", label: t("cardTypeOptions.summary_large_image") },
+      { value: "app", label: t("cardTypeOptions.app") },
+      { value: "player", label: t("cardTypeOptions.player") },
+    ],
+    [t]
+  );
   const [form, setForm] = useState(emptyTwitter);
 
   const handleChange = (key, value) => {
@@ -30,7 +43,7 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
       const url = await uploadImage(file);
       handleChange("image", url);
     } catch {
-      toast.error("Upload failed");
+      toast.error(t("uploadFailed"));
     }
   };
 
@@ -42,7 +55,7 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
     const data = config.twitter?.[selectedPage] || {};
     setForm({ ...emptyTwitter, ...data });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPage, config.twitter]);
+  }, [selectedPage, config.twitter, emptyTwitter]);
 
 
   const handleSave = async () => {
@@ -111,8 +124,8 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
             onChange={(e) => handleChange("cardType", e.target.value)}
             className="border rounded px-3 py-2 w-full"
           >
-            {['summary', 'summary_large_image', 'app', 'player'].map((type) => (
-              <option key={type} value={type}>{type}</option>
+            {cardTypeOptions.map((type) => (
+              <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
         </div>
@@ -121,7 +134,7 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
           <label className="block font-medium mb-1">{t("image")}</label>
           <input type="file" accept="image/*" onChange={handleImageUpload} />
           {form.image && (
-            <img src={form.image} alt="Twitter Preview" className="mt-2 w-48 rounded shadow" />
+            <img src={form.image} alt={t("imagePreviewAlt")} className="mt-2 w-48 rounded shadow" />
           )}
         </div>
       </div>
@@ -132,7 +145,7 @@ export default function TwitterCardSettings({ config, update, availablePages }) 
           value={form.handle}
           onChange={(e) => handleChange("handle", e.target.value)}
           className="w-full border px-3 py-2 rounded"
-          placeholder="@username"
+          placeholder={t("handlePlaceholder")}
         />
       </div>
 

@@ -24,24 +24,66 @@ import {
 const PROGRESS_KEY_BASE = "skillbridge_tutorialProgress";
 const getProgressKey = (uid) => `${PROGRESS_KEY_BASE}_${uid}`;
 
-export const getStars = (rating) => {
+const renderStars = (rating) => {
   const safeRating = Number.isFinite(rating)
     ? Math.min(Math.max(rating, 0), 5)
     : 0;
-  if (safeRating <= 0) return null;
-  const full = Math.floor(safeRating);
-  const half = safeRating % 1 >= 0.5;
-  return (
-    <div className="flex items-center">
-      {Array.from({ length: full }).map((_, i) => (
-        <FaStar key={i} className="text-yellow-400 text-sm" />
-      ))}
-      {half && <FaStar className="text-yellow-300 opacity-50 text-sm" />}
-      {Array.from({ length: 5 - full - (half ? 1 : 0) }).map((_, i) => (
-        <FaStar key={`empty-${i}`} className="text-gray-500 text-sm" />
-      ))}
-    </div>
-  );
+  return Array.from({ length: 5 }, (_, index) => {
+    const starNumber = index + 1;
+    const isActive =
+      safeRating >= starNumber ||
+      (index === 0 && safeRating > 0 && safeRating < 1);
+    return (
+      <FaStar
+        key={index}
+        className={`text-sm ${isActive ? "text-yellow-400" : "text-gray-600"}`}
+        aria-hidden="true"
+      />
+    );
+  });
+};
+
+const resolveDurationLabel = (tutorial) => {
+  const stringFields = [
+    tutorial.durationLabel,
+    tutorial.duration_label,
+    tutorial.durationText,
+    tutorial.duration_text,
+  ];
+  for (const value of stringFields) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+
+  const numericCandidates = [tutorial.duration, tutorial.duration_minutes];
+  for (const candidate of numericCandidates) {
+    const numeric = Number(candidate);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      if (numeric >= 60) {
+        const hours = Math.floor(numeric / 60);
+        const minutes = Math.round(numeric % 60);
+        const hourLabel = hours ? `${hours}h` : "";
+        const minuteLabel = minutes ? `${minutes}m` : "";
+        return `${hourLabel}${hourLabel && minuteLabel ? " " : ""}${minuteLabel}`.trim();
+      }
+      return `${numeric}m`;
+    }
+  }
+
+  const dateFields = [
+    tutorial.published_at,
+    tutorial.publishedAt,
+    tutorial.created_at,
+    tutorial.createdAt,
+  ];
+  for (const value of dateFields) {
+    if (!value) continue;
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString();
+    }
+  }
+
+  return null;
 };
 
 const LandingTutorialsSection = () => {
@@ -221,7 +263,29 @@ const LandingTutorialsSection = () => {
         {/* Tutorial Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTutorials.map((tut, index) => {
-            const isTopRated = Array.isArray(tut.tags) && tut.tags.includes("Top Rated");
+            const isTopRated =
+              Array.isArray(tut.tags) && tut.tags.includes("Top Rated");
+            const ratingValue = Number.isFinite(Number(tut.rating))
+              ? Number(tut.rating)
+              : 0;
+            const ratingCount = Number.isFinite(Number(tut.ratingCount))
+              ? Number(tut.ratingCount)
+              : 0;
+            const priceValue = Number(tut.discountPrice ?? tut.price) || 0;
+            const originalPrice = Number(tut.price) || 0;
+            const hasDiscount =
+              priceValue > 0 &&
+              Number.isFinite(originalPrice) &&
+              tut.discountPrice &&
+              Number(tut.discountPrice) < originalPrice;
+            const formattedPrice = priceValue
+              ? formatCurrency(priceValue, { currency: tut.currency })
+              : t("free");
+            const formattedOriginalPrice =
+              hasDiscount && originalPrice
+                ? formatCurrency(originalPrice, { currency: tut.currency })
+                : null;
+            const durationLabel = resolveDurationLabel(tut);
             return (
               <motion.div
                 key={tut.id}
@@ -328,85 +392,99 @@ const LandingTutorialsSection = () => {
                   </div>
                 </div>
 
-                <div className="p-4">
-                  <h3 className="font-bold text-yellow-400 text-lg mb-1 line-clamp-2 min-h-[56px]">
-                    {tut.title}
-                  </h3>
-                  <p className="text-sm text-gray-300 mb-2">
-                    Instructor: {tut.instructor}
-                  </p>
+                <div className="p-5 space-y-5">
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-lg text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                      {tut.title}
+                    </h3>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-full overflow-hidden border border-gray-700 bg-gray-800 flex-shrink-0">
+                          <Image
+                            src={tut.instructorAvatar || "/images/default-avatar.png"}
+                            alt={tut.instructor || 'Instructor'}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            {t('instructor_label', 'Instructor')}
+                          </p>
+                          <p className="text-sm font-medium text-white truncate">
+                            {tut.instructor || t('unknown_instructor', 'Unknown')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-wide text-gray-500">
+                          {t('level_label', 'Level')}
+                        </p>
+                        <p className="text-sm font-semibold text-yellow-300">
+                          {tut.level || t('level_unknown', 'All Levels')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                  <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                    <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">
-                      {tut.level}
-                    </span>
-                    {Array.isArray(tut.tags) &&
-                      tut.tags.slice(0, 2).map((tag, i) => (
+                  <div className="flex items-center justify-between text-sm text-gray-300">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {renderStars(ratingValue)}
+                      <span className="ml-2 text-yellow-300 font-semibold">
+                        {ratingValue > 0 ? ratingValue.toFixed(1) : "0.0"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({ratingCount})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <FaClock size={12} /> {durationLabel || t('duration_na', 'N/A')}
+                    </div>
+                  </div>
+
+                  {Array.isArray(tut.tags) && tut.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {tut.tags.slice(0, 2).map((tag, i) => (
                         <span
                           key={i}
-                          className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300"
-                          title={`Tag: ${tag}`}
+                          className="bg-gray-800/70 text-gray-300 px-2 py-1 rounded-full"
                         >
                           #{tag}
                         </span>
                       ))}
-                    {Array.isArray(tut.tags) && tut.tags.length > 2 && (
-                      <span className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300">
-                        +{tut.tags.length - 2}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center mt-4 text-sm">
-                    {tut.rating > 0 && (
-                      <div className="flex items-center gap-1 text-yellow-400">
-                        {getStars(tut.rating)}
-                        {tut.ratingCount > 0 && (
-                          <span className="text-gray-400 ml-1">({tut.ratingCount})</span>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1 text-gray-400">
-                      <FaClock size={12} /> {tut.duration}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex justify-between items-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        Number(tut.discountPrice ?? tut.price) > 0
-                          ? 'bg-yellow-500 text-black'
-                          : 'bg-green-500 text-black'
-                      }`}
-                    >
-                      {Number(tut.discountPrice ?? tut.price) > 0 ? (
-                        tut.discountPrice && Number(tut.discountPrice) < Number(tut.price) ? (
-                          <>
-                            <span className="line-through mr-1">
-                              {formatCurrency(tut.price, { currency: tut.currency })}
-                            </span>
-                            <span>
-                              {formatCurrency(tut.discountPrice, { currency: tut.currency })}
-                            </span>
-                          </>
-                        ) : (
-                          formatCurrency(tut.price, { currency: tut.currency })
-                        )
-                      ) : (
-                        t('free')
+                      {tut.tags.length > 2 && (
+                        <span className="bg-gray-800/70 text-yellow-300 px-2 py-1 rounded-full">
+                          +{tut.tags.length - 2}
+                        </span>
                       )}
-                    </span>
-                    
-                    {enrolledIds.includes(tut.id) && (
-                      <span className="text-xs text-green-400 font-medium">
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className={`text-base font-semibold ${priceValue > 0 ? 'text-yellow-300' : 'text-green-400'}`}>
+                        {formattedPrice}
+                      </p>
+                      {formattedOriginalPrice && (
+                        <p className="text-xs text-gray-400 line-through">
+                          {formattedOriginalPrice}
+                        </p>
+                      )}
+                    </div>
+                    {enrolledIds.includes(tut.id) ? (
+                      <span className="text-xs font-semibold uppercase tracking-wide text-yellow-400">
                         {t('enrolled')}
                       </span>
+                    ) : (
+                      <span className="text-xs uppercase tracking-wide text-gray-500">
+                        {t('not_enrolled', 'Not enrolled')}
+                      </span>
                     )}
                   </div>
 
-                  {/* Progress Bar */}
                   {enrolledIds.includes(tut.id) && (
-                    <div className="mt-3">
+                    <div>
                       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-yellow-400 transition-all duration-300"
@@ -420,7 +498,7 @@ const LandingTutorialsSection = () => {
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2">
                     <button
                       aria-label="View tutorial details"
                       onClick={(e) => {
@@ -441,8 +519,7 @@ const LandingTutorialsSection = () => {
                           return;
                         }
                         try {
-                          const price = tut.discountPrice ?? tut.price;
-                          if (price == null) {
+                          if (priceValue <= 0) {
                             console.error(
                               `Cannot add tutorial ${tut.id} to cart: missing price`,
                             );
@@ -452,7 +529,7 @@ const LandingTutorialsSection = () => {
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
-                            price: (tut.discountPrice ?? tut.price) || 0,
+                            price: priceValue,
                             quantity: 1,
                             ...(tut.currency || tut.currencyCode
                               ? { currency: tut.currency || tut.currencyCode }

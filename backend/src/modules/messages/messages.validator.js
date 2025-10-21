@@ -1,7 +1,10 @@
 const { z } = require("zod");
 
 const idParams = z.object({
-  id: z.coerce.number().int(),
+  id: z
+    .string()
+    .trim()
+    .uuid({ message: "Invalid id format" }),
 });
 
 exports.idParam = {

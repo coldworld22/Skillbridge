@@ -80,6 +80,35 @@ app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
+
+const defaultApiHosts = [];
+if (APP_DOMAIN) {
+  defaultApiHosts.push(`${APP_DOMAIN}`, `www.${APP_DOMAIN}`, `api.${APP_DOMAIN}`);
+}
+const allowedApiHosts = Array.from(
+  new Set(
+    [
+      ...(process.env.ALLOWED_API_HOSTS || "")
+        .split(",")
+        .map((h) => h.trim())
+        .filter(Boolean),
+      ...defaultApiHosts,
+      process.env.API_HOST,
+      "localhost",
+      "127.0.0.1",
+    ]
+      .filter(Boolean)
+      .map((host) => host.toLowerCase())
+  )
+);
+const allowedHostSet = new Set(allowedApiHosts);
+const allowedOriginSet = new Set(ALLOWED_ORIGINS);
+if (APP_DOMAIN) {
+  allowedOriginSet.add(`https://${APP_DOMAIN}`);
+  allowedOriginSet.add(`https://www.${APP_DOMAIN}`);
+  allowedOriginSet.add(`https://api.${APP_DOMAIN}`);
+}
+
 // 🌐 CORS must run before body parsing so even 4xx responses include the header
 app.use(
   cors({
@@ -96,6 +125,45 @@ app.use(
     credentials: true,
   })
 );
+
+// Block requests that come from untrusted hosts or browser origins to limit phishing proxies.
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== "production") {
+    return next();
+  }
+
+  const hostHeader = (req.headers.host || "").toLowerCase();
+  if (hostHeader) {
+    const hostname = hostHeader.replace(/:\d+$/, "");
+    if (!allowedHostSet.has(hostname)) {
+      logger.warn(`Rejected request with invalid host header: ${hostHeader}`);
+      return res.status(403).json({ message: "Forbidden host" });
+    }
+  }
+
+  const originHeader = req.headers.origin;
+  if (originHeader) {
+    if (!allowedOriginSet.has(originHeader)) {
+      logger.warn(`Rejected request with invalid origin header: ${originHeader}`);
+      return res.status(403).json({ message: "Origin not allowed" });
+    }
+  } else if (req.headers.referer) {
+    try {
+      const refererOrigin = new URL(req.headers.referer).origin;
+      if (!allowedOriginSet.has(refererOrigin)) {
+        logger.warn(
+          `Rejected request with invalid referer header: ${req.headers.referer}`
+        );
+        return res.status(403).json({ message: "Referer not allowed" });
+      }
+    } catch (error) {
+      logger.warn(`Failed to parse referer header: ${req.headers.referer}`);
+      return res.status(403).json({ message: "Invalid referer" });
+    }
+  }
+
+  return next();
+});
 
 // Set reasonable body parser limits; routes needing more can override per-route.
 // Large content editors (such as the admin class builder which can embed
@@ -158,20 +226,20 @@ app.use(passport.session());
 
 
 
-// Restrict direct PDF access from the uploads folder
+// Restrict direct PDF access for protected uploads (e.g., paid books)
 const uploadsPath = path.join(__dirname, "../uploads");
 const serveUploads = express.static(uploadsPath);
 const blockPdfMiddleware = (req, res, next) => {
   const lowerPath = (req.path || '').toLowerCase();
   const isPdf = lowerPath.endsWith('.pdf');
-  // Allow preview PDFs under the dedicated previews folder or when explicitly marked
-  // as preview via query flag for backward compatibility with old paths.
-  const allowPreview =
-    lowerPath.includes('/books/previews/') ||
-    req.query?.preview === '1' ||
-    req.query?.preview === 'true';
+  const isBookAsset = lowerPath.startsWith('/books/');
+  const isPreviewFile = lowerPath.startsWith('/books/previews/');
+  const previewFlag = req.query?.preview;
+  const allowLegacyPreview =
+    typeof previewFlag === 'string' &&
+    (previewFlag === '1' || previewFlag.toLowerCase() === 'true');
 
-  if (isPdf && !allowPreview) {
+  if (isPdf && isBookAsset && !isPreviewFile && !allowLegacyPreview) {
     return res.status(403).json({ message: 'Direct PDF access is forbidden' });
   }
   return serveUploads(req, res, next);

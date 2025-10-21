@@ -34,11 +34,16 @@ exports.updateSettings = async (settings) => {
   try {
     const fs = require("fs");
     const path = require("path");
-    const robotsPath = path.join(__dirname, "../../../../frontend/public/robots.txt");
-    if (settings.robots) {
-      fs.writeFileSync(robotsPath, settings.robots);
-    } else if (fs.existsSync(robotsPath)) {
-      fs.unlinkSync(robotsPath);
+    const frontendPublic = path.join(__dirname, "../../../../frontend/public");
+    if (fs.existsSync(frontendPublic)) {
+      const robotsPath = path.join(frontendPublic, "robots.txt");
+      if (settings.robots) {
+        fs.writeFileSync(robotsPath, settings.robots);
+      } else if (fs.existsSync(robotsPath)) {
+        fs.unlinkSync(robotsPath);
+      }
+    } else {
+      logger.warn("Skipping robots.txt write – frontend/public directory not found in backend container.");
     }
   } catch (err) {
     logger.error("Failed to write robots.txt", err);
@@ -51,7 +56,8 @@ exports.updateSettings = async (settings) => {
 exports.generateSitemap = async () => {
   const fs = require("fs");
   const path = require("path");
-  const fetch = require("node-fetch");
+  const fetch = (...args) =>
+    import("node-fetch").then(({ default: fetchFn }) => fetchFn(...args));
   const { frontendBase } = require("../../utils/frontend");
 
   const settings = (await exports.getSettings()) || {};

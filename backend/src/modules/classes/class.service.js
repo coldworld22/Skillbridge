@@ -207,8 +207,15 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
     .select("class_id")
     .count("* as recent_enrollments");
 
+  const totalEnrollments = db("class_enrollments")
+    .whereNot({ status: "cancelled" })
+    .groupBy("class_id")
+    .select("class_id")
+    .count("* as enrolled_count");
+
   const rows = await db("online_classes as c")
     .leftJoin(subquery.as("e"), "e.class_id", "c.id")
+    .leftJoin(totalEnrollments.as("total"), "total.class_id", "c.id")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .where({ "c.status": "published", "c.moderation_status": "Approved" })
@@ -217,7 +224,8 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
       "u.full_name as instructor",
       "u.avatar_url as instructor_image",
       "cat.name as category",
-      db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments")
+      db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments"),
+      db.raw("COALESCE(total.enrolled_count, 0) as enrolled_count")
     )
     .orderByRaw("COALESCE(e.recent_enrollments, 0) DESC")
     .orderBy("c.start_date", "asc")
@@ -225,11 +233,32 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
     .limit(lim)
     .offset(offset);
 
-  const classes = rows.map((cls) => ({
-    ...cls,
-    recent_enrollments: parseInt(cls.recent_enrollments, 10) || 0,
-    trending: (parseInt(cls.recent_enrollments, 10) || 0) >= 5,
-  }));
+  const classes = rows.map((cls) => {
+    const recent = parseInt(cls.recent_enrollments, 10) || 0;
+    const enrolledCount = parseInt(cls.enrolled_count, 10) || 0;
+    const rawMax =
+      cls.max_students === null || cls.max_students === undefined
+        ? null
+        : Number(cls.max_students);
+    const maxStudents = Number.isFinite(rawMax) ? rawMax : null;
+    const spotsLeft =
+      maxStudents === null ? null : Math.max(0, maxStudents - enrolledCount);
+
+    return {
+      ...cls,
+      price:
+        cls.price === null ||
+        cls.price === undefined ||
+        cls.price === ""
+          ? null
+          : parseFloat(cls.price),
+      max_students: maxStudents ?? cls.max_students,
+      recent_enrollments: recent,
+      enrolled_count: enrolledCount,
+      trending: recent >= 5,
+      spots_left: spotsLeft,
+    };
+  });
 
   return {
     data: classes,

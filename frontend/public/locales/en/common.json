@@ -50,6 +50,8 @@
   "welcome_user": "Welcome, {{name}}",
   "dashboard_navigation": "Dashboard Navigation",
   "useful_links": "Useful Links",
+  "quick_links_online": "Your Shortcuts",
+  "quick_links_offline": "Quick Links",
   "explore_website_sections": "Explore Website Sections",
   "explore_courses": "Explore Courses",
   "community_forum": "Community Forum",

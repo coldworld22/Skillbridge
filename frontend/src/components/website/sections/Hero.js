@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback, Fragment, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Typewriter from "typewriter-effect";
@@ -18,6 +18,8 @@ import {
   FaChevronRight,
   FaQuestionCircle,
   FaSearchPlus,
+  FaSpinner,
+  FaTimes,
 } from "react-icons/fa";
 import AdMediaModal from "@/components/website/AdMediaModal";
 import SidebarMenu from "@/components/shared/SidebarMenu";
@@ -29,6 +31,137 @@ import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
 
+const SITE_SECTIONS = [
+  {
+    id: "section-online-classes",
+    label: "Online Classes",
+    href: "/online-classes",
+    keywords: ["class", "classes", "course", "courses", "live learning"],
+  },
+  {
+    id: "section-tutorials",
+    label: "Tutorials",
+    href: "/tutorials",
+    keywords: ["tutorial", "tutorials", "recorded lessons"],
+  },
+  {
+    id: "section-books",
+    label: "Books Marketplace",
+    href: "/marketplace/books",
+    keywords: ["book", "books", "library", "marketplace", "ebook"],
+  },
+  {
+    id: "section-offers",
+    label: "Offers & Scholarships",
+    href: "/offers",
+    keywords: ["offer", "offers", "discount", "discounts", "scholarship"],
+  },
+  {
+    id: "section-community",
+    label: "Community Forum",
+    href: "/community",
+    keywords: ["community", "forum", "discussions", "groups"],
+  },
+  {
+    id: "section-blog",
+    label: "Blog & News",
+    href: "/blog",
+    keywords: ["blog", "news", "articles", "insights"],
+  },
+  {
+    id: "section-faqs",
+    label: "FAQs",
+    href: "/faqs",
+    keywords: ["faq", "faqs", "questions", "help"],
+  },
+  {
+    id: "section-support",
+    label: "Help & Support",
+    href: "/support",
+    keywords: ["support", "help", "ticket", "assistance"],
+  },
+  {
+    id: "section-contact",
+    label: "Contact",
+    href: "/contact",
+    keywords: ["contact", "email", "phone", "get in touch"],
+  },
+  {
+    id: "section-about",
+    label: "About SkillBridge",
+    href: "/about",
+    keywords: ["about", "mission", "team", "story"],
+  },
+  {
+    id: "section-dashboard",
+    label: "Dashboard",
+    href: "/dashboard",
+    keywords: ["dashboard", "profile", "account", "portal"],
+  },
+];
+
+const SEARCH_SECTIONS = [
+  {
+    key: "sections",
+    title: "🌐 Site Sections",
+    href: (item) => item.href,
+    getLabel: (item) => item.title,
+    getKey: (item) => item.id,
+  },
+  {
+    key: "classes",
+    title: "📚 Online Classes",
+    href: (item) => `/online-classes/${item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `class-${item.id}`,
+  },
+  {
+    key: "tutorials",
+    title: "📘 Tutorials",
+    href: (item) => `/tutorials/${item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `tutorial-${item.id}`,
+  },
+  {
+    key: "books",
+    title: "📖 Books",
+    href: (item) => `/marketplace/books/${item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `book-${item.id}`,
+  },
+  {
+    key: "instructors",
+    title: "👩‍🏫 Instructors",
+    href: (item) => `/instructors/${item.id}`,
+    getLabel: (item) => item.full_name || item.name,
+    getKey: (item) => `instructor-${item.id}`,
+  },
+  {
+    key: "offers",
+    title: "💼 Offers",
+    href: (item) => `/offers/${item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `offer-${item.id}`,
+  },
+  {
+    key: "community",
+    title: "💬 Community",
+    href: (item) => `/community/${item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `community-${item.id}`,
+  },
+  {
+    key: "blog",
+    title: "📝 Blog",
+    href: (item) => `/blog/${item.slug || item.id}`,
+    getLabel: (item) => item.title,
+    getKey: (item) => `blog-${item.slug || item.id}`,
+  },
+];
+
+const escapeRegExp = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 
 const Hero = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -39,21 +172,45 @@ const Hero = () => {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState(null);
   const [searchError, setSearchError] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [loadingAds, setLoadingAds] = useState(true);
   const [adsError, setAdsError] = useState(false);
   const [isAdPaused, setIsAdPaused] = useState(false);
-  const hasResults =
-    results &&
-    Object.values(results).some(
+  const searchContainerRef = useRef(null);
+  const latestQueryRef = useRef("");
+  const hasResults = useMemo(() => {
+    if (!results) return false;
+    return Object.values(results).some(
       (arr) => Array.isArray(arr) && arr.length > 0
     );
+  }, [results]);
   const settings = useAppConfigStore((s) => s.settings);
   const fetchAppConfig = useAppConfigStore((s) => s.fetch);
-  const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
+  const isLoggedIn = useAuthStore((s) => s.isAuthenticated());
   const userRole = useAuthStore((s) => s.user?.roles?.[0] || s.user?.role);
 
   const [heroBg, setHeroBg] = useState("");
+
+  const matchSiteSections = useCallback((term) => {
+    const query = term.trim().toLowerCase();
+    if (!query) return [];
+    const parts = query.split(/\s+/).filter(Boolean);
+    return SITE_SECTIONS.filter((section) => {
+      const haystack = [section.label, ...(section.keywords || [])]
+        .join(" ")
+        .toLowerCase();
+      return (
+        haystack.includes(query) ||
+        parts.some((part) => haystack.includes(part))
+      );
+    }).map((section) => ({
+      id: section.id,
+      title: section.label,
+      href: section.href,
+    }));
+  }, []);
 
   useEffect(() => {
     const bg = settings.home_bg_url;
@@ -121,19 +278,58 @@ const Hero = () => {
     }
   }, [ads, currentAd]);
 
+  const handleSearch = useCallback(async (query) => {
+    const term = query.trim();
+    if (!term) return;
+    const staticMatches = matchSiteSections(term);
+    latestQueryRef.current = term;
+    setSearchError(false);
+    setResults({ sections: staticMatches });
+    setIsDropdownOpen(true);
+    setIsSearching(true);
+    try {
+      const data = await searchAll(term);
+      if (latestQueryRef.current !== term) {
+        return;
+      }
+      const normalizedResults =
+        data && typeof data === "object" ? data : {};
+      setResults({
+        sections: staticMatches,
+        ...normalizedResults,
+      });
+      setSearchError(false);
+    } catch (_err) {
+      if (latestQueryRef.current !== term) {
+        return;
+      }
+      setResults({ sections: staticMatches });
+      setSearchError(true);
+    } finally {
+      if (latestQueryRef.current === term) {
+        setIsSearching(false);
+      }
+    }
+  }, [matchSiteSections]);
+
   // Auto search when user types with small debounce
   useEffect(() => {
-    if (!searchText.trim()) {
+    const term = searchText.trim();
+    if (!term) {
+      latestQueryRef.current = "";
       setResults(null);
+      setSearchError(false);
+      setIsDropdownOpen(false);
+      setIsSearching(false);
       return;
     }
 
     const timeout = setTimeout(() => {
       handleSearch(searchText);
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timeout);
-  }, [searchText]);
+  }, [searchText, handleSearch]);
 
 
   // Handle Ad Navigation
@@ -147,23 +343,65 @@ const Hero = () => {
     trackMouse: true,
   });
 
-  const handleSearch = async (query) => {
-    const term = query.trim();
-    if (!term) return;
-    try {
-      const data = await searchAll(term);
-      setResults(data);
-      setSearchError(false);
-    } catch (_err) {
-      setResults(null);
-      setSearchError(true);
-    }
-  };
+  const clearSearch = useCallback(() => {
+    setSearchText("");
+    setResults(null);
+    setSearchError(false);
+    setIsDropdownOpen(false);
+    setIsSearching(false);
+    latestQueryRef.current = "";
+  }, []);
 
-  const handleSearchSelect = (selectedValue) => {
-    setSearchText(selectedValue);
-    handleSearch(selectedValue);
-  };
+  const highlightMatch = useCallback(
+    (text = "") => {
+      const term = searchText.trim();
+      if (!term || typeof text !== "string") return text;
+      const regex = new RegExp(`(${escapeRegExp(term)})`, "ig");
+      return text.split(regex).map((part, idx) => {
+        if (part.toLowerCase() === term.toLowerCase()) {
+          return (
+            <mark
+              key={`highlight-${idx}`}
+              className="bg-yellow-200 text-gray-900 px-0.5 rounded"
+            >
+              {part}
+            </mark>
+          );
+        }
+        return <Fragment key={`fragment-${idx}`}>{part}</Fragment>;
+      });
+    },
+    [searchText],
+  );
+
+  const handleResultNavigate = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleClickOutside = (event) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen]);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isDropdownOpen]);
 
   const scrollToSection = (id) => {
     if (typeof document !== "undefined") {
@@ -171,6 +409,12 @@ const Hero = () => {
       el && el.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const trimmedQuery = searchText.trim();
+  const resultsId = "hero-search-results";
+  const shouldShowDropdown =
+    isDropdownOpen &&
+    (isSearching || searchError || hasResults || !!trimmedQuery);
 
   return (
     <motion.section
@@ -222,185 +466,163 @@ const Hero = () => {
           <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-6 text-white drop-shadow-lg">
             <Typewriter options={{ strings: typewriterText, autoStart: true, loop: true }} />
           </motion.h1>
-
           {/* 🔍 Modern Search Box */}
-          <div className="relative w-full max-w-lg mx-auto mb-6">
-            <div className="flex">
+          <div
+            ref={searchContainerRef}
+            className="relative w-full max-w-lg mx-auto mb-6"
+          >
+            <div className="flex items-center gap-2">
               <div className="flex-grow">
                 <SearchBar
                   value={searchText}
                   onChange={setSearchText}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchText)}
-                  label="Search courses, books and more"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleSearch(searchText);
+                    } else if (event.key === "Escape") {
+                      setIsDropdownOpen(false);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (searchText.trim()) {
+                      setIsDropdownOpen(true);
+                    }
+                  }}
+                  label={t("hero_search_label", {
+                    defaultValue: "Search courses, books and more",
+                  })}
+                  placeholder={t("hero_search_placeholder", {
+                    defaultValue:
+                      "Search courses, tutorials, books, instructors…",
+                  })}
+                  aria-controls={resultsId}
+                  aria-expanded={shouldShowDropdown}
+                  aria-autocomplete="list"
+                  inputMode="search"
                 />
               </div>
+              {searchText && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="px-3 py-2 text-white/80 hover:text-white focus:outline-none"
+                  aria-label={t("clear_search", { defaultValue: "Clear search" })}
+                >
+                  <FaTimes />
+                </button>
+              )}
               <button
+                type="button"
                 onClick={() => handleSearch(searchText)}
-                aria-label="Search"
-                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                aria-label={t("perform_search", { defaultValue: "Search" })}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={!trimmedQuery || isSearching}
               >
-                <FaSearch />
+                {isSearching ? (
+                  <FaSpinner className="animate-spin" />
+                ) : (
+                  <FaSearch />
+                )}
               </button>
             </div>
-            {results && (
-              <div
-                className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20 max-h-80 overflow-y-auto text-left"
-                role="listbox"
-                aria-label="Search results"
-                aria-live="polite"
-              >
-                {results && (
-                  <>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        📚 Online Classes ({results.classes?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.classes?.map((c) => (
-                          <li key={`c-${c.id}`}>
-                            <Link href={`/online-classes/${c.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {c.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+            <AnimatePresence>
+              {shouldShowDropdown && (
+                <motion.div
+                  key="hero-search-results"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  id={resultsId}
+                  className="absolute mt-2 w-full bg-white border border-gray-200 rounded-md shadow-2xl z-20 max-h-80 overflow-y-auto text-left"
+                  role="listbox"
+                  aria-label={t("search_results_label", {
+                    defaultValue: "Search results",
+                  })}
+                  aria-live="polite"
+                >
+                  {isSearching && (
+                    <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600">
+                      <FaSpinner className="animate-spin" />
+                      <span>
+                        {t("searching", { defaultValue: "Searching…" })}
+                      </span>
                     </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        📘 Tutorials ({results.tutorials?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.tutorials?.map((t) => (
-                          <li key={`t-${t.id}`}>
-                            <Link href={`/tutorials/${t.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {t.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                  )}
+                  {!isSearching && searchError && (
+                    <div className="px-4 py-3 text-sm text-red-600">
+                      {t("search_failed", {
+                        defaultValue:
+                          "We couldn't complete your search. Please try again.",
+                      })}
                     </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        📖 Books ({results.books?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.books?.map((b) => (
-                          <li key={`b-${b.id}`}>
-                            <Link href={`/marketplace/books/${b.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {b.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                  )}
+                  {!isSearching && !searchError && hasResults && (
+                    <Fragment>
+                      {SEARCH_SECTIONS.map((section) => {
+                        const items = results?.[section.key];
+                        if (!Array.isArray(items) || !items.length) return null;
+                        return (
+                          <div key={section.key} className="py-2">
+                            <h3 className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              {section.title} ({items.length})
+                            </h3>
+                            <ul>
+                              {items.map((item) => {
+                                const label =
+                                  section.getLabel(item) ||
+                                  t("search_untitled", {
+                                    defaultValue: "Untitled",
+                                  });
+                                return (
+                                  <li key={section.getKey(item)}>
+                                    <Link href={section.href(item)} prefetch={false}>
+                                      <span
+                                        role="option"
+                                        tabIndex={0}
+                                        className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors"
+                                        onClick={handleResultNavigate}
+                                      >
+                                        {highlightMatch(label)}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </Fragment>
+                  )}
+                  {!isSearching && !searchError && !hasResults && !!trimmedQuery && (
+                    <div className="px-4 py-3 text-sm text-gray-600">
+                      {t("search_no_results", {
+                        defaultValue: "No results match your query.",
+                      })}
                     </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        👩‍🏫 Instructors ({results.instructors?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.instructors?.map((i) => (
-                          <li key={`i-${i.id}`}>
-                            <Link href={`/instructors/${i.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {i.full_name}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                  )}
+                  {!isLoggedIn && (
+                    <div className="px-4 py-3 bg-slate-50 border-t border-gray-200 text-xs text-gray-600 flex items-center justify-between gap-4">
+                      <span>
+                        {t("search_guest_hint", {
+                          defaultValue:
+                            "Sign in to enroll and save your learning journey.",
+                        })}
+                      </span>
+                      <Link
+                        href="/auth/login"
+                        className="text-blue-600 font-semibold hover:underline"
+                        onClick={handleResultNavigate}
+                      >
+                        {t("login", { defaultValue: "Login" })}
+                      </Link>
                     </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        💼 Offers ({results.offers?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.offers?.map((o) => (
-                          <li key={`o-${o.id}`}>
-                            <Link href={`/offers/${o.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {o.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        💬 Community ({results.community?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.community?.map((d) => (
-                          <li key={`d-${d.id}`}>
-                            <Link href={`/community/${d.id}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {d.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="py-1">
-                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
-                        📝 Blog ({results.blog?.length || 0})
-                      </h3>
-                      <ul>
-                        {results.blog?.map((b) => (
-                          <li key={`b-${b.id}`}>
-                            <Link href={`/blog/${b.slug}`}>
-                              <span
-                                role="option"
-                                tabIndex={0}
-                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              >
-                                {b.title}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </>
-                )}
-                {!hasResults && (
-                  <p className="px-4 py-2 text-sm text-gray-500">No results found.</p>
-                )}
-                {searchError && (
-                  <p className="px-4 py-2 text-sm text-red-500">Search failed.</p>
-                )}
-              </div>
-            )}
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* CTA Buttons */}

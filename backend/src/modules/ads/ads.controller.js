@@ -15,7 +15,62 @@ const {
   sendNewAdAdminEmail,
 } = require("../../utils/email");
 const db = require("../../config/database");
-const { parsePlanFeatures } = require("./ads.utils");
+const { resolveAdPlanFeatures, normalizePlanKey } = require("./ads.utils");
+const { getActiveInstructorPlan } = require("../plans/instructor.helper");
+
+const ALLOWED_INSTRUCTOR_AD_PLAN_KEYS = new Set([
+  "basic",
+  "basic-plan",
+  "regular",
+  "regular-plan",
+  "prime",
+  "prime-plan",
+  "instructor-basic",
+  "instructor-regular",
+  "instructor-prime",
+  "instructor-pro",
+]);
+
+const numericOrNull = (value) => {
+  if (value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const resolveInstructorPlanForAds = async (user) => {
+  const planId =
+    user.plan_id || user.plan?.id || user.subscription?.plan_id;
+
+  let plan = planId ? await planService.getPlanById(planId) : null;
+
+  if (!plan) {
+    const active = await getActiveInstructorPlan(user.id);
+    if (active?.id) {
+      plan = await planService.getPlanById(active.id);
+    }
+  }
+
+  if (!plan) {
+    throw new AppError(
+      "You need an active instructor plan before you can manage ads",
+      403
+    );
+  }
+
+  const planKey = normalizePlanKey(plan);
+  if (planKey && !ALLOWED_INSTRUCTOR_AD_PLAN_KEYS.has(planKey)) {
+    throw new AppError(
+      "Your current subscription does not include instructor ad tools",
+      403
+    );
+  }
+
+  if (!Array.isArray(plan.features)) {
+    plan.features = [];
+  }
+
+  return plan;
+};
 
 /**
  * Controller functions for managing advertisement banners.
@@ -124,32 +179,35 @@ exports.createAd = catchAsync(async (req, res) => {
 
   let ad;
   if (!isAdmin) {
-    // Load instructor plan and verify ad creation permissions
-    const planId =
-      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
-    const plan = planId ? await planService.getPlanById(planId) : null;
-    if (!plan) {
-      throw new AppError("Plan not found", 403);
-    }
+    const plan = await resolveInstructorPlanForAds(req.user);
+    const features = resolveAdPlanFeatures(plan);
 
-    const features = parsePlanFeatures(plan);
-
-    const maxDuration = Number(features["ads_max_duration"] || 0);
-    if (!end && maxDuration) {
-      end = new Date(start.getTime() + maxDuration * 24 * 60 * 60 * 1000);
-    } else if (end) {
-      const diffDays = Math.ceil(
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      if (maxDuration && diffDays > maxDuration) {
+    const maxDuration = numericOrNull(features["ads_max_duration"]);
+    if (maxDuration !== null) {
+      if (maxDuration <= 0) {
         throw new AppError("Ad duration exceeds limit for your plan", 403);
+      }
+      if (!end) {
+        end = new Date(
+          start.getTime() + maxDuration * 24 * 60 * 60 * 1000
+        );
+      } else {
+        const diffDays = Math.ceil(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (diffDays > maxDuration) {
+          throw new AppError("Ad duration exceeds limit for your plan", 403);
+        }
       }
     }
     data.start_at = start;
     data.end_at = end;
 
-    const maxAds = Number(features["ads_max_ads"] || 0);
-    if (maxAds) {
+    const maxAds = numericOrNull(features["ads_max_ads"]);
+    if (maxAds !== null) {
+      if (maxAds <= 0) {
+        throw new AppError("Ad limit reached for your plan", 403);
+      }
       const { data: existing } = await service.getAds(
         true,
         req.user.id,
@@ -158,7 +216,7 @@ exports.createAd = catchAsync(async (req, res) => {
         true,
         undefined,
         undefined,
-        undefined,
+        "active",
         undefined,
         undefined
       );
@@ -172,14 +230,29 @@ exports.createAd = catchAsync(async (req, res) => {
       throw new AppError("Branding not allowed for your plan", 403);
     }
 
-    if ((plan.ad_credits ?? 0) <= 0) {
+    const allowance = plan.ad_credits;
+    const remainingCredits = await planService.getRemainingAdCredits(
+      plan,
+      req.user.id
+    );
+    if (remainingCredits !== null && remainingCredits <= 0) {
       throw new AppError("Insufficient ad credits", 403);
     }
 
     const trx = await db.transaction();
     try {
       ad = await service.createAd(data, trx);
-      await planService.consumeAdCredit(plan.id, trx);
+      if (allowance !== null && allowance !== undefined) {
+        const result = await planService.consumeAdCredit({
+          planId: plan.id,
+          userId: req.user.id,
+          allowance,
+          trx,
+        });
+        if (!result.consumed) {
+          throw new AppError("Insufficient ad credits", 403);
+        }
+      }
       await trx.commit();
     } catch (err) {
       await trx.rollback();
@@ -416,17 +489,16 @@ exports.updateAd = catchAsync(async (req, res) => {
 
   if (!isAdmin) {
     // Load instructor plan and enforce ad feature limits
-    const planId =
-      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
-    const plan = planId ? await planService.getPlanById(planId) : null;
-    if (!plan) {
-      throw new AppError("Plan not found", 403);
-    }
+    const plan = await resolveInstructorPlanForAds(req.user);
+    const features = resolveAdPlanFeatures(plan);
 
-    const features = parsePlanFeatures(plan);
-
-    const maxDuration = Number(features["ads_max_duration"] || 0);
-    if (maxDuration && newStart && newEnd) {
+    const maxDuration = numericOrNull(features["ads_max_duration"]);
+    if (
+      maxDuration !== null &&
+      maxDuration > 0 &&
+      newStart &&
+      newEnd
+    ) {
       const diffDays = Math.ceil(
         (new Date(newEnd).getTime() - new Date(newStart).getTime()) /
           (1000 * 60 * 60 * 24)
@@ -434,10 +506,15 @@ exports.updateAd = catchAsync(async (req, res) => {
       if (diffDays > maxDuration) {
         throw new AppError("Ad duration exceeds limit for your plan", 403);
       }
+    } else if (maxDuration !== null && maxDuration <= 0) {
+      throw new AppError("Ad duration exceeds limit for your plan", 403);
     }
 
-    const maxAds = Number(features["ads_max_ads"] || 0);
-    if (maxAds) {
+    const maxAds = numericOrNull(features["ads_max_ads"]);
+    if (maxAds !== null) {
+      if (maxAds <= 0) {
+        throw new AppError("Ad limit reached for your plan", 403);
+      }
       const { data: existing } = await service.getAds(
         true,
         req.user.id,
@@ -446,11 +523,14 @@ exports.updateAd = catchAsync(async (req, res) => {
         true,
         undefined,
         undefined,
-        undefined,
+        "active",
         undefined,
         undefined
       );
-      if (existing.length > maxAds) {
+      const activeBeyondCurrent = existing.filter(
+        (item) => item.id !== ad.id
+      );
+      if (activeBeyondCurrent.length >= maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }
     }
@@ -577,13 +657,8 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
   }
 
   if (!isAdmin) {
-    const planId =
-      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
-    const plan = planId ? await planService.getPlanById(planId) : null;
-    if (!plan) {
-      throw new AppError("Plan not found", 403);
-    }
-    const features = parsePlanFeatures(plan);
+    const plan = await resolveInstructorPlanForAds(req.user);
+    const features = resolveAdPlanFeatures(plan);
     if (!features["ads_show_analytics"]) {
       throw new AppError(
         "Analytics not available for your current plan",

@@ -146,7 +146,7 @@ exports.getUserGroups = async (userId) => {
     `(
       SELECT DISTINCT ON (group_id)
         group_id,
-        message,
+        content AS message,
         EXTRACT(EPOCH FROM sent_at) * 1000 AS last_message_at
       FROM group_messages
       ORDER BY group_id, sent_at DESC

@@ -86,5 +86,15 @@ export function buildUrl(path) {
 }
 
 export function joinUrl(base, path) {
-  return new URL(path, base).href;
+  if (!path) return null;
+  if (/^https?:/i.test(path)) return safeEncodeURI(path);
+
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (base && /^https?:/i.test(base)) {
+    const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+    return safeEncodeURI(`${normalizedBase}${normalizedPath}`);
+  }
+
+  return buildUrl(normalizedPath);
 }

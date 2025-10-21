@@ -1568,6 +1568,14 @@
       "lastChecked": "Last checked: {{date}}",
       "quickActions": "Quick Actions"
     },
+    "metaIssues": {
+      "title": "Meta Issues ({{count}})",
+      "noIssues": "No issues found 🎉",
+      "missing": "Missing: {{fields}}",
+      "lastChecked": "Last checked: {{date}}",
+      "editMeta": "Edit Meta",
+      "close": "Close"
+    },
     "meta": {
       "invalidCanonical": "Canonical URL must be absolute",
       "saved": "Meta tags saved",
@@ -1580,6 +1588,7 @@
       "metaDescriptionPlaceholder": "Short description for search engines...",
       "keywords": "Keywords",
       "canonical": "Canonical URL",
+      "canonicalPlaceholder": "https://example.com/page",
       "noindex": "Noindex",
       "nofollow": "Nofollow",
       "save": "Save Meta Tags"
@@ -1593,9 +1602,19 @@
       "heading": "Sitemap Manager",
       "regenerate": "Regenerate Sitemap",
       "path": "Path",
+      "pathPlaceholder": "/path",
       "include": "Include",
       "priority": "Priority",
       "changeFreq": "Change Freq",
+      "changeFreqOptions": {
+        "always": "Always",
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "never": "Never"
+      },
       "actions": "Actions",
       "delete": "Delete",
       "addPage": "Add Page",
@@ -1612,6 +1631,7 @@
     "og": {
       "saved": "Open Graph saved",
       "saveFailed": "Failed to save",
+      "uploadFailed": "Failed to upload image",
       "heading": "Open Graph Settings",
       "selectPage": "Select Page",
       "title": "OG Title",
@@ -1619,13 +1639,22 @@
       "description": "OG Description",
       "descriptionPlaceholder": "Description for social sharing",
       "type": "OG Type",
+      "typeOptions": {
+        "website": "Website",
+        "article": "Article",
+        "product": "Product",
+        "video": "Video",
+        "book": "Book"
+      },
       "image": "OG Image",
+      "imagePreviewAlt": "Open Graph image preview",
       "save": "Save OG Settings"
     },
     "twitter": {
       "invalidHandle": "Handle must start with @",
       "saved": "Twitter card saved",
       "saveFailed": "Failed to save",
+      "uploadFailed": "Failed to upload image",
       "heading": "Twitter Card Settings",
       "selectPage": "Select Page",
       "title": "Twitter Card Title",
@@ -1633,8 +1662,17 @@
       "description": "Description",
       "descriptionPlaceholder": "Description for Twitter",
       "cardType": "Card Type",
+      "cardTypeOptions": {
+        "summary": "Summary",
+        "summary_large_image": "Summary Large Image",
+        "app": "App",
+        "player": "Player"
+      },
       "image": "Twitter Card Image",
+      "imagePreviewAlt": "Twitter card image preview",
       "handle": "Twitter Handle",
+      "handlePlaceholder": "@username",
+      "defaultHandle": "@yourhandle",
       "save": "Save Twitter Card"
     },
     "advanced": {

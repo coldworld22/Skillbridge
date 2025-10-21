@@ -132,6 +132,14 @@ export default function ReviewStep({
               })}
             </p>
           )}
+          {!tutorialData.isFree && tutorialData.allowInstallments && (
+            <p className="text-gray-700 text-sm">
+              {t("create.review.installments_summary", {
+                defaultValue: "Installments enabled: pay over {{count}} months.",
+                count: tutorialData.installments || 2,
+              })}
+            </p>
+          )}
         </div>
 
         {/* Access */}

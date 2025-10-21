@@ -2,7 +2,7 @@ import MessageItem from "./MessageItem";
 
 const MessageList = ({ messages, onReply, onDelete, onPin }) => {
   return (
-    <div className="mt-4 space-y-4 max-h-80 overflow-y-auto p-4 border border-gray-700 rounded-lg">
+    <div className="mt-2 max-h-80 space-y-4 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       {messages.map((msg, index) => (
         <MessageItem
           key={index}

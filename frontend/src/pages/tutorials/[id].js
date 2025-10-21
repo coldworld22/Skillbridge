@@ -17,7 +17,6 @@ import useAuthStore from "@/store/auth/authStore";
 import useCartStore from "@/store/cart/cartStore";
 import useTutorialProgress from "@/hooks/useTutorialProgress";
 import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
-import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
 import { FaBookmark, FaHeart } from "react-icons/fa";
 import { formatCurrency } from "@/utils/currency";
 
@@ -44,8 +43,7 @@ import {
   getNotifications,
   markNotificationAsRead,
 } from "@/services/notificationService";
-import { API_BASE_URL } from "@/config/config";
-import { safeEncodeURI } from "@/utils/url";
+import { buildUrl } from "@/utils/url";
 import Link from "next/link";
 
 export async function handleShare(tutorial) {
@@ -196,30 +194,29 @@ export default function TutorialDetail() {
           setLoading(false);
           return;
         }
-        const chapters = (data.chapters || []).map((ch) => {
-          let url = ch.video_url || ch.videoUrl;
-          if (url && !url.startsWith('http')) {
-            url = `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${url}`;
-          }
-          return {
-            ...ch,
-            videoUrl: url ? safeEncodeURI(url) : null,
-          };
-        });
+        const rawChapters = Array.isArray(data.chapters)
+          ? data.chapters
+          : data.chapters && typeof data.chapters === 'object'
+            ? Object.values(data.chapters)
+            : [];
+
+        const chapters = rawChapters
+          .filter((chapter) => chapter && typeof chapter === 'object')
+          .map((ch) => {
+            return {
+              ...ch,
+              videoUrl: buildUrl(ch.video_url || ch.videoUrl),
+            };
+          });
         const previewUrl = (() => {
-          if (!data.preview) return null;
-          const raw = data.preview;
-          const full = raw.startsWith("http")
-            ? raw
-            : `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${raw}`;
-          return safeEncodeURI(full);
+          return buildUrl(data.preview);
         })();
 
         setTutorial({ ...data, chapters, preview: previewUrl });
         let enrolled = Boolean(
           data?.is_enrolled || data?.enrolled || data?.isEnrolled,
         );
-        if (!enrolled && isLoggedIn) {
+        if (!enrolled && isLoggedIn && isStudent) {
           try {
             const status = await fetchTutorialProgress(id);
             enrolled = Boolean(
@@ -230,11 +227,15 @@ export default function TutorialDetail() {
           }
         }
         setIsEnrolled(enrolled);
-        try {
-          const assignmentList = await fetchTutorialAssignments(id);
-          setAssignments(assignmentList);
-        } catch (err) {
-          console.error('Failed to load assignments', err);
+        if (isLoggedIn) {
+          try {
+            const assignmentList = await fetchTutorialAssignments(id);
+            setAssignments(assignmentList);
+          } catch (err) {
+            console.error('Failed to load assignments', err);
+          }
+        } else {
+          setAssignments([]);
         }
 
         const list = await fetchPublishedTutorials();
@@ -319,6 +320,7 @@ export default function TutorialDetail() {
   // Restore last watched chapter when tutorial loads
   useEffect(() => {
     if (!tutorial) return;
+    if (!isEnrolled) return;
     if (!Array.isArray(tutorial.chapters) || !tutorial.chapters.length) {
       if (tutorial?.preview && currentVideoIndex !== 0) {
         setCurrentVideoIndex(0);
@@ -335,7 +337,7 @@ export default function TutorialDetail() {
         setCurrentVideoIndex(targetIndex);
       }
     }
-  }, [progress.lastIndex, tutorial, currentVideoIndex]);
+  }, [progress.lastIndex, tutorial, currentVideoIndex, isEnrolled]);
 
   // Prevent unenrolled users from accessing locked videos
   useEffect(() => {
@@ -375,10 +377,6 @@ export default function TutorialDetail() {
         <p className="text-lg text-gray-300">{t("not_found")}</p>
       </div>
     );
-  }
-
-  if (!isLoggedIn) {
-    return <LoginPrompt />;
   }
 
   const currentItem = playlist[currentVideoIndex] || null;
@@ -503,6 +501,25 @@ export default function TutorialDetail() {
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
         <BackButton />
 
+        {!isLoggedIn && (
+          <div className="bg-blue-900/30 border border-blue-700 text-blue-200 px-4 py-3 rounded-md mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              {t("login_reminder", {
+                defaultValue:
+                  "Log in to purchase this tutorial, resume where you left off, and unlock the full learning experience.",
+              })}
+            </span>
+            <Link
+              href={`/auth/login?next=${encodeURIComponent(
+                router.asPath || `/tutorials/${tutorial.id}`,
+              )}`}
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-md transition"
+            >
+              {t("login_cta", { defaultValue: "Log in" })}
+            </Link>
+          </div>
+        )}
+
         {!isEnrolled && (
           <EnrollBanner
             onEnroll={enroll}
@@ -558,16 +575,7 @@ export default function TutorialDetail() {
           </button>
 
           <button
-            onClick={() =>
-              navigator
-                .share({
-                  title: tutorial.title,
-                  text: t("share_message"),
-                  url: typeof window !== "undefined" ? window.location.href : "",
-                })
-                .then(() => toast.success(t("share_success")))
-                .catch(() => {})
-            }
+            onClick={() => handleShare(tutorial)}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
             🔗 {t("share")}

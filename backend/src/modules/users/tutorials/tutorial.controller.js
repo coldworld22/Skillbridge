@@ -51,6 +51,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
     chapters: rawChapters,
     included_plans = [],
     instructor_id: bodyInstructorId,
+    allow_installments = false,
+    installments,
   } = req.body;
 
   const parsedChapters = parseChapters(rawChapters);
@@ -102,6 +104,13 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
+  const isPaid = Number(price) > 0;
+  const allowInstallmentsFlag = isPaid && Boolean(allow_installments);
+  const normalizedInstallments =
+    allowInstallmentsFlag && Number.isFinite(Number(installments))
+      ? Math.max(2, Math.floor(Number(installments)))
+      : 2;
+
   const tutorialData = {
     id,
     title,
@@ -110,7 +119,9 @@ exports.createTutorial = catchAsync(async (req, res) => {
     level,
     duration: duration ?? null,
     price,
-    is_paid: Number(price) > 0,
+    is_paid: isPaid,
+    allow_installments: allowInstallmentsFlag,
+    installments: allowInstallmentsFlag ? normalizedInstallments : 1,
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
@@ -176,6 +187,27 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   }
   if (req.files?.preview) {
     data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
+  }
+  if (data.allow_installments !== undefined) {
+    const allowInstallments = Boolean(data.allow_installments);
+    data.allow_installments = allowInstallments;
+    data.installments = allowInstallments
+      ? Math.max(
+          2,
+          Math.floor(
+            Number(
+              data.installments === undefined ? 2 : data.installments,
+            ),
+          ),
+        )
+      : 1;
+  } else if (data.installments !== undefined) {
+    data.installments = Math.max(1, Math.floor(Number(data.installments)));
+  }
+  if (data.is_paid === false || (data.price !== undefined && Number(data.price) <= 0)) {
+    data.is_paid = false;
+    data.allow_installments = false;
+    data.installments = 1;
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
   if (!tutorial) {

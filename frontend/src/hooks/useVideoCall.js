@@ -12,6 +12,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
   const [audioOutputDevices, setAudioOutputDevices] = useState([]);
   const [selectedAudioInput, setSelectedAudioInput] = useState(null);
   const [selectedAudioOutput, setSelectedAudioOutput] = useState(null);
+  const [videoInputDevices, setVideoInputDevices] = useState([]);
+  const [selectedVideoInput, setSelectedVideoInput] = useState(null);
   const [error, setError] = useState(null);
   const socketRef = useRef();
   const peersRef = useRef([]);
@@ -24,13 +26,14 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     const initMedia = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: selectedVideoInput ? { deviceId: selectedVideoInput } : true,
           audio: selectedAudioInput ? { deviceId: selectedAudioInput } : true,
         });
         setStream(mediaStream);
         const devices = await navigator.mediaDevices.enumerateDevices();
         setAudioInputDevices(devices.filter((d) => d.kind === "audioinput"));
         setAudioOutputDevices(devices.filter((d) => d.kind === "audiooutput"));
+        setVideoInputDevices(devices.filter((d) => d.kind === "videoinput"));
         if (!selectedAudioInput) {
           const defaultInput = devices.find((d) => d.kind === "audioinput");
           setSelectedAudioInput(defaultInput?.deviceId || null);
@@ -38,6 +41,10 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
         if (!selectedAudioOutput) {
           const defaultOutput = devices.find((d) => d.kind === "audiooutput");
           setSelectedAudioOutput(defaultOutput?.deviceId || null);
+        }
+        if (!selectedVideoInput) {
+          const defaultVideo = devices.find((d) => d.kind === "videoinput");
+          setSelectedVideoInput(defaultVideo?.deviceId || null);
         }
 
         socketRef.current.emit("join-room", {
@@ -81,6 +88,7 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
       const devices = await navigator.mediaDevices.enumerateDevices();
       setAudioInputDevices(devices.filter((d) => d.kind === "audioinput"));
       setAudioOutputDevices(devices.filter((d) => d.kind === "audiooutput"));
+      setVideoInputDevices(devices.filter((d) => d.kind === "videoinput"));
     };
     navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);
 
@@ -190,6 +198,34 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     });
   };
 
+  const changeVideoInput = async (deviceId) => {
+    if (!stream) return;
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId },
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      const currentTracks = stream.getVideoTracks();
+      const oldTrack = currentTracks[0];
+      if (oldTrack) {
+        stream.removeTrack(oldTrack);
+      }
+      stream.addTrack(newTrack);
+      peersRef.current.forEach(({ peer }) => {
+        if (peer.replaceTrack && oldTrack) {
+          peer.replaceTrack(oldTrack, newTrack, stream);
+        } else if (peer.addTrack) {
+          peer.addTrack(newTrack, stream);
+        }
+      });
+      if (oldTrack) oldTrack.stop();
+      setSelectedVideoInput(deviceId);
+    } catch (err) {
+      logger.error("Failed to switch camera", err);
+      setError(err);
+    }
+  };
+
   return {
     localStream: stream,
     peers,
@@ -201,8 +237,11 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     audioOutputDevices,
     selectedAudioInput,
     selectedAudioOutput,
+    videoInputDevices,
+    selectedVideoInput,
     isMuted,
     isVideoOff,
     error,
+    changeVideoInput,
   };
 }

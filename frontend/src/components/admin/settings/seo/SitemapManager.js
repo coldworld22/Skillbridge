@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
@@ -11,7 +11,18 @@ export default function SitemapManager({ config, update, availablePages }) {
       : [{ path: "/", include: true, priority: 1.0, freq: "daily" }]
   );
 
-  const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
+  const changeFreqOptions = useMemo(
+    () => [
+      { value: "always", label: t("changeFreqOptions.always") },
+      { value: "hourly", label: t("changeFreqOptions.hourly") },
+      { value: "daily", label: t("changeFreqOptions.daily") },
+      { value: "weekly", label: t("changeFreqOptions.weekly") },
+      { value: "monthly", label: t("changeFreqOptions.monthly") },
+      { value: "yearly", label: t("changeFreqOptions.yearly") },
+      { value: "never", label: t("changeFreqOptions.never") },
+    ],
+    [t]
+  );
 
   const updatePage = (index, key, value) => {
     const updated = [...pages];
@@ -90,7 +101,7 @@ export default function SitemapManager({ config, update, availablePages }) {
                   value={page.path}
                   onChange={(e) => updatePage(index, "path", e.target.value)}
                   className="border rounded px-2 py-1 w-full"
-                  placeholder="/path"
+                  placeholder={t("pathPlaceholder")}
                   list="sitemap-pages"
                 />
               </td>
@@ -119,7 +130,7 @@ export default function SitemapManager({ config, update, availablePages }) {
                   className="border rounded px-2 py-1"
                 >
                   {changeFreqOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </td>

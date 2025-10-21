@@ -46,6 +46,19 @@ function EditTutorialPage() {
       setTutorialData({
         ...parsed,
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+        allowInstallments: Boolean(
+          parsed.allowInstallments ?? parsed.allow_installments ?? false
+        ),
+        installments: parsed.installments
+          ? String(parsed.installments)
+          : parsed.allowInstallments || parsed.allow_installments
+          ? "2"
+          : "1",
+        includedPlans: Array.isArray(parsed.includedPlans)
+          ? parsed.includedPlans.map((id) => String(id))
+          : Array.isArray(parsed.included_plans)
+          ? parsed.included_plans.map((id) => String(id))
+          : [],
       });
       return;
     }
@@ -81,6 +94,19 @@ function EditTutorialPage() {
           preview: tutorial.preview,
           price: tutorial.price || "",
           isFree: tutorial.isFree,
+          allowInstallments: Boolean(
+            tutorial.allowInstallments ?? tutorial.allow_installments ?? false
+          ),
+          installments: tutorial.installments
+            ? String(tutorial.installments)
+            : tutorial.allowInstallments || tutorial.allow_installments
+            ? "2"
+            : "1",
+          includedPlans: Array.isArray(tutorial.includedPlans)
+            ? tutorial.includedPlans.map((id) => String(id))
+            : Array.isArray(tutorial.included_plans)
+            ? tutorial.included_plans.map((id) => String(id))
+            : [],
         });
         setCategories(cats?.data || cats);
       } catch (err) {

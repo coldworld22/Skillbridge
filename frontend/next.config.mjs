@@ -50,6 +50,28 @@ try {
   ({ protocol, hostname, port } = new URL(defaultApiBase));
 }
 const appDomain = process.env.APP_DOMAIN;
+const formActionHosts = new Set();
+if (appDomain) {
+  formActionHosts.add(`https://${appDomain}`);
+  formActionHosts.add(`https://www.${appDomain}`);
+  formActionHosts.add(`https://api.${appDomain}`);
+}
+const formActionList = ["'self'", ...Array.from(formActionHosts)];
+const cspRules = [
+  `form-action ${formActionList.join(" ")}`,
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+const securityHeaders = isProduction
+  ? [
+      { key: 'Content-Security-Policy', value: cspRules },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    ]
+  : [];
 const nextConfig = {
   images: {
     unoptimized: true,
@@ -121,6 +143,17 @@ const nextConfig = {
       destination: `${rewriteBase}/:path*`,
     });
     return rules;
+  },
+  async headers() {
+    if (!securityHeaders.length) {
+      return [];
+    }
+    return [
+      {
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ];
   },
 };
 

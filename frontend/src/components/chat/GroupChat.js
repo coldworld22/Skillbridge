@@ -11,7 +11,6 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
   const groupId = group?.id || idProp;
   const groupName = group?.name || nameProp;
   const [messages, setMessages] = useState([]);
-  const [typing, setTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
 
@@ -94,8 +93,8 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
-      <div className="border-b border-gray-700">
+    <div className="flex h-[calc(100vh-7rem)] w-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-200">
         <ChatHeader
           selectedChat={
             group ? { ...group, isGroup: true } : { id: groupId, groupName, isGroup: true }
@@ -104,9 +103,9 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-700" style={{ minHeight: 0 }}>
+      <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 px-4 py-3" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
-          <p className="text-center text-gray-300 mt-4">No messages yet.</p>
+          <p className="mt-4 text-center text-sm text-gray-500">No messages yet.</p>
         )}
         <MessageList
           messages={messages}
@@ -117,13 +116,12 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
         <TypingIndicator names={typingUsers} />
       </div>
 
-      <div className="border-t border-gray-700 bg-gray-800 p-3">
+      <div className="border-t border-gray-200 bg-white p-3">
         <MessageInput
           sendMessage={sendMessage}
           replyTo={replyTo}
           onCancelReply={() => setReplyTo(null)}
           onTyping={(isTyping) => {
-            setTyping(isTyping);
             groupService.setTypingStatus(groupId, isTyping).catch(() => {});
           }}
         />
@@ -131,4 +129,3 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
     </div>
   );
 }
-

@@ -1538,6 +1538,14 @@
       "lastChecked": "آخر فحص: {{date}}",
       "quickActions": "إجراءات سريعة"
     },
+    "metaIssues": {
+      "title": "مشكلات التعريف ({{count}})",
+      "noIssues": "لا توجد مشكلات 🎉",
+      "missing": "مفقود: {{fields}}",
+      "lastChecked": "آخر فحص: {{date}}",
+      "editMeta": "تحرير بيانات التعريف",
+      "close": "إغلاق"
+    },
     "meta": {
       "invalidCanonical": "يجب أن يكون عنوان URL الكنسي مطلقًا",
       "saved": "علامات التعريف المحفوظة",
@@ -1550,6 +1558,7 @@
       "metaDescriptionPlaceholder": "وصف قصير لمحركات البحث ...",
       "keywords": "الكلمات الرئيسية",
       "canonical": "عنوان URL الكنسي",
+      "canonicalPlaceholder": "https://example.com/page",
       "noindex": "عدم الفهرسة",
       "nofollow": "عدم التتبع",
       "save": "حفظ علامات التعريف"
@@ -1563,9 +1572,19 @@
       "heading": "مدير Sitemap",
       "regenerate": "تجديد خريطة sitemap",
       "path": "طريق",
+      "pathPlaceholder": "/path",
       "include": "يشمل",
       "priority": "أولوية",
       "changeFreq": "تغيير التكرار",
+      "changeFreqOptions": {
+        "always": "دائماً",
+        "hourly": "كل ساعة",
+        "daily": "يوميًا",
+        "weekly": "أسبوعيًا",
+        "monthly": "شهريًا",
+        "yearly": "سنويًا",
+        "never": "أبدًا"
+      },
       "actions": "الإجراءات",
       "delete": "يمسح",
       "addPage": "أضف الصفحة",
@@ -1582,6 +1601,7 @@
     "og": {
       "saved": "فتح الرسم البياني",
       "saveFailed": "فشل في الادخار",
+      "uploadFailed": "فشل في تحميل الصورة",
       "heading": "افتح إعدادات الرسم البياني",
       "selectPage": "حدد الصفحة",
       "title": "OG عنوان",
@@ -1589,13 +1609,22 @@
       "description": "وصف OG",
       "descriptionPlaceholder": "وصف للمشاركة الاجتماعية",
       "type": "نوع OG",
+      "typeOptions": {
+        "website": "موقع إلكتروني",
+        "article": "مقال",
+        "product": "منتج",
+        "video": "فيديو",
+        "book": "كتاب"
+      },
       "image": "صورة OG",
+      "imagePreviewAlt": "معاينة صورة Open Graph",
       "save": "حفظ إعدادات OG"
     },
     "twitter": {
       "invalidHandle": "يجب أن يبدأ المقبض بـ @",
       "saved": "بطاقة تويتر المحفوظة",
       "saveFailed": "فشل في الادخار",
+      "uploadFailed": "فشل في تحميل الصورة",
       "heading": "إعدادات بطاقة Twitter",
       "selectPage": "حدد الصفحة",
       "title": "عنوان بطاقة Twitter",
@@ -1603,8 +1632,17 @@
       "description": "وصف",
       "descriptionPlaceholder": "وصف Twitter",
       "cardType": "نوع البطاقة",
+      "cardTypeOptions": {
+        "summary": "ملخص",
+        "summary_large_image": "ملخص بصورة كبيرة",
+        "app": "تطبيق",
+        "player": "مشغل"
+      },
       "image": "صورة بطاقة Twitter",
+      "imagePreviewAlt": "معاينة صورة بطاقة تويتر",
       "handle": "تويتر مقبض",
+      "handlePlaceholder": "@اسم_المستخدم",
+      "defaultHandle": "@مثال",
       "save": "حفظ بطاقة تويتر"
     },
     "advanced": {

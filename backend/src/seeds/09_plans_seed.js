@@ -42,6 +42,9 @@ exports.seed = async function (knex) {
         classes_create: false,
         books_download: false,
         community_post: false,
+        messages_email_limit: 3,
+        messages_whatsapp_limit: 3,
+        messages_video_limit: 3,
       },
     },
     {
@@ -68,6 +71,9 @@ exports.seed = async function (knex) {
         classes_create: false,
         books_download: true,
         community_post: true,
+        messages_email_limit: 10,
+        messages_whatsapp_limit: 10,
+        messages_video_limit: 10,
       },
     },
     {
@@ -94,6 +100,9 @@ exports.seed = async function (knex) {
         classes_create: false,
         books_download: true,
         community_post: true,
+        messages_email_limit: "unlimited",
+        messages_whatsapp_limit: "unlimited",
+        messages_video_limit: "unlimited",
       },
     },
     {
@@ -117,8 +126,8 @@ exports.seed = async function (knex) {
       ad_credits: 10,
       features: {
         commission_rate: 0.2,
-        ads_max_ads: 2,
-        ads_max_duration: 7,
+        ads_max_ads: 3,
+        ads_max_duration: 3,
         ads_allow_branding: false,
         ads_show_analytics: false,
         groups_create: true,
@@ -128,6 +137,9 @@ exports.seed = async function (knex) {
         tutorials_max_count: 10,
         books_download: true,
         community_post: true,
+        messages_email_limit: 3,
+        messages_whatsapp_limit: 3,
+        messages_video_limit: 3,
       },
     },
     {
@@ -152,7 +164,7 @@ exports.seed = async function (knex) {
       ad_credits: 100,
       features: {
         commission_rate: 0.1,
-        ads_max_ads: 10,
+        ads_max_ads: 15,
         ads_max_duration: 30,
         ads_allow_branding: true,
         ads_show_analytics: true,
@@ -163,6 +175,9 @@ exports.seed = async function (knex) {
         tutorials_max_count: null,
         books_download: true,
         community_post: true,
+        messages_email_limit: "unlimited",
+        messages_whatsapp_limit: "unlimited",
+        messages_video_limit: "unlimited",
       },
     },
   ];
@@ -204,293 +219,5 @@ exports.seed = async function (knex) {
     });
   });
 
-  await knex('plan_features').insert([
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'commission_rate',
-      value: '0.3',
-      description: '30% platform fee'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'groups_create',
-      value: 'false',
-      description: 'Cannot create groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'groups_join_limit',
-      value: '1',
-      description: 'Join up to 1 group'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'classes_create',
-      value: 'false',
-      description: 'Cannot create classes'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'books_download',
-      value: 'false',
-      description: 'Cannot download books'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'community_post',
-      value: 'false',
-      description: 'Cannot post in community'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'commission_rate',
-      value: '0.2',
-      description: '20% platform fee'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'groups_create',
-      value: 'true',
-      description: 'Can create groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'groups_join_limit',
-      value: '5',
-      description: 'Join up to 5 groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'classes_create',
-      value: 'false',
-      description: 'Cannot create classes'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'books_download',
-      value: 'true',
-      description: 'Can download books'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'community_post',
-      value: 'true',
-      description: 'Can post in community'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'commission_rate',
-      value: '0.1',
-      description: '10% platform fee'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'groups_create',
-      value: 'true',
-      description: 'Can create groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'groups_join_limit',
-      value: 'unlimited',
-      description: 'Join unlimited groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'classes_create',
-      value: 'false',
-      description: 'Cannot create classes'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'books_download',
-      value: 'true',
-      description: 'Can download books'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'community_post',
-      value: 'true',
-      description: 'Can post in community'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'commission_rate',
-      value: '0.2',
-      description: '20% commission on sales'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'ads_max_ads',
-      value: '2',
-      description: 'Up to 2 active ads'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'ads_max_duration',
-      value: '7',
-      description: 'Ads can run up to 7 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'ads_show_analytics',
-      value: 'false',
-      description: 'No analytics access'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'groups_create',
-      value: 'true',
-      description: 'Can create groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'groups_join_limit',
-      value: '3',
-      description: 'Join up to 3 groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'classes_create',
-      value: 'true',
-      description: 'Can create classes'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'books_download',
-      value: 'true',
-      description: 'Can download books'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'community_post',
-      value: 'true',
-      description: 'Can post in community'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'tutorials_create',
-      value: 'true',
-      description: 'Can create tutorials'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-basic'],
-      feature_key: 'tutorials_max_count',
-      value: '5',
-      description: 'Publish up to 5 tutorials'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'commission_rate',
-      value: '0.1',
-      description: '10% commission on sales'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'ads_max_ads',
-      value: '10',
-      description: 'Up to 10 active ads'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'ads_max_duration',
-      value: '30',
-      description: 'Ads can run up to 30 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'ads_allow_branding',
-      value: 'true',
-      description: 'Custom branding'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'ads_show_analytics',
-      value: 'true',
-      description: 'Analytics access'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'groups_create',
-      value: 'true',
-      description: 'Can create groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'groups_join_limit',
-      value: 'unlimited',
-      description: 'Join unlimited groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'classes_create',
-      value: 'true',
-      description: 'Can create classes'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'books_download',
-      value: 'true',
-      description: 'Can download books'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'community_post',
-      value: 'true',
-      description: 'Can post in community'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'tutorials_create',
-      value: 'true',
-      description: 'Can create tutorials'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids['instructor-pro'],
-      feature_key: 'tutorials_max_count',
-      value: 'null',
-      description: 'Unlimited tutorial publishing'
-    }
-  ]);
+  await knex("plan_features").insert(featureRows);
 };

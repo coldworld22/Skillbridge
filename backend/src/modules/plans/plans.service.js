@@ -1,7 +1,64 @@
 const db = require("../../config/database");
 const { groupContentByPlan } = require("./planContent.helper");
+const { buildPlanIdLookup } = require("./planCoverage.helper");
+const {
+  parseFeatureValue,
+  serializeFeatureValue,
+  getFeaturePresentation,
+} = require("./planFeatureMetadata");
 
-const collectIncludedContent = async () => {
+const AD_CREDIT_USAGE_TYPE = "ad_credit";
+
+const normalizeGroupedContent = (grouped = {}, lookup) => {
+  if (!(lookup instanceof Map) || lookup.size === 0) {
+    return grouped;
+  }
+
+  const resolved = new Map();
+
+  Object.entries(grouped).forEach(([rawKey, items]) => {
+    const candidate = `${rawKey}`.trim();
+    if (!candidate) return;
+
+    const planId =
+      lookup.get(candidate) || lookup.get(candidate.toLowerCase());
+    if (!planId) return;
+
+    if (!resolved.has(planId)) {
+      resolved.set(planId, new Map());
+    }
+
+    const bucket = resolved.get(planId);
+    items.forEach((item) => {
+      if (!item) return;
+      const key =
+        item.id !== undefined && item.id !== null
+          ? `id:${item.id}`
+          : item.slug
+            ? `slug:${item.slug}`
+            : `hash:${JSON.stringify(item)}`;
+      if (!bucket.has(key)) {
+        bucket.set(key, item);
+      }
+    });
+  });
+
+  const output = {};
+  resolved.forEach((bucket, planId) => {
+    const list = Array.from(bucket.values()).sort((a, b) => {
+      const titleA = `${a.title || ""}`.toLowerCase();
+      const titleB = `${b.title || ""}`.toLowerCase();
+      if (titleA < titleB) return -1;
+      if (titleA > titleB) return 1;
+      return 0;
+    });
+    output[planId] = list;
+  });
+
+  return output;
+};
+
+const collectIncludedContent = async (lookup) => {
   const [rawClasses, rawBooks, rawTutorials] = await Promise.all([
     db("online_classes")
       .select(
@@ -69,7 +126,11 @@ const collectIncludedContent = async () => {
     status: tutorial.status,
   }));
 
-  return { classesByPlan, booksByPlan, tutorialsByPlan };
+  return {
+    classesByPlan: normalizeGroupedContent(classesByPlan, lookup),
+    booksByPlan: normalizeGroupedContent(booksByPlan, lookup),
+    tutorialsByPlan: normalizeGroupedContent(tutorialsByPlan, lookup),
+  };
 };
 
 exports.createPlan = async (data) => {
@@ -92,7 +153,7 @@ exports.getPlans = async (role) => {
   const lookup = buildPlanIdLookup(plans);
 
   const { classesByPlan, booksByPlan, tutorialsByPlan } =
-    await collectIncludedContent();
+    await collectIncludedContent(lookup);
 
   return plans.map((p) => ({
     ...p,
@@ -109,21 +170,100 @@ exports.getPlanById = async (id) => {
   const feats = await db("plan_features").where({ plan_id: id }).select("*");
   plan.features = feats;
   const { classesByPlan, booksByPlan, tutorialsByPlan } =
-    await collectIncludedContent();
+    await collectIncludedContent(buildPlanIdLookup([plan]));
   plan.included_classes = classesByPlan[id] || [];
   plan.included_books = booksByPlan[id] || [];
   plan.included_tutorials = tutorialsByPlan[id] || [];
   return plan;
 };
 
-// Decrement available ad credits for a plan
-exports.consumeAdCredit = async (planId, trx) => {
-  if (!planId) return;
+const getAdCreditUsage = async (planId, userId, trx) => {
+  if (!planId || !userId) return 0;
   const query = trx || db;
-  await query("plans")
-    .where({ id: planId })
-    .andWhere("ad_credits", ">", 0)
-    .decrement("ad_credits", 1);
+  const row = await query("plan_usage_metrics")
+    .where({
+      plan_id: planId,
+      item_type: AD_CREDIT_USAGE_TYPE,
+      item_id: String(userId),
+    })
+    .first();
+  return row ? Number(row.usage_count) || 0 : 0;
+};
+
+exports.getAdCreditUsage = getAdCreditUsage;
+
+exports.getRemainingAdCredits = async (plan, userId, trx) => {
+  if (!plan || plan.ad_credits === null || plan.ad_credits === undefined) {
+    return null;
+  }
+
+  const allowance = Number(plan.ad_credits);
+  if (!Number.isFinite(allowance) || allowance < 0) {
+    return null;
+  }
+  if (allowance === 0) return 0;
+
+  const used = await getAdCreditUsage(plan.id, userId, trx);
+  const remaining = allowance - used;
+  return remaining < 0 ? 0 : remaining;
+};
+
+exports.consumeAdCredit = async ({
+  planId,
+  userId,
+  allowance,
+  trx,
+} = {}) => {
+  if (!planId || !userId) {
+    return { consumed: false, remaining: null };
+  }
+
+  const credits =
+    allowance === null || allowance === undefined
+      ? null
+      : Number(allowance);
+
+  if (credits === null || !Number.isFinite(credits)) {
+    return { consumed: false, remaining: null };
+  }
+
+  const query = trx || db;
+  const itemId = String(userId);
+
+  const usageRow = await query("plan_usage_metrics")
+    .where({
+      plan_id: planId,
+      item_type: AD_CREDIT_USAGE_TYPE,
+      item_id: itemId,
+    })
+    .first();
+
+  const used = Number(usageRow?.usage_count) || 0;
+  if (used >= credits) {
+    return { consumed: false, remaining: 0 };
+  }
+
+  if (usageRow) {
+    await query("plan_usage_metrics")
+      .where({
+        plan_id: planId,
+        item_type: AD_CREDIT_USAGE_TYPE,
+        item_id: itemId,
+      })
+      .update({
+        usage_count: used + 1,
+      });
+  } else {
+    await query("plan_usage_metrics").insert({
+      plan_id: planId,
+      item_type: AD_CREDIT_USAGE_TYPE,
+      item_id: itemId,
+      usage_count: 1,
+    });
+  }
+
+  const remaining = credits - (used + 1);
+  return { consumed: true, remaining: remaining < 0 ? 0 : remaining };
 };
 
 exports.updatePlan = async (id, data) => {

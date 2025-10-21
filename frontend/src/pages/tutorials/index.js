@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -32,23 +32,29 @@ import { fetchAds as fetchAdBanners } from "@/services/adsService";
  * @returns {Promise<{enrolled: boolean, status: string | null, progress: number}>}
  */
 export const loadTutorialStatus = async (tut) => {
-  const userId = useAuthStore.getState().user?.id;
+  const authState = useAuthStore.getState();
+  const userId = authState.user?.id;
+  const role = authState.user?.role;
+  const isStudent =
+    typeof role === "string" && role.toLowerCase() === "student";
   let enrolled = false;
   let progressPercent = 0;
   let status = null;
 
-  try {
-    const apiData = await fetchTutorialProgress(tut.id);
-    if (apiData) {
-      enrolled = !!apiData.enrolled;
-      status = apiData.status ?? null;
-      if (apiData.progress != null) {
-        progressPercent = Number(apiData.progress);
+  if (isStudent) {
+    try {
+      const apiData = await fetchTutorialProgress(tut.id);
+      if (apiData) {
+        enrolled = !!apiData.enrolled;
+        status = apiData.status ?? null;
+        if (apiData.progress != null) {
+          progressPercent = Number(apiData.progress);
+        }
+        return { enrolled, status, progress: progressPercent };
       }
-      return { enrolled, status, progress: progressPercent };
+    } catch (err) {
+      // Ignore API errors and fall back to localStorage
     }
-  } catch (err) {
-    // Ignore API errors and fall back to localStorage
   }
 
   if (typeof window !== "undefined") {
@@ -99,6 +105,20 @@ const TutorialsSection = () => {
   const addItem = useCartStore((state) => state.addItem);
   const [ads, setAds] = useState([]);
 
+  const fetchUserLists = useCallback(async () => {
+    if (!user || !isStudent) return;
+    try {
+      const [wishlist, favorites] = await Promise.all([
+        getMyTutorialWishlist(),
+        getMyTutorialFavorites(),
+      ]);
+      setWishlistIds(wishlist.map((t) => t.id));
+      setFavoriteIds(favorites.map((t) => t.id));
+    } catch (err) {
+      console.error("Failed to load user lists", err);
+    }
+  }, [user, isStudent]);
+
   const toggleFavorite = async (id) => {
     if (!user) return router.push('/auth/login');
     if (!isStudent) {
@@ -108,12 +128,14 @@ const TutorialsSection = () => {
     try {
       if (favoriteIds.includes(id)) {
         await removeTutorialFromFavorites(id);
-        setFavoriteIds(favoriteIds.filter((i) => i !== id));
+        setFavoriteIds((prev) => prev.filter((i) => i !== id));
+        toast.success(t('removed_from_favorites', 'Removed from favorites'));
       } else {
         await addTutorialToFavorites(id);
-        setFavoriteIds([...favoriteIds, id]);
-        toast.success('Added to favorites');
+        setFavoriteIds((prev) => [...prev, id]);
+        toast.success(t('added_to_favorites', 'Added to favorites'));
       }
+      await fetchUserLists();
     } catch (err) {
       toast.error('Failed to update favorites');
     }
@@ -128,12 +150,14 @@ const TutorialsSection = () => {
     try {
       if (wishlistIds.includes(id)) {
         await removeTutorialFromWishlist(id);
-        setWishlistIds(wishlistIds.filter((i) => i !== id));
+        setWishlistIds((prev) => prev.filter((i) => i !== id));
+        toast.success(t('removed_from_wishlist', 'Removed from wishlist'));
       } else {
         await addTutorialToWishlist(id);
-        setWishlistIds([...wishlistIds, id]);
+        setWishlistIds((prev) => [...prev, id]);
         toast.success(t('added_to_wishlist'));
       }
+      await fetchUserLists();
     } catch (err) {
       toast.error('Failed to update wishlist');
     }
@@ -192,21 +216,8 @@ const TutorialsSection = () => {
   }, [tutorials]);
 
   useEffect(() => {
-    if (!user || !isStudent) return;
-    const loadLists = async () => {
-      try {
-        const [w, f] = await Promise.all([
-          getMyTutorialWishlist(),
-          getMyTutorialFavorites(),
-        ]);
-        setWishlistIds(w.map((t) => t.id));
-        setFavoriteIds(f.map((t) => t.id));
-      } catch (err) {
-        console.error("Failed to load user lists", err);
-      }
-    };
-    loadLists();
-  }, [user, isStudent]);
+    fetchUserLists();
+  }, [fetchUserLists]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =
@@ -406,6 +417,35 @@ const TutorialsSection = () => {
                   status: enrollStatus,
                   progress: progressPercent = 0,
                 } = statusMap[tut.id] || {};
+                const ratingValue = Number.isFinite(Number(tut.rating))
+                  ? Number(tut.rating)
+                  : 0;
+                const starIcons = Array.from({ length: 5 }, (_, index) => {
+                  const active =
+                    ratingValue >= index + 1 ||
+                    (index === 0 && ratingValue > 0 && ratingValue < 1);
+                  return (
+                    <FaStar
+                      key={index}
+                      className={active ? "text-yellow-400" : "text-gray-700"}
+                      aria-hidden="true"
+                    />
+                  );
+                });
+                const priceIsPaid = Number(tut.price) > 0;
+                const priceLabel = priceIsPaid
+                  ? formatCurrency(tut.price, {
+                      currency: tut.currency || tut.currencyCode,
+                    })
+                  : t("free");
+                const instructorName =
+                  tut.instructor ||
+                  tut.instructor_name ||
+                  t("instructor_unknown", "Unknown instructor");
+                const levelLabel =
+                  tut.level ||
+                  tut.difficulty ||
+                  t("level_unknown", "Level not set");
 
                 return (
                   <motion.div
@@ -495,8 +535,8 @@ const TutorialsSection = () => {
                         )}
                     </div>
 
-                    <div className="p-5">
-                      <div className="flex justify-between items-start mb-3">
+                    <div className="p-5 space-y-5">
+                      <div className="flex items-start justify-between gap-3">
                         <h3 className="font-bold text-lg text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
                           {tut.title}
                         </h3>
@@ -506,83 +546,115 @@ const TutorialsSection = () => {
                           </span>
                         )}
                       </div>
-                      
-                      {/* Instructor */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="flex-shrink-0">
-                          {(() => {
-                            const avatar = tut.instructorAvatar || "/images/default-avatar.png";
-                            return (
-                              <img
-                                src={avatar}
-                                alt={tut.instructor}
-                                className="w-8 h-8 rounded-full border-2 border-yellow-500"
-                                loading="lazy"
-                              />
-                            );
-                          })()}
-                        </div>
-                        <span className="text-gray-300 text-sm">{tut.instructor}</span>
-                      </div>
-                      
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <span className="bg-gray-700/60 text-yellow-400 text-xs px-2.5 py-1 rounded-full">
-                          {tut.level}
-                        </span>
-                        {tut.tags?.slice(0, 2).map((tag, i) => (
-                          <span key={i} className="bg-gray-700/60 text-gray-300 text-xs px-2.5 py-1 rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      {/* Stats */}
-                      <div className="flex justify-between items-center border-t border-gray-700/60 pt-4">
-                        <div className="flex items-center space-x-4">
-                          <span className="flex items-center text-sm text-gray-400">
-                            <FaStar className="text-yellow-400 mr-1" /> {tut.rating}
-                          </span>
-                          <span className="flex items-center text-sm text-gray-400">
-                            <FaEye className="text-gray-400 mr-1" /> {tut.views}
-                          </span>
-                        </div>
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          {Number(tut.price) > 0 ? (
-                            <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
-                              {formatCurrency(tut.price, { currency: tut.currencyCode })}
-                            </span>
-                          ) : (
-                            <span className="text-green-400">{t("free")}</span>
-                          )}
-                          <button
-                            className="px-2 py-1 text-xs rounded bg-yellow-500 text-black hover:bg-yellow-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const price = tut.discountPrice ?? tut.price;
-                              if (price == null) {
-                                console.error(
-                                  `Cannot add tutorial ${tut.id} to cart: missing price`,
-                                );
-                                return;
+
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-11 w-11 rounded-full overflow-hidden border border-gray-700 bg-gray-800 flex-shrink-0">
+                            <Image
+                              src={
+                                tut.instructorAvatar ||
+                                "/images/default-avatar.png"
                               }
-                              addItem({
-                                id: tut.id,
-                                name: tut.title,
-                                item_type: "tutorial",
-                                price,
-                                ...(tut.currency || tut.currencyCode
-                                  ? { currency: tut.currency || tut.currencyCode }
-                                  : {}),
-                              });
-                            }}
-                          >
-                            Add to Cart
-                          </button>
+                              alt={instructorName}
+                              width={44}
+                              height={44}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs uppercase tracking-wide text-gray-500">
+                              {t("card.instructor_label", "Instructor")}
+                            </p>
+                            <p className="text-sm font-medium text-white truncate">
+                              {instructorName}
+                            </p>
+                          </div>
                         </div>
+                        <div className="text-right">
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            {t("card.level_label", "Level")}
+                          </p>
+                          <p className="text-sm font-semibold text-yellow-300">
+                            {levelLabel}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm text-gray-300">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {starIcons}
+                          <span className="ml-2 text-yellow-400 font-semibold">
+                            {ratingValue.toFixed(1)}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({tut.ratingCount ?? 0})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center text-xs text-gray-400">
+                            <FaEye className="text-gray-500 mr-1" />
+                            {tut.views ?? 0}
+                          </span>
+                          <span
+                            className={`text-base font-semibold ${
+                              priceIsPaid ? "text-yellow-400" : "text-green-400"
+                            }`}
+                          >
+                            {priceLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      {tut.tags?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {tut.tags.slice(0, 2).map((tag, i) => (
+                            <span
+                              key={i}
+                              className="bg-gray-800/70 text-gray-300 text-xs px-2.5 py-1 rounded-full"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="flex items-center justify-between border-t border-gray-700/60 pt-4">
+                        {enrollStatus ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-800 text-gray-200 text-xs uppercase tracking-wide">
+                            {enrollStatus}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">
+                            {t("card.not_enrolled", "Not enrolled")}
+                          </span>
+                        )}
+                        <button
+                          className="px-3 py-1.5 text-xs rounded bg-yellow-500 text-black font-semibold hover:bg-yellow-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const price = tut.discountPrice ?? tut.price;
+                            if (price == null) {
+                              console.error(
+                                `Cannot add tutorial ${tut.id} to cart: missing price`,
+                              );
+                              return;
+                            }
+                            addItem({
+                              id: tut.id,
+                              name: tut.title,
+                              item_type: "tutorial",
+                              price,
+                              ...(tut.currency || tut.currencyCode
+                                ? { currency: tut.currency || tut.currencyCode }
+                                : {}),
+                            });
+                          }}
+                        >
+                          {t("add_to_cart", "Add to Cart")}
+                        </button>
                       </div>
                     </div>
-                    
+
                     {/* Enrolled Badge */}
                     {enrolled && (
                       <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
