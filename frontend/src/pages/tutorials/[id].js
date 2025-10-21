@@ -279,8 +279,8 @@ export default function TutorialDetail() {
         if (!notes.length) return;
         const note = notes.find(
           (n) =>
-            n.type === "new_assignment" &&
-            n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
+            n?.type === "new_assignment" &&
+            n?.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
         );
         if (!note) return;
         toast((t) => (
