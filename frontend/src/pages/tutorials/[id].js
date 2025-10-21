@@ -268,30 +268,37 @@ export default function TutorialDetail() {
     if (!isEnrolled || !tutorial?.title) return;
     const fetchNotifications = async () => {
       try {
-        const notes = await getNotifications();
+        const raw = await getNotifications();
+        const notes = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.notifications)
+              ? raw.notifications
+              : [];
+        if (!notes.length) return;
         const note = notes.find(
           (n) =>
             n.type === "new_assignment" &&
             n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
         );
-        if (note) {
-          toast((t) => (
-            <span>
-              {note.message}{" "}
-              <Link
-                href="/dashboard/student/assignments"
-                className="underline text-blue-400"
-                onClick={() => toast.dismiss(t.id)}
-              >
-                View
-              </Link>
-            </span>
-          ));
-          try {
-            await markNotificationAsRead(note.id);
-          } catch (err) {
-            // ignore mark read errors
-          }
+        if (!note) return;
+        toast((t) => (
+          <span>
+            {note.message}{" "}
+            <Link
+              href="/dashboard/student/assignments"
+              className="underline text-blue-400"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              View
+            </Link>
+          </span>
+        ));
+        try {
+          await markNotificationAsRead(note.id);
+        } catch (err) {
+          // ignore mark read errors
         }
       } catch (err) {
         console.error("Failed to fetch notifications", err);
