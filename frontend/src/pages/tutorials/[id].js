@@ -393,7 +393,7 @@ export default function TutorialDetail() {
   const currentVideo = !isCurrentLocked ? currentItem?.src : null;
   const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
-  const progressPercentage = tutorial.chapters.length
+  const progressPercentage = Array.isArray(tutorial?.chapters) && tutorial.chapters.length
     ? (progress.completedChapters.length / tutorial.chapters.length) * 100
     : 0;
 
