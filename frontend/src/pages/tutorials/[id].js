@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
@@ -78,6 +78,8 @@ export default function TutorialDetail() {
   const [error, setError] = useState(null);
   const [testPassed, setTestPassed] = useState(false);
   const [assignments, setAssignments] = useState([]);
+  const [assignmentStatus, setAssignmentStatus] = useState("idle");
+  const [assignmentErrorCode, setAssignmentErrorCode] = useState(null);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const user = useAuthStore((state) => state.user);
   const { addItem, items: cartItems } = useCartStore((state) => ({
@@ -94,6 +96,20 @@ export default function TutorialDetail() {
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id, tutorial?.chapters ?? []);
   const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
+  const renderCountRef = useRef(0);
+  const viewerRole = user?.role?.toLowerCase?.() ?? null;
+  const viewerStatus = useMemo(() => {
+    if (!isLoggedIn) return "guest";
+    if (!viewerRole || viewerRole === "student") {
+      return isEnrolled ? "student-enrolled" : "student-not-enrolled";
+    }
+    return viewerRole;
+  }, [isLoggedIn, viewerRole, isEnrolled]);
+  const shouldShowEnrollBanner =
+    !isEnrolled &&
+    (viewerStatus === "guest" || viewerStatus === "student-not-enrolled");
+  const isStaffViewer =
+    Boolean(isLoggedIn && viewerRole && viewerRole !== "student");
   const playlist = useMemo(() => {
     if (!tutorial) return [];
     const items = [];
@@ -118,10 +134,36 @@ export default function TutorialDetail() {
     });
     return items;
   }, [tutorial, t]);
+
   const previewOffset = tutorial?.preview ? 1 : 0;
   const unlockedLimit = isEnrolled
     ? playlist.length
     : Math.min(playlist.length, tutorial?.preview ? 2 : 1);
+
+  renderCountRef.current += 1;
+  if (typeof window !== "undefined") {
+    const logCount = renderCountRef.current;
+    if (logCount <= 10 || logCount % 10 === 0) {
+      console.debug(
+        "[TutorialDetail render]",
+        logCount,
+        {
+          loading,
+          error,
+          hasTutorial: Boolean(tutorial),
+          assignmentsLength: Array.isArray(assignments) ? assignments.length : "n/a",
+          isLoggedIn,
+          isStudent,
+          isEnrolled,
+          viewerStatus,
+          assignmentStatus,
+          currentVideoIndex,
+          unlockedLimit,
+          playlistLength: playlist.length,
+        },
+      );
+    }
+  }
 
   const enroll = async () => {
     if (!tutorial) return;
@@ -184,86 +226,219 @@ export default function TutorialDetail() {
 
   useEffect(() => {
     if (!id) return;
-    const load = async () => {
+    let isActive = true;
+
+    const loadTutorial = async () => {
       setLoading(true);
       setError(null);
+      if (typeof window !== "undefined") {
+        console.debug("[TutorialDetail] load() invoked", { id });
+      }
       try {
         const data = await fetchTutorialDetails(id);
+        if (!isActive) return;
         if (!data) {
           setError(t("not_found"));
           setLoading(false);
           return;
         }
+
         const rawChapters = Array.isArray(data.chapters)
           ? data.chapters
-          : data.chapters && typeof data.chapters === 'object'
+          : data.chapters && typeof data.chapters === "object"
             ? Object.values(data.chapters)
             : [];
 
         const chapters = rawChapters
-          .filter((chapter) => chapter && typeof chapter === 'object')
-          .map((ch) => {
-            return {
-              ...ch,
-              videoUrl: buildUrl(ch.video_url || ch.videoUrl),
-            };
-          });
-        const previewUrl = (() => {
-          return buildUrl(data.preview);
-        })();
+          .filter((chapter) => chapter && typeof chapter === "object")
+          .map((ch) => ({
+            ...ch,
+            videoUrl: buildUrl(ch.video_url || ch.videoUrl),
+          }));
+
+        const previewUrl = buildUrl(data.preview);
 
         setTutorial({ ...data, chapters, preview: previewUrl });
-        let enrolled = Boolean(
-          data?.is_enrolled || data?.enrolled || data?.isEnrolled,
-        );
-        if (!enrolled && isLoggedIn && isStudent) {
-          try {
-            const status = await fetchTutorialProgress(id);
-            enrolled = Boolean(
-              status?.is_enrolled || status?.enrolled || status?.success,
-            );
-          } catch (err) {
-            console.error('Failed to fetch enrollment status', err);
-          }
-        }
-        setIsEnrolled(enrolled);
-        if (isLoggedIn) {
-          try {
-            const assignmentList = await fetchTutorialAssignments(id);
-            setAssignments(assignmentList);
-          } catch (err) {
-            console.error('Failed to load assignments', err);
-          }
-        } else {
-          setAssignments([]);
+        if (typeof window !== "undefined") {
+          console.debug("[TutorialDetail] tutorial state set", {
+            tutorialId: data.id,
+            chapters: chapters.length,
+            hasPreview: Boolean(previewUrl),
+          });
         }
 
+        const initialEnrollment = Boolean(
+          data?.is_enrolled || data?.enrolled || data?.isEnrolled,
+        );
+        setIsEnrolled(initialEnrollment);
+        setAssignmentStatus((status) =>
+          isLoggedIn
+            ? isStudent
+              ? status
+              : "restricted"
+            : "idle",
+        );
+        setAssignmentErrorCode(null);
+
         const list = await fetchPublishedTutorials();
+        if (!isActive) return;
         const others = (list?.data || list || []).filter(
           (t) => String(t.id) !== String(data.id),
         );
         setRelated(others.slice(0, 3));
-        if (isLoggedIn && isStudent) {
-          try {
-            const [w, f] = await Promise.all([
-              getMyTutorialWishlist(),
-              getMyTutorialFavorites(),
-            ]);
-            setInWishlist(w.some((t) => String(t.id) === String(data.id)));
-            setInFavorites(f.some((t) => String(t.id) === String(data.id)));
-          } catch (err) {
-            console.error('Failed to load user lists', err);
-          }
-        }
       } catch (err) {
+        if (!isActive) return;
         console.error(err);
         setError(t("load_error"));
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
-    load();
-  }, [id, isLoggedIn, isStudent]);
+
+    loadTutorial();
+
+    return () => {
+      isActive = false;
+    };
+  }, [id, t]);
+
+  useEffect(() => {
+    if (!id || !tutorial?.id) return;
+    let isActive = true;
+
+    const resetAssignments = (status) => {
+      if (!isActive) return;
+      setAssignments((prev) =>
+        Array.isArray(prev) && prev.length ? [] : prev,
+      );
+      setInWishlist((prev) => (prev ? false : prev));
+      setInFavorites((prev) => (prev ? false : prev));
+      setIsEnrolled((prev) => (prev ? false : prev));
+      setAssignmentStatus((prev) => (prev === status ? prev : status));
+      setAssignmentErrorCode(null);
+    };
+
+    if (!isLoggedIn) {
+      resetAssignments("idle");
+      return;
+    }
+
+    if (!isStudent) {
+      resetAssignments("restricted");
+      return;
+    }
+
+    const syncStudentState = async () => {
+      setAssignmentStatus((prev) =>
+        prev === "loading" ? prev : "loading",
+      );
+      setAssignmentErrorCode(null);
+
+      let enrolledStatus = false;
+
+      try {
+        const status = await fetchTutorialProgress(id);
+        if (!isActive) return;
+        enrolledStatus = Boolean(
+          status?.is_enrolled || status?.enrolled || status?.success,
+        );
+        setIsEnrolled((prev) =>
+          prev === enrolledStatus ? prev : enrolledStatus,
+        );
+      } catch (err) {
+        if (!isActive) return;
+        console.error("Failed to fetch enrollment status", err);
+      }
+
+      if (!enrolledStatus) {
+        if (!isActive) return;
+        setAssignments((prev) =>
+          Array.isArray(prev) && prev.length ? [] : prev,
+        );
+        setAssignmentStatus((prev) =>
+          prev === "locked" ? prev : "locked",
+        );
+        setAssignmentErrorCode(null);
+      } else {
+        try {
+          const assignmentList = await fetchTutorialAssignments(id);
+          if (!isActive) return;
+          const normalizedAssignments = Array.isArray(assignmentList)
+            ? assignmentList
+            : [];
+          if (typeof window !== "undefined") {
+            console.debug("[TutorialDetail] assignments loaded", {
+              count: normalizedAssignments.length,
+            });
+          }
+          setAssignments((prev) => {
+            const prevIds = Array.isArray(prev)
+              ? prev.map((a) => a?.id).filter(Boolean)
+              : [];
+            const nextIds = normalizedAssignments
+              .map((a) => a?.id)
+              .filter(Boolean);
+            if (
+              prevIds.length === nextIds.length &&
+              prevIds.every((id, idx) => String(id) === String(nextIds[idx]))
+            ) {
+              return prev;
+            }
+            return normalizedAssignments;
+          });
+          setAssignmentStatus((prev) => {
+            const nextStatus = normalizedAssignments.length ? "ready" : "empty";
+            return prev === nextStatus ? prev : nextStatus;
+          });
+        } catch (err) {
+          if (!isActive) return;
+          console.error("Failed to load assignments", err);
+          const statusCode = err?.response?.status ?? err?.status ?? null;
+          if (typeof window !== "undefined") {
+            console.debug("[TutorialDetail] assignments request failed", {
+              status: statusCode,
+            });
+          }
+          setAssignments((prev) =>
+            Array.isArray(prev) && prev.length ? [] : prev,
+          );
+          const nextStatus = statusCode === 403 ? "forbidden" : "error";
+          setAssignmentStatus((prev) =>
+            prev === nextStatus ? prev : nextStatus,
+          );
+          setAssignmentErrorCode(statusCode);
+        }
+      }
+
+      try {
+        const [w, f] = await Promise.all([
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+        ]);
+        if (!isActive) return;
+        const tutorialIdString = String(tutorial.id);
+        setInWishlist((prev) => {
+          const next = w.some((t) => String(t.id) === tutorialIdString);
+          return prev === next ? prev : next;
+        });
+        setInFavorites((prev) => {
+          const next = f.some((t) => String(t.id) === tutorialIdString);
+          return prev === next ? prev : next;
+        });
+      } catch (err) {
+        if (!isActive) return;
+        console.error("Failed to load user lists", err);
+      }
+    };
+
+    syncStudentState();
+
+    return () => {
+      isActive = false;
+    };
+  }, [id, tutorial?.id, isLoggedIn, isStudent]);
   useEffect(() => {
     if (!isEnrolled || !tutorial?.title) return;
     const fetchNotifications = async () => {
@@ -530,7 +705,7 @@ export default function TutorialDetail() {
           </div>
         )}
 
-        {!isEnrolled && (
+        {shouldShowEnrollBanner && (
           <EnrollBanner
             onEnroll={enroll}
             isPaid={Number(tutorial.price) > 0}
@@ -538,6 +713,15 @@ export default function TutorialDetail() {
             onAddToCart={handleAddToCart}
             currency={tutorial.currency}
           />
+        )}
+
+        {isStaffViewer && (
+          <div className="bg-gray-800/60 border border-gray-700 text-gray-300 px-4 py-3 rounded-md">
+            {t("staff_view_notice", {
+              defaultValue:
+                "You are viewing this tutorial with a staff role. Student-only interactions such as enrollment, quiz, and assignments are hidden.",
+            })}
+          </div>
         )}
 
 
@@ -629,28 +813,95 @@ export default function TutorialDetail() {
           </div>
         )}
 
-        {assignments.length > 0 && (
-          <div className="mt-6 text-center">
-            {testPassed && isEnrolled ? (
-              <div className="space-y-4">
-                {assignments.map((assignment) => (
-                  <div key={assignment.id}>
-                    <Link
-                      href={`/dashboard/student/assignments/${assignment.id}`}
-                      className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition inline-block"
-                    >
-                      📚 {assignment.title || t("start_assignment")}
-                    </Link>
-                    {(assignment.due_date || assignment.dueDate) && (
-                      <p className="text-sm text-gray-400 mt-1">
-                        Due: {new Date(assignment.due_date || assignment.dueDate).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                ))}
+        {assignmentStatus !== "idle" && (
+          <div className="mt-6 text-center space-y-4">
+            {assignmentStatus === "loading" && (
+              <div className="text-gray-400">
+                {t("assignments_loading", {
+                  defaultValue: "Loading assignments...",
+                })}
               </div>
-            ) : (
-              <div className="text-gray-400">{t("complete_quiz_unlock_assignments")}</div>
+            )}
+
+            {assignmentStatus === "locked" && (
+              <div className="text-gray-400">
+                {t("assignments_locked", {
+                  defaultValue: "Enroll in this tutorial to unlock assignments.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "restricted" && isStaffViewer && (
+              <div className="text-gray-400">
+                {t("assignments_staff_only", {
+                  defaultValue:
+                    "Assignments and the quiz are visible only to student accounts.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "forbidden" && (
+              <div className="text-red-400">
+                {t("assignments_forbidden", {
+                  defaultValue:
+                    "Assignments are currently locked for your account.",
+                })}
+                {assignmentErrorCode && (
+                  <span className="ml-2 text-xs text-red-300">
+                    {t("error_code", { defaultValue: "Error code" })}:{" "}
+                    {assignmentErrorCode}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {assignmentStatus === "error" && (
+              <div className="text-red-400">
+                {t("assignments_error", {
+                  defaultValue:
+                    "We couldn't load assignments right now. Please try again later.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "empty" && (
+              <div className="text-gray-400">
+                {t("assignments_empty", {
+                  defaultValue:
+                    "No assignments have been published for this tutorial yet.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "ready" && (
+              <>
+                {testPassed && isEnrolled ? (
+                  <div className="space-y-4">
+                    {assignments.map((assignment) => (
+                      <div key={assignment.id}>
+                        <Link
+                          href={`/dashboard/student/assignments/${assignment.id}`}
+                          className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition inline-block"
+                        >
+                          📚 {assignment.title || t("start_assignment")}
+                        </Link>
+                        {(assignment.due_date || assignment.dueDate) && (
+                          <p className="text-sm text-gray-400 mt-1">
+                            {t("assignments_due", { defaultValue: "Due" })}:{" "}
+                            {new Date(
+                              assignment.due_date || assignment.dueDate,
+                            ).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-400">
+                    {t("complete_quiz_unlock_assignments")}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
