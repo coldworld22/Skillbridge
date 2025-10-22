@@ -21,13 +21,49 @@ const resolveCurrency = (...candidates) => {
   return DEFAULT_CURRENCY;
 };
 
-const createFormatter = (locale, currency) =>
-  new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const fallbackFormat = (value, currency = DEFAULT_CURRENCY) => {
+  const numericValue = Number(value ?? 0);
+  const safeNumeric = Number.isFinite(numericValue) ? numericValue : 0;
+  const code = normalizeCurrency(currency) || DEFAULT_CURRENCY;
+  const symbol = code === DEFAULT_CURRENCY ? "$" : `${code} `;
+  return `${symbol}${safeNumeric.toFixed(2)}`;
+};
+
+const createManualFormatter = (currency) => {
+  const code = normalizeCurrency(currency) || DEFAULT_CURRENCY;
+  return {
+    format: (value) => fallbackFormat(value, code),
+  };
+};
+
+let hasWarnedMissingIntl = false;
+
+const attemptIntlFormatter = (locale, currency) => {
+  if (typeof Intl !== "object" || typeof Intl.NumberFormat !== "function") {
+    if (!hasWarnedMissingIntl) {
+      console.warn(
+        "[currency] Intl.NumberFormat is not available; using basic formatter instead.",
+      );
+      hasWarnedMissingIntl = true;
+    }
+    return null;
+  }
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } catch (err) {
+    console.warn(
+      `[currency] Failed to create formatter (locale=${locale}, currency=${currency}):`,
+      err?.message || err,
+    );
+    return null;
+  }
+};
 
 /**
  * Build an Intl.NumberFormat using the current locale and currency from
@@ -51,24 +87,30 @@ export const getCurrencyFormatter = (override = {}) => {
     useAppConfigStore.getState().settings?.currency,
   );
 
-  try {
-    return createFormatter(locale, currency);
-  } catch (err) {
-    // Invalid locale or currency codes from the API/config can surface here.
-    // Fall back to safe defaults so rendering continues without crashing.
-    console.warn(
-      `[currency] Falling back due to formatter error (locale=${locale}, currency=${currency}):`,
-      err?.message || err,
-    );
-    try {
-      if (locale !== FALLBACK_LOCALE) {
-        return createFormatter(FALLBACK_LOCALE, currency);
-      }
-    } catch {
-      // ignore and fall through
-    }
-    return createFormatter(FALLBACK_LOCALE, DEFAULT_CURRENCY);
+  const primaryFormatter = attemptIntlFormatter(locale, currency);
+  if (primaryFormatter) {
+    return primaryFormatter;
   }
+
+  if (locale !== FALLBACK_LOCALE) {
+    const fallbackLocaleFormatter = attemptIntlFormatter(
+      FALLBACK_LOCALE,
+      currency,
+    );
+    if (fallbackLocaleFormatter) {
+      return fallbackLocaleFormatter;
+    }
+  }
+
+  const defaultCurrencyFormatter = attemptIntlFormatter(
+    FALLBACK_LOCALE,
+    DEFAULT_CURRENCY,
+  );
+  if (defaultCurrencyFormatter) {
+    return defaultCurrencyFormatter;
+  }
+
+  return createManualFormatter(currency);
 };
 
 /**
@@ -96,8 +138,6 @@ export const formatCurrency = (value, override = {}) => {
       `[currency] Falling back to string formatter (currency=${currency}):`,
       err?.message || err,
     );
-    const symbol = currency === DEFAULT_CURRENCY ? "$" : `${currency} `;
-    const formatted = Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
-    return `${symbol}${formatted}`;
+    return fallbackFormat(numeric, currency);
   }
 };
