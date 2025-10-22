@@ -7,7 +7,7 @@ const { calculateInstructorAmount } = require("./planRevenue");
 
 async function creditInstructorWallet(item_type, item_id, amount) {
   const numericAmount = Number(amount);
-  if (!Number.isFinite(numericAmount) || numericAmount <= 0) return;
+  if (!Number.isFinite(numericAmount) || numericAmount < 0) return;
   try {
     if (item_type === "book") {
       const book = await bookService.getBookById(item_id);

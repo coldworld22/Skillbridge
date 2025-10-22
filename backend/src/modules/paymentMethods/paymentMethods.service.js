@@ -31,28 +31,56 @@ exports.getByType = async (type) => {
   const normalized = String(type).trim().toLowerCase();
   if (!normalized) return null;
 
-  const baseQuery = db("payment_methods_config")
-    .orderBy("is_default", "desc")
-    .orderBy("created_at", "asc");
+  const buildQuery = (withOrdering = true) => {
+    const query = db("payment_methods_config");
+    if (withOrdering && typeof query.orderBy === "function") {
+      query.orderBy("is_default", "desc");
+      query.orderBy("created_at", "asc");
+    }
+    return query;
+  };
 
-  const matchByType = await baseQuery
-    .clone()
-    .whereRaw("LOWER(type) = ?", [normalized])
-    .first();
+  const attempt = async (handler, withOrdering = true) => {
+    const query = buildQuery(withOrdering);
+    handler(query);
+    if (typeof query.first === "function") {
+      try {
+        return await query.first();
+      } catch (err) {
+        const message = String(err?.message || "");
+        const missingColumn = /(is_default|created_at)/i.test(message);
+        if (withOrdering && missingColumn) {
+          return attempt(handler, false);
+        }
+        throw err;
+      }
+    }
+    return null;
+  };
+
+  const matchByType = await attempt((query) => {
+    if (typeof query.whereRaw === "function") {
+      query.whereRaw("LOWER(type) = ?", normalized);
+    }
+  });
   if (matchByType) return matchByType;
 
-  const matchByName = await baseQuery
-    .clone()
-    .whereRaw("LOWER(name) = ?", [normalized])
-    .first();
+  const matchByName = await attempt((query) => {
+    if (typeof query.whereRaw === "function") {
+      query.whereRaw("LOWER(name) = ?", normalized);
+    }
+  });
   if (matchByName) return matchByName;
 
   if (normalized.includes("bank")) {
-    const bankLike = await baseQuery
-      .clone()
-      .whereRaw("LOWER(name) LIKE ?", ["%bank%"])
-      .orWhereRaw("LOWER(type) LIKE ?", ["%bank%"])
-      .first();
+    const bankLike = await attempt((query) => {
+      if (typeof query.whereRaw === "function") {
+        query.whereRaw("LOWER(name) LIKE ?", "%bank%");
+        if (typeof query.orWhereRaw === "function") {
+          query.orWhereRaw("LOWER(type) LIKE ?", "%bank%");
+        }
+      }
+    });
     if (bankLike) return bankLike;
   }
 

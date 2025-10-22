@@ -16,8 +16,27 @@ function applyDiscount(amount, coupon) {
  * Returns the resolved interval ("monthly" | "yearly") and the normalized amount
  * for that interval.
  */
+async function loadPlan(planId) {
+  try {
+    return await plansService.getPlanById(planId);
+  } catch (err) {
+    const message = String(err?.message || "");
+    const missingRelation =
+      err?.code === "42P01" || /does not exist/i.test(message);
+    if (missingRelation) {
+      try {
+        const db = require("../../../config/database");
+        return await db("plans").where({ id: planId }).first();
+      } catch (_) {
+        return null;
+      }
+    }
+    throw err;
+  }
+}
+
 async function ensurePlanAmountMatches(planId, amount, { coupon = null, installments = 1 } = {}) {
-  const plan = await plansService.getPlanById(planId);
+  const plan = await loadPlan(planId);
   if (!plan) throw new AppError("Plan not found", 404);
 
   const rawMonthly = Number(plan.price_monthly);

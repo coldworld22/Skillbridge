@@ -1,6 +1,5 @@
 const logger = require("../../../utils/logger.js");
 const paymentConfigService = require("../../paymentConfig/paymentConfig.service");
-const isTest = process.env.NODE_ENV === 'test';
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -12,12 +11,6 @@ async function calculatePlatformFee(item_type, amount) {
   // In tests, avoid DB calls and use defaults for determinism and speed
   let platform_fee = 0;
   let instructor_amount = amount;
-  if (isTest) {
-    const cut = DEFAULT_PLATFORM_CUT[item_type] ?? 0;
-    platform_fee = (amount * cut) / 100;
-    instructor_amount = amount - platform_fee;
-    return { platform_fee, instructor_amount };
-  }
   try {
     const settings = await paymentConfigService.getSettings();
     const cut =

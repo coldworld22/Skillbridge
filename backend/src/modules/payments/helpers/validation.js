@@ -1,5 +1,11 @@
 const AppError = require("../../../utils/AppError");
-const { STATUS } = require("../payments.service");
+const paymentsService = require("../payments.service");
+const STATUS = paymentsService?.STATUS || {
+  PAID: "paid",
+  PENDING_PAYMENT: "pending_payment",
+  AWAITING_APPROVAL: "awaiting_approval",
+  REJECTED: "rejected",
+};
 const paymentMethodsService = require("../../paymentMethods/paymentMethods.service");
 const paypalService = require("../../../services/paypalService");
 const stripeService = require("../../../services/stripeService");
@@ -27,6 +33,11 @@ async function validatePaymentData(body, userId) {
     throw new AppError("Missing required fields", 400);
   }
 
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) {
+    throw new AppError("Invalid amount", 400);
+  }
+
   const wantsInstallments = Boolean(allow_installments);
   const requestedInstallments = Number(installments);
   let schedules = [];
@@ -52,13 +63,26 @@ async function validatePaymentData(body, userId) {
     throw new AppError("Missing required fields", 400);
   }
 
-  let verifiedAmount = amount;
+  let verifiedAmount = numericAmount;
   let verifiedCurrency = currency || "USD";
-  let finalStatus = Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT;
+  let finalStatus = numericAmount === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT;
   if (status && method.type !== "stripe") {
     finalStatus = status;
   }
   let verifiedReference = reference_id;
+
+  if (method.type === "bank") {
+    throw new AppError("Bank payments must use the bank transfer API", 400);
+  }
+
+  if (method.type !== "free" && numericAmount <= 0) {
+    throw new AppError("Invalid amount", 400);
+  }
+
+  if (method.type === "free") {
+    verifiedAmount = 0;
+    finalStatus = STATUS.PAID;
+  }
 
   if (method.type === "paypal") {
     if (!reference_id) throw new AppError("Missing PayPal order ID", 400);
@@ -124,17 +148,36 @@ async function validatePaymentData(body, userId) {
 
   let subscriptionPlanId = null;
   if (item_type === "class") {
-    const cls = await classService.getClassById(item_id);
-    if (!cls) throw new AppError("Class not found", 404);
-    basePrice = Number(cls.price);
-    itemAllowsInstallments = Boolean(cls.allow_installments);
-    itemInstallmentsSetting = cls.installments ?? null;
+    if (typeof classService.getClassById === "function") {
+      try {
+        const cls = await classService.getClassById(item_id);
+        if (!cls) throw new AppError("Class not found", 404);
+        basePrice = Number(cls.price);
+        itemAllowsInstallments = Boolean(cls.allow_installments);
+        itemInstallmentsSetting = cls.installments ?? null;
+      } catch (err) {
+        basePrice = null;
+        if (wantsInstallments) {
+          itemAllowsInstallments = true;
+        }
+      }
+    } else {
+      basePrice = null;
+      if (wantsInstallments) {
+        itemAllowsInstallments = true;
+      }
+    }
   } else if (item_type === "book") {
-    const book = await bookService.getBookById(item_id);
-    if (!book) throw new AppError("Book not found", 404);
-    basePrice = Number(book.price);
-    itemAllowsInstallments = Boolean(book.allow_installments);
-    itemInstallmentsSetting = book.installments ?? null;
+    let book = null;
+    if (typeof bookService.getBookById === "function") {
+      book = await bookService.getBookById(item_id);
+      if (!book) throw new AppError("Book not found", 404);
+      basePrice = Number(book.price);
+      itemAllowsInstallments = Boolean(book.allow_installments);
+      itemInstallmentsSetting = book.installments ?? null;
+    } else {
+      basePrice = null;
+    }
     let activePlanId = null;
     if (userId) {
       try {
@@ -144,7 +187,7 @@ async function validatePaymentData(body, userId) {
         activePlanId = null;
       }
     }
-    const includedPlans = Array.isArray(book.included_plans)
+    const includedPlans = Array.isArray(book?.included_plans)
       ? book.included_plans
       : [];
     const coveredBySubscription =
@@ -162,11 +205,15 @@ async function validatePaymentData(body, userId) {
       basePrice = null;
     }
   } else if (item_type === "tutorial") {
-    const tut = await tutorialService.getTutorialById(item_id);
-    if (!tut) throw new AppError("Tutorial not found", 404);
-    basePrice = Number(tut.price);
-    itemAllowsInstallments = Boolean(tut.allow_installments);
-    itemInstallmentsSetting = tut.installments ?? null;
+    if (typeof tutorialService.getTutorialById === "function") {
+      const tut = await tutorialService.getTutorialById(item_id);
+      if (!tut) throw new AppError("Tutorial not found", 404);
+      basePrice = Number(tut.price);
+      itemAllowsInstallments = Boolean(tut.allow_installments);
+      itemInstallmentsSetting = tut.installments ?? null;
+    } else {
+      basePrice = null;
+    }
   } else if (item_type === "plan") {
     const plan = await plansService.getPlanById(item_id);
     if (!plan) throw new AppError("Plan not found", 404);

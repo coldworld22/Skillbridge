@@ -479,6 +479,21 @@ exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
   await exports.addTutorialTags(tutorialId, tagIds, trx);
 };
 
+exports.updateTutorialTagsTransactional = async (tutorialId, tags) => {
+  const trx = await db.transaction();
+  try {
+    await exports.updateTutorialTags(tutorialId, tags, trx);
+    const result = await exports.getTutorialTags(tutorialId, trx);
+    await trx.commit();
+    return result;
+  } catch (err) {
+    try {
+      await trx.rollback();
+    } catch (_) {}
+    throw err;
+  }
+};
+
 exports.getTutorialTags = async (tutorialId, trx = db) => {
   return trx("tutorial_tag_map as m")
     .join("tags as t", "m.tag_id", "t.id")

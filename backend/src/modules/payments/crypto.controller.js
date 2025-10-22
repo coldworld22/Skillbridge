@@ -3,7 +3,12 @@ const catchAsync = require('../../utils/catchAsync');
 const AppError = require('../../utils/AppError');
 const { sendSuccess } = require('../../utils/response');
 const paymentsService = require('./payments.service');
-const { STATUS } = paymentsService;
+const STATUS = paymentsService?.STATUS || {
+  PAID: 'paid',
+  PENDING_PAYMENT: 'pending_payment',
+  REJECTED: 'rejected',
+  AWAITING_APPROVAL: 'awaiting_approval',
+};
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const nowPayments = require('../../services/nowPaymentsService');

@@ -263,7 +263,13 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   );
 
   await grantAccess(payment);
-  const refreshedPayment = await paymentsService.getById(payment.id);
+  let refreshedPayment = payment;
+  try {
+    const latest = await paymentsService.getById(payment.id);
+    if (latest) refreshedPayment = latest;
+  } catch (err) {
+    logger.warn("Failed to refresh bank payment after approval:", err);
+  }
   if (refreshedPayment?.status === STATUS.PAID) {
     await creditInstructorFromPayment(refreshedPayment);
   }
@@ -292,26 +298,18 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
       const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice) {
         const attachmentPath =
-          invoice.file_path ||
-          (invoice.pdf_url
-            ? path.join(
-                __dirname,
-                "../../../",
-                invoice.pdf_url.replace(/^\//, "")
-              )
-            : null);
+          invoice.file_path || invoice.pdf_url || null;
         const payload = {
           to: user.email,
           subject: "Payment Invoice",
           html: `<p>Please find your invoice attached.</p>`,
         };
         if (attachmentPath) {
-          payload.attachments = [
-            {
-              path: attachmentPath,
-              filename: `invoice-${invoice.id}.pdf`,
-            },
-          ];
+          const attachment = { path: attachmentPath };
+          if (invoice?.id) {
+            attachment.filename = `invoice-${invoice.id}.pdf`;
+          }
+          payload.attachments = [attachment];
         }
         await mailService.sendMail(payload);
       }

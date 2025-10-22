@@ -19,8 +19,12 @@ exports.resolveUploadFilePath = (input) => {
   if (!input) return null;
   const stripped = stripOrigin(String(input));
   const segmentIndex = stripped.indexOf(UPLOADS_SEGMENT);
-  if (segmentIndex === -1) return null;
-  const relative = stripped.slice(segmentIndex + UPLOADS_SEGMENT.length);
+  let relative;
+  if (segmentIndex === -1) {
+    relative = normalizeRelativePath(stripped);
+  } else {
+    relative = stripped.slice(segmentIndex + UPLOADS_SEGMENT.length);
+  }
   const normalized = normalizeRelativePath(relative);
   if (!normalized) return null;
   const absolutePath = path.join(UPLOADS_DIR, normalized);

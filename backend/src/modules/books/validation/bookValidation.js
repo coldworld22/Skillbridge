@@ -25,7 +25,7 @@ exports.createBook = Joi.object({
     Joi.array().items(Joi.string()),
     Joi.string()
   ).optional(),
-});
+}).unknown(true);
 
 exports.updateBook = Joi.object({
   title: Joi.string().min(1),
@@ -47,7 +47,7 @@ exports.updateBook = Joi.object({
     Joi.array().items(Joi.string()),
     Joi.string()
   ).optional(),
-});
+}).unknown(true);
 
 exports.updateBookStatus = Joi.object({
   status: Joi.string()
