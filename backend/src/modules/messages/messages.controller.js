@@ -35,34 +35,43 @@ exports.deleteMessage = catchAsync(async (req, res) => {
 
 exports.sendEmail = catchAsync(async (req, res) => {
   const quota = await prepareMessagingQuota(req.user, "email");
-  const data = await service.sendEmail({
+  const payload = {
     sender_id: req.user.id,
     receiver_id: req.params.id,
     subject: req.body.subject,
     message: req.body.message,
-    quota,
-  });
+  };
+  if (quota && !quota.unlimited) {
+    payload.quota = quota;
+  }
+  const data = await service.sendEmail(payload);
   sendSuccess(res, data, "Email sent");
 });
 
 exports.sendWhatsApp = catchAsync(async (req, res) => {
   const quota = await prepareMessagingQuota(req.user, "whatsapp");
-  const data = await service.sendWhatsApp({
+  const payload = {
     sender_id: req.user.id,
     receiver_id: req.params.id,
     message: req.body.message,
-    quota,
-  });
+  };
+  if (quota && !quota.unlimited) {
+    payload.quota = quota;
+  }
+  const data = await service.sendWhatsApp(payload);
   sendSuccess(res, data, "WhatsApp message sent");
 });
 
 exports.startVideoCall = catchAsync(async (req, res) => {
   const quota = await prepareMessagingQuota(req.user, "video");
-  const data = await service.startVideoCall({
+  const payload = {
     sender_id: req.user.id,
     receiver_id: req.params.id,
-    quota,
-  });
+  };
+  if (quota && !quota.unlimited) {
+    payload.quota = quota;
+  }
+  const data = await service.startVideoCall(payload);
   sendSuccess(res, data, "Video call started");
 });
 

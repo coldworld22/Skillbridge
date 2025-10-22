@@ -1,10 +1,14 @@
-const path = require("path");
 const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./payments.service");
-const { STATUS } = service;
+const STATUS = service?.STATUS || {
+  PAID: "paid",
+  PENDING_PAYMENT: "pending_payment",
+  AWAITING_APPROVAL: "awaiting_approval",
+  REJECTED: "rejected",
+};
 const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
@@ -26,14 +30,11 @@ const {
   creditInstructorSubscription,
   creditInstructorWallet,
 } = require("./helpers/wallet");
-const INVOICE_PATH_ROOT = path.join(__dirname, "../../../");
-
 const resolveInvoicePath = (invoice) => {
   if (!invoice) return null;
   if (invoice.file_path) return invoice.file_path;
   if (!invoice.pdf_url) return null;
-  const relative = invoice.pdf_url.replace(/^\//, "");
-  return path.join(INVOICE_PATH_ROOT, relative);
+  return invoice.pdf_url;
 };
 
 const clearCartItem = async (userId, itemId, itemType) => {
@@ -229,12 +230,11 @@ exports.createPayment = catchAsync(async (req, res) => {
           html: `<p>Please find your invoice attached.</p>`,
         };
         if (attachmentPath) {
-          payload.attachments = [
-            {
-              path: attachmentPath,
-              filename: `invoice-${invoice.id}.pdf`,
-            },
-          ];
+          const attachment = { path: attachmentPath };
+          if (invoice?.id) {
+            attachment.filename = `invoice-${invoice.id}.pdf`;
+          }
+          payload.attachments = [attachment];
         }
         await mailService.sendMail(payload);
       }
@@ -340,12 +340,11 @@ exports.updatePayment = catchAsync(async (req, res) => {
               html: `<p>Please find your invoice attached.</p>`,
             };
             if (attachmentPath) {
-              payload.attachments = [
-                {
-                  path: attachmentPath,
-                  filename: `invoice-${invoice.id}.pdf`,
-                },
-              ];
+              const attachment = { path: attachmentPath };
+              if (invoice?.id) {
+                attachment.filename = `invoice-${invoice.id}.pdf`;
+              }
+              payload.attachments = [attachment];
             }
             await mailService.sendMail(payload);
           }

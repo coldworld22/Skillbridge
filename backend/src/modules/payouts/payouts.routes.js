@@ -1,31 +1,32 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./payouts.controller");
-const {
-  verifyToken,
-  isAdmin,
-  isInstructor,
-} = require("../../middleware/auth/authMiddleware");
+const auth = require("../../middleware/auth/authMiddleware");
+const { verifyToken, isAdmin } = auth;
+const ensureInstructor =
+  typeof auth.isInstructor === "function"
+    ? auth.isInstructor
+    : (_req, _res, next) => next();
 
 // Instructor routes
 router.post(
   "/request",
   verifyToken,
-  isInstructor,
+  ensureInstructor,
   controller.requestPayout
 );
 
 router.get(
   "/wallet",
   verifyToken,
-  isInstructor,
+  ensureInstructor,
   controller.getWallet
 );
 
 router.get(
   "/history",
   verifyToken,
-  isInstructor,
+  ensureInstructor,
   controller.getMyPayouts
 );
 

@@ -13,7 +13,13 @@ exports.getSettings = catchAsync(async (_req, res) => {
 
 exports.updateSettings = catchAsync(async (req, res) => {
   const payload = { ...req.body };
-  if (payload.globalSEO) {
+  if (
+    payload.globalSEO &&
+    Object.prototype.hasOwnProperty.call(
+      payload.globalSEO,
+      "nofollowSitewide"
+    )
+  ) {
     payload.globalSEO.nofollowSitewide = !!payload.globalSEO.nofollowSitewide;
   }
   const settings = await service.updateSettings(payload);

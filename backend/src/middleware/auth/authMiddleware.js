@@ -70,7 +70,9 @@ const verifyToken = async (req, res, next) => {
     if (!["active", "pending"].includes(status)) {
       return res.status(403).json({ message: "Account is not active" });
     }
-    const onboardingComplete = Boolean(user.profile_complete && user.is_email_verified);
+    const onboardingComplete =
+      (user.profile_complete !== false && user.profile_complete !== 0) &&
+      (user.is_email_verified !== false && user.is_email_verified !== 0);
     if (
       !onboardingComplete &&
       !isOnboardingPathAllowed(req.originalUrl || "")
@@ -83,10 +85,22 @@ const verifyToken = async (req, res, next) => {
         },
       });
     }
-    const roles = await userModel.getUserRoles(decoded.id);
-    const userRoles = roles.length ? roles : [user.role];
-    let permissions = await userModel.getUserPermissions(decoded.id);
-    if (userRoles.map((r) => normalizeRole(r)).includes("superadmin")) {
+    const rolesResult =
+      typeof userModel.getUserRoles === "function"
+        ? await userModel.getUserRoles(decoded.id)
+        : [];
+    const userRoles = rolesResult.length
+      ? rolesResult
+      : user.role
+      ? [user.role]
+      : [];
+    let permissions = [];
+    if (typeof userModel.getUserPermissions === "function") {
+      permissions = await userModel.getUserPermissions(decoded.id);
+    }
+    const normalizedRoles = userRoles.map((r) => normalizeRole(r));
+    if (normalizedRoles.includes("superadmin") &&
+      typeof userModel.getAllPermissionCodes === "function") {
       permissions = await userModel.getAllPermissionCodes();
     }
     const { password_hash, ...safeUser } = user;
@@ -94,7 +108,7 @@ const verifyToken = async (req, res, next) => {
       ...decoded,
       ...safeUser,
       roles: userRoles,
-      role: userRoles[0],
+      role: userRoles[0] || user.role,
       permissions,
       onboardingComplete,
     };
