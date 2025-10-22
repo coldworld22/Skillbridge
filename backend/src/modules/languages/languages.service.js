@@ -7,6 +7,9 @@ const DUPLICATE_ERROR_CODE = "23505";
 const CONNECTION_ERROR_MESSAGE =
   "Unable to access the language catalog. Please try again after the database connection is restored.";
 
+const GENERIC_ERROR_MESSAGE =
+  "Unable to access the language catalog. Please try again after the database connection is restored.";
+
 const parseDbError = (err, context) => {
   if (err?.code === DUPLICATE_ERROR_CODE) {
     throw new AppError("Duplicate language code", 409);
@@ -38,7 +41,7 @@ exports.list = async () => {
       logUndefinedTableWarning("languages", "languages.list");
       return [];
     }
-    throw error;
+    parseDbError(error, "Failed to list languages");
   }
 };
 
@@ -50,7 +53,7 @@ exports.getById = async (id) => {
       logUndefinedTableWarning("languages", "languages.getById");
       return null;
     }
-    throw error;
+    parseDbError(error, "Failed to fetch language");
   }
 };
 

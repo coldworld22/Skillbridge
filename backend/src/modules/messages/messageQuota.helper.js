@@ -93,6 +93,10 @@ const prepareMessagingQuota = async (user, type) => {
   }
 
   const normalizedRoles = roles.map((r) => normalizeRole(r));
+  const hasRoleInformation = normalizedRoles.some((role) => role);
+  if (!hasRoleInformation) {
+    return prepareUnlimitedQuota();
+  }
   const planId = await resolvePlanIdForUser(user, normalizedRoles);
 
   if (!planId) {
