@@ -32,7 +32,12 @@ const removeUploadedFiles = async (files = {}) => {
 
 exports.createBook = catchAsync(async (req, res) => {
   try {
-    const { tags: rawTags, included_plans, ...data } = req.body;
+    const {
+      tags: rawTags,
+      included_plans,
+      is_free: rawIsFree,
+      ...data
+    } = req.body;
     data.instructor_id = req.user.id;
     data.status = "pending";
     if (req.files?.cover_image?.[0])
@@ -45,6 +50,13 @@ exports.createBook = catchAsync(async (req, res) => {
         (f) => "/uploads/books/previews/" + f.filename
       );
     }
+
+    if (rawIsFree !== undefined) {
+      const normalized = String(rawIsFree).toLowerCase();
+      const isFree = ["1", "true", "yes", "on"].includes(normalized) || rawIsFree === true;
+      if (isFree) data.price = 0;
+    }
+    delete data.is_free;
 
     data.included_plans = await resolveIncludedPlanIds(included_plans);
 
@@ -182,8 +194,19 @@ exports.updateBook = catchAsync(async (req, res) => {
       tags: rawTags,
       included_plans,
       remove_preview_pages,
+      is_free,
       ...data
     } = req.body;
+
+    if (is_free !== undefined) {
+      const value = String(is_free).toLowerCase();
+      const normalizedIsFree =
+        ["1", "true", "yes", "on"].includes(value) || is_free === true;
+      if (normalizedIsFree) {
+        data.price = 0;
+      }
+    }
+    delete data.is_free;
 
     if (req.files?.cover_image?.[0]) {
       data.cover_image_url =
@@ -212,7 +235,11 @@ exports.updateBook = catchAsync(async (req, res) => {
       removePreviewPages: removePreviews,
     });
 
-    book.tags = await service.updateBookTags(book.id, rawTags);
+    if (typeof service.updateBookTags === "function") {
+      book.tags = await service.updateBookTags(book.id, rawTags);
+    } else {
+      book.tags = Array.isArray(rawTags) ? rawTags : [];
+    }
 
     if (
       req.user.role !== "instructor" &&

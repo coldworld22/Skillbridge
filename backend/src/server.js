@@ -184,17 +184,75 @@ app.use(
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required");
 }
+const MemoryStore = session.MemoryStore;
+
+class AdaptiveSessionStore extends session.Store {
+  constructor(initialStore) {
+    super();
+    this.activeStore = initialStore;
+    this.redisStore = null;
+    this.loggedFallback = false;
+  }
+
+  useRedis(store) {
+    this.redisStore = store;
+    this.activeStore = store;
+    this.loggedFallback = false;
+  }
+
+  fallbackToMemory() {
+    const alreadyMemory = this.activeStore instanceof MemoryStore;
+    if (!alreadyMemory) {
+      this.activeStore = new MemoryStore();
+    }
+    if (!this.loggedFallback) {
+      this.loggedFallback = true;
+      logger.warn(
+        "⚠️ Falling back to in-memory session store; sessions will reset on restart."
+      );
+    }
+  }
+
+  get(sid, callback) {
+    this.activeStore.get(sid, callback);
+  }
+
+  set(sid, sessionData, callback) {
+    this.activeStore.set(sid, sessionData, callback);
+  }
+
+  destroy(sid, callback) {
+    this.activeStore.destroy(sid, callback);
+  }
+
+  touch(sid, sessionData, callback) {
+    if (typeof this.activeStore.touch === "function") {
+      this.activeStore.touch(sid, sessionData, callback);
+    } else if (callback) {
+      callback();
+    }
+  }
+}
+
+const adaptiveStore = new AdaptiveSessionStore(new MemoryStore());
+
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { ...refreshCookieOptions },
+  store: adaptiveStore,
 };
 
 let redisClient;
+let redisStore;
 if (process.env.REDIS_URL) {
   redisClient = createClient({ url: process.env.REDIS_URL });
-  sessionOptions.store = new RedisStore({ client: redisClient });
+  redisClient.on("error", (err) => {
+    logger.error("❌ Redis client error:", err);
+    adaptiveStore.fallbackToMemory();
+  });
+  redisStore = new RedisStore({ client: redisClient });
 } else if (process.env.NODE_ENV === "production") {
   const msg = "REDIS_URL is required in production for session persistence";
   logger.error(`❌ ${msg}`);
@@ -272,9 +330,18 @@ async function startServer() {
   if (redisClient) {
     try {
       await redisClient.connect();
+      if (redisStore) {
+        adaptiveStore.useRedis(redisStore);
+        logger.log("✅ Connected to Redis for session storage");
+      }
     } catch (err) {
       logger.error("❌ Failed to connect to Redis:", err);
-      process.exit(1);
+      adaptiveStore.fallbackToMemory();
+      try {
+        await redisClient.quit();
+      } catch (quitErr) {
+        logger.debug("Redis client quit error:", quitErr);
+      }
     }
   }
 

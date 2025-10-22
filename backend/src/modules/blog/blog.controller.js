@@ -9,7 +9,10 @@ exports.createPost = catchAsync(async (req, res) => {
   const { title, excerpt, content, published_at } = req.body;
   if (!title) throw new AppError("Title is required", 400);
   const slug = slugify(title, { lower: true, strict: true });
-  if (await service.findBySlug(slug)) throw new AppError("Post slug already exists", 409);
+  const existing = await service.findBySlug(slug);
+  if (existing && existing.id && existing.id !== req.body.id) {
+    throw new AppError("Post slug already exists", 409);
+  }
 
   const post = await service.createPost({
     id: uuidv4(),

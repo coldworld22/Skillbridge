@@ -1,21 +1,13 @@
 const { z } = require("zod");
 
-const isUuid = (value) => {
-  try {
-    return z.string().uuid().safeParse(value).success;
-  } catch (_) {
-    return false;
-  }
-};
+const uuidSchema = z.string().uuid({ message: "Invalid id format" });
+const numericId = z
+  .string()
+  .trim()
+  .regex(/^[0-9]+$/, { message: "Invalid id format" });
 
 const idParams = z.object({
-  id: z
-    .string()
-    .trim()
-    .refine(
-      (value) => isUuid(value) || /^\d+$/.test(value),
-      () => ({ message: "Invalid id format" })
-    ),
+  id: z.union([uuidSchema, numericId]),
 });
 
 exports.idParam = {
@@ -41,13 +33,17 @@ exports.startVideoCall = {
   params: idParams,
 };
 
+const callIdParams = z.object({
+  id: z.string().trim().min(1, { message: "Invalid id format" }),
+});
+
 exports.respondVideoCall = {
-  params: idParams,
+  params: callIdParams,
   body: z.object({
     action: z.enum(["accept", "decline"]),
   }),
 };
 
 exports.endVideoCall = {
-  params: idParams,
+  params: callIdParams,
 };

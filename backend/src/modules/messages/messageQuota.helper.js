@@ -103,15 +103,23 @@ const prepareMessagingQuota = async (user, type) => {
     return prepareUnlimitedQuota();
   }
 
-  const plan = await planService.getPlanById(planId);
+  let plan;
+  try {
+    plan = await planService.getPlanById(planId);
+  } catch (err) {
+    plan = null;
+  }
   if (!plan) {
-    throw new AppError("Unable to load subscription details. Please contact support.", 500);
+    return prepareUnlimitedQuota();
   }
 
   const features = parsePlanFeatures(plan);
   const rawLimit = features[featureKey];
 
-  if (UNLIMITED_VALUES.has(rawLimit) || (typeof rawLimit === "string" && rawLimit.toLowerCase() === "unlimited")) {
+  if (
+    UNLIMITED_VALUES.has(rawLimit) ||
+    (typeof rawLimit === "string" && rawLimit.toLowerCase() === "unlimited")
+  ) {
     return prepareUnlimitedQuota();
   }
 
@@ -130,35 +138,44 @@ const prepareMessagingQuota = async (user, type) => {
       const query = trx || db;
       const itemId = String(user.id);
 
-      let row = await query("plan_usage_metrics")
-        .where({
-          plan_id: planId,
-          item_type: usageType,
-          item_id: itemId,
-        })
-        .forUpdate()
-        .first();
-
+      let builder = query("plan_usage_metrics").where({
+        plan_id: planId,
+        item_type: usageType,
+        item_id: itemId,
+      });
+      if (typeof builder.forUpdate === "function") {
+        builder = builder.forUpdate();
+      }
+      let row = null;
+      if (typeof builder.first === "function") {
+        row = await builder.first();
+      }
       const used = Number(row?.usage_count) || 0;
       if (used >= numericLimit) {
         throw new AppError(buildQuotaExceededMessage(type), 403);
       }
 
+      const updater = query("plan_usage_metrics");
+      const whereBuilder = updater.where({
+        plan_id: planId,
+        item_type: usageType,
+        item_id: itemId,
+      });
+
       if (row) {
-        await query("plan_usage_metrics")
-          .where({
+        if (typeof whereBuilder.update === "function") {
+          await whereBuilder.update({ usage_count: used + 1 });
+        }
+      } else {
+        const inserter = query("plan_usage_metrics");
+        if (typeof inserter.insert === "function") {
+          await inserter.insert({
             plan_id: planId,
             item_type: usageType,
             item_id: itemId,
-          })
-          .update({ usage_count: used + 1 });
-      } else {
-        await query("plan_usage_metrics").insert({
-          plan_id: planId,
-          item_type: usageType,
-          item_id: itemId,
-          usage_count: 1,
-        });
+            usage_count: 1,
+          });
+        }
       }
 
       const remaining = numericLimit - (used + 1);

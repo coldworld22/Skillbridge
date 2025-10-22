@@ -4,6 +4,8 @@ const logger = require("../../utils/logger");
 const { isUndefinedTableError, logUndefinedTableWarning } = require("../../utils/dbErrors");
 
 const DUPLICATE_ERROR_CODE = "23505";
+const CONNECTION_ERROR_MESSAGE =
+  "Unable to access the language catalog. Please try again after the database connection is restored.";
 
 const GENERIC_ERROR_MESSAGE =
   "Unable to access the language catalog. Please try again after the database connection is restored.";
@@ -13,7 +15,8 @@ const parseDbError = (err, context) => {
     throw new AppError("Duplicate language code", 409);
   }
   logger.error(`[languages] ${context}`, err);
-  throw new AppError(GENERIC_ERROR_MESSAGE, 503);
+  if (err instanceof AppError) throw err;
+  throw new AppError(CONNECTION_ERROR_MESSAGE, 503);
 };
 
 exports.create = async (data) => {

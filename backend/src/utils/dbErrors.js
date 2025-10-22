@@ -12,14 +12,19 @@ const UNDEFINED_TABLE_CODE = "42P01";
  */
 function isUndefinedTableError(error, tableName) {
   if (!error || typeof error !== "object") return false;
-  if (error.code !== UNDEFINED_TABLE_CODE) return false;
 
-  if (!tableName) return true;
+  const message = typeof error.message === "string" ? error.message : "";
+  if (error.code === UNDEFINED_TABLE_CODE) {
+    if (!tableName) return true;
+    return message.includes(`relation "${tableName}"`);
+  }
 
-  const message = error.message || "";
-  if (typeof message !== "string") return true;
+  if (!error.code && /does not exist/i.test(message)) {
+    if (!tableName) return true;
+    return message.includes(`"${tableName}"`);
+  }
 
-  return message.includes(`relation "${tableName}"`);
+  return false;
 }
 
 /**

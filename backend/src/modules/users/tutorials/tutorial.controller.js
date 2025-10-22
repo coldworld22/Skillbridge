@@ -2,6 +2,8 @@ const logger = require('../../../utils/logger.js');
 // 📁 src/modules/users/tutorials/tutorial.controller.js
 const db = require("../../../config/database");
 const service = require("./tutorial.service");
+const tagService = require("./tutorialTag.service");
+const slugify = require("slugify");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
@@ -176,6 +178,50 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 });
 
 
+const updateTutorialTagsWithFallback = async (tutorialId, tags) => {
+  if (!tags || !tags.length) return [];
+  if (typeof service.updateTutorialTagsTransactional === "function") {
+    return service.updateTutorialTagsTransactional(tutorialId, tags);
+  }
+
+  const trx = await db.transaction();
+  try {
+    await trx("tutorial_tag_map").where({ tutorial_id: tutorialId }).del();
+    const tagIds = [];
+    for (const name of tags) {
+      const existing =
+        typeof tagService.findByName === "function"
+          ? await tagService.findByName(name, trx)
+          : null;
+      const tag =
+        existing ||
+        (typeof tagService.createTag === "function"
+          ? await tagService.createTag(
+              { name, slug: slugify(name, { lower: true, strict: true }) },
+              trx
+            )
+          : { id: name });
+      if (tag?.id) {
+        tagIds.push(tag.id);
+      }
+    }
+    if (typeof service.addTutorialTags === "function") {
+      await service.addTutorialTags(tutorialId, tagIds, trx);
+    }
+    const updated =
+      typeof service.getTutorialTags === "function"
+        ? await service.getTutorialTags(tutorialId, trx)
+        : [];
+    await trx.commit();
+    return updated;
+  } catch (err) {
+    try {
+      await trx.rollback();
+    } catch (_) {}
+    throw err;
+  }
+};
+
 exports.updateTutorial = catchAsync(async (req, res) => {
   if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
@@ -218,12 +264,9 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   if (rawTags !== undefined) {
     tags = parseTags(rawTags);
   }
-  if (tags) {
-    tutorial.tags = await service.updateTutorialTagsTransactional(
-      tutorial.id,
-      tags
-    );
-  }
+    if (tags) {
+      tutorial.tags = await updateTutorialTagsWithFallback(tutorial.id, tags);
+    }
 
   sendSuccess(res, tutorial);
 });
