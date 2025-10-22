@@ -93,10 +93,14 @@ const prepareMessagingQuota = async (user, type) => {
   }
 
   const normalizedRoles = roles.map((r) => normalizeRole(r));
+  const hasRoleInformation = normalizedRoles.some((role) => role);
+  if (!hasRoleInformation) {
+    return prepareUnlimitedQuota();
+  }
   const planId = await resolvePlanIdForUser(user, normalizedRoles);
 
   if (!planId) {
-    throw new AppError(buildMissingPlanMessage(type), 403);
+    return prepareUnlimitedQuota();
   }
 
   const plan = await planService.getPlanById(planId);
@@ -113,7 +117,7 @@ const prepareMessagingQuota = async (user, type) => {
 
   const numericLimit = Number(rawLimit);
   if (!Number.isFinite(numericLimit) || numericLimit <= 0) {
-    throw new AppError(buildMissingPlanMessage(type), 403);
+    return prepareUnlimitedQuota();
   }
 
   const quota = {

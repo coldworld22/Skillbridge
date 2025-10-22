@@ -11,6 +11,14 @@ exports.createBook = Joi.object({
   language: Joi.string().required(),
   license_type: Joi.string().required(),
   category_id: uuid.required(),
+  is_free: Joi.boolean()
+    .truthy('1')
+    .truthy(1)
+    .truthy('true')
+    .falsy('0')
+    .falsy(0)
+    .falsy('false')
+    .optional(),
   allow_preview: Joi.boolean()
     .truthy('1')
     .truthy(1)
@@ -35,6 +43,13 @@ exports.updateBook = Joi.object({
   language: Joi.string(),
   license_type: Joi.string(),
   category_id: uuid,
+  is_free: Joi.boolean()
+    .truthy('1')
+    .truthy(1)
+    .truthy('true')
+    .falsy('0')
+    .falsy(0)
+    .falsy('false'),
   allow_preview: Joi.boolean()
     .truthy('1')
     .truthy(1)

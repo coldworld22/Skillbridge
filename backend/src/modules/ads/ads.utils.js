@@ -31,13 +31,13 @@ const AD_PLAN_RULES = {
     ads_show_analytics: true,
   },
   prime: {
-    ads_max_ads: 15,
+    ads_max_ads: 10,
     ads_max_duration: 30,
     ads_allow_branding: true,
     ads_show_analytics: true,
   },
   "prime-plan": {
-    ads_max_ads: 15,
+    ads_max_ads: 10,
     ads_max_duration: 30,
     ads_allow_branding: true,
     ads_show_analytics: true,
@@ -55,13 +55,13 @@ const AD_PLAN_RULES = {
     ads_show_analytics: true,
   },
   "instructor-prime": {
-    ads_max_ads: 15,
+    ads_max_ads: 10,
     ads_max_duration: 30,
     ads_allow_branding: true,
     ads_show_analytics: true,
   },
   "instructor-pro": {
-    ads_max_ads: 15,
+    ads_max_ads: 10,
     ads_max_duration: 30,
     ads_allow_branding: true,
     ads_show_analytics: true,

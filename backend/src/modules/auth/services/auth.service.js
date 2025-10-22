@@ -99,7 +99,9 @@ exports.registerUser = async (data) => {
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
-  const permissions = await userModel.getUserPermissions(newUser.id);
+  const permissions = typeof userModel.getUserPermissions === "function"
+    ? await userModel.getUserPermissions(newUser.id)
+    : [];
 
   const welcomeMessage =
     newUser.role && newUser.role.toLowerCase() === "instructor"
@@ -210,7 +212,9 @@ exports.loginUser = async ({ email, password }) => {
   user.is_online = true;
 
   const roles = await userModel.getUserRoles(user.id);
-  const permissions = await userModel.getUserPermissions(user.id);
+  const permissions = typeof userModel.getUserPermissions === "function"
+    ? await userModel.getUserPermissions(user.id)
+    : [];
   const tokenRoles = roles.length ? roles : [user.role];
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);

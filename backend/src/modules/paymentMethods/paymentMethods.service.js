@@ -31,27 +31,30 @@ exports.getByType = async (type) => {
   const normalized = String(type).trim().toLowerCase();
   if (!normalized) return null;
 
-  const baseQuery = db("payment_methods_config")
-    .orderBy("is_default", "desc")
-    .orderBy("created_at", "asc");
+  const applyOrdering = (query) => {
+    if (typeof query?.orderBy === "function") {
+      query = query.orderBy("is_default", "desc");
+      query = query.orderBy("created_at", "asc");
+    }
+    return query;
+  };
 
-  const matchByType = await baseQuery
-    .clone()
-    .whereRaw("LOWER(type) = ?", [normalized])
+  const buildQuery = () => applyOrdering(db("payment_methods_config"));
+
+  const matchByType = await buildQuery()
+    .whereRaw("LOWER(type) = ?", normalized)
     .first();
   if (matchByType) return matchByType;
 
-  const matchByName = await baseQuery
-    .clone()
-    .whereRaw("LOWER(name) = ?", [normalized])
+  const matchByName = await buildQuery()
+    .whereRaw("LOWER(name) = ?", normalized)
     .first();
   if (matchByName) return matchByName;
 
   if (normalized.includes("bank")) {
-    const bankLike = await baseQuery
-      .clone()
-      .whereRaw("LOWER(name) LIKE ?", ["%bank%"])
-      .orWhereRaw("LOWER(type) LIKE ?", ["%bank%"])
+    const bankLike = await buildQuery()
+      .whereRaw("LOWER(name) LIKE ?", "%bank%")
+      .orWhereRaw("LOWER(type) LIKE ?", "%bank%")
       .first();
     if (bankLike) return bankLike;
   }

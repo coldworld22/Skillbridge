@@ -1,10 +1,21 @@
 const { z } = require("zod");
 
+const isUuid = (value) => {
+  try {
+    return z.string().uuid().safeParse(value).success;
+  } catch (_) {
+    return false;
+  }
+};
+
 const idParams = z.object({
   id: z
     .string()
     .trim()
-    .uuid({ message: "Invalid id format" }),
+    .refine(
+      (value) => isUuid(value) || /^\d+$/.test(value),
+      () => ({ message: "Invalid id format" })
+    ),
 });
 
 exports.idParam = {
