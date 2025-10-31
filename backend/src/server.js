@@ -23,6 +23,59 @@ const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 require("dotenv").config();
 
+const parseBooleanFlag = (value) => {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (["1", "true", "yes", "on", "enable", "enabled"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off", "disable", "disabled"].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+};
+
+const resolveStaticDirectory = (label, candidates = [], options = {}) => {
+  const { strict = false } = options;
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (!candidate) continue;
+    const absolute = path.resolve(candidate);
+    try {
+      const stats = fs.statSync(absolute);
+      if (stats.isDirectory()) {
+        logger.debug?.(`Resolved ${label}`, { path: absolute });
+        return absolute;
+      }
+      logger.debug?.(`Skipping ${label} candidate that is not a directory`, {
+        path: absolute,
+      });
+      if (strict && index === 0) {
+        logger.warn?.(`${label} override is not a directory`, { path: absolute });
+        return null;
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        logger.warn?.(`Unable to access ${label} candidate`, {
+          path: absolute,
+          error: error.message,
+        });
+      }
+      if (strict && index === 0) {
+        logger.warn?.(`${label} override not found`, { path: absolute });
+        return null;
+      }
+    }
+  }
+  logger.debug?.(`No ${label} directory found`, {
+    candidates: candidates.filter(Boolean).map((candidate) =>
+      path.resolve(candidate),
+    ),
+  });
+  return null;
+};
+
 // Ensure required environment secrets are present
 const requiredSecrets = [
   "JWT_SECRET",
@@ -365,24 +418,48 @@ app.use((req, res, next) => {
   next();
 });
 
-const installerPath = path.join(__dirname, "../install");
+const installerPath = resolveStaticDirectory(
+  "installer assets",
+  [
+    process.env.INSTALL_DIR,
+    path.join(__dirname, "../install"),
+    path.join(__dirname, "../../install"),
+    path.join(process.cwd(), "install"),
+    path.join(process.cwd(), "../install"),
+  ],
+  { strict: Boolean(process.env.INSTALL_DIR) },
+);
+
+const installDisabled = parseBooleanFlag(process.env.DISABLE_INSTALL) === true;
+const installPreference =
+  parseBooleanFlag(process.env.ENABLE_INSTALL) ??
+  parseBooleanFlag(process.env.INSTALL_API_ENABLED);
+const installAssetsAvailable = Boolean(installerPath);
 const shouldServeInstaller =
-  (process.env.ENABLE_INSTALL || "").toLowerCase() === "true" ||
-  (process.env.INSTALL_API_ENABLED || "").toLowerCase() === "true";
-logger.debug?.("Installer flags", {
-  shouldServeInstaller,
+  !installDisabled && (installPreference ?? installAssetsAvailable);
+
+logger.debug?.("Installer configuration", {
+  installDisabled,
+  installPreference,
   installerPath,
-  exists: fs.existsSync(installerPath),
+  installAssetsAvailable,
+  shouldServeInstaller,
 });
-if (shouldServeInstaller && fs.existsSync(installerPath)) {
+
+if (shouldServeInstaller && installerPath && installAssetsAvailable) {
   const installerIndex = path.join(installerPath, "index.html");
   logger.log(`📦 Serving installer assets from ${installerPath}`);
   const sendInstaller = (req, res) => {
     const wildcard = req.params?.wildcard || "";
     const relativePath = wildcard.replace(/^\/+/, "");
     if (relativePath) {
-      const candidate = path.join(installerPath, relativePath);
-      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      const normalizedRoot = path.resolve(installerPath);
+      const candidate = path.resolve(installerPath, relativePath);
+      if (!candidate.startsWith(`${normalizedRoot}${path.sep}`) && candidate !== normalizedRoot) {
+        logger.warn?.("Blocked attempt to access installer asset outside root", {
+          requested: candidate,
+        });
+      } else if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
         return res.sendFile(candidate, (err) => {
           if (err) {
             logger.error("Failed to send installer asset", {
@@ -408,10 +485,29 @@ if (shouldServeInstaller && fs.existsSync(installerPath)) {
   app.get("/install", sendInstaller);
   app.get("/install/", sendInstaller);
   app.get("/install/:wildcard(*)", sendInstaller);
+} else if (installAssetsAvailable) {
+  logger.warn?.("Installer assets detected but serving is disabled", {
+    installDisabled,
+    installPreference,
+  });
+} else if (installPreference) {
+  logger.warn?.("Installer requested via env flag but assets are missing", {
+    installerPath,
+  });
 }
 
-const docsPath = path.join(__dirname, "../docs");
-if (fs.existsSync(docsPath)) {
+const docsPath = resolveStaticDirectory(
+  "documentation",
+  [
+    process.env.DOCS_DIR,
+    path.join(__dirname, "../docs"),
+    path.join(__dirname, "../../docs"),
+    path.join(process.cwd(), "docs"),
+    path.join(process.cwd(), "../docs"),
+  ],
+  { strict: Boolean(process.env.DOCS_DIR) },
+);
+if (docsPath) {
   logger.log(`📚 Serving documentation from ${docsPath}`);
   app.get("/docs", (req, res) => res.redirect(301, "/docs/"));
   app.use(
@@ -421,6 +517,8 @@ if (fs.existsSync(docsPath)) {
       extensions: ["html", "htm"],
     }),
   );
+} else {
+  logger.warn?.("Documentation directory not found; /docs will return 404");
 }
 
 // ─── Routes ───
