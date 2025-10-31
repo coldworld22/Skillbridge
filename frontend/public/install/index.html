@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillBridge Installer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2rem 1rem 4rem;
+        background: #f8fafc;
+        color: #1f2937;
+      }
+      h1 {
+        margin-bottom: 1.5rem;
+      }
+      section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+      }
+      label {
+        display: block;
+        margin-bottom: 1rem;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5f5;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        margin-top: 0.35rem;
+      }
+      button {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        margin-top: 1rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .hint {
+        font-size: 0.85rem;
+        color: #4b5563;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SkillBridge Installation Wizard</h1>
+
+    <section id="step0">
+      <h2>Step 0: Authenticate</h2>
+      <p class="hint">
+        Sign in with an Admin or SuperAdmin account so the installer can run
+        privileged actions. On new deployments the seeded SuperAdmin account
+        uses the email <code>support@&lt;APP_DOMAIN&gt;</code> and the default password
+        documented in <code>docs/installation.md</code>.
+      </p>
+      <form id="authForm">
+        <label>
+          Email
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" required />
+        </label>
+        <label>
+          Setup Secret (optional)
+          <input
+            type="text"
+            name="setupSecret"
+            placeholder="Only required when INSTALL_SETUP_SECRET is set"
+          />
+        </label>
+        <button type="submit">Sign In</button>
+      </form>
+      <pre id="authOutput" class="hidden"></pre>
+    </section>
+
+    <section id="step1" class="hidden">
+      <h2>Step 1: Prerequisite Check</h2>
+      <p class="hint">
+        Verifies Node.js, Docker, Docker Compose, and Git are available on the
+        host running the backend.
+      </p>
+      <button id="checkBtn">Run Check</button>
+      <pre id="prereqOutput"></pre>
+    </section>
+
+    <section id="step2" class="hidden">
+      <h2>Step 2: Run Installer</h2>
+      <form id="configForm">
+        <label>
+          Mode
+          <select name="mode" id="installMode">
+            <option value="development" selected>Development (Docker)</option>
+            <option value="production">Production</option>
+          </select>
+        </label>
+        <label id="domainField" class="hidden">
+          Domain (required for production)
+          <input
+            type="text"
+            name="domain"
+            placeholder="example.com"
+            autocomplete="off"
+          />
+        </label>
+        <button type="submit">Run Install Script</button>
+      </form>
+      <pre id="installOutput"></pre>
+    </section>
+
+    <script src="install.js" defer></script>
+  </body>
+</html>

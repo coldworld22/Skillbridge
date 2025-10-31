@@ -161,7 +161,7 @@ const nextConfig = {
       },
       {
         source: '/install',
-        destination: '/docs/installation.html',
+        destination: '/install/index.html',
         permanent: false,
       },
     ];
