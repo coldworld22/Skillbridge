@@ -152,6 +152,20 @@ const nextConfig = {
     });
     return rules;
   },
+  async redirects() {
+    return [
+      {
+        source: '/docs',
+        destination: '/docs/index.html',
+        permanent: false,
+      },
+      {
+        source: '/install',
+        destination: '/install/index.html',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     if (!securityHeaders.length) {
       return [];
