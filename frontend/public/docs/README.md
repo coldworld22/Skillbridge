@@ -260,20 +260,38 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 The backend exposes protected setup endpoints at `/api/install` for automated
 deployments. Enable them by setting `INSTALL_API_ENABLED=true` in
 `backend/.env` and restarting the backend. Authenticate every request with an
-administrator JWT and provide the configuration payload when invoking
-`POST /api/install/run`.
+administrator JWT and call `POST /api/install/run` with a JSON body such as:
+
+```json
+{
+  "mode": "development"
+}
+```
+
+For production deployments include the domain:
+
+```json
+{
+  "mode": "production",
+  "domain": "skillbridge.example"
+}
+```
 
 If you configure `INSTALL_SETUP_SECRET`, clients must also send the same value
 in the `X-Install-Setup-Secret` header on every installer request. Remove or
-disable the API when setup is complete.
+disable the API when setup is complete. The web wizard served from
+`/install/index.html` uses the same endpoints.
 
 ##### Initial admin passwords
 
-Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` before running
-seed scripts if you want to control the passwords for the seeded Admin and
-SuperAdmin accounts. If you omit `SUPERADMIN_INITIAL_PASSWORD`, the SuperAdmin
-seed generates a secure random password the first time it creates the account
-and logs it once—capture the output so operators can sign in later.
+The seed process provisions `SuperAdmin` and `Admin` accounts. Define
+`APP_DOMAIN` first so their emails align with your domain.
+
+- `ADMIN_INITIAL_PASSWORD` (optional) overrides the Admin password. When
+  omitted, a secure random password is generated and printed during seeding.
+- The SuperAdmin account currently defaults to `Javaheat@18880`. Change it
+  immediately after signing in, or edit `backend/src/seeds/seed_superadmin_user.js`
+  before seeding to pick a different value.
 
 #### Frontend (optional)
 

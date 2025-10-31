@@ -153,16 +153,22 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
 
         {/* ✅ Styled Phone Input */}
 
-        <div className="w-full mb-3">
+        <div className="w-full mb-3 phone-input-wrapper">
           <label className="block text-sm text-gray-400 mb-1">{t('phone')}</label>
-          <div className="phone-input-container border border-gray-600 rounded-md bg-gray-700 overflow-hidden">
+          <div className="phone-input-container border border-gray-600 rounded-md bg-gray-700 overflow-hidden transition-shadow focus-within:border-yellow-500 focus-within:shadow-[0_0_0_2px_rgba(245,158,11,0.35)]">
             <PhoneInput
               international
               value={watch("phone")}
-              onChange={(value) => setValue("phone", value)}
+              onChange={(value) => setValue("phone", value ?? "")}
               defaultCountry="SA"
               placeholder={t('phone')}
-              className="w-full"
+              className="w-full flex items-center gap-2 text-white"
+              numberInputProps={{
+                className: "w-full px-3 py-2 bg-transparent text-white placeholder-gray-400 border-none focus:outline-none focus:ring-0",
+              }}
+              countrySelectProps={{
+                className: "text-white",
+              }}
             />
           </div>
           {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}

@@ -435,40 +435,48 @@ The backend exposes protected setup endpoints at `/api/install` for automated de
 INSTALL_API_ENABLED=true
 ```
 
-Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes. When invoking `POST /api/install/run`, include the following JSON body so the installer can persist your configuration before provisioning the admin account:
+Every request to `/api/install/*` must be authenticated with an administrator token. Log in as an admin (for example via `/api/auth/login`) and reuse the returned JWT as a `Bearer` token when calling the installation routes. The main endpoint triggers the bundled Bash installer with a sanitized argument list:
+
+```http
+POST /api/install/run
+Authorization: Bearer <token>
+Content-Type: application/json
+```
 
 ```json
 {
-  "adminEmail": "admin@example.com",
-  "adminPassword": "super-secret",
-  "databaseUrl": "postgres://user:password@db-host:5432/skillbridge",
-  "databaseUser": "user",
-  "databasePassword": "password",
-  "smtpHost": "smtp.example.com",
-  "smtpPort": 587,
-  "smtpUser": "mailer",
-  "smtpPassword": "smtp-password",
-  "defaultFromEmail": "notifications@example.com",
-  "appDisplayName": "SkillBridge",
-  "logoUrl": "https://assets.example.com/logo.png"
+  "mode": "development"
 }
 ```
 
-You may provide a base64-encoded logo instead of `logoUrl` by supplying a `logoFile` object with `name`, `size`, `type`, `encoding` (`base64`) and `data` fields. The API refuses requests that omit both a logo URL and a file. The backend writes these values into `backend/.env`, uploads the logo to `backend/uploads/app/`, and seeds the `settings` table with the default email and branding metadata before creating the admin user.
+Pass `"mode": "production"` and include a `domain` field when you need the script to configure nginx and obtain TLS certificates:
+
+```json
+{
+  "mode": "production",
+  "domain": "skillbridge.example"
+}
+```
 
 If you configure `INSTALL_SETUP_SECRET` in `backend/.env`, clients must also send the same value in the `X-Install-Setup-Secret` header on **every** installer request. The backend trims the configured secret before comparison, so avoid trailing spaces when setting the environment variable. Requests that omit the header or provide the wrong secret receive a `403` response with an `INSTALL_LOCKED` error code before the installer runs.
+
+When the script completes, the JSON response includes the stdout/stderr emitted by `install.sh`. The same flow powers the in-browser wizard served from `/install/index.html`.
 
 After you finish the installation or automation tasks, immediately disable the API again by removing the setting or switching it back to `false` and redeploying/restarting the backend. Leaving the installer enabled in production is not recommended.
 
 ### Initial admin passwords
 
-Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in
-`backend/.env` before running the seed scripts if you want to control the
-passwords for the seeded Admin and SuperAdmin accounts. When
-`SUPERADMIN_INITIAL_PASSWORD` is omitted, the SuperAdmin seed generates a
-secure random password the first time it creates the account and logs the value
-once—capture it from the seeding output so operators can sign in. Subsequent
-runs leave existing credentials unchanged.
+The seed process provisions two built-in accounts: `SuperAdmin` and `Admin`.
+Define `APP_DOMAIN` in `backend/.env` first so the generated email addresses
+(`support@<APP_DOMAIN>` and `admin@<APP_DOMAIN>`) match your domain.
+
+- `ADMIN_INITIAL_PASSWORD` (optional) lets you control the Admin user's
+  password. If the variable is omitted a secure random password is generated
+  and printed in the seed output.
+- The SuperAdmin user currently ships with the default password
+  `Javaheat@18880`. Change this password immediately after the first login or
+  edit `backend/src/seeds/seed_superadmin_user.js` before seeding if you prefer
+  a different value.
 
 ### Frontend (optional)
 

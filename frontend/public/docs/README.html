@@ -370,16 +370,28 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 <p>The backend exposes protected setup endpoints at <code>/api/install</code> for automated
 deployments. Enable them by setting <code>INSTALL_API_ENABLED=true</code> in
 <code>backend/.env</code> and restarting the backend. Authenticate every request with an
-administrator JWT and provide the configuration payload when invoking
-<code>POST /api/install/run</code>.</p>
+administrator JWT and call <code>POST /api/install/run</code> with a JSON body such as:</p>
+<div class="codehilite"><pre><span></span><code>{
+  "mode": "development"
+}
+</code></pre></div>
+<p>For production deployments include the domain:</p>
+<div class="codehilite"><pre><span></span><code>{
+  "mode": "production",
+  "domain": "skillbridge.example"
+}
+</code></pre></div>
 <p>If you configure <code>INSTALL_SETUP_SECRET</code>, clients must also send the same value
 in the <code>X-Install-Setup-Secret</code> header on every installer request. Remove or
-disable the API when setup is complete.</p>
+disable the API when setup is complete. The web wizard served from
+<code>/install/index.html</code> is a thin UI on top of the same endpoints.</p>
 <h5 id="initial-admin-passwords">Initial admin passwords</h5>
-<p>Set <code>ADMIN_INITIAL_PASSWORD</code> and <code>SUPERADMIN_INITIAL_PASSWORD</code> before running
-seed scripts if you want to control the passwords for the seeded Admin and
-SuperAdmin accounts. When left unset, the seed process generates secure random
-passwords and prints them to the console.</p>
+<p>The seed process provisions <code>SuperAdmin</code> and <code>Admin</code> accounts. Define
+<code>APP_DOMAIN</code> first so their emails match your domain.</p>
+<ul>
+<li><code>ADMIN_INITIAL_PASSWORD</code> (optional) overrides the Admin password. When omitted a secure random value is generated and printed during seeding.</li>
+<li>The SuperAdmin account currently defaults to <code>Javaheat@18880</code>. Change it immediately after signing in, or edit <code>backend/src/seeds/seed_superadmin_user.js</code> before seeding.</li>
+</ul>
 <h4 id="frontend-optional">Frontend (optional)</h4>
 <p>When using Docker Compose the frontend automatically points to the API on port
 <code>5002</code>. If you start the Next.js app separately, create <code>frontend/.env.local</code>

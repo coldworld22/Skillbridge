@@ -526,32 +526,26 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 INSTALL_API_ENABLED=true
 </code></pre></div>
 
-<p>Every request to <code>/api/install/*</code> must be authenticated with an administrator token. Log in as an admin (for example via <code>/api/auth/login</code>) and reuse the returned JWT as a <code>Bearer</code> token when calling the installation routes. When invoking <code>POST /api/install/run</code>, include the following JSON body so the installer can persist your configuration before provisioning the admin account:</p>
+<p>Every request to <code>/api/install/*</code> must be authenticated with an administrator token. Log in as an admin (for example via <code>/api/auth/login</code>) and reuse the returned JWT as a <code>Bearer</code> token when calling the installation routes. Trigger the installer with a simple payload:</p>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;adminEmail&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin@example.com&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;adminPassword&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;super-secret&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;databaseUrl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres://user:password@db-host:5432/skillbridge&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;databaseUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;databasePassword&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;password&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;smtpHost&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;smtp.example.com&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;smtpPort&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">587</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;smtpUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mailer&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;smtpPassword&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;smtp-password&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;defaultFromEmail&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;notifications@example.com&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;appDisplayName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SkillBridge&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;logoUrl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://assets.example.com/logo.png&quot;</span>
+<span class="w">  </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;development&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>For production deployments include the domain to configure nginx and obtain TLS certificates:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;production&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;skillbridge.example&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
 
-<p>You may provide a base64-encoded logo instead of <code>logoUrl</code> by supplying a <code>logoFile</code> object with <code>name</code>, <code>size</code>, <code>type</code>, <code>encoding</code> (<code>base64</code>) and <code>data</code> fields. The API refuses requests that omit both a logo URL and a file. The backend writes these values into <code>backend/.env</code>, uploads the logo to <code>backend/uploads/app/</code>, and seeds the <code>settings</code> table with the default email and branding metadata before creating the admin user.</p>
-<p>If you configure <code>INSTALL_SETUP_SECRET</code> in <code>backend/.env</code>, clients must also send the same value in the <code>X-Install-Setup-Secret</code> header on <strong>every</strong> installer request. The backend trims the configured secret before comparison, so avoid trailing spaces when setting the environment variable. Requests that omit the header or provide the wrong secret receive a <code>403</code> response with an <code>INSTALL_LOCKED</code> error code before the installer runs.</p>
+<p>If you configure <code>INSTALL_SETUP_SECRET</code> in <code>backend/.env</code>, clients must also send the same value in the <code>X-Install-Setup-Secret</code> header on <strong>every</strong> installer request. The backend trims the configured secret before comparison, so avoid trailing spaces when setting the environment variable. Requests that omit the header or provide the wrong secret receive a <code>403</code> response with an <code>INSTALL_LOCKED</code> error code before the installer runs. The JSON response contains the stdout/stderr emitted by <code>install.sh</code>, which is the same flow used by the web wizard at <code>/install/index.html</code>.</p>
 <p>After you finish the installation or automation tasks, immediately disable the API again by removing the setting or switching it back to <code>false</code> and redeploying/restarting the backend. Leaving the installer enabled in production is not recommended.</p>
 <h3 id="initial-admin-passwords">Initial admin passwords</h3>
-<p>Set <code>ADMIN_INITIAL_PASSWORD</code> and <code>SUPERADMIN_INITIAL_PASSWORD</code> in
-<code>backend/.env</code> before running the seed scripts if you want to control the
-passwords for the seeded Admin and SuperAdmin accounts. When left unset, the
-seed process will generate secure random passwords and print them to the
-console.</p>
+<p>The seed process provisions two built-in accounts: <code>SuperAdmin</code> and <code>Admin</code>. Define <code>APP_DOMAIN</code> first so the generated email addresses match your domain (<code>support@&lt;APP_DOMAIN&gt;</code> and <code>admin@&lt;APP_DOMAIN&gt;</code>).</p>
+<ul>
+<li><code>ADMIN_INITIAL_PASSWORD</code> (optional) lets you control the Admin password. If omitted a secure random value is generated and printed in the seed output.</li>
+<li>The SuperAdmin user currently uses the default password <code>Javaheat@18880</code>. Change it immediately after the first login, or edit <code>backend/src/seeds/seed_superadmin_user.js</code> before seeding if you prefer a different default.</li>
+</ul>
 <h3 id="frontend-optional">Frontend (optional)</h3>
 <p>When using Docker Compose the frontend automatically points to the API on port
 <code>5002</code>. If you start the Next.js app separately, create <code>frontend/.env.local</code> and
@@ -617,23 +611,10 @@ in.</p>
 
 <ol start="3">
 <li>Rebuild and start the containers if they are running.</li>
-<li>Log in with an administrator account.</li>
-<li>Visit <code>http://localhost:5002/install</code> (or your domain's <code>/install</code>) and verify the page lists the prerequisite checks.</li>
-<li>Complete the <strong>Configuration</strong> step by supplying:
-   - A PostgreSQL connection string, database user, and database password.
-   - SMTP host, port, username, and password so SkillBridge can deliver transactional email.
-   - The default “from” email address used for outbound messages.
-   - (Optional) Your Codecanyon purchase or subscription key so future updates can validate the license.
-   - The public application display name.
-   - Either a logo image upload (PNG/JPG/SVG up to 2&nbsp;MB) or an HTTPS URL to an existing logo.
-   - The admin email and password for the first administrator.</li>
-<li>Run the installer to apply the configuration. The script updates <code>backend/.env</code>, writes the selected logo to <code>backend/uploads/app/</code>, seeds the branding/email settings in the database, and finally provisions the administrator account.</li>
+<li>Visit <code>/install/</code> (for example <code>http://localhost:5002/install</code>), sign in with an Admin or SuperAdmin account, and enter the setup secret if required.</li>
+<li>Run the prerequisite check, choose the installation mode (development or production), and launch the installer. The output panel streams the stdout/stderr from <code>install.sh</code>.</li>
 </ol>
-<p>The prerequisite card now verifies that PostgreSQL is reachable using the
-   credentials in <code>.env</code>, confirms SMTP settings (or acknowledges that
-   <code>DISABLE_EMAILS=true</code> is set), checks that <code>APP_NAME</code> is defined, and ensures
-   <code>backend/uploads/app</code> is writable for logo uploads. Address any failures the
-   installer reports before continuing.</p>
+<p>The prerequisite card verifies that Node.js, Docker, Docker Compose, and Git are available on the backend host. Address any failures before continuing.</p>
 <p>Whether you run SkillBridge directly from the monorepo or from the packaged
 container image, the backend automatically serves the installer assets. During
 development it reads from the top-level <code>install/</code> directory, and in production
@@ -641,7 +622,7 @@ it falls back to <code>backend/install/</code> inside the container image when t
 repository layout is different.</p>
 <p>Common problems:</p>
 <ul>
-<li><strong>404 Not Found</strong> – the Nginx block is missing or <code>ENABLE_INSTALL</code> is false.</li>
+<li><strong>404 Not Found</strong> – the Nginx block is missing or <code>INSTALL_API_ENABLED</code> is not set.</li>
 <li><strong>Installation via API is disabled</strong> – <code>INSTALL_API_ENABLED</code> is not set to <code>true</code>.</li>
 <li><strong>Unauthorized</strong> – you must be logged in as an admin before visiting <code>/install</code>.</li>
 </ul>

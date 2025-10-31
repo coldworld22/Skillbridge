@@ -154,10 +154,6 @@ input:-webkit-autofill:focus {
   border-radius: 0.375rem 0 0 0.375rem !important;
 }
 
-.phone-input-wrapper .PhoneInputCountryIconImg {
-  filter: invert(1) brightness(0.8);
-}
-
 /* Phone Input Styling */
 .phone-input-container .PhoneInput {
   --PhoneInputCountryFlag-height: 1.5em;
@@ -177,18 +173,21 @@ input:-webkit-autofill:focus {
   outline: none !important;
 }
 
+.phone-input-container .PhoneInputInput::placeholder {
+  color: #9ca3af !important;
+}
+
 .phone-input-container .PhoneInputCountry {
   background-color: #374151;
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
+  border-right: 1px solid #4b5563;
+  display: flex;
+  align-items: center;
 }
 
 .phone-input-container .PhoneInputCountrySelect {
   background-color: transparent;
   color: white;
-}
-
-.phone-input-container .PhoneInputCountryIconImg {
-  filter: brightness(0.8);
 }
 
 .phone-input-container .PhoneInputCountrySelect:focus-within {

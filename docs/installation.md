@@ -9,6 +9,36 @@ This document explains how to set up SkillBridge for local development and for h
 - Git
 - Redis or another session store for production deployments
 
+## Quick install script
+
+After extracting the project, you can bootstrap a Docker-based environment with
+the bundled installer instead of running each command manually:
+
+```bash
+chmod +x install.sh
+./install.sh development
+```
+
+The script performs the prerequisite check, copies any missing `.env` files from
+their `*.example` templates, builds the Docker images, starts PostgreSQL/Redis,
+runs database migrations and seeds, then brings the full stack online. When it
+finishes you can visit `http://localhost:3000` for the frontend, `http://localhost:5002/api`
+for the API, and `http://localhost:5050` for pgAdmin. Update the generated `.env`
+files with real secrets when you're ready and rerun `docker compose up -d --build`
+to pick up the changes.
+
+For production deployments run the installer with sudo/root so it can request
+TLS certificates and update nginx:
+
+```bash
+sudo ./install.sh production yourdomain.com
+```
+
+The production workflow provisions certificates via `scripts/deploy_server.sh`,
+applies migrations/seeds, and starts the full stack in detached mode. Remember
+to disable the installation API (`INSTALL_API_ENABLED=false`) once setup is
+complete.
+
 ## 1. Clone the repository
 
 ```bash
@@ -118,6 +148,8 @@ cd ..
 Start all services with Docker Compose:
 
 ```bash
+docker compose up --build          # Docker 20.10+
+# or, if you still use the legacy plugin:
 docker-compose up --build
 ```
 
@@ -164,14 +196,18 @@ To deploy SkillBridge for real users on a remote host:
 4. **Run database migrations and seeds** before starting the containers:
 
    ```bash
-   docker-compose run --rm backend npm run migrate
-   docker-compose run --rm backend npm run seed
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed
+   # Legacy plugin:
+   # docker-compose run --rm backend npm run migrate
+   # docker-compose run --rm backend npm run seed
    ```
 
 5. **Build and start the containers** in detached mode:
 
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
+   # Legacy plugin: docker-compose up -d --build
    ```
 
 6. **Verify the deployment** by visiting `https://<your-domain>` in a browser. The API will be available at `https://<your-domain>/api`.
@@ -180,5 +216,6 @@ For updates, pull the latest changes and rebuild:
 
 ```bash
 git pull
-docker-compose up -d --build
+docker compose up -d --build
+# Legacy plugin: docker-compose up -d --build
 ```

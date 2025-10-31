@@ -16,6 +16,7 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const csrf = require("./middleware/csrf");
 const path = require("path");
+const fs = require("fs");
 const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
@@ -364,9 +365,62 @@ app.use((req, res, next) => {
   next();
 });
 
-if (process.env.ENABLE_INSTALL === "true") {
-  const installerPath = path.join(__dirname, "../../install");
-  app.use("/install", express.static(installerPath));
+const installerPath = path.join(__dirname, "../install");
+const shouldServeInstaller =
+  (process.env.ENABLE_INSTALL || "").toLowerCase() === "true" ||
+  (process.env.INSTALL_API_ENABLED || "").toLowerCase() === "true";
+logger.debug?.("Installer flags", {
+  shouldServeInstaller,
+  installerPath,
+  exists: fs.existsSync(installerPath),
+});
+if (shouldServeInstaller && fs.existsSync(installerPath)) {
+  const installerIndex = path.join(installerPath, "index.html");
+  logger.log(`📦 Serving installer assets from ${installerPath}`);
+  const sendInstaller = (req, res) => {
+    const wildcard = req.params?.wildcard || "";
+    const relativePath = wildcard.replace(/^\/+/, "");
+    if (relativePath) {
+      const candidate = path.join(installerPath, relativePath);
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return res.sendFile(candidate, (err) => {
+          if (err) {
+            logger.error("Failed to send installer asset", {
+              asset: candidate,
+              error: err.message,
+            });
+            res.status(500).send("Installer asset unavailable");
+          }
+        });
+      }
+    }
+    return res.sendFile(installerIndex, (err) => {
+      if (err) {
+        logger.error("Failed to send installer index", {
+          asset: installerIndex,
+          error: err.message,
+        });
+        res.status(err.statusCode || 500).send("Installer unavailable");
+      }
+    });
+  };
+
+  app.get("/install", sendInstaller);
+  app.get("/install/", sendInstaller);
+  app.get("/install/:wildcard(*)", sendInstaller);
+}
+
+const docsPath = path.join(__dirname, "../docs");
+if (fs.existsSync(docsPath)) {
+  logger.log(`📚 Serving documentation from ${docsPath}`);
+  app.get("/docs", (req, res) => res.redirect(301, "/docs/"));
+  app.use(
+    "/docs",
+    express.static(docsPath, {
+      index: "index.html",
+      extensions: ["html", "htm"],
+    }),
+  );
 }
 
 // ─── Routes ───

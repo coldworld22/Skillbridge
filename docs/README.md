@@ -24,8 +24,10 @@
 - [Class Plan Coverage](class-plan-coverage.md) — overview of plan coverage.
 - [Student Registration Guide](student-registration-guide.md) — steps for new student sign-up.
 - [Student Enrollment Workflow](student-enrollment-workflow.md) — enroll students into classes.
+- [Plans System Overview](plans-system-overview.md) — plan lifecycle and billing logic.
 
 ## Reference
 - [API Documentation](api-docs.md) — REST API endpoints.
 - [Changelog](changelog.md) — record of notable changes.
 - [Release Checklist](release-checklist.md) — tasks before a release.
+- [Plan Feature Catalog](plan-feature-catalog.md) — plan capabilities and limits.

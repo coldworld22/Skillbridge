@@ -74,6 +74,8 @@ services:
       - redis
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./install:/app/install:ro
+      - ./docs:/app/docs:ro
     networks:
       - app-network
 
