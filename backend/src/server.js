@@ -365,16 +365,37 @@ app.use((req, res, next) => {
   next();
 });
 
-const installerPath = path.join(__dirname, "../install");
+const resolveStaticDirectory = (label, candidates) => {
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+        return candidate;
+      }
+    } catch (err) {
+      logger.debug?.(`Failed to inspect ${label} path`, {
+        candidate,
+        error: err.message,
+      });
+    }
+  }
+  return null;
+};
+
+const installerCandidates = [
+  path.join(__dirname, "../install"),
+  path.join(__dirname, "../../install"),
+  path.join(process.cwd(), "install"),
+];
+const installerPath = resolveStaticDirectory("installer", installerCandidates);
 const shouldServeInstaller =
   (process.env.ENABLE_INSTALL || "").toLowerCase() === "true" ||
   (process.env.INSTALL_API_ENABLED || "").toLowerCase() === "true";
 logger.debug?.("Installer flags", {
   shouldServeInstaller,
   installerPath,
-  exists: fs.existsSync(installerPath),
+  exists: Boolean(installerPath),
 });
-if (shouldServeInstaller && fs.existsSync(installerPath)) {
+if (shouldServeInstaller && installerPath) {
   const installerIndex = path.join(installerPath, "index.html");
   logger.log(`📦 Serving installer assets from ${installerPath}`);
   const sendInstaller = (req, res) => {
@@ -410,8 +431,13 @@ if (shouldServeInstaller && fs.existsSync(installerPath)) {
   app.get("/install/:wildcard(*)", sendInstaller);
 }
 
-const docsPath = path.join(__dirname, "../docs");
-if (fs.existsSync(docsPath)) {
+const docsCandidates = [
+  path.join(__dirname, "../docs"),
+  path.join(__dirname, "../../docs"),
+  path.join(process.cwd(), "docs"),
+];
+const docsPath = resolveStaticDirectory("documentation", docsCandidates);
+if (docsPath) {
   logger.log(`📚 Serving documentation from ${docsPath}`);
   app.get("/docs", (req, res) => res.redirect(301, "/docs/"));
   app.use(
@@ -421,6 +447,10 @@ if (fs.existsSync(docsPath)) {
       extensions: ["html", "htm"],
     }),
   );
+} else {
+  logger.warn("Documentation assets directory not found", {
+    attemptedPaths: docsCandidates,
+  });
 }
 
 // ─── Routes ───
