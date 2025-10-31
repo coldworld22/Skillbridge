@@ -14,9 +14,13 @@ jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
 
-jest.mock('react-hot-toast', () => ({
-  toast: { error: jest.fn() },
-}));
+jest.mock(
+  'react-hot-toast',
+  () => ({
+    toast: { error: jest.fn() },
+  }),
+  { virtual: true }
+);
 
 describe('BookForm', () => {
   beforeEach(() => {

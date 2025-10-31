@@ -2,7 +2,6 @@
 
 ## Setup
 - [Installation Guide](installation.md) — step-by-step setup instructions.
-- [Installation Guide (PDF)](installation.pdf) — downloadable PDF version.
 - [Deployment Guide](deployment.md) — how to deploy SkillBridge.
 - [Architecture Overview](architecture.md) — system components and data flow.
 - [Social Login Setup](social-login-setup.md) — configure OAuth providers.

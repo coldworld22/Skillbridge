@@ -26,7 +26,7 @@ function initSockets(server, allowedOrigins) {
       socket.userId = userId;
     });
 
-    socket.on('call-user', async ({ to, roomId }) => {
+    socket.on('call-user', async ({ to, roomId, callId }) => {
       const from = socket.userId;
       const target = userSockets[to];
       if (from && target) {
@@ -38,6 +38,7 @@ function initSockets(server, allowedOrigins) {
           io.to(target).emit('incoming-call', {
             chatId: from,
             roomId,
+            callId,
             name: caller?.full_name || '',
           });
         } catch (err) {
@@ -46,24 +47,34 @@ function initSockets(server, allowedOrigins) {
       }
     });
 
-    socket.on('call-accepted', ({ chatId, roomId }) => {
+    socket.on('call-accepted', ({ chatId, roomId, callId }) => {
       const target = userSockets[chatId];
       if (socket.userId && target) {
-        io.to(target).emit('call-accepted', { chatId: socket.userId, roomId });
+        io.to(target).emit('call-accepted', {
+          chatId: socket.userId,
+          roomId,
+          callId,
+        });
       }
     });
 
-    socket.on('call-declined', ({ chatId }) => {
+    socket.on('call-declined', ({ chatId, callId }) => {
       const target = userSockets[chatId];
       if (socket.userId && target) {
-        io.to(target).emit('call-declined', { chatId: socket.userId });
+        io.to(target).emit('call-declined', {
+          chatId: socket.userId,
+          callId,
+        });
       }
     });
 
-    socket.on('call-cancelled', ({ chatId }) => {
+    socket.on('call-cancelled', ({ chatId, callId }) => {
       const target = userSockets[chatId];
       if (socket.userId && target) {
-        io.to(target).emit('call-cancelled', { chatId: socket.userId });
+        io.to(target).emit('call-cancelled', {
+          chatId: socket.userId,
+          callId,
+        });
       }
     });
 

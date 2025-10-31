@@ -232,6 +232,38 @@ export function resolveCheckoutItem(query, cartItems) {
   return null;
 }
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const parseDateSafe = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date.getTime());
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const determineClassInstallmentDueDate = (classInfo) => {
+  const now = new Date();
+  const start = parseDateSafe(classInfo?.startDate || classInfo?.start_date);
+  const end = parseDateSafe(classInfo?.endDate || classInfo?.end_date);
+
+  let offsetDays = 14;
+  if (start && end && end > start) {
+    const durationDays = Math.round((end.getTime() - start.getTime()) / DAY_IN_MS);
+    offsetDays = Math.max(7, Math.round(durationDays / 2));
+  }
+
+  let candidate = start ? addDays(start, offsetDays) : addDays(now, offsetDays);
+  if (candidate <= now) {
+    candidate = addDays(now, Math.max(7, offsetDays));
+  }
+  return candidate;
+};
+
 function resolveInstallmentMeta(allowInstallments, installments, totalAmount) {
   if (!allowInstallments) {
     return { enabled: false, count: 1, amountPerInstallment: totalAmount };
@@ -518,9 +550,10 @@ export default function CheckoutPage() {
   );
   const isFree = finalPrice <= Number.EPSILON;
   const installmentsAllowed = useMemo(() => {
+    if (itemType !== 'class') return false;
     if (existingPayment?.installments > 1) return true;
     return Boolean(itemInfo?.allow_installments);
-  }, [existingPayment, itemInfo]);
+  }, [itemType, existingPayment, itemInfo]);
   const installmentsActive = useMemo(
     () => installmentsAllowed && allowInstallments && installments > 1,
     [installmentsAllowed, allowInstallments, installments]
@@ -611,10 +644,8 @@ export default function CheckoutPage() {
       setAllowInstallments(false);
       return;
     }
-    if (existingPayment?.installments > 1) {
-      setAllowInstallments(true);
-    }
-  }, [installmentsAllowed, existingPayment]);
+    setAllowInstallments(true);
+  }, [installmentsAllowed]);
 
   useEffect(() => {
     if (!itemId || !itemType) {
@@ -742,21 +773,45 @@ export default function CheckoutPage() {
   const completePayment = async (existingPayment) => {
     setPaymentStatus('processing');
     let payment = existingPayment;
-    if (itemType === 'plan' && finalPrice <= Number.EPSILON) {
+    if (!payment && finalPrice <= Number.EPSILON && itemInfo?.id) {
+      const isPlanFree =
+        itemType === 'plan' &&
+        ((itemInfo?.price ?? 0) <= Number.EPSILON ||
+          Number.isNaN(Number(itemInfo?.price)));
+
+      if (isPlanFree) {
+        try {
+          await subscribeToPlan(itemInfo.id, interval || 'monthly');
+        } catch (err) {
+          console.error('Failed to subscribe to free plan', err);
+          toast.error(t('payment_generic_failure'));
+          setPaymentStatus('idle');
+          return;
+        }
+        setPaymentStatus('success');
+        setTimeout(() => {
+          router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`);
+        }, 1500);
+        return;
+      }
       try {
-        await subscribeToPlan(itemInfo.id, interval);
+        const payload = {
+          item_type: itemType,
+          item_id: itemInfo.id,
+          amount: 0,
+          status: 'paid',
+        };
+        if (itemType === 'plan') payload.interval = interval;
+        if (couponId) payload.coupon_id = couponId;
+        payment = await createPayment(payload);
       } catch (err) {
-        console.error('Failed to subscribe to plan', err);
+        console.error('Failed to record free payment', err);
         toast.error(t('payment_generic_failure'));
         setPaymentStatus('idle');
         return;
       }
-      setPaymentStatus('success');
-      setTimeout(() => {
-        router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`);
-      }, 1500);
-      return;
     }
+
     if (itemType === 'plan' && !payment) {
       const eligible = filterEligibleMethods(methods);
       if (eligible.length === 0) {
@@ -783,23 +838,6 @@ export default function CheckoutPage() {
         payment = await createPayment(payload);
       } catch (err) {
         console.error('Failed to create payment', err);
-        toast.error(t('payment_generic_failure'));
-        setPaymentStatus('idle');
-        return;
-      }
-    }
-    if (!payment && finalPrice <= Number.EPSILON && itemInfo?.id) {
-      try {
-        const payload = {
-          item_type: itemType,
-          item_id: itemInfo.id,
-          amount: 0,
-          status: 'paid',
-        };
-        if (couponId) payload.coupon_id = couponId;
-        payment = await createPayment(payload);
-      } catch (err) {
-        console.error('Failed to record free payment', err);
         toast.error(t('payment_generic_failure'));
         setPaymentStatus('idle');
         return;
@@ -874,7 +912,31 @@ export default function CheckoutPage() {
 
   const handlePayment = async (_formData = {}) => {
     if (finalPrice <= Number.EPSILON) {
-      await completePayment();
+      const basePrice = Number(itemInfo?.price ?? 0);
+      const isPlanFree =
+        itemType === "plan" &&
+        (!Number.isFinite(basePrice) || basePrice <= Number.EPSILON);
+
+      if (isPlanFree) {
+        await completePayment();
+      } else {
+        try {
+          const payload = {
+            item_type: itemType,
+            item_id: itemInfo.id,
+            amount: 0,
+            status: "paid",
+          };
+          if (itemType === "plan") payload.interval = interval;
+          if (couponId) payload.coupon_id = couponId;
+          const zeroPayment = await createPayment(payload);
+          await completePayment(zeroPayment);
+        } catch (err) {
+          console.error("Failed to create zero-amount payment", err);
+          toast.error(t("payment_generic_failure"));
+          setPaymentStatus("idle");
+        }
+      }
       return;
     }
     const method = filteredMethods.find(
@@ -925,14 +987,19 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    const fallback =
-      existingPayment?.installments ||
-      itemInfo?.installments ||
-      (itemInfo?.allow_installments ? 2 : 1);
-    const parsed = Number(fallback);
-    const safeCount = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
-    setInstallments(safeCount);
-  }, [existingPayment, itemInfo]);
+    if (!installmentsAllowed) {
+      setInstallments(1);
+      return;
+    }
+    if (existingPayment?.installments > 1) {
+      const parsed = Number(existingPayment.installments);
+      setInstallments(
+        Number.isFinite(parsed) && parsed > 1 ? Math.floor(parsed) : 2
+      );
+      return;
+    }
+    setInstallments(2);
+  }, [installmentsAllowed, existingPayment]);
 
   const perInstallment = useMemo(() => {
     const divisor = installments > 0 ? installments : 1;
@@ -947,20 +1014,26 @@ export default function CheckoutPage() {
     return base.toFixed(2);
   }, [installmentsActive, perInstallment, finalPrice]);
   const schedule = useMemo(() => {
-    if (!installmentsActive) {
+    if (!installmentsActive || itemType !== 'class') {
       return [];
     }
-    const amount = perInstallment;
-    return Array.from({ length: installments }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() + i);
-      return {
-        number: i + 1,
-        date: d.toLocaleDateString(),
+    const amount = Number.isFinite(perInstallment) ? perInstallment : 0;
+    const first = {
+      number: 1,
+      date: new Date().toLocaleDateString(),
+      amount: amount.toFixed(2),
+    };
+    const dueDate = determineClassInstallmentDueDate(itemInfo);
+    const entries = [first];
+    if (dueDate) {
+      entries.push({
+        number: 2,
+        date: dueDate.toLocaleDateString(),
         amount: amount.toFixed(2),
-      };
-    });
-  }, [perInstallment, installmentsActive, installments]);
+      });
+    }
+    return entries;
+  }, [installmentsActive, itemType, itemInfo, perInstallment]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
@@ -1038,6 +1111,29 @@ export default function CheckoutPage() {
                 })}
               </h3>
               {methodInstructions}
+            </div>
+          )}
+
+          {installmentsActive && schedule.length > 0 && (
+            <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+              <h3 className="font-semibold text-yellow-300 mb-2">{t('installments')}</h3>
+              <ul className="space-y-1">
+                {schedule.map((entry) => (
+                  <li key={entry.number}>
+                    {t('installment_item', {
+                      number: entry.number,
+                      amount: entry.amount,
+                      date: entry.date,
+                    })}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-yellow-200">
+                {t(
+                  'installment_access_notice',
+                  'Complete the remaining payment by the due date to keep your access active. Overdue installments automatically suspend access until paid.'
+                )}
+              </p>
             </div>
           )}
 

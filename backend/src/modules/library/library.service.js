@@ -46,6 +46,9 @@ exports.listForStudent = async (studentId) => {
       previewPages = [];
     }
 
+    const primaryPreview = previewPages.length ? previewPages[0] : null;
+    const coverImage = row.cover_image_url || primaryPreview || null;
+
     return {
       id: row.id,
       title: row.title,
@@ -55,10 +58,10 @@ exports.listForStudent = async (studentId) => {
       isFree: Number(row.price_paid) === 0,
       price_paid: Number(row.price_paid),
       purchasedAt: row.purchased_at,
-      cover_image_url: row.cover_image_url,
+      cover_image_url: coverImage,
       pdf_url: row.pdf_url,
-      preview_url:
-        row.allow_preview && previewPages.length ? previewPages[0] : null,
+      preview_url: row.allow_preview ? primaryPreview : null,
+      preview_pages: previewPages,
     };
   });
 };
@@ -81,9 +84,20 @@ exports.recordPurchase = async (studentId, bookId, pricePaid) => {
 };
 
 exports.getBookForDownload = async (studentId, bookId) => {
-  return db("book_purchases as bp")
+  if (!studentId || !bookId) return null;
+  let book = await db("book_purchases as bp")
     .join("books as b", "bp.book_id", "b.id")
     .where({ "bp.student_id": studentId, "bp.book_id": bookId })
-    .select("b.pdf_url", "b.title")
+    .select("b.pdf_url", "b.title", "b.id")
     .first();
+
+  if (!book) {
+    book = await db("student_book_access as sba")
+      .join("books as b", "sba.book_id", "b.id")
+      .where({ "sba.student_id": studentId, "sba.book_id": bookId })
+      .select("b.pdf_url", "b.title", "b.id")
+      .first();
+  }
+
+  return book || null;
 };

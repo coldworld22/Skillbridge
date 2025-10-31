@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -20,6 +20,8 @@ import {
   listenCalls,
   listenMessages,
   stopListenMessages,
+  respondToCall,
+  endCall,
 } from "@/services/messageService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
@@ -34,6 +36,9 @@ import { getCookie } from "@/utils/cookies";
 import { SeoConfigContext } from "@/context/SeoConfigContext";
 import App from "next/app";
 import { resolveApiBase } from "@/utils/serverApi";
+import { userHasPermissionForPath } from "@/config/adminRoutePermissions";
+import { loadGtagScript, configureGtag } from "@/utils/gtag";
+import { initializeGoogleAds } from "@/utils/googleAds";
 
 const langFetcher = () => getLanguages();
 
@@ -76,6 +81,7 @@ function MyApp({ Component, pageProps, router }) {
   const { data: langs } = useSWR("/languages", langFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
+  const hasHydratedAuth = useAuthStore((s) => s.hasHydrated);
 
   useEffect(() => {
     if (typeof initialSEOSettings !== "undefined") {
@@ -155,28 +161,56 @@ function MyApp({ Component, pageProps, router }) {
   }, [configLoaded, fetchConfig]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/google-analytics`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
-        return res.json();
-      })
-      .then((cfg) => {
-        if (cfg.enabled && cfg.measurementId) {
-          if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
-            const s = document.createElement('script');
-            s.async = true;
-            s.src = `https://www.googletagmanager.com/gtag/js?id=${cfg.measurementId}`;
-            s.dataset.gaMeasurementId = cfg.measurementId;
-            document.head.appendChild(s);
+    let isMounted = true;
 
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', cfg.measurementId);
-          }
+    const fetchAnalyticsConfig = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/google-analytics`);
+        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
+        const json = await res.json();
+        if (!isMounted) return;
+        const cfg = json?.data || {};
+        const measurementId = cfg.measurementId;
+        const enabled = cfg.enabled !== false && cfg.active !== false;
+        if (enabled && measurementId) {
+          loadGtagScript(measurementId, "data-ga-measurement-id");
+          configureGtag(measurementId);
         }
-      })
-      .catch((err) => console.error('Failed to load Google Analytics', err));
+      } catch (err) {
+        console.error("Failed to load Google Analytics", err);
+      }
+    };
+
+    fetchAnalyticsConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchGoogleAdsConfig = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/google-ads`);
+        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
+        const json = await res.json();
+        if (!isMounted) return;
+        const cfg = json?.data || {};
+        if (cfg && (cfg.conversionId || (cfg.conversions || []).length)) {
+          initializeGoogleAds(cfg);
+        }
+      } catch (err) {
+        console.error("Failed to load Google Ads config", err);
+      }
+    };
+
+    fetchGoogleAdsConfig();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -210,6 +244,44 @@ function MyApp({ Component, pageProps, router }) {
     }
   }, [callAccepted, callDeclined, router, clearCallStatus]);
 
+  const handleIncomingAccept = async () => {
+    const call = incomingCall;
+    if (!call) return;
+    try {
+      if (call.callId) {
+        await respondToCall(call.callId, "accept");
+      }
+    } catch (err) {
+      console.error("Failed to acknowledge accepted call", err);
+    }
+    acceptCall();
+  };
+
+  const handleIncomingDecline = async () => {
+    const call = incomingCall;
+    if (!call) return;
+    try {
+      if (call.callId) {
+        await respondToCall(call.callId, "decline");
+      }
+    } catch (err) {
+      console.error("Failed to acknowledge declined call", err);
+    }
+    declineCall();
+  };
+
+  const handleOutgoingCancel = async () => {
+    const call = outgoingCall;
+    if (call?.callId) {
+      try {
+        await endCall(call.callId);
+      } catch (err) {
+        console.error("Failed to end call", err);
+      }
+    }
+    cancelCall();
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("lng");
@@ -230,6 +302,26 @@ function MyApp({ Component, pageProps, router }) {
       currentLang?.direction === 'rtl'
     );
   }, [currentLang]);
+
+  const lastDeniedPathRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasHydratedAuth) return;
+    if (!user) return;
+    const currentPath = router.asPath || "/";
+    if (!currentPath.startsWith("/dashboard/admin")) return;
+    if (currentPath.startsWith("/error/403")) return;
+
+    if (userHasPermissionForPath(user, currentPath)) {
+      lastDeniedPathRef.current = null;
+      return;
+    }
+
+    if (lastDeniedPathRef.current === currentPath) return;
+    lastDeniedPathRef.current = currentPath;
+    toast.error("You do not have permission to access this page.");
+    router.replace("/error/403");
+  }, [router.asPath, user, hasHydratedAuth, router]);
 
   const getPageTitle = () => {
     const slug = router.pathname.split('/').pop();
@@ -286,9 +378,14 @@ function MyApp({ Component, pageProps, router }) {
           {(incomingCall || outgoingCall) && (
             <CallOverlay
               incoming={!!incomingCall}
-              name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
-              onAccept={incomingCall ? () => acceptCall() : undefined}
-              onDecline={incomingCall ? () => declineCall() : cancelCall}
+              name={
+                incomingCall?.name ||
+                outgoingCall?.name ||
+                incomingCall?.chatId ||
+                outgoingCall?.chatId
+              }
+              onAccept={incomingCall ? handleIncomingAccept : undefined}
+              onDecline={incomingCall ? handleIncomingDecline : handleOutgoingCancel}
             />
           )}
 

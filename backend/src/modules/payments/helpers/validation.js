@@ -15,6 +15,38 @@ const bookService = require("../../books/book.service");
 const tutorialService = require("../../users/tutorials/tutorial.service");
 const plansService = require("../../plans/plans.service");
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const parseDateSafe = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date.getTime());
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const determineClassInstallmentDueDate = (cls) => {
+  const now = new Date();
+  const start = parseDateSafe(cls?.start_date) || now;
+  const end = parseDateSafe(cls?.end_date);
+
+  let offsetDays = 14;
+  if (end && end > start) {
+    const durationDays = Math.round((end.getTime() - start.getTime()) / DAY_IN_MS);
+    offsetDays = Math.max(7, Math.round(durationDays / 2));
+  }
+
+  let candidate = addDays(start, offsetDays);
+  if (candidate <= now) {
+    candidate = addDays(now, Math.max(7, offsetDays));
+  }
+  return candidate;
+};
+
 async function validatePaymentData(body, userId) {
   const {
     method_id,
@@ -39,12 +71,13 @@ async function validatePaymentData(body, userId) {
   }
 
   const wantsInstallments = Boolean(allow_installments);
-  const requestedInstallments = Number(installments);
   let schedules = [];
   let next_due_date = null;
   let totalInstallments = 1;
   let itemAllowsInstallments = false;
-  let itemInstallmentsSetting = null;
+  let classInfo = null;
+  let installmentNumber = 1;
+  let scheduleToClose = null;
 
   let method;
   if (method_id) {
@@ -54,10 +87,8 @@ async function validatePaymentData(body, userId) {
     }
   } else if (Number(amount) === 0) {
     method = await paymentMethodsService.getByType("free");
-    if (!method) {
-      method = { id: null, type: "free", active: true };
-    } else if (!method.active) {
-      throw new AppError("Invalid payment method", 400);
+    if (!method || !method.active) {
+      method = await paymentMethodsService.ensureFreeMethod();
     }
   } else {
     throw new AppError("Missing required fields", 400);
@@ -147,25 +178,23 @@ async function validatePaymentData(body, userId) {
   let basePrice;
 
   let subscriptionPlanId = null;
+  let subscriptionId = null;
   if (item_type === "class") {
     if (typeof classService.getClassById === "function") {
       try {
-        const cls = await classService.getClassById(item_id);
-        if (!cls) throw new AppError("Class not found", 404);
-        basePrice = Number(cls.price);
-        itemAllowsInstallments = Boolean(cls.allow_installments);
-        itemInstallmentsSetting = cls.installments ?? null;
+        classInfo = await classService.getClassById(item_id);
+        if (!classInfo) throw new AppError("Class not found", 404);
+        basePrice = Number(classInfo.price);
+        itemAllowsInstallments = Boolean(classInfo.allow_installments);
       } catch (err) {
         basePrice = null;
-        if (wantsInstallments) {
-          itemAllowsInstallments = true;
+        if (err instanceof AppError) {
+          throw err;
         }
+        throw new AppError("Unable to retrieve class details", 500);
       }
     } else {
       basePrice = null;
-      if (wantsInstallments) {
-        itemAllowsInstallments = true;
-      }
     }
   } else if (item_type === "book") {
     let book = null;
@@ -173,18 +202,32 @@ async function validatePaymentData(body, userId) {
       book = await bookService.getBookById(item_id);
       if (!book) throw new AppError("Book not found", 404);
       basePrice = Number(book.price);
-      itemAllowsInstallments = Boolean(book.allow_installments);
-      itemInstallmentsSetting = book.installments ?? null;
+      itemAllowsInstallments = false;
     } else {
       basePrice = null;
     }
     let activePlanId = null;
+    let activeSubscriptionId = null;
     if (userId) {
       try {
-        const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
-        activePlanId = await getActiveStudentPlanId(userId);
+        const {
+          getActiveStudentSubscription,
+          getActiveStudentPlanId,
+        } = require("../../plans/subscription.helper");
+        let activeSubscription = null;
+        if (typeof getActiveStudentSubscription === "function") {
+          activeSubscription = await getActiveStudentSubscription(userId);
+        }
+        if (activeSubscription) {
+          activePlanId = activeSubscription.plan_id || null;
+          activeSubscriptionId = activeSubscription.subscription_id || null;
+        } else if (typeof getActiveStudentPlanId === "function") {
+          activePlanId = await getActiveStudentPlanId(userId);
+          activeSubscriptionId = null;
+        }
       } catch (_) {
         activePlanId = null;
+        activeSubscriptionId = null;
       }
     }
     const includedPlans = Array.isArray(book?.included_plans)
@@ -200,6 +243,7 @@ async function validatePaymentData(body, userId) {
         );
       }
       subscriptionPlanId = activePlanId;
+      subscriptionId = activeSubscriptionId;
       verifiedAmount = 0;
       finalStatus = STATUS.PAID;
       basePrice = null;
@@ -209,8 +253,7 @@ async function validatePaymentData(body, userId) {
       const tut = await tutorialService.getTutorialById(item_id);
       if (!tut) throw new AppError("Tutorial not found", 404);
       basePrice = Number(tut.price);
-      itemAllowsInstallments = Boolean(tut.allow_installments);
-      itemInstallmentsSetting = tut.installments ?? null;
+      itemAllowsInstallments = false;
     } else {
       basePrice = null;
     }
@@ -238,16 +281,44 @@ async function validatePaymentData(body, userId) {
   }
 
   if (wantsInstallments) {
-    if (!itemAllowsInstallments) {
-      throw new AppError("Installment plan not available for this item", 400);
+    if (item_type !== "class") {
+      throw new AppError("Installment plan is only available for online classes", 400);
     }
-    if (Number.isFinite(requestedInstallments) && requestedInstallments > 1) {
-      totalInstallments = Math.floor(requestedInstallments);
-    } else if (
-      Number.isFinite(Number(itemInstallmentsSetting)) &&
-      Number(itemInstallmentsSetting) > 1
-    ) {
-      totalInstallments = Math.floor(Number(itemInstallmentsSetting));
+    if (!itemAllowsInstallments) {
+      throw new AppError("Installment plan not available for this class", 400);
+    }
+
+    const normalizedClassId =
+      item_id === undefined || item_id === null ? item_id : String(item_id);
+
+    let existingInstallmentPayment = null;
+    let outstandingSchedule = null;
+    if (typeof paymentsService.findInstallmentContext === "function") {
+      const context = await paymentsService.findInstallmentContext(
+        userId,
+        item_type,
+        normalizedClassId
+      );
+      if (context) {
+        existingInstallmentPayment = context.payment || null;
+        outstandingSchedule = context.schedule || null;
+      }
+    }
+
+    if (existingInstallmentPayment) {
+      totalInstallments = existingInstallmentPayment.installments || 2;
+      if (outstandingSchedule) {
+        installmentNumber =
+          Number(outstandingSchedule.installment_number) || 2;
+        scheduleToClose = outstandingSchedule;
+        schedules = [];
+        next_due_date = null;
+      } else {
+        throw new AppError(
+          "Installment plan for this class is already settled",
+          400
+        );
+      }
     } else {
       totalInstallments = 2;
     }
@@ -256,6 +327,9 @@ async function validatePaymentData(body, userId) {
   }
 
   if (basePrice !== null && basePrice !== undefined) {
+    if (wantsInstallments && basePrice <= 0) {
+      throw new AppError("Installments require a positive class price", 400);
+    }
     if (coupon) {
       basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
     }
@@ -266,19 +340,30 @@ async function validatePaymentData(body, userId) {
     }
   }
 
-  if (wantsInstallments && totalInstallments > 1) {
+  if (scheduleToClose) {
+    const scheduledAmount = Number(scheduleToClose.amount);
+    if (
+      Number.isFinite(scheduledAmount) &&
+      Math.abs(verifiedAmount - scheduledAmount) >= EPS
+    ) {
+      throw new AppError(
+        "Payment amount does not match outstanding installment",
+        400
+      );
+    }
+  }
+
+  if (wantsInstallments && totalInstallments > 1 && !scheduleToClose) {
     const installmentAmount = verifiedAmount;
-    schedules = [];
-    for (let i = 2; i <= totalInstallments; i++) {
-      const due = new Date();
-      due.setMonth(due.getMonth() + (i - 1));
-      schedules.push({
-        installment_number: i,
+    const due = determineClassInstallmentDueDate(classInfo);
+    schedules = [
+      {
+        installment_number: 2,
         amount: installmentAmount,
         due_date: due,
-      });
-    }
-    next_due_date = schedules[0]?.due_date || null;
+      },
+    ];
+    next_due_date = due;
   }
 
   return {
@@ -292,7 +377,10 @@ async function validatePaymentData(body, userId) {
     schedules,
     next_due_date,
     totalInstallments,
+    installmentNumber,
+    scheduleToClose,
     subscriptionPlanId,
+    subscriptionId,
   };
 }
 

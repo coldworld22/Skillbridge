@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -27,6 +27,28 @@ const ReactQuill = dynamic(() => import('react-quill'), {
   loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded"></div>
 });
 import 'react-quill/dist/quill.snow.css';
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const parseDateSafe = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const computeInstallmentDueDate = (startValue, endValue) => {
+  const start = parseDateSafe(startValue);
+  if (!start) return null;
+  const end = parseDateSafe(endValue);
+  let offsetDays = 14;
+  if (end && end > start) {
+    const durationDays = Math.round((end.getTime() - start.getTime()) / DAY_IN_MS);
+    offsetDays = Math.max(7, Math.round(durationDays / 2));
+  }
+  const due = new Date(start.getTime());
+  due.setDate(due.getDate() + offsetDays);
+  return due;
+};
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -104,6 +126,20 @@ function CreateOnlineClass() {
       .then((items) => setPlans(items || []))
       .catch(() => setPlans([]));
   }, []);
+
+  useEffect(() => {
+    setFormData((prev) => {
+      const priceValue = parseFloat(prev.price);
+      const shouldDisable =
+        prev.isFree ||
+        !Number.isFinite(priceValue) ||
+        priceValue <= 0;
+      if (shouldDisable && prev.allowInstallments) {
+        return { ...prev, allowInstallments: false };
+      }
+      return prev;
+    });
+  }, [formData.isFree, formData.price]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -206,6 +242,37 @@ function CreateOnlineClass() {
         : [...prev.includedPlans, planId],
     }));
   };
+
+  const installmentsDisabled = useMemo(() => {
+    const priceValue = parseFloat(formData.price);
+    if (formData.isFree) return true;
+    if (!Number.isFinite(priceValue) || priceValue <= 0) return true;
+    return false;
+  }, [formData.isFree, formData.price]);
+
+  const installmentSummary = useMemo(() => {
+    if (!formData.allowInstallments) return null;
+    const priceValue = parseFloat(formData.price);
+    if (!Number.isFinite(priceValue) || priceValue <= 0) return null;
+    const perInstallment = (priceValue / 2).toFixed(2);
+    const dueDate = computeInstallmentDueDate(
+      formData.startDate,
+      formData.endDate
+    );
+    const hasExplicitSchedule =
+      parseDateSafe(formData.startDate) && parseDateSafe(formData.endDate);
+    return {
+      amount: perInstallment,
+      dueDateLabel:
+        dueDate?.toLocaleDateString() || "14 days after the class begins",
+      needsSchedule: !hasExplicitSchedule,
+    };
+  }, [
+    formData.allowInstallments,
+    formData.price,
+    formData.startDate,
+    formData.endDate,
+  ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -517,16 +584,44 @@ function CreateOnlineClass() {
                           />
                           <span className="ml-2 text-sm text-gray-700">Free Class</span>
                         </label>
-                        <label className="inline-flex items-center">
+                        <label
+                          className={`inline-flex items-center ${
+                            installmentsDisabled ? 'cursor-not-allowed opacity-70' : ''
+                          }`}
+                        >
                           <input
                             type="checkbox"
                             name="allowInstallments"
                             checked={formData.allowInstallments}
                             onChange={handleChange}
-                            className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                            disabled={installmentsDisabled}
+                            className={`h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded ${
+                              installmentsDisabled ? 'cursor-not-allowed' : ''
+                            }`}
                           />
                           <span className="ml-2 text-sm text-gray-700">Allow Installments</span>
                         </label>
+                        {installmentsDisabled ? (
+                          <p className="ml-6 text-xs text-gray-500">
+                            Set a paid price above $0 to offer the two-part payment plan.
+                          </p>
+                        ) : null}
+                        {!installmentsDisabled && formData.allowInstallments && installmentSummary ? (
+                          <div className="ml-6 mt-2 space-y-1 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-gray-700">
+                            <p>
+                              Students pay <strong>${installmentSummary.amount}</strong> now and the
+                              remaining <strong>${installmentSummary.amount}</strong> halfway through the class.
+                            </p>
+                            <p>
+                              Second installment due on <strong>{installmentSummary.dueDateLabel}</strong>.
+                            </p>
+                            {installmentSummary.needsSchedule ? (
+                              <p className="text-gray-500">
+                                Add both start and end dates to lock in the reminder date.
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
                         <label className="inline-flex items-center">
                           <input
                             type="checkbox"

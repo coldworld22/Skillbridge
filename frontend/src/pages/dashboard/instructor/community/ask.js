@@ -14,7 +14,16 @@ export default function AskQuestionPage() {
   const router = useRouter();
 
   useEffect(() => {
-    searchTags("").then(setAvailableTags).catch(() => {});
+    searchTags("")
+      .then((results) =>
+        setAvailableTags(
+          (results || [])
+            .map((tag) => tag.name || tag)
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b))
+        )
+      )
+      .catch(() => {});
   }, []);
 
   const toggleTag = (tag) => {
@@ -27,6 +36,10 @@ export default function AskQuestionPage() {
     e.preventDefault();
     if (!title.trim()) {
       toast.error("Please enter a question title.");
+      return;
+    }
+    if (selectedTags.length === 0) {
+      toast.error("Select at least one tag.");
       return;
     }
     try {
@@ -88,15 +101,15 @@ export default function AskQuestionPage() {
                 {availableTags.map((tag) => (
                   <button
                     type="button"
-                    key={tag.id || tag.name || tag}
-                    onClick={() => toggleTag(tag.name || tag)}
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
                     className={`px-3 py-1 rounded-full text-sm border ${
-                      selectedTags.includes(tag.name || tag)
+                      selectedTags.includes(tag)
                         ? "bg-yellow-500 text-white border-yellow-500"
                         : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
                     }`}
                   >
-                    #{tag.name || tag}
+                    #{tag}
                   </button>
                 ))}
               </div>

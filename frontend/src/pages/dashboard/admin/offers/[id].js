@@ -82,9 +82,15 @@ const AdminOfferDetails = () => {
               ? "instructor"
               : "student",
           title: o.title,
-          price: o.budget || "",
+          price: o.budget ? `$${o.budget}` : "Not specified",
           duration: o.timeframe || "",
-          tags: [],
+          tags: Array.isArray(o.tags)
+            ? o.tags
+                .map((tag) =>
+                  typeof tag === "string" ? tag : tag?.name
+                )
+                .filter(Boolean)
+            : [],
           date: o.created_at
             ? new Date(o.created_at).toLocaleDateString()
             : "",
@@ -92,7 +98,7 @@ const AdminOfferDetails = () => {
             ? new Date(o.expires_at).toLocaleDateString()
             : null,
           description: o.description || "",
-          status: o.status,
+          status: (o.status || "open").toLowerCase(),
           email: o.student_email || "",
           phone: o.student_phone || "",
         });
@@ -123,6 +129,10 @@ const AdminOfferDetails = () => {
   }, [id]);
 
   if (!offer) return <div className="p-6 text-gray-600">{t("adminOfferDetailsPage.loading")}</div>;
+
+  const statusLabel = offer.status
+    ? t(`offersPage.${offer.status}`, offer.status)
+    : t("offersPage.open", "open");
 
   const isStudentOffer = offer.type === "student";
 
@@ -155,7 +165,7 @@ const AdminOfferDetails = () => {
           </p>
         )}
         <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-          {t("adminOfferDetailsPage.status")}: {offer.status}
+          {t("adminOfferDetailsPage.status")}: {statusLabel}
         </span>
       </div>
 

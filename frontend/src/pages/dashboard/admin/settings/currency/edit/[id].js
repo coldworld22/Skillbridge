@@ -239,7 +239,9 @@ EditCurrencyPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedEditCurrencyPage = withAuthProtection(EditCurrencyPage, ["admin", "superadmin"]);
+const ProtectedEditCurrencyPage = withAuthProtection(EditCurrencyPage, {
+  permissions: ["manage_currencies"],
+});
 ProtectedEditCurrencyPage.getLayout = EditCurrencyPage.getLayout;
 export default ProtectedEditCurrencyPage;
 

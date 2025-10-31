@@ -34,9 +34,9 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         student: "/dashboard/student/profile/edit",
         superadmin: "/dashboard/admin/profile/edit",
       };
-      const profilePath = profilePaths[role] || "/profile/edit";
+      const profilePath = profilePaths[role];
       const currentPath = router.pathname;
-      const onProfileCompletionRoute = profilePath && currentPath.startsWith(profilePath);
+      const onProfileCompletionRoute = profilePath ? currentPath.startsWith(profilePath) : false;
       const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
       if (!user) {
@@ -47,7 +47,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         return { destination: "/auth/login", logout: true };
       }
 
-      if (!user.profile_complete && !onProfileCompletionRoute) {
+      if (!user.profile_complete && profilePath && !onProfileCompletionRoute) {
         return { destination: profilePath, logout: false };
       }
 
@@ -64,7 +64,7 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
         return { destination: "/error/403", logout: false };
       }
 
-        return null;
+      return null;
     }, [hydrated, user, accessToken, normalizedRoles, router.pathname]);
 
     useEffect(() => {
@@ -82,16 +82,16 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       student: "/dashboard/student/profile/edit",
       superadmin: "/dashboard/admin/profile/edit",
     };
-    const profilePath = profilePaths[role] || "/profile/edit";
+    const profilePath = profilePaths[role];
     const currentPath = router.pathname;
-    const onProfileCompletionRoute = profilePath && currentPath.startsWith(profilePath);
+    const onProfileCompletionRoute = profilePath ? currentPath.startsWith(profilePath) : false;
     const onEmailVerificationRoute = currentPath.startsWith("/auth/verify-email");
 
     if (!hydrated || !user || redirectDecision) {
       return null;
     }
 
-    if (!user.profile_complete && !onProfileCompletionRoute) {
+    if (!user.profile_complete && profilePath && !onProfileCompletionRoute) {
       return null;
     }
 

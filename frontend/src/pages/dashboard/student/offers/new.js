@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { fetchOfferTags, createOfferTag } from "@/services/offerTagService";
 import { createOffer } from "@/services/offerService";
+import groupService from "@/services/groupService";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -19,11 +21,16 @@ const NewOfferPage = () => {
     price: "",
     expiresAt: "",
     description: "",
+    offerType: "tutorial",
+    groupId: "",
   });
   const [tagInput, setTagInput] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [newTags, setNewTags] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [groupError, setGroupError] = useState("");
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -40,6 +47,41 @@ const NewOfferPage = () => {
     fetchOfferTags(search).then(setSuggestedTags).catch(() => {});
   }, [tagInput]);
 
+  useEffect(() => {
+    if (!hasHydrated || !user) return;
+    let active = true;
+    setIsLoadingGroups(true);
+    setGroupError("");
+    groupService
+      .getMyGroups()
+      .then((list) => {
+        if (!active) return;
+        setGroups(list);
+        if (!list.length) {
+          setForm((prev) =>
+            prev.groupId ? { ...prev, groupId: "" } : prev
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load groups", err);
+        if (!active) return;
+        setGroups([]);
+        setGroupError(t("groups_load_failed"));
+        setForm((prev) =>
+          prev.groupId ? { ...prev, groupId: "" } : prev
+        );
+      })
+      .finally(() => {
+        if (!active) return;
+        setIsLoadingGroups(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hasHydrated, user, t]);
+
   if (!hasHydrated || !user || user.role?.toLowerCase() !== "student") {
     return null;
   }
@@ -49,18 +91,69 @@ const NewOfferPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addTag = async (name) => {
-    const tag = name.trim();
-    if (!tag || selectedTags.includes(tag)) return;
-    const exists = suggestedTags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
-    if (!exists) {
-      try {
-        await createOfferTag({ name: tag });
-        setNewTags((prev) => [...prev, tag]);
-      } catch (_) {}
+  const hasTagAlreadySelected = (tag) =>
+    selectedTags.some((existing) => existing.toLowerCase() === tag.toLowerCase());
+
+  const addTag = async (name, { knownTag } = {}) => {
+    const rawTag = name?.trim();
+    if (!rawTag || hasTagAlreadySelected(rawTag)) {
+      setTagInput("");
+      return;
     }
-    setSelectedTags((prev) => [...prev, tag]);
-    setTagInput("");
+
+    let canonicalName = rawTag;
+    let createdNewTag = false;
+
+    try {
+      const matched =
+        knownTag ||
+        suggestedTags.find(
+          (t) => t.name.toLowerCase() === rawTag.toLowerCase()
+        );
+
+      if (matched) {
+        canonicalName = matched.name;
+      } else {
+        try {
+          const created = await createOfferTag({ name: rawTag });
+          if (created?.name) {
+            canonicalName = created.name;
+            createdNewTag = true;
+            setSuggestedTags((prev) => {
+              if (!created?.id || prev.some((t) => t.id === created.id)) {
+                return prev;
+              }
+              return [...prev, created];
+            });
+          } else {
+            createdNewTag = true;
+          }
+        } catch (err) {
+          const fallback = await fetchOfferTags(rawTag);
+          const exists = fallback.find(
+            (t) => t.name.toLowerCase() === rawTag.toLowerCase()
+          );
+          if (exists) {
+            canonicalName = exists.name;
+            setSuggestedTags(fallback);
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      setSelectedTags((prev) => [...prev, canonicalName]);
+      if (createdNewTag) {
+        setNewTags((prev) =>
+          prev.includes(canonicalName) ? prev : [...prev, canonicalName]
+        );
+      }
+    } catch (error) {
+      console.error("Failed to add tag", error);
+      toast.error(t("tag_add_failed"));
+    } finally {
+      setTagInput("");
+    }
   };
 
   const removeTag = (tag) => {
@@ -80,17 +173,29 @@ const NewOfferPage = () => {
         budget: form.price,
         expires_at: form.expiresAt || undefined,
         tags: JSON.stringify(selectedTags),
+        offer_type: form.offerType,
       };
+      if (form.groupId) {
+        payload.group_id = form.groupId;
+      }
       await createOffer(payload);
       toast.success(t("success_post"));
       router.push("/dashboard/student/offers");
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error(t("error_post"));
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        t("error_post");
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const submitDisabled =
+    isSubmitting ||
+    isLoadingGroups;
 
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-md mt-10 mb-10 border border-gray-100">
@@ -109,6 +214,74 @@ const NewOfferPage = () => {
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <p className="mt-1 text-sm text-gray-500">{t("title_hint")}</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("field_offer_type")}
+            </label>
+            <select
+              name="offerType"
+              value={form.offerType}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            >
+              <option value="class">{t("offer_type_class")}</option>
+              <option value="tutorial">
+                {t("offer_type_tutorial")}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("field_group_optional")}
+            </label>
+            {isLoadingGroups ? (
+              <div className="border border-dashed border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-500">
+                {t("loading_groups")}
+              </div>
+            ) : groups.length ? (
+              <>
+                <select
+                  name="groupId"
+                  value={form.groupId}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">{t("group_placeholder_optional")}</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.title || group.name || "Untitled group"}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-gray-500">
+                  {t("no_groups_available_optional")}{" "}
+                  <Link
+                    href="/dashboard/student/groups"
+                    className="text-blue-600 underline hover:text-blue-700"
+                  >
+                    {t("groups_action_optional")}
+                  </Link>
+                  .
+                </p>
+              </>
+            ) : (
+              <div className="border border-blue-200 bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-800 space-y-2">
+                <p>{t("no_groups_available_optional")}</p>
+                <Link
+                  href="/dashboard/student/groups"
+                  className="inline-flex items-center text-blue-800 underline"
+                >
+                  {t("groups_action_optional")}
+                </Link>
+              </div>
+            )}
+            {groupError && (
+              <p className="mt-2 text-sm text-red-600">{groupError}</p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -181,7 +354,7 @@ const NewOfferPage = () => {
                 <button
                   type="button"
                   key={tag.id}
-                  onClick={() => addTag(tag.name)}
+                  onClick={() => addTag(tag.name, { knownTag: tag })}
                   className="bg-gray-200 hover:bg-gray-300 text-xs px-2 py-1 rounded-full"
                 >
                   {tag.name}
@@ -207,9 +380,9 @@ const NewOfferPage = () => {
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={submitDisabled}
             className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center ${
-              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              submitDisabled ? "opacity-70 cursor-not-allowed" : ""
             }`}
           >
             {isSubmitting ? (

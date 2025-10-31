@@ -1,14 +1,13 @@
 // ✅ Enhanced Instructor Booking UI Component with All Features
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import useAuthStore from "@/store/auth/authStore";
-import { toast } from "react-toastify";
-import { fetchPublicInstructors } from "@/services/public/instructorService";
-import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
+import useAuthStore from '@/store/auth/authStore';
+import { toast } from 'react-toastify';
+import { fetchPublicInstructors } from '@/services/public/instructorService';
+import BookingRequestModal from '@/components/student/instructors/BookingRequestModal';
 
-import { motion } from "framer-motion";
+import { motion } from 'framer-motion';
 import {
-  FaChalkboardTeacher,
   FaStar,
   FaUserCheck,
   FaComments,
@@ -30,7 +29,8 @@ export default function InstructorBooking() {
   const { t } = useTranslation("website");
 
   const [instructors, setInstructors] = useState([]);
-  const [categories, setCategories] = useState(defaultCategories);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,54 +44,92 @@ export default function InstructorBooking() {
   useEffect(() => {
     const load = async () => {
       try {
+        setError('');
         const data = await fetchPublicInstructors();
         const mapped = data.map((ins) => ({
           ...ins,
           name: ins.full_name,
           avatar: ins.avatar_url
             ? `${API_BASE_URL}${ins.avatar_url}`
-            : "/images/profile/user.png",
+            : '/images/profile/user.png',
           rating: ins.rating || 5,
           tags: Array.isArray(ins.expertise) ? ins.expertise : [],
           availableNow: !!ins.is_online,
-          verified: ins.status === "active",
+          verified: ins.status === 'active',
         }));
         setInstructors(mapped);
-        const cats = new Set(defaultCategories);
-        mapped.forEach((ins) => {
-          if (Array.isArray(ins.expertise)) {
-            ins.expertise.forEach((e) => cats.add(e));
-          } else if (ins.expertise) {
-            cats.add(ins.expertise);
-          }
-        });
-        setCategories(Array.from(cats));
       } catch (err) {
-        console.error("Failed to load instructors", err);
+        console.error('Failed to load instructors', err);
+        setError('Unable to load instructors right now. Please try again later.');
+        toast.error('Failed to load instructors. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
     load();
   }, []);
 
-  const filtered = instructors
-    .filter(
-      (i) =>
-        (!onlyAvailable || i.availableNow) &&
-        (!showFavoritesOnly || favorites.includes(i.id)) &&
-        (selectedCategory === "All" ||
-          (Array.isArray(i.expertise)
-            ? i.expertise.includes(selectedCategory)
-            : i.expertise === selectedCategory)) &&
-        i.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "Highest Rated") return b.rating - a.rating;
-      if (sortBy === "Most Experienced") {
-        const getYears = (exp) => parseInt(exp);
-        return getYears(b.experience) - getYears(a.experience);
+  const categories = useMemo(() => {
+    const unique = new Set(defaultCategories);
+    instructors.forEach((ins) => {
+      if (Array.isArray(ins.expertise)) {
+        ins.expertise.filter(Boolean).forEach((value) => unique.add(value));
+      } else if (ins.expertise) {
+        unique.add(ins.expertise);
       }
-      return 0;
     });
+    return Array.from(unique);
+  }, [instructors]);
+
+  const filtered = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    const selected = selectedCategory;
+
+    return instructors
+      .filter((instructor) => {
+        if (onlyAvailable && !instructor.availableNow) return false;
+        if (showFavoritesOnly && !favorites.includes(instructor.id)) return false;
+        if (selected !== 'All') {
+          const expertiseList = Array.isArray(instructor.expertise)
+            ? instructor.expertise
+            : [instructor.expertise].filter(Boolean);
+          if (!expertiseList.includes(selected)) return false;
+        }
+        if (keyword && !instructor.name.toLowerCase().includes(keyword)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'Highest Rated') {
+          return (b.rating ?? 0) - (a.rating ?? 0);
+        }
+        if (sortBy === 'Most Experienced') {
+          const parseYears = (value) => {
+            const numeric = parseInt(value, 10);
+            return Number.isNaN(numeric) ? 0 : numeric;
+          };
+          return parseYears(b.experience) - parseYears(a.experience);
+        }
+        return 0;
+      });
+  }, [
+    favorites,
+    instructors,
+    onlyAvailable,
+    searchQuery,
+    selectedCategory,
+    showFavoritesOnly,
+    sortBy,
+  ]);
+
+  const filtersActive = useMemo(
+    () =>
+      selectedCategory !== 'All' ||
+      searchQuery.trim().length > 0 ||
+      showFavoritesOnly ||
+      onlyAvailable ||
+      sortBy !== sortOptions[0],
+    [onlyAvailable, searchQuery, selectedCategory, showFavoritesOnly, sortBy]
+  );
 
   const toggleFavorite = (id) => {
     setFavorites((prev) =>
@@ -99,7 +137,19 @@ export default function InstructorBooking() {
     );
   };
 
+  const resetFilters = () => {
+    setSelectedCategory('All');
+    setSearchQuery('');
+    setSortBy(sortOptions[0]);
+    setShowFavoritesOnly(false);
+    setOnlyAvailable(false);
+  };
+
   const handleRequest = async (instructor) => {
+    if (!instructor?.availableNow) {
+      toast.info(t('instructor_unavailable_message', 'This instructor is offline right now. Please check back soon.'));
+      return;
+    }
     if (!user || user.role?.toLowerCase() !== "student") {
       toast.info("Please login as a student or create a student account to proceed.");
 
@@ -114,136 +164,194 @@ export default function InstructorBooking() {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
       viewport={{ once: true }}
-      className="py-16 bg-gray-900 text-white text-center"
+      className="relative overflow-hidden py-16 text-white"
     >
-      <h2 className="text-4xl font-bold mb-6 text-yellow-500">{t("instructor_heading")}</h2>
-      <p className="text-lg text-gray-300 mb-8">{t("instructor_text")}</p>
-
-      {/* Search & Filter */}
-      <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
-        <div className="relative w-full max-w-xs">
-          <input
-            type="text"
-            placeholder={t("search_instructors_placeholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full p-3 pl-10 rounded-lg border border-gray-500 text-gray-900"
-          />
-          <FaSearch className="absolute left-3 top-4 text-gray-600" />
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-black"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-6xl px-4">
+        <div className="text-center">
+          <h2 className="text-4xl font-bold text-yellow-400 md:text-5xl">
+            {t('instructor_heading')}
+          </h2>
+          <p className="mt-4 text-lg text-gray-300">
+            {t('instructor_text')}
+          </p>
         </div>
 
-        <select
-          className="p-3 border border-gray-500 rounded-lg bg-gray-800 text-white"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-        >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+        <div className="mt-10 flex flex-col gap-8">
+          <div className="rounded-2xl bg-gray-800/70 p-6 shadow-xl backdrop-blur">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="relative lg:col-span-2">
+                <FaSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder={t('search_instructors_placeholder')}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  className="h-12 w-full rounded-xl border border-gray-700 bg-gray-900/60 pl-12 pr-4 text-sm text-gray-100 placeholder-gray-400 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+                />
+              </div>
 
-        <select
-          className="p-3 border border-gray-500 rounded-lg bg-gray-800 text-white"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-        >
-          {sortOptions.map((opt) => (
-            <option key={opt}>{opt}</option>
-          ))}
-        </select>
+              <select
+                className="h-12 w-full rounded-xl border border-gray-700 bg-gray-900/60 px-4 text-sm text-gray-100 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          <input
-            type="checkbox"
-            checked={onlyAvailable}
-            onChange={(e) => setOnlyAvailable(e.target.checked)}
-          />
-          {t("instructor_only_available")}
-        </label>
-
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          <input
-            type="checkbox"
-            checked={showFavoritesOnly}
-            onChange={(e) => setShowFavoritesOnly(e.target.checked)}
-          />
-          {t("instructor_show_favorites")}
-        </label>
-      </div>
-
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {filtered.length === 0 ? (
-          <p className="col-span-full text-gray-400">{t("instructor_no_results")}</p>
-        ) : (
-          filtered.map((i) => (
-            <motion.div
-            key={i.id}
-            whileHover={{ scale: 1.05 }}
-            className="p-6 bg-gray-800 rounded-lg shadow-lg text-center flex flex-col items-center relative"
-          >
-            <span
-              className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full ${
-                i.availableNow ? 'bg-green-500' : 'bg-gray-600'
-              }`}
-            >
-              {i.availableNow ? t('instructor_online') : t('instructor_offline')}
-            </span>
-            {i.verified && (
-              <span className="absolute top-2 left-2 text-green-400 text-sm flex items-center gap-1">
-                <FaCircleCheck /> {t("instructor_verified")}
-              </span>
-            )}
-            <img src={i.avatar} className="w-20 h-20 rounded-full border-2 border-yellow-500 mb-3" alt={i.name} />
-            <h3
-              className="text-xl font-semibold cursor-pointer hover:underline"
-              onClick={() => router.push(`/instructors/${i.id}`)}
-            >
-              {i.name}
-            </h3>
-            <div className="flex flex-wrap justify-center gap-2 mt-2 text-sm text-gray-300">
-              {(Array.isArray(i.expertise) ? i.expertise : [i.expertise]).map((exp, idx) => (
-                <span key={idx} className="bg-gray-700 px-2 py-1 rounded">
-                  {exp}
-                </span>
-              ))}
+              <select
+                className="h-12 w-full rounded-xl border border-gray-700 bg-gray-900/60 px-4 text-sm text-gray-100 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+              >
+                {sortOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
             </div>
-            <p className="text-gray-400 text-sm mt-1">
-              {t('experience_years', { count: i.experience })}
-            </p>
-            <div className="flex items-center justify-center gap-1 mt-2">
-              {Array.from({ length: 5 }).map((_, idx) => (
-                <FaStar
-                  key={idx}
-                  className={idx < Math.floor(i.rating) ? "text-yellow-400" : "text-gray-500"}
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={onlyAvailable}
+                    onChange={(event) => setOnlyAvailable(event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+                  />
+                  {t('instructor_only_available')}
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={showFavoritesOnly}
+                    onChange={(event) => setShowFavoritesOnly(event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+                  />
+                  {t('instructor_show_favorites')}
+                </label>
+              </div>
+
+              {filtersActive && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="self-start rounded-full border border-gray-600 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-yellow-400 hover:text-yellow-300"
+                >
+                  {t('instructor_clear_filters', 'Clear filters')}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {error ? (
+            <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 p-6 text-center text-sm text-rose-200">
+              {error}
+            </div>
+          ) : loading ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-72 animate-pulse rounded-2xl bg-gray-800/60"
                 />
               ))}
-              <span className="text-sm text-gray-300">{t('instructor_rating', { count: i.rating })}</span>
             </div>
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={() => handleRequest(i)}
-                className="bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600"
-              >
-                <FaUserCheck /> {t("instructor_request_lesson")}
-              </button>
-              <button
-                onClick={() => setChatWithInstructor(i.id)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
-              >
-                <FaComments /> {t("instructor_chat")}
-              </button>
-              <button
-                onClick={() => toggleFavorite(i.id)}
-                className={`px-2 py-2 rounded-full hover:bg-yellow-700 transition ${favorites.includes(i.id) ? 'bg-yellow-500 text-black' : 'bg-gray-600 text-white'}`}
-                aria-label="Save to Favorites"
-              >
-                <FaHeart />
-              </button>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-sm text-gray-300">
+              {t('instructor_no_results')}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((i) => (
+                <motion.div
+                  key={i.id}
+                  whileHover={{ scale: 1.05 }}
+                  className="relative flex h-full flex-col items-center gap-4 rounded-2xl bg-gray-800/80 p-6 text-center shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
+                >
+                  <span
+                    className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-semibold ${
+                      i.availableNow ? 'bg-emerald-500 text-emerald-900' : 'bg-gray-600 text-gray-200'
+                    }`}
+                  >
+                    {i.availableNow ? t('instructor_online') : t('instructor_offline')}
+                  </span>
+                  {i.verified && (
+                    <span className="absolute left-4 top-4 flex items-center gap-1 text-sm text-emerald-300">
+                      <FaCircleCheck /> {t('instructor_verified')}
+                    </span>
+                  )}
+                  <img
+                    src={i.avatar}
+                    className="h-20 w-20 rounded-full border-2 border-yellow-400 object-cover"
+                    alt={i.name}
+                  />
+                  <h3
+                    className="text-xl font-semibold hover:underline"
+                    onClick={() => router.push(`/instructors/${i.id}`)}
+                  >
+                    {i.name}
+                  </h3>
+                  <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-300">
+                    {(Array.isArray(i.expertise) ? i.expertise : [i.expertise]).filter(Boolean).map((exp, idx) => (
+                      <span key={exp || idx} className="rounded-full bg-gray-700/80 px-3 py-1">
+                        {exp}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    {t('experience_years', { count: i.experience })}
+                  </p>
+                  <div className="flex items-center justify-center gap-1">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <FaStar
+                        key={idx}
+                        className={idx < Math.round(i.rating) ? 'text-yellow-400' : 'text-gray-600'}
+                      />
+                    ))}
+                    <span className="text-sm text-gray-300">
+                      {t('instructor_rating', { count: i.rating })}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3 pt-2">
+                    <button
+                      onClick={() => handleRequest(i)}
+                      disabled={!i.availableNow}
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        i.availableNow
+                          ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+                          : 'bg-gray-600/60 text-gray-300 cursor-not-allowed'
+                      }`}
+                    >
+                      <FaUserCheck /> {i.availableNow ? t('instructor_request_lesson') : t('instructor_offline_cta', 'Offline')}
+                    </button>
+                    <button
+                      onClick={() => setChatWithInstructor(i.id)}
+                      className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+                    >
+                      <FaComments /> {t('instructor_chat')}
+                    </button>
+                    <button
+                      onClick={() => toggleFavorite(i.id)}
+                      className={`inline-flex items-center justify-center rounded-full px-3 py-2 text-sm transition ${favorites.includes(i.id) ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                      aria-label={favorites.includes(i.id) ? 'Remove from favorites' : 'Save to favorites'}
+                    >
+                      <FaHeart />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            </motion.div>
-          ))
-        )}
+          )}
+        </div>
       </div>
 
       {/* Booking Modal */}

@@ -73,14 +73,19 @@ export const sendWhatsAppMessage = async (userId, { message }) => {
   return res.data.data || res.data;
 };
 
-export const startVideoCall = async (userId) => {
+export const startVideoCall = async (userId, metadata = {}) => {
   try {
     const res = await api.post(`/messages/${userId}/video-call`);
     const { roomId, callId } = res.data.data || res.data;
-    useCallStore.getState().initiateCall({ chatId: userId, roomId, callId });
+    useCallStore.getState().initiateCall({
+      chatId: userId,
+      roomId,
+      callId,
+      ...metadata,
+    });
     const caller = useAuthStore.getState().user;
     if (caller?.id) {
-      socket.emit("call-user", { to: userId, roomId, callId });
+      socket.emit("call-user", { to: userId, roomId, callId, ...metadata });
     }
     return { roomId, callId };
   } catch (err) {

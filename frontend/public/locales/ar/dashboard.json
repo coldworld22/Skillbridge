@@ -41,6 +41,27 @@
   "recentAlerts": "التنبيهات الأخيرة",
   "flaggedMessages": "الرسائل المبلَّغ عنها",
   "licenseCheck": "التحقق من الترخيص",
+  "planOverviewTitle": "أداء الخطط",
+  "planOverviewSubtitle": "تابع كيفية اشتراك المستخدمين في كل خطة.",
+  "planOverviewManageLink": "إدارة الخطط",
+  "planOverviewLoading": "جارٍ تحميل إحصاءات الخطط...",
+  "planOverviewEmpty": "لا توجد نشاطات اشتراك بعد.",
+  "planOverviewPriceSummary": "{{monthly}} / شهر | {{yearly}} / سنة",
+  "planOverviewPriceMonthlyOnly": "{{monthly}} / شهر",
+  "planOverviewFreeLabel": "خطة مجانية",
+  "planOverviewPricingUnavailable": "السعر غير متوفر",
+  "planOverviewRoleStudent": "خطة الطلاب",
+  "planOverviewRoleInstructor": "خطة المدربين",
+  "planOverviewRoleGeneral": "خطة الاشتراك",
+  "planStatActiveLabelShort": "{{count}} نشط",
+  "planStatActiveLabel": "المشتركين النشطين",
+  "planStatNewLabel": "الجدد هذا الشهر",
+  "planStatExpiringLabel": "تنتهي قريبًا",
+  "planStatCancelledLabel": "أُلغيت هذا الشهر",
+  "planOverviewTotalActive": "المشتركين النشطين",
+  "planOverviewTotalNew": "الجدد هذا الشهر",
+  "planOverviewTotalExpiring": "تنتهي قريبًا",
+  "planOverviewTotalCancelled": "أُلغيت هذا الشهر",
   "platformInsights": "إحصاءات المنصة",
   "view": "عرض",
   "read": "قراءة",
@@ -161,7 +182,7 @@
     "inactive": "غير نشط",
     "create_category": "إنشاء فئة",
     "name": "الاسم",
-    "image": "الصورة",
+    "image": "Visual",
     "classes": "الصفوف",
     "status": "الحالة",
     "actions": "إجراءات",
@@ -179,14 +200,47 @@
     "category_name": "اسم الفئة",
     "parent_category": "الفئة الرئيسية",
     "status_label": "الحالة",
-    "category_image": "صورة الفئة",
+    "category_image": "Category Icon",
+    "icon_label": "Category Icon",
+    "icon_placeholder": "Select an icon",
+    "icon_helper": "Icons appear on the admin dashboard and public site. Choose one that matches the category theme.",
+    "icon_required": "Category icon is required.",
     "upload_image": "رفع صورة",
     "save_category": "حفظ الفئة",
     "update_category": "تحديث الفئة",
     "create_title": "إنشاء فئة جديدة",
     "edit_title": "تحرير الفئة",
     "none_top_level": "لا شيء (مستوى أعلى)",
-    "processing": "جارٍ الحفظ..."
+    "processing": "جارٍ الحفظ...",
+    "subtitle": "Manage course categories and their hierarchy.",
+    "refresh": "Refresh",
+    "classes_count": "{{count}} classes",
+    "confirm_status": "Set {{name}} to {{status}}?",
+    "confirm_delete": "Delete \"{{name}}\"? This action cannot be undone.",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "unknown_parent": "Unknown parent",
+    "not_available": "Not available",
+    "parent_label": "Parent: {{parent}}",
+    "showing_count": "Showing {{from}}–{{to}} of {{total}} categories",
+    "last_updated_notice": "Data updates every time you refresh this list.",
+    "view_details": "Category Details",
+    "details_subtitle": "Quick reference for this category's metadata.",
+    "close": "Close",
+    "slug_label": "Slug",
+    "created_at": "Created",
+    "updated_at": "Updated",
+    "child_of": "Child of {{parent}}",
+    "top_level": "Top-level category",
+    "no_image": "No icon available",
+    "image_alt": "Category visual for {{name}}",
+    "name_placeholder": "e.g. Pediatrics",
+    "image_validation_error": "Please choose a valid icon.",
+    "name_required": "Category name is required.",
+    "category_created": "Category created!",
+    "create_failed": "Failed to create category",
+    "category_updated": "Category updated!"
   },
   "instructorsPage": {
     "title": "المدرسون",
@@ -338,6 +392,7 @@
     "mark_as_active": "وضع كـنشط",
     "set_as_default": "تعيين كافتراضي",
     "save_language": "حفظ اللغة",
+    "no_permission": "ليس لديك صلاحية لإدارة اللغات.",
     "language_added": "تمت إضافة اللغة",
     "language_exists": "رمز اللغة موجود بالفعل.",
     "failed_to_add": "فشل في إضافة اللغة"
@@ -430,7 +485,57 @@
     "video_requirements": "MP4 أو WEBM حتى 50MB",
     "target_audience_help": "اختر من سيرى هذا الإعلان",
     "target_audience_required": "يرجى اختيار جمهور واحد على الأقل.",
-    "allow_branding_help": "عرض علامة المؤسسة على هذا الإعلان"
+    "allow_branding_help": "عرض علامة المؤسسة على هذا الإعلان",
+    "duration_exceeded": "لا يمكن أن تتجاوز المدة {{days}} يومًا.",
+    "ad_limit_reached": "تم الوصول إلى الحد الأقصى للإعلانات: {{count}} إعلان نشط.",
+    "plan_limit_ads": "الإعلانات النشطة: {{current}} / {{count}}",
+    "plan_limit_duration": "المدة القصوى لكل إعلان: {{days}} يومًا",
+    "loading_plan_limits": "جارٍ تحميل حدود خطتك...",
+    "checking_plan_limits": "جارٍ التحقق من حدود خطتك...",
+    "limit_load_failed": "تعذّر التحقق من حدود الإعلانات الحالية. يرجى المحاولة مرة أخرى لاحقًا.",
+    "manage_ads_prompt": "يرجى إيقاف أحد الإعلانات الحالية أو ترقية خطتك لإنشاء إعلان جديد.",
+    "auto_duration_hint": "خطة اشتراكك تحدد مدة الإعلان إلى {{days}} يومًا.",
+    "auto_duration_schedule": "سيعمل هذا الإعلان من {{start}} حتى {{end}}."
+  },
+  "instructorPlansPage": {
+    "title": "خطط المدربين",
+    "subtitle": "راجع اشتراكك وطوّر خطتك عندما تكون جاهزًا.",
+    "current_plan_heading": "الخطة الحالية للمدرب",
+    "current_plan_badge": "الخطة الحالية",
+    "current_plan_dates": "سارية من {{start}} إلى {{end}}",
+    "manage_plan": "إدارة الخطة",
+    "loading_summary": "جارٍ تحميل ملخص الخطة...",
+    "summary_error": "تعذر تحميل ملخص الخطة.",
+    "retry": "إعادة المحاولة",
+    "no_plan_heading": "لا توجد خطة مدربين مفعلة",
+    "no_plan_body": "اختر إحدى الخطط أدناه لتفعيل أدوات المدربين وأرصدة الإعلانات.",
+    "metrics_active_ads": "الإعلانات النشطة",
+    "metrics_active_ads_helper": "تم استخدام {{current}} من {{total}} فتحة",
+    "metrics_active_ads_unlimited": "فتحات إعلانات غير محدودة",
+    "metrics_classes": "الدروس المنشورة",
+    "metrics_classes_helper": "{{current}} منشور · {{remaining}} متبقي",
+    "metrics_classes_unlimited": "نشر غير محدود للدروس",
+    "metrics_ad_credits": "أرصدة الإعلانات",
+    "metrics_ad_credits_helper": "{{remaining}} متبقي من أصل {{total}}",
+    "metrics_ad_credits_unlimited": "أرصدة إعلانات غير محدودة",
+    "metrics_ad_duration": "مدة الإعلان",
+    "metrics_ad_duration_value": "حتى {{days}} يومًا للإعلان الواحد",
+    "metrics_ad_duration_unlimited": "لا يوجد حد للمدة",
+    "metrics_branding_enabled": "العلامة التجارية المخصصة مفعلة",
+    "metrics_branding_disabled": "العلامة التجارية المخصصة غير متاحة",
+    "choose_plan_heading": "اختر الخطة التي تناسب أهدافك",
+    "choose_plan_subtitle": "يمكنك التبديل بين الفوترة الشهرية والسنوية في أي وقت.",
+    "monthly_label": "شهري",
+    "yearly_label": "سنوي",
+    "loading_plans": "جارٍ تحميل الخطط...",
+    "no_plans": "لا توجد خطط مدربين متاحة حاليًا.",
+    "badge_most_popular": "الأكثر شيوعًا",
+    "plan_max_courses": "يمكنك نشر ما يصل إلى {{count}} فصل نشط",
+    "plan_max_courses_unlimited": "يمكنك نشر عدد غير محدود من الفصول النشطة",
+    "plan_ad_credits": "يتضمن {{count}} رصيدًا للإعلانات",
+    "plan_ad_credits_unlimited": "يتضمن أرصدة إعلانات غير محدودة",
+    "select_plan_button": "اختيار الخطة",
+    "current_plan_button": "الخطة الحالية"
   },
   "plansPage": {
     "title": "خطط الاشتراك",
@@ -447,6 +552,7 @@
     "failed_to_delete": "فشل في حذف الخطة",
     "delete_selected": "حذف المحدد",
     "selected": "محدد",
+    "clear_selection": "مسح التحديد",
     "plan_name": "اسم الخطة",
     "monthly_price": "السعر الشهري",
     "yearly_price": "السعر السنوي",
@@ -476,6 +582,8 @@
     "plan_not_found": "لم يتم العثور على الخطة",
     "edit": "تعديل",
     "delete": "حذف",
+    "monthly_price_label": "شهرياً: {{price}} {{currency}}",
+    "yearly_price_label": "سنوياً: {{price}} {{currency}}",
     "loading": "جارٍ التحميل...",
     "confirm_delete_plan": "هل أنت متأكد أنك تريد حذف هذه الخطة؟",
     "confirm_delete_selected": "حذف الخطط المحددة؟"
@@ -688,7 +796,8 @@
     },
     "topContributor": {
       "title": "🏆 أفضل مساهم",
-      "meta": "{{contributions}} مساهمة • {{reputation}} سمعة"
+      "meta": "{{contributions}} مساهمة • {{reputation}} سمعة",
+      "empty": "لا يوجد مساهم مميز هذا الأسبوع بعد."
     },
     "activity": {
       "title": "📈 نشاط المجتمع (آخر 5 أيام)",
@@ -744,6 +853,7 @@
     "title": "عرض المناقشة",
     "back": "رجوع",
     "posted_by": "نُشرت بواسطة {{user}}",
+    "unknown_user": "مستخدم غير معروف",
     "status": {
       "open": "مفتوح",
       "locked": "مغلق",
@@ -755,16 +865,33 @@
     "replies": "الردود",
     "no_replies": "لا توجد ردود بعد.",
     "confirm_delete": "حذف هذه المناقشة؟",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "load_failed": "تعذر تحميل هذه المناقشة.",
+    "lock_success": "تم قفل المناقشة.",
+    "lock_failed": "فشل قفل المناقشة.",
+    "resolve_success": "تم وضع علامة تم الحل على المناقشة.",
+    "delete_success": "تم حذف المناقشة.",
+    "delete_failed": "فشل حذف المناقشة."
   },
   "communityReportsPage": {
     "title": "المنشورات المبلّغ عنها",
     "heading": "المحتوى المبلّغ عنه",
     "reported_by": "تم الإبلاغ بواسطة {{user}}",
     "review": "مراجعة",
+    "resolve": "وضع علامة تم الحل",
     "delete": "حذف",
+    "loading": "جارٍ تحميل البلاغات...",
+    "load_failed": "تعذر تحميل البلاغات في الوقت الحالي.",
+    "update_failed": "فشل تحديث حالة البلاغ.",
+    "resolved_success": "تم وضع علامة تم الحل على البلاغ.",
+    "dismissed_success": "تم تجاهل البلاغ.",
     "confirm_delete": "هل أنت متأكد أنك تريد حذف هذا المحتوى؟",
-    "no_reports": "لا توجد بلاغات حالياً."
+    "no_reports": "لا توجد بلاغات حالياً.",
+    "status": {
+      "pending": "قيد المراجعة",
+      "resolved": "تم الحل",
+      "dismissed": "مرفوض"
+    }
   },
   "communityTagsPage": {
     "title": "الوسوم",
@@ -845,6 +972,59 @@
     "search_placeholder": "ابحث عن الطلاب أو الصفوف",
     "preview": "معاينة",
     "download": "تنزيل"
+  },
+  "instructorBookingsPage": {
+    "subtitle": "تابع جلساتك القادمة، وأدر توافرك، واستجب بسرعة لطلبات الطلاب.",
+    "search_placeholder": "ابحث حسب الطالب أو الصف",
+    "search_label": "ابحث في الحجوزات",
+    "status_label": "تصفية حسب الحالة",
+    "empty": {
+      "title": "لا توجد حجوزات مطابقة لعوامل التصفية.",
+      "subtitle": "حاول تعديل عوامل التصفية لعرض المزيد من النتائج."
+    },
+    "errors": {
+      "load_failed": "فشل تحميل الحجوزات. يرجى تحديث الصفحة للمحاولة مرة أخرى."
+    },
+    "toast": {
+      "load_failed": "فشل تحميل الحجوزات",
+      "cancelled": "تم إلغاء الحجز",
+      "cancel_failed": "فشل إلغاء الحجز"
+    },
+    "summary": {
+      "all": "جميع الحجوزات",
+      "all_hint": "كل ما هو موجود حاليًا في جدولك",
+      "pending_hint": "بانتظار تأكيدك",
+      "approved_hint": "تم إبلاغ الطلاب بالفعل",
+      "completed_hint": "جلسات قمت بتقديمها بالفعل",
+      "cancelled_hint": "الطلبات التي تم سحبها أو رفضها"
+    },
+    "filters": {
+      "all": "الكل"
+    },
+    "table": {
+      "student": "الطالب",
+      "class": "الصف",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "status": "الحالة"
+    },
+    "labels": {
+      "you": "أنت",
+      "class": "صف",
+      "session": "جلسة",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "duration": "المدة",
+      "summary_meta": "{{classTitle}} • {{type}}",
+      "duration_minutes": "{{count}} دقيقة"
+    }
+  },
+  "bookingStatuses": {
+    "pending": "قيد الانتظار",
+    "approved": "مقبول",
+    "completed": "مكتمل",
+    "cancelled": "ملغى",
+    "declined": "مرفوض"
   },
   "classStudentsPage": {
     "title": "الطلاب المسجلون",
@@ -1038,10 +1218,88 @@
     "user_added": "أضاف المستخدم بنجاح.",
     "user_add_failed": "فشل في إضافة المستخدم."
   },
+  "adminGroupsPage": {
+    "title": "📋 إدارة المجموعات",
+    "search_placeholder": "ابحث بالاسم أو المنشئ...",
+    "export_csv": "تصدير CSV",
+    "csv_filename": "المجموعات.csv",
+    "empty_state": "لا توجد مجموعات مطابقة لمعاييرك.",
+    "statuses": {
+      "pending": "معلقة",
+      "active": "نشطة",
+      "inactive": "غير نشطة",
+      "suspended": "موقوفة"
+    },
+    "filters": {
+      "status_all": "جميع الحالات",
+      "status_pending": "🕓 معلقة",
+      "status_active": "✅ نشطة",
+      "status_inactive": "⏸ غير نشطة",
+      "status_suspended": "🚫 موقوفة"
+    },
+    "sort": {
+      "newest": "📅 الأحدث",
+      "oldest": "📆 الأقدم",
+      "members": "👥 الأكثر أعضاءً"
+    },
+    "csv_headers": {
+      "id": "المعرف",
+      "name": "الاسم",
+      "status": "الحالة",
+      "members": "الأعضاء",
+      "visibility": "الظهور",
+      "created_at": "تاريخ الإنشاء"
+    },
+    "actions": {
+      "create_group": "+ إنشاء مجموعة",
+      "delete_selected": "حذف المحدد ({{count}})",
+      "bulk_set_active": "تعيين كـ نشطة",
+      "bulk_set_inactive": "تعيين كـ غير نشطة",
+      "bulk_suspend": "إيقاف",
+      "select_all_on_page": "تحديد الكل في الصفحة",
+      "select": "تحديد",
+      "view": "عرض",
+      "approve": "اعتماد",
+      "deactivate": "تعطيل",
+      "suspend": "إيقاف",
+      "activate": "تفعيل",
+      "delete": "حذف"
+    },
+    "group_card": {
+      "creator": "👤 {{name}}",
+      "members": "{{count}} عضو",
+      "created": "📅 تاريخ الإنشاء: {{date}}",
+      "visibility": "🔓 قابلية الظهور: {{visibility}}",
+      "public": "عام",
+      "private": "خاص",
+      "missing_value": "غير متوفر"
+    },
+    "alerts": {
+      "status_update_success": "تم ضبط حالة المجموعة إلى {{status}}",
+      "status_update_error": "فشل تحديث الحالة",
+      "delete_success": "تم حذف المجموعة",
+      "delete_error": "فشل حذف المجموعة",
+      "bulk_delete_error": "فشل حذف {{count}} من المجموعات",
+      "bulk_delete_success": "تم حذف المجموعات المحددة",
+      "bulk_status_error": "فشل تحديث {{count}} من المجموعات",
+      "bulk_status_success": "تم تحديث الحالة إلى {{status}} للمجموعات المحددة"
+    },
+    "confirm": {
+      "delete_title": "حذف المجموعة",
+      "delete_message": "هل أنت متأكد أنك تريد حذف هذه المجموعة؟",
+      "delete_selected_title": "حذف المجموعات المحددة",
+      "delete_selected_message": "حذف المجموعات المحددة؟",
+      "change_status_title": "تغيير الحالة",
+      "change_status_message": "تغيير حالة المجموعات المحددة إلى {{status}}؟",
+      "delete": "حذف",
+      "confirm": "تأكيد"
+    }
+  },
   "groupsPage": {
     "explore_title": "استكشاف المجموعات العامة",
     "join_group": "انضم إلى المجموعة",
-    "request_sent": "طلب إرسال",
+    "request_sent": "تم إرسال الطلب",
+    "request_sent_pending": "تم إرسال طلب الانضمام. بانتظار موافقة المشرف.",
     "your_group": "مجموعتك",
     "member": "عضو",
     "no_groups": "لم يتم العثور على مجموعات.",
@@ -1052,10 +1310,94 @@
     "sort_az": "أ-ي",
     "view_group": "عرض المجموعة",
     "back_to_my_groups": "العودة إلى مجموعاتي",
-    "pending_requests": "{{count}} معلق طلب انضمام",
-    "pending_requests_plural": "{{count}} في انتظار طلبات الانضمام",
-    "join_pending": "⏳ انضم إلى طلب في انتظار الموافقة",
-    "joined": "✅ أنت عضو في هذه المجموعة"
+    "pending_requests": "{{count}} طلب انضمام معلق",
+    "pending_requests_plural": "{{count}} طلب انضمام قيد الانتظار",
+    "join_pending": "⏳ طلب الانضمام قيد الموافقة",
+    "joined": "✅ أنت عضو في هذه المجموعة",
+    "loading": "جارٍ تحميل المجموعات...",
+    "load_failed": "فشل تحميل المجموعات",
+    "refresh_failed": "فشل تحديث عضويات المجموعات",
+    "create_group": "إنشاء مجموعة",
+    "requires_approval": "يتطلب موافقة",
+    "members_label": "أعضاء",
+    "no_tags": "لا توجد وسوم",
+    "cancel_request": "إلغاء الطلب",
+    "awaiting_approval": "بانتظار الموافقة",
+    "request_cancelled": "تم إلغاء طلب الانضمام",
+    "cancel_failed": "فشل إلغاء الطلب",
+    "joined_successfully": "تم الانضمام إلى المجموعة بنجاح!",
+    "join_failed": "فشل الانضمام إلى المجموعة"
+  },
+  "groupsDetailPage": {
+    "loading": "⏳ جارٍ تحميل المجموعة...",
+    "groupNotFound": "المجموعة غير موجودة.",
+    "loadError": "فشل تحميل المجموعة.",
+    "joinRequestSubmitted": "تم إرسال طلب الانضمام!",
+    "joinSuccess": "تم الانضمام إلى المجموعة بنجاح!",
+    "joinError": "فشل الانضمام إلى المجموعة",
+    "updateNameSuccess": "تم تحديث اسم المجموعة",
+    "updateNameError": "فشل تحديث اسم المجموعة",
+    "confirmDelete": "هل أنت متأكد من حذف هذه المجموعة؟",
+    "deleteSuccess": "تم حذف المجموعة",
+    "deleteError": "فشل حذف المجموعة",
+    "pendingRequestsLabel_zero": "لا توجد طلبات انضمام معلقة",
+    "pendingRequestsLabel_one": "طلب انضمام واحد معلق",
+    "pendingRequestsLabel_two": "طلبا انضمام معلقان",
+    "pendingRequestsLabel_few": "{{count}} طلبات انضمام معلقة",
+    "pendingRequestsLabel_many": "{{count}} طلب انضمام معلق",
+    "pendingRequestsLabel_other": "{{count}} طلب انضمام معلق",
+    "editName": "تحرير الاسم",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "creator": "المنشئ",
+    "createdAt": "📅 تاريخ الإنشاء: {{date}}",
+    "deleteGroup": "حذف المجموعة",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "chat": "الدردشة",
+      "members": "الأعضاء",
+      "memberManagement": "إدارة الأعضاء"
+    },
+    "membersHeading": "👥 الأعضاء ({{count}})",
+    "pendingRequestsHeading": "طلبات الانضمام المعلقة",
+    "pendingRequestsAlert": "{{count}} طلب انضمام جديد بانتظار المراجعة"
+  },
+  "groupMembersList": {
+    "title": "👥 أعضاء المجموعة",
+    "actions": {
+      "kick": "تمت إزالة العضو",
+      "promote": "تم ترقية العضو",
+      "demote": "تم تنزيل العضو",
+      "disable": "تم تعطيل العضو",
+      "enable": "تم تفعيل العضو",
+      "default": "تم تنفيذ الإجراء"
+    },
+    "errors": {
+      "update": "فشل تحديث العضو"
+    },
+    "labels": {
+      "admin": "مسؤول",
+      "moderator": "مشرف",
+      "member": "عضو",
+      "disabled": "[معطل]"
+    },
+    "tooltips": {
+      "kick": "إزالة العضو",
+      "disable": "تعطيل",
+      "enable": "تفعيل",
+      "promote": "تعيين كمسؤول",
+      "demote": "إعادته إلى عضو"
+    }
+  },
+  "groupRequests": {
+    "loading": "جارٍ تحميل طلبات الانضمام...",
+    "empty": "لا توجد طلبات معلقة.",
+    "loadFailed": "فشل تحميل طلبات الانضمام",
+    "approved": "تمت الموافقة على الطلب",
+    "rejected": "تم رفض الطلب",
+    "actionFailed": "فشل تنفيذ الإجراء",
+    "approve": "موافقة",
+    "reject": "رفض"
   },
   "sidebar": {
     "Help Center": "مركز المساعدة",
@@ -1221,6 +1563,30 @@
     "payments": "المدفوعات",
     "my_reviews": "تقييماتي"
   },
+  "instructorReviewsPage": {
+    "title": "تقييماتي",
+    "overallRating": "التقييم العام",
+    "reviewCount": "من {{count}} مراجعة",
+    "reviewCount_plural": "من {{count}} مراجعة",
+    "filters": {
+      "all": "الكل",
+      "rating": "{{count}} نجمة",
+      "rating_plural": "{{count}} نجوم",
+      "recent": "الأحدث"
+    },
+    "loading": "جارٍ تحميل تقييماتك...",
+    "loadError": "تعذر تحميل تقييماتك الآن.",
+    "toastError": "تعذر تحميل تقييماتك. يرجى المحاولة لاحقًا.",
+    "noMatch": "لا توجد تقييمات تطابق عامل التصفية المحدد.",
+    "emptyState": "لم تتلق أي تقييمات بعد.",
+    "studentFallback": "طالب",
+    "recentFallback": "مؤخرًا",
+    "noComment": "لا توجد ملاحظات.",
+    "ratingBreakdown": {
+      "label": "{{count}} نجمة",
+      "label_plural": "{{count}} نجوم"
+    }
+  },
   "emailConfigPage": {
     "title": "تكوين البريد الإلكتروني",
     "sender_details": "تفاصيل المرسل",
@@ -1343,11 +1709,157 @@
     "field_description": "وصف",
     "description_placeholder": "صف بإيجاز احتياجاتك التعليمية وأهدافك وأي متطلبات محددة ...",
     "description_hint": "كلما زادت التفاصيل التي تقدمها ، يمكن للمعلمين أفضل المساعدة",
+    "field_offer_type": "نوع العرض",
+    "offer_type_class": "فصل",
+    "offer_type_tutorial": "درس تعليمي",
+    "field_group_optional": "المجموعة (اختياري)",
+    "group_placeholder_optional": "بدون مجموعة",
+    "loading_groups": "جاري تحميل مجموعاتك...",
+    "no_groups_available_optional": "لست ضمن أي مجموعة حتى الآن. يمكنك نشر الطلب الآن أو إنشاء مجموعة للتعاون.",
+    "groups_action_optional": "إدارة المجموعات",
+    "groups_load_failed": "تعذر تحميل مجموعاتك. حاول مرة أخرى.",
+    "tag_add_failed": "تعذر إضافة الوسم الآن. حاول مرة أخرى.",
     "submitting": "إرسال...",
     "submit": "طلب النشر",
     "cancel": "يلغي",
     "success_post": "تم نشر طلبك بنجاح!",
-    "error_post": "كان هناك خطأ في تقديم طلبك.من فضلك حاول مرة أخرى."
+    "error_post": "كان هناك خطأ في تقديم طلبك.من فضلك حاول مرة أخرى.",
+    "card_budget_label": "الميزانية",
+    "card_timeframe_label": "الإطار الزمني",
+    "card_posted_label": "تاريخ النشر",
+    "card_expires_label": "ينتهي",
+    "card_expired_label": "منتهي",
+    "card_untitled": "عرض بدون عنوان",
+    "card_tags_label": "الوسوم",
+    "flexible_timeline": "جدول زمني مرن",
+    "posted_label": "تاريخ النشر",
+    "type_label": "النوع",
+    "status_label": "الحالة",
+    "loading": "جاري التحميل...",
+    "refreshing": "جارٍ تحديث العروض",
+    "load_error": "تعذر تحميل العروض في الوقت الحالي.",
+    "retry": "حاول مرة أخرى",
+    "back_to_offers": "العودة إلى العروض",
+    "responses_load_failed": "تعذّر تحميل الردود الآن.",
+    "messages_load_failed": "تعذّر تحميل الرسائل الآن.",
+    "responses_loading": "جارٍ تحميل الردود...",
+    "no_responses_student": "لم يرد أي مدرس بعد.",
+    "no_responses_instructor": "كن أول من يرد على هذا العرض.",
+    "messages_loading": "جارٍ تحميل الرسائل...",
+    "no_messages": "لا توجد رسائل بعد. ابدأ المحادثة أدناه.",
+    "messages_disabled": "تم إغلاق هذا العرض. تم تعطيل الرسائل.",
+    "attachments_disabled": "المرفقات غير مدعومة في رسائل العروض حالياً.",
+    "response_create_failed": "تعذّر بدء المحادثة لهذا العرض.",
+    "message_sent": "تم إرسال الرسالة!",
+    "message_failed": "تعذّر إرسال الرسالة.",
+    "message_deleted": "تم حذف الرسالة.",
+    "message_delete_failed": "تعذّر حذف الرسالة.",
+    "link_copied": "تم نسخ الرابط إلى الحافظة!",
+    "link_copy_failed": "تعذّر نسخ الرابط.",
+    "confirm_close": "هل تريد إغلاق هذا العرض؟",
+    "closed_success": "تم إغلاق العرض.",
+    "closed_failed": "تعذّر إغلاق العرض.",
+    "contact_instructor": "تواصل مع المدرس",
+    "contact_student": "تواصل مع الطالب",
+    "contact_unknown": "ستظهر تفاصيل التواصل بعد اختيار رد.",
+    "manage_offer": "إدارة العرض",
+    "offer_closed_note": "هذا الطلب مغلق. يمكنك إعادة فتحه في أي وقت.",
+    "offer_open_note": "أغلق الطلب بعد العثور على المدرس المناسب.",
+    "already_closed": "العرض مغلق",
+    "close_offer": "إغلاق العرض",
+    "share_offer": "مشاركة العرض",
+    "copy_link": "نسخ الرابط",
+    "discussion_heading": "نقاش العرض",
+    "replying_to": "الرد على",
+    "instructor_label": "المدرّس",
+    "you_label": "أنت",
+    "cancelled": "ملغى"
+  },
+  "groupsCreatePage": {
+    "title": "إنشاء مجموعة جديدة",
+    "heading": "إنشاء مجموعة جديدة",
+    "subtitle": "املأ التفاصيل أدناه لإنشاء مجموعتك الجديدة.",
+    "sections": {
+      "general": "معلومات عامة",
+      "invites": "دعوة الأعضاء"
+    },
+    "labels": {
+      "name": "اسم المجموعة",
+      "type": "نوع المجموعة",
+      "description": "الوصف",
+      "avatar": "صورة المجموعة",
+      "category": "الفئة",
+      "maxSize": "الحد الأقصى لعدد الأعضاء",
+      "timezone": "المنطقة الزمنية",
+      "tags": "الوسوم",
+      "popularTags": "وسوم شائعة:",
+      "searchMembers": "البحث عن أعضاء",
+      "selectedMembers": "الأعضاء المختارون ({{count}})",
+      "selectedMembers_zero": "لم يتم اختيار أعضاء",
+      "selectedMembers_one": "الأعضاء المختارون ({{count}})",
+      "selectedMembers_two": "الأعضاء المختارون ({{count}})",
+      "selectedMembers_few": "الأعضاء المختارون ({{count}})",
+      "selectedMembers_many": "الأعضاء المختارون ({{count}})",
+      "selectedMembers_other": "الأعضاء المختارون ({{count}})",
+      "invitationMethods": "طرق الدعوة"
+    },
+    "placeholders": {
+      "name": "أدخل اسم المجموعة",
+      "type": "اختر النوع",
+      "description": "أخبر الأعضاء عن موضوع هذه المجموعة...",
+      "category": "اختر فئة",
+      "maxSize": "لا يوجد حد في حال تركه فارغاً",
+      "timezone": "مثال: Asia/Riyadh",
+      "tagInput": "أضف وسمًا واضغط Enter",
+      "searchMembers": "ابحث بالاسم أو البريد الإلكتروني أو رقم الهاتف..."
+    },
+    "options": {
+      "typePrivate": "خاصة (الدعوة فقط)",
+      "typePublic": "عامة (يمكن لأي شخص الطلب)"
+    },
+    "buttons": {
+      "upload": "تحميل",
+      "change": "تغيير",
+      "addTag": "إضافة",
+      "submit": "إنشاء المجموعة",
+      "submitting": "جاري إنشاء المجموعة..."
+    },
+    "toasts": {
+      "success": "تم إنشاء المجموعة بنجاح!",
+      "successWithInvites": "تم إنشاء المجموعة. أُرسلت الدعوات إلى عضو واحد.",
+      "successWithInvites_zero": "تم إنشاء المجموعة. لم تُرسل أي دعوات.",
+      "successWithInvites_two": "تم إنشاء المجموعة. أُرسلت الدعوات إلى عضوين.",
+      "successWithInvites_few": "تم إنشاء المجموعة. أُرسلت الدعوات إلى {{count}} أعضاء.",
+      "successWithInvites_many": "تم إنشاء المجموعة. أُرسلت الدعوات إلى {{count}} عضوًا.",
+      "successWithInvites_other": "تم إنشاء المجموعة. أُرسلت الدعوات إلى {{count}} عضوًا.",
+      "additionalMethods": "طرق الدعوة الإضافية: {{methods}}",
+      "error": "فشل إنشاء المجموعة"
+    },
+    "inviteMethods": {
+      "email": "البريد الإلكتروني",
+      "whatsapp": "واتساب"
+    }
+  },
+  "groupsLanding": {
+    "title": "مجموعات الطلاب",
+    "intro": "في المجموعات يتعاون الطلاب مع المدربين، ويصلون إلى مواد تعليمية حصرية، ويحافظون على التزامهم بخطط الدراسة. انضم أو أنشئ مجموعة لفتح المزيد من مزايا Skillbridge.",
+    "benefits": {
+      "connect_title": "تواصل مع المرشدين",
+      "connect_body": "استكشف المجموعات المفتوحة التي يستضيفها المدربون ذوو الخبرة. الانضمام يمنحك الوصول إلى جلسات الأسئلة والأجوبة المباشرة، والموارد المخصصة، والدعم المستمر.",
+      "connect_cta": "استعرض المجموعات",
+      "collaborate_title": "نظم تعلمك",
+      "collaborate_body": "تابع المجتمعات التي تنتمي إليها بالفعل، وراجع الإعلانات، وتابع المهام المسندة.",
+      "collaborate_cta": "اذهب إلى مجموعاتي",
+      "lead_title": "أنشئ مساحتك الخاصة",
+      "lead_body": "بدء مجموعة يمكّنك من اختيار الزملاء، ودعوة المدربين، وتخصيص المحتوى لرحلتك التعليمية.",
+      "lead_cta": "ابدأ مجموعة"
+    },
+    "cta": {
+      "title": "هل أنت مستعد للبدء؟",
+      "subtitle": "اختر مجموعة تتوافق مع أهدافك — أو أطلق واحدة لتقود تجربة التعلم للآخرين.",
+      "create": "أنشئ مجموعة",
+      "discover": "اكتشف المجموعات"
+    }
   },
   "wishlistPage": {
     "title": "قائمة أمنياتي",
@@ -1382,7 +1894,6 @@
     "all_roles": "جميع الأدوار",
     "instructor": "مدرب",
     "student": "طالب",
-    "sort_by_id": "فرز حسب المعرف",
     "search_title": "عنوان البحث ...",
     "column_title": "عنوان",
     "column_user": "مستخدم",
@@ -1396,7 +1907,12 @@
     "offer_deleted": "عرض تم حذفه",
     "delete_failed": "فشل في حذف العرض",
     "status_updated": "تم تحديث الحالة",
-    "status_update_failed": "فشل في تحديث الحالة"
+    "status_update_failed": "فشل في تحديث الحالة",
+    "sort_by_date": "ترتيب حسب التاريخ",
+    "status_all": "جميع الحالات",
+    "status_open": "مفتوح",
+    "status_closed": "مغلق",
+    "status_cancelled": "ملغى"
   },
   "adminOfferDetailsPage": {
     "back_to_list": "← العودة لتقديم قائمة",
@@ -1671,15 +2187,37 @@
     "overview": "نظرة عامة على التحليلات لحملتك الإعلانية",
     "loading": "تحميل تحليلات الإعلانات ...",
     "error_loading": "فشل في تحميل التحليلات",
-    "not_found": "لم يتم العثور على م",
+    "not_found": "لم يتم العثور على الإعلان",
     "description": "وصف",
-    "target_roles": "جمهور",
+    "target_roles": "الجمهور",
     "duration": "مدة",
     "ad_type": "نوع الإعلان",
     "status": "حالة",
     "performance_metrics": "مقاييس الأداء",
     "views_over_time": "وجهات النظر مع مرور الوقت",
-    "views_by_country": "وجهات النظر حسب البلد"
+    "views_by_country": "وجهات النظر حسب البلد",
+    "edit": "تعديل",
+    "activate": "تفعيل",
+    "deactivate": "إلغاء التفعيل",
+    "delete": "حذف",
+    "no_data": "لا توجد بيانات متاحة",
+    "no_media": "لا توجد وسائط متاحة",
+    "no_description": "لا يوجد وصف متوفر.",
+    "no_target_roles": "غير محدد",
+    "duration_range": "{{start}} → {{end}}",
+    "duration_unavailable": "غير مجدول",
+    "date_unavailable": "غير محدد",
+    "delete_confirmation": "هل أنت متأكد أنك تريد حذف \"{{title}}\"؟",
+    "unknown_label": "غير معروف",
+    "metrics": {
+      "views": "المشاهدات",
+      "ctr": "نسبة النقر",
+      "conversions": "التحويلات",
+      "reach": "الوصول",
+      "top_devices": "أفضل الأجهزة",
+      "no_device_data": "لا توجد بيانات للأجهزة",
+      "unknown_device": "جهاز غير معروف"
+    }
   },
   "adsEditPage": {
     "title": "تحرير الإعلان",
@@ -1877,7 +2415,99 @@
   },
   "schedulePage": {
     "title": "جدول تدريسي",
+    "overview_heading": "نظرة سريعة على أسبوعك",
+    "next_event": "الحدث القادم",
+    "class_ref": "الحصة",
+    "overview_empty": "لا توجد حصص أو دروس قادمة بعد. عند جدولة جلسات جديدة ستظهر هنا.",
+    "refresh": "تحديث الجدول",
+    "refreshing": "جارٍ التحديث...",
+    "filters_title": "تصفية الأحداث",
+    "filter_all": "جميع الأحداث",
+    "filter_classes": "الحصص",
+    "filter_lessons": "الدروس",
+    "total_events": "إجمالي الأحداث",
+    "lessons_count": "الدروس القادمة",
+    "calendar_title": "التقويم",
+    "calendar_subtitle": "اضغط على أي حدث لعرض تفاصيله والإجراءات السريعة.",
+    "lesson_label": "درس",
+    "class_label": "حصة",
+    "event_label": "حدث",
+    "status": {
+      "upcoming": "قادم",
+      "live": "مباشر الآن",
+      "completed": "مكتمل"
+    },
+    "part_of_class": "ضمن",
+    "starts": "يبدأ",
+    "ends": "ينتهي",
+    "duration": "المدة",
+    "minutes": "{{count}} دقيقة",
+    "relative_time": "الوقت النسبي",
+    "enrolled": "المسجلون",
+    "join_live": "الانضمام إلى البث المباشر",
+    "joining": "جارٍ الانضمام...",
+    "open_class": "فتح مساحة الصف",
+    "no_events_title": "لا توجد عناصر مجدولة",
+    "no_selection_title": "اختر حدثاً",
+    "no_selection_hint": "اختر حدثاً من التقويم لمشاهدة التفاصيل والإجراءات.",
     "no_events": "لا توجد أحداث قادمة"
+  },
+  "rolesPage": {
+    "title": "Roles Management",
+    "list": {
+      "heading": "Roles",
+      "add": "Add Role",
+      "confirmDelete": "Delete this role?"
+    },
+    "messages": {
+      "loadSuccess": "Roles loaded",
+      "loadError": "Failed to load roles",
+      "addSuccess": "Role added",
+      "addError": "Failed to add role",
+      "updateSuccess": "Role updated",
+      "updateError": "Failed to update role",
+      "deleteSuccess": "Role deleted",
+      "deleteError": "Failed to delete role",
+      "noPermissionManage": "You do not have permission to manage roles.",
+      "noPermissionPermissions": "You do not have permission to manage permissions.",
+      "noPermissionUpdatePermissions": "You do not have permission to update role permissions.",
+      "permissionsLoadError": "Failed to load permissions",
+      "roleLoadError": "Failed to load role",
+      "permissionExists": "Permission already exists",
+      "permissionSaveSuccess": "Permissions saved",
+      "permissionSaveError": "Failed to save permissions",
+      "permissionCreateSuccess": "Permission created",
+      "permissionCreateError": "Failed to create permission"
+    },
+    "permissionAssignment": {
+      "heading": "Permissions for {{role}}",
+      "checkAll": "Check All",
+      "uncheckAll": "Uncheck All",
+      "addPermission": "Add Permission",
+      "save": "Save Changes",
+      "addModal": {
+        "title": "Add New Permission",
+        "placeholder": "e.g. manage_users",
+        "cancel": "Cancel",
+        "add": "Add"
+      }
+    },
+    "modals": {
+      "add": {
+        "title": "Add New Role",
+        "namePlaceholder": "Role Name",
+        "descriptionPlaceholder": "Description",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "edit": {
+        "title": "Edit Role",
+        "namePlaceholder": "Role Name",
+        "descriptionPlaceholder": "Description",
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    }
   },
   "permissionsPage": {
     "title": "أذونات",
@@ -1888,6 +2518,7 @@
     "permission_exists": "إذن موجود بالفعل",
     "permission_added": "الإذن إضافة",
     "permission_add_failed": "فشل في إضافة إذن",
+    "no_permission": "ليس لديك صلاحية لإدارة الأذونات.",
     "permission_removed": "الإذن بإزالة",
     "permission_delete_failed": "فشل في حذف",
     "no_permissions": "لم يتم العثور على أذونات",
@@ -2050,5 +2681,231 @@
     "empty_suggestion_prefix": "جرّب تعديل عوامل التصفية أو",
     "return_to_dashboard": "العودة إلى لوحة التحكم",
     "empty_suggestion_suffix": "لاستكشاف المزيد من فرص التعلم."
+  },
+  "instructorBillingPage": {
+    "title": "الفوترة والاشتراك",
+    "subtitle": "اطّلع على خطتك الحالية، والاستخدام، وسجل المدفوعات في واجهة واحدة.",
+    "loading": "جارٍ التحميل...",
+    "activePlan": {
+      "heading": "الخطة الحالية للمدرّس",
+      "caption": "أدر اشتراكك النشط، والحدود، والتحليلات.",
+      "plan_label": "الخطة",
+      "interval": "الدورية: {{value}}",
+      "start_date": "تاريخ البدء",
+      "end_date": "تاريخ الانتهاء",
+      "no_plan_title": "لا تملك خطة مدرّس نشطة بعد.",
+      "no_plan_caption": "اختر خطة لتفعيل الإعلانات وأدوات النشر المتقدمة للمدرّس."
+    },
+    "usage": {
+      "ads": "الإعلانات النشطة",
+      "max_duration": "المدة القصوى للإعلان: {{value}} يومًا",
+      "classes": "الصفوف المنشورة",
+      "remaining_classes": "متبقٍ {{value}} من مقاعد الصفوف",
+      "ad_credits": "رصيد الإعلانات المتبقي",
+      "wallet_balance": "الرصيد المتاح في المحفظة",
+      "unlimited": "غير محدود"
+    },
+    "history": {
+      "heading": "سجل الاشتراك",
+      "caption": "تابع التجديدات والترقيات والإلغاءات.",
+      "empty": "لا يوجد سجل اشتراك بعد.",
+      "columns": {
+        "plan": "الخطة",
+        "interval": "الدورية",
+        "start": "البداية",
+        "end": "النهاية",
+        "status": "الحالة"
+      }
+    },
+    "payments": {
+      "heading": "سجل المدفوعات",
+      "caption": "يشمل اشتراكات الخطط والمشتريات المرتبطة بحسابك.",
+      "empty": "لا توجد مدفوعات مسجلة حتى الآن.",
+      "unknown_method": "—",
+      "download_invoice": "فاتورة",
+      "columns": {
+        "date": "التاريخ",
+        "item": "العنصر",
+        "type": "النوع",
+        "amount": "المبلغ",
+        "status": "الحالة",
+        "method": "طريقة الدفع",
+        "invoice": "الفاتورة"
+      }
+    },
+    "invoices": {
+      "heading": "الفواتير",
+      "caption": "قم بتنزيل نسخة PDF لأرشيفك.",
+      "empty": "لا توجد فواتير.",
+      "invoice_label": "فاتورة رقم {{id}}",
+      "download": "تنزيل PDF"
+    },
+    "paymentTypes": {
+      "plan": "خطة المدرّس",
+      "class": "صف",
+      "tutorial": "درس",
+      "book": "كتاب",
+      "other": "أخرى"
+    },
+    "statusLabels": {
+      "paid": "مدفوع",
+      "awaiting_approval": "بانتظار الموافقة",
+      "pending_payment": "بانتظار الدفع",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى",
+      "expired": "منتهٍ",
+      "active": "نشط",
+      "unknown": "غير معروف"
+    },
+    "labels": {
+      "interval_monthly": "شهري",
+      "interval_yearly": "سنوي",
+      "interval_unknown": "مرن"
+    },
+    "actions": {
+      "view_plans": "استعراض الخطط",
+      "upgrade": "ترقية الخطة",
+      "cancel": "إلغاء الخطة",
+      "upgrading": "جارٍ الترقية...",
+      "canceling": "جارٍ الإلغاء...",
+      "refresh": "تحديث البيانات"
+    },
+    "messages": {
+      "summary_error": "تعذّر تحميل تفاصيل خطتك الحالية.",
+      "payments_error": "تعذّر تحميل سجل المدفوعات حاليًا.",
+      "invoices_error": "تعذّر تحميل الفواتير في الوقت الحالي.",
+      "upgrade_success": "تمت ترقية الخطة بنجاح.",
+      "upgrade_failed": "تعذّر ترقية الخطة. يرجى المحاولة مرة أخرى.",
+      "upgrade_unavailable": "أنت بالفعل على أعلى خطة متاحة للمدربين.",
+      "upgrade_options_error": "تعذّر تحميل خيارات الترقية. يرجى المحاولة مرة أخرى من صفحة الخطط.",
+      "cancel_success": "تم إلغاء الخطة بنجاح.",
+      "cancel_failed": "تعذّر إلغاء الخطة الآن.",
+      "invoice_not_found": "لا توجد فاتورة مرتبطة بهذه الدفعة.",
+      "invoice_download_failed": "تعذّر تنزيل الفاتورة. يرجى المحاولة مرة أخرى.",
+      "wallet_error": "تعذّر تحديث بيانات المحفظة الآن."
+    }
+  },
+  "studentBillingPage": {
+    "tabLabel": "الفوترة",
+    "title": "الفوترة والمدفوعات",
+    "subtitle": "تابع اشتراكك، مشترياتك، وفواتيرك من مكان واحد.",
+    "loading": "جارٍ التحميل...",
+    "activePlan": {
+      "plan_label": "الخطة",
+      "interval": "الدورية: {{value}}",
+      "start_date": "تاريخ البدء",
+      "end_date": "تاريخ الانتهاء",
+      "no_plan_title": "لا توجد خطة طلاب نشطة",
+      "no_plan_caption": "اختر خطة للاستفادة من الموارد المميزة والخصومات الحصرية."
+    },
+    "labels": {
+      "interval_monthly": "شهري",
+      "interval_yearly": "سنوي",
+      "interval_unknown": "مرن"
+    },
+    "actions": {
+      "view_plans": "استعراض الخطط",
+      "upgrade": "ترقية الخطة",
+      "cancel": "إلغاء الخطة",
+      "upgrading": "جارٍ الترقية...",
+      "canceling": "جارٍ الإلغاء...",
+      "refresh": "تحديث البيانات"
+    },
+    "stats": {
+      "total_spent": "إجمالي المدفوع",
+      "pending_payments": "مدفوعات جارٍ تنفيذها",
+      "last_purchase": "آخر عملية شراء",
+      "plan_status": "حالة الخطة",
+      "none": "لا توجد مشتريات بعد"
+    },
+    "history": {
+      "heading": "سجل الاشتراك",
+      "caption": "جميع الترقيات، التجديدات، والإلغاءات تظهر هنا.",
+      "empty": "لا يوجد سجل اشتراك حتى الآن.",
+      "columns": {
+        "plan": "الخطة",
+        "interval": "الدورية",
+        "start": "البداية",
+        "end": "النهاية",
+        "status": "الحالة"
+      }
+    },
+    "payments": {
+      "heading": "سجل المدفوعات",
+      "caption": "يشمل الصفوف، الكتب، الدروس، والاشتراكات.",
+      "empty": "لا توجد مدفوعات مسجلة بعد.",
+      "unknown_method": "—",
+      "download_invoice": "فاتورة",
+      "invoice_reference": "فاتورة رقم {{id}}",
+      "columns": {
+        "date": "التاريخ",
+        "item": "العنصر",
+        "type": "النوع",
+        "amount": "المبلغ",
+        "status": "الحالة",
+        "method": "طريقة الدفع",
+        "reference": "المرجع",
+        "invoice": "الفاتورة"
+      }
+    },
+    "invoices": {
+      "heading": "الفواتير",
+      "caption": "نزّل نسخة PDF لإيصالاتك.",
+      "empty": "لا توجد فواتير حالياً.",
+      "invoice_label": "فاتورة رقم {{id}}",
+      "download": "تنزيل PDF",
+      "labels": {
+        "issued": "تاريخ الإصدار",
+        "total_due": "الإجمالي",
+        "payment_date": "تاريخ الدفع",
+        "billed_to": "مفوترة إلى",
+        "billed_to_unknown": "الطالب",
+        "item_unknown": "عملية شراء تعليمية",
+        "payment_method": "طريقة الدفع",
+        "payment_status": "الحالة",
+        "payment_reference": "المرجع",
+        "payment_type": "النوع",
+        "payment_item": "العنصر"
+      },
+      "table": {
+        "item": "العنصر",
+        "type": "النوع",
+        "status": "الحالة",
+        "method": "طريقة الدفع",
+        "reference": "المرجع",
+        "total": "الإجمالي"
+      }
+    },
+    "paymentTypes": {
+      "plan": "خطة اشتراك",
+      "class": "صف",
+      "tutorial": "درس",
+      "book": "كتاب",
+      "other": "أخرى"
+    },
+    "statusLabels": {
+      "paid": "مدفوع",
+      "awaiting_approval": "بانتظار الموافقة",
+      "pending_payment": "بانتظار الدفع",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى",
+      "expired": "منتهٍ",
+      "active": "نشط",
+      "unknown": "غير معروف"
+    },
+    "messages": {
+      "summary_error": "تعذّر تحميل تفاصيل خطتك.",
+      "history_error": "تعذّر تحميل سجل الاشتراك الآن.",
+      "payments_error": "تعذّر تحميل سجل المدفوعات حاليًا.",
+      "invoices_error": "تعذّر تحميل الفواتير في الوقت الحالي.",
+      "upgrade_success": "تمت ترقية الخطة بنجاح.",
+      "upgrade_failed": "تعذّر ترقية الخطة. يرجى المحاولة مرة أخرى.",
+      "upgrade_unavailable": "أنت بالفعل على أعلى خطة متاحة للطلاب.",
+      "upgrade_options_error": "تعذّر تحميل خيارات الترقية. يرجى المحاولة مرة أخرى من صفحة الخطط.",
+      "cancel_success": "تم إلغاء الخطة بنجاح.",
+      "cancel_failed": "تعذّر إلغاء الخطة الآن.",
+      "invoice_not_found": "لا توجد فاتورة مرتبطة بهذه الدفعة.",
+      "invoice_download_failed": "تعذّر تنزيل الفاتورة. يرجى المحاولة مرة أخرى."
+    }
   }
 }

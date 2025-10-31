@@ -6,6 +6,7 @@ const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const { sendPasswordChangeEmails } = require("../passwordNotifications.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 
 
@@ -132,12 +133,79 @@ exports.updateProfile = async (req, res) => {
  * @route PATCH /api/users/admin/change-password
  * @access Admin
  */
+exports.changePassword = async (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 8) {
+    return res
+      .status(400)
+      .json({ message: "New password must be at least 8 characters." });
+  }
+
+  const [user] = await db("users")
+    .where({ id: userId })
+    .select("password_hash", "email", "full_name", "role");
+  if (!user) {
+    return res.status(404).json({ message: "User not found." });
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Current password is incorrect." });
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+
+  await db("users").where({ id: userId }).update({
+    password_hash: newHash,
+    updated_at: new Date(),
+  });
+
+  await notificationService.createNotification({
+    user_id: userId,
+    type: "security",
+    message: "Your password was changed successfully",
+  });
+
+  await messageService.createMessage({
+    sender_id: userId,
+    receiver_id: userId,
+    message: "Your password was changed successfully",
+  });
+
+  await sendPasswordChangeEmails({
+    targetUser: {
+      id: userId,
+      email: user.email,
+      full_name: user.full_name,
+      role: user.role || req.user.role,
+    },
+    actor: req.user,
+  });
+
+  res.json({ message: "Password changed successfully." });
+};
+
+/**
+ * @desc SuperAdmin reset password for any user
+ * @route POST /api/users/admin/reset-password/:userId
+ * @access SuperAdmin
+ */
 exports.resetPasswordAsAdmin = async (req, res) => {
   const { userId } = req.params;
   const { newPassword } = req.body;
 
   if (!newPassword || newPassword.length < 8) {
     return res.status(400).json({ message: "New password must be at least 8 characters." });
+  }
+
+  const targetUser = await db("users")
+    .where({ id: userId })
+    .select("email", "full_name", "role")
+    .first();
+  if (!targetUser) {
+    return res.status(404).json({ message: "User not found." });
   }
 
   const newHash = await bcrypt.hash(newPassword, 12);
@@ -158,6 +226,16 @@ exports.resetPasswordAsAdmin = async (req, res) => {
     sender_id: req.user.id,
     receiver_id: userId,
     message: "Your password was changed by an administrator",
+  });
+
+  await sendPasswordChangeEmails({
+    targetUser: {
+      id: userId,
+      email: targetUser.email,
+      full_name: targetUser.full_name,
+      role: targetUser.role,
+    },
+    actor: req.user,
   });
 
 

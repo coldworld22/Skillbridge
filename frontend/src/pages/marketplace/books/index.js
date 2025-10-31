@@ -1,5 +1,6 @@
 // pages/website/books/index.js
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { FaSearch, FaFilter, FaArrowUp } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -16,7 +17,7 @@ import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
-import { mapBookForCart, mapBookForWishlist } from "@/utils/bookMapping";
+import { mapBookForCart } from "@/utils/bookMapping";
 import { BOOK_PRICE_RANGE_DEFAULT } from "@/utils/constants";
 import debounce from "lodash/debounce";
 
@@ -28,6 +29,7 @@ const DEFAULT_PRICE_RANGE =
 
 export default function BooksPage() {
   const { t } = useTranslation(["website", "common"]);
+  const router = useRouter();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +51,9 @@ export default function BooksPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const loader = useRef(null);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
+  const fetchWishlist = useBookWishlistStore((state) => state.fetchWishlist);
+  const clearWishlist = useBookWishlistStore((state) => state.clearWishlist);
+  const wishlistHydrated = useBookWishlistStore((state) => state.hasHydrated);
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -141,14 +146,72 @@ export default function BooksPage() {
     setHasMore(true);
   };
 
-  const handleAddToWishlist = (book) => {
-    addToWishlist(mapBookForWishlist(book));
-    toast.success("Added to wishlist");
+  const isLoggedIn = isAuthenticated();
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      if (wishlistHydrated) {
+        clearWishlist();
+      }
+      return;
+    }
+    if (wishlistHydrated) return;
+    fetchWishlist().catch(() => {});
+  }, [isLoggedIn, wishlistHydrated, fetchWishlist, clearWishlist]);
+
+  const handleAddToWishlist = async (book) => {
+    if (!isLoggedIn) {
+      toast.info(
+        t("please_login_to_use_wishlist", {
+          defaultValue: "Please log in to use your wishlist.",
+        })
+      );
+      return;
+    }
+    const ok = await addToWishlist(book);
+    if (ok) {
+      toast.success(
+        t("added_to_wishlist", { defaultValue: "Added to wishlist" })
+      );
+    } else {
+      toast.error(
+        t("failed_to_update_wishlist", {
+          defaultValue: "Could not update wishlist. Please try again.",
+        })
+      );
+    }
   };
 
   const handleAddToCart = async (book) => {
-    await addItem(mapBookForCart(book));
-    toast.success("Added to cart");
+    if (!isAuthenticated()) {
+      toast.info(
+        t("please_login_to_purchase", {
+          defaultValue: "Please log in to purchase books.",
+        })
+      );
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!isLoggedInStudent) {
+      toast.error(
+        t("only_students_can_purchase", {
+          defaultValue: "Only students can purchase books.",
+        })
+      );
+      return;
+    }
+
+    const ok = await addItem(mapBookForCart(book));
+    if (ok) {
+      toast.success(t("added_to_cart", { defaultValue: "Added to cart" }));
+    } else {
+      toast.error(
+        t("failed_to_add_to_cart", {
+          defaultValue: "Could not add this book to your cart.",
+        })
+      );
+    }
   };
 
   useEffect(() => {

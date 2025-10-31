@@ -26,6 +26,9 @@ describe("AdForm", () => {
     fireEvent.change(screen.getByLabelText("start_at *"), {
       target: { value: "2024-01-01" },
     });
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "dashboard.adsPage.student" }),
+    );
     const file = new File(["hello"], "hello.png", { type: "image/png" });
     fireEvent.change(screen.getByLabelText("click_to_upload"), {
       target: { files: [file] },

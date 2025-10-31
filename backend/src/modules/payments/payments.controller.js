@@ -30,6 +30,8 @@ const {
   creditInstructorSubscription,
   creditInstructorWallet,
 } = require("./helpers/wallet");
+const paymentScheduleService = require("./paymentSchedule.service");
+const db = require("../../config/database");
 const resolveInvoicePath = (invoice) => {
   if (!invoice) return null;
   if (invoice.file_path) return invoice.file_path;
@@ -63,7 +65,10 @@ exports.createPayment = catchAsync(async (req, res) => {
     schedules,
     next_due_date,
     totalInstallments,
+    installmentNumber,
+    scheduleToClose,
     subscriptionPlanId,
+    subscriptionId,
   } = validation;
 
   let statusToUse = finalStatus;
@@ -91,15 +96,35 @@ exports.createPayment = catchAsync(async (req, res) => {
     instructor_amount,
     paid_at: statusToUse === STATUS.PAID ? new Date() : null,
     installments: totalInstallments,
-    installment_number: 1,
+    installment_number: installmentNumber || 1,
     next_due_date,
   };
-  if (subscriptionPlanId) {
-    createData.source = 'subscription';
+  if (item_type === "plan") {
+    createData.source = "plan";
+  } else if (subscriptionPlanId && subscriptionId) {
+    createData.source = "subscription";
   }
   const createArgs = [createData];
   if (schedules.length) createArgs.push(schedules);
   const payment = await service.create(...createArgs);
+
+  if (scheduleToClose) {
+    try {
+      if (payment.status === STATUS.PAID) {
+        await paymentScheduleService.markPaid(scheduleToClose.id);
+        if (scheduleToClose.payment_id) {
+          await db("payments")
+            .where({ id: scheduleToClose.payment_id })
+            .update({ next_due_date: null, updated_at: new Date() });
+        }
+      }
+    } catch (err) {
+      logger.error(
+        "Failed to finalize installment schedule after payment:",
+        err
+      );
+    }
+  }
 
   if (coupon_id && payment.status === STATUS.PAID) {
     try {
@@ -130,14 +155,14 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
-  if (subscriptionPlanId && item_type === "book") {
+  if (subscriptionPlanId && subscriptionId && item_type === "book") {
     try {
       const normalizedItemId =
         item_id === undefined || item_id === null ? item_id : String(item_id);
-      const db = require("../../config/database");
       const usage = await db("plan_usage_metrics")
         .where({
           plan_id: subscriptionPlanId,
+          subscription_id: subscriptionId,
           item_type: "book",
           item_id: normalizedItemId,
         })
@@ -146,6 +171,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         await db("plan_usage_metrics")
           .where({
             plan_id: subscriptionPlanId,
+            subscription_id: subscriptionId,
             item_type: "book",
             item_id: normalizedItemId,
           })
@@ -153,6 +179,7 @@ exports.createPayment = catchAsync(async (req, res) => {
       } else {
         await db("plan_usage_metrics").insert({
           plan_id: subscriptionPlanId,
+          subscription_id: subscriptionId,
           item_type: "book",
           item_id: normalizedItemId,
           usage_count: 1,
@@ -161,10 +188,17 @@ exports.createPayment = catchAsync(async (req, res) => {
       await creditInstructorSubscription(
         "book",
         normalizedItemId,
-        subscriptionPlanId
+        subscriptionPlanId,
+        subscriptionId
       );
     } catch (err) {
       logger.error("Failed to record subscription usage:", err);
+    }
+  } else if (subscriptionPlanId && item_type === "book") {
+    try {
+      await creditInstructorSubscription("book", item_id, subscriptionPlanId);
+    } catch (err) {
+      logger.error("Failed to credit instructor for subscription book:", err);
     }
   }
 
@@ -290,7 +324,14 @@ exports.getPayments = catchAsync(async (_req, res) => {
 });
 
 exports.getMyPayments = catchAsync(async (req, res) => {
-  const data = await service.getByUser(req.user.id);
+  const { status, itemType, limit, offset, sortDirection } = req.query || {};
+  const data = await service.getByUser(req.user.id, {
+    status,
+    itemType,
+    limit,
+    offset,
+    sortDirection,
+  });
   sendSuccess(res, data);
 });
 
@@ -328,6 +369,37 @@ exports.updatePayment = catchAsync(async (req, res) => {
         } catch (err) {
           logger.error("Failed to grant access after admin approval:", err);
         }
+
+        if (
+          payment.item_type === "class" &&
+          Number(payment.installments || 1) > 1 &&
+          Number(payment.installment_number || 1) > 1
+        ) {
+          try {
+            if (typeof service.findInstallmentContext === "function") {
+              const context = await service.findInstallmentContext(
+                payment.user_id,
+                payment.item_type,
+                payment.item_id
+              );
+              const schedule = context?.schedule;
+              if (schedule) {
+                await paymentScheduleService.markPaid(schedule.id);
+                if (schedule.payment_id) {
+                  await db("payments")
+                    .where({ id: schedule.payment_id })
+                    .update({ next_due_date: null, updated_at: new Date() });
+                }
+              }
+            }
+          } catch (err) {
+            logger.error(
+              "Failed to settle installment schedule after approval:",
+              err
+            );
+          }
+        }
+
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
         try {

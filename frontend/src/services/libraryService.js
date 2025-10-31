@@ -5,7 +5,13 @@ import { buildUrl } from "@/utils/url";
 const coerceText = (value, lang = "en") => {
   if (value == null) return "";
   const t = typeof value;
-  if (t === "string") return value;
+  if (t === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    const lower = trimmed.toLowerCase();
+    if (lower === "null" || lower === "undefined") return "";
+    return trimmed;
+  }
   if (t === "number" || t === "boolean") return String(value);
   if (Array.isArray(value)) return value.map((v) => coerceText(v, lang)).filter(Boolean).join(", ");
   if (t === "object") {
@@ -18,15 +24,48 @@ const coerceText = (value, lang = "en") => {
   return "";
 };
 
+const coerceUrl = (value, lang = "en") => {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const lower = trimmed.toLowerCase();
+    if (lower === "null" || lower === "undefined" || lower === "false") return null;
+    return trimmed;
+  }
+  if (typeof value === "object") {
+    if (typeof value.url === "string") return coerceUrl(value.url, lang);
+    if (typeof value.href === "string") return coerceUrl(value.href, lang);
+    if (typeof value.src === "string") return coerceUrl(value.src, lang);
+    const localized = value[lang];
+    if (typeof localized === "string") return coerceUrl(localized, lang);
+    const english = value.en;
+    if (typeof english === "string") return coerceUrl(english, lang);
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const resolved = coerceUrl(entry, lang);
+      if (resolved) return resolved;
+    }
+  }
+  return coerceText(value, lang) || null;
+};
+
+const resolveMediaUrl = (value, lang = "en") => {
+  const candidate = coerceUrl(value, lang);
+  if (!candidate) return null;
+  return buildUrl(candidate) || candidate;
+};
+
 const normalizeLibraryItem = (item) => {
   const coverUrl =
-    buildUrl(item?.coverUrl) ||
-    buildUrl(item?.cover_image_url) ||
-    buildUrl(item?.cover_image) ||
+    resolveMediaUrl(item?.coverUrl) ||
+    resolveMediaUrl(item?.cover_image_url) ||
+    resolveMediaUrl(item?.cover_image) ||
     "/images/default-book-cover.jpg";
 
-  const previewUrl = buildUrl(item?.previewUrl || item?.preview_url);
-  const pdfUrl = buildUrl(item?.pdfUrl || item?.pdf_url);
+  const previewUrl = resolveMediaUrl(item?.previewUrl || item?.preview_url);
+  const pdfUrl = resolveMediaUrl(item?.pdfUrl || item?.pdf_url);
 
   return {
     ...item,

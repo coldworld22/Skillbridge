@@ -55,7 +55,7 @@ exports.assignPermissions = async (roleId, permissionIds, userId) => {
 
   // Automatically ensure specific roles get the ADD_ONLINE_CLASS_RULE permission
   const role = await db("roles").where({ id: roleId }).first("name");
-  if (role && ["Admin", "SuperAdmin"].includes(role.name)) {
+  if (role && role.name === "SuperAdmin") {
     const perm = await db("permissions")
       .where({ code: "ADD_ONLINE_CLASS_RULE" })
       .first("id");

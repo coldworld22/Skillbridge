@@ -112,6 +112,11 @@ function InstructorBookDetailPage() {
         : [],
     [book?.tags]
   );
+  const shortDescription = book?.short_description || null;
+  const detailedDescription =
+    book?.detailed_description ||
+    book?.description ||
+    null;
 
   if (loading) {
     return (
@@ -194,8 +199,13 @@ function InstructorBookDetailPage() {
                   </p>
                 )}
 
-                {book.description && (
-                  <p className="text-gray-700">{book.description}</p>
+                {shortDescription && (
+                  <p className="text-sm text-gray-600">{shortDescription}</p>
+                )}
+                {detailedDescription && (
+                  <p className="text-gray-700 whitespace-pre-line">
+                    {detailedDescription}
+                  </p>
                 )}
 
                 <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">

@@ -139,38 +139,89 @@ export const fetchInstructorScheduleEvents = async () => {
   const now = new Date();
   const events = [];
 
-  for (const cls of classes) {
-    if (!cls.start_date) continue;
+  await Promise.all(
+    classes.map(async (cls) => {
+      if (!cls.start_date) return;
+      if (cls.scheduleStatus === "Completed") return;
 
-    // Skip completed classes
-    if (cls.scheduleStatus === "Completed") continue;
+      const classEvent = {
+        id: `class-${cls.id}`,
+        title: `Class: ${cls.title}`,
+        start: cls.start_date,
+        ...(cls.end_date ? { end: cls.end_date } : {}),
+        backgroundColor: "#1f2937",
+        borderColor: "#111827",
+        textColor: "#f9fafb",
+        extendedProps: {
+          type: "class",
+          classId: cls.id,
+          displayTitle: cls.title,
+          scheduleStatus: cls.scheduleStatus,
+          startDate: cls.start_date,
+          endDate: cls.end_date,
+          deliveryMode: cls.delivery_mode || cls.deliveryMode || "Online",
+          level: cls.level || cls.difficulty || null,
+          subject: cls.subject || null,
+          enrolledCount:
+            typeof cls.enrolled_count === "number"
+              ? cls.enrolled_count
+              : cls.enrolledCount ?? null,
+          maxStudents:
+            typeof cls.max_students === "number"
+              ? cls.max_students
+              : cls.maxStudents ?? null,
+        },
+      };
 
-    // Show ongoing and upcoming classes
-    events.push({
-      id: `class-${cls.id}`,
-      title: `Class: ${cls.title}`,
-      start: cls.start_date,
-      ...(cls.end_date ? { end: cls.end_date } : {}),
-    });
+      events.push(classEvent);
 
-    try {
-      const management = await fetchClassManagementData(cls.id);
-      management?.lessons?.forEach((lesson) => {
-        if (!lesson.start_time) return;
-        const lessonStart = new Date(lesson.start_time);
-        if (lessonStart >= now) {
-          events.push({
+      try {
+        const management = await fetchClassManagementData(cls.id);
+        management?.lessons?.forEach((lesson) => {
+          if (!lesson?.start_time) return;
+          const lessonStart = new Date(lesson.start_time);
+          if (lessonStart < now) return;
+
+          const rawDuration =
+            typeof lesson.duration === "number"
+              ? lesson.duration
+              : typeof lesson.duration_minutes === "number"
+              ? lesson.duration_minutes
+              : parseInt(lesson.duration, 10);
+
+          const durationMinutes = Number.isFinite(rawDuration)
+            ? rawDuration
+            : null;
+
+          const lessonEvent = {
             id: `lesson-${lesson.id}`,
             title: `Lesson: ${lesson.title}`,
             start: lesson.start_time,
             ...(lesson.end_time ? { end: lesson.end_time } : {}),
-          });
-        }
-      });
-    } catch {
-      // ignore individual class errors
-    }
-  }
+            backgroundColor: "#065f46",
+            borderColor: "#064e3b",
+            textColor: "#ecfdf5",
+            extendedProps: {
+              type: "lesson",
+              classId: cls.id,
+              lessonId: lesson.id,
+              classTitle: cls.title,
+              displayTitle: lesson.title,
+              scheduleStatus: cls.scheduleStatus,
+              startTime: lesson.start_time,
+              endTime: lesson.end_time || null,
+              durationMinutes,
+              instructorNotes: lesson.notes || null,
+            },
+          };
 
-  return events;
+          events.push(lessonEvent);
+        });
+      } catch {
+        // ignore individual class errors
+      }
+    })
+  );
+
+  return events.sort((a, b) => new Date(a.start) - new Date(b.start));
 };

@@ -19,6 +19,7 @@ export default function StudentInstructorsAll() {
   const [favorites, setFavorites] = useState([]);
   const [sortBy, setSortBy] = useState("Highest Rated");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const [bookingInstructor, setBookingInstructor] = useState(null);
   const [chatInstructorId, setChatInstructorId] = useState(null);
@@ -43,7 +44,7 @@ export default function StudentInstructorsAll() {
           rating: i.rating || 0,
           avatar: i.avatar_url,
           availableNow: i.is_online,
-          verified: false,
+          verified: Boolean(i.is_verified),
         }));
         setInstructors(mapped);
       } catch (err) {
@@ -69,12 +70,13 @@ export default function StudentInstructorsAll() {
   );
 
   const filtered = instructors
-    .filter(
-      (i) =>
-        (!onlyAvailable || i.availableNow) &&
-        (selectedCategory === "All" || i.tags.includes(selectedCategory)) &&
-        i.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter((i) => {
+      if (showFavoritesOnly && !favorites.includes(i.id)) return false;
+      if (onlyAvailable && !i.availableNow) return false;
+      if (selectedCategory !== "All" && !i.tags.includes(selectedCategory))
+        return false;
+      return i.name.toLowerCase().includes(searchQuery.toLowerCase());
+    })
     .sort((a, b) => {
       if (sortBy === "Highest Rated") return b.rating - a.rating;
       if (sortBy === "Most Experienced") {
@@ -87,7 +89,14 @@ export default function StudentInstructorsAll() {
   return (
     <StudentLayout>
       <section className="py-10 px-4">
-        <h1 className="text-2xl font-bold mb-6">Find Instructors</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Book or Chat with Instructors
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Request tutorials or private lessons directly.
+          </p>
+        </div>
 
         <InstructorFilters
           categories={categories}
@@ -100,23 +109,31 @@ export default function StudentInstructorsAll() {
           setSearchQuery={setSearchQuery}
           onlyAvailable={onlyAvailable}
           setOnlyAvailable={setOnlyAvailable}
+          showFavoritesOnly={showFavoritesOnly}
+          setShowFavoritesOnly={setShowFavoritesOnly}
         />
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
         {loading ? (
-          <p>Loading instructors...</p>
+          <p className="text-gray-500">Loading instructors...</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((i) => (
-              <InstructorCard
-                key={i.id}
-                instructor={i}
-                isFavorite={favorites.includes(i.id)}
-                onToggleFavorite={() => toggleFavorite(i.id)}
-                onBook={() => setBookingInstructor(i)}
-                onChat={() => setChatInstructorId(i.id)}
-              />
-            ))}
+            {filtered.length ? (
+              filtered.map((i) => (
+                <InstructorCard
+                  key={i.id}
+                  instructor={i}
+                  isFavorite={favorites.includes(i.id)}
+                  onToggleFavorite={() => toggleFavorite(i.id)}
+                  onBook={() => setBookingInstructor(i)}
+                  onChat={() => setChatInstructorId(i.id)}
+                />
+              ))
+            ) : (
+              <p className="col-span-full text-center text-gray-500">
+                No instructors match your filters right now.
+              </p>
+            )}
           </div>
         )}
 

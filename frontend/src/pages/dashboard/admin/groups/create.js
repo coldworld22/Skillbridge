@@ -13,4 +13,6 @@ function CreateGroupPage() {
   );
 }
 
-export default withAuthProtection(CreateGroupPage, ['admin', 'superadmin']);
+export default withAuthProtection(CreateGroupPage, {
+  permissions: ["manage_groups"],
+});

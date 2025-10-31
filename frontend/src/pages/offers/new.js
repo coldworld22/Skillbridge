@@ -5,6 +5,8 @@ import Footer from "@/components/website/sections/Footer";
 import { FaTag } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { createOffer } from "@/services/offerService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 
 const availableTags = ["Urgent", "LiveClass", "Discount", "Flexible", "OneOnOne"];
 
@@ -166,13 +168,11 @@ const CreateOffer = () => {
 };
 
 export default CreateOffer;
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["common"], nextI18NextConfig)),
     },
   };
 }

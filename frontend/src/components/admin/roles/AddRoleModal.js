@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
 
 export default function AddRoleModal({ isOpen, onClose, onSubmit }) {
   const [form, setForm] = useState({ name: "", description: "" });
+  const { t } = useTranslation("dashboard", { keyPrefix: "rolesPage.modals.add" });
 
   useEffect(() => {
     if (isOpen) setForm({ name: "", description: "" });
@@ -22,28 +24,28 @@ export default function AddRoleModal({ isOpen, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg w-full max-w-md">
-        <h2 className="text-lg font-semibold mb-4">Add New Role</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("title")}</h2>
         <input
           type="text"
           name="name"
-          placeholder="Role Name"
+          placeholder={t("namePlaceholder")}
           value={form.name}
           onChange={handleChange}
           className="w-full border p-2 rounded mb-3"
         />
         <textarea
           name="description"
-          placeholder="Description"
+          placeholder={t("descriptionPlaceholder")}
           value={form.description}
           onChange={handleChange}
           className="w-full border p-2 rounded mb-4"
         />
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
-            Cancel
+            {t("cancel")}
           </button>
           <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white rounded">
-            Save
+            {t("save")}
           </button>
         </div>
       </div>

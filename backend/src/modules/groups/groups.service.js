@@ -12,6 +12,7 @@ exports.createGroup = async (data) => {
 };
 
 exports.syncGroupTags = async (groupId, tagNames = []) => {
+  await db("group_tag_map").where({ group_id: groupId }).del();
   if (!tagNames.length) return [];
   const existing = await db("group_tags").whereIn("name", tagNames);
   const existingMap = {};
@@ -115,13 +116,32 @@ exports.addMember = async (groupId, userId, role = "admin") => {
     .first();
 };
 
-exports.requestJoin = async (groupId, userId) => {
+exports.requestJoin = async (groupId, userId, { status = "pending" } = {}) => {
+  const now = db.fn.now();
+  const respondedAt = status === "pending" ? null : now;
+  const insertPayload = {
+    id: uuidv4(),
+    group_id: groupId,
+    user_id: userId,
+    status,
+    responded_at: respondedAt,
+  };
+  const mergePayload = {
+    status,
+    responded_at: respondedAt,
+  };
   const [row] = await db("group_join_requests")
-    .insert({ id: uuidv4(), group_id: groupId, user_id: userId })
+    .insert(insertPayload)
     .onConflict(["group_id", "user_id"])
-    .merge({ status: "pending", responded_at: null })
+    .merge(mergePayload)
     .returning("*");
   return row;
+};
+
+exports.getJoinRequest = async (groupId, userId) => {
+  return db("group_join_requests")
+    .where({ group_id: groupId, user_id: userId })
+    .first();
 };
 
 exports.cancelJoinRequest = async (groupId, userId) => {
@@ -136,6 +156,22 @@ exports.cancelJoinRequest = async (groupId, userId) => {
 exports.countUserGroups = async (userId) => {
   const row = await db("group_members")
     .where({ user_id: userId })
+    .count("id as count")
+    .first();
+  return Number(row?.count || 0);
+};
+
+exports.countMembers = async (groupId) => {
+  const row = await db("group_members")
+    .where({ group_id: groupId })
+    .countDistinct("user_id as count")
+    .first();
+  return Number(row?.count || 0);
+};
+
+exports.countGroupsOwnedByUser = async (userId) => {
+  const row = await db("groups")
+    .where({ creator_id: userId })
     .count("id as count")
     .first();
   return Number(row?.count || 0);
@@ -345,6 +381,8 @@ exports.listJoinRequests = (groupId) => {
       "r.user_id",
       db.raw("COALESCE(u.full_name, '') as name"),
       db.raw("COALESCE(u.email, '') as email"),
+      db.raw("COALESCE(u.avatar_url, '') as avatar"),
+      db.raw("COALESCE(u.role, '') as user_role"),
       db.raw("r.requested_at"),
     )
     .orderBy("r.requested_at", "asc");
@@ -358,10 +396,11 @@ exports.manageJoinRequest = async (id, action) => {
     .update({ status, responded_at: db.fn.now() })
     .returning("*");
   if (!row) return null;
+  let member = null;
   if (status === "approved") {
-    await exports.addMember(row.group_id, row.user_id, "member");
+    member = await exports.addMember(row.group_id, row.user_id, "member");
   }
-  return row;
+  return { request: row, member };
 };
 
 const DEFAULT_PERMISSIONS = {
@@ -381,4 +420,8 @@ exports.updateGroupPermissions = async (groupId, permissions) => {
     .update({ permissions })
     .returning("permissions");
   return row ? row.permissions : permissions;
+};
+
+exports.getJoinRequestById = async (id) => {
+  return db("group_join_requests").where({ id }).first();
 };

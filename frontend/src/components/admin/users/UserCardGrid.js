@@ -17,6 +17,10 @@ export default function UserCardGrid({
   onDeleteUser,
   selectedIds = [],
   onSelectUser,
+  canManage = true,
+  requirePermission,
+  permissionWarning,
+  onUserUpdated,
 }) {
   if (!Array.isArray(users)) {
     logger.warn("⚠️ `users` is not an array:", users);
@@ -47,6 +51,10 @@ export default function UserCardGrid({
             onDelete={onDeleteUser}
             isSelected={selectedIds.includes(user.id)}
             onSelect={onSelectUser}
+            canManage={canManage}
+            requirePermission={requirePermission}
+            permissionWarning={permissionWarning}
+            onUserUpdated={onUserUpdated}
           />
         );
       })}

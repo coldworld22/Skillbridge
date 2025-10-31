@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { askAI } from "@/services/aiService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
+import { toast } from "react-toastify";
 
 export default function AIChatTutorPage() {
   const [models, setModels] = useState([]);
@@ -12,15 +14,18 @@ export default function AIChatTutorPage() {
     const load = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
-        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
-          opts.push({ key: "chatgpt", label: "ChatGPT" });
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
-          opts.push({ key: "deepseek", label: "DeepSeek AI" });
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
-          opts.push({ key: "huggingface", label: "Hugging Face" });
-        setModels(opts);
-        if (opts.length === 1) setSelectedModel(opts[0].key);
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setModels(providers);
+        setSelectedModel(defaultProvider || "");
+        if (!providers.length) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: "AI chat is unavailable. Please configure a provider in the admin dashboard.",
+            },
+          ]);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -30,19 +35,22 @@ export default function AIChatTutorPage() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+    if (!selectedModel) {
+      toast.warning("Select an AI provider before sending a message.");
+      return;
+    }
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
     try {
       const { answer } = await askAI(selectedModel, userMessage.text);
-      const aiReply = { sender: "ai", text: answer };
+      const aiReply = { sender: "ai", text: answer?.trim() || "No answer received." };
       setMessages((prev) => [...prev, aiReply]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: "Error fetching response" },
-      ]);
+      const message = err?.message || "Error fetching response";
+      toast.error(message);
+      setMessages((prev) => [...prev, { sender: "ai", text: message }]);
     }
   };
 
@@ -64,6 +72,11 @@ export default function AIChatTutorPage() {
               {model.label}
             </label>
           ))}
+          {!models.length && (
+            <span className="text-sm text-yellow-300">
+              No AI provider configured.
+            </span>
+          )}
         </div>
 
         {/* Chat History */}

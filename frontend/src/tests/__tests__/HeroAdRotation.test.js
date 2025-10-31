@@ -30,7 +30,11 @@ jest.mock('../../store/appConfigStore', () => {
 });
 jest.mock('../../store/auth/authStore', () => ({
   __esModule: true,
-  default: (selector) => selector({ user: { id: 1, roles: ['student'] } }),
+  default: (selector) =>
+    selector({
+      user: { id: 1, roles: ['student'] },
+      isAuthenticated: () => true,
+    }),
 }));
 jest.mock('../../services/adsService', () => ({
   fetchAds: jest.fn(),

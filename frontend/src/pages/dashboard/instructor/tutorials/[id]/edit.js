@@ -43,14 +43,6 @@ export default function EditTutorialPage() {
         ...parsed,
         language: parsed.language || "",
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
-        allowInstallments: Boolean(
-          parsed.allowInstallments ?? parsed.allow_installments ?? false
-        ),
-        installments: parsed.installments
-          ? String(parsed.installments)
-          : parsed.allowInstallments || parsed.allow_installments
-          ? "2"
-          : "1",
         includedPlans: Array.isArray(parsed.includedPlans)
           ? parsed.includedPlans.map((id) => String(id))
           : Array.isArray(parsed.included_plans)
@@ -85,14 +77,6 @@ export default function EditTutorialPage() {
             ...formatted,
             language: formatted.language || "",
             lessonCount: formatted.chapters?.length || 1,
-            allowInstallments: Boolean(
-              formatted.allowInstallments ?? formatted.allow_installments ?? false
-            ),
-            installments: formatted.installments
-              ? String(formatted.installments)
-              : formatted.allowInstallments || formatted.allow_installments
-              ? "2"
-              : "1",
             includedPlans: Array.isArray(formatted.includedPlans)
               ? formatted.includedPlans.map((id) => String(id))
               : Array.isArray(formatted.included_plans)

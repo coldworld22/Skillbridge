@@ -160,13 +160,23 @@ function AdminBooksPage() {
         setLoading(true);
         setError(null);
         const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
-          if (
-            value === "" ||
-            value === null ||
-            value === undefined ||
-            (Array.isArray(value) && value.length === 0) ||
-            (key === "priceRange" && (value === null || value <= 0))
-          ) {
+          if (value === null || value === undefined) {
+            return acc;
+          }
+          if (Array.isArray(value)) {
+            if (value.length === 0) return acc;
+            acc[key] = value;
+            return acc;
+          }
+          if (typeof value === "string" && value.trim() === "") {
+            return acc;
+          }
+          if (key === "priceRange") {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric) || numeric < 0) {
+              return acc;
+            }
+            acc[key] = numeric;
             return acc;
           }
           acc[key] = value;

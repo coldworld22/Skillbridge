@@ -18,6 +18,7 @@
   "your_cart": "Your Cart",
   "view_cart": "View Cart",
   "loading": "Loading...",
+  "failed_live_session": "Failed to start live session",
   "language_changed": "Language changed",
   "language_changed_to": "Language changed to {{name}}",
   "language_change_failed": "Failed to change language",

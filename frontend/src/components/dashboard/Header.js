@@ -64,7 +64,9 @@ export default function Header() {
   const profileLink =
     userRole === "superadmin" || userRole === "admin"
       ? "/dashboard/admin/profile/edit"
-      : `/dashboard/${userRole}/profile/edit`;
+      : userRole
+      ? `/dashboard/${userRole}/profile/edit`
+      : "/profile/edit";
 
   const handleLogout = async () => {
     try {

@@ -13,9 +13,11 @@ export default function RatingStars({
   className = "",
   showValue = false,
   valueClassName = "text-sm text-gray-300",
+  activeColor = "#FACC15",
+  inactiveColor = "#4B5563",
+  showSuffix = true,
 }) {
   const safe = Math.max(0, Math.min(5, Number(value) || 0));
-  const percent = (safe / 5) * 100;
 
   const Star = ({ color = "currentColor" }) => (
     <svg
@@ -25,36 +27,48 @@ export default function RatingStars({
       height={size}
       fill={color}
       aria-hidden="true"
+      style={{ display: "block" }}
     >
       <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.786 1.401 8.168L12 18.896l-7.335 3.869 1.401-8.168L.132 9.211l8.2-1.193L12 .587z" />
     </svg>
   );
 
+  const renderStar = (index) => {
+    const fillPercent = Math.max(0, Math.min(1, safe - index)) * 100;
+    return (
+      <span
+        key={index}
+        className="relative inline-block"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <Star color={inactiveColor} />
+        {fillPercent > 0 && (
+          <span
+            className="absolute top-0 left-0 h-full overflow-hidden"
+            style={{ width: `${fillPercent}%` }}
+          >
+            <Star color={activeColor} />
+          </span>
+        )}
+      </span>
+    );
+  };
+
   return (
     <div className={`inline-flex items-center ${className}`}>
-      <div className="relative inline-block align-middle" aria-label={`${safe.toFixed(1)} out of 5`}>
-        {/* Base (empty) stars */}
-        <div className="flex gap-0.5 text-gray-500/50">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={`empty-${i}`} />
-          ))}
-        </div>
-        {/* Filled stars overlay */}
-        <div
-          className="absolute top-0 left-0 overflow-hidden text-yellow-400"
-          style={{ width: `${percent}%` }}
-        >
-          <div className="flex gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={`filled-${i}`} />
-            ))}
-          </div>
-        </div>
+      <div
+        className="flex items-center gap-1"
+        aria-label={`${safe.toFixed(1)} out of 5`}
+      >
+        {Array.from({ length: 5 }).map((_, index) => renderStar(index))}
       </div>
       {showValue && (
-        <span className={`ml-2 ${valueClassName}`}>{safe.toFixed(1)} / 5</span>
+        <span className={`ml-2 ${valueClassName}`}>
+          {safe.toFixed(1)}
+          {showSuffix ? " / 5" : ""}
+        </span>
       )}
     </div>
   );
 }
-

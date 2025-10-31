@@ -34,9 +34,12 @@ import { fetchAds as fetchAdBanners } from "@/services/adsService";
 export const loadTutorialStatus = async (tut) => {
   const authState = useAuthStore.getState();
   const userId = authState.user?.id;
-  const role = authState.user?.role;
-  const isStudent =
-    typeof role === "string" && role.toLowerCase() === "student";
+  const userRoles = Array.isArray(authState.user?.roles)
+    ? authState.user.roles
+    : [authState.user?.role].filter(Boolean);
+  const isStudent = userRoles.some(
+    (role) => typeof role === "string" && role.toLowerCase() === "student",
+  );
   let enrolled = false;
   let progressPercent = 0;
   let status = null;
@@ -98,7 +101,12 @@ const TutorialsSection = () => {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const user = useAuthStore((state) => state.user);
-  const isStudent = user?.role?.toLowerCase() === "student";
+  const userRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : [user?.role].filter(Boolean);
+  const isStudent = userRoles.some(
+    (role) => typeof role === "string" && role.toLowerCase() === "student",
+  );
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
@@ -462,7 +470,7 @@ const TutorialsSection = () => {
                         {t("premium_badge")}
                       </div>
                     )}
-                    
+
                     {/* Thumbnail */}
                     <div className="relative h-44 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
@@ -498,41 +506,41 @@ const TutorialsSection = () => {
                         />
                       ) : (
                         <Image
-                          src={tut.thumbnail}
+                          src={tut.thumbnail || "/images/logo.png"}
                           alt={tut.title}
                           width={640}
                           height={256}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        )}
+                      )}
 
-                        {/* Progress bar */}
-                        {enrolled ? (
-                          <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
-                            <div
-                              className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
-                              style={{ width: `${progressPercent}%` }}
-                            ></div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (!user) return router.push('/auth/login');
-                              if (!isStudent) {
-                                return;
-                              }
-                              try {
-                                await enrollInTutorial(tut.id);
-                                const status = await loadTutorialStatus(tut);
-                                setStatusMap((prev) => ({ ...prev, [tut.id]: status }));
-                              } catch {}
-                            }}
-                            className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
-                          >
-                            Enroll
-                          </button>
-                        )}
+                      {/* Progress bar */}
+                      {enrolled ? (
+                        <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
+                          <div
+                            className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
+                            style={{ width: `${progressPercent}%` }}
+                          ></div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!user) return router.push('/auth/login');
+                            if (!isStudent) {
+                              return;
+                            }
+                            try {
+                              await enrollInTutorial(tut.id);
+                              const status = await loadTutorialStatus(tut);
+                              setStatusMap((prev) => ({ ...prev, [tut.id]: status }));
+                            } catch {}
+                          }}
+                          className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
+                        >
+                          Enroll
+                        </button>
+                      )}
                     </div>
 
                     <div className="p-5 space-y-5">

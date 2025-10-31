@@ -35,6 +35,13 @@ For card payments, the checkout uses Stripe Elements to tokenize sensitive detai
 
 If paying via bank transfer or another offline method, students may need to upload a payment receipt. Accepted formats are JPG, PNG or PDF files up to 5 MB.
 
+### Installment Payments for Online Classes
+- Installments are available only for online classes where the instructor enabled the option.
+- Checkout automatically splits the class price into two equal payments; the first installment is charged immediately.
+- The second installment becomes due halfway through the class schedule (minimum reminder gap of 7 days, default 14 if no schedule is provided).
+- Students, instructors and administrators receive a notification on the due date so the remaining payment can be collected.
+- Subsequent installment payments reuse the standard checkout flow once the reminder is received.
+
 ## 6. Order & Invoicing
 - Administrators can view orders under `/dashboard/admin/orders`.
 - Students can download invoices from `/dashboard/student/invoices`.
@@ -48,4 +55,3 @@ Once payment is confirmed, students appear in the class's roster and gain access
 - Certificate eligibility when applicable.
 
 Optional enhancements include guest checkout, coupon codes, a wallet/credits system and automated reminders for upcoming classes.
-

@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { parseAvailabilitySlots } = require("../users/instructor/instructorAvailability.util");
 
 // Convert comma separated or JSON strings to arrays
 const parseArrayField = (val) => {
@@ -46,10 +47,25 @@ exports.getPublicInstructors = async () => {
     )
     .orderBy("users.created_at", "desc");
 
+  const directRatingsMap = new Map();
+  if (await db.schema.hasTable("instructor_reviews")) {
+    const directRatings = await db("instructor_reviews as ir")
+      .groupBy("ir.instructor_id")
+      .select("ir.instructor_id", db.raw("AVG(ir.rating) as direct_rating"));
+
+    directRatings.forEach(({ instructor_id, direct_rating }) => {
+      if (direct_rating !== null && direct_rating !== undefined) {
+        directRatingsMap.set(instructor_id, parseFloat(direct_rating));
+      }
+    });
+  }
+
   return rows.map((r) => {
     const ratings = [];
     if (r.class_rating) ratings.push(parseFloat(r.class_rating));
     if (r.tutorial_rating) ratings.push(parseFloat(r.tutorial_rating));
+    const direct = directRatingsMap.get(r.id);
+    if (typeof direct === "number") ratings.push(direct);
     const avg = ratings.length
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : 0;
@@ -62,17 +78,25 @@ exports.getPublicInstructors = async () => {
 };
 
 exports.getPublicInstructor = async (id) => {
-  const classRatings = db("class_reviews as cr")
+  const classRatings = await db("class_reviews as cr")
     .join("online_classes as oc", "cr.class_id", "oc.id")
     .where("oc.instructor_id", id)
     .avg({ rating: "cr.rating" })
     .first();
 
-  const tutorialRatings = db("tutorial_reviews as tr")
+  const tutorialRatings = await db("tutorial_reviews as tr")
     .join("tutorials as t", "tr.tutorial_id", "t.id")
     .where("t.instructor_id", id)
     .avg({ rating: "tr.rating" })
     .first();
+
+  let directRatings = null;
+  if (await db.schema.hasTable("instructor_reviews")) {
+    directRatings = await db("instructor_reviews")
+      .where("instructor_id", id)
+      .avg({ rating: "rating" })
+      .first();
+  }
 
   const row = await db("users")
     .join("instructor_profiles", "users.id", "instructor_profiles.user_id")
@@ -100,6 +124,8 @@ exports.getPublicInstructor = async (id) => {
       ratings.push(parseFloat(classRatings.rating));
     if (tutorialRatings && tutorialRatings.rating)
       ratings.push(parseFloat(tutorialRatings.rating));
+    if (directRatings && directRatings.rating !== null && directRatings.rating !== undefined)
+      ratings.push(parseFloat(directRatings.rating));
     row.rating = ratings.length
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : 0;
@@ -112,13 +138,5 @@ exports.getInstructorAvailability = async (id) => {
     .where({ user_id: id })
     .select("availability_slots");
 
-  let availability = [];
-  if (profile && profile.availability_slots) {
-    try {
-      availability = JSON.parse(profile.availability_slots);
-    } catch (_) {
-      availability = [];
-    }
-  }
-  return availability;
+  return parseAvailabilitySlots(profile?.availability_slots);
 };

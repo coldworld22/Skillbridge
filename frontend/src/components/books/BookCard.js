@@ -52,15 +52,27 @@ export default function BookCard({
     inactive: "bg-gray-100 text-gray-800",
   };
 
-  const finalDownloadUrl = downloadUrl ||
+  const finalDownloadUrl =
+    downloadUrl ||
+    book.download_url ||
+    book.pdf_url ||
     (book.id ? `${API_BASE_URL}/library/download/${book.id}` : null);
 
+  const rawAuthor =
+    typeof book.author === "string" && book.author.trim()
+      ? book.author
+      : book.uploaded_by?.name;
+  const authorName =
+    typeof rawAuthor === "string" && rawAuthor.trim() && rawAuthor.trim().toLowerCase() !== "unknown"
+      ? rawAuthor.trim()
+      : null;
+
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow relative">
+    <div className="relative flex h-full w-full max-w-xs flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-center shadow-sm transition-shadow hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 sm:max-w-sm">
       {onSelect && (
         <input
           type="checkbox"
-          className="absolute top-2 left-2"
+          className="absolute left-3 top-3"
           checked={isSelected}
           onChange={onSelect}
         />
@@ -85,48 +97,54 @@ export default function BookCard({
           <FiShoppingCart />
         </button>
       )}
-      <Image
-        src={coverSrc}
-        alt={book.title}
-        width={400}
-        height={160}
-        loading="lazy"
-        className="w-full h-40 object-cover"
-        onError={() => {
-          if (coverSrc !== "/images/default-book-cover.jpg") {
-            setCoverSrc("/images/default-book-cover.jpg");
-          }
-        }}
-      />
-      <div className="p-4 text-gray-900 dark:text-gray-100">
-        <h3 className="font-semibold mb-1 line-clamp-1 text-gray-900 dark:text-gray-100">{book.title || book.name}</h3>
-        {(book.uploaded_by?.name || book.author) && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            {t("by_author", { author: book.uploaded_by?.name || book.author })}
+      <div className="flex flex-col gap-4">
+        <Image
+          src={coverSrc}
+          alt={book.title}
+          width={400}
+          height={200}
+          loading="lazy"
+          className="h-48 w-full rounded-xl object-cover"
+          onError={() => {
+            if (coverSrc !== "/images/default-book-cover.jpg") {
+              setCoverSrc("/images/default-book-cover.jpg");
+            }
+          }}
+        />
+        <div className="flex flex-1 flex-col items-center gap-2 text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold leading-snug line-clamp-2">
+            {book.title || book.name}
+          </h3>
+          {authorName && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t("by_author", { author: authorName })}
+            </p>
+          )}
+          {book.category_name && (
+            <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {book.category_name}
+            </p>
+          )}
+          {book.rating != null && (
+            <div>
+              <RatingStars value={Number(book.rating)} showValue valueClassName="text-xs text-yellow-500 dark:text-yellow-400" />
+            </div>
+          )}
+          <p className="text-base font-semibold text-blue-600 dark:text-blue-300">
+            {formatCurrency(book.price)}
           </p>
-        )}
-        {book.category_name && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            {book.category_name}
-          </p>
-        )}
-        {book.rating != null && (
-          <div className="mb-2">
-            <RatingStars value={Number(book.rating)} showValue valueClassName="text-xs text-yellow-500 dark:text-yellow-400" />
-          </div>
-        )}
-        <p className="text-sm text-gray-900 dark:text-gray-100 mb-1">{formatCurrency(book.price)}</p>
-        {owned && (
-          <p className="mt-1 mb-2 text-xs font-medium text-green-600 dark:text-green-400">
-            {t("book_owned_message", {
-              defaultValue: "Already in your library",
-            })}
-          </p>
-        )}
-        <div className="flex gap-2">
+          {owned && (
+            <p className="text-xs font-medium uppercase text-green-600 dark:text-green-400">
+              {t("book_owned_message", {
+                defaultValue: "Already in your library",
+              })}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
-            className="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
             aria-label={t("view")}
           >
             <FiEye />
@@ -137,7 +155,7 @@ export default function BookCard({
               href={finalDownloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition-colors hover:bg-indigo-100"
               aria-label={t("read")}
             >
               <FiBookOpen />
@@ -148,7 +166,7 @@ export default function BookCard({
             <button
               type="button"
               onClick={onAddToWishlist}
-              className="p-2 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-50 text-pink-600 transition-colors hover:bg-pink-100"
               aria-label={t("wishlist")}
             >
               <FiHeart />
@@ -159,7 +177,7 @@ export default function BookCard({
             <button
               type="button"
               onClick={onAddToCart}
-              className="p-2 rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-50 text-yellow-600 transition-colors hover:bg-yellow-100"
               aria-label={t("add_to_cart")}
             >
               <FiShoppingCart />
@@ -169,7 +187,7 @@ export default function BookCard({
           {onEditLink && (
             <Link
               href={onEditLink}
-              className="p-2 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-green-600 transition-colors hover:bg-green-100"
               aria-label={t("edit")}
             >
               <FiEdit />
@@ -180,7 +198,7 @@ export default function BookCard({
             <button
               type="button"
               onClick={onDelete}
-              className="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600 transition-colors hover:bg-red-100"
               aria-label={t("delete")}
             >
               <FiTrash2 />

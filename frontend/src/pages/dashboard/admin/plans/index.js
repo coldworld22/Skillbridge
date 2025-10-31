@@ -128,7 +128,7 @@ export default function PlansIndex() {
             <span>{selectedIds.length} {t('selected')}</span>
             <div className="flex gap-2">
               <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">{t('delete_selected')}</button>
-              <button onClick={clearAll} className="text-sm text-gray-500 hover:text-black">Clear</button>
+              <button onClick={clearAll} className="text-sm text-gray-500 hover:text-black">{t('clear_selection')}</button>
             </div>
           </div>
         )}
@@ -175,7 +175,7 @@ export default function PlansIndex() {
                   <div>
                     <h2 className="font-bold text-lg">{plan.name}</h2>
                     <p className="text-sm text-gray-600">
-                      Monthly: {plan.price_monthly} {plan.currency} | Yearly: {plan.price_yearly} {plan.currency}
+                      {t('monthly_price_label', { price: plan.price_monthly, currency: plan.currency })} | {t('yearly_price_label', { price: plan.price_yearly, currency: plan.currency })}
                     </p>
                   </div>
                 </div>

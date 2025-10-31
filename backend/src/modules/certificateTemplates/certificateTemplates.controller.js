@@ -1,6 +1,7 @@
 const service = require("./certificateTemplates.service");
 const { sendSuccess } = require("../../utils/response");
 const path = require("path");
+const configService = require("./certificateTemplateConfig.service");
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
@@ -88,6 +89,24 @@ exports.upload = async (req, res, next) => {
     // static file middleware serves uploaded certificate assets.
     const url = `/api/uploads/certificateTemplates/${sanitizedFilename}`;
     sendSuccess(res, { url });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getDefaults = async (_req, res, next) => {
+  try {
+    const settings = await configService.getSettings();
+    sendSuccess(res, settings);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateDefaults = async (req, res, next) => {
+  try {
+    const settings = await configService.updateSettings(req.body || {});
+    sendSuccess(res, settings);
   } catch (err) {
     next(err);
   }

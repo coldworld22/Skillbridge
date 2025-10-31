@@ -28,7 +28,7 @@ const InstructorOfferDashboard = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetchOffers()
+    fetchOffers({ includeMine: true })
       .then((data) => {
         const mapped = data.map((o) => ({
           id: o.id,
@@ -41,8 +41,14 @@ const InstructorOfferDashboard = () => {
           title: o.title,
           price: o.budget ? `$${o.budget}` : "Not specified",
           duration: o.timeframe || "Flexible",
-          status: o.status || "open",
-          tags: o.tags || [],
+          status: (o.status || "open").toLowerCase(),
+          tags: Array.isArray(o.tags)
+            ? o.tags
+                .map((tag) =>
+                  typeof tag === "string" ? tag : tag?.name
+                )
+                .filter(Boolean)
+            : [],
           date: o.created_at
             ? new Date(o.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -158,9 +164,10 @@ const InstructorOfferDashboard = () => {
       {offer.type === "student" && (
         <div className="mt-5">
           <button
-            onClick={() =>
-              router.push(`/messages?to=${offer.userId}`)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/messages?to=${offer.userId}`);
+            }}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition"
           >
             Message Student

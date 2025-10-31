@@ -10,8 +10,11 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
-const { getActiveStudentPlanId } = require("../plans/subscription.helper");
+const {
+  getActiveStudentSubscription,
+} = require("../plans/subscription.helper");
 const walletService = require("../payouts/wallet.service");
+const { creditInstructorSubscription } = require("../payments/helpers/wallet");
 const planRevenue = require("../payments/helpers/planRevenue");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
@@ -81,6 +84,46 @@ const parseJsonArray = (value, fallback = []) => {
   return fallback;
 };
 
+const normalizeBookRow = (row) => {
+  if (!row) return row;
+  const normalized = { ...row };
+
+  if (Object.prototype.hasOwnProperty.call(normalized, "included_plans")) {
+    normalized.included_plans = parseJsonArray(normalized.included_plans);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, "preview_pages")) {
+    normalized.preview_pages =
+      normalized.preview_pages === null
+        ? null
+        : parseJsonArray(normalized.preview_pages);
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(normalized, "price") &&
+    normalized.price !== undefined &&
+    normalized.price !== null
+  ) {
+    const priceNumber = Number(normalized.price);
+    normalized.price = Number.isNaN(priceNumber)
+      ? normalized.price
+      : priceNumber;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(normalized, "rating") &&
+    normalized.rating !== undefined &&
+    normalized.rating !== null
+  ) {
+    const ratingNumber = Number(normalized.rating);
+    normalized.rating = Number.isNaN(ratingNumber)
+      ? normalized.rating
+      : ratingNumber;
+  }
+
+  return normalized;
+};
+
 exports.createBook = async (data) => {
   const insertData = { ...data };
   insertData.included_plans = serializeJsonArray(insertData.included_plans, {
@@ -99,10 +142,7 @@ exports.createBook = async (data) => {
   }
 
   const [row] = await db("books").insert(insertData).returning("*");
-  row.included_plans = parseJsonArray(row.included_plans);
-  row.preview_pages =
-    row.preview_pages === null ? null : parseJsonArray(row.preview_pages);
-  return row;
+  return normalizeBookRow(row);
 };
 
 const { parsePagination } = require("../../utils/pagination");
@@ -124,7 +164,9 @@ exports.listBooks = async (params = {}) => {
     limit: params.perPage,
   });
 
-  const query = db("books as b");
+  const query = db("books as b")
+    .select("b.*", "c.name as category_name")
+    .leftJoin("categories as c", "b.category_id", "c.id");
 
   if (search) {
     query.where(function () {
@@ -164,6 +206,12 @@ exports.listBooks = async (params = {}) => {
     case "price-low":
       query.orderBy("b.price", "asc");
       break;
+    case "price":
+      query.orderBy("b.price", "asc");
+      break;
+    case "rating":
+      query.orderByRaw("b.rating DESC NULLS LAST");
+      break;
     default:
       query.orderBy("b.created_at", "desc");
   }
@@ -178,9 +226,10 @@ exports.listBooks = async (params = {}) => {
   const total = Number(count) || 0;
 
   const books = await query.clone().offset(offset).limit(perPage);
+  const normalizedBooks = books.map(normalizeBookRow);
 
   return {
-    data: books,
+    data: normalizedBooks,
     meta: {
       page,
       perPage,
@@ -190,7 +239,10 @@ exports.listBooks = async (params = {}) => {
   };
 };
 
-exports.getBookById = (id) => db("books").where({ id }).first();
+exports.getBookById = async (id) => {
+  const row = await db("books").where({ id }).first();
+  return row ? normalizeBookRow(row) : row;
+};
 
 exports.addBookTags = async (bookId, tagIds, trx = db) => {
   if (!tagIds.length) return;
@@ -311,17 +363,12 @@ exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
     }
   }
   const [row] = await db("books").where({ id }).update(updateData).returning("*");
-  if (row) {
-    row.included_plans = parseJsonArray(row.included_plans);
-    row.preview_pages =
-      row.preview_pages === null ? null : parseJsonArray(row.preview_pages);
-  }
-  return row;
+  return row ? normalizeBookRow(row) : row;
 };
 
 exports.updateBookStatus = async (id, status) => {
   const [row] = await db("books").where({ id }).update({ status }).returning("*");
-  return row;
+  return row ? normalizeBookRow(row) : row;
 };
 
 exports.deleteBook = (id) => db("books").where({ id }).del();
@@ -372,10 +419,13 @@ exports.removeFromCart = (studentId, bookId) =>
   db('book_cart').where({ student_id: studentId, book_id: bookId }).del();
 
 exports.checkout = async (studentId) => {
-  const bankMethod = await paymentMethodsService.getByType('bank');
-  if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
+  const bankMethod = await paymentMethodsService.getByType("bank");
+  if (!bankMethod)
+    throw new AppError("Bank payment method not configured", 400);
 
-  const activePlanId = await getActiveStudentPlanId(studentId);
+  const activeSubscription = await getActiveStudentSubscription(studentId);
+  const activePlanId = activeSubscription?.plan_id || null;
+  const activeSubscriptionId = activeSubscription?.subscription_id || null;
 
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
@@ -394,10 +444,11 @@ exports.checkout = async (studentId) => {
       throw new AppError(`Book already purchased: ${ids}`, 409);
     }
 
-    const books = await trx('books')
+    const booksRaw = await trx('books')
       .whereIn('id', bookIds)
       .where('status', 'active')
       .select('id', 'price', 'included_plans', 'instructor_id');
+    const books = booksRaw.map(normalizeBookRow);
 
     if (books.length !== bookIds.length) {
       const validIds = books.map((b) => b.id);
@@ -412,31 +463,40 @@ exports.checkout = async (studentId) => {
       settings = null;
     }
 
+    const planLookupKey = activePlanId ? String(activePlanId) : null;
     const payments = [];
     for (const b of books) {
-      const bookItemId = b?.id === undefined || b?.id === null ? b.id : String(b.id);
-      const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
-      const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
+      const bookItemId =
+        b?.id === undefined || b?.id === null ? b.id : String(b.id);
+      const includedPlansRaw = Array.isArray(b.included_plans)
+        ? b.included_plans
+        : parseJsonArray(b.included_plans, []);
+      const includedPlans = includedPlansRaw.map((plan) => String(plan));
+      const coveredBySubscription =
+        Boolean(planLookupKey) && includedPlans.includes(planLookupKey);
 
-      if (coveredBySubscription) {
-        const usage = await trx('plan_usage_metrics')
+      if (coveredBySubscription && activeSubscriptionId) {
+        const usage = await trx("plan_usage_metrics")
           .where({
             plan_id: activePlanId,
+            subscription_id: activeSubscriptionId,
             item_type: 'book',
             item_id: bookItemId,
           })
           .first();
         if (usage) {
-          await trx('plan_usage_metrics')
+          await trx("plan_usage_metrics")
             .where({
               plan_id: activePlanId,
+              subscription_id: activeSubscriptionId,
               item_type: 'book',
               item_id: bookItemId,
             })
             .update({ usage_count: usage.usage_count + 1 });
         } else {
-          await trx('plan_usage_metrics').insert({
+          await trx("plan_usage_metrics").insert({
             plan_id: activePlanId,
+            subscription_id: activeSubscriptionId,
             item_type: 'book',
             item_id: bookItemId,
             usage_count: 1,
@@ -447,7 +507,8 @@ exports.checkout = async (studentId) => {
           activePlanId,
           b.id,
           trx,
-          'book'
+          'book',
+          activeSubscriptionId
         );
         if (amount > 0 && b.instructor_id) {
           await walletService.increment(b.instructor_id, amount, trx);
@@ -470,6 +531,34 @@ exports.checkout = async (studentId) => {
           book_id: b.id,
           price_paid: 0,
         });
+
+        payments.push(payment);
+        continue;
+      } else if (coveredBySubscription) {
+        const [payment] = await trx('payments')
+          .insert({
+            id: uuidv4(),
+            user_id: studentId,
+            item_type: 'book',
+            item_id: bookItemId,
+            amount: 0,
+            status: PAYMENT_STATUS.PAID,
+            source: 'subscription',
+          })
+          .returning('*');
+
+        await trx('book_purchases').insert({
+          student_id: studentId,
+          book_id: b.id,
+          price_paid: 0,
+        });
+
+        await creditInstructorSubscription(
+          'book',
+          bookItemId,
+          activePlanId,
+          trx
+        );
 
         payments.push(payment);
         continue;
@@ -525,3 +614,13 @@ exports.addToWishlist = async (studentId, bookId) => {
 
 exports.removeFromWishlist = (studentId, bookId) =>
   db('book_wishlist').where({ student_id: studentId, book_id: bookId }).del();
+
+exports.getWishlist = async (studentId) => {
+  const rows = await db('book_wishlist as w')
+    .join('books as b', 'w.book_id', 'b.id')
+    .where('w.student_id', studentId)
+    .select('b.*')
+    .orderBy('w.created_at', 'desc');
+
+  return rows.map(normalizeBookRow);
+};

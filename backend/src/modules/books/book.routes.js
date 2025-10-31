@@ -43,7 +43,7 @@ router.put(
 router.patch(
   "/:id/status",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   validate({ body: validation.updateBookStatus }),
   controller.updateBookStatus
 );
@@ -55,6 +55,12 @@ router.post(
   controller.updateCart
 );
 router.post("/checkout", verifyToken, isStudent, controller.checkout);
+router.get(
+  "/wishlist",
+  verifyToken,
+  isStudent,
+  controller.listWishlist
+);
 router.post(
   "/wishlist",
   verifyToken,

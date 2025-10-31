@@ -30,6 +30,7 @@ export default function CreateAdPage() {
         checkTitle={checkAdTitle}
         submitLabel={t("submit", { defaultValue: "Submit" })}
         tPrefix="adsCreatePage"
+        requireTargetRoles={false}
       />
     </AdminLayout>
   );

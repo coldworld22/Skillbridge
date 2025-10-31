@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, PlusCircle, PenSquare, Trash2 } from "lucide-react";
-import useAuthStore from "@/store/auth/authStore";
+import usePermission from "@/hooks/usePermission";
 import PermissionAssignment from "./PermissionAssignment";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
@@ -12,14 +12,17 @@ import {
   updateRole,
   deleteRole,
 } from "@/services/admin/roleService";
+import { useTranslation } from "next-i18next";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [editRole, setEditRole] = useState(null);
-  const { user } = useAuthStore();
-  const canManage = user?.permissions?.includes("manage_roles");
+  const { can, requirePermission } = usePermission();
+  const canManage = can("manage_roles");
+  const { t } = useTranslation("dashboard", { keyPrefix: "rolesPage" });
+  const manageWarning = t("messages.noPermissionManage");
 
   useEffect(() => {
     const loadRoles = async () => {
@@ -30,14 +33,14 @@ export default function RoleManagement() {
           const firstRole = await fetchRoleById(data[0].id);
           setSelectedRole(firstRole);
         }
-        toast.success("Roles loaded");
+        toast.success(t("messages.loadSuccess"));
       } catch (error) {
         console.error(error);
-        toast.error("Failed to load roles");
+        toast.error(t("messages.loadError"));
       }
     };
     loadRoles();
-  }, []);
+  }, [t]);
 
   const handleSelect = async (role) => {
     const detailed = await fetchRoleById(role.id);
@@ -45,42 +48,49 @@ export default function RoleManagement() {
   };
 
   const handleAddRole = async (payload) => {
-    if (!canManage) return;
+    if (!requirePermission("manage_roles", manageWarning)) {
+      return;
+    }
     try {
       const newRole = await createRole(payload);
       setRoles((r) => [...r, newRole]);
       setShowAdd(false);
-      toast.success("Role added");
+      toast.success(t("messages.addSuccess"));
     } catch (error) {
       console.error(error);
-      toast.error("Failed to add role");
+      toast.error(t("messages.addError"));
     }
   };
 
   const handleUpdateRole = async (payload) => {
-    if (!canManage) return;
+    if (!requirePermission("manage_roles", manageWarning)) {
+      return;
+    }
     try {
       const updated = await updateRole(editRole.id, payload);
       setRoles((r) => r.map((ro) => (ro.id === updated.id ? updated : ro)));
       setEditRole(null);
       if (selectedRole?.id === updated.id) setSelectedRole(updated);
-      toast.success("Role updated");
+      toast.success(t("messages.updateSuccess"));
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update role");
+      toast.error(t("messages.updateError"));
     }
   };
 
   const handleDeleteRole = async (id) => {
-    if (!canManage || !confirm("Delete this role?")) return;
+    if (!requirePermission("manage_roles", manageWarning)) {
+      return;
+    }
+    if (!confirm(t("list.confirmDelete"))) return;
     try {
       await deleteRole(id);
       setRoles((r) => r.filter((ro) => ro.id !== id));
       if (selectedRole?.id === id) setSelectedRole(null);
-      toast.success("Role deleted");
+      toast.success(t("messages.deleteSuccess"));
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete role");
+      toast.error(t("messages.deleteError"));
     }
   };
 
@@ -88,14 +98,14 @@ export default function RoleManagement() {
     <div className="flex space-x-8">
       <div className="w-1/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
         <h3 className="font-semibold text-xl flex items-center mb-4 text-gray-800">
-          <ShieldCheck className="mr-2 text-yellow-500" /> Roles
+          <ShieldCheck className="mr-2 text-yellow-500" /> {t("list.heading")}
         </h3>
         {canManage && (
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center text-sm mb-4 bg-yellow-100 hover:bg-yellow-200 rounded-xl py-2 px-3"
           >
-            <PlusCircle className="w-4 h-4 mr-1 text-yellow-600" /> Add Role
+            <PlusCircle className="w-4 h-4 mr-1 text-yellow-600" /> {t("list.add")}
           </button>
         )}
         <ul className="space-y-2">

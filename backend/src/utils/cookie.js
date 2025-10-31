@@ -15,6 +15,13 @@ const refreshCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+const accessCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+  maxAge: 15 * 60 * 1000,
+};
+
 // CSRF token needs to be readable by the client so `httpOnly` is false, but we
 // still apply the same domain, `secure` and `sameSite` rules as the refresh
 // token to ensure it is available across subdomains in production.
@@ -40,6 +47,7 @@ const cookieDomain =
 if (cookieDomain) {
   refreshCookieOptions.domain = cookieDomain;
   csrfCookieOptions.domain = cookieDomain;
+  accessCookieOptions.domain = cookieDomain;
 }
 
-module.exports = { refreshCookieOptions, csrfCookieOptions };
+module.exports = { refreshCookieOptions, csrfCookieOptions, accessCookieOptions };

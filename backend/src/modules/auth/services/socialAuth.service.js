@@ -100,11 +100,41 @@ exports.loginOrRegister = async ({
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
 
-  await userModel.updateUser(user.id, {
+  const now = new Date();
+  const loginUpdate = {
     is_online: true,
-    updated_at: new Date(),
-  });
-  user.is_online = true;
+    updated_at: now,
+    last_login_at: now,
+  };
+
+  try {
+    const [updatedUser] = await db("users")
+      .where({ id: user.id })
+      .update(loginUpdate)
+      .returning("*");
+    if (updatedUser) {
+      user = { ...user, ...updatedUser };
+    } else {
+      user = { ...user, ...loginUpdate };
+    }
+  } catch (err) {
+    if (err.code === "42703") {
+      const [fallback] = await db("users")
+        .where({ id: user.id })
+        .update({
+          is_online: true,
+          updated_at: now,
+        })
+        .returning("*");
+      if (fallback) {
+        user = { ...user, ...fallback };
+      } else {
+        user = { ...user, is_online: true, updated_at: now };
+      }
+    } else {
+      throw err;
+    }
+  }
 
   await notificationService.createNotification({
     user_id: user.id,

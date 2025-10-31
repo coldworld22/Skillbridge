@@ -40,10 +40,10 @@ const useAdminStore = create(
       },
 
       // ✅ Change password
-      changePassword: async (adminId, newPassword) => {
+      changePassword: async ({ currentPassword, newPassword }) => {
         set({ isLoading: true, error: null });
         try {
-          await changeAdminPassword(adminId, newPassword);
+          await changeAdminPassword({ currentPassword, newPassword });
           set({ isLoading: false });
           return true;
         } catch (err) {

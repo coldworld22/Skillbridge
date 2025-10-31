@@ -16,10 +16,11 @@ const storage = multer.diskStorage({
 const fileFilter = (_req, file, cb) => {
   const fileTypes = {
     file: ["image/jpeg", "image/png", "application/pdf"],
-    audio: ["audio/mpeg", "audio/wav"],
+    audio: ["audio/mpeg", "audio/wav", "audio/webm", "audio/ogg"],
   };
   const allowed = fileTypes[file.fieldname] || [];
-  if (allowed.includes(file.mimetype)) return cb(null, true);
+  const matches = allowed.some((type) => file.mimetype === type || file.mimetype?.startsWith(`${type};`));
+  if (matches) return cb(null, true);
   const err = new Error("Invalid file type");
   err.status = 400;
   cb(err);

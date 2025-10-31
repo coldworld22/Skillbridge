@@ -1,4 +1,8 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import nextI18NextConfig from './next-i18next.config.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const resolveDefaultApiBase = () => {
@@ -69,7 +73,10 @@ const securityHeaders = isProduction
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
-      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      {
+        key: 'Permissions-Policy',
+        value: 'microphone=(self), camera=(), geolocation=()',
+      },
     ]
   : [];
 const nextConfig = {
@@ -118,6 +125,7 @@ const nextConfig = {
   experimental: {
     largePageDataBytes: 256 * 1024,
   },
+  outputFileTracingRoot: path.join(__dirname),
   eslint: {
     ignoreDuringBuilds: true,
   },

@@ -13,6 +13,7 @@ import {
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
+import usePermission from "@/hooks/usePermission";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import {
@@ -46,7 +47,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const canManageRules = user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
+  const { can, requirePermission } = usePermission();
+  const canManageClasses = can('manage_online_classes');
+  const canManageRules = can('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     setClassList(classes);
@@ -119,6 +122,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
 
   
   const handleStatusChange = async (id, action, reason = "") => {
+    if (!requirePermission('manage_online_classes', 'You do not have permission to manage classes.')) {
+      return;
+    }
     const target = classList.find((c) => c.id === id);
     if (!target) {
       toast.error(t('class_not_found', { defaultValue: 'Class not found.' }));
@@ -208,6 +214,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   };
 
   const handleDeleteClass = async (id) => {
+    if (!requirePermission('manage_online_classes', 'You do not have permission to manage classes.')) {
+      return;
+    }
     try {
       await deleteAdminClass(id);
       setClassList(prev => prev.filter(cls => cls.id !== id));
@@ -350,16 +359,28 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button
-                    onClick={() => handleStatusChange(cls.id, 'toggle')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                  {canManageClasses ? (
+                    <button
+                      onClick={() => handleStatusChange(cls.id, 'toggle')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                          cls.publishStatus === 'published'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                        }`}
+                    >
+                      {cls.publishStatus === 'published' ? 'Published' : 'Draft'}
+                    </button>
+                  ) : (
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
                         cls.publishStatus === 'published'
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
                       }`}
-                  >
-                    {cls.publishStatus === 'published' ? 'Published' : 'Draft'}
-                  </button>
+                    >
+                      {cls.publishStatus === 'published' ? 'Published' : 'Draft'}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   {cls.approvalStatus === 'Pending' ? (
@@ -391,21 +412,25 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   )}
                 </td>
                 <td className="px-6 py-4 text-right space-x-1 space-y-1">
-                  <button title="Approve Class"
-                    onClick={() => handleStatusChange(cls.id, 'approve')}
-                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaCheck className="w-4 h-4" />
-                  </button>
-                  <button title="Reject Class"
-                    onClick={() => { setModalClass(cls); setModalType('reject'); setRejectionReason(''); }}
-                    className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaTimes className="w-4 h-4" />
-                  </button>
-                  <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} title="Manage Class">
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
-                      <FaEdit className="w-4 h-4" />
-                    </button>
-                  </Link>
+                  {canManageClasses && (
+                    <>
+                      <button title="Approve Class"
+                        onClick={() => handleStatusChange(cls.id, 'approve')}
+                        className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
+                        <FaCheck className="w-4 h-4" />
+                      </button>
+                      <button title="Reject Class"
+                        onClick={() => { setModalClass(cls); setModalType('reject'); setRejectionReason(''); }}
+                        className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
+                        <FaTimes className="w-4 h-4" />
+                      </button>
+                      <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} title="Manage Class">
+                        <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                      </Link>
+                    </>
+                  )}
                   {canManageRules && (
                     <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} title="Manage Rules">
                       <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow">
@@ -413,11 +438,13 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                       </button>
                     </Link>
                   )}
-                  <button title="Delete Class"
-                    onClick={() => { setModalClass(cls); setModalType('delete'); }}
-                    className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaTrash className="w-4 h-4" />
-                  </button>
+                  {canManageClasses && (
+                    <button title="Delete Class"
+                      onClick={() => { setModalClass(cls); setModalType('delete'); }}
+                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  )}
                   <Link href={`/dashboard/admin/online-classes/${cls.id}/students`} title="View Enrolled Students">
                     <button className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow">
                       <FaUserGraduate className="w-4 h-4" />

@@ -14,6 +14,7 @@ jest.mock('../src/modules/groups/groups.service', () => ({
   getGroupPermissions: jest.fn(),
   getGroupById: jest.fn(),
   listMembers: jest.fn(),
+  getJoinRequestById: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({

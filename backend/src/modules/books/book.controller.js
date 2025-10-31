@@ -123,10 +123,8 @@ exports.createBook = catchAsync(async (req, res) => {
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
-  const result = await service.listBooks({
-    ...req.query,
-    status: req.query.status || "active",
-  });
+  const filters = { ...req.query, status: "active" };
+  const result = await service.listBooks(filters);
   sendSuccess(res, result.data, "Books fetched", result.meta);
 });
 
@@ -183,10 +181,9 @@ exports.updateBook = catchAsync(async (req, res) => {
   try {
     const existing = await service.getBookById(req.params.id);
     if (!existing) throw new AppError("Book not found", 404);
-    if (
-      !isAdminRole(req.user.roles || req.user.role) &&
-      existing.instructor_id !== req.user.id
-    ) {
+    const roles = req.user.roles || req.user.role;
+    const admin = isAdminRole(roles);
+    if (!admin && existing.instructor_id !== req.user.id) {
       throw new AppError("Access denied", 403);
     }
 
@@ -207,6 +204,11 @@ exports.updateBook = catchAsync(async (req, res) => {
       }
     }
     delete data.is_free;
+
+    if (!admin) {
+      delete data.status;
+      delete data.instructor_id;
+    }
 
     if (req.files?.cover_image?.[0]) {
       data.cover_image_url =
@@ -424,4 +426,9 @@ exports.removeWishlist = catchAsync(async (req, res) => {
   if (book.status !== 'active') throw new AppError('Book is not active', 400);
   await service.removeFromWishlist(req.user.id, req.body.bookId);
   sendSuccess(res, null, 'Removed from wishlist');
+});
+
+exports.listWishlist = catchAsync(async (req, res) => {
+  const books = await service.getWishlist(req.user.id);
+  sendSuccess(res, books, 'Wishlist fetched');
 });

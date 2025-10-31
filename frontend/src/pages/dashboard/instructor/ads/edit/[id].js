@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -15,7 +15,8 @@ export default function EditAdPage() {
   const { id } = router.query;
   const { t } = useTranslation("dashboard", { keyPrefix: "adsEditPage" });
   const user = useAuthStore((s) => s.user);
-  const planKey = user?.plan || "basic";
+  const rawPlanKey =
+    user?.plan_slug || user?.plan?.slug || user?.plan || "basic";
   const [planFeatures, setPlanFeatures] = useState(null);
   const [ad, setAd] = useState(null);
 
@@ -33,11 +34,40 @@ export default function EditAdPage() {
     }
   }, [id, router]);
 
-  const allowBrandingEnabled =
-    planFeatures?.[planKey]?.allowBranding ?? false;
+  const canonicalize = (value) =>
+    value?.toString().toLowerCase().replace(/[^a-z0-9]/g, "") || "";
 
-  const maxAdDuration = planFeatures?.[planKey]?.maxAdDuration;
-  const hideSchedule = Boolean(maxAdDuration);
+  const currentPlanFeatures = useMemo(() => {
+    if (!planFeatures) return null;
+    const entries = Object.entries(planFeatures);
+    if (!entries.length) return null;
+
+    if (typeof rawPlanKey === "string" && rawPlanKey.trim()) {
+      const direct = planFeatures[rawPlanKey];
+      if (direct) return direct;
+      const lower = planFeatures[rawPlanKey.toLowerCase()];
+      if (lower) return lower;
+      const canonicalKey = canonicalize(rawPlanKey);
+      const match = entries.find(
+        ([slug]) => canonicalize(slug) === canonicalKey
+      );
+      if (match) return match[1];
+    }
+
+    if (planFeatures.basic) return planFeatures.basic;
+    const firstEntry = entries.find(([, value]) => value);
+    return firstEntry ? firstEntry[1] : null;
+  }, [planFeatures, rawPlanKey]);
+
+  const toNumberOrNull = (value) => {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const allowBrandingEnabled =
+    currentPlanFeatures?.allowBranding ?? false;
+  const maxAdDuration = toNumberOrNull(currentPlanFeatures?.maxAdDuration);
 
   const handleSubmit = async (payload, setUploadProgress) => {
     await updateAd(id, payload, {
@@ -66,7 +96,7 @@ export default function EditAdPage() {
         allowBrandingEnabled={allowBrandingEnabled}
         submitLabel={t("submit", { defaultValue: "Submit" })}
         tPrefix="adsEditPage"
-        hideSchedule={hideSchedule}
+        maxDurationDays={maxAdDuration}
       />
     </InstructorLayout>
   );

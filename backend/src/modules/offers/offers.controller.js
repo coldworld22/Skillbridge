@@ -10,6 +10,147 @@ const mailService = require("../../services/mailService");
 const groupService = require("../groups/groups.service");
 const slugify = require("slugify");
 const db = require("../../config/database");
+const { getActiveInstructorPlan } = require("../plans/instructor.helper");
+const {
+  getActiveStudentPlanId,
+} = require("../plans/subscription.helper");
+const planService = require("../plans/plans.service");
+const { isAdminRole } = require("../../utils/role");
+
+const normalizePlanSlug = (slugOrName) => {
+  if (!slugOrName) return "";
+  let normalized = String(slugOrName).trim().toLowerCase();
+  if (!normalized) return "";
+  normalized = normalized.replace(/\s+/g, "-");
+  if (normalized.endsWith("-plan")) {
+    normalized = normalized.slice(0, -5);
+  }
+  return normalized;
+};
+
+const STUDENT_PLAN_ALIASES = {
+  basic: "basic",
+  "student-basic": "basic",
+  starter: "basic",
+  "student-starter": "basic",
+  regular: "regular",
+  "student-regular": "regular",
+  standard: "regular",
+  "student-standard": "regular",
+  plus: "regular",
+  "student-plus": "regular",
+  prime: "prime",
+  "student-prime": "prime",
+  premium: "prime",
+  "student-premium": "prime",
+};
+
+const INSTRUCTOR_PLAN_ALIASES = {
+  basic: "basic",
+  "instructor-basic": "basic",
+  starter: "basic",
+  "instructor-starter": "basic",
+  regular: "regular",
+  "instructor-regular": "regular",
+  standard: "regular",
+  "instructor-standard": "regular",
+  plus: "regular",
+  "instructor-plus": "regular",
+  prime: "prime",
+  "instructor-prime": "prime",
+  premium: "prime",
+  "instructor-premium": "prime",
+  pro: "prime",
+  "instructor-pro": "prime",
+};
+
+const STUDENT_OFFER_LIMITS = {
+  basic: 1,
+  regular: 5,
+  prime: 15,
+};
+
+const INSTRUCTOR_OFFER_LIMITS = {
+  basic: 1,
+  regular: 5,
+  prime: 15,
+};
+
+const resolvePlanTier = (slugOrName, role) => {
+  const normalized = normalizePlanSlug(slugOrName);
+  if (!normalized) return "";
+  const aliasMap = role === "instructor" ? INSTRUCTOR_PLAN_ALIASES : STUDENT_PLAN_ALIASES;
+  if (aliasMap[normalized]) return aliasMap[normalized];
+  const withoutPrefix = normalized.replace(/^(student|instructor)-/, "");
+  if (aliasMap[withoutPrefix]) return aliasMap[withoutPrefix];
+  return withoutPrefix;
+};
+
+const getOfferLimitForPlan = (role, tier) => {
+  if (!tier) return null;
+  const limits = role === "instructor" ? INSTRUCTOR_OFFER_LIMITS : STUDENT_OFFER_LIMITS;
+  return Object.prototype.hasOwnProperty.call(limits, tier) ? limits[tier] : null;
+};
+
+const buildLimitReachedMessage = (role, tier, limit) => {
+  if (!tier || !limit) {
+    return role === "instructor"
+      ? "You have reached the offer limit for your current instructor plan."
+      : "You have reached the request limit for your current plan.";
+  }
+
+  if (role === "instructor") {
+    if (tier === "basic") {
+      return `You have reached the Instructor Basic plan limit (${limit} active offer). Upgrade to Instructor Regular or Prime for more capacity.`;
+    }
+    if (tier === "regular") {
+      return `You have reached the Instructor Regular plan limit (${limit} active offers). Upgrade to Instructor Prime for additional capacity.`;
+    }
+    if (tier === "prime") {
+      return `You have reached the Instructor Prime plan limit (${limit} active offers). Close an existing offer or contact support for higher limits.`;
+    }
+    return `You have reached the offer limit for your instructor plan (${limit} active offers).`;
+  }
+
+  if (tier === "basic") {
+    return `You have reached the Basic plan limit (${limit} active request). Upgrade to Regular or Prime for more requests.`;
+  }
+  if (tier === "regular") {
+    return `You have reached the Regular plan limit (${limit} active requests). Upgrade to Prime for additional requests.`;
+  }
+  if (tier === "prime") {
+    return `You have reached the Prime plan limit (${limit} active requests). Close an existing request or contact support for higher limits.`;
+  }
+  return `You have reached the request limit for your plan (${limit} active requests).`;
+};
+
+const parseExpirationInput = (rawValue) => {
+  if (rawValue === undefined || rawValue === null) return null;
+
+  const str = String(rawValue).trim();
+  if (!str) return null;
+
+  const timestamp = Date.parse(str);
+  if (Number.isNaN(timestamp)) {
+    const error = new Error("Invalid expiration date");
+    error.status = 400;
+    throw error;
+  }
+
+  const date = new Date(timestamp);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    date.setUTCHours(23, 59, 59, 999);
+  }
+
+  return date;
+};
+
+const parseBooleanQuery = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value !== "string") return false;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+};
 
 exports.createOffer = catchAsync(async (req, res) => {
   const {
@@ -23,16 +164,81 @@ exports.createOffer = catchAsync(async (req, res) => {
     group_id,
   } = req.body;
 
-  // ensure the group exists
-  const group = await groupService.getGroupById(group_id);
-  if (!group) {
-    return res.status(404).json({ message: "Group not found" });
+  const primaryRole = String(req.user.role || "").toLowerCase();
+  const roles = Array.isArray(req.user.roles) && req.user.roles.length
+    ? req.user.roles.map((role) => String(role).toLowerCase())
+    : [primaryRole].filter(Boolean);
+  const isPrivileged =
+    roles.includes("admin") || roles.includes("superadmin");
+
+  let offerLimit = null;
+  let planTier = null;
+  let primaryPlanRole = null;
+
+  if (!isPrivileged) {
+    if (roles.includes("instructor")) {
+      const plan = await getActiveInstructorPlan(req.user.id);
+      if (!plan) {
+        return res.status(403).json({
+          message:
+            "You need an active Instructor plan to post offers. Subscribe to Instructor Basic, Regular, or Prime to continue.",
+        });
+      }
+      planTier = resolvePlanTier(plan.slug || plan.name, "instructor");
+      const limit = getOfferLimitForPlan("instructor", planTier);
+      if (limit !== null) {
+        offerLimit = limit;
+        primaryPlanRole = "instructor";
+      }
+    } else if (roles.includes("student")) {
+      const planId = await getActiveStudentPlanId(req.user.id);
+      if (!planId) {
+        return res.status(403).json({
+          message:
+            "You need an active student subscription to post learning requests.",
+        });
+      }
+      const plan = await planService.getPlanById(planId);
+      planTier = resolvePlanTier(plan?.slug || plan?.name, "student");
+      const limit = getOfferLimitForPlan("student", planTier);
+      if (limit === null) {
+        return res.status(403).json({
+          message:
+            "Your current plan does not include posting learning requests. Upgrade to a student plan that supports learning requests (Basic, Regular, or Prime).",
+        });
+      }
+      offerLimit = limit;
+      primaryPlanRole = "student";
+    }
+  }
+
+  if (offerLimit !== null && offerLimit !== undefined) {
+    const activeOffers = await service.countActiveOffersByUser(req.user.id);
+    if (activeOffers >= offerLimit) {
+      return res.status(403).json({
+        message: buildLimitReachedMessage(
+          primaryPlanRole || (roles.includes("student") ? "student" : "instructor"),
+          planTier,
+          offerLimit
+        ),
+      });
+    }
+  }
+
+  const normalizedGroupId =
+    typeof group_id === "string" && group_id.trim().length
+      ? group_id.trim()
+      : null;
+  if (normalizedGroupId) {
+    const group = await groupService.getGroupById(normalizedGroupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
   }
 
   const data = {
     id: uuidv4(),
     student_id: req.user.id,
-    group_id,
     title,
     description,
     budget,
@@ -40,15 +246,31 @@ exports.createOffer = catchAsync(async (req, res) => {
     offer_type,
     status: "open",
   };
+  if (normalizedGroupId) {
+    data.group_id = normalizedGroupId;
+  }
 
   const fee = service.calculateOfferFee(req.user);
   if (fee > 0) data.fee = fee;
-  if (expires_at) {
-    if (new Date(expires_at) <= new Date()) {
-      return res.status(400).json({ message: "Expiration must be in the future" });
-    }
-    data.expires_at = expires_at;
+
+  let parsedExpiration = null;
+  try {
+    parsedExpiration = parseExpirationInput(expires_at);
+  } catch (err) {
+    return res
+      .status(err.status || err.statusCode || 400)
+      .json({ message: err.message || "Invalid expiration date" });
   }
+
+  if (parsedExpiration) {
+    if (parsedExpiration.getTime() <= Date.now()) {
+      return res
+        .status(400)
+        .json({ message: "Expiration must be in the future" });
+    }
+    data.expires_at = parsedExpiration.toISOString();
+  }
+
   let tags = [];
   if (rawTags) {
     try {
@@ -118,13 +340,94 @@ exports.createOffer = catchAsync(async (req, res) => {
   sendSuccess(res, offer, "Offer created");
 });
 
-exports.getOffers = catchAsync(async (_req, res) => {
-  const offers = await service.getOffers();
+exports.getOffers = catchAsync(async (req, res) => {
+  const viewer = req.user || null;
+  const roles = viewer?.roles?.length
+    ? viewer.roles
+    : viewer?.role
+    ? [viewer.role]
+    : [];
+  const isAdmin = isAdminRole(roles);
+
+  const requestedScope = String(req.query.scope || "")
+    .trim()
+    .toLowerCase();
+  let scope = "public";
+  if (requestedScope === "admin") {
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Admin access only" });
+    }
+    scope = "admin";
+  }
+
+  const filters = {
+    scope,
+    viewerId: viewer?.id || null,
+    includeMine: parseBooleanQuery(req.query.includeMine) && !!viewer,
+  };
+
+  const status = String(req.query.status || "").trim().toLowerCase();
+  if (status && ["open", "closed", "cancelled"].includes(status)) {
+    filters.status = status;
+  }
+
+  const offerType = String(req.query.offerType || "").trim().toLowerCase();
+  if (offerType && ["class", "tutorial"].includes(offerType)) {
+    filters.offerType = offerType;
+  }
+
+  const ownerRole = String(req.query.ownerRole || "").trim().toLowerCase();
+  if (ownerRole && ["student", "instructor"].includes(ownerRole)) {
+    filters.ownerRole = ownerRole;
+  }
+
+  const search =
+    typeof req.query.search === "string" ? req.query.search.trim() : "";
+  if (search) {
+    filters.search = search;
+  }
+
+  const orderBy = String(req.query.orderBy || "").trim().toLowerCase();
+  if (["created_at", "updated_at", "expires_at"].includes(orderBy)) {
+    filters.orderBy = orderBy;
+  }
+
+  const orderDirection = String(req.query.orderDirection || "")
+    .trim()
+    .toLowerCase();
+  if (["asc", "desc"].includes(orderDirection)) {
+    filters.orderDirection = orderDirection;
+  }
+
+  const offers = await service.getOffers(filters);
   sendSuccess(res, offers);
 });
 
 exports.getOfferById = catchAsync(async (req, res) => {
-  const offer = await service.getOfferById(req.params.id);
+  const viewer = req.user || null;
+  const roles = viewer?.roles?.length
+    ? viewer.roles
+    : viewer?.role
+    ? [viewer.role]
+    : [];
+  const isAdmin = isAdminRole(roles);
+
+  const requestedScope = String(req.query.scope || "")
+    .trim()
+    .toLowerCase();
+  let scope = isAdmin ? "admin" : "public";
+  if (requestedScope === "admin") {
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Admin access only" });
+    }
+    scope = "admin";
+  }
+
+  const offer = await service.getOfferById(req.params.id, {
+    scope,
+    viewerId: viewer?.id || null,
+    includeMine: !!viewer,
+  });
   sendSuccess(res, offer);
 });
 
@@ -141,9 +444,29 @@ exports.updateOffer = catchAsync(async (req, res) => {
     return res.status(403).json({ message: "Not authorized" });
   }
 
-  const { tags: rawTags, ...data } = req.body;
-  if (data.expires_at && new Date(data.expires_at) <= new Date()) {
-    return res.status(400).json({ message: "Expiration must be in the future" });
+  const { tags: rawTags, expires_at: rawExpiresAt, ...rest } = req.body;
+  const data = { ...rest };
+
+  if (rawExpiresAt !== undefined) {
+    let parsedExpiration = null;
+    try {
+      parsedExpiration = parseExpirationInput(rawExpiresAt);
+    } catch (err) {
+      return res
+        .status(err.status || err.statusCode || 400)
+        .json({ message: err.message || "Invalid expiration date" });
+    }
+
+    if (parsedExpiration) {
+      if (parsedExpiration.getTime() <= Date.now()) {
+        return res
+          .status(400)
+          .json({ message: "Expiration must be in the future" });
+      }
+      data.expires_at = parsedExpiration.toISOString();
+    } else {
+      data.expires_at = null;
+    }
   }
   const offer = await service.updateOffer(req.params.id, data);
 

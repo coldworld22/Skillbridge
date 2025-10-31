@@ -6,15 +6,16 @@ exports.seed = async function (knex) {
   const now = new Date();
 
   const parents = [
-    { name: "Development", slug: "development", image: "dev.jpg" },
-    { name: "Design", slug: "design", image: "design.jpg" },
-    { name: "Health & Medicine", slug: "health-medicine", image: "medicine.jpg" },
-    { name: "Business", slug: "business", image: "business.jpg" },
-    { name: "Science", slug: "science", image: "science.jpg" },
-    { name: "IT & Software", slug: "it-software", image: "it.jpg" },
-    { name: "Marketing", slug: "marketing", image: "marketing.jpg" },
-    { name: "Humanities", slug: "humanities", image: "humanities.jpg" },
-    { name: "Languages", slug: "languages", image: "language.jpg" },
+    { name: "Technology & Programming", slug: "technology-programming", icon: "Code2" },
+    { name: "Design & Creative Arts", slug: "design-creative-arts", icon: "Palette" },
+    { name: "Business & Finance", slug: "business-finance", icon: "Briefcase" },
+    { name: "Health & Wellness", slug: "health-wellness", icon: "HeartPulse" },
+    { name: "Data & Analytics", slug: "data-analytics", icon: "BarChart3" },
+    { name: "Marketing & Sales", slug: "marketing-sales", icon: "Megaphone" },
+    { name: "Science & Engineering", slug: "science-engineering", icon: "FlaskConical" },
+    { name: "Languages & Communication", slug: "languages-communication", icon: "Languages" },
+    { name: "Personal Development", slug: "personal-development", icon: "Sparkles" },
+    { name: "Education & Teaching", slug: "education-teaching", icon: "GraduationCap" },
   ];
 
   const parentRecords = parents.map((p) => ({
@@ -23,7 +24,8 @@ exports.seed = async function (knex) {
     slug: p.slug,
     status: "active",
     parent_id: null,
-    image_url: `/uploads/categories/${p.image}`,
+    image_url: null,
+    icon: p.icon,
     created_at: now,
     updated_at: now,
   }));

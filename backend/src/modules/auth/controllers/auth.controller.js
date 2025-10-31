@@ -8,7 +8,11 @@ const recaptchaService = require("../../recaptcha/recaptcha.service");
 const authMiddleware = require("../../../middleware/auth/authMiddleware");
 
 // 🔧 Cookie options used in login and logout
-const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
+const {
+  refreshCookieOptions,
+  csrfCookieOptions,
+  accessCookieOptions,
+} = require("../../../utils/cookie");
 
 /**
  * @desc Register a new user
@@ -66,9 +70,14 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user, onboarding } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user, onboarding } = await authService.loginUser({
+    ...req.body,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .cookie("token", accessToken, accessCookieOptions)
     .json({ message: "Login successful", accessToken, user, onboarding });
 });
 
@@ -97,6 +106,7 @@ exports.refreshToken = catchAsync(async (req, res) => {
     }
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+      .cookie("token", accessToken, accessCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
@@ -129,6 +139,7 @@ exports.logout = catchAsync(async (req, res) => {
   res
     .clearCookie("refreshToken", refreshCookieOptions)
     .clearCookie("csrfToken", csrfCookieOptions)
+    .clearCookie("token", accessCookieOptions)
     .json({ message: "Logged out successfully" });
 });
 

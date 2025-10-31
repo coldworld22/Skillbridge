@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
@@ -105,6 +105,38 @@ const LandingTutorialsSection = () => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
+  const [showWishlistOnly, setShowWishlistOnly] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [showEnrolledOnly, setShowEnrolledOnly] = useState(false);
+
+  const availableLevels = useMemo(() => {
+    const set = new Set();
+    tutorials.forEach((tutorial) => {
+      const level = typeof tutorial.level === "string" ? tutorial.level.trim() : "";
+      if (level && level.toLowerCase() !== "all levels") {
+        set.add(level);
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tutorials]);
+
+  const availableTags = useMemo(() => {
+    const set = new Set();
+    tutorials.forEach((tutorial) => {
+      if (Array.isArray(tutorial.tags)) {
+        tutorial.tags.forEach((tag) => {
+          if (typeof tag === "string" && tag.trim()) {
+            set.add(tag.trim());
+          }
+        });
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tutorials]);
 
   useEffect(() => {
     if (typeof navigator !== "undefined") {
@@ -205,7 +237,7 @@ const LandingTutorialsSection = () => {
             const updated = { ...prev, [tutorialId]: res.progress };
             localStorage.setItem(key, JSON.stringify(updated));
             return updated;
-          });
+          })
         }
       } catch (err) {
         console.error('Failed to sync progress', err);
@@ -215,13 +247,103 @@ const LandingTutorialsSection = () => {
     return () => window.removeEventListener('tutorial-progress', handler);
   }, [user, enrolledIds]);
 
-  const filteredTutorials =
-    activeTab === "All"
-      ? tutorials
-      : tutorials.filter((t) => {
-          const id = t.categoryId ?? t.category_id;
-          return id === activeTab;
-        });
+  const filteredTutorials = useMemo(() => {
+    return tutorials.filter((tutorial) => {
+      const categoryId = tutorial.categoryId ?? tutorial.category_id;
+      const activeCategory = String(activeTab);
+      if (
+        activeCategory !== "All" &&
+        String(categoryId ?? "") !== activeCategory
+      ) {
+        return false;
+      }
+
+      const term = searchTerm.trim().toLowerCase();
+      if (term) {
+        const haystack = [
+          tutorial.title,
+          tutorial.description,
+          tutorial.short_description,
+          tutorial.instructor,
+        ]
+          .map((value) => (typeof value === "string" ? value.toLowerCase() : ""))
+          .join(" ");
+        if (!haystack.includes(term)) {
+          return false;
+        }
+      }
+
+      if (levelFilter !== "all") {
+        const level =
+          typeof tutorial.level === "string" ? tutorial.level.toLowerCase() : "";
+        if (level !== levelFilter.toLowerCase()) {
+          return false;
+        }
+      }
+
+      if (priceFilter !== "all") {
+        const priceValue = Number(tutorial.discountPrice ?? tutorial.price) || 0;
+        if (priceFilter === "free" && priceValue > 0) return false;
+        if (priceFilter === "paid" && priceValue <= 0) return false;
+      }
+
+      if (tagFilter !== "all") {
+        const tags = Array.isArray(tutorial.tags)
+          ? tutorial.tags.map((tag) =>
+              typeof tag === "string" ? tag.toLowerCase() : String(tag || "").toLowerCase()
+            )
+          : [];
+        if (!tags.includes(tagFilter.toLowerCase())) {
+          return false;
+        }
+      }
+
+      if (showWishlistOnly && !wishlistIds.includes(tutorial.id)) {
+        return false;
+      }
+      if (showFavoritesOnly && !favoriteIds.includes(tutorial.id)) {
+        return false;
+      }
+      if (showEnrolledOnly && !enrolledIds.includes(tutorial.id)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    tutorials,
+    activeTab,
+    searchTerm,
+    levelFilter,
+    priceFilter,
+    tagFilter,
+    showWishlistOnly,
+    showFavoritesOnly,
+    showEnrolledOnly,
+    wishlistIds,
+    favoriteIds,
+    enrolledIds,
+  ]);
+
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() ||
+      levelFilter !== "all" ||
+      priceFilter !== "all" ||
+      tagFilter !== "all" ||
+      showWishlistOnly ||
+      showFavoritesOnly ||
+      showEnrolledOnly
+  );
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setLevelFilter("all");
+    setPriceFilter("all");
+    setTagFilter("all");
+    setShowWishlistOnly(false);
+    setShowFavoritesOnly(false);
+    setShowEnrolledOnly(false);
+  };
 
   return (
     <section id="tutorials" className="bg-gray-950 py-16 text-white px-4 sm:px-6">
@@ -248,11 +370,11 @@ const LandingTutorialsSection = () => {
             <button
               key={tab.value}
               className={`flex-shrink-0 px-4 py-2 rounded-full border transition-colors ${
-                activeTab === tab.value
+                activeTab === String(tab.value)
                   ? "bg-yellow-500 text-black border-yellow-400 font-semibold"
                   : "bg-gray-800 text-yellow-300 border-gray-600 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveTab(tab.value)}
+              onClick={() => setActiveTab(String(tab.value))}
               aria-label={`Show ${tab.label} tutorials`}
             >
               {tab.label}
@@ -260,9 +382,131 @@ const LandingTutorialsSection = () => {
           ))}
         </div>
 
+        {/* Filter Controls */}
+        <div className="mx-auto mb-8 flex w-full max-w-7xl flex-col gap-4 rounded-2xl bg-gray-900/60 p-4 shadow-lg">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex-1">
+              <label htmlFor="tutorials-search" className="sr-only">
+                {t("tutorials_filter_search_label", "Search tutorials")}
+              </label>
+              <input
+                id="tutorials-search"
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t("tutorials_filter_search_placeholder", "Search by title, instructor or description")}
+                className="w-full rounded-lg border border-gray-700 bg-gray-950/80 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              />
+            </div>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="self-start rounded-lg border border-yellow-400 px-3 py-2 text-sm font-medium text-yellow-300 transition hover:bg-yellow-500/10 sm:self-auto"
+              >
+                {t("tutorials_filter_reset", "Reset filters")}
+              </button>
+            )}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="tutorials-level" className="block text-xs font-medium uppercase tracking-wide text-gray-400">
+                {t("tutorials_filter_level_label", "Level")}
+              </label>
+              <select
+                id="tutorials-level"
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950/80 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              >
+                <option value="all">
+                  {t("tutorials_filter_level_all", "All levels")}
+                </option>
+                {availableLevels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="tutorials-price" className="block text-xs font-medium uppercase tracking-wide text-gray-400">
+                {t("tutorials_filter_price_label", "Price")}
+              </label>
+              <select
+                id="tutorials-price"
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950/80 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              >
+                <option value="all">{t("tutorials_filter_price_all", "All prices")}</option>
+                <option value="free">{t("tutorials_filter_price_free", "Free")}</option>
+                <option value="paid">{t("tutorials_filter_price_paid", "Paid")}</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="tutorials-tag" className="block text-xs font-medium uppercase tracking-wide text-gray-400">
+                {t("tutorials_filter_tag_label", "Tag")}
+              </label>
+              <select
+                id="tutorials-tag"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950/80 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              >
+                <option value="all">
+                  {t("tutorials_filter_tag_all", "All tags")}
+                </option>
+                {availableTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-2 rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm text-gray-200">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showWishlistOnly}
+                  onChange={(e) => setShowWishlistOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-400 focus:ring-yellow-400"
+                />
+                {t("tutorials_filter_wishlist_only", "Wishlist only")}
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showFavoritesOnly}
+                  onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-400 focus:ring-yellow-400"
+                />
+                {t("tutorials_filter_favorites_only", "Favorites only")}
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showEnrolledOnly}
+                  onChange={(e) => setShowEnrolledOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-400 focus:ring-yellow-400"
+                />
+                {t("tutorials_filter_enrolled_only", "Enrolled only")}
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Tutorial Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTutorials.map((tut, index) => {
+          {filteredTutorials.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-gray-800 bg-gray-900/60 p-10 text-center text-gray-400">
+              {hasActiveFilters
+                ? t("tutorials_no_results_filters", "No tutorials match your filters yet.")
+                : t("tutorials_no_results", "No tutorials available right now.")}
+            </div>
+          ) : (
+            filteredTutorials.map((tut, index) => {
             const isTopRated =
               Array.isArray(tut.tags) && tut.tags.includes("Top Rated");
             const ratingValue = Number.isFinite(Number(tut.rating))
@@ -534,7 +778,7 @@ const LandingTutorialsSection = () => {
                             ...(tut.currency || tut.currencyCode
                               ? { currency: tut.currency || tut.currencyCode }
                               : {}),
-                          });
+                          })
                           if (added) {
                             toast.success(t('added_to_cart'));
                           } else {
@@ -552,7 +796,8 @@ const LandingTutorialsSection = () => {
                 </div>
               </motion.div>
             );
-          })}
+          })
+          )}
         </div>
 
         {/* Explore Button */}

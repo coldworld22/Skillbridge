@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { io } from "socket.io-client";
 import Peer from "simple-peer";
 import logger from "@/utils/logger";
+import socketClient from "@/services/socketService";
 
 export default function useVideoCall(roomId, userName = "User", role = "participant") {
   const [peers, setPeers] = useState([]);
@@ -19,10 +19,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
   const peersRef = useRef([]);
 
   useEffect(() => {
-    socketRef.current = io(
-      // Use current origin if NEXT_PUBLIC_API_URL isn't defined
-      process.env.NEXT_PUBLIC_API_URL || "",
-    );
+    const socket = socketClient;
+    socketRef.current = socket;
     const initMedia = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -47,13 +45,13 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
           setSelectedVideoInput(defaultVideo?.deviceId || null);
         }
 
-        socketRef.current.emit("join-room", {
+        socket.emit("join-room", {
           roomId,
           name: userName,
           role,
         });
 
-        socketRef.current.on("all-users", (users) => {
+        socket.on("all-users", (users) => {
           const peers = [];
           users.forEach((userID) => {
             const peer = createPeer(userID, socketRef.current.id, mediaStream);
@@ -63,18 +61,18 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
           setPeers(peers);
         });
 
-        socketRef.current.on("user-joined", (payload) => {
+        socket.on("user-joined", (payload) => {
           const peer = addPeer(payload.signal, payload.callerID, mediaStream);
           peersRef.current.push({ peerID: payload.callerID, peer });
           setPeers((users) => [...users, { peerID: payload.callerID, peer }]);
         });
 
-        socketRef.current.on("receiving-returned-signal", (payload) => {
+        socket.on("receiving-returned-signal", (payload) => {
           const item = peersRef.current.find((p) => p.peerID === payload.id);
           if (item) item.peer.signal(payload.signal);
         });
 
-        socketRef.current.on("user-disconnected", (id) => {
+        socket.on("user-disconnected", (id) => {
           setPeers((prev) => prev.filter((p) => p.peerID !== id));
         });
       } catch (err) {
@@ -94,11 +92,19 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
 
     return () => {
       navigator.mediaDevices.removeEventListener("devicechange", handleDeviceChange);
-      socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.off("all-users");
+        socketRef.current.off("user-joined");
+        socketRef.current.off("receiving-returned-signal");
+        socketRef.current.off("user-disconnected");
+      }
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }
     };
+    // We intentionally re-run this setup only when the room changes; device selections
+    // are managed via the dedicated change handlers below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   const defaultIce = [{ urls: "stun:stun.l.google.com:19302" }];

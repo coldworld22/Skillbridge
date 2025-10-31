@@ -19,7 +19,16 @@ router.post('/:lessonId/room', verifyToken, async (req, res) => {
       const enrollment = await db('class_enrollments')
         .where({ class_id: lesson.class_id, user_id: req.user.id })
         .first();
-      if (enrollment) isStudent = true;
+      if (enrollment) {
+        if (enrollment.status === 'suspended') {
+          return res
+            .status(403)
+            .json({ message: 'Access suspended pending installment payment' });
+        }
+        if (enrollment.status !== 'cancelled') {
+          isStudent = true;
+        }
+      }
     }
     if (!isInstructor && !isStudent)
       return res.status(403).json({ message: 'Not allowed' });

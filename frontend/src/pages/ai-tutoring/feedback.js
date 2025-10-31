@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { askAI } from "@/services/aiService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
 
 export default function InstantFeedbackPage() {
   const [models, setModels] = useState([]);
@@ -13,15 +14,14 @@ export default function InstantFeedbackPage() {
     const load = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
-        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
-          opts.push({ key: "chatgpt", label: "ChatGPT" });
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
-          opts.push({ key: "deepseek", label: "DeepSeek AI" });
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
-          opts.push({ key: "huggingface", label: "Hugging Face" });
-        setModels(opts);
-        if (opts.length === 1) setSelectedModel(opts[0].key);
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setModels(providers);
+        setSelectedModel(defaultProvider || "");
+        if (!providers.length) {
+          setFeedback(
+            "AI feedback is unavailable. Please configure an AI provider in the admin settings."
+          );
+        }
       } catch (err) {
         console.error(err);
       }
@@ -38,7 +38,7 @@ export default function InstantFeedbackPage() {
       const { answer } = await askAI(selectedModel, text);
       setFeedback(answer);
     } catch (err) {
-      setFeedback("Error fetching feedback");
+      setFeedback(err?.message || "Error fetching feedback");
     } finally {
       setLoading(false);
     }
@@ -68,6 +68,11 @@ export default function InstantFeedbackPage() {
             </label>
           ))}
         </div>
+        {!models.length && (
+          <p className="text-sm text-yellow-300 mb-4">
+            AI feedback requires at least one configured provider. Ask an administrator to enable ChatGPT, DeepSeek, or Gemini in the Third Party settings.
+          </p>
+        )}
 
         <textarea
           rows={8}
@@ -79,7 +84,7 @@ export default function InstantFeedbackPage() {
 
         <button
           onClick={handleSubmit}
-          disabled={loading || !text.trim()}
+          disabled={loading || !text.trim() || !selectedModel}
           className="bg-yellow-500 text-gray-900 px-6 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
         >
           {loading ? "Analyzing..." : "Get Feedback"}

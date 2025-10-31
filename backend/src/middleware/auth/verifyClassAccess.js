@@ -21,7 +21,16 @@ module.exports = async function verifyClassAccess(req, res, next) {
       const enrollment = await db("class_enrollments")
         .where({ class_id: classId, user_id: req.user.id })
         .first();
-      if (enrollment) isStudent = true;
+      if (enrollment) {
+        if (enrollment.status === "suspended") {
+          return res
+            .status(403)
+            .json({ message: "Access suspended pending installment payment" });
+        }
+        if (enrollment.status !== "cancelled") {
+          isStudent = true;
+        }
+      }
     }
 
     if (!isInstructor && !isAdmin && !isStudent) {

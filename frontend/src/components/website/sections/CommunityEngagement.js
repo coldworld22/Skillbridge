@@ -8,6 +8,7 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { fetchDiscussions, fetchTopContributors } from "@/services/communityService";
 import { getBadge } from "@/utils/community/reputation";
 import { useTranslation, Trans } from "next-i18next";
@@ -17,6 +18,7 @@ const CommunityLandingPage = () => {
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState([]);
+  const router = useRouter();
   const { t } = useTranslation("website");
 
   useEffect(() => {
@@ -117,7 +119,8 @@ const CommunityLandingPage = () => {
                     className="p-4 bg-gray-700 rounded-lg flex justify-between items-center hover:bg-gray-600 cursor-pointer transition"
                     whileHover={{ scale: 1.03 }}
                     onClick={() => {
-                      window.location.href = `/community/question/details?id=${discussion.id}`;
+                      if (!discussion.id) return;
+                      router.push(`/community/question/${discussion.id}`);
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -191,5 +194,4 @@ const CommunityLandingPage = () => {
 };
 
 export default CommunityLandingPage;
-
 

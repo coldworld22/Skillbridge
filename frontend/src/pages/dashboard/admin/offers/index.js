@@ -26,27 +26,61 @@ const AdminOfferDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterRole, setFilterRole] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const perPage = 5;
+
+  const getStatusLabel = (status) => {
+    switch ((status || "").toLowerCase()) {
+      case "open":
+        return t("adminOffersPage.status_open");
+      case "closed":
+        return t("adminOffersPage.status_closed");
+      case "cancelled":
+        return t("adminOffersPage.status_cancelled");
+      default:
+        return status || "unknown";
+    }
+  };
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterRole, statusFilter]);
 
   useEffect(() => {
     fetchOffers()
       .then((data) => {
-        const mapped = data.map((o) => ({
-          id: o.id,
-          title: o.title,
-          user: {
-            id: o.student_id,
-            name: o.student_name,
-            role: o.student_role,
-            avatar: o.student_avatar
-              ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${o.student_avatar}`
-              : "/avatars/default.jpg",
-          },
-          type: o.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
-          status: o.status || "open",
-          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
-        }));
+        const mapped = data.map((o) => {
+          const ownerRole = o?.student_role ? o.student_role.toLowerCase() : "";
+          const avatarPath = o?.student_avatar || "";
+          const createdAt = o?.created_at ? new Date(o.created_at) : null;
+          const expiresAt = o?.expires_at ? new Date(o.expires_at) : null;
+          const avatarUrl =
+            avatarPath && (avatarPath.startsWith("http://") || avatarPath.startsWith("https://"))
+              ? avatarPath
+              : avatarPath
+              ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatarPath}`
+              : "/avatars/default.jpg";
+
+          return {
+            id: o.id,
+            title: o.title,
+            user: {
+              id: o.student_id,
+              name: o.student_name,
+              role: o.student_role,
+              avatar: avatarUrl,
+            },
+            type: ownerRole === "instructor" ? "instructor" : "student",
+            status: (o.status || "open").toLowerCase(),
+            createdAt,
+            createdAtLabel: createdAt
+              ? createdAt.toLocaleDateString()
+              : "",
+            expiresAt,
+            expiresAtLabel: expiresAt ? expiresAt.toLocaleDateString() : "",
+          };
+        });
         setOffers(mapped);
       })
       .catch(() => setOffers([]));
@@ -84,10 +118,24 @@ const AdminOfferDashboard = () => {
     }
   };
 
+  const lowerSearch = searchTerm.trim().toLowerCase();
+
   const filtered = offers
-    .filter((o) => o.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((o) => {
+      if (!lowerSearch) return true;
+      const title = o.title?.toLowerCase() || "";
+      const owner = o.user?.name?.toLowerCase() || "";
+      return title.includes(lowerSearch) || owner.includes(lowerSearch);
+    })
     .filter((o) => (filterRole ? o.type === filterRole : true))
-    .sort((a, b) => (sortAsc ? a.id - b.id : b.id - a.id));
+    .filter((o) =>
+      statusFilter === "all" ? true : o.status === statusFilter
+    )
+    .sort((a, b) => {
+      const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+      const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+      return sortAsc ? aTime - bTime : bTime - aTime;
+    });
 
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
@@ -107,11 +155,22 @@ const AdminOfferDashboard = () => {
             <option value="student">{t("adminOffersPage.student")}</option>
           </select>
 
+          <select
+            onChange={(e) => setStatusFilter(e.target.value)}
+            value={statusFilter}
+            className="border border-gray-300 rounded px-3 py-1 text-sm"
+          >
+            <option value="all">{t("adminOffersPage.status_all")}</option>
+            <option value="open">{t("adminOffersPage.status_open")}</option>
+            <option value="closed">{t("adminOffersPage.status_closed")}</option>
+            <option value="cancelled">{t("adminOffersPage.status_cancelled")}</option>
+          </select>
+
           <button
             onClick={() => setSortAsc(!sortAsc)}
             className="text-sm px-3 py-1 bg-gray-100 border rounded text-gray-700 hover:bg-gray-200 flex items-center gap-1"
           >
-            {sortAsc ? <FaSortAmountDown /> : <FaSortAmountUp />} {t("adminOffersPage.sort_by_id")}
+            {sortAsc ? <FaSortAmountDown /> : <FaSortAmountUp />} {t("adminOffersPage.sort_by_date")}
           </button>
 
           <div className="flex items-center border border-gray-300 rounded px-2 py-1 bg-white shadow-sm">
@@ -166,20 +225,45 @@ const AdminOfferDashboard = () => {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <div
-                    onClick={() => handleToggleStatus(offer.id)}
-                    className={`cursor-pointer inline-block w-14 h-7 flex items-center bg-gray-200 rounded-full p-1 transition duration-300 ${
-                      offer.status === "open" ? "bg-green-400" : "bg-red-400"
-                    }`}
-                  >
-                    <div
-                      className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-                        offer.status === "open" ? "translate-x-7" : "translate-x-0"
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`text-xs font-semibold uppercase tracking-wide ${
+                        offer.status === "open"
+                          ? "text-green-600"
+                          : offer.status === "cancelled"
+                          ? "text-red-600"
+                          : "text-amber-600"
                       }`}
-                    ></div>
+                    >
+                      {getStatusLabel(offer.status)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(offer.id)}
+                      className={`relative inline-flex w-14 h-7 items-center rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        offer.status === "open"
+                          ? "bg-green-400 focus:ring-green-500"
+                          : "bg-red-400 focus:ring-red-500"
+                      }`}
+                      aria-pressed={offer.status === "open"}
+                      aria-label={`${t("adminOffersPage.column_status")}: ${getStatusLabel(offer.status)}`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
+                          offer.status === "open" ? "translate-x-7" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">{offer.date}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">
+                  <div>{offer.createdAtLabel}</div>
+                  {offer.expiresAtLabel && (
+                    <div className="text-xs text-gray-400">
+                      {t("offersPage.field_expires_at")}: {offer.expiresAtLabel}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right flex justify-end gap-2">
                   <Link href={`/dashboard/admin/offers/${offer.id}`}>
                     <button className="text-blue-600 hover:text-blue-800" title="View">

@@ -1,6 +1,7 @@
 const db = require('../../../config/database');
 const catchAsync = require('../../../utils/catchAsync');
 const { sendSuccess } = require('../../../utils/response');
+const AppError = require('../../../utils/AppError');
 
 exports.submitReview = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -43,4 +44,21 @@ exports.getReviews = catchAsync(async (req, res) => {
     );
 
   sendSuccess(res, reviews, 'Reviews fetched');
+});
+
+exports.deleteReview = catchAsync(async (req, res) => {
+  const { reviewId } = req.params;
+  const userId = req.user.id;
+
+  const review = await db('class_reviews')
+    .where({ id: reviewId })
+    .first();
+
+  if (!review || review.user_id !== userId) {
+    throw new AppError('Review not found.', 404);
+  }
+
+  await db('class_reviews').where({ id: reviewId }).del();
+
+  sendSuccess(res, null, 'Review deleted');
 });

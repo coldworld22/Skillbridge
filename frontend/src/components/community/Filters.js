@@ -1,106 +1,215 @@
-import { useState } from "react";
-import { FaFilter, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { useMemo, useState } from "react";
+import { FaChevronDown, FaChevronUp, FaFilter } from "react-icons/fa";
 
-const Filters = ({ onFilterChange }) => {
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState({
-    noAnswers: false,
-    noAcceptedAnswer: false,
-    hasBounty: false,
-    sortBy: "Newest",
-    tags: "",
-  });
+const sortOptions = [
+  { value: "Newest", label: "Newest" },
+  { value: "Recent Activity", label: "Recent activity" },
+  { value: "Most Answered", label: "Most answered" },
+  { value: "Top Voted", label: "Top voted" },
+  { value: "Trending", label: "Trending" },
+];
 
-  const handleChange = (e) => {
-    const { name, type, checked, value } = e.target;
-    setSelectedFilter((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+const Filters = ({
+  filters,
+  onFiltersChange,
+  onReset,
+  availableTags = [],
+  searchTerm,
+  onSearchChange,
+  disabled = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const activeFilters = useMemo(() => {
+    let count = 0;
+    if (filters.noAnswers) count += 1;
+    if (filters.noAcceptedAnswer) count += 1;
+    if (filters.hasBounty) count += 1;
+    if (filters.sortBy && filters.sortBy !== "Newest") count += 1;
+    if (filters.tags.length) count += 1;
+    if (searchTerm.trim()) count += 1;
+    return count;
+  }, [filters, searchTerm]);
+
+  const handleCheckboxChange = (event) => {
+    if (disabled) return;
+    const { name, checked } = event.target;
+    onFiltersChange({
+      ...filters,
+      [name]: checked,
+    });
   };
 
-  // Apply Filters
-  const applyFilter = () => {
-    onFilterChange(selectedFilter);
+  const handleSortChange = (event) => {
+    if (disabled) return;
+    onFiltersChange({
+      ...filters,
+      sortBy: event.target.value,
+    });
+  };
+
+  const handleTagToggle = (tag) => {
+    if (disabled) return;
+    const hasTag = filters.tags.includes(tag);
+    const nextTags = hasTag
+      ? filters.tags.filter((item) => item !== tag)
+      : [...filters.tags, tag];
+    onFiltersChange({
+      ...filters,
+      tags: nextTags,
+    });
   };
 
   return (
-    <div className="bg-gray-800 text-white p-4 rounded-lg shadow-md">
-      {/* 🔹 Expand/Collapse Button */}
+    <aside className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
       <button
-        className="flex items-center justify-between w-full bg-gray-700 p-2 rounded-md text-white"
-        onClick={() => setIsFilterOpen(!isFilterOpen)}
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+        className="flex w-full items-center justify-between text-left"
       >
-        <span className="font-bold">Filter Options</span>
-        {isFilterOpen ? <FaChevronUp /> : <FaChevronDown />}
+        <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.3em] text-slate-200">
+          <FaFilter className="text-yellow-400" />
+          Filters
+        </span>
+        <span className="flex items-center gap-3 text-xs text-slate-400">
+          {activeFilters > 0 && (
+            <span className="rounded-full bg-yellow-500/15 px-3 py-1 font-semibold text-yellow-300">
+              {activeFilters} active
+            </span>
+          )}
+          {isOpen ? <FaChevronUp /> : <FaChevronDown />}
+        </span>
       </button>
 
-      {isFilterOpen && (
-        <div className="mt-4">
-          {/* 🔹 Filter By */}
-          <h4 className="text-sm font-semibold mb-1">Filter by:</h4>
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="noAnswers"
-                checked={selectedFilter.noAnswers}
-                onChange={handleChange}
-                className="accent-yellow-500"
-              />
-              No answers
+      {isOpen && (
+        <div className="mt-6 space-y-6 text-sm text-slate-200">
+          <div>
+            <label
+              htmlFor="community-search"
+              className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400"
+            >
+              Search discussions
             </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="noAcceptedAnswer"
-                checked={selectedFilter.noAcceptedAnswer}
-                onChange={handleChange}
-                className="accent-yellow-500"
-              />
-              No accepted answer
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="hasBounty"
-                checked={selectedFilter.hasBounty}
-                onChange={handleChange}
-                className="accent-yellow-500"
-              />
-              Has bounty
-            </label>
+            <input
+              id="community-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search by keyword or tag"
+              disabled={disabled}
+              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-300 disabled:cursor-not-allowed disabled:opacity-70"
+            />
           </div>
 
-          {/* 🔹 Sorting Options */}
-          <h4 className="text-sm font-semibold mt-4 mb-1">Sorted by:</h4>
-          <select
-            name="sortBy"
-            value={selectedFilter.sortBy}
-            onChange={handleChange}
-            className="bg-gray-700 p-2 w-full rounded-md text-white"
-          >
-            <option value="Newest">Newest</option>
-            <option value="Recent Activity">Recent Activity</option>
-            <option value="Highest Score">Highest Score</option>
-            <option value="Most Frequent">Most Frequent</option>
-            <option value="Trending">Trending</option>
-          </select>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+              Filter by status
+            </p>
+            <div className="mt-3 space-y-2">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  name="noAnswers"
+                  checked={filters.noAnswers}
+                  onChange={handleCheckboxChange}
+                  disabled={disabled}
+                  className="h-4 w-4 accent-yellow-400"
+                />
+                <span className="text-slate-200">No answers yet</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  name="noAcceptedAnswer"
+                  checked={filters.noAcceptedAnswer}
+                  onChange={handleCheckboxChange}
+                  disabled={disabled}
+                  className="h-4 w-4 accent-yellow-400"
+                />
+                <span className="text-slate-200">Unresolved</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  name="hasBounty"
+                  checked={filters.hasBounty}
+                  onChange={handleCheckboxChange}
+                  disabled={disabled}
+                  className="h-4 w-4 accent-yellow-400"
+                />
+                <span className="text-slate-200">Has bounty</span>
+              </label>
+            </div>
+          </div>
 
-          {/* 🔹 Apply & Save Buttons */}
-          <div className="flex justify-between mt-4">
-            <button
-              className="bg-yellow-500 text-gray-900 px-4 py-2 rounded-md font-bold hover:bg-yellow-600 transition"
-              onClick={applyFilter}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+              Sort results
+            </p>
+            <select
+              value={filters.sortBy}
+              onChange={handleSortChange}
+              disabled={disabled}
+              className="mt-3 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-300 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Apply Filter
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+              Popular tags
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {availableTags.length === 0 && (
+                <span className="text-xs text-slate-500">
+                  Tags will appear once discussions are available.
+                </span>
+              )}
+              {availableTags.map((tag) => {
+                const isActive = filters.tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleTagToggle(tag)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      isActive
+                        ? "border-yellow-400 bg-yellow-400/20 text-yellow-200"
+                        : "border-slate-700 bg-slate-800 text-slate-200 hover:border-yellow-400/50 hover:text-yellow-200"
+                    } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                    disabled={disabled}
+                  >
+                    #{tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">
+              Adjust filters to refine your results.
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (disabled) return;
+                onReset();
+              }}
+              className="text-xs font-semibold uppercase tracking-[0.3em] text-yellow-300 transition hover:text-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={disabled}
+            >
+              Reset
             </button>
           </div>
         </div>
       )}
-    </div>
+    </aside>
   );
 };
 

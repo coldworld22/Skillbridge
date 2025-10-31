@@ -144,13 +144,21 @@ export default function ViewTutorialPage() {
 
         {/* Thumbnail */}
         <div className="w-full h-52 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-lg">
-          <Image
-            src={tutorial.thumbnail}
-            alt={tutorial.title}
-            width={1280}
-            height={720}
-            className="w-full h-full object-cover"
-          />
+          {tutorial.thumbnail ? (
+            <Image
+              src={safeEncodeURI(tutorial.thumbnail)}
+              alt={tutorial.title || t("dashboard:tutorialViewPage.untitled", { defaultValue: "Untitled tutorial" })}
+              width={1280}
+              height={720}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm sm:text-base">
+              {t("dashboard:tutorialViewPage.no_thumbnail", {
+                defaultValue: "No cover image uploaded yet.",
+              })}
+            </div>
+          )}
         </div>
 
         {/* Title and Meta */}

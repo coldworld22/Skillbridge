@@ -7,6 +7,7 @@ import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 import { toast } from "react-hot-toast";
 import { buildUrl } from "@/utils/url";
+import { FiFileText } from "react-icons/fi";
 
 const extractTagName = (tag) => {
   if (!tag) return "";
@@ -698,11 +699,8 @@ export default function BookForm({
               onChange={(e) => {
                 reg.onChange(e);
                 const file = e.target.files?.[0];
-                setBookFileUrl(null);
+                setExistingFileUrl(null);
                 setBookFileName(file ? file.name : "");
-                if (file) {
-                  setExistingFileUrl(null);
-                }
               }}
               className="w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />

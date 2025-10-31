@@ -1,1004 +1,1094 @@
-// ✅ Enhanced Instructor Profile Edit Page
-// File: pages/dashboard/instructor/profile/edit.js
-
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
-import { API_BASE_URL } from "@/config/config";
-import { getCurrencies } from "@/services/currencyService";
+import {
+  FaAward,
+  FaCamera,
+  FaCheck,
+  FaLink,
+  FaPlus,
+  FaSpinner,
+  FaTrash,
+  FaUpload,
+  FaVideo,
+} from "react-icons/fa";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import {
   getInstructorProfile,
   updateInstructorProfile,
   uploadInstructorAvatar,
+  deleteInstructorAvatar,
   uploadInstructorDemo,
+  deleteInstructorDemo,
   uploadCertificateFile,
   deleteCertificateFile,
-  toggleInstructorStatus,
 } from "@/services/instructor/instructorService";
-import Cropper from "react-easy-crop";
-import getCroppedImg from "@/utils/cropImage";
-import {
-  FaUpload,
-  FaTrash,
-  FaSpinner,
-  FaUserCircle,
-  FaVideo,
-  FaLinkedin,
-  FaGithub,
-  FaGlobe,
-  FaTwitter,
-  FaYoutube,
-  FaFacebook,
-  FaInstagram,
-  FaDollarSign,
-  FaCertificate,
-  FaBriefcase,
-  FaCalendarAlt,
-  FaPhone,
-  FaVenusMars,
-  FaUser,
-  FaPlus,
-  FaFilePdf,
-  FaFileImage,
-  FaCheck,
-} from "react-icons/fa";
-import { MdOutlineWorkOutline } from "react-icons/md";
-import { RiDeleteBin6Line } from "react-icons/ri";
+import logger from "@/utils/logger";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-const MAX_AVATAR_MB = 200;
-const MAX_AVATAR_BYTES = MAX_AVATAR_MB * 1024 * 1024;
-const MAX_CERTIFICATE_MB = 200;
-const MAX_CERTIFICATE_BYTES = MAX_CERTIFICATE_MB * 1024 * 1024;
-const MAX_DEMO_MB = 500;
-const MAX_DEMO_BYTES = MAX_DEMO_MB * 1024 * 1024;
-const instructorProfileSchema = z.object({
-  full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().min(8, "phone_min"),
+const PROFILE_SCHEMA = z.object({
+  full_name: z.string().trim().min(3, "Full name must be at least 3 characters"),
+  phone: z.string().trim().min(8, "Phone number must be at least 8 digits"),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
-  date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: "invalid_date",
-  }),
-  experience: z.number().min(0, "experience_positive"),
-  pricing_amount: z.number().min(0, "amount_positive").optional(),
-  pricing_currency: z.string().optional(),
-  expertise: z.array(z.string()).optional(),
+  date_of_birth: z
+    .string()
+    .trim()
+    .refine((val) => !Number.isNaN(new Date(val).getTime()), "Please select a valid date"),
+  expertise: z.array(z.string().trim()).min(1, "Add at least one expertise"),
+  experience: z
+    .string()
+    .trim()
+    .optional()
+    .refine((val) => !val || /^\d+$/.test(val), "Experience must be a whole number"),
   bio: z
     .string()
+    .trim()
     .optional()
-    .refine((val) => !val || val.split(/\s+/).filter(Boolean).length <= 150, {
-      message: "bio_max_words",
-    }),
-  socialLinks: z
-    .record(z.string())
-    .optional(),
+    .refine(
+      (val) => !val || val.split(/\s+/).filter(Boolean).length <= 150,
+      "Bio must be 150 words or fewer"
+    ),
+  certifications: z.string().trim().optional(),
+  pricing: z.string().trim().optional(),
+  demo_video_url: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (val) => !val || /^https?:\/\/.+/i.test(val),
+      "Enter a valid URL starting with http or https"
+    ),
+  socialLinks: z.record(z.string().trim()).optional(),
 });
 
-const socialPlatforms = [
-  { name: "linkedin", icon: <FaLinkedin className="text-blue-600" /> },
-  { name: "github", icon: <FaGithub className="text-gray-800" /> },
-  { name: "twitter", icon: <FaTwitter className="text-blue-400" /> },
-  { name: "youtube", icon: <FaYoutube className="text-red-600" /> },
-  { name: "facebook", icon: <FaFacebook className="text-blue-700" /> },
-  { name: "instagram", icon: <FaInstagram className="text-pink-600" /> },
-  { name: "website", icon: <FaGlobe className="text-green-600" /> },
-];
+const DEFAULT_SOCIAL_LINKS = {
+  linkedin: "",
+  website: "",
+  youtube: "",
+  twitter: "",
+  instagram: "",
+};
 
-// Currency options will be loaded from the backend configuration
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_DEMO_BYTES = 150 * 1024 * 1024; // 150 MB
 
-export default function InstructorProfileEdit() {
+function InstructorProfileEditPage() {
   const router = useRouter();
-  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorProfilePage' });
-  const { user, hasHydrated } = useAuthStore();
+  const { t } = useTranslation("dashboard", {
+    keyPrefix: "instructorProfilePage",
+  });
+  const { user, hasHydrated, setUser } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
     gender: "male",
     date_of_birth: "",
-    experience: 0,
-    pricing_amount: undefined,
-    pricing_currency: "",
     expertise: [],
+    experience: "",
     bio: "",
-    socialLinks: {},
-    certificates: [],
-    avatarPreview: null,
-    demoPreview: null,
+    certifications: "",
+    pricing: "",
+    demo_video_url: "",
+    socialLinks: { ...DEFAULT_SOCIAL_LINKS },
   });
-  const [errors, setErrors] = useState({});
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [expertiseInput, setExpertiseInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newExpertise, setNewExpertise] = useState("");
-  const [newCertificate, setNewCertificate] = useState({
-    title: "",
-    file: null,
-    preview: null,
-  });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [demoUploading, setDemoUploading] = useState(false);
   const [certificateUploading, setCertificateUploading] = useState(false);
-
-  const [showCropper, setShowCropper] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [tempAvatar, setTempAvatar] = useState(null);
-  const [tempFileName, setTempFileName] = useState("");
-  const [currencyOptions, setCurrencyOptions] = useState([]);
-  const [available, setAvailable] = useState(user?.is_online ?? false);
-
-  useEffect(() => {
-    setAvailable(user?.is_online ?? false);
-  }, [user]);
+  const [errors, setErrors] = useState({});
+  const [certificates, setCertificates] = useState([]);
+  const [newCertificateTitle, setNewCertificateTitle] = useState("");
+  const certificateInputRef = useRef(null);
+  const [expanded, setExpanded] = useState({
+    personal: true,
+    professional: true,
+    social: true,
+    media: true,
+    certificates: true,
+  });
 
   useEffect(() => {
-    const loadCurrencies = async () => {
-      try {
-        const list = await getCurrencies();
-        setCurrencyOptions(list);
-        const def = list.find((c) => c.is_default) || list[0];
-        if (def) {
-          setFormData((prev) => ({
-            ...prev,
-            pricing_currency: prev.pricing_currency || def.code,
-          }));
-        }
-      } catch (err) {
-        console.error("Failed to load currencies", err);
-      }
-    };
-    loadCurrencies();
-  }, []);
+    if (!hasHydrated) return;
+    if (!user) {
+      setLoadingProfile(false);
+      return;
+    }
 
-  useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== "instructor") return;
+    if (user.role?.toLowerCase() !== "instructor") {
+      router.replace("/dashboard");
+      return;
+    }
 
     const loadProfile = async () => {
       try {
-        const res = await getInstructorProfile();
-        const { full_name, phone, gender, date_of_birth, avatar_url, instructor, social_links, certificates } = res;
-
-        const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        setLoadingProfile(true);
+        const profile = await getInstructorProfile();
+        const defaultSocial = { ...DEFAULT_SOCIAL_LINKS };
+        profile.social_links?.forEach((link) => {
+          if (link.platform) {
+            defaultSocial[link.platform] = link.url || "";
+          }
         });
 
-        // Split pricing if it exists in format "100 USD"
-        let pricing_amount;
-        let pricing_currency = "";
-        if (instructor?.pricing) {
-          const pricingParts = instructor.pricing.split(" ");
-          if (pricingParts.length === 2) {
-            const amount = parseFloat(pricingParts[0]);
-            pricing_amount = isNaN(amount) ? undefined : amount;
-            pricing_currency = pricingParts[1] || "";
-          }
-        }
-
-        let expertiseList = [];
-        if (Array.isArray(instructor?.expertise)) {
-          expertiseList = instructor.expertise;
-        } else if (typeof instructor?.expertise === "string") {
-          try {
-            expertiseList = JSON.parse(instructor.expertise);
-          } catch (_) {
-            expertiseList = instructor.expertise
-              .split(',')
-              .map((e) => e.trim())
-              .filter(Boolean);
-          }
-        }
-
-        setFormData(prev => ({
-          ...prev,
-          full_name: full_name || "",
-          phone: phone || "",
-          gender: gender || "male",
-          date_of_birth: date_of_birth?.split("T")[0] || "",
-          experience: instructor?.experience ? parseInt(instructor.experience) : 0,
-          pricing_amount,
-          pricing_currency,
-          expertise: expertiseList,
-          bio: instructor?.bio || "",
-          socialLinks: socialMap,
-          certificates: certificates || [],
-          avatarPreview: avatar_url
-            ? `${BASE_URL}${avatar_url}`
-            : null,
-          demoPreview: instructor?.demo_video_url
-            ? `${BASE_URL}${instructor.demo_video_url}`
-            : null,
-        }));
+        setFormData({
+          full_name: profile.full_name || "",
+          phone: profile.phone || "",
+          gender: profile.gender || "male",
+          date_of_birth: profile.date_of_birth
+            ? profile.date_of_birth.split("T")[0]
+            : "",
+          expertise: profile.instructor?.expertise || [],
+          experience:
+            typeof profile.instructor?.experience === "number"
+              ? String(profile.instructor.experience || "")
+              : profile.instructor?.experience
+              ? String(profile.instructor.experience)
+              : "",
+          bio: profile.instructor?.bio || "",
+          certifications: profile.instructor?.certifications || "",
+          pricing: profile.instructor?.pricing || "",
+          demo_video_url: profile.instructor?.demo_video_url || "",
+          socialLinks: defaultSocial,
+        });
+        setEmail(profile.email || "");
+        setAvatarUrl(profile.avatar_url || null);
+        setCertificates(Array.isArray(profile.certificates) ? profile.certificates : []);
       } catch (err) {
-        toast.error(t('load_profile_failed'));
-        console.error("Profile load error:", err);
+        toast.error(t("loadError", "Failed to load profile details."));
+        logger.error?.("Instructor profile load error", err);
+      } finally {
+        setLoadingProfile(false);
       }
     };
 
     loadProfile();
-  }, [user]);
+  }, [hasHydrated, user, router, t]);
 
-  const validateForm = () => {
-    try {
-      const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
-      );
-      instructorProfileSchema.parse({
-        ...formData,
-        socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
-      });
-      setErrors({});
-      return true;
-    } catch (err) {
-      const errs = {};
-      err.errors.forEach(e => { errs[e.path[0]] = t(e.message); });
-      setErrors(errs);
-      if (err.errors?.length) {
-        toast.error(t(err.errors[0].message));
-      } else {
-          toast.error(t('fix_errors'));
-      }
-      return false;
+  const socialPlatforms = useMemo(() => {
+    const keys = new Set([
+      ...Object.keys(DEFAULT_SOCIAL_LINKS),
+      ...Object.keys(formData.socialLinks || {}),
+    ]);
+    return Array.from(keys);
+  }, [formData.socialLinks]);
+
+  const toggleSection = (section) => {
+    setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleCertificateUpload = async () => {
-    if (!newCertificate.title || !newCertificate.file) {
-      toast.error(t('provide_title_and_file'));
+  const handleSocialChange = (platform, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [platform]: value },
+    }));
+  };
+
+  const handleExpertiseKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addExpertiseTag();
+    }
+  };
+
+  const addExpertiseTag = () => {
+    const value = expertiseInput.trim();
+    if (!value) return;
+    setFormData((prev) => {
+      if (prev.expertise.some((item) => item.toLowerCase() === value.toLowerCase())) {
+        return prev;
+      }
+      return { ...prev, expertise: [...prev.expertise, value] };
+    });
+    setExpertiseInput("");
+    if (errors.expertise) {
+      setErrors((prev) => ({ ...prev, expertise: null }));
+    }
+  };
+
+  const removeExpertiseTag = (skill) => {
+    setFormData((prev) => ({
+      ...prev,
+      expertise: prev.expertise.filter(
+        (item) => item.toLowerCase() !== skill.toLowerCase()
+      ),
+    }));
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error(t("avatarTooLarge", "Avatar must be smaller than 5MB."));
       return;
     }
-
+    setAvatarUploading(true);
     try {
-      setCertificateUploading(true);
-      const formData = new FormData();
-      formData.append("title", newCertificate.title);
-      formData.append("file", newCertificate.file);
-
-      const response = await uploadCertificateFile(formData);
-
-      setFormData(prev => ({
-        ...prev,
-        certificates: [...prev.certificates, {
-          id: response.id,
-          title: newCertificate.title,
-          file_url: response.file_url
-        }]
-      }));
-
-      if (newCertificate.preview) {
-        URL.revokeObjectURL(newCertificate.preview);
+      const res = await uploadInstructorAvatar(user.id, file);
+      const url = res?.avatar_url || null;
+      setAvatarUrl(url);
+      setUser({
+        ...user,
+        avatar_url: url,
+        profile_complete: true,
+      });
+      if (url) {
+        toast.success(t("avatarUpdated", "Avatar updated successfully."));
+      } else {
+        toast.success(t("avatarRemoved", "Avatar removed."));
       }
-      setNewCertificate({ title: "", file: null, preview: null });
-        toast.success(t('certificate_upload_success'));
-    } catch (error) {
-        toast.error(t('certificate_upload_failed'));
-      console.error("Certificate upload error:", error);
+    } catch (err) {
+      toast.error(t("avatarUploadFailed", "Failed to upload avatar."));
+      logger.error?.("Avatar upload failed", err);
+    } finally {
+      setAvatarUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user) return;
+    setAvatarUploading(true);
+    try {
+      await deleteInstructorAvatar(user.id);
+      setAvatarUrl(null);
+      setUser({
+        ...user,
+        avatar_url: null,
+      });
+      toast.success(t("avatarRemoved", "Avatar removed."));
+    } catch (err) {
+      toast.error(t("avatarRemoveFailed", "Failed to remove avatar."));
+      logger.error?.("Avatar removal failed", err);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleDemoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > MAX_DEMO_BYTES) {
+      toast.error(t("demoTooLarge", "Demo video must be smaller than 150MB."));
+      return;
+    }
+    setDemoUploading(true);
+    try {
+      const res = await uploadInstructorDemo(file, user.id);
+      const demoUrl = res?.demo_video_url || "";
+      setFormData((prev) => ({
+        ...prev,
+        demo_video_url: demoUrl,
+      }));
+      toast.success(t("demoUpdated", "Demo video uploaded successfully."));
+    } catch (err) {
+      toast.error(t("demoUploadFailed", "Failed to upload demo video."));
+      logger.error?.("Demo upload failed", err);
+    } finally {
+      setDemoUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleDemoDelete = async () => {
+    if (!user) return;
+    setDemoUploading(true);
+    try {
+      await deleteInstructorDemo(user.id);
+      setFormData((prev) => ({
+        ...prev,
+        demo_video_url: "",
+      }));
+      toast.success(t("demoRemoved", "Demo video removed."));
+    } catch (err) {
+      toast.error(t("demoRemoveFailed", "Failed to remove demo video."));
+      logger.error?.("Demo removal failed", err);
+    } finally {
+      setDemoUploading(false);
+    }
+  };
+
+  const handleCertificateUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!newCertificateTitle.trim()) {
+      toast.error(t("certificateTitleRequired", "Please provide a title first."));
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(t("certificateTooLarge", "Certificate must be smaller than 10MB."));
+      event.target.value = "";
+      return;
+    }
+    setCertificateUploading(true);
+    try {
+      const form = new FormData();
+      form.append("title", newCertificateTitle.trim());
+      form.append("file", file);
+      const res = await uploadCertificateFile(form);
+      if (res) {
+        setCertificates((prev) => [res, ...prev]);
+        setNewCertificateTitle("");
+        if (certificateInputRef.current) {
+          certificateInputRef.current.value = "";
+        }
+        toast.success(t("certificateUploaded", "Certificate added."));
+      }
+    } catch (err) {
+      toast.error(t("certificateUploadFailed", "Failed to upload certificate."));
+      logger.error?.("Certificate upload failed", err);
+    } finally {
+      setCertificateUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleCertificateDelete = async (certificateId) => {
+    if (!certificateId) return;
+    setCertificateUploading(true);
+    try {
+      await deleteCertificateFile(certificateId);
+      setCertificates((prev) => prev.filter((cert) => cert.id !== certificateId));
+      toast.success(t("certificateDeleted", "Certificate removed."));
+    } catch (err) {
+      toast.error(t("certificateDeleteFailed", "Failed to delete certificate."));
+      logger.error?.("Certificate delete failed", err);
     } finally {
       setCertificateUploading(false);
     }
   };
 
-  const handleRemoveCertificate = async (certificateId) => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setErrors({});
     try {
-      await deleteCertificateFile(certificateId);
-      setFormData(prev => ({
-        ...prev,
-        certificates: prev.certificates.filter(cert => cert.id !== certificateId)
-      }));
-        toast.success(t('certificate_removed'));
-    } catch (error) {
-        toast.error(t('certificate_remove_failed'));
-      console.error("Certificate removal error:", error);
-    }
-  };
-
-  const onCropComplete = useCallback((_, area) => {
-    setCroppedAreaPixels(area);
-  }, []);
-
-  const handleAvatarSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > MAX_AVATAR_BYTES) return toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
-    setTempFileName(file.name);
-    setTempAvatar(URL.createObjectURL(file));
-    setShowCropper(true);
-  };
-
-  const handleCropUpload = async () => {
-    if (!tempAvatar || !croppedAreaPixels) return;
-    setIsSubmitting(true);
-    try {
-      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
-      if (blob.size > MAX_AVATAR_BYTES) {
-        toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
-        setIsSubmitting(false);
-        return;
-      }
-      const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
-      const res = await uploadInstructorAvatar(user.id, file);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: res.avatar_url });
-      setFormData((prev) => ({
-        ...prev,
-        avatarPreview: `${BASE_URL}${res.avatar_url}?v=${Date.now()}`,
-      }));
-      setShowCropper(false);
-      URL.revokeObjectURL(tempAvatar);
-      setTempAvatar(null);
-    } catch (error) {
-        if (error?.response?.status === 413) {
-          toast.error(t('avatar_max_size', { size: MAX_AVATAR_MB }));
-        } else {
-          toast.error(t('avatar_upload_failed'));
-        }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    try {
+      const parsed = PROFILE_SCHEMA.parse({
+        ...formData,
+        socialLinks: formData.socialLinks,
+      });
+      const payload = {
+        full_name: parsed.full_name.trim(),
+        phone: parsed.phone.trim(),
+        gender: parsed.gender,
+        date_of_birth: parsed.date_of_birth,
+        expertise: parsed.expertise,
+        experience: parsed.experience ? Number(parsed.experience) : null,
+        bio: parsed.bio || null,
+        certifications: parsed.certifications || null,
+        pricing: parsed.pricing || null,
+        demo_video_url: parsed.demo_video_url || null,
+        social_links: Object.entries(parsed.socialLinks || {})
+          .filter(([, value]) => value && value.trim().length > 0)
+          .map(([platform, url]) => ({
+            platform,
+            url: url.trim(),
+          })),
+      };
       setIsSubmitting(true);
-
-      // Combine pricing amount and currency
-      const pricing =
-        typeof formData.pricing_amount === "number"
-          ? `${formData.pricing_amount} ${formData.pricing_currency}`
-          : "";
-
-      const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
-
-      await updateInstructorProfile({
-        full_name: formData.full_name,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
-        experience: formData.experience,
-        bio: formData.bio,
-        pricing,
-        expertise: formData.expertise,
-        social_links,
-      });
-      // Fetch the latest profile to ensure data persisted
-      const fresh = await getInstructorProfile();
-
-      // Update the auth store with the returned user data
-      const update = useAuthStore.getState().setUser;
-      update({
-        ...user,
-        full_name: fresh.full_name,
-        phone: fresh.phone,
-        gender: fresh.gender,
-        date_of_birth: fresh.date_of_birth,
-        avatar_url: fresh.avatar_url,
-        profile_complete: true,
-      });
-
-      // Reflect updates locally
-      let freshExpertise = [];
-      if (Array.isArray(fresh.instructor?.expertise)) {
-        freshExpertise = fresh.instructor.expertise;
-      } else if (typeof fresh.instructor?.expertise === "string") {
-        try {
-          freshExpertise = JSON.parse(fresh.instructor.expertise);
-        } catch (_) {
-          freshExpertise = fresh.instructor.expertise
-            .split(',')
-            .map((e) => e.trim())
-            .filter(Boolean);
+      const updated = await updateInstructorProfile(payload);
+      const defaultSocial = { ...DEFAULT_SOCIAL_LINKS };
+      updated.social_links?.forEach((link) => {
+        if (link.platform) {
+          defaultSocial[link.platform] = link.url || "";
         }
+      });
+      setFormData({
+        full_name: updated.full_name || "",
+        phone: updated.phone || "",
+        gender: updated.gender || "male",
+        date_of_birth: updated.date_of_birth
+          ? updated.date_of_birth.split("T")[0]
+          : "",
+        expertise: updated.instructor?.expertise || [],
+        experience:
+          typeof updated.instructor?.experience === "number"
+            ? String(updated.instructor.experience || "")
+            : updated.instructor?.experience
+            ? String(updated.instructor.experience)
+            : "",
+        bio: updated.instructor?.bio || "",
+        certifications: updated.instructor?.certifications || "",
+        pricing: updated.instructor?.pricing || "",
+        demo_video_url: updated.instructor?.demo_video_url || "",
+        socialLinks: defaultSocial,
+      });
+      setCertificates(Array.isArray(updated.certificates) ? updated.certificates : []);
+      setEmail(updated.email || email);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        setUser({
+          ...currentUser,
+          full_name: updated.full_name || currentUser.full_name,
+          phone: updated.phone || currentUser.phone,
+          gender: updated.gender || currentUser.gender,
+          date_of_birth: updated.date_of_birth || currentUser.date_of_birth,
+          profile_complete: true,
+        });
       }
-
-      const defCur = currencyOptions.find((c) => c.is_default) || currencyOptions[0];
-
-      setFormData((prev) => ({
-        ...prev,
-        expertise: freshExpertise,
-        experience: fresh.instructor?.experience || 0,
-        bio: fresh.instructor?.bio || "",
-        pricing_amount: fresh.instructor?.pricing
-          ? (() => {
-              const amt = parseFloat(fresh.instructor.pricing.split(" ")[0]);
-              return isNaN(amt) ? undefined : amt;
-            })()
-          : undefined,
-        pricing_currency: fresh.instructor?.pricing
-          ? fresh.instructor.pricing.split(" ")[1]
-          : defCur?.code || "",
-        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
-          acc[cur.platform] = cur.url;
-          return acc;
-        }, {}),
-        demoPreview: fresh.instructor?.demo_video_url
-          ? `${BASE_URL}${fresh.instructor.demo_video_url}`
-          : null,
-      }));
-
-      toast.success(t('profile_update_success'));
-      await fetchNotifications();
-      const nextRoute = !fresh.is_email_verified
-        ? "/auth/verify-email"
-        : "/dashboard/instructor";
-      router.push(nextRoute);
+      fetchNotifications?.();
+      fetchMessages?.();
+      toast.success(t("profileSaved", "Profile updated successfully."));
     } catch (err) {
-        toast.error(err.message || t('profile_update_failed'));
-      console.error("Profile update error:", err);
+      if (err instanceof z.ZodError) {
+        const fieldErrors = err.flatten().fieldErrors;
+        const mapped = Object.keys(fieldErrors).reduce((acc, key) => {
+          if (fieldErrors[key]?.length) {
+            acc[key] = fieldErrors[key][0];
+          }
+          return acc;
+        }, {});
+        setErrors(mapped);
+      } else if (err?.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error(t("profileSaveFailed", "Failed to update profile."));
+        logger.error?.("Instructor profile update failed", err);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!hasHydrated) return (
-    <InstructorLayout>
-      <div className="flex justify-center items-center h-64">
-        <FaSpinner className="animate-spin text-4xl text-yellow-600" />
-      </div>
-    </InstructorLayout>
-  );
+  if (!hasHydrated || !user || loadingProfile) {
+    return (
+      <InstructorLayout>
+        <div className="flex items-center justify-center py-24">
+          <FaSpinner className="mr-3 h-5 w-5 animate-spin text-emerald-500" />
+          <span>{t("loading", "Loading profile...")}</span>
+        </div>
+      </InstructorLayout>
+    );
+  }
+
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  const avatarPreview = avatarUrl ? `${apiBase}${avatarUrl}` : null;
+  const isEmailVerified = Boolean(user?.is_email_verified);
 
   return (
     <InstructorLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">{t('title')}</h1>
-        </div>
-
-        {/* Avatar and Demo Upload Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaUserCircle className="text-yellow-600" /> {t('profile_picture')}
-            </h2>
-            <div className="flex flex-col items-center">
-              {formData.avatarPreview ? (
-                <div className="relative mb-4">
-                  <img
-                    src={formData.avatarPreview}
-                    alt="Avatar"
-                    className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
-                  />
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, avatarPreview: null }))}
-                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    <FaTrash size={14} />
-                  </button>
+      <div className="px-6 py-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          {!isEmailVerified && (
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-6 py-4 text-yellow-900">
+              <div className="flex items-center gap-3">
+                <FaCheck className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-semibold">
+                    {t("verifyHeading", "Verify your email to unlock payouts.")}
+                  </p>
+                  <p className="text-sm">
+                    {t(
+                      "verifyCopy",
+                      "We sent a verification link to your inbox. Complete this step to access all instructor tools."
+                    )}
+                  </p>
                 </div>
-              ) : (
-                <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
-                  <FaUserCircle size={48} className="text-gray-400" />
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarSelect}
-                  className="hidden"
-                />
-
-                <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
-                    <FaSpinner className="animate-spin" />
-                  ) : (
-                    <FaUpload />
-                  )}
-                  {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaVideo className="text-purple-600" /> {t('demo_video')}
-            </h2>
-            <div className="flex flex-col items-center">
-              {formData.demoPreview ? (
-                <div className="relative w-full">
-                  <video
-                    controls
-                    src={formData.demoPreview}
-                    className="rounded-md w-full max-h-64 border"
-                  />
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, demoPreview: null }))}
-                    className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    <FaTrash size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="w-full h-40 bg-gray-100 flex flex-col items-center justify-center rounded-lg mb-4 border-2 border-dashed border-gray-300">
-                  <FaVideo className="text-3xl text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">{t('upload_video')}</p>
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (file.size > MAX_DEMO_BYTES) return toast.error(t('demo_max_size', { size: MAX_DEMO_MB }));
-                    if (!user?.id) {
-                      toast.error(t('demo_upload_failed'));
-                      return;
-                    }
-                    setIsSubmitting(true);
-                    try {
-                      const res = await uploadInstructorDemo(file, user?.id);
-                      setFormData(prev => ({
-                        ...prev,
-                        demoPreview: `${BASE_URL}${res.demo_video_url}`,
-                      }));
-                    } catch (error) {
-                      if (error?.response?.status === 413) {
-                        toast.error(t('demo_max_size', { size: MAX_DEMO_MB }));
-                      } else {
-                        const serverMessage =
-                          error?.response?.data?.error ||
-                          error?.response?.data?.message;
-                        toast.error(serverMessage || t('demo_upload_failed'));
-                      }
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
-                    <FaSpinner className="animate-spin" />
-                  ) : (
-                    <FaUpload />
-                  )}
-                  {formData.demoPreview ? t('change_video') : t('upload_video')}
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Personal and Professional Info */}
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
-            {t('personal_information')}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaUser className="text-gray-500" /> {t('full_name')} *
-              </label>
-              <input
-                name="full_name"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className={`w-full px-4 py-2 border ${errors.full_name ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-yellow-500 focus:border-yellow-500`}
-                placeholder="John Doe"
-              />
-              {errors.full_name && <p className="text-sm text-red-600 mt-1">{errors.full_name}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaPhone className="text-gray-500" /> {t('phone')} *
-              </label>
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={`w-full px-4 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-yellow-500 focus:border-yellow-500`}
-                placeholder="+1234567890"
-              />
-              {errors.phone && <p className="text-sm text-red-600 mt-1">{errors.phone}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaVenusMars className="text-gray-500" /> {t('gender')} *
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-              >
-                <option value="male">{t('male')}</option>
-                <option value="female">{t('female')}</option>
-                <option value="other">{t('other')}</option>
-                <option value="prefer-not-to-say">{t('prefer_not_to_say')}</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaCalendarAlt className="text-gray-500" /> {t('date_of_birth')} *
-              </label>
-              <input
-                type="date"
-                name="date_of_birth"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-yellow-500 focus:border-yellow-500`}
-              />
-          {errors.date_of_birth && <p className="text-sm text-red-600 mt-1">{errors.date_of_birth}</p>}
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <label className="block text-sm font-medium mb-1">{t('bio_max')}</label>
-        <textarea
-          name="bio"
-          value={formData.bio}
-          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-          rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-        />
-        {errors.bio && <p className="text-sm text-red-600 mt-1">{errors.bio}</p>}
-      </div>
-
-      <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mt-8">
-        {t('professional_information')}
-      </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <MdOutlineWorkOutline className="text-gray-500" /> {t('years_of_experience')} *
-              </label>
-              <input
-                type="number"
-                min="0"
-                name="experience"
-                value={formData.experience}
-                onChange={(e) => setFormData({ ...formData, experience: parseInt(e.target.value) || 0 })}
-                className={`w-full px-4 py-2 border ${errors.experience ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-yellow-500 focus:border-yellow-500`}
-              />
-              {errors.experience && <p className="text-sm text-red-600 mt-1">{errors.experience}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaCalendarAlt className="text-gray-500" /> {t('availability')}
-              </label>
-              <button
-                type="button"
-                onClick={async () => {
-                  const newStatus = !available;
-                  try {
-                    const res = await toggleInstructorStatus(newStatus);
-                    const updated = res?.is_online ?? newStatus;
-                    setAvailable(updated);
-                    const setUser = useAuthStore.getState().setUser;
-                    setUser({ ...user, is_online: updated });
-                  } catch (err) {
-                    toast.error(t('availability_update_failed'));
-                  }
-                }}
-                className={`px-4 py-2 rounded-md ${available ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {available ? t('available') : t('unavailable')}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaDollarSign className="text-gray-500" /> {t('pricing_per_hour')}
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  name="pricing_amount"
-                  value={formData.pricing_amount ?? ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      pricing_amount:
-                        e.target.value === "" ? undefined : parseFloat(e.target.value),
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  placeholder={t('amount_placeholder')}
-                />
-                <select
-                  name="pricing_currency"
-                  value={formData.pricing_currency}
-                  onChange={(e) => setFormData({ ...formData, pricing_currency: e.target.value })}
-                  className="w-32 px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+                <button
+                  type="button"
+                  onClick={() => router.push("/auth/verify-email")}
+                  className="ml-auto rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-900 transition hover:bg-yellow-400"
                 >
-                  {currencyOptions.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label} {option.symbol ? `(${option.symbol})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  {t("verifyCta", "Verify now")}
+                </button>
               </div>
-              <p className="text-sm text-gray-500 mt-1">e.g. 100 USD per hour</p>
             </div>
-          </div>
+          )}
 
-          {/* Expertise List */}
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-              <FaBriefcase className="text-gray-500" /> {t('expertise')}
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {formData.expertise.map((tag, i) => (
-                <span key={i} className="inline-flex items-center bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
-                  {tag}
+          <section className="rounded-2xl bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center">
+              <div className="relative h-32 w-32 flex-shrink-0">
+                <div className="h-full w-full overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                  {avatarPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarPreview}
+                      alt={t("avatarAlt", "Instructor avatar")}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-gray-400">
+                      {formData.full_name?.charAt(0)?.toUpperCase() || "I"}
+                    </div>
+                  )}
+                </div>
+                <label className="absolute bottom-2 right-2 flex cursor-pointer items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-lg transition hover:bg-emerald-500">
+                  <FaCamera className="h-4 w-4" />
+                  <span>{avatarUploading ? t("uploading", "Uploading...") : t("change", "Change")}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </label>
+                {avatarUrl && (
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      expertise: prev.expertise.filter((_, idx) => idx !== i)
-                    }))}
-                    className="ml-2 text-yellow-600 hover:text-yellow-800"
+                    onClick={handleAvatarRemove}
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100"
+                    disabled={avatarUploading}
                   >
-                    <RiDeleteBin6Line size={14} />
+                    {avatarUploading
+                      ? t("removing", "Removing...")
+                      : t("removeAvatar", "Remove")}
                   </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newExpertise}
-                onChange={(e) => setNewExpertise(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newExpertise.trim()) {
-                    setFormData(prev => ({
-                      ...prev,
-                      expertise: [...prev.expertise, newExpertise.trim()],
-                    }));
-                    setNewExpertise("");
-                  }
-                }}
-                placeholder={t('add_expertise_placeholder')}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (!newExpertise.trim()) return;
-                  setFormData(prev => ({
-                    ...prev,
-                    expertise: [...prev.expertise, newExpertise.trim()]
-                  }));
-                  setNewExpertise("");
-                }}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 flex items-center gap-2"
-              >
-                <FaPlus size={14} /> {t('add')}
-              </button>
-            </div>
-          </div>
-
-          {/* Certificates Section */}
-          <div>
-            <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-              <FaCertificate className="text-gray-500" /> {t('certificates')}
-            </label>
-
-            {/* Existing Certificates */}
-            <div className="space-y-4 mb-6">
-              {formData.certificates.map((certificate) => (
-                <div key={certificate.id} className="border rounded-lg p-4 flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    {certificate.file_url.endsWith('.pdf') ? (
-                      <FaFilePdf className="text-red-500 text-2xl" />
-                    ) : (
-                      <FaFileImage className="text-blue-500 text-2xl" />
-                    )}
-                    <div>
-                      <h4 className="font-medium">{certificate.title}</h4>
-                      <a
-                        href={`${BASE_URL}${certificate.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        {t('view_certificate')}
-                      </a>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveCertificate(certificate.id)}
-                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full"
-                  >
-                    <FaTrash />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Add New Certificate */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <FaPlus className="text-gray-500" /> {t('add_new_certificate')}
-              </h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">{t('certificate_title')} *</label>
-                  <input
-                    type="text"
-                    value={newCertificate.title}
-                    onChange={(e) => setNewCertificate(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Yoga Instructor Certification"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">{t('certificate_file')} *</label>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-
-                        if (file.size > MAX_CERTIFICATE_BYTES) {
-                          toast.error(t('avatar_max_size', { size: MAX_CERTIFICATE_MB }));
-                          return;
-                        }
-
-                        // Preview for images
-                        let preview = null;
-                        if (file.type.startsWith('image/')) {
-                          preview = URL.createObjectURL(file);
-                        }
-
-                        setNewCertificate(prev => ({
-                          ...prev,
-                          file,
-                          preview
-                        }));
-                      }}
-                      className="hidden"
+                )}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {t("pageTitle", "Instructor profile")}
+                </h1>
+                <p className="mt-2 text-sm text-gray-500">
+                  {t(
+                    "pageSubtitle",
+                    "Tell learners about your expertise, highlight your achievements, and keep your contact details accurate."
+                  )}
+                </p>
+                <div className="mt-4 flex flex-col gap-2 text-sm text-gray-600 md:flex-row md:items-center md:gap-4">
+                  <span className="font-medium">{email}</span>
+                  <span className="flex items-center gap-2">
+                    <FaCheck
+                      className={`h-3 w-3 ${
+                        isEmailVerified ? "text-emerald-500" : "text-gray-400"
+                      }`}
                     />
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-md flex items-center justify-between">
-                      <span className="truncate">
-                        {newCertificate.file ? newCertificate.file.name : t('choose_file')}
-                      </span>
-                      <FaUpload className="text-gray-500" />
-                    </div>
-                  </label>
+                    {isEmailVerified
+                      ? t("emailVerified", "Email verified")
+                      : t("emailPending", "Email verification pending")}
+                  </span>
                 </div>
               </div>
+            </div>
+          </section>
 
-              {/* Preview for image certificates */}
-              {newCertificate.preview && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium mb-1">{t('preview')}</label>
-                  <img
-                    src={newCertificate.preview}
-                    alt="Certificate preview"
-                    className="max-h-40 border rounded-md"
-                  />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <section className="rounded-2xl bg-white shadow-sm">
+              <header
+                onClick={() => toggleSection("personal")}
+                className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-6 py-4"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("personalInfo", "Personal information")}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "personalInfoCopy",
+                      "These details help us keep your account secure."
+                    )}
+                  </p>
+                </div>
+                <FaPlus
+                  className={`h-4 w-4 text-gray-400 transition ${
+                    expanded.personal ? "rotate-45" : ""
+                  }`}
+                />
+              </header>
+              {expanded.personal && (
+                <div className="grid gap-6 px-6 pb-6 pt-2 md:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("fullName", "Full name")}
+                    </label>
+                    <input
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      placeholder={t("fullNamePlaceholder", "Jane Doe")}
+                    />
+                    {errors.full_name && (
+                      <p className="mt-1 text-xs text-red-500">{errors.full_name}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("phone", "Phone number")}
+                    </label>
+                    <input
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      placeholder={t("phonePlaceholder", "+1 555 123 4567")}
+                    />
+                    {errors.phone && (
+                      <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("gender", "Gender")}
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="male">{t("male", "Male")}</option>
+                      <option value="female">{t("female", "Female")}</option>
+                      <option value="other">{t("other", "Other")}</option>
+                      <option value="prefer-not-to-say">
+                        {t("preferNotToSay", "Prefer not to say")}
+                      </option>
+                    </select>
+                    {errors.gender && (
+                      <p className="mt-1 text-xs text-red-500">{errors.gender}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("dob", "Date of birth")}
+                    </label>
+                    <input
+                      type="date"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {errors.date_of_birth && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.date_of_birth}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
+            </section>
 
-              <button
-                onClick={handleCertificateUpload}
-                disabled={!newCertificate.title || !newCertificate.file || certificateUploading}
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+            <section className="rounded-2xl bg-white shadow-sm">
+              <header
+                onClick={() => toggleSection("professional")}
+                className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-6 py-4"
               >
-                {certificateUploading ? (
-                  <FaSpinner className="animate-spin" />
-                ) : (
-                  <FaUpload />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("professionalProfile", "Professional profile")}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "professionalCopy",
+                      "Share your teaching background and core strengths."
+                    )}
+                  </p>
+                </div>
+                <FaPlus
+                  className={`h-4 w-4 text-gray-400 transition ${
+                    expanded.professional ? "rotate-45" : ""
+                  }`}
+                />
+              </header>
+              {expanded.professional && (
+                <div className="grid gap-6 px-6 pb-6 pt-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("expertise", "Areas of expertise")}
+                    </label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {formData.expertise.map((skill) => (
+                        <span
+                          key={skill}
+                          className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-600"
+                        >
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() => removeExpertiseTag(skill)}
+                            className="text-xs text-emerald-500 hover:text-emerald-700"
+                            aria-label={t("removeSkill", "Remove skill")}
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                      <label className="flex flex-1 items-center rounded-lg border border-dashed border-gray-300 px-2">
+                        <input
+                          type="text"
+                          value={expertiseInput}
+                          onChange={(e) => setExpertiseInput(e.target.value)}
+                          onKeyDown={handleExpertiseKeyDown}
+                          placeholder={t("expertisePlaceholder", "Press Enter to add")}
+                          className="w-full border-none bg-transparent py-2 text-sm focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={addExpertiseTag}
+                          className="rounded-lg bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-200"
+                        >
+                          {t("add", "Add")}
+                        </button>
+                      </label>
+                    </div>
+                    {errors.expertise && (
+                      <p className="mt-1 text-xs text-red-500">{errors.expertise}</p>
+                    )}
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t("experienceYears", "Teaching experience (years)")}
+                      </label>
+                      <input
+                        name="experience"
+                        type="number"
+                        min="0"
+                        value={formData.experience}
+                        onChange={handleInputChange}
+                        className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      {errors.experience && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.experience}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t("pricing", "Pricing notes")}
+                      </label>
+                      <input
+                        name="pricing"
+                        value={formData.pricing}
+                        onChange={handleInputChange}
+                        placeholder={t("pricingPlaceholder", "e.g. $30/hour or custom")}
+                        className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      {errors.pricing && (
+                        <p className="mt-1 text-xs text-red-500">{errors.pricing}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("bio", "Professional bio")}
+                    </label>
+                    <textarea
+                      name="bio"
+                      rows={4}
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      placeholder={t(
+                        "bioPlaceholder",
+                        "Share your teaching style, achievements, and what learners can expect."
+                      )}
+                      className="mt-2 w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {errors.bio && (
+                      <p className="mt-1 text-xs text-red-500">{errors.bio}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("certifications", "Certification highlights")}
+                    </label>
+                    <textarea
+                      name="certifications"
+                      rows={3}
+                      value={formData.certifications}
+                      onChange={handleInputChange}
+                      placeholder={t(
+                        "certificationsPlaceholder",
+                        "Highlight certifications or accreditations learners should know about."
+                      )}
+                      className="mt-2 w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {errors.certifications && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.certifications}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl bg-white shadow-sm">
+              <header
+                onClick={() => toggleSection("social")}
+                className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-6 py-4"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("socialPresence", "Social presence")}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "socialCopy",
+                      "Add links learners can use to explore your work."
+                    )}
+                  </p>
+                </div>
+                <FaPlus
+                  className={`h-4 w-4 text-gray-400 transition ${
+                    expanded.social ? "rotate-45" : ""
+                  }`}
+                />
+              </header>
+              {expanded.social && (
+                <div className="grid gap-6 px-6 pb-6 pt-2">
+                  {socialPlatforms.map((platform) => (
+                    <div key={platform}>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        <span className="flex items-center gap-2 capitalize">
+                          <FaLink className="h-3 w-3 text-gray-400" />
+                          {platform.replace(/[-_]/g, " ")}
+                        </span>
+                      </label>
+                      <input
+                        value={formData.socialLinks?.[platform] || ""}
+                        onChange={(e) =>
+                          handleSocialChange(platform, e.target.value)
+                        }
+                        placeholder="https://"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl bg-white shadow-sm">
+              <header
+                onClick={() => toggleSection("media")}
+                className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-6 py-4"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("mediaShowcase", "Media & demo")}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "mediaCopy",
+                      "Add a demo video link or upload a short introduction clip."
+                    )}
+                  </p>
+                </div>
+                <FaPlus
+                  className={`h-4 w-4 text-gray-400 transition ${
+                    expanded.media ? "rotate-45" : ""
+                  }`}
+                />
+              </header>
+              {expanded.media && (
+                <div className="grid gap-6 px-6 pb-6 pt-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("demoVideoUrl", "Demo video URL")}
+                    </label>
+                    <input
+                      name="demo_video_url"
+                      value={formData.demo_video_url}
+                      onChange={handleInputChange}
+                      placeholder="https://"
+                      className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {errors.demo_video_url && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.demo_video_url}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700">
+                          {t("demoUpload", "Upload an introduction clip")}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {t(
+                            "demoUploadCopy",
+                            "MP4, MOV, or WEBM up to 150MB. Ideal length: 1-2 minutes."
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500">
+                          <FaUpload className="h-4 w-4" />
+                          {demoUploading
+                            ? t("uploading", "Uploading...")
+                            : t("upload", "Upload")}
+                          <input
+                            type="file"
+                            accept="video/mp4,video/webm,video/quicktime"
+                            className="hidden"
+                            onChange={handleDemoUpload}
+                          />
+                        </label>
+                        {formData.demo_video_url && (
+                          <button
+                            type="button"
+                            onClick={handleDemoDelete}
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
+                            disabled={demoUploading}
+                          >
+                            {demoUploading
+                              ? t("removing", "Removing...")
+                              : t("remove", "Remove")}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {formData.demo_video_url && (
+                      <div className="mt-4 flex items-center gap-3 text-sm text-emerald-600">
+                        <FaVideo className="h-4 w-4" />
+                        <span className="truncate">
+                          {formData.demo_video_url.replace(apiBase, "")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl bg-white shadow-sm">
+              <header
+                onClick={() => toggleSection("certificates")}
+                className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-6 py-4"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("certificatesHeading", "Certificates")}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {t(
+                      "certificatesCopy",
+                      "Upload supporting documents to build learner confidence."
+                    )}
+                  </p>
+                </div>
+                <FaPlus
+                  className={`h-4 w-4 text-gray-400 transition ${
+                    expanded.certificates ? "rotate-45" : ""
+                  }`}
+                />
+              </header>
+              {expanded.certificates && (
+                <div className="px-6 pb-6 pt-2">
+                  <div className="flex flex-col gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t("certificateTitle", "Certificate title")}
+                      </label>
+                      <input
+                        value={newCertificateTitle}
+                        onChange={(e) => setNewCertificateTitle(e.target.value)}
+                        placeholder={t("certificateTitlePlaceholder", "e.g. TESOL 2023")}
+                        className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500">
+                      <FaAward className="h-4 w-4" />
+                      {certificateUploading
+                        ? t("uploading", "Uploading...")
+                        : t("uploadCertificate", "Upload certificate")}
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        className="hidden"
+                        onChange={handleCertificateUpload}
+                        ref={certificateInputRef}
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {certificates.length === 0 && (
+                      <p className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                        {t("noCertificates", "No certificates uploaded yet.")}
+                      </p>
+                    )}
+                    {certificates.map((certificate) => (
+                      <div
+                        key={certificate.id}
+                        className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 shadow-sm"
+                      >
+                        <div className="max-w-md">
+                          <p className="font-semibold text-gray-800">
+                            {certificate.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(certificate.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <a
+                            href={`${apiBase}${certificate.file_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-lg border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-50"
+                          >
+                            {t("view", "View")}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleCertificateDelete(certificate.id)}
+                            className="flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                            disabled={certificateUploading}
+                          >
+                            <FaTrash className="h-3 w-3" />
+                            {t("delete", "Delete")}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting && (
+                  <FaSpinner className="h-4 w-4 animate-spin text-white" />
                 )}
-                {t('upload_certificate')}
+                {isSubmitting
+                  ? t("saving", "Saving changes...")
+                  : t("saveChanges", "Save changes")}
               </button>
             </div>
-          </div>
-
-          {/* Social Links */}
-          <div>
-            <label className="block text-sm font-medium mb-2">{t('social_links')}</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {socialPlatforms.map((platform) => (
-                <div key={platform.name} className="bg-gray-50 p-3 rounded-lg">
-                  <label className="text-sm flex items-center gap-2 font-medium mb-1">
-                    {platform.icon} {platform.name.charAt(0).toUpperCase() + platform.name.slice(1)}
-                  </label>
-                  <input
-                    type="text"
-                    name={platform.name}
-                    value={formData.socialLinks[platform.name] || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, [platform.name]: e.target.value },
-                    }))}
-                    placeholder={`https://${platform.name}.com/yourprofile`}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex justify-end pt-6">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2 shadow-md"
-            >
-              {isSubmitting ? (
-                <>
-                  <FaSpinner className="animate-spin" /> {t('upload') + '...'}
-                </>
-              ) : (
-                t('save_changes')
-              )}
-            </button>
-          </div>
+          </form>
         </div>
       </div>
-      {showCropper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
-            <div className="relative w-full h-64">
-              <Cropper
-                image={tempAvatar}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => {
-                  setShowCropper(false);
-                  if (tempAvatar) URL.revokeObjectURL(tempAvatar);
-                  setTempAvatar(null);
-                }}
-                className="px-4 py-2 bg-gray-200 rounded"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleCropUpload}
-                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
-              >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                {t('upload')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </InstructorLayout>
   );
 }
 
+const ProtectedPage = withAuthProtection(InstructorProfileEditPage, ["instructor"]);
+export default ProtectedPage;
+
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
     },
   };
 }

@@ -329,6 +329,62 @@ describe('POST /api/ads/admin', () => {
     expect(service.createAd).not.toHaveBeenCalled();
   });
 
+  it('rejects creation when ad duration exceeds plan limit', async () => {
+    const payload = {
+      title: 'Test',
+      image_url: 'img.jpg',
+      target_roles: JSON.stringify(['student']),
+      start_at: '2024-01-01T00:00:00.000Z',
+      end_at: '2024-01-10T00:00:00.000Z',
+    };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      slug: 'instructor-basic',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_max_duration', value: '3' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/duration/i);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
+
+  it('defaults end_at based on plan limit when none provided', async () => {
+    const payload = {
+      title: 'Test',
+      image_url: 'img.jpg',
+      target_roles: JSON.stringify(['student']),
+      start_at: '2024-01-01T00:00:00.000Z',
+    };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      slug: 'instructor-basic',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_max_duration', value: '3' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
+    service.createAd.mockResolvedValue({ id: '1' });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.createAd).toHaveBeenCalled();
+    const callData = service.createAd.mock.calls[0][0];
+    expect(callData.start_at).toBeInstanceOf(Date);
+    expect(callData.end_at).toBeInstanceOf(Date);
+    const diffDays =
+      (callData.end_at.getTime() - callData.start_at.getTime()) /
+      (1000 * 60 * 60 * 24);
+    expect(diffDays).toBeCloseTo(3, 5);
+  });
+
   it('activates ad immediately for admin-created ads', async () => {
     auth.verifyToken.mockImplementationOnce((req, _res, next) => {
       req.user = {

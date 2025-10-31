@@ -126,8 +126,8 @@ const Navbar = () => {
         student: "/dashboard/student/profile/edit",
         superadmin: "/dashboard/admin/profile/edit",
       };
-      const rolePath = profilePaths[userRole] || "/website";
-      if (router.pathname !== rolePath) {
+      const rolePath = profilePaths[userRole];
+      if (rolePath && router.pathname !== rolePath) {
         router.replace(rolePath);
         toast.info(t('please_complete_profile'));
       }
@@ -199,7 +199,9 @@ const Navbar = () => {
   const profileLink =
     userRole === "superadmin" || userRole === "admin"
       ? "/dashboard/admin/profile/edit"
-      : `/dashboard/${userRole}/profile/edit`;
+      : userRole
+      ? `/dashboard/${userRole}/profile/edit`
+      : "/profile/edit";
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "";

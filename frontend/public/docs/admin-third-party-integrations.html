@@ -154,7 +154,7 @@
     </nav>
     <article>
       <h1 id="admin-third-party-integrations">Admin Third Party Integrations</h1>
-<p>SkillBridge lets administrators manage API keys and settings for various third-party services. These include the ChatGPT and Hugging Face AI providers used on the community "Ask" page.</p>
+<p>SkillBridge lets administrators manage API keys and settings for various third-party services. These include the ChatGPT, DeepSeek, and Gemini AI providers used on the community "Ask" page.</p>
 <blockquote>
 <p><strong>Note:</strong> Google reCAPTCHA configuration is no longer managed here. Administrators can configure reCAPTCHA under the <strong>Social Login</strong> settings page.</p>
 </blockquote>
@@ -168,12 +168,13 @@
 <h2 id="frontend">Frontend</h2>
 <ul>
 <li>Admin page: <code>frontend/src/pages/dashboard/admin/settings/thirdParty</code></li>
-<li>Integration modals under <code>frontend/src/components/admin/integrations</code> allow entering API keys for ChatGPT and Hugging Face.</li>
+<li>Integration modals under <code>frontend/src/components/admin/integrations</code> allow entering API keys for AI providers plus Google Analytics, Google Ads, and Google AdSense settings.</li>
 <li>Saved settings are fetched through <code>frontend/src/services/admin/thirdPartyService.js</code>.</li>
 <li>Community question page <code>frontend/src/pages/community/ask.js</code> calls <code>fetchThirdPartyConfig</code> to list available AI providers for users.</li>
 <li>When no provider has an API key configured the page shows "No AI integrations available".</li>
+<li>Set the primary AI integration via the <strong>Default AI Provider</strong> selector at the top of the admin page. The homepage chatbot and featured AI sections fall back to this provider when multiple options are active.</li>
 </ul>
-<p>After storing keys on the admin page, users can select ChatGPT or Hugging Face from a dropdown on the AI Assistance tab and submit questions powered by the chosen model.</p>
+<p>After storing keys on the admin page, users can select any enabled AI provider (ChatGPT, DeepSeek, or Gemini) from a dropdown on the AI Assistance tab and submit questions powered by the chosen model.</p>
 <h3 id="chatgpt-configuration">ChatGPT Configuration</h3>
 <ol>
 <li>Sign in to your OpenAI account and create an API key.</li>
@@ -187,22 +188,34 @@
 <li>Click <strong>Save</strong> to persist the settings. The backend will use the selected
    model when calling the OpenAI Chat Completion API.</li>
 </ol>
-<h3 id="hugging-face-configuration">Hugging Face Configuration</h3>
-<ol>
-<li>Generate an access token in your Hugging Face account: <a href="https://huggingface.co/settings/tokens">https://huggingface.co/settings/tokens</a>.
-   A fine‑grained token with the <code>inference:serverless</code> permission is sufficient.</li>
-<li>In the admin dashboard open <strong>Settings → Third Party</strong> and launch the <strong>Hugging Face</strong> modal.</li>
-<li>Paste the token into the <strong>Access Token</strong> field and specify the desired model
-   endpoint (e.g. <code>gpt2</code> or <code>google/flan-t5-base</code>).</li>
-<li>Click <strong>Save</strong> to store the settings.</li>
-<li>Users can now choose <code>huggingface</code> as the provider when asking AI questions.</li>
-</ol>
 <h3 id="deepseek-configuration">DeepSeek Configuration</h3>
 <ol>
 <li>Generate an API key in your DeepSeek account.</li>
 <li>In the admin dashboard open <strong>Settings → Third Party</strong> and select <strong>DeepSeek</strong>.</li>
 <li>Provide the API key and the desired model name (e.g. <code>deepseek-chat</code>) and optional max tokens such as <code>1024</code>.</li>
 <li>Save the settings to enable DeepSeek. Other providers can be deactivated by toggling them off.</li>
+</ol>
+<h3 id="gemini-configuration">Gemini Configuration</h3>
+<ol>
+<li>Set up access to the Gemini API in your Google Cloud project and create an API key with the <strong>Generative Language API</strong> enabled.</li>
+<li>In the admin dashboard open <strong>Settings → Third Party</strong> and choose <strong>Gemini</strong>.</li>
+<li>Paste the API key and specify the preferred Gemini model (for example <code>gemini-1.5-pro-latest</code>), plus any optional configuration such as temperature limits.</li>
+<li>Click <strong>Save</strong> to activate Gemini as an AI provider. Users can select it from the AI Assistance dropdown once enabled.</li>
+</ol>
+<h3 id="google-ads-conversion-tracking">Google Ads Conversion Tracking</h3>
+<ol>
+<li>In Google Ads, create conversion actions for the events you want to capture (e.g. lead, purchase, subscription) and note the global <strong>Conversion ID</strong> (format <code>AW-XXXXXXXXX</code>) plus each action’s <code>send_to</code> identifier.</li>
+<li>In the admin dashboard open <strong>Settings → Third Party</strong> and select <strong>Google Ads</strong>.</li>
+<li>Enter the conversion ID, optional remarketing and enhanced conversion preferences, then add conversion rows that map a platform event key (for example <code>signup</code> or <code>purchase</code>) to its Google Ads <code>send_to</code> value. You can optionally provide a default value and currency for each event.</li>
+<li>Click <strong>Save</strong>. The frontend will automatically load the Google Ads tag when a conversion ID is present. It emits the following event keys out of the box:
+  <ul>
+    <li><code>signup</code> when a visitor creates an account.</li>
+    <li><code>purchase</code> after a successful payment (includes amount, currency, transaction id).</li>
+    <li><code>subscription</code> in addition to <code>purchase</code> for plan activations.</li>
+    <li><code>class_enrollment</code>, <code>tutorial_enrollment</code>, and <code>book_purchase</code> for the respective item types.</li>
+  </ul>
+</li>
+<li>To track additional actions, add rows in the modal and trigger <code>recordGoogleAdsConversion('&lt;eventKey&gt;', params)</code> from the relevant component.</li>
 </ol>
     </article>
   </main>

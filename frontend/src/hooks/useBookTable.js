@@ -13,6 +13,13 @@ export default function useBookTable({
   },
   storageKey = "booksFilters",
 } = {}) {
+  const normalizePrice = (value) => {
+    if (value === null || value === undefined) return null;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : value;
+  };
+  const initialPriceRange = normalizePrice(initialFilters?.priceRange);
+
   const [filters, setFilters] = useState(initialFilters);
   const [selectedItems, setSelectedItems] = useState([]);
   const [allSelected, setAllSelected] = useState(false);
@@ -59,11 +66,15 @@ export default function useBookTable({
     setPage(1);
   };
 
+  const currentPriceRange = normalizePrice(filters?.priceRange);
+  const hasPriceFilter =
+    currentPriceRange !== null && currentPriceRange !== initialPriceRange;
+
   const hasActiveFilters =
     filters.search ||
     filters.category ||
     filters.status ||
-    (filters.priceRange && filters.priceRange > 0) ||
+    hasPriceFilter ||
     filters.language ||
     (filters.tags && filters.tags.length > 0);
 

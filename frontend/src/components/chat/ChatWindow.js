@@ -79,7 +79,13 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
 
   const handleStartVideoCall = async (chatId) => {
     try {
-      const res = await startVideoCall(chatId);
+      const displayName =
+        selectedChat?.groupName ||
+        selectedChat?.name ||
+        selectedChat?.full_name ||
+        selectedChat?.email ||
+        "Conversation";
+      const res = await startVideoCall(chatId, { name: displayName });
       toast.info("Calling...");
       return res;
     } catch (_) {

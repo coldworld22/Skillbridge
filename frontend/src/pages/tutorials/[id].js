@@ -45,6 +45,7 @@ import {
 } from "@/services/notificationService";
 import { buildUrl } from "@/utils/url";
 import Link from "next/link";
+import { normalizeText } from "@/utils/text";
 
 export async function handleShare(tutorial) {
   const shareData = {
@@ -412,19 +413,32 @@ export default function TutorialDetail() {
         }
       }
 
+      const normalizeCollection = (input) => {
+        if (Array.isArray(input)) return input;
+        if (input && Array.isArray(input.data)) return input.data;
+        if (input && Array.isArray(input.items)) return input.items;
+        return [];
+      };
+
       try {
-        const [w, f] = await Promise.all([
+        const [wRaw, fRaw] = await Promise.all([
           getMyTutorialWishlist(),
           getMyTutorialFavorites(),
         ]);
         if (!isActive) return;
+        const wishlistEntries = normalizeCollection(wRaw);
+        const favoriteEntries = normalizeCollection(fRaw);
         const tutorialIdString = String(tutorial.id);
         setInWishlist((prev) => {
-          const next = w.some((t) => String(t.id) === tutorialIdString);
+          const next = wishlistEntries.some(
+            (item) => String(item?.id) === tutorialIdString,
+          );
           return prev === next ? prev : next;
         });
         setInFavorites((prev) => {
-          const next = f.some((t) => String(t.id) === tutorialIdString);
+          const next = favoriteEntries.some(
+            (item) => String(item?.id) === tutorialIdString,
+          );
           return prev === next ? prev : next;
         });
       } catch (err) {
@@ -680,7 +694,10 @@ export default function TutorialDetail() {
     <div className="bg-gray-900 text-white min-h-screen">
       <Head>
         <title>{tutorial.title} | SkillBridge</title>
-        <meta name="description" content={tutorial.description} />
+        <meta
+          name="description"
+          content={normalizeText(tutorial.description).slice(0, 160)}
+        />
       </Head>
       <Navbar />
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">

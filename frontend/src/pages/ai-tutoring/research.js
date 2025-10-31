@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { askAI } from "@/services/aiService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
 
 const modes = [
   { key: "summary", label: "Summarize" },
@@ -20,15 +21,9 @@ export default function ResearchAssistantPage() {
     const load = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
-        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
-          opts.push({ key: "chatgpt", label: "ChatGPT" });
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
-          opts.push({ key: "deepseek", label: "DeepSeek AI" });
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
-          opts.push({ key: "huggingface", label: "Hugging Face" });
-        setModels(opts);
-        if (opts.length === 1) setSelectedModel(opts[0].key);
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setModels(providers);
+        setSelectedModel(defaultProvider || "");
       } catch (err) {
         console.error(err);
       }
@@ -48,7 +43,7 @@ export default function ResearchAssistantPage() {
       );
       setOutput(answer);
     } catch (err) {
-      setOutput("Error generating response");
+      setOutput(err?.message || "Error generating response");
     } finally {
       setLoading(false);
     }
@@ -60,7 +55,7 @@ export default function ResearchAssistantPage() {
       const { answer } = await askAI(selectedModel, followUp);
       setFollowUpResponse(answer);
     } catch (err) {
-      setFollowUpResponse("Error fetching response");
+      setFollowUpResponse(err?.message || "Error fetching response");
     }
   };
 
@@ -108,6 +103,11 @@ export default function ResearchAssistantPage() {
             </label>
           ))}
         </div>
+        {!models.length && (
+          <p className="text-sm text-yellow-300 mb-4">
+            AI research assistance requires an active provider. Configure ChatGPT, DeepSeek, or Gemini in the Third Party settings.
+          </p>
+        )}
 
         {/* File Upload */}
         <div className="mb-4">
@@ -129,7 +129,7 @@ export default function ResearchAssistantPage() {
 
         <button
           onClick={handleAnalyze}
-          disabled={loading || !inputText.trim()}
+          disabled={loading || !inputText.trim() || !selectedModel}
           className="bg-yellow-500 text-gray-900 px-6 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
         >
           {loading ? `${selectedMode === "summary" ? "Summarizing" : "Explaining"}...` : `Get ${selectedMode === "summary" ? "Summary" : "Explanation"}`}
@@ -154,7 +154,8 @@ export default function ResearchAssistantPage() {
               />
               <button
                 onClick={handleFollowUp}
-                className="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600"
+                disabled={!selectedModel}
+                className="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
               >
                 Ask
               </button>

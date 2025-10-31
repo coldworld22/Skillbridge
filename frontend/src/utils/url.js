@@ -5,6 +5,9 @@ const RAW_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 // Remove any trailing "/api" segment (and anything following it) so that
 // static asset URLs point to the server root regardless of API prefix.
 const API_BASE = RAW_API_BASE.replace(/\/api.*$/, "");
+const TRIMMED_API_BASE = API_BASE.replace(/\/$/, "");
+const TRIMMED_RAW_BASE = RAW_API_BASE.replace(/\/$/, "");
+const UPLOAD_BASE = TRIMMED_API_BASE || TRIMMED_RAW_BASE;
 
 export function safeEncodeURI(url) {
   if (!url) return url;
@@ -59,11 +62,37 @@ function extractPathCandidate(path) {
   return null;
 }
 
+function rewriteInternalUploads(candidate) {
+  try {
+    const url = new URL(candidate);
+    const hostname = url.hostname?.toLowerCase?.() || "";
+    const isInternalHost =
+      hostname === "backend" ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.endsWith(".internal");
+    if (isInternalHost && /^\/(api\/)?uploads\//i.test(url.pathname || "")) {
+      const uploadsPath = (url.pathname || "").replace(/^\/api/i, "");
+      const suffix = `${uploadsPath}${url.search || ""}${url.hash || ""}`;
+      if (UPLOAD_BASE) {
+        return safeEncodeURI(`${UPLOAD_BASE}${suffix}`);
+      }
+      return safeEncodeURI(`/api${suffix}`);
+    }
+  } catch {
+    /* ignore invalid URL */
+  }
+  return null;
+}
+
 export function buildUrl(path) {
   const candidate = extractPathCandidate(path);
   if (!candidate) return null;
 
-  if (/^https?:/i.test(candidate)) return safeEncodeURI(candidate);
+  if (/^https?:/i.test(candidate)) {
+    const rewritten = rewriteInternalUploads(candidate);
+    return safeEncodeURI(rewritten || candidate);
+  }
 
   // Normalize to root-relative
   const uploadsIndex = candidate.indexOf("/uploads");
@@ -72,9 +101,8 @@ export function buildUrl(path) {
 
   // Only prefix uploads with the API base so they proxy through Nginx/backend.
   if (/^\/uploads\//i.test(normalized)) {
-    if (RAW_API_BASE) {
-      const base = RAW_API_BASE.replace(/\/$/, "");
-      return safeEncodeURI(`${base}${normalized}`); // e.g., https://domain/api/uploads/...
+    if (UPLOAD_BASE) {
+      return safeEncodeURI(`${UPLOAD_BASE}${normalized}`);
     }
     return safeEncodeURI(normalized.startsWith("/api/") ? normalized : `/api${normalized}`);
   }

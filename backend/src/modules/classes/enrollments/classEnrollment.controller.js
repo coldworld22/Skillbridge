@@ -6,7 +6,10 @@ const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
-const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
+const {
+  getActiveStudentSubscription,
+  getActiveStudentPlanId,
+} = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 
 exports.enroll = catchAsync(async (req, res) => {
@@ -36,7 +39,30 @@ exports.enroll = catchAsync(async (req, res) => {
       return;
     }
 
-    const activePlanId = await getActiveStudentPlanId(user_id);
+    let activePlanId = null;
+    let activeSubscriptionId = null;
+    let activeSubscription = null;
+
+    if (typeof getActiveStudentSubscription === "function") {
+      try {
+        activeSubscription = await getActiveStudentSubscription(user_id);
+      } catch (_) {
+        activeSubscription = null;
+      }
+    }
+
+    if (activeSubscription) {
+      activePlanId = activeSubscription.plan_id || null;
+      activeSubscriptionId = activeSubscription.subscription_id || null;
+    }
+
+    if (!activePlanId && typeof getActiveStudentPlanId === "function") {
+      try {
+        activePlanId = await getActiveStudentPlanId(user_id);
+      } catch (_) {
+        activePlanId = null;
+      }
+    }
     let includedPlans = [];
     if (Array.isArray(cls.included_plans)) {
       includedPlans = cls.included_plans;
@@ -62,10 +88,11 @@ exports.enroll = catchAsync(async (req, res) => {
     const classItemId =
       classId === undefined || classId === null ? classId : String(classId);
 
-    if (coveredBySubscription) {
+    if (coveredBySubscription && activeSubscriptionId) {
       const usage = await trx("plan_usage_metrics")
         .where({
           plan_id: activePlanId,
+          subscription_id: activeSubscriptionId,
           item_type: "class",
           item_id: classItemId,
         })
@@ -75,6 +102,7 @@ exports.enroll = catchAsync(async (req, res) => {
         await trx("plan_usage_metrics")
           .where({
             plan_id: activePlanId,
+            subscription_id: activeSubscriptionId,
             item_type: "class",
             item_id: classItemId,
           })
@@ -82,6 +110,7 @@ exports.enroll = catchAsync(async (req, res) => {
       } else {
         await trx("plan_usage_metrics").insert({
           plan_id: activePlanId,
+          subscription_id: activeSubscriptionId,
           item_type: "class",
           item_id: classItemId,
           usage_count: 1,
@@ -100,6 +129,24 @@ exports.enroll = catchAsync(async (req, res) => {
       });
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.
+      await creditInstructorSubscription(
+        "class",
+        classItemId,
+        activePlanId,
+        activeSubscriptionId,
+        trx
+      );
+    } else if (coveredBySubscription) {
+      await trx("payments").insert({
+        user_id,
+        method_id: null,
+        item_id: classItemId,
+        item_type: "class",
+        source: "subscription",
+        status: paymentsService.STATUS.PAID,
+        paid_at: new Date(),
+        amount: 0,
+      });
       await creditInstructorSubscription(
         "class",
         classItemId,

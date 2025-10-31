@@ -1,5 +1,6 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 import {
   FaClock,
   FaDollarSign,
@@ -11,11 +12,10 @@ import {
   FaTrashAlt,
   FaLink,
 } from "react-icons/fa";
-import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
-import { updateOffer } from "@/services/admin/offerService";
+import { updateOffer, deleteOffer } from "@/services/admin/offerService";
 import { toast } from "react-toastify";
 import {
   createResponse,
@@ -28,6 +28,12 @@ import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
 import ChatImage from "@/components/shared/ChatImage";
+import { formatCurrency } from "@/utils/currency";
+import { formatDate } from "@/utils/date";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+
+const SKELETON_LINES = 5;
 
 const getAvatarUrl = (url) => {
   if (!url) return "/images/default-avatar.png";
@@ -37,429 +43,602 @@ const getAvatarUrl = (url) => {
 
 const getMediaUrl = (url) => {
   if (!url) return null;
-  if (
-    url.startsWith("http") ||
-    url.startsWith("blob:") ||
-    url.startsWith("data:")
-  )
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
     return url;
+  }
   return `${API_BASE_URL}${url}`;
 };
 
 const isImage = (path) => {
   if (!path) return false;
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
+  return /(png|jpe?g|gif|webp|svg)$/i.test(path.split("?")[0]) || path.startsWith("data:image/");
 };
+
+const SkeletonBlock = () => (
+  <div className="animate-pulse space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="h-6 w-2/3 rounded bg-gray-200" />
+    <div className="flex gap-3">
+      <div className="h-4 w-24 rounded-full bg-gray-200" />
+      <div className="h-4 w-24 rounded-full bg-gray-200" />
+      <div className="h-4 w-24 rounded-full bg-gray-200" />
+    </div>
+    <div className="h-4 w-1/2 rounded bg-gray-200" />
+    <div className="h-4 w-4/5 rounded bg-gray-200" />
+    <div className="h-32 rounded-lg bg-gray-100" />
+  </div>
+);
+
+const SkeletonChat = () => (
+  <div className="space-y-4">
+    {Array.from({ length: SKELETON_LINES }).map((_, index) => (
+      <div key={index} className="flex items-start gap-3">
+        <div className="h-10 w-10 rounded-full bg-gray-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-24 rounded bg-gray-200" />
+          <div className="h-12 w-full max-w-sm rounded-2xl bg-gray-100" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const { user } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
   const currentUserId = user?.id;
 
+  const shouldDeferRender = !hasHydrated || !user || user.role?.toLowerCase() !== "instructor";
+
   const [offer, setOffer] = useState(null);
-  const [response, setResponse] = useState(null);
+  const [isLoadingOffer, setIsLoadingOffer] = useState(true);
+  const [offerError, setOfferError] = useState(null);
+
   const [messages, setMessages] = useState([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [activeResponse, setActiveResponse] = useState(null);
 
-  const toggleStatus = async () => {
-    if (!offer) return;
-    const newStatus = offer.status === "open" ? "closed" : "open";
-    setOffer((prev) => ({ ...prev, status: newStatus }));
-    try {
-      await updateOffer(offer.id, { status: newStatus });
-      toast.success(
-        `Offer ${newStatus === "open" ? "opened" : "closed"} successfully`,
-        { theme: "dark" }
-      );
-    } catch (_) {
-      toast.error("Failed to update offer", { theme: "dark" });
-    }
-  };
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  const [isDeletingOffer, setIsDeletingOffer] = useState(false);
 
-  useEffect(() => {
+  const isMyOffer = useMemo(() => offer?.userId === currentUserId, [offer?.userId, currentUserId]);
+
+  const hydrateOffer = useCallback(async () => {
     if (!id) return;
+    setIsLoadingOffer(true);
+    setOfferError(null);
 
-    fetchOfferById(id)
-      .then((o) => {
-        if (!o) return setOffer(null);
-        setOffer({
-          id: o.id,
-          userId: o.student_id,
-          name: o.student_name,
-          avatar: o.student_avatar,
-          type:
-            o.student_role?.toLowerCase() === "instructor"
-              ? "instructor"
-              : "student",
-          offerType: o.offer_type,
-          title: o.title,
-          price: o.budget || "",
-          duration: o.timeframe || "",
-          tags: [],
-          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
-          description: o.description || "",
-          status: o.status || "open",
-          email: o.email || "",
-          phone: o.phone || "",
-        });
-      })
-      .catch(() => setOffer(null));
+    try {
+      const data = await fetchOfferById(id);
+      if (!data) {
+        setOffer(null);
+        setOfferError("Offer not found");
+        return;
+      }
+
+      setOffer({
+        id: data.id,
+        userId: data.student_id,
+        name: data.student_name,
+        avatar: data.student_avatar,
+        type: data.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
+        offerType: data.offer_type,
+        title: data.title,
+        budget: data.budget === null || data.budget === undefined ? null : Number(data.budget),
+        duration: typeof data.timeframe === "string" ? data.timeframe.trim() : "",
+        tags: Array.isArray(data.tags)
+          ? data.tags
+              .map((tag) => (typeof tag === "string" ? tag : tag?.name))
+              .filter(Boolean)
+          : [],
+        createdAt: data.created_at || null,
+        description: data.description || "",
+        status: (data.status || "open").toLowerCase(),
+        email: data.student_email || "",
+        phone: data.student_phone || "",
+      });
+    } catch (error) {
+      console.error("Failed to load offer", error);
+      setOffer(null);
+      setOfferError("We couldn't load this offer. Please try again later.");
+    } finally {
+      setIsLoadingOffer(false);
+    }
   }, [id]);
 
-  useEffect(() => {
-    if (!offer) return;
-    fetchResponses(offer.id)
-      .then(async (resps) => {
-        if (!resps.length) {
-          setResponse(null);
-          setMessages([]);
-          return;
-        }
+  const mergeMessages = (responses) =>
+    responses
+      .flat()
+      .sort((a, b) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime());
 
-        const myResp = resps.find((r) => r.instructor_id === currentUserId);
-
-        // Always prefer showing the conversation of the current instructor
-        const activeResp = myResp || (offer.userId === currentUserId ? resps[0] : null);
-        if (activeResp) setResponse(activeResp);
-
-        // Fetch messages from all responses so both parties can see the entire discussion
-        const allMsgs = await Promise.all(
-          resps.map((r) => fetchResponseMessages(offer.id, r.id))
-        );
-        const merged = allMsgs.flat().sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-        setMessages(merged);
-      })
-      .catch(() => {
-        setResponse(null);
-        setMessages([]);
-      });
-  }, [offer]);
-
-  useEffect(() => {
-    if (!offer) return;
-
-    const loadMessages = async () => {
-      try {
-        const resps = await fetchResponses(offer.id);
-        const allMsgs = await Promise.all(
-          resps.map((r) => fetchResponseMessages(offer.id, r.id))
-        );
-        const merged = allMsgs
-          .flat()
-          .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-        setMessages(merged);
-
-        if (!response) {
-          const myResp = resps.find((r) => r.instructor_id === currentUserId);
-          const activeResp = myResp || (offer.userId === currentUserId ? resps[0] : null);
-          if (activeResp) setResponse(activeResp);
-        }
-      } catch (_) {}
-    };
-
-    loadMessages();
-    const interval = setInterval(loadMessages, 10000);
-    return () => clearInterval(interval);
-  }, [offer]);
-  const handleSendMessage = async ({ text, file, audio }) => {
-    if (!text?.trim()) return;
-    if (file || audio) {
-      toast.error("Attachments not supported for offer messages", { theme: "colored" });
-    }
+  const loadConversation = useCallback(async () => {
+    if (!offer?.id) return;
+    setIsLoadingMessages(true);
     try {
-      let resp = response;
-      if (
-        !resp ||
-        (resp.instructor_id !== currentUserId && offer.userId !== currentUserId)
-      ) {
-        resp = await createResponse(offer.id, {});
-        setResponse(resp);
+      const responses = await fetchResponses(offer.id);
+      if (!responses.length) {
+        setActiveResponse(null);
         setMessages([]);
+        return;
       }
-      const sent = await sendResponseMessage(
-        offer.id,
-        resp.id,
-        text.trim(),
-        replyTo?.id
+
+      const matchingResponse = responses.find((resp) => resp.instructor_id === currentUserId);
+      const ownerResponse = offer.userId === currentUserId ? responses[0] : null;
+      const effectiveResponse = matchingResponse || ownerResponse || responses[0];
+      setActiveResponse(effectiveResponse || null);
+
+      const messageGroups = await Promise.all(
+        responses.map((resp) => fetchResponseMessages(offer.id, resp.id))
       );
-      setMessages((prev) => [...prev, sent]);
-      setReplyTo(null);
-      toast.success("Message sent!", { theme: "colored" });
-    } catch (_) {
-      toast.error("Failed to send message", { theme: "colored" });
+      setMessages(mergeMessages(messageGroups));
+    } catch (error) {
+      console.error("Failed to load conversation", error);
+      if (!messages.length) {
+        toast.error("Unable to load offer discussion right now.");
+      }
+    } finally {
+      setIsLoadingMessages(false);
     }
-  };
+  }, [offer?.id, offer?.userId, currentUserId, messages.length]);
 
-  const handleDeleteMessage = async (msgId) => {
+  useEffect(() => {
+    if (shouldDeferRender || !id) return;
+    hydrateOffer();
+  }, [id, shouldDeferRender, hydrateOffer]);
+
+  useEffect(() => {
+    if (!offer?.id) return;
+    loadConversation();
+
+    const interval = setInterval(loadConversation, 10000);
+    return () => clearInterval(interval);
+  }, [offer?.id, loadConversation]);
+
+  const handleSendMessage = useCallback(
+    async ({ text, file, audio }) => {
+      const trimmed = text?.trim();
+      if (!trimmed) return;
+      if (file || audio) {
+        toast.error("Attachments are not supported for offer messages.");
+      }
+
+      try {
+        let response = activeResponse;
+        if (!response || (response.instructor_id !== currentUserId && offer?.userId !== currentUserId)) {
+          response = await createResponse(offer.id, {});
+          setActiveResponse(response);
+          setMessages([]);
+        }
+
+        const sent = await sendResponseMessage(offer.id, response.id, trimmed, replyTo?.id);
+        setMessages((prev) => [...prev, sent]);
+        setReplyTo(null);
+      } catch (error) {
+        console.error("Failed to send message", error);
+        toast.error("Failed to send message. Please try again.");
+      }
+    },
+    [activeResponse, currentUserId, offer?.id, offer?.userId, replyTo?.id]
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId) => {
+      if (!activeResponse?.id || !offer?.id) return;
+      try {
+        await deleteResponseMessage(offer.id, activeResponse.id, messageId);
+        setMessages((prev) => prev.filter((message) => message.id !== messageId));
+      } catch (error) {
+        console.error("Failed to delete message", error);
+        toast.error("Could not delete the message.");
+      }
+    },
+    [activeResponse?.id, offer?.id]
+  );
+
+  const toggleStatus = useCallback(async () => {
+    if (!offer) return;
+    const nextStatus = offer.status === "open" ? "closed" : "open";
+
+    setIsTogglingStatus(true);
+    setOffer((prev) => (prev ? { ...prev, status: nextStatus } : prev));
+
     try {
-      await deleteResponseMessage(offer.id, response.id, msgId);
-      setMessages((prev) => prev.filter((m) => m.id !== msgId));
-      toast.info("Message deleted.");
-    } catch (_) {
-      toast.error("Failed to delete message", { theme: "colored" });
+      await updateOffer(offer.id, { status: nextStatus });
+      toast.success(`Offer ${nextStatus === "open" ? "reopened" : "closed"} successfully.`);
+    } catch (error) {
+      console.error("Failed to toggle status", error);
+      setOffer((prev) => (prev ? { ...prev, status: prev.status === "open" ? "closed" : "open" } : prev));
+      toast.error("Unable to update the offer status.");
+    } finally {
+      setIsTogglingStatus(false);
     }
-  };
+  }, [offer]);
 
-  if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
+  const handleDeleteOffer = useCallback(async () => {
+    if (!offer?.id) return;
+    if (!window.confirm("Delete this offer? This action cannot be undone.")) {
+      return;
+    }
 
-  const isMyOffer = offer.userId === currentUserId;
-  const isStudentOffer = offer.type === "student";
+    setIsDeletingOffer(true);
+    try {
+      await deleteOffer(offer.id);
+      toast.success("Offer deleted successfully.");
+      router.push("/dashboard/instructor/offers");
+    } catch (error) {
+      console.error("Failed to delete offer", error);
+      toast.error("Unable to delete this offer.");
+      setIsDeletingOffer(false);
+    }
+  }, [offer?.id, router]);
+
+  const copyOfferLink = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const link = window.location.href;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(link)
+        .then(() => toast.success("Offer link copied to clipboard."))
+        .catch(() => {
+          toast.info(link);
+        });
+    } else {
+      toast.info(link);
+    }
+  }, []);
+
+  if (shouldDeferRender) {
+    return null;
+  }
+
+  if (isLoadingOffer) {
+    return (
+      <div className="mx-auto mt-12 w-full max-w-4xl">
+        <SkeletonBlock />
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 h-6 w-48 animate-pulse rounded bg-gray-200" />
+          <SkeletonChat />
+        </div>
+      </div>
+    );
+  }
+
+  if (offerError || !offer) {
+    return (
+      <div className="mx-auto mt-12 w-full max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700">
+        <p className="text-lg font-semibold">{offerError || "Offer not found."}</p>
+        <button
+          type="button"
+          onClick={hydrateOffer}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  const priceLabel = offer.budget === null ? "Not specified" : formatCurrency(offer.budget, { fallback: "—" });
+  const postedLabel = offer.createdAt ? formatDate(offer.createdAt) : "—";
+
+  const contactButtons = [
+    offer.email && {
+      key: "email",
+      label: "Email",
+      icon: <FaEnvelope />,
+      action: () => window.open(`mailto:${offer.email}`, "_blank"),
+      className: "bg-gray-600 hover:bg-gray-700",
+    },
+    offer.phone && {
+      key: "whatsapp",
+      label: "WhatsApp",
+      icon: <FaWhatsapp />,
+      action: () => window.open(`https://wa.me/${offer.phone.replace(/\D/g, "")}`, "_blank"),
+      className: "bg-green-500 hover:bg-green-600",
+    },
+    {
+      key: "message",
+      label: "Message",
+      icon: <FaComments />,
+      action: () => router.push(`/messages?to=${offer.userId}`),
+      className: "bg-blue-600 hover:bg-blue-700",
+    },
+  ].filter(Boolean);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-lg mt-10 mb-12">
-      <Link href="/dashboard/instructor/offers">
-        <button className="text-gray-600 hover:text-gray-800 underline text-sm mb-6 block">
-          ← Back to My Offers
-        </button>
+    <section className="mx-auto w-full max-w-5xl p-4 pb-16 sm:p-6 lg:p-8">
+      <Link
+        href="/dashboard/instructor/offers"
+        className="mb-6 inline-flex items-center text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+      >
+        ← Back to Offers
       </Link>
 
-      <div className="flex justify-between items-center mb-3">
-        <h1 className="text-2xl font-bold text-gray-800">{offer.title}</h1>
-        <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow ${isStudentOffer ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-          {isStudentOffer ? "Student Request" : "Instructor Offer"}
-        </span>
-      </div>
+      <article className="rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-lg">
+        <header className="flex flex-col gap-4 border-b border-gray-100 p-6 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-3">
+            <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">{offer.title}</h1>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1">
+                Type: {offer.offerType || "—"}
+              </span>
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
+                  offer.status === "open" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                }`}
+              >
+                Status: {offer.status}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1">
+                Posted: {postedLabel}
+              </span>
+            </div>
+          </div>
+          <span
+            className={`self-start rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+              offer.type === "student" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+            }`}
+          >
+            {offer.type === "student" ? "Student Request" : "Instructor Offer"}
+          </span>
+        </header>
 
-      <div className="flex flex-wrap justify-between text-sm text-gray-500 mb-6 gap-2">
-        <p>Posted: {offer.date}</p>
-        <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-          Type: {offer.offerType}
-        </span>
-        <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-          Status: {offer.status}
-        </span>
-      </div>
-
-      <div className="space-y-3 mb-6">
-        <div className="flex gap-2 items-center text-gray-700">
-          <FaClock className="text-yellow-500" /> {offer.duration}
-        </div>
-        <div className="flex gap-2 items-center text-gray-700">
-          <FaDollarSign className="text-yellow-500" /> {offer.price}
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {offer.tags.map((tag, i) => (
-            <span key={i} className="bg-yellow-100 text-yellow-800 px-3 py-1 text-xs rounded-full flex items-center gap-1">
-              <FaTag className="text-xs" /> {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-10">
-        <h3 className="text-md font-semibold text-gray-700 mb-2">Description</h3>
-        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-          {offer.description || "No description provided."}
-        </p>
-      </div>
-
-      {/* Offer Discussion Section */}
-      <div className="border-t pt-6 mb-10">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
-        <>
-          <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-            {messages.map((msg) => {
-            const isCurrentUser = msg.sender_id === currentUserId;
-            return (
-                <div key={msg.id} className={`flex items-end ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-                {!isCurrentUser && (
-                  <ChatImage
-                    src={getAvatarUrl(msg.sender_avatar || offer.avatar)}
-                    alt={msg.sender_name || offer.name}
-                    className="w-8 h-8 rounded-full mr-2"
-                    width={32}
-                    height={32}
-                  />
-                )}
-                <div className={`flex flex-col max-w-[75%] space-y-1 ${isCurrentUser ? "items-end" : "items-start"}`}>
-                  <div className="text-xs text-gray-500">
-                    {isCurrentUser ? "You" : msg.sender_name || offer.name}
-                  </div>
-                  <div
-                    className={`px-4 py-2 rounded-2xl shadow text-sm ${
-                      isCurrentUser
-                        ? "bg-green-500 text-white rounded-br-sm"
-                        : "bg-gray-200 text-gray-900 rounded-bl-sm"
-                    }`}
-                  >
-                    {msg.reply_message && (
-                      <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
-                        {msg.reply_message}
-                      </div>
-                    )}
-                    {msg.reply_file_url && isImage(msg.reply_file_url) && (
-                      <ChatImage
-                        src={getMediaUrl(msg.reply_file_url)}
-                        alt="reply file"
-                        className="max-w-xs rounded-md mb-1"
-                        width={200}
-                        height={200}
-                      />
-                    )}
-                    {msg.reply_file_url && !isImage(msg.reply_file_url) && (
-                      <a
-                        href={getMediaUrl(msg.reply_file_url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline text-xs mb-1"
+        <div className="grid gap-6 p-6 md:grid-cols-[1.5fr_1fr]">
+          <div className="space-y-6">
+            <section className="grid gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 text-sm text-gray-700">
+              <div className="flex items-center gap-3">
+                <FaClock className="text-yellow-500" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Timeframe</p>
+                  <p className="text-base font-semibold text-gray-800">{offer.duration || "—"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <FaDollarSign className="text-yellow-500" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Budget</p>
+                  <p className="text-base font-semibold text-gray-800">{priceLabel}</p>
+                </div>
+              </div>
+              {offer.tags.length > 0 && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Tags</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {offer.tags.map((tag) => (
+                      <span
+                        key={`${offer.id}-${tag}`}
+                        className="inline-flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-800"
                       >
-                        {msg.reply_file_url.split("/").pop()}
-                      </a>
-                    )}
-                    {msg.reply_audio_url && (
-                      <audio
-                        controls
-                        src={getMediaUrl(msg.reply_audio_url)}
-                        className="w-48 mb-1"
-                      />
-                    )}
-                    {msg.message && <p>{msg.message}</p>}
-                    {msg.file_url && isImage(msg.file_url) && (
-                      <ChatImage
-                        src={getMediaUrl(msg.file_url)}
-                        alt="attachment"
-                        className="max-w-xs rounded-md mt-1"
-                        width={200}
-                        height={200}
-                      />
-                    )}
-                    {msg.file_url && !isImage(msg.file_url) && (
-                      <a
-                        href={getMediaUrl(msg.file_url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline text-blue-600 text-sm mt-1"
-                      >
-                        {msg.file_url.split("/").pop()}
-                      </a>
-                    )}
-                    {msg.audio_url && (
-                      <audio
-                        controls
-                        src={getMediaUrl(msg.audio_url)}
-                        className="mt-1 w-48"
-                      />
-                    )}
-                  </div>
-                  <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-                    <span>{formatRelativeTime(msg.sent_at)}</span>
-                    <button
-                      onClick={() => setReplyTo(msg)}
-                      className="ml-2 text-blue-600 hover:underline"
-                    >
-                      Reply
-                    </button>
-                    {isCurrentUser && (
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        className="ml-2 text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    )}
+                        <FaTag className="text-[0.65rem]" /> {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                {isCurrentUser && (
-                  <ChatImage
-                    src={getAvatarUrl(user?.avatar_url)}
-                    alt="You"
-                    className="w-8 h-8 rounded-full ml-2 mt-1"
-                    width={32}
-                    height={32}
-                  />
-                )}
-              </div>
-            );
-            })}
-            {messages.length === 0 && (
-              <p className="text-gray-500">No messages yet. Start the discussion below.</p>
-            )}
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">Description</h2>
+              <p className="mt-3 whitespace-pre-line text-gray-700">
+                {offer.description || "No description provided."}
+              </p>
+            </section>
           </div>
 
-          <div className="mt-4">
-            <MessageInput
-              sendMessage={handleSendMessage}
-              replyTo={replyTo}
-              onCancelReply={() => setReplyTo(null)}
-            />
-          </div>
-        </>
-      </div>
-
-      {/* Actions */}
-      <div className="border-t border-gray-200 pt-6">
-        {isMyOffer ? (
-          <div className="flex flex-wrap gap-4 items-center">
-            <Link href={`/dashboard/instructor/offers/edit/${offer.id}`}>
-              <button className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold transition">
-                <FaEdit /> Edit
-              </button>
-            </Link>
-            <button
-              onClick={toggleStatus}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              {offer.status === "open" ? "Close" : "Open"} Offer
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Are you sure you want to delete this offer?")) {
-                  alert("Offer deleted!");
-                  router.push("/dashboard/instructor/offers");
-                }
-              }}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-            >
-              <FaTrashAlt /> Delete
-            </button>
-          </div>
-        ) : (
-          <>
-            <h4 className="text-sm font-semibold text-gray-600 mb-3">
-              Contact {isStudentOffer ? "Student" : "Instructor"}
-            </h4>
-            <div className="flex flex-wrap gap-4 items-center">
+          <aside className="space-y-5">
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">Actions</h2>
+              {isMyOffer ? (
+                <div className="mt-4 flex flex-col gap-3">
+                  <Link
+                    href={`/dashboard/instructor/offers/edit/${offer.id}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-white transition hover:bg-yellow-600"
+                  >
+                    <FaEdit /> Edit Offer
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={toggleStatus}
+                    disabled={isTogglingStatus}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-75"
+                  >
+                    {offer.status === "open" ? "Close Offer" : "Reopen Offer"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteOffer}
+                    disabled={isDeletingOffer}
+                    className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-75"
+                  >
+                    <FaTrashAlt /> Delete Offer
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-gray-600">Connect with the {offer.type === "student" ? "student" : "instructor"}:</p>
+                  <div className="flex flex-wrap gap-3">
+                    {contactButtons.map((button) => (
+                      <button
+                        key={button.key}
+                        type="button"
+                        onClick={button.action}
+                        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${button.className}`}
+                      >
+                        {button.icon} {button.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <button
-                onClick={() => router.push(`/messages?to=${offer.userId}`)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                type="button"
+                onClick={copyOfferLink}
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
               >
-                <FaComments /> Message
+                <FaLink /> Copy offer link
               </button>
-              <a
-                href={`https://wa.me/${offer.phone.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold transition"
-              >
-                <FaWhatsapp /> WhatsApp
-              </a>
-              <a
-                href={`mailto:${offer.email}`}
-                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-semibold transition"
-              >
-                <FaEnvelope /> Email
-              </a>
             </div>
-          </>
-        )}
-
-        {/* Copy Link */}
-        <div className="mt-6">
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              alert("Link copied to clipboard!");
-            }}
-            className="flex items-center text-sm text-blue-600 hover:text-blue-800 gap-2"
-          >
-            <FaLink /> Copy Offer Link
-          </button>
+          </aside>
         </div>
-      </div>
-    </div>
+      </article>
+
+      <section className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Offer discussion</h2>
+          {replyTo && (
+            <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
+              Replying to {replyTo.sender_name || "message"}
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                className="font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 max-h-[26rem] space-y-4 overflow-y-auto pr-2">
+          {isLoadingMessages ? (
+            <SkeletonChat />
+          ) : messages.length ? (
+            messages.map((message) => {
+              const isCurrentUser = message.sender_id === currentUserId;
+              return (
+                <div
+                  key={message.id}
+                  className={`flex items-end gap-3 ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                >
+                  {!isCurrentUser && (
+                    <ChatImage
+                      src={getAvatarUrl(message.sender_avatar || offer.avatar)}
+                      alt={message.sender_name || offer.name}
+                      className="h-9 w-9 rounded-full"
+                      width={36}
+                      height={36}
+                    />
+                  )}
+                  <div className={`flex max-w-[75%] flex-col space-y-1 ${isCurrentUser ? "items-end" : "items-start"}`}>
+                    <span className="text-xs uppercase tracking-wide text-gray-400">
+                      {isCurrentUser ? "You" : message.sender_name || offer.name}
+                    </span>
+                    <div
+                      className={`w-full rounded-2xl px-4 py-3 text-sm shadow ${
+                        isCurrentUser
+                          ? "rounded-br-sm bg-emerald-500 text-white"
+                          : "rounded-bl-sm bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {message.reply_message && (
+                        <div className="mb-2 border-l-4 border-yellow-300 pl-2 text-xs italic text-gray-600">
+                          {message.reply_message}
+                        </div>
+                      )}
+                      {message.reply_file_url && isImage(message.reply_file_url) && (
+                        <ChatImage
+                          src={getMediaUrl(message.reply_file_url)}
+                          alt="reply attachment"
+                          className="mb-2 max-w-xs rounded-md"
+                          width={220}
+                          height={220}
+                        />
+                      )}
+                      {message.reply_file_url && !isImage(message.reply_file_url) && (
+                        <a
+                          href={getMediaUrl(message.reply_file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mb-2 block text-xs underline"
+                        >
+                          {message.reply_file_url.split("/").pop()}
+                        </a>
+                      )}
+                      {message.reply_audio_url && (
+                        <audio controls src={getMediaUrl(message.reply_audio_url)} className="mb-2 w-48" />
+                      )}
+                      {message.message && <p>{message.message}</p>}
+                      {message.file_url && isImage(message.file_url) && (
+                        <ChatImage
+                          src={getMediaUrl(message.file_url)}
+                          alt="attachment"
+                          className="mt-2 max-w-xs rounded-md"
+                          width={220}
+                          height={220}
+                        />
+                      )}
+                      {message.file_url && !isImage(message.file_url) && (
+                        <a
+                          href={getMediaUrl(message.file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 block text-xs underline"
+                        >
+                          {message.file_url.split("/").pop()}
+                        </a>
+                      )}
+                      {message.audio_url && (
+                        <audio controls src={getMediaUrl(message.audio_url)} className="mt-2 w-48" />
+                      )}
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs text-gray-400 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                      <time>{formatRelativeTime(message.sent_at)}</time>
+                      <button
+                        type="button"
+                        onClick={() => setReplyTo(message)}
+                        className="font-semibold text-blue-600 hover:text-blue-700"
+                      >
+                        Reply
+                      </button>
+                      {isCurrentUser && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(message.id)}
+                          className="font-semibold text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {isCurrentUser && (
+                    <ChatImage
+                      src={getAvatarUrl(user?.avatar_url)}
+                      alt="You"
+                      className="h-9 w-9 rounded-full"
+                      width={36}
+                      height={36}
+                    />
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-500">
+              No messages yet. Start the conversation below.
+            </p>
+          )}
+        </div>
+
+        <div className="mt-6">
+          <MessageInput
+            sendMessage={handleSendMessage}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+          />
+        </div>
+      </section>
+    </section>
   );
 };
 
 OfferDetailsPage.getLayout = (page) => <InstructorLayout>{page}</InstructorLayout>;
 
 export default OfferDetailsPage;
+
+export const getServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+  },
+});

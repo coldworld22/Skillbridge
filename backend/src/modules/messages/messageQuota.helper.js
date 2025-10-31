@@ -4,8 +4,9 @@ const { parsePlanFeatures } = require("../../utils/planFeatures");
 const { normalizeRole, isAdminRole } = require("../../utils/role");
 const planService = require("../plans/plans.service");
 const {
-  getActiveStudentPlanId,
-  getActiveInstructorPlanId,
+  getActiveStudentSubscription,
+  getActiveInstructorSubscription,
+  getActiveSubscriptionForPlan,
 } = require("../plans/subscription.helper");
 
 const FEATURE_KEYS = {
@@ -48,23 +49,44 @@ const buildMissingPlanMessage = (type) => {
   }
 };
 
-const resolvePlanIdForUser = async (user, normalizedRoles) => {
+const resolvePlanContextForUser = async (user, normalizedRoles) => {
   let planId =
     user.plan_id || user.plan?.id || user.subscription?.plan_id || null;
+  let subscriptionId =
+    user.subscription?.subscription_id ||
+    user.subscription?.id ||
+    user.subscription_id ||
+    null;
 
-  if (planId) return planId;
-
-  if (normalizedRoles.includes("instructor")) {
-    planId = await getActiveInstructorPlanId(user.id);
-    if (planId) return planId;
+  if (planId && !subscriptionId && user?.id) {
+    const active = await getActiveSubscriptionForPlan(user.id, planId);
+    if (active) {
+      planId = active.plan_id;
+      subscriptionId = active.subscription_id;
+    }
   }
 
-  if (normalizedRoles.includes("student")) {
-    planId = await getActiveStudentPlanId(user.id);
-    if (planId) return planId;
+  if ((!planId || !subscriptionId) && normalizedRoles.includes("instructor")) {
+    const sub = await getActiveInstructorSubscription(user.id);
+    if (sub) {
+      planId = sub.plan_id;
+      subscriptionId = sub.subscription_id;
+    }
   }
 
-  return null;
+  if ((!planId || !subscriptionId) && normalizedRoles.includes("student")) {
+    const sub = await getActiveStudentSubscription(user.id);
+    if (sub) {
+      planId = sub.plan_id;
+      subscriptionId = sub.subscription_id;
+    }
+  }
+
+  if (!planId || !subscriptionId) {
+    return { planId: null, subscriptionId: null };
+  }
+
+  return { planId, subscriptionId };
 };
 
 const prepareUnlimitedQuota = () => ({
@@ -97,7 +119,10 @@ const prepareMessagingQuota = async (user, type) => {
   if (!hasRoleInformation) {
     return prepareUnlimitedQuota();
   }
-  const planId = await resolvePlanIdForUser(user, normalizedRoles);
+  const { planId, subscriptionId } = await resolvePlanContextForUser(
+    user,
+    normalizedRoles
+  );
 
   if (!planId) {
     return prepareUnlimitedQuota();
@@ -111,6 +136,10 @@ const prepareMessagingQuota = async (user, type) => {
   }
   if (!plan) {
     return prepareUnlimitedQuota();
+  }
+
+  if (subscriptionId) {
+    plan.active_subscription_id = subscriptionId;
   }
 
   const features = parsePlanFeatures(plan);
@@ -132,17 +161,22 @@ const prepareMessagingQuota = async (user, type) => {
     limit: numericLimit,
     unlimited: false,
     planId,
+    subscriptionId,
     usageType,
     type,
     async consume(trx) {
       const query = trx || db;
       const itemId = String(user.id);
-
-      let builder = query("plan_usage_metrics").where({
+      const usageCriteria = {
         plan_id: planId,
         item_type: usageType,
         item_id: itemId,
-      });
+      };
+      if (subscriptionId) {
+        usageCriteria.subscription_id = subscriptionId;
+      }
+
+      let builder = query("plan_usage_metrics").where(usageCriteria);
       if (typeof builder.forUpdate === "function") {
         builder = builder.forUpdate();
       }
@@ -156,11 +190,7 @@ const prepareMessagingQuota = async (user, type) => {
       }
 
       const updater = query("plan_usage_metrics");
-      const whereBuilder = updater.where({
-        plan_id: planId,
-        item_type: usageType,
-        item_id: itemId,
-      });
+      const whereBuilder = updater.where(usageCriteria);
 
       if (row) {
         if (typeof whereBuilder.update === "function") {
@@ -169,12 +199,16 @@ const prepareMessagingQuota = async (user, type) => {
       } else {
         const inserter = query("plan_usage_metrics");
         if (typeof inserter.insert === "function") {
-          await inserter.insert({
+          const payload = {
             plan_id: planId,
             item_type: usageType,
             item_id: itemId,
             usage_count: 1,
-          });
+          };
+          if (subscriptionId) {
+            payload.subscription_id = subscriptionId;
+          }
+          await inserter.insert(payload);
         }
       }
 

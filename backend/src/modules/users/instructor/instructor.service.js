@@ -4,6 +4,19 @@
  */
 
 const db = require("../../../config/database");
+const logger = require("../../../utils/logger.js");
+
+let hasLoggedMissingViewTable = false;
+const isMissingViewTableError = (err) =>
+  err?.code === "42P01" ||
+  (typeof err?.message === "string" && err.message.includes("tutorial_views"));
+const logMissingViewTableOnce = () => {
+  if (hasLoggedMissingViewTable) return;
+  hasLoggedMissingViewTable = true;
+  logger.warn(
+    "tutorial_views table not found; skipping tutorial view tracking until the migration runs."
+  );
+};
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];
@@ -132,22 +145,34 @@ const getDashboardStats = async (userId) => {
 
 // 📊 Tutorial views grouped by week for the instructor
 const getTutorialViewsByWeek = async (userId, weeks = 4) => {
-  const rows = await db('tutorial_views as v')
-    .join('tutorials as t', 'v.tutorial_id', 't.id')
-    .where('t.instructor_id', userId)
-    .where('v.created_at', '>=', db.raw(`CURRENT_DATE - INTERVAL '${weeks} weeks'`))
-    .select(
-      db.raw("DATE_TRUNC('week', v.created_at) as week"),
-      db.raw('COUNT(*) as views')
-    )
-    .groupBy('week')
-    .orderBy('week');
+  try {
+    const rows = await db("tutorial_views as v")
+      .join("tutorials as t", "v.tutorial_id", "t.id")
+      .where("t.instructor_id", userId)
+      .where(
+        "v.created_at",
+        ">=",
+        db.raw(`CURRENT_DATE - INTERVAL '${weeks} weeks'`)
+      )
+      .select(
+        db.raw("DATE_TRUNC('week', v.created_at) as week"),
+        db.raw("COUNT(*) as views")
+      )
+      .groupBy("week")
+      .orderBy("week");
 
-  return rows.map((r) => ({
-    week:
-      r.week instanceof Date ? r.week.toISOString().split('T')[0] : r.week,
-    views: parseInt(r.views, 10) || 0,
-  }));
+    return rows.map((r) => ({
+      week:
+        r.week instanceof Date ? r.week.toISOString().split("T")[0] : r.week,
+      views: parseInt(r.views, 10) || 0,
+    }));
+  } catch (err) {
+    if (isMissingViewTableError(err)) {
+      logMissingViewTableOnce();
+      return [];
+    }
+    throw err;
+  }
 };
 
 module.exports = {

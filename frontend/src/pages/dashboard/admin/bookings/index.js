@@ -4,6 +4,7 @@ import BookingRow from '@/components/admin/bookings/BookingRow';
 import BookingFilters from '@/components/admin/bookings/BookingFilters';
 import BookingStats from '@/components/admin/bookings/BookingStats';
 import BookingModal from '@/components/admin/bookings/BookingModal';
+import BookingSummaryCard from '@/components/dashboard/bookings/BookingSummaryCard';
 import {
   fetchAllBookings,
   updateBooking,
@@ -11,7 +12,6 @@ import {
 } from '@/services/admin/bookingService';
 import { API_BASE_URL } from '@/config/config';
 import { toast } from 'react-toastify';
-import { FaSpinner } from 'react-icons/fa';
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -19,6 +19,7 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const buildAvatar = useCallback((value, fallbackText) => {
     if (!value) return `https://via.placeholder.com/40x40?text=${fallbackText}`;
@@ -97,13 +98,15 @@ export default function AdminBookingsPage() {
 
     const loadBookings = async () => {
       try {
+        setError('');
         const data = await fetchAllBookings();
         if (!isMounted) return;
         setBookings((data || []).map(formatBooking).filter(Boolean));
       } catch (err) {
-        console.error("Failed to load bookings", err);
+        console.error('Failed to load bookings', err);
         if (isMounted) {
-          toast.error("Failed to load bookings");
+          setError('Failed to load bookings. Please refresh to try again.');
+          toast.error('Failed to load bookings');
         }
       } finally {
         if (isMounted) {
@@ -131,10 +134,24 @@ export default function AdminBookingsPage() {
     });
   }, [bookings, search, statusFilter]);
 
+  const statusCounts = useMemo(() => {
+    const counts = { all: bookings.length };
+    bookings.forEach((booking) => {
+      const status = (booking.status || '').toLowerCase();
+      counts[status] = (counts[status] ?? 0) + 1;
+    });
+    return counts;
+  }, [bookings]);
+
   return (
     <AdminLayout>
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">All Bookings</h1>
+      <section className="space-y-6 p-4 lg:p-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">All Bookings</h1>
+          <p className="text-sm text-gray-500">
+            Monitor incoming requests, manage cancellations, and review booking details across the platform.
+          </p>
+        </div>
 
         <BookingStats bookings={bookings} />
         <BookingFilters
@@ -142,45 +159,88 @@ export default function AdminBookingsPage() {
           onSearchChange={setSearch}
           statusFilter={statusFilter}
           onStatusFilter={setStatusFilter}
+          statusCounts={statusCounts}
         />
 
-        {loading ? (
-          <div className="flex justify-center items-center h-48">
-            <FaSpinner className="animate-spin text-3xl text-blue-500" />
+        {loading && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-32 animate-pulse rounded-xl border border-gray-200 bg-gray-100/60"
+              />
+            ))}
           </div>
-        ) : (
-          <div className="overflow-x-auto bg-white rounded shadow">
-            <table className="min-w-full table-auto text-sm">
-              <thead className="bg-gray-100 text-left">
-                <tr>
-                  <th className="px-4 py-2">Student</th>
-                  <th className="px-4 py-2">Instructor</th>
-                  <th className="px-4 py-2">Booking Type</th>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Time</th>
-                  <th className="px-4 py-2">Duration</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((b) => (
-                  <BookingRow
+        )}
+
+        {error && !loading && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
+            <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto text-sm">
+                  <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr>
+                      <th className="px-4 py-3">Student</th>
+                      <th className="px-4 py-3">Instructor</th>
+                      <th className="px-4 py-3">Booking Type</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Time</th>
+                      <th className="px-4 py-3">Duration</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((b) => (
+                      <BookingRow
+                        key={b.id}
+                        booking={b}
+                        onView={() => setSelectedBooking(b)}
+                      />
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-gray-400">
+                          No bookings match your filters.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="space-y-4 md:hidden">
+              {filtered.length === 0 ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
+                  No bookings match your filters.
+                </div>
+              ) : (
+                filtered.map((b) => (
+                  <BookingSummaryCard
                     key={b.id}
-                    booking={b}
-                    onView={() => setSelectedBooking(b)}
+                    avatar={b.student.avatar}
+                    title={b.student.name}
+                    subtitle={`Instructor: ${b.instructor.name} • ${b.type}`}
+                    status={b.status}
+                    meta={[
+                      { label: 'Date', value: b.date },
+                      { label: 'Time', value: b.time },
+                      { label: 'Duration', value: b.duration },
+                    ]}
+                    note={b.notes}
+                    onClick={() => setSelectedBooking(b)}
                   />
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="text-center text-gray-400 py-8">
-                      No bookings found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </div>
+          </>
         )}
 
         {selectedBooking && (
@@ -191,7 +251,7 @@ export default function AdminBookingsPage() {
             onDelete={handleDelete}
           />
         )}
-      </div>
+      </section>
     </AdminLayout>
   );
 }

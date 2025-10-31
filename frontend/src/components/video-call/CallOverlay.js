@@ -1,7 +1,8 @@
 const CallOverlay = ({ incoming, name, onAccept, onDecline }) => {
+  const safeName = name || "Someone";
   const label = incoming
-    ? `${name ? name + " is" : ""} calling...`
-    : `Calling${name ? ` ${name}` : ""}...`;
+    ? `${safeName} is calling...`
+    : `Calling ${safeName}...`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white text-lg font-bold p-6">

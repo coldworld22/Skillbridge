@@ -43,6 +43,7 @@ router.use('/api/payments/instructor', require('../modules/payments/instructor.r
 router.use('/api/payments/bank', require('../modules/payments/bank.routes'));
 router.use('/api/payments/crypto', require('../modules/payments/crypto.routes'));
 router.use('/api/payments/coinbase', require('../modules/payments/coinbase.routes'));
+router.use('/api/payments/me', require('../modules/payments/user.routes'));
 // Alias for NOWPayments crypto gateway
 router.use(
   '/api/payments/nowpayments',
@@ -69,6 +70,7 @@ router.use('/api/social-login/config', require('../modules/socialLoginConfig/soc
 router.use('/api/app-config', require('../modules/appConfig/appConfig.routes'));
 router.use('/api/third-party-config', require('../modules/thirdPartyConfig/thirdPartyConfig.routes'));
 router.use('/api/google-analytics', require('../modules/googleAnalytics/googleAnalytics.routes'));
+router.use('/api/google-ads', require('../modules/googleAds/googleAds.routes'));
 router.use('/api/adsense', require('../modules/adsense/adsense.routes'));
 router.use('/api/ai-assistance', require('../modules/ai/ai.routes'));
 router.use('/api/email-config', require('../modules/emailConfig/emailConfig.routes'));
@@ -102,6 +104,7 @@ router.use('/api/book-categories', require('../modules/bookCategories/bookCatego
 router.use('/api/books', require('../modules/books/book.routes'));
 router.use('/api/instructor/books', require('../modules/books/instructorBook.routes'));
 router.use('/api/book-reviews', require('../modules/bookReviews/bookReview.routes'));
+router.use('/api/instructor-reviews', require('../modules/instructorReviews/instructorReview.routes'));
 router.use('/api/library', require('../modules/library/library.routes'));
 router.use('/api/search', require('../modules/search/search.routes'));
 // Installation routes are disabled by default for security reasons.

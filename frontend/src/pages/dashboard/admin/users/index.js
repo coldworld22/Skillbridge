@@ -28,27 +28,34 @@ function UsersPage() {
       return;
     }
 
-    const role = user.role?.toLowerCase() ?? "";
-    if (role !== "admin" && role !== "superadmin") {
-      router.replace("/error/403");
-      return;
-    }
-
     const loadUsers = async () => {
       try {
         const data = await fetchAllUsers(); // ✅ No token needed (cookie session)
         logger.log("✅ API returned users:", data);
 
-        const formatted = (data ?? []).map((u) => ({
-          ...u,
-          name: u.full_name || u.email?.split("@")[0],
-          createdAt: u.created_at,
-          status: u.status?.toLowerCase() ?? "pending", // ✅ ensure status exists
-          role: u.role?.toLowerCase() ?? "student",
-          avatar_url: u.avatar_url
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${u.avatar_url}`
-            : null,
-        }));
+        const formatted = (data ?? []).map((u) => {
+          const rawLastLogin = u.last_login_at || u.last_login || null;
+          const lastLoginDate = rawLastLogin ? new Date(rawLastLogin) : null;
+          const lastLoginDisplay =
+            lastLoginDate && !Number.isNaN(lastLoginDate.getTime())
+              ? lastLoginDate.toLocaleString()
+              : null;
+
+          return {
+            ...u,
+            name: u.full_name || u.email?.split("@")[0],
+            createdAt: u.created_at,
+            status: u.status?.toLowerCase() ?? "pending", // ✅ ensure status exists
+            role: u.role?.toLowerCase() ?? "student",
+            lastLogin: lastLoginDate && !Number.isNaN(lastLoginDate.getTime())
+              ? lastLoginDate.toISOString()
+              : null,
+            lastLoginDisplay,
+            avatar_url: u.avatar_url
+              ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${u.avatar_url}`
+              : null,
+          };
+        });
 
         setUsers(formatted);
       } catch (err) {
@@ -113,7 +120,9 @@ function UsersPage() {
   );
 }
 
-const ProtectedUsersPage = withAuthProtection(UsersPage, ["admin", "superadmin"]);
+const ProtectedUsersPage = withAuthProtection(UsersPage, {
+  permissions: ["view_users"],
+});
 
 export default ProtectedUsersPage;
 

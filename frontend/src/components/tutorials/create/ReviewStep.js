@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
@@ -21,6 +22,37 @@ export default function ReviewStep({
         return match.name || match.slug || planId;
       })
     : [];
+
+  const thumbnailUrl = useMemo(() => {
+    if (!tutorialData?.thumbnail) return null;
+    if (tutorialData.thumbnail instanceof File) {
+      return URL.createObjectURL(tutorialData.thumbnail);
+    }
+    return tutorialData.thumbnail;
+  }, [tutorialData?.thumbnail]);
+
+  const previewUrl = useMemo(() => {
+    if (!tutorialData?.preview) return null;
+    if (tutorialData.preview instanceof File) {
+      return URL.createObjectURL(tutorialData.preview);
+    }
+    return tutorialData.preview;
+  }, [tutorialData?.preview]);
+
+  useEffect(() => {
+    if (!thumbnailUrl || !(tutorialData?.thumbnail instanceof File)) return;
+    return () => {
+      URL.revokeObjectURL(thumbnailUrl);
+    };
+  }, [thumbnailUrl, tutorialData?.thumbnail]);
+
+  useEffect(() => {
+    if (!previewUrl || !(tutorialData?.preview instanceof File)) return;
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl, tutorialData?.preview]);
+
   return (
     <div className="space-y-8">
 
@@ -92,24 +124,16 @@ export default function ReviewStep({
             <FaCheckCircle /> {t("create.review.sections.media")}
           </h3>
           <div className="flex gap-6 items-center">
-            {tutorialData.thumbnail && (
+            {thumbnailUrl && (
               <img
-                src={
-                  tutorialData.thumbnail instanceof File
-                    ? URL.createObjectURL(tutorialData.thumbnail)
-                    : tutorialData.thumbnail
-                }
+                src={thumbnailUrl}
                 alt={t("create.media.thumbnail_preview_alt")}
                 className="w-32 h-20 object-cover rounded shadow"
               />
             )}
-            {tutorialData.preview && (
+            {previewUrl && (
               <video
-                src={
-                  tutorialData.preview instanceof File
-                    ? URL.createObjectURL(tutorialData.preview)
-                    : tutorialData.preview
-                }
+                src={previewUrl}
                 controls
                 className="w-32 h-20 rounded shadow"
               />
@@ -129,14 +153,6 @@ export default function ReviewStep({
               <strong>{t("create.review.price_label")}</strong>{" "}
               {formatCurrency(tutorialData.price, {
                 currency: tutorialData.currency,
-              })}
-            </p>
-          )}
-          {!tutorialData.isFree && tutorialData.allowInstallments && (
-            <p className="text-gray-700 text-sm">
-              {t("create.review.installments_summary", {
-                defaultValue: "Installments enabled: pay over {{count}} months.",
-                count: tutorialData.installments || 2,
               })}
             </p>
           )}

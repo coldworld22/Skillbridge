@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Switch } from "@headlessui/react";
 import { toast } from "react-toastify";
 import { Edit, Trash2 } from "lucide-react";
@@ -16,10 +16,34 @@ import {
 } from "@/services/admin/userService";
 import { formatDistanceToNow } from "date-fns";
 
-export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect }) {
+export default function UserCard({
+  user,
+  onEdit,
+  onDelete,
+  isSelected,
+  onSelect,
+  canManage = true,
+  requirePermission,
+  permissionWarning,
+  onUserUpdated,
+}) {
   const [enabled, setEnabled] = useState(user.status?.toLowerCase() === "active");
   const [role, setRole] = useState(user.role);
+
+  useEffect(() => {
+    setEnabled(user.status?.toLowerCase() === "active");
+    setRole(user.role);
+  }, [user.role, user.status]);
   const isSuperAdmin = user.role?.toLowerCase() === "superadmin";
+  const warning = permissionWarning || "You do not have permission to manage users.";
+  const ensureManagePermission = () => {
+    if (canManage) return true;
+    if (typeof requirePermission === "function") {
+      return requirePermission("manage_users", warning);
+    }
+    toast.error(warning);
+    return false;
+  };
 
   const roleColors = {
     admin: "bg-yellow-100 text-yellow-700",
@@ -37,11 +61,15 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
   };
 
   const toggleStatus = async () => {
+    if (!ensureManagePermission()) return;
     const newStatus = enabled ? "inactive" : "active";
     if (!window.confirm(`Set ${user.name} as ${newStatus}?`)) return;
     try {
       await updateUserStatus(user.id, newStatus);
-      setEnabled(!enabled);
+      setEnabled(newStatus === "active");
+      if (typeof onUserUpdated === "function") {
+        onUserUpdated(user.id, { status: newStatus });
+      }
       toast.success(`${user.name} is now ${newStatus}`);
     } catch (err) {
       toast.error("Failed to update status");
@@ -50,11 +78,19 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
   };
 
   const handleRoleChange = async (e) => {
+    if (!ensureManagePermission()) {
+      e.preventDefault();
+      e.target.value = role;
+      return;
+    }
     if (isSuperAdmin) return;
     const newRole = e.target.value;
     try {
       await updateUserRole(user.id, newRole);
       setRole(newRole);
+      if (typeof onUserUpdated === "function") {
+        onUserUpdated(user.id, { role: newRole });
+      }
       toast.success(`${user.name}'s role changed to ${newRole}`);
     } catch (err) {
       toast.error("Failed to change role");
@@ -63,6 +99,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
   };
 
   const handleDelete = async () => {
+    if (!ensureManagePermission()) return;
     if (role?.toLowerCase() === "superadmin") {
       toast.error("Cannot delete SuperAdmin user");
       return;
@@ -78,6 +115,13 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
     }
   };
 
+  const handleEdit = () => {
+    if (!ensureManagePermission()) return;
+    if (typeof onEdit === "function") {
+      onEdit();
+    }
+  };
+
   const avatar = user.avatar_url || "/images/profile/default-avatar.png";
 
   return (
@@ -87,7 +131,10 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
           type="checkbox"
           className="absolute top-3 right-3 w-4 h-4 accent-blue-500"
           checked={isSelected}
-          onChange={() => onSelect(user.id)}
+          onChange={() => {
+            if (!ensureManagePermission()) return;
+            onSelect(user.id);
+          }}
         />
       )}
 
@@ -156,7 +203,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
 
       <div className="flex justify-between">
         <button
-          onClick={onEdit}
+          onClick={handleEdit}
           className="flex items-center text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg transition"
         >
           <Edit className="w-4 h-4 mr-1" /> Edit

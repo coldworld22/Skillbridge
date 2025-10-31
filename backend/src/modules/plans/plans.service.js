@@ -5,9 +5,58 @@ const {
   parseFeatureValue,
   serializeFeatureValue,
   getFeaturePresentation,
+  buildPlanFeatureBundle,
 } = require("./planFeatureMetadata");
 
 const AD_CREDIT_USAGE_TYPE = "ad_credit";
+
+const isSubscriptionActive = (sub) => {
+  if (!sub) return false;
+  if (!sub.end_date) return true;
+  return new Date(sub.end_date) > new Date();
+};
+
+const resolveActiveSubscriptionId = async (query, userId, planId) => {
+  if (!userId || !planId || typeof query !== "function") return null;
+  let builder;
+  try {
+    builder = query("user_subscriptions");
+  } catch (err) {
+    return null;
+  }
+  if (!builder) return null;
+
+  const chain = (method, ...args) => {
+    if (builder && typeof builder[method] === "function") {
+      const result = builder[method](...args);
+      if (result && typeof result.then === "function") {
+        return builder;
+      }
+      builder = result || builder;
+    }
+    return builder;
+  };
+
+  chain("select", "id", "end_date");
+  chain("where", {
+    user_id: userId,
+    plan_id: planId,
+    status: "active",
+  });
+  chain("orderBy", "end_date", "desc");
+
+  if (!builder || typeof builder.first !== "function") {
+    return null;
+  }
+
+  try {
+    const sub = await builder.first();
+    if (!isSubscriptionActive(sub)) return null;
+    return sub.id;
+  } catch (_) {
+    return null;
+  }
+};
 
 const normalizeGroupedContent = (grouped = {}, lookup) => {
   if (!(lookup instanceof Map) || lookup.size === 0) {
@@ -155,37 +204,61 @@ exports.getPlans = async (role) => {
   const { classesByPlan, booksByPlan, tutorialsByPlan } =
     await collectIncludedContent(lookup);
 
-  return plans.map((p) => ({
-    ...p,
-    features: features.filter((f) => f.plan_id === p.id),
-    included_classes: classesByPlan[p.id] || [],
-    included_books: booksByPlan[p.id] || [],
-    included_tutorials: tutorialsByPlan[p.id] || [],
-  }));
+  return plans.map((p) => {
+    const planFeatures = features.filter((f) => f.plan_id === p.id);
+    const { entries, sections, featureMap } = buildPlanFeatureBundle({
+      ...p,
+      features: planFeatures,
+    });
+    return {
+      ...p,
+      features: planFeatures,
+      feature_entries: entries,
+      feature_sections: sections,
+      feature_map: featureMap,
+      included_classes: classesByPlan[p.id] || [],
+      included_books: booksByPlan[p.id] || [],
+      included_tutorials: tutorialsByPlan[p.id] || [],
+    };
+  });
 };
 
 exports.getPlanById = async (id) => {
   const plan = await db("plans").where({ id }).first();
   if (!plan) return null;
   const feats = await db("plan_features").where({ plan_id: id }).select("*");
-  plan.features = feats;
+  const decoratedPlan = {
+    ...plan,
+    features: feats,
+  };
+  const { entries, sections, featureMap } = buildPlanFeatureBundle(
+    decoratedPlan
+  );
   const { classesByPlan, booksByPlan, tutorialsByPlan } =
-    await collectIncludedContent(buildPlanIdLookup([plan]));
-  plan.included_classes = classesByPlan[id] || [];
-  plan.included_books = booksByPlan[id] || [];
-  plan.included_tutorials = tutorialsByPlan[id] || [];
-  return plan;
+    await collectIncludedContent(buildPlanIdLookup([decoratedPlan]));
+  decoratedPlan.feature_entries = entries;
+  decoratedPlan.feature_sections = sections;
+  decoratedPlan.feature_map = featureMap;
+  decoratedPlan.included_classes = classesByPlan[id] || [];
+  decoratedPlan.included_books = booksByPlan[id] || [];
+  decoratedPlan.included_tutorials = tutorialsByPlan[id] || [];
+  return decoratedPlan;
 };
 
-const getAdCreditUsage = async (planId, userId, trx) => {
+const getAdCreditUsage = async (planId, userId, subscriptionId, trx) => {
   if (!planId || !userId) return 0;
   const query = trx || db;
+  const criteria = {
+    plan_id: planId,
+    item_type: AD_CREDIT_USAGE_TYPE,
+    item_id: String(userId),
+  };
+  if (subscriptionId) {
+    criteria.subscription_id = subscriptionId;
+  }
+
   const row = await query("plan_usage_metrics")
-    .where({
-      plan_id: planId,
-      item_type: AD_CREDIT_USAGE_TYPE,
-      item_id: String(userId),
-    })
+    .where(criteria)
     .first();
   return row ? Number(row.usage_count) || 0 : 0;
 };
@@ -203,7 +276,26 @@ exports.getRemainingAdCredits = async (plan, userId, trx) => {
   }
   if (allowance === 0) return 0;
 
-  const used = await getAdCreditUsage(plan.id, userId, trx);
+  const query = trx || db;
+  let subscriptionId = plan.active_subscription_id || null;
+  if (!subscriptionId) {
+    try {
+      subscriptionId = await resolveActiveSubscriptionId(query, userId, plan.id);
+    } catch (_) {
+      subscriptionId = null;
+    }
+  }
+
+  if (subscriptionId) {
+    plan.active_subscription_id = subscriptionId;
+  }
+
+  const used = await getAdCreditUsage(
+    plan.id,
+    userId,
+    subscriptionId,
+    query
+  );
   const remaining = allowance - used;
   return remaining < 0 ? 0 : remaining;
 };
@@ -212,6 +304,7 @@ exports.consumeAdCredit = async ({
   planId,
   userId,
   allowance,
+  subscriptionId,
   trx,
 } = {}) => {
   if (!planId || !userId) {
@@ -230,12 +323,31 @@ exports.consumeAdCredit = async ({
   const query = trx || db;
   const itemId = String(userId);
 
+  let activeSubscriptionId = subscriptionId || null;
+  if (!activeSubscriptionId) {
+    try {
+      activeSubscriptionId = await resolveActiveSubscriptionId(
+        query,
+        userId,
+        planId
+      );
+    } catch (_) {
+      activeSubscriptionId = null;
+    }
+  }
+
+  const usageCriteria = {
+    plan_id: planId,
+    item_type: AD_CREDIT_USAGE_TYPE,
+    item_id: itemId,
+  };
+
+  if (activeSubscriptionId) {
+    usageCriteria.subscription_id = activeSubscriptionId;
+  }
+
   const usageRow = await query("plan_usage_metrics")
-    .where({
-      plan_id: planId,
-      item_type: AD_CREDIT_USAGE_TYPE,
-      item_id: itemId,
-    })
+    .where(usageCriteria)
     .first();
 
   const used = Number(usageRow?.usage_count) || 0;
@@ -245,25 +357,32 @@ exports.consumeAdCredit = async ({
 
   if (usageRow) {
     await query("plan_usage_metrics")
-      .where({
-        plan_id: planId,
-        item_type: AD_CREDIT_USAGE_TYPE,
-        item_id: itemId,
-      })
+      .where(usageCriteria)
       .update({
         usage_count: used + 1,
       });
   } else {
-    await query("plan_usage_metrics").insert({
+    const payload = {
       plan_id: planId,
       item_type: AD_CREDIT_USAGE_TYPE,
       item_id: itemId,
       usage_count: 1,
-    });
+    };
+    if (activeSubscriptionId) {
+      payload.subscription_id = activeSubscriptionId;
+    }
+    await query("plan_usage_metrics").insert(payload);
   }
 
   const remaining = credits - (used + 1);
-  return { consumed: true, remaining: remaining < 0 ? 0 : remaining };
+  const response = {
+    consumed: true,
+    remaining: remaining < 0 ? 0 : remaining,
+  };
+  if (activeSubscriptionId) {
+    response.subscriptionId = activeSubscriptionId;
+  }
+  return response;
 };
 
 exports.updatePlan = async (id, data) => {

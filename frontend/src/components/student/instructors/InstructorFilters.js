@@ -11,7 +11,9 @@ export default function InstructorFilters({
   searchQuery,
   setSearchQuery,
   onlyAvailable,
-  setOnlyAvailable
+  setOnlyAvailable,
+  showFavoritesOnly,
+  setShowFavoritesOnly,
 }) {
   return (
     <div className="flex flex-wrap gap-4 mb-8">
@@ -52,7 +54,16 @@ export default function InstructorFilters({
           checked={onlyAvailable}
           onChange={(e) => setOnlyAvailable(e.target.checked)}
         />
-        Only Available
+        Only Available Now
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={showFavoritesOnly}
+          onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+        />
+        Show Favorites Only
       </label>
     </div>
   );

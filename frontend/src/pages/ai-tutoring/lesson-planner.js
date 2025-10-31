@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { askAI } from "@/services/aiService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
 
 const goals = [
   "Improve coding skills",
@@ -23,15 +24,9 @@ export default function LessonPlannerPage() {
     const load = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
-        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
-          opts.push({ key: "chatgpt", label: "ChatGPT" });
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
-          opts.push({ key: "deepseek", label: "DeepSeek AI" });
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
-          opts.push({ key: "huggingface", label: "Hugging Face" });
-        setModels(opts);
-        if (opts.length === 1) setSelectedModel(opts[0].key);
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setModels(providers);
+        setSelectedModel(defaultProvider || "");
       } catch (err) {
         console.error(err);
       }
@@ -58,7 +53,7 @@ export default function LessonPlannerPage() {
       setGeneratedPlan({
         goal: selectedGoal,
         model: selectedModel,
-        plan: ["Error generating plan"],
+        plan: [err?.message || "Error generating plan"],
       });
     } finally {
       setLoading(false);
@@ -107,6 +102,11 @@ export default function LessonPlannerPage() {
             </label>
           ))}
         </div>
+        {!models.length && (
+          <p className="text-sm text-yellow-300 mb-6">
+            Activate at least one AI provider in the admin settings to generate lesson plans.
+          </p>
+        )}
 
         {/* Generate Button */}
         <button

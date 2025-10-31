@@ -30,14 +30,38 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-async function creditInstructorSubscription(item_type, item_id, planId, trx) {
+async function creditInstructorSubscription(
+  item_type,
+  item_id,
+  planId,
+  subscriptionIdOrTrx,
+  maybeTrx
+) {
+  if (!planId) return;
+  let subscriptionId = null;
+  let trx = maybeTrx;
+
+  const looksLikeTrx =
+    subscriptionIdOrTrx === null ||
+    subscriptionIdOrTrx === undefined ||
+    typeof subscriptionIdOrTrx === "object" ||
+    typeof subscriptionIdOrTrx === "function";
+
+  if (arguments.length >= 5) {
+    subscriptionId = subscriptionIdOrTrx;
+  } else if (!looksLikeTrx) {
+    subscriptionId = subscriptionIdOrTrx;
+    trx = undefined;
+  } else {
+    trx = subscriptionIdOrTrx;
+  }
+
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      item_id,
-      trx,
-      item_type
-    );
+    const args = [planId, item_id, trx, item_type];
+    if (subscriptionId) {
+      args.push(subscriptionId);
+    }
+    const amount = await calculateInstructorAmount(...args);
     if (amount <= 0) return;
 
     let instructorId;
@@ -60,14 +84,37 @@ async function creditInstructorSubscription(item_type, item_id, planId, trx) {
   }
 }
 
-async function creditTutorialSubscription(tutorialId, planId, trx) {
+async function creditTutorialSubscription(
+  tutorialId,
+  planId,
+  subscriptionIdOrTrx,
+  maybeTrx
+) {
+  if (!planId) return;
+  let subscriptionId = null;
+  let trx = maybeTrx;
+
+  const looksLikeTrx =
+    subscriptionIdOrTrx === null ||
+    subscriptionIdOrTrx === undefined ||
+    typeof subscriptionIdOrTrx === "object" ||
+    typeof subscriptionIdOrTrx === "function";
+
+  if (arguments.length > 4) {
+    subscriptionId = subscriptionIdOrTrx;
+  } else if (!looksLikeTrx) {
+    subscriptionId = subscriptionIdOrTrx;
+    trx = undefined;
+  } else {
+    trx = subscriptionIdOrTrx;
+  }
+
   try {
-    const amount = await calculateInstructorAmount(
-      planId,
-      tutorialId,
-      trx,
-      "tutorial"
-    );
+    const args = [planId, tutorialId, trx, "tutorial"];
+    if (subscriptionId) {
+      args.push(subscriptionId);
+    }
+    const amount = await calculateInstructorAmount(...args);
     if (amount <= 0) return;
     const tut = await tutorialService.getTutorialById(tutorialId);
     if (tut?.instructor_id) {

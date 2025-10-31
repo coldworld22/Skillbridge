@@ -20,6 +20,8 @@ export default function MyGroupsPage() {
     { id: 'pending', label: 'Pending', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' }
   ];
 
+  const getCreatedAt = (group) => group.createdAt ?? group.created_at ?? null;
+
   useEffect(() => {
     setIsLoading(true);
     groupService
@@ -49,7 +51,11 @@ export default function MyGroupsPage() {
     let filtered = activeTab === 'all' ? groups : groups.filter((g) => g.role === activeTab);
 
     if (sortBy === 'newest') {
-      filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      filtered.sort(
+        (a, b) =>
+          (getCreatedAt(b) ? new Date(getCreatedAt(b)).getTime() : 0) -
+          (getCreatedAt(a) ? new Date(getCreatedAt(a)).getTime() : 0),
+      );
     } else if (sortBy === 'az') {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -58,9 +64,14 @@ export default function MyGroupsPage() {
     setVisibleCount(6); // Reset visible count when filters change
   }, [groups, activeTab, sortBy]);
 
-  const cancelJoinRequest = (groupId) => {
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
-    toast.success('Join request cancelled.');
+  const cancelJoinRequest = async (groupId) => {
+    try {
+      await groupService.cancelJoinRequest(groupId);
+      setGroups((prev) => prev.filter((g) => g.id !== groupId));
+      toast.success('Join request cancelled.');
+    } catch (_) {
+      toast.error('Failed to cancel join request');
+    }
   };
 
   const renderGroupCard = (group) => (

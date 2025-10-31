@@ -46,6 +46,34 @@ exports.create = async (data, schedules = [], trx) => {
   return db.transaction(run);
 };
 
+exports.findInstallmentContext = async (userId, itemType, itemId) => {
+  if (!userId || !itemType || itemId === undefined || itemId === null) {
+    return { payment: null, schedule: null };
+  }
+  const normalizedItemId = String(itemId);
+  const payment = await db("payments")
+    .where({
+      user_id: userId,
+      item_type: itemType,
+      item_id: normalizedItemId,
+    })
+    .andWhere("installments", ">", 1)
+    .orderBy("created_at", "asc")
+    .first();
+
+  if (!payment) {
+    return { payment: null, schedule: null };
+  }
+
+  const schedule = await db("payment_schedules")
+    .where({ payment_id: payment.id })
+    .whereIn("status", ["pending", "awaiting_payment"])
+    .orderBy("installment_number")
+    .first();
+
+  return { payment, schedule };
+};
+
 exports.getAll = async (status, methodType) => {
   const { hasPlatformFee, hasInstructorAmount, hasSource } =
     await getPaymentColumnInfo();
@@ -130,9 +158,48 @@ exports.getAll = async (status, methodType) => {
   return query;
 };
 
-exports.getByUser = async (userId, status) => {
+exports.getByUser = async (userId, filters = {}) => {
+  let statusFilter = null;
+  let itemTypeFilter = null;
+  let limit = null;
+  let offset = null;
+  let sortDirection = "desc";
+
+  if (typeof filters === "string") {
+    statusFilter = filters;
+  } else if (filters && typeof filters === "object") {
+    statusFilter =
+      filters.status === undefined ? null : String(filters.status);
+    itemTypeFilter =
+      filters.itemType === undefined ? null : String(filters.itemType);
+    if (filters.limit !== undefined) {
+      const parsed = Number(filters.limit);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        limit = Math.floor(parsed);
+      }
+    }
+    if (filters.offset !== undefined) {
+      const parsed = Number(filters.offset);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        offset = Math.floor(parsed);
+      }
+    }
+    if (typeof filters.sortDirection === "string") {
+      const normalized = filters.sortDirection.toLowerCase();
+      if (normalized === "asc" || normalized === "desc") {
+        sortDirection = normalized;
+      }
+    }
+  } else if (filters !== null && filters !== undefined) {
+    statusFilter = String(filters);
+  }
+
+  const { hasPlatformFee, hasInstructorAmount, hasSource } =
+    await getPaymentColumnInfo();
+
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
+    .leftJoin("invoices as inv", "inv.payment_id", "p.id")
     .leftJoin("online_classes as c", function () {
       this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
         "p.item_type",
@@ -171,15 +238,49 @@ exports.getByUser = async (userId, status) => {
       "pl.slug as plan_slug",
       "pl.price_monthly",
       "pl.price_yearly",
+      "inv.id as invoice_id",
+      "inv.pdf_url as invoice_pdf_url",
+      "inv.created_at as invoice_created_at",
       db.raw(
         "COALESCE(c.title, tut.title, b.title, pl.name) as item_title"
       )
     )
-    .where("p.user_id", userId)
-    .orderBy("p.created_at", "desc");
+    .where("p.user_id", userId);
 
-  if (status) {
-    query.andWhere("p.status", status);
+  if (statusFilter) {
+    query.andWhere("p.status", statusFilter);
+  }
+
+  if (itemTypeFilter) {
+    query.andWhere("p.item_type", itemTypeFilter);
+  }
+
+  if (hasPlatformFee) {
+    query.select("p.platform_fee");
+  } else {
+    query.select(db.raw("NULL as platform_fee"));
+  }
+
+  if (hasInstructorAmount) {
+    query.select("p.instructor_amount");
+  } else {
+    query.select(db.raw("NULL as instructor_amount"));
+  }
+
+  if (hasSource) {
+    query.select("p.source");
+  } else {
+    query.select(db.raw("NULL as source"));
+  }
+
+  query.orderBy("p.created_at", sortDirection);
+
+  if (offset !== null) {
+    query.offset(offset);
+  }
+
+  if (limit !== null) {
+    query.limit(limit);
   }
 
   return query;

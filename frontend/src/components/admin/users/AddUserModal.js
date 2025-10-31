@@ -10,13 +10,11 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
     phone: "",
     password: "",
     role: "student",
-    status: "active",
-    avatar: null,
+    status: "pending",
     gender: "male",
   });
 
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,11 +24,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
         phone: "",
         password: "",
         role: "student",
-        status: "active",
-        avatar: null,
+        status: "pending",
         gender: "male",
       });
-      setPreview(null);
     }
   }, [isOpen]);
 
@@ -43,13 +39,8 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   }, [onClose]);
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "avatar" && files[0]) {
-      setFormData({ ...formData, avatar: files[0] });
-      setPreview(URL.createObjectURL(files[0]));
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async () => {
@@ -149,9 +140,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded"
         >
-          <option value="Admin">Admin</option>
-          <option value="Instructor">Instructor</option>
-          <option value="Student">Student</option>
+          <option value="admin">Admin</option>
+          <option value="instructor">Instructor</option>
+          <option value="student">Student</option>
         </select>
 
 
@@ -164,23 +155,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
         >
           <option value="pending">Pending</option>
           <option value="active">Active</option>
-          <option value="banned">Banned</option>
-
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
         </select>
-
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Avatar (optional)</label>
-          <input
-            type="file"
-            name="avatar"
-            accept="image/*"
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-          {preview && (
-            <img src={preview} alt="Preview" className="mt-3 w-24 h-24 object-cover rounded-full" />
-          )}
-        </div>
 
         <div className="flex justify-end gap-3">
           <button

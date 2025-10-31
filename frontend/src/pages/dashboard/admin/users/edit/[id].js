@@ -5,8 +5,9 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import EditUserForm from "@/components/admin/users/EditUserForm";
 import { fetchUserById } from "@/services/admin/userService";
 import { toast } from "react-toastify";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function EditUserPage() {
+function EditUserPage() {
   const router = useRouter();
   const { id } = router.query;
   const [user, setUser] = useState(null);
@@ -32,3 +33,7 @@ export default function EditUserPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(EditUserPage, {
+  permissions: ["manage_users"],
+});

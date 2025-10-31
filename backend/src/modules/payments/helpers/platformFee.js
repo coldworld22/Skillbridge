@@ -8,6 +8,9 @@ const DEFAULT_PLATFORM_CUT = {
 };
 
 async function calculatePlatformFee(item_type, amount) {
+  if (Number(amount) <= 0) {
+    return { platform_fee: 0, instructor_amount: Number(amount) || 0 };
+  }
   // In tests, avoid DB calls and use defaults for determinism and speed
   let platform_fee = 0;
   let instructor_amount = amount;

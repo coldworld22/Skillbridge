@@ -8,18 +8,29 @@ import api from "@/services/api/api";
  * @returns {Promise<object>} { answer: string, ... }
  */
 export const askAI = async (provider, question, model) => {
-  // Use the backend AI assistance endpoint which reads API keys from
-  // the third party configuration settings. Older code pointed to `/ai`
-  // but the server exposes `/api/ai-assistance`.
-  const { data } = await api.post("/ai-assistance", {
-    provider,
-    question,
-    model,
-  });
-  if (data?.error) {
-    throw new Error(data.error.message || "AI request failed");
+  try {
+    // Use the backend AI assistance endpoint which reads API keys from
+    // the third party configuration settings. Older code pointed to `/ai`
+    // but the server exposes `/api/ai-assistance`.
+    const { data } = await api.post("/ai-assistance", {
+      provider,
+      question,
+      model,
+    });
+    if (data?.error) {
+      throw new Error(data.error.message || "AI request failed");
+    }
+    return data?.data ?? data;
+  } catch (err) {
+    const message =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "AI request failed";
+    const error = new Error(message);
+    error.cause = err;
+    throw error;
   }
-  return data?.data ?? data;
 };
 
 export default { askAI };

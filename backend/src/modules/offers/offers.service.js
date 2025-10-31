@@ -30,40 +30,155 @@ exports.getGroupOfferSummary = async (groupId) => {
   };
 };
 
-exports.getOffers = () => {
-  return db("offers as o")
-    .join("users as u", "o.student_id", "u.id")
+exports.getOffers = (options = {}) => {
+  const {
+    scope = "public",
+    viewerId = null,
+    includeMine = false,
+    status,
+    offerType,
+    ownerRole,
+    search,
+    orderBy,
+    orderDirection,
+  } = options;
+
+  const normalizedScope = String(scope).toLowerCase();
+  const normalizedStatus = status ? String(status).toLowerCase() : "";
+  const normalizedOfferType = offerType ? String(offerType).toLowerCase() : "";
+  const normalizedOwnerRole = ownerRole ? String(ownerRole).toLowerCase() : "";
+
+  const query = db("offers as o")
+    .leftJoin("users as u", "o.student_id", "u.id")
+    .leftJoin("offer_tag_map as m", "o.id", "m.offer_id")
+    .leftJoin("offer_tags as t", "m.tag_id", "t.id")
     .select(
       "o.*",
       "u.full_name as student_name",
       "u.role as student_role",
       "u.avatar_url as student_avatar",
       "u.email as student_email",
-      "u.phone as student_phone"
+      "u.phone as student_phone",
+      db.raw(
+        `COALESCE(
+          jsonb_agg(
+            DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'slug', t.slug)
+          ) FILTER (WHERE t.id IS NOT NULL),
+          '[]'::jsonb
+        ) as tags`
+      )
     )
-    .where("o.status", "open")
-    .andWhere(function () {
-      this.whereNull("o.expires_at").orWhere("o.expires_at", ">", db.fn.now());
-    })
-    .orderBy("o.created_at", "desc");
+    .groupBy(
+      "o.id",
+      "u.full_name",
+      "u.role",
+      "u.avatar_url",
+      "u.email",
+      "u.phone"
+    );
+
+  if (normalizedScope === "admin") {
+    if (normalizedStatus && ["open", "closed", "cancelled"].includes(normalizedStatus)) {
+      query.where("o.status", normalizedStatus);
+    }
+    if (normalizedOfferType && ["class", "tutorial"].includes(normalizedOfferType)) {
+      query.where("o.offer_type", normalizedOfferType);
+    }
+    if (normalizedOwnerRole && ["student", "instructor"].includes(normalizedOwnerRole)) {
+      query.whereRaw("LOWER(u.role) = ?", [normalizedOwnerRole]);
+    }
+  } else {
+    query.where(function (qb) {
+      qb.where(function (publicQb) {
+        publicQb.where("o.status", "open").andWhere(function () {
+          this.whereNull("o.expires_at").orWhere(
+            "o.expires_at",
+            ">",
+            db.fn.now()
+          );
+        });
+      });
+      if (includeMine && viewerId) {
+        qb.orWhere("o.student_id", viewerId);
+      }
+    });
+  }
+
+  if (search) {
+    const term = `%${search}%`;
+    query.andWhere(function (qb) {
+      qb.whereRaw("o.title ILIKE ?", [term]).orWhereRaw(
+        "o.description ILIKE ?",
+        [term]
+      );
+    });
+  }
+
+  const allowedOrderColumns = ["created_at", "updated_at", "expires_at"];
+  const column = allowedOrderColumns.includes(orderBy) ? orderBy : "created_at";
+  const direction = orderDirection === "asc" ? "asc" : "desc";
+  query.orderBy(`o.${column}`, direction);
+
+  return query;
 };
 
-exports.getOfferById = (id) => {
-  return db("offers as o")
-    .join("users as u", "o.student_id", "u.id")
+exports.getOfferById = (id, options = {}) => {
+  const {
+    scope = "public",
+    viewerId = null,
+    includeMine = false,
+  } = options;
+
+  const normalizedScope = String(scope).toLowerCase();
+
+  const query = db("offers as o")
+    .leftJoin("users as u", "o.student_id", "u.id")
+    .leftJoin("offer_tag_map as m", "o.id", "m.offer_id")
+    .leftJoin("offer_tags as t", "m.tag_id", "t.id")
     .select(
       "o.*",
       "u.full_name as student_name",
       "u.role as student_role",
       "u.avatar_url as student_avatar",
       "u.email as student_email",
-      "u.phone as student_phone"
+      "u.phone as student_phone",
+      db.raw(
+        `COALESCE(
+          jsonb_agg(
+            DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'slug', t.slug)
+          ) FILTER (WHERE t.id IS NOT NULL),
+          '[]'::jsonb
+        ) as tags`
+      )
     )
     .where("o.id", id)
-    .andWhere(function () {
-      this.whereNull("o.expires_at").orWhere("o.expires_at", ">", db.fn.now());
-    })
-    .first();
+    .groupBy(
+      "o.id",
+      "u.full_name",
+      "u.role",
+      "u.avatar_url",
+      "u.email",
+      "u.phone"
+    );
+
+  if (normalizedScope !== "admin") {
+    query.andWhere(function (qb) {
+      qb.where(function (publicQb) {
+        publicQb.where("o.status", "open").andWhere(function () {
+          this.whereNull("o.expires_at").orWhere(
+            "o.expires_at",
+            ">",
+            db.fn.now()
+          );
+        });
+      });
+      if (includeMine && viewerId) {
+        qb.orWhere("o.student_id", viewerId);
+      }
+    });
+  }
+
+  return query.first();
 };
 
 exports.updateOffer = async (id, data) => {
@@ -93,4 +208,17 @@ exports.getOfferTags = async (offerId) => {
     .join("offer_tags as t", "m.tag_id", "t.id")
     .where("m.offer_id", offerId)
     .select("t.id", "t.name", "t.slug");
+};
+
+exports.countActiveOffersByUser = async (userId) => {
+  const row = await db("offers")
+    .where({ student_id: userId })
+    .andWhere("status", "open")
+    .andWhere(function () {
+      this.whereNull("expires_at").orWhere("expires_at", ">", db.fn.now());
+    })
+    .count("id as count")
+    .first();
+
+  return Number(row?.count || 0);
 };

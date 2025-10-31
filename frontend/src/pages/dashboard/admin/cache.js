@@ -19,7 +19,9 @@ function AdminCachePage() {
   );
 }
 
-const ProtectedAdminCachePage = withAuthProtection(AdminCachePage, ["admin", "superadmin"]);
+const ProtectedAdminCachePage = withAuthProtection(AdminCachePage, {
+  permissions: ["manage_cache"],
+});
 
 export default ProtectedAdminCachePage;
 

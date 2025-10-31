@@ -5,9 +5,18 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./student.controller");
-const { verifyToken, isStudent } = require("../../../middleware/auth/authMiddleware");
+const {
+  verifyToken,
+  isStudent,
+} = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, identityUpload } = require("./studentUploadMiddleware");
-const { updateStudentProfileSchema } = require("./student.validator");
+const {
+  updateStudentProfileSchema,
+  updateStudentAccountSchema,
+  updateLearningPreferencesSchema,
+  updatePrivacySettingsSchema,
+  updateUiPreferencesSchema,
+} = require("./student.validator");
 const validate = require("../../../middleware/validate");
 
 /**
@@ -15,16 +24,51 @@ const validate = require("../../../middleware/validate");
  * @route GET /api/users/student/profile
  */
 
-router.get("/profile", verifyToken,isStudent, controller.getProfile);
+router.get("/profile", verifyToken, isStudent, controller.getProfile);
 /**
  * @desc Update student profile
  * @route PUT /api/users/student/profile
  */
 router.put(
   "/profile",
-  verifyToken,isStudent,
+  verifyToken,
+  isStudent,
   validate(updateStudentProfileSchema), // ✅ Zod validation here
   controller.updateProfile
+);
+
+router.get("/settings", verifyToken, isStudent, controller.getSettings);
+
+router.patch(
+  "/settings/account",
+  verifyToken,
+  isStudent,
+  validate(updateStudentAccountSchema),
+  controller.updateAccountInfo
+);
+
+router.patch(
+  "/settings/learning",
+  verifyToken,
+  isStudent,
+  validate(updateLearningPreferencesSchema),
+  controller.updateLearningPreferences
+);
+
+router.patch(
+  "/settings/privacy",
+  verifyToken,
+  isStudent,
+  validate(updatePrivacySettingsSchema),
+  controller.updatePrivacySettings
+);
+
+router.patch(
+  "/settings/ui",
+  verifyToken,
+  isStudent,
+  validate(updateUiPreferencesSchema),
+  controller.updateUiPreferences
 );
 
 const ensureSelf = (req, res, next) => {

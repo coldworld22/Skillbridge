@@ -19,8 +19,8 @@ export default function RequireProfileCompletion({ children }) {
     if (!user) return;
 
     if (user.profile_complete === false) {
-      const targetPath = roleRedirects[userRole] || "/profile/edit";
-      if (router.pathname !== targetPath) {
+      const targetPath = roleRedirects[userRole];
+      if (targetPath && router.pathname !== targetPath) {
         toast.info("Please complete your profile to continue.");
         router.replace(targetPath);
       }

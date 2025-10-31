@@ -23,6 +23,7 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { buildTutorialFormData } from "@/utils/tutorialForm";
+import { fetchPlanIdentifiers } from "@/services/admin/planService";
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -33,6 +34,7 @@ function EditTutorialPage() {
   const [tutorialData, setTutorialData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
+  const [plans, setPlans] = useState([]);
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
@@ -45,31 +47,34 @@ function EditTutorialPage() {
       const parsed = JSON.parse(draft);
       setTutorialData({
         ...parsed,
+        category: parsed.category ? String(parsed.category) : "",
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
-        allowInstallments: Boolean(
-          parsed.allowInstallments ?? parsed.allow_installments ?? false
-        ),
-        installments: parsed.installments
-          ? String(parsed.installments)
-          : parsed.allowInstallments || parsed.allow_installments
-          ? "2"
-          : "1",
         includedPlans: Array.isArray(parsed.includedPlans)
           ? parsed.includedPlans.map((id) => String(id))
           : Array.isArray(parsed.included_plans)
           ? parsed.included_plans.map((id) => String(id))
           : [],
       });
+      // Still fetch supporting data (categories/plans) even when a draft is present
+      fetchAllCategories()
+        .then((cats) => setCategories(cats?.data || cats || []))
+        .catch((err) => console.error(err));
+      fetchPlanIdentifiers()
+        .then((identifiers) =>
+          setPlans(Array.isArray(identifiers) ? identifiers : []),
+        )
+        .catch((err) => console.error(err));
       return;
     }
 
     const load = async () => {
       try {
         setError(null);
-        const [tutorial, chapters, cats] = await Promise.all([
+        const [tutorial, chapters, cats, identifierList] = await Promise.all([
           fetchTutorialById(id),
           fetchChaptersByTutorial(id),
           fetchAllCategories(),
+          fetchPlanIdentifiers(),
         ]);
         const mappedChapters = chapters.map((ch) => ({
           title: ch.title,
@@ -81,7 +86,7 @@ function EditTutorialPage() {
         setTutorialData({
           title: tutorial.title,
           shortDescription: tutorial.shortDescription || "",
-          category: tutorial.category,
+          category: tutorial.category ? String(tutorial.category) : "",
           categoryName: tutorial.categoryName,
           level: tutorial.level,
           language: tutorial.language || "",
@@ -94,21 +99,14 @@ function EditTutorialPage() {
           preview: tutorial.preview,
           price: tutorial.price || "",
           isFree: tutorial.isFree,
-          allowInstallments: Boolean(
-            tutorial.allowInstallments ?? tutorial.allow_installments ?? false
-          ),
-          installments: tutorial.installments
-            ? String(tutorial.installments)
-            : tutorial.allowInstallments || tutorial.allow_installments
-            ? "2"
-            : "1",
           includedPlans: Array.isArray(tutorial.includedPlans)
             ? tutorial.includedPlans.map((id) => String(id))
             : Array.isArray(tutorial.included_plans)
             ? tutorial.included_plans.map((id) => String(id))
             : [],
         });
-        setCategories(cats?.data || cats);
+        setCategories(cats?.data || cats || []);
+        setPlans(Array.isArray(identifierList) ? identifierList : []);
       } catch (err) {
         console.error(err);
         setError("Failed to load tutorial.");
@@ -144,6 +142,7 @@ function EditTutorialPage() {
             setTutorialData={setTutorialData}
             onNext={onNext}
             categories={categories}
+            plans={plans}
           />
         )}
         {step === 2 && (
@@ -151,7 +150,7 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onPrev}
           />
         )}
         {step === 3 && (
@@ -159,13 +158,14 @@ function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onPrev}
           />
         )}
         {step === 4 && (
             <ReviewStep
               tutorialData={tutorialData}
-              onPrev={onPrev}
+              onBack={onPrev}
+              plans={plans}
               actionLabel="Save Changes"
               onPublish={async () => {
                 const formData = buildTutorialFormData(tutorialData);

@@ -16,6 +16,8 @@ export default function CreateCertificateTemplate() {
     show_qr: true,
     logo: null,
     background: null,
+    for_tutorials: true,
+    for_online_classes: true,
   };
 
   const handleSubmit = async (data) => {

@@ -12,9 +12,28 @@ const messageService = require("../messages/messages.service");
 // { groupId => Map<userId, { name, ts }> }
 const typingStatus = new Map();
 
+const normalizeRole = (value) =>
+  value ? String(value).trim().toLowerCase() : "";
+
+const resolveGroupRole = async (groupId, user) => {
+  if (!user || !user.id) {
+    throw new AppError("Not authorized", 403);
+  }
+  const platformRole = normalizeRole(user.role);
+  if (["admin", "superadmin"].includes(platformRole)) {
+    return "admin";
+  }
+  const role = await groupService.getMemberRole(groupId, user.id);
+  if (!role) {
+    throw new AppError("Not authorized", 403);
+  }
+  return role;
+};
+
 
 exports.getMessages = catchAsync(async (req, res) => {
   const { id } = req.params;
+  await resolveGroupRole(id, req.user);
   const messages = await msgService.listMessages(id);
   sendSuccess(res, messages);
 });
@@ -30,8 +49,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
     throw new AppError("Message or attachment required", 400);
   }
 
-  const role = await groupService.getMemberRole(id, req.user.id);
-  if (!role) throw new AppError("Not authorized", 403);
+  const role = await resolveGroupRole(id, req.user);
 
   const perms = await groupService.getGroupPermissions(id);
   const rolePerms = perms[role] || {};
@@ -150,6 +168,7 @@ exports.deleteMessage = catchAsync(async (req, res) => {
 exports.updateTyping = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { typing } = req.body || {};
+  await resolveGroupRole(id, req.user);
   if (!typingStatus.has(id)) typingStatus.set(id, new Map());
   const map = typingStatus.get(id);
   if (typing) {
@@ -162,6 +181,7 @@ exports.updateTyping = catchAsync(async (req, res) => {
 
 exports.getTyping = catchAsync(async (req, res) => {
   const { id } = req.params;
+  await resolveGroupRole(id, req.user);
   const map = typingStatus.get(id);
   if (!map) return sendSuccess(res, []);
   const now = Date.now();
@@ -175,4 +195,3 @@ exports.getTyping = catchAsync(async (req, res) => {
   }
   sendSuccess(res, names);
 });
-

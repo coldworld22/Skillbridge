@@ -29,8 +29,12 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
   // Clean up generated object URLs when media changes or component unmounts
   useEffect(() => {
     return () => {
-      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
-      if (previewVideo) URL.revokeObjectURL(previewVideo);
+      if (thumbnailPreview?.startsWith?.("blob:")) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+      if (previewVideo?.startsWith?.("blob:")) {
+        URL.revokeObjectURL(previewVideo);
+      }
     };
   }, [thumbnailPreview, previewVideo]);
 
@@ -41,6 +45,9 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
       file.size < 10 * 1024 * 1024 &&
       ["image/jpeg", "image/png"].includes(file.type)
     ) {
+      if (thumbnailPreview?.startsWith?.("blob:")) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
       const url = URL.createObjectURL(file);
       setThumbnailPreview(url);
       setTutorialData((prev) => ({ ...prev, thumbnail: file }));
@@ -52,6 +59,9 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
   const handlePreviewUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.size < 50 * 1024 * 1024 && ["video/mp4", "video/webm"].includes(file.type)) {
+      if (previewVideo?.startsWith?.("blob:")) {
+        URL.revokeObjectURL(previewVideo);
+      }
       const url = URL.createObjectURL(file);
       setPreviewVideo(url);
       setTutorialData((prev) => ({ ...prev, preview: file }));

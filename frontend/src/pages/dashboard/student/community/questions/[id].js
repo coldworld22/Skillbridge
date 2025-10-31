@@ -1,9 +1,18 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { FaReply, FaUserCircle } from "react-icons/fa";
 import { fetchDiscussionById, fetchReplies, createReply } from "@/services/communityService";
 import toast, { Toaster } from "react-hot-toast";
+import { safeParseTags } from "@/utils/community/tags";
+import ReactMarkdown from "react-markdown";
+
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString();
+};
 
 export default function QuestionDetailPage() {
   const router = useRouter();
@@ -13,6 +22,14 @@ export default function QuestionDetailPage() {
   const [replies, setReplies] = useState([]);
   const [replyText, setReplyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const stats = useMemo(
+    () => [
+      { label: "Replies", value: replies.length },
+      { label: "Tags", value: question?.tags?.length ?? 0 },
+      { label: "Views", value: question?.views ?? 0 },
+    ],
+    [replies.length, question?.tags?.length, question?.views]
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -20,15 +37,13 @@ export default function QuestionDetailPage() {
       try {
         const q = await fetchDiscussionById(id);
         if (q) {
-          q.tags = Array.isArray(q.tags)
-            ? q.tags
-            : typeof q.tags === "string" && q.tags
-            ? JSON.parse(q.tags)
-            : [];
-          setQuestion(q);
+          setQuestion({
+            ...q,
+            tags: safeParseTags(q.tags),
+          });
         }
         const r = await fetchReplies(id);
-        setReplies(r);
+        setReplies(Array.isArray(r) ? r : []);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load discussion");
@@ -44,8 +59,10 @@ export default function QuestionDetailPage() {
     fd.append("content", replyText);
     try {
       const newReply = await createReply(id, fd);
-      setReplies((prev) => [...prev, newReply]);
-      setReplyText("")
+      if (newReply) {
+        setReplies((prev) => [...prev, newReply]);
+      }
+      setReplyText("");
       toast.success("Reply posted");
     } catch (err) {
       console.error(err);
@@ -60,64 +77,111 @@ export default function QuestionDetailPage() {
   return (
     <StudentLayout title={question.title}>
       <Toaster position="top-center" />
-      <div className="p-6 max-w-4xl mx-auto space-y-8">
-        {/* Question */}
-        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-2 text-gray-800">{question.title}</h1>
-        <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
-          {question.user_avatar ? (
-            <img src={question.user_avatar} alt="avatar" className="w-6 h-6 rounded-full" />
-          ) : (
-            <FaUserCircle className="text-gray-400" />
-          )}
-          <span>Asked by <strong>{question.user_name}</strong></span>
-        </p>
-          <p className="text-gray-700 mb-4">{question.content}</p>
-          <div className="flex gap-2 flex-wrap">
-            {question.tags.map((tag) => (
-              <span key={tag} className="text-xs px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Replies */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Replies</h2>
-          {replies.map((reply) => (
-            <div key={reply.id} className="bg-gray-50 border border-gray-200 p-4 rounded-lg flex gap-3">
-              {reply.user_avatar ? (
-                <img src={reply.user_avatar} alt="avatar" className="w-8 h-8 rounded-full" />
-              ) : (
-                <FaUserCircle className="text-3xl text-gray-400" />
-              )}
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{reply.user_name}</p>
-                <p className="text-gray-600 text-sm">{reply.content}</p>
-                <span className="text-xs text-gray-400">{new Date(reply.created_at).toLocaleDateString()}</span>
+      <div className="px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-8">
+          <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+            <div className="space-y-4 p-8">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h1 className="text-3xl font-bold md:text-4xl">{question.title}</h1>
+                <span className="rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-yellow-200">
+                  {formatDate(question.created_at)}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-200/80">
+                {question.user_avatar ? (
+                  <img src={question.user_avatar} alt="avatar" className="h-9 w-9 rounded-full border border-white/20 object-cover" />
+                ) : (
+                  <FaUserCircle className="text-2xl text-yellow-200/80" />
+                )}
+                <span className="font-semibold text-white">{question.user_name}</span>
+                <span className="text-white/60">asked for help</span>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="grid gap-4 border-t border-white/10 bg-white/5 px-8 py-6 text-sm sm:grid-cols-3">
+              {stats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl bg-white/10 p-4 shadow-inner">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-200/70">
+                    {stat.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        {/* Reply Box */}
-        <div className="mt-6">
-          <h3 className="text-md font-semibold mb-2 text-gray-800">Post a Reply</h3>
-          <textarea
-            rows={4}
-            className="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-yellow-400"
-            placeholder="Write your reply here..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-          />
-          <button
-            onClick={handleReply}
-            disabled={submitting}
-            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
-          >
-            <FaReply /> {submitting ? 'Posting...' : 'Reply'}
-          </button>
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr),1fr]">
+            <article className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+              <ReactMarkdown className="space-y-4 text-slate-700 leading-relaxed">
+                {question.content || "No description provided."}
+              </ReactMarkdown>
+            </article>
+
+            <aside className="space-y-5 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Tags</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {question.tags.length > 0 ? (
+                    question.tags.map((tag) => (
+                      <span key={tag} className="rounded-full border border-yellow-300/60 bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
+                        #{tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-400">No tags provided.</span>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
+                <p className="font-semibold text-slate-800">Need more visibility?</p>
+                <p className="mt-1">Share this thread with your classmates to gather quicker responses.</p>
+              </div>
+            </aside>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Replies</h2>
+            {replies.length > 0 ? (
+              replies.map((reply) => (
+                <div key={reply.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-3 text-sm text-slate-500">
+                    {reply.user_avatar ? (
+                      <img src={reply.user_avatar} alt="avatar" className="h-8 w-8 rounded-full border border-slate-200 object-cover" />
+                    ) : (
+                      <FaUserCircle className="text-2xl text-slate-400" />
+                    )}
+                    <div>
+                      <p className="font-semibold text-slate-800">{reply.user_name}</p>
+                      <span>{formatDate(reply.created_at)}</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-700">{reply.content}</p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-slate-500">
+                No replies yet. Be the first to share your expertise!
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+            <h3 className="text-md font-semibold text-slate-900">Post a Reply</h3>
+            <p className="mt-1 text-sm text-slate-500">Add helpful context or steps that solved the issue for you.</p>
+            <textarea
+              rows={4}
+              className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-300/60"
+              placeholder="Write your reply here..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+            />
+            <button
+              onClick={handleReply}
+              disabled={submitting}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-yellow-500 px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FaReply /> {submitting ? "Posting..." : "Reply"}
+            </button>
+          </section>
         </div>
       </div>
     </StudentLayout>

@@ -4,6 +4,14 @@ const catchAsync = require("../../utils/catchAsync");
 const msgService = require("../messages/messages.service");
 const { prepareMessagingQuota } = require("../messages/messageQuota.helper");
 
+const isValidInstructorId = (value) => {
+  if (!value && value !== 0) return false;
+  const id = String(value).trim();
+  const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  const numericPattern = /^[0-9]+$/;
+  return uuidPattern.test(id) || numericPattern.test(id);
+};
+
 exports.list = catchAsync(async (_req, res) => {
   const data = await service.getPublicInstructors();
   sendSuccess(res, data, "Instructors fetched");
@@ -11,7 +19,7 @@ exports.list = catchAsync(async (_req, res) => {
 
 exports.getById = catchAsync(async (req, res) => {
   const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+  if (!isValidInstructorId(id)) {
     return res.status(400).json({ message: "Invalid instructor id" });
   }
 
@@ -24,7 +32,7 @@ exports.getById = catchAsync(async (req, res) => {
 
 exports.getAvailability = catchAsync(async (req, res) => {
   const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+  if (!isValidInstructorId(id)) {
     return res.status(400).json({ message: "Invalid instructor id" });
   }
 
@@ -34,7 +42,7 @@ exports.getAvailability = catchAsync(async (req, res) => {
 
 exports.sendEmail = catchAsync(async (req, res) => {
   const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+  if (!isValidInstructorId(id)) {
     return res.status(400).json({ message: "Invalid instructor id" });
   }
 
@@ -54,7 +62,7 @@ exports.sendEmail = catchAsync(async (req, res) => {
 
 exports.sendWhatsApp = catchAsync(async (req, res) => {
   const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+  if (!isValidInstructorId(id)) {
     return res.status(400).json({ message: "Invalid instructor id" });
   }
 
@@ -73,7 +81,7 @@ exports.sendWhatsApp = catchAsync(async (req, res) => {
 
 exports.startVideoCall = catchAsync(async (req, res) => {
   const { id } = req.params;
-  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+  if (!isValidInstructorId(id)) {
     return res.status(400).json({ message: "Invalid instructor id" });
   }
 

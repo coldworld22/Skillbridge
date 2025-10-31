@@ -1,0 +1,135 @@
+{
+  "adminGroupDetailsPage": {
+    "title": "🔍 نظرة عامة على المجموعة: {{name}}",
+    "pendingBanner": "{{count}} طلب انضمام قيد المراجعة",
+    "pendingBanner_zero": "لا توجد طلبات انضمام معلقة",
+    "pendingBanner_one": "طلب انضمام واحد قيد المراجعة",
+    "pendingBanner_two": "طلبا انضمام قيد المراجعة",
+    "pendingBanner_few": "{{count}} طلبات انضمام قيد المراجعة",
+    "pendingBanner_many": "{{count}} طلب انضمام قيد المراجعة",
+    "pendingBanner_other": "{{count}} طلب انضمام قيد المراجعة",
+    "actions": {
+      "back": "← الرجوع إلى المجموعات"
+    },
+    "states": {
+      "loading": "جارٍ تحميل بيانات المجموعة...",
+      "notFound": "لم يتم العثور على المجموعة"
+    },
+    "tabs": {
+      "overview": "نظرة عامة",
+      "chat": "الدردشة",
+      "members": "الأعضاء",
+      "requests": "الطلبات"
+    },
+    "overview": {
+      "creator": "المنشئ:",
+      "created": "تاريخ الإنشاء:",
+      "members": "الأعضاء:",
+      "visibility": "الظهور:",
+      "visibilityPublic": "عام",
+      "visibilityPrivate": "خاص",
+      "category": "الفئة:",
+      "status": "الحالة:",
+      "statusLabels": {
+        "pending": "قيد الانتظار",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "suspended": "معلق",
+        "archived": "مؤرشف"
+      },
+      "offers": "العروض:",
+      "feesCollected": "الرسوم المحصلة:",
+      "purpose": "الهدف:",
+      "toolsUsed": "الأدوات المستخدمة:",
+      "missing": "غير متوفر"
+    },
+    "members": {
+      "sort": {
+        "label": "ترتيب حسب:",
+        "name": "الاسم",
+        "role": "الدور"
+      },
+      "searchPlaceholder": "ابحث في الأعضاء...",
+      "export": "تصدير",
+      "removeSelected": "إزالة المحددين ({{count}})",
+      "removeSelected_zero": "إزالة المحددين (0)",
+      "removeSelected_one": "إزالة المحدد ({{count}})",
+      "removeSelected_two": "إزالة المحددين ({{count}})",
+      "removeSelected_few": "إزالة المحددين ({{count}})",
+      "removeSelected_many": "إزالة المحددين ({{count}})",
+      "removeSelected_other": "إزالة المحددين ({{count}})",
+      "csvHeaders": {
+        "name": "الاسم",
+        "role": "الدور"
+      },
+      "csvFilename": "members.csv",
+      "table": {
+        "columns": {
+          "name": "الاسم",
+          "role": "الدور",
+          "actions": "إجراءات"
+        }
+      },
+      "actions": {
+        "remove": "إزالة",
+        "promote": "ترقية"
+      },
+      "roles": {
+        "admin": "مسؤول",
+        "moderator": "مشرف",
+        "member": "عضو",
+        "disabled": "[معطل]"
+      }
+    },
+    "requests": {
+      "empty": "لا توجد طلبات معلقة.",
+      "table": {
+        "columns": {
+          "name": "الاسم",
+          "email": "البريد الإلكتروني",
+          "requestedAt": "تاريخ الطلب",
+          "actions": "إجراءات"
+        }
+      },
+      "actions": {
+        "approve": "✅ موافقة",
+        "reject": "❌ رفض"
+      }
+    },
+    "modals": {
+      "bulkRemove": {
+        "title": "تأكيد الإزالة",
+        "message": "هل أنت متأكد من إزالة الأعضاء المحددين؟"
+      },
+      "removeMember": {
+        "title": "تأكيد الإزالة",
+        "message": "إزالة هذا العضو؟"
+      },
+      "promoteMember": {
+        "title": "تأكيد الترقية",
+        "message": "ترقية هذا العضو إلى مسؤول؟"
+      },
+      "approveRequest": {
+        "title": "الموافقة على الطلب",
+        "message": "الموافقة على {{name}}؟"
+      },
+      "rejectRequest": {
+        "title": "رفض الطلب",
+        "message": "رفض {{name}}؟"
+      }
+    },
+    "toasts": {
+      "loadError": "فشل تحميل المجموعة",
+      "bulkRemoveSuccess": "تمت إزالة الأعضاء المحددين",
+      "bulkRemoveError": "تعذر إزالة بعض الأعضاء.",
+      "memberRemoved": "تمت إزالة العضو",
+      "memberRemoveError": "فشل إزالة العضو",
+      "memberPromoted": "تمت ترقية العضو إلى مسؤول",
+      "memberPromoteError": "فشل ترقية العضو",
+      "requestApproved": "تمت الموافقة على الطلب",
+      "requestApproveError": "فشل في الموافقة على الطلب",
+      "requestRejected": "تم رفض الطلب",
+      "requestRejectError": "فشل في رفض الطلب"
+    }
+  }
+}

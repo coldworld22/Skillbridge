@@ -20,3 +20,8 @@ exports.getByUser = (user_id) => {
 exports.findByPayment = (payment_id) => {
   return db("invoices").where({ payment_id }).first();
 };
+
+exports.update = async (id, data) => {
+  const [row] = await db("invoices").where({ id }).update(data).returning("*");
+  return row;
+};

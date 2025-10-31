@@ -22,7 +22,12 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function Home() {
   const { user } = useAuthStore();
-  const planRole = user?.role === "instructor" ? "instructor" : "student";
+  const normalizedRole = (user?.role || "").toLowerCase();
+  const planRole = normalizedRole === "instructor"
+    ? "instructor"
+    : ["admin", "superadmin"].includes(normalizedRole)
+      ? "all"
+      : "student";
 
   const sections = [
     { component: Hero },

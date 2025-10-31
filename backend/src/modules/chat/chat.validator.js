@@ -2,7 +2,7 @@ const { z } = require("zod");
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const fileTypes = ["image/jpeg", "image/png", "application/pdf"];
-const audioTypes = ["audio/mpeg", "audio/wav"];
+const audioTypes = ["audio/mpeg", "audio/wav", "audio/webm", "audio/ogg"];
 
 const baseUploadSchema = z.object({
   mimetype: z.string(),
@@ -17,13 +17,18 @@ const fileSchema = baseUploadSchema
     message: "File too large",
   });
 
-const audioSchema = baseUploadSchema
-  .extend({
-    mimetype: z.enum(audioTypes),
-  })
-  .refine((f) => f.size <= MAX_FILE_SIZE, {
-    message: "File too large",
-  });
+const audioSchema = baseUploadSchema.extend({
+  mimetype: z
+    .string()
+    .refine(
+      (type) => audioTypes.some((allowed) => type === allowed || type.startsWith(`${allowed};`)),
+      {
+        message: "Unsupported audio format",
+      }
+    ),
+}).refine((f) => f.size <= MAX_FILE_SIZE, {
+  message: "File too large",
+});
 
 exports.sendMessage = {
   body: z

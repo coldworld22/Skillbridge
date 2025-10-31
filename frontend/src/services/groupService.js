@@ -17,6 +17,7 @@ const formatGroup = (g) => {
   }
   return {
     ...g,
+    title: g.title ?? g.name ?? g.display_name ?? g.displayName ?? g.slug ?? "Untitled group",
     cover_image: g.cover_image
       ? g.cover_image.startsWith('http') || g.cover_image.startsWith('blob:')
         ? g.cover_image
@@ -39,6 +40,8 @@ const formatGroup = (g) => {
     status: g.status ?? "active",
     contactPhone: g.contact_phone ?? g.contactPhone ?? null,
     phone: g.phone ?? g.contact_phone ?? g.contactPhone ?? null,
+    requiresApproval:
+      g.requires_approval ?? g.requiresApproval ?? false,
     tags,
     offerSummary: g.offerSummary || g.offer_summary || {
       count: g.offer_count ?? 0,
@@ -81,7 +84,11 @@ const groupService = {
 
   joinGroup: async (groupId) => {
     const { data } = await api.post(`/groups/${groupId}/join`);
-    return data?.data;
+    return {
+      data: data?.data ?? null,
+      message: data?.message ?? "",
+      status: data?.status ?? "success",
+    };
   },
 
   cancelJoinRequest: async (groupId) => {
@@ -212,6 +219,7 @@ const groupService = {
   getJoinRequestsForGroup: async (groupId, opts = {}) => {
     const { data } = await api.get(`/groups/${groupId}/requests`, opts);
     const list = data?.data ?? [];
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return Array.isArray(list)
       ? list.map((r) => ({
           id: r.id,
@@ -219,18 +227,28 @@ const groupService = {
           name: r.name,
           email: r.email,
           requestedAt: r.requested_at,
+          role: r.user_role,
+          avatar: r.avatar
+            ? r.avatar.startsWith("http") || r.avatar.startsWith("blob:")
+              ? r.avatar
+              : `${base}${r.avatar}`
+            : "/images/default-avatar.png",
         }))
       : [];
   },
 
   approveRequest: async (requestId) => {
-    await api.post(`/groups/requests/${requestId}`, { action: "approve" });
-    return true;
+    const { data } = await api.post(`/groups/requests/${requestId}`, {
+      action: "approve",
+    });
+    return data?.data ?? true;
   },
 
   rejectRequest: async (requestId) => {
-    await api.post(`/groups/requests/${requestId}`, { action: "reject" });
-    return true;
+    const { data } = await api.post(`/groups/requests/${requestId}`, {
+      action: "reject",
+    });
+    return data?.data ?? true;
   },
 
   getGroupPermissions: async (groupId) => {

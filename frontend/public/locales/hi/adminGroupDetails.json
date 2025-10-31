@@ -1,0 +1,125 @@
+{
+  "adminGroupDetailsPage": {
+    "title": "🔍 Group Overview: {{name}}",
+    "pendingBanner": "{{count}} pending join request",
+    "pendingBanner_plural": "{{count}} pending join requests",
+    "actions": {
+      "back": "← Back to Groups"
+    },
+    "states": {
+      "loading": "Loading group...",
+      "notFound": "Group not found"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "chat": "Chat",
+      "members": "Members",
+      "requests": "Requests"
+    },
+    "overview": {
+      "creator": "Creator:",
+      "created": "Created:",
+      "members": "Members:",
+      "visibility": "Visibility:",
+      "visibilityPublic": "Public",
+      "visibilityPrivate": "Private",
+      "category": "Category:",
+      "status": "Status:",
+      "statusLabels": {
+        "pending": "Pending",
+        "active": "Active",
+        "inactive": "Inactive",
+        "suspended": "Suspended",
+        "archived": "Archived"
+      },
+      "offers": "Offers:",
+      "feesCollected": "Fees Collected:",
+      "purpose": "Purpose:",
+      "toolsUsed": "Tools Used:",
+      "missing": "N/A"
+    },
+    "members": {
+      "sort": {
+        "label": "Sort by:",
+        "name": "Name",
+        "role": "Role"
+      },
+      "searchPlaceholder": "Search members...",
+      "export": "Export",
+      "removeSelected": "Remove Selected ({{count}})",
+      "removeSelected_plural": "Remove Selected ({{count}})",
+      "csvHeaders": {
+        "name": "Name",
+        "role": "Role"
+      },
+      "csvFilename": "members.csv",
+      "table": {
+        "columns": {
+          "name": "Name",
+          "role": "Role",
+          "actions": "Actions"
+        }
+      },
+      "actions": {
+        "remove": "Remove",
+        "promote": "Promote"
+      },
+      "roles": {
+        "admin": "Admin",
+        "moderator": "Moderator",
+        "member": "Member",
+        "disabled": "[Disabled]"
+      }
+    },
+    "requests": {
+      "empty": "No pending requests.",
+      "table": {
+        "columns": {
+          "name": "Name",
+          "email": "Email",
+          "requestedAt": "Requested At",
+          "actions": "Actions"
+        }
+      },
+      "actions": {
+        "approve": "✅ Approve",
+        "reject": "❌ Reject"
+      }
+    },
+    "modals": {
+      "bulkRemove": {
+        "title": "Confirm Removal",
+        "message": "Are you sure you want to remove the selected members?"
+      },
+      "removeMember": {
+        "title": "Confirm Removal",
+        "message": "Remove this member?"
+      },
+      "promoteMember": {
+        "title": "Confirm Promotion",
+        "message": "Promote this member to Admin?"
+      },
+      "approveRequest": {
+        "title": "Approve Request",
+        "message": "Approve {{name}}?"
+      },
+      "rejectRequest": {
+        "title": "Reject Request",
+        "message": "Reject {{name}}?"
+      }
+    },
+    "toasts": {
+      "loadError": "Failed to load group",
+      "bulkRemoveSuccess": "Selected members removed",
+      "bulkRemoveError": "Some members could not be removed.",
+      "memberRemoved": "Member removed",
+      "memberRemoveError": "Failed to remove member",
+      "memberPromoted": "Member promoted to admin",
+      "memberPromoteError": "Failed to promote member",
+      "requestApproved": "Request approved",
+      "requestApproveError": "Failed to approve request",
+      "requestRejected": "Request rejected",
+      "requestRejectError": "Failed to reject request"
+    }
+  }
+}

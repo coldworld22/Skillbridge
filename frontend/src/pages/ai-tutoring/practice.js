@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
 
 const sampleQuestions = [
   {
@@ -44,15 +45,9 @@ export default function PracticePage() {
     const load = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
-        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
-          opts.push({ key: "chatgpt", label: "ChatGPT" });
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
-          opts.push({ key: "deepseek", label: "DeepSeek AI" });
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
-          opts.push({ key: "huggingface", label: "Hugging Face" });
-        setModels(opts);
-        if (opts.length === 1) setSelectedModel(opts[0].key);
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setModels(providers);
+        setSelectedModel(defaultProvider || "");
       } catch (err) {
         console.error(err);
       }
@@ -110,6 +105,11 @@ export default function PracticePage() {
                 </label>
               ))}
             </div>
+            {!models.length && (
+              <p className="text-sm text-yellow-300 mb-4">
+                Enable an AI provider to unlock adaptive practice quizzes.
+              </p>
+            )}
 
             <select
               value={selectedField}

@@ -9,7 +9,12 @@ const path = require("path");
 const instructorService = require("./instructor.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
-const { availabilitySlotSchema } = require("./instructor.validator");
+const { sendPasswordChangeEmails } = require("../passwordNotifications.service");
+const {
+  parseAvailabilitySlots,
+  sanitizeAvailabilitySlots,
+} = require("./instructorAvailability.util");
+
 
 
 /**
@@ -355,7 +360,9 @@ exports.changePassword = async (req, res) => {
         return res.status(400).json({ message: "New password must be at least 8 characters." });
     }
 
-    const [user] = await db("users").where({ id: userId }).select("password_hash");
+    const [user] = await db("users")
+        .where({ id: userId })
+        .select("password_hash", "email", "full_name", "role");
     if (!user) {
         return res.status(404).json({ message: "User not found." });
     }
@@ -385,6 +392,16 @@ exports.changePassword = async (req, res) => {
         message: "Your password was changed successfully",
     });
 
+    await sendPasswordChangeEmails({
+        targetUser: {
+            id: userId,
+            email: user.email,
+            full_name: user.full_name,
+            role: user.role || req.user.role,
+        },
+        actor: req.user,
+    });
+
 
     res.json({ message: "Password changed successfully." });
 };
@@ -400,14 +417,7 @@ exports.getAvailability = async (req, res) => {
         .where({ user_id: userId })
         .select('availability_slots');
 
-    let availability = [];
-    if (profile && profile.availability_slots) {
-        try {
-            availability = JSON.parse(profile.availability_slots);
-        } catch (_) {
-            availability = [];
-        }
-    }
+    const availability = parseAvailabilitySlots(profile?.availability_slots);
 
     res.json({ availability_slots: availability });
 };
@@ -421,15 +431,27 @@ exports.updateAvailability = async (req, res) => {
     const userId = req.user.id;
     const { availability_slots } = req.body;
 
-    if (!Array.isArray(availability_slots)) {
-        return res.status(400).json({ message: 'Availability must be an array' });
+    const result = sanitizeAvailabilitySlots(availability_slots);
+    if (!result.ok) {
+        const payload = { message: result.message || 'Invalid availability data.' };
+        if (typeof result.index === 'number') {
+            payload.index = result.index;
+        }
+        if (result.issues) {
+            payload.errors = result.issues;
+        }
+        return res.status(400).json(payload);
     }
 
-    await db('instructor_profiles')
-        .where({ user_id: userId })
-        .update({ availability_slots: JSON.stringify(availability_slots) });
+    const sanitizedSlots = result.value;
+    const serialized = JSON.stringify(sanitizedSlots);
 
-    res.json({ message: 'Availability updated successfully' });
+    await db('instructor_profiles')
+        .insert({ user_id: userId, availability_slots: serialized })
+        .onConflict('user_id')
+        .merge({ availability_slots: serialized, updated_at: db.fn.now() });
+
+    res.json({ message: 'Availability updated successfully', availability_slots: sanitizedSlots });
 };
 
 /**

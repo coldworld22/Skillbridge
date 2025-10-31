@@ -64,16 +64,24 @@ module.exports = (schemaConfig = {}) => {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
+        const firstMessage =
+          err.errors && err.errors.length ? err.errors[0].message : null;
         return res.status(400).json({
           message: "Validation error",
           errors: err.errors,
+          detail: firstMessage || null,
         });
       }
 
       if (err.isJoi || err.details) {
+        const firstDetail =
+          Array.isArray(err.details) && err.details.length
+            ? err.details[0].message
+            : null;
         return res.status(400).json({
           message: "Validation error",
           errors: err.details,
+          detail: firstDetail || null,
         });
       }
 

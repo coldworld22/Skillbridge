@@ -21,7 +21,14 @@ export default function EditCertificateTemplate() {
       try {
         const existing = await getTemplate(id);
         if (existing) {
-          setInitialValues(toSnakeCase(existing));
+          const normalized = toSnakeCase(existing);
+          if (normalized.for_tutorials === undefined || normalized.for_tutorials === null) {
+            normalized.for_tutorials = true;
+          }
+          if (normalized.for_online_classes === undefined || normalized.for_online_classes === null) {
+            normalized.for_online_classes = true;
+          }
+          setInitialValues(normalized);
         }
       } catch (err) {
         console.error("Failed to load template", err);

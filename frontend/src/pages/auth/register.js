@@ -22,6 +22,7 @@ import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
+import { recordGoogleAdsConversion } from "@/utils/googleAds";
 
 function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
@@ -84,6 +85,10 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
         recaptchaToken: token,
       });
       toast.success(t("registration_successful"));
+      recordGoogleAdsConversion("signup", {
+        user_role: role,
+        language: router.locale || "en",
+      });
       fetchNotifications();
       router.push("/auth/login");
     } catch (err) {

@@ -1,6 +1,6 @@
 // Import the configured passport instance
 const { passport } = require('../../../config/passport');
-const { refreshCookieOptions } = require('../../../utils/cookie');
+const { refreshCookieOptions, accessCookieOptions } = require('../../../utils/cookie');
 const { frontendBase, allowedOrigins } = require('../../../utils/frontend');
 
 // Shared callback handler for social auth providers
@@ -9,8 +9,10 @@ const handleCallback = (provider) => (req, res, next) => {
     if (err || !result) {
       return res.redirect(`${frontendBase}/auth/login?error=social`);
     }
-    const { refreshToken } = result;
-    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
+    const { refreshToken, accessToken } = result;
+    res
+      .cookie('refreshToken', refreshToken, refreshCookieOptions)
+      .cookie('token', accessToken, accessCookieOptions);
     let origin = req.query.origin;
     if (!allowedOrigins.includes(origin)) {
       const headerOrigin = req.get('origin');

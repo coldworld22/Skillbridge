@@ -16,7 +16,18 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setForm(initialValues);
+    if (!initialValues) return;
+    setForm({
+      ...initialValues,
+      for_tutorials:
+        initialValues.for_tutorials !== undefined
+          ? initialValues.for_tutorials
+          : true,
+      for_online_classes:
+        initialValues.for_online_classes !== undefined
+          ? initialValues.for_online_classes
+          : true,
+    });
     setLogoPreview(initialValues?.logo || "/images/certificate/logo.png");
     setBgPreview(initialValues?.background || "/images/paper-texture.png");
   }, [initialValues]);
@@ -46,6 +57,10 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
   const handleSubmit = async () => {
     if (!form.name.trim()) {
       toast.error("Template name is required.");
+      return;
+    }
+    if (!form.for_tutorials && !form.for_online_classes) {
+      toast.error("Select at least one usage target.");
       return;
     }
     setIsSubmitting(true);
@@ -79,6 +94,46 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
             <option value="Attendance">Attendance</option>
           </select>
         </div>
+      </section>
+
+      {/* Context */}
+      <section>
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">🎯 Usage Targets</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="flex items-start gap-3 p-4 border rounded-lg hover:border-yellow-400 transition cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.for_tutorials}
+              onChange={(e) => handleChange("for_tutorials", e.target.checked)}
+              className="checkbox mt-1"
+            />
+            <div>
+              <p className="font-medium text-gray-800">Tutorial Certificates</p>
+              <p className="text-sm text-gray-500">
+                Enable this template for self-paced tutorials and downloadable lessons.
+              </p>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 p-4 border rounded-lg hover:border-yellow-400 transition cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.for_online_classes}
+              onChange={(e) =>
+                handleChange("for_online_classes", e.target.checked)
+              }
+              className="checkbox mt-1"
+            />
+            <div>
+              <p className="font-medium text-gray-800">Online Class Certificates</p>
+              <p className="text-sm text-gray-500">
+                Use this design when instructors issue certificates for live cohorts.
+              </p>
+            </div>
+          </label>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Selecting targets controls where the template can be assigned as a default.
+        </p>
       </section>
 
       {/* Fonts */}
@@ -210,4 +265,3 @@ export default function CertificateTemplateForm({ initialValues, onSubmit, submi
     </div>
   );
 }
-

@@ -26,6 +26,8 @@ exports.createTemplate = Joi.object({
   background: Joi.string().allow("", null),
   show_qr: boolean,
   active: boolean,
+  for_tutorials: boolean,
+  for_online_classes: boolean,
 }).options({ stripUnknown: true });
 
 exports.updateTemplate = Joi.object({
@@ -46,6 +48,8 @@ exports.updateTemplate = Joi.object({
   background: Joi.string().allow("", null),
   show_qr: boolean,
   active: boolean,
+  for_tutorials: boolean,
+  for_online_classes: boolean,
 })
   .min(1)
   .options({ stripUnknown: true });

@@ -87,6 +87,11 @@ beforeAll(async () => {
     table.integer('quantity').defaultTo(1);
   });
 
+  await db.schema.createTable('categories', (table) => {
+    table.increments('id').primary();
+    table.string('name').notNullable();
+  });
+
   await db.schema.createTable('book_purchases', (table) => {
     table.increments('id');
     table.uuid('student_id');
@@ -134,6 +139,7 @@ beforeAll(async () => {
       created_at: new Date('2023-01-01'),
       price: 10,
       status: 'active',
+      category_id: null,
     },
     {
       id: 2,
@@ -145,6 +151,7 @@ beforeAll(async () => {
       created_at: new Date('2023-01-02'),
       price: 15,
       status: 'active',
+      category_id: null,
     },
     {
       id: 3,
@@ -156,6 +163,7 @@ beforeAll(async () => {
       created_at: new Date('2023-01-03'),
       price: 20,
       status: 'active',
+      category_id: null,
     },
   ];
   await db('books').insert(books);

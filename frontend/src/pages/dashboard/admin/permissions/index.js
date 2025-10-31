@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import useAuthStore from "@/store/auth/authStore";
+import usePermission from "@/hooks/usePermission";
 import { PlusCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
@@ -21,8 +21,9 @@ function PermissionsPage() {
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState(null);
-  const { user } = useAuthStore();
-  const canManage = user?.permissions?.includes("manage_permissions");
+  const { can, requirePermission } = usePermission();
+  const canManage = can("manage_permissions");
+  const permissionWarning = t("permissionsPage.no_permission", "You do not have permission to manage permissions.");
 
   useEffect(() => {
     (async () => {
@@ -40,7 +41,9 @@ function PermissionsPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!canManage) return;
+    if (!requirePermission("manage_permissions", permissionWarning)) {
+      return;
+    }
     if (!newPermission.trim()) {
       toast.error(t("permissionsPage.permission_name_required"));
       return;
@@ -62,13 +65,18 @@ function PermissionsPage() {
   };
 
   const openDeleteModal = (id) => {
-    if (!canManage) return;
+    if (!requirePermission("manage_permissions", permissionWarning)) {
+      return;
+    }
     setPermissionToDelete(id);
     setShowDeleteModal(true);
   };
 
   const handleDelete = async () => {
-    if (!canManage || !permissionToDelete) return;
+    if (!requirePermission("manage_permissions", permissionWarning)) {
+      return;
+    }
+    if (!permissionToDelete) return;
     try {
       await deletePermission(permissionToDelete);
       setPermissions((perms) =>

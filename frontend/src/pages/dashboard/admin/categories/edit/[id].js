@@ -5,17 +5,67 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { ArrowLeftCircle, Upload } from "lucide-react";
+import { ArrowLeftCircle } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "@/config/config";
 import { useTranslation } from "next-i18next";
 import {
   fetchCategoryTree,
   fetchCategoryById,
   updateCategory,
 } from "@/services/admin/categoryService";
+
+const FALLBACK_ICON = "FolderKanban";
+
+const ICON_OPTIONS = [
+  { value: "Code2", label: "Code & Development" },
+  { value: "Palette", label: "Design & Creative" },
+  { value: "Briefcase", label: "Business & Finance" },
+  { value: "HeartPulse", label: "Health & Wellness" },
+  { value: "BarChart3", label: "Data & Analytics" },
+  { value: "Megaphone", label: "Marketing & Sales" },
+  { value: "FlaskConical", label: "Science & Engineering" },
+  { value: "Languages", label: "Languages & Communication" },
+  { value: "Sparkles", label: "Personal Development" },
+  { value: "GraduationCap", label: "Education & Teaching" },
+  { value: "Globe", label: "Web Development" },
+  { value: "Smartphone", label: "Mobile Apps" },
+  { value: "CloudCog", label: "DevOps & Cloud" },
+  { value: "Component", label: "UI/UX" },
+  { value: "PenTool", label: "Graphic Design" },
+  { value: "Clapperboard", label: "Motion Graphics" },
+  { value: "Rocket", label: "Entrepreneurship" },
+  { value: "PiggyBank", label: "Finance" },
+  { value: "ClipboardCheck", label: "Project Management" },
+  { value: "Stethoscope", label: "Healthcare" },
+  { value: "Apple", label: "Nutrition" },
+  { value: "Brain", label: "Mental Health" },
+  { value: "Binary", label: "Data Science" },
+  { value: "Bot", label: "Machine Learning" },
+  { value: "PieChart", label: "Business Intelligence" },
+  { value: "CursorClick", label: "Digital Marketing" },
+  { value: "FileText", label: "Content Strategy" },
+  { value: "Handshake", label: "Sales Enablement" },
+  { value: "Atom", label: "Physics" },
+  { value: "CircuitBoard", label: "Electrical Engineering" },
+  { value: "Leaf", label: "Environmental Science" },
+  { value: "BookOpen", label: "English Language" },
+  { value: "Book", label: "Arabic Language" },
+  { value: "Mic", label: "Public Speaking" },
+  { value: "Crown", label: "Leadership" },
+  { value: "AlarmClock", label: "Productivity" },
+  { value: "TrendingUp", label: "Career Growth" },
+  { value: "ChalkboardTeacher", label: "Curriculum Design" },
+  { value: "Users", label: "Classroom Management" },
+  { value: "Laptop", label: "Online Teaching" },
+];
+
+const getIconComponent = (iconName) => {
+  if (!iconName) return null;
+  return LucideIcons[iconName] || null;
+};
 
 function EditCategory() {
   const router = useRouter();
@@ -25,12 +75,13 @@ function EditCategory() {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [status, setStatus] = useState("active");
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [error, setError] = useState("");
+  const [icon, setIcon] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [iconError, setIconError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [parentCategories, setParentCategories] = useState([]);
+  const IconPreview = getIconComponent(icon) || LucideIcons[FALLBACK_ICON];
 
   const formatCategories = (nodes, prefix = "") =>
     nodes.flatMap((n) => [
@@ -51,10 +102,7 @@ function EditCategory() {
           setName(category.name);
           setParentId(category.parent_id || "");
           setStatus(category.status);
-          if (category.image_url) {
-            const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-            setPreview(`${base}${category.image_url}`);
-          }
+          setIcon(category.icon || "");
         }
       } catch (err) {
         console.error("Failed to load category", err);
@@ -69,36 +117,38 @@ function EditCategory() {
     loadData();
   }, [id]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith("image/") && file.size <= 2 * 1024 * 1024) {
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    } else {
-      setError("Please upload a valid image (max 2MB). ");
-      toast.error("Please upload a valid image (max 2MB).");
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Category name is required.");
-      toast.error("Category name is required.");
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      const message = t("name_required");
+      setNameError(message);
+      setIconError("");
+      toast.error(message);
       return;
     }
-    setError("");
+
+    if (!icon) {
+      const message = t("icon_required");
+      setNameError("");
+      setIconError(message);
+      toast.error(message);
+      return;
+    }
+
+    setNameError("");
+    setIconError("");
     setLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append("name", name);
-      if (parentId) formData.append("parent_id", parentId);
+      formData.append("name", trimmedName);
+      formData.append("parent_id", parentId ?? "");
       formData.append("status", status);
-      if (image) formData.append("image", image);
+      formData.append("icon", icon);
 
       await updateCategory(id, formData);
-      toast.success("Category updated!");
+      toast.success(t("category_updated"));
       router.push("/dashboard/admin/categories");
     } catch (err) {
       console.error("Failed to update category", err);
@@ -130,12 +180,16 @@ function EditCategory() {
             id="name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (nameError) setNameError("");
+            }}
             required
             className="w-full border px-4 py-2 rounded focus:ring focus:border-primary"
-            placeholder="e.g. Pediatrics"
+            placeholder={t("name_placeholder")}
+            aria-invalid={!!nameError}
           />
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
         </div>
 
         <div>
@@ -167,15 +221,39 @@ function EditCategory() {
         </div>
 
         <div>
-          <label htmlFor="image-upload" className="block mb-1 font-medium">{t('category_image')} <span className="text-xs text-gray-500">(Max 2MB)</span></label>
-          <div className="flex items-center gap-4">
-            <label htmlFor="image-upload" className="inline-flex items-center gap-2 cursor-pointer text-sm bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">
-              <Upload size={16} /> {t('upload_image')}
-              <input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} hidden />
-            </label>
-            {preview && (
-              <img src={preview} alt="Preview" className="w-16 h-16 rounded object-cover border" />
-            )}
+          <label htmlFor="icon" className="block mb-1 font-medium">
+            {t('icon_label')} <span className="text-red-500">*</span>
+          </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-md border ${
+                icon
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-dashed border-gray-300 bg-gray-50 text-gray-400"
+              }`}
+            >
+              <IconPreview className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-[220px]">
+              <select
+                id="icon"
+                value={icon}
+                onChange={(e) => {
+                  setIcon(e.target.value);
+                  if (iconError) setIconError("");
+                }}
+                className="w-full border px-4 py-2 rounded focus:ring focus:border-primary"
+              >
+                <option value="">{t('icon_placeholder')}</option>
+                {ICON_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-gray-500">{t('icon_helper')}</p>
+              {iconError && <p className="mt-1 text-sm text-red-500">{iconError}</p>}
+            </div>
           </div>
         </div>
 
@@ -220,4 +298,3 @@ export default ProtectedEditCategory;
 export async function getServerSideProps() {
   return { props: {} };
 }
-

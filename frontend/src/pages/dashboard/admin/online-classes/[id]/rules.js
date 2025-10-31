@@ -5,7 +5,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import RuleList from "@/components/admin/online-classes/rules/RuleList";
-import useAuthStore from "@/store/auth/authStore";
+import usePermission from "@/hooks/usePermission";
 import {
   fetchClassRules,
   createClassRule,
@@ -17,11 +17,11 @@ export default function ClassRulesPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
-  const user = useAuthStore((state) => state.user);
+  const { can, requirePermission } = usePermission();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const canManage = user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
+  const canManage = can('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     if (!id) return;
@@ -36,6 +36,9 @@ export default function ClassRulesPage() {
   }, [id]);
 
   const handleAdd = async (payload) => {
+    if (!requirePermission('ADD_ONLINE_CLASS_RULE', 'You do not have permission to manage class rules.')) {
+      return;
+    }
     try {
       const created = await createClassRule(id, payload);
       if (created) setRules((prev) => [...prev, created]);
@@ -45,6 +48,9 @@ export default function ClassRulesPage() {
   };
 
   const handleUpdate = async (ruleId, payload) => {
+    if (!requirePermission('ADD_ONLINE_CLASS_RULE', 'You do not have permission to manage class rules.')) {
+      return;
+    }
     try {
       const updated = await updateClassRule(id, ruleId, payload);
       if (updated) setRules((prev) => prev.map((r) => (r.id === ruleId ? updated : r)));
@@ -54,6 +60,9 @@ export default function ClassRulesPage() {
   };
 
   const handleDelete = async (ruleId) => {
+    if (!requirePermission('ADD_ONLINE_CLASS_RULE', 'You do not have permission to manage class rules.')) {
+      return;
+    }
     try {
       await deleteClassRule(id, ruleId);
       setRules((prev) => prev.filter((r) => r.id !== ruleId));
@@ -91,4 +100,3 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
-

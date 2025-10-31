@@ -12,6 +12,11 @@ export const fetchInstructorPayments = async (params = {}) => {
   return unwrap(response);
 };
 
+export const fetchInstructorBillingPayments = async (params = {}) => {
+  const response = await api.get("/payments/me", { params });
+  return unwrap(response);
+};
+
 export const fetchInstructorWithdrawals = async () => {
   const response = await api.get("/payouts/history");
   return unwrap(response);

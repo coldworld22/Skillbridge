@@ -6,6 +6,7 @@ import UserFilters from "./UserFilters";
 import { toast } from "react-toastify";
 
 import { bulkDeleteUsers, bulkUpdateStatus } from "@/services/admin/userService";
+import usePermission from "@/hooks/usePermission";
 
 export default function UserList({ users, setUsers }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,13 +18,23 @@ export default function UserList({ users, setUsers }) {
   const usersPerPage = 6;
   const totalPages = Math.ceil(users.length / usersPerPage);
 
+  const { can, requirePermission } = usePermission();
+  const canManage = can("manage_users");
+  const permissionWarning = "You do not have permission to manage users.";
+
   const toggleUserSelect = (id) => {
+    if (!requirePermission("manage_users", permissionWarning)) {
+      return;
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
     );
   };
 
   const deleteSelected = async () => {
+    if (!requirePermission("manage_users", permissionWarning)) {
+      return;
+    }
     if (!confirm(`Delete ${selectedIds.length} selected user(s)?`)) return;
     try {
       await bulkDeleteUsers(selectedIds);
@@ -37,6 +48,9 @@ export default function UserList({ users, setUsers }) {
   };
 
   const applyBulkStatus = async (status) => {
+    if (!requirePermission("manage_users", permissionWarning)) {
+      return;
+    }
     if (!status) return;
     try {
       await bulkUpdateStatus(selectedIds, status);
@@ -52,12 +66,23 @@ export default function UserList({ users, setUsers }) {
     }
   };
 
-  const openEditModal = (user) => setSelectedUser(user);
+  const openEditModal = (user) => {
+    if (!requirePermission("manage_users", permissionWarning)) {
+      return;
+    }
+    setSelectedUser(user);
+  };
   const closeEditModal = () => setSelectedUser(null);
 
   const deleteUser = (id) => {
     setUsers((prev) => prev.filter((u) => u.id !== id));
     setSelectedIds((prev) => prev.filter((uid) => uid !== id));
+  };
+
+  const updateUserInline = (id, updates) => {
+    setUsers((prev) =>
+      prev.map((user) => (user.id === id ? { ...user, ...updates } : user))
+    );
   };
 
   const filteredUsers = users
@@ -134,6 +159,10 @@ export default function UserList({ users, setUsers }) {
                 currentUsers.every((u) => selectedIds.includes(u.id))
               }
               onChange={(e) => {
+                if (!requirePermission("manage_users", permissionWarning)) {
+                  e.preventDefault();
+                  return;
+                }
                 const visibleIds = currentUsers
                   .filter((u) => u.role?.toLowerCase() !== "superadmin")
                   .map((u) => u.id);
@@ -161,6 +190,10 @@ export default function UserList({ users, setUsers }) {
         onDeleteUser={deleteUser}
         selectedIds={selectedIds}
         onSelectUser={toggleUserSelect}
+        canManage={canManage}
+        requirePermission={requirePermission}
+        permissionWarning={permissionWarning}
+        onUserUpdated={updateUserInline}
       />
 
       {/* Pagination */}

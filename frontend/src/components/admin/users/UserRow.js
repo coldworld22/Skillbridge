@@ -15,6 +15,12 @@ export default function UserRow({ user, onEdit, onDelete }) {
   const [enabled, setEnabled] = useState(user.status === "Active");
   const [isSaving, setIsSaving] = useState(false);
 
+  const lastLoginDate = user.lastLogin ? new Date(user.lastLogin) : null;
+  const lastLoginText =
+    lastLoginDate && !Number.isNaN(lastLoginDate.getTime())
+      ? lastLoginDate.toLocaleString()
+      : user.lastLoginDisplay || "—";
+
   const toggleStatus = async () => {
     setIsSaving(true);
     setEnabled((prev) => !prev);
@@ -90,7 +96,7 @@ export default function UserRow({ user, onEdit, onDelete }) {
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
         <div className="flex items-center">
           <Clock className="mr-2 w-4 h-4 text-gray-400" />
-          {user.lastLogin || "—"}
+          {lastLoginText}
         </div>
       </td>
 

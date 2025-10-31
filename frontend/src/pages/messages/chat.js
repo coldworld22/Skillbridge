@@ -5,7 +5,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import CallOverlay from "@/components/video-call/CallOverlay";
 import socket from "@/services/socketService";
-import { getUsers, getGroups } from "@/services/messageService";
+import { getUsers, getGroups, respondToCall } from "@/services/messageService";
 
 const ChatPage = () => {
   const [users, setUsers] = useState([]);
@@ -26,19 +26,37 @@ const ChatPage = () => {
     return () => socket.off("incoming-call", handleIncomingCall);
   }, []);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!incomingCall) return;
+    try {
+      if (incomingCall.callId) {
+        await respondToCall(incomingCall.callId, "accept");
+      }
+    } catch (err) {
+      console.error("Failed to acknowledge accepted call", err);
+    }
     socket.emit("call-accepted", {
       chatId: incomingCall.chatId,
       roomId: incomingCall.roomId,
+      callId: incomingCall.callId,
     });
     router.push(`/video-call?roomId=${incomingCall.roomId}`);
     setIncomingCall(null);
   };
 
-  const handleDecline = () => {
+  const handleDecline = async () => {
     if (!incomingCall) return;
-    socket.emit("call-declined", { chatId: incomingCall.chatId });
+    try {
+      if (incomingCall.callId) {
+        await respondToCall(incomingCall.callId, "decline");
+      }
+    } catch (err) {
+      console.error("Failed to acknowledge declined call", err);
+    }
+    socket.emit("call-declined", {
+      chatId: incomingCall.chatId,
+      callId: incomingCall.callId,
+    });
     setIncomingCall(null);
   };
 

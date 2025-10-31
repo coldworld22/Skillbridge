@@ -8,30 +8,33 @@ import {
   FaSmile,
   FaTimes,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
   const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
   const [recording, setRecording] = useState(false);
+  const [recordingBlocked, setRecordingBlocked] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [sendEmail, setSendEmail] = useState(false);
   const [sendWhatsapp, setSendWhatsapp] = useState(false);
 
   const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
 
   const typingTimeout = useRef(null);
 
   const handleSend = () => {
-    if (!message.trim() && !file && !audioBlob) return;
+    if (!message.trim() && !file && !audioFile) return;
 
     const newMessage = {
       text: message.trim(),
       file,
-      audio: audioBlob,
+      audio: audioFile,
       sendEmail,
       sendWhatsapp,
     };
@@ -39,9 +42,10 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
     sendMessage(newMessage);
     setMessage("");
     setFile(null);
-    setAudioBlob(null);
+    setAudioFile(null);
     setSendEmail(false);
     setSendWhatsapp(false);
+    setRecordingBlocked(false);
     setShowEmojiPicker(false);
     onCancelReply?.();
     onTyping?.(false);
@@ -54,13 +58,31 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      mediaStreamRef.current = stream;
+      const options = { mimeType: "audio/webm" };
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, options);
+      } catch (_err) {
+        recorder = new MediaRecorder(stream);
+      }
       const chunks = [];
 
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/wav" });
-        setAudioBlob(blob);
+        const mimeType =
+          recorder.mimeType ||
+          chunks[0]?.type ||
+          "audio/webm";
+        const extension = mimeType.includes("wav")
+          ? "wav"
+          : mimeType.includes("ogg")
+          ? "ogg"
+          : "webm";
+        const blob = new Blob(chunks, { type: mimeType });
+        const fileName = `recording-${Date.now()}.${extension}`;
+        const fileObject = new File([blob], fileName, { type: mimeType });
+        setAudioFile(fileObject);
       };
 
       recorder.start();
@@ -68,11 +90,25 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
       setRecording(true);
     } catch (err) {
       console.error("Microphone error:", err);
+      setRecording(false);
+      setRecordingBlocked(true);
+      const message =
+        err.name === "NotAllowedError"
+          ? t("microphone_permission_denied", {
+              defaultValue:
+                "Microphone access was blocked. Please allow microphone permissions in your browser settings.",
+            })
+          : t("microphone_unavailable", {
+              defaultValue: "Unable to access the microphone. Please try again.",
+            });
+      toast.error(message);
     }
   };
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
+    mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
     setRecording(false);
   };
 
@@ -107,8 +143,13 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
           {/* Audio */}
           <button
             onClick={recording ? stopRecording : startRecording}
+            disabled={recordingBlocked}
             className={`flex h-9 w-9 items-center justify-center rounded-md border transition ${
-              recording ? "border-red-200 bg-red-100" : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+              recording
+                ? "border-red-200 bg-red-100"
+                : recordingBlocked
+                ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
             }`}
           >
             <FaMicrophone className={recording ? "text-red-600" : "text-yellow-600"} />

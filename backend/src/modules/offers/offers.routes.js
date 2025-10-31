@@ -6,6 +6,19 @@ const { verifyToken } = require("../../middleware/auth/authMiddleware");
 const ensureVerified = require("../../middleware/ensureVerified");
 const validator = require("./offers.validator");
 
+const optionalAuth = (req, res, next) => {
+  const hasToken =
+    (req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")) ||
+    (req.cookies && req.cookies.token);
+
+  if (hasToken) {
+    return verifyToken(req, res, next);
+  }
+
+  return next();
+};
+
 router.post(
   "/",
   verifyToken,
@@ -13,8 +26,13 @@ router.post(
   validate(validator.create),
   controller.createOffer
 );
-router.get("/", controller.getOffers);
-router.get("/:id", controller.getOfferById);
+router.get("/", optionalAuth, controller.getOffers);
+
+// Tags need to be registered before parameterised routes to avoid UUID casting errors
+router.get("/tags", tagController.listTags);
+router.post("/tags", verifyToken, tagController.createTag);
+
+router.get("/:id", optionalAuth, controller.getOfferById);
 router.put(
   "/:id",
   verifyToken,
@@ -23,9 +41,5 @@ router.put(
   controller.updateOffer
 );
 router.delete("/:id", verifyToken, ensureVerified, controller.deleteOffer);
-
-// Tags
-router.get("/tags", tagController.listTags);
-router.post("/tags", verifyToken, tagController.createTag);
 
 module.exports = router;

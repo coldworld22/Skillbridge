@@ -244,10 +244,9 @@ CreateCurrencyPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedCreateCurrencyPage = withAuthProtection(CreateCurrencyPage, [
-  "admin",
-  "superadmin",
-]);
+const ProtectedCreateCurrencyPage = withAuthProtection(CreateCurrencyPage, {
+  permissions: ["manage_currencies"],
+});
 
 ProtectedCreateCurrencyPage.getLayout = CreateCurrencyPage.getLayout;
 
@@ -260,4 +259,3 @@ export async function getStaticProps({ locale }) {
     },
   };
 }
-

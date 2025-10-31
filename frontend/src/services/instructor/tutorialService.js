@@ -13,8 +13,8 @@ const formatBase = (tut) => ({
     : null,
   instructor: tut.instructor_name || tut.instructor,
   tags: tut.tags || [],
-  allowInstallments: Boolean(tut.allow_installments ?? tut.allowInstallments ?? false),
-  installments: tut.installments ? String(tut.installments) : "1",
+  allowInstallments: false,
+  installments: "1",
 });
 
 const mapStatus = (tut) =>

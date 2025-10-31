@@ -1,6 +1,7 @@
 const db = require('../../../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { generateCode } = require('../../users/tutorials/certificate/certificate.service');
+const templateConfig = require('../../certificateTemplates/certificateTemplateConfig.service');
 
 const getPolicy = async (classId) => {
   const existing = await db('class_scoring_policies').where({ class_id: classId }).first();
@@ -118,12 +119,13 @@ const issueCertificate = async (classId, studentId) => {
   if (!score || !score.passed) {
     throw new Error('Student has not passed');
   }
+  const templateId = await templateConfig.resolveTemplateIdForContext("online_class");
   cert = {
     id: uuidv4(),
     user_id: studentId,
     class_id: classId,
     tutorial_id: null,
-    template_id: null,
+    template_id: templateId,
     certificate_code: generateCode().replace('TUT', 'CLS'),
     status: 'issued',
   };

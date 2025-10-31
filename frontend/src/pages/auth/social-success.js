@@ -37,7 +37,7 @@ export default function SocialSuccess() {
         };
         let destination = "/website";
         if (profile.profile_complete === false) {
-          destination = profilePaths[role] || "/profile/edit";
+          destination = profilePaths[role] || "/website";
         } else if (!profile.is_email_verified) {
           destination = "/auth/verify-email";
         }

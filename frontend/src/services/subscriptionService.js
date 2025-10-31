@@ -16,3 +16,12 @@ export const fetchMySubscription = async () => {
   return data?.data ?? null;
 };
 
+export const fetchSubscriptionSummary = async () => {
+  const { data } = await api.get("/user-subscriptions/summary");
+  return data?.data ?? null;
+};
+
+export const fetchSubscriptionHistory = async () => {
+  const { data } = await api.get("/user-subscriptions/history");
+  return data?.data ?? [];
+};

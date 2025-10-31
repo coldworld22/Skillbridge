@@ -36,11 +36,14 @@ exports.getByStudent = async (studentId) => {
 exports.getByInstructor = async (instructorId) => {
   return db("bookings")
     .leftJoin("users as s", "bookings.student_id", "s.id")
+    .leftJoin("users as i", "bookings.instructor_id", "i.id")
     .where({ instructor_id: instructorId })
     .select(
       "bookings.*",
       "s.full_name as student_name",
-      "s.avatar_url as student_avatar_url"
+      "s.avatar_url as student_avatar_url",
+      "i.full_name as instructor_name",
+      "i.avatar_url as instructor_avatar_url"
     )
     .orderBy("bookings.requested_at", "desc");
 };

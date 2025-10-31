@@ -41,6 +41,27 @@
   "recentAlerts": "Recent Alerts",
   "flaggedMessages": "Flagged Messages",
   "licenseCheck": "License Check",
+  "planOverviewTitle": "Plan Performance",
+  "planOverviewSubtitle": "Track how learners and instructors are adopting each subscription.",
+  "planOverviewManageLink": "Manage plans",
+  "planOverviewLoading": "Loading plan insights...",
+  "planOverviewEmpty": "No subscription activity yet.",
+  "planOverviewPriceSummary": "{{monthly}} / mo | {{yearly}} / yr",
+  "planOverviewPriceMonthlyOnly": "{{monthly}} / mo",
+  "planOverviewFreeLabel": "Free plan",
+  "planOverviewPricingUnavailable": "Pricing not available",
+  "planOverviewRoleStudent": "Student plan",
+  "planOverviewRoleInstructor": "Instructor plan",
+  "planOverviewRoleGeneral": "Subscription plan",
+  "planStatActiveLabelShort": "{{count}} active",
+  "planStatActiveLabel": "Active subscribers",
+  "planStatNewLabel": "New this month",
+  "planStatExpiringLabel": "Expiring soon",
+  "planStatCancelledLabel": "Cancelled this month",
+  "planOverviewTotalActive": "Active subscribers",
+  "planOverviewTotalNew": "New this month",
+  "planOverviewTotalExpiring": "Expiring soon",
+  "planOverviewTotalCancelled": "Cancelled this month",
   "platformInsights": "Platform Insights",
   "view": "View",
   "read": "Read",
@@ -154,15 +175,18 @@
   "preview_alt": "Preview",
   "categoriesPage": {
     "title": "Categories",
+    "subtitle": "Manage course categories and their hierarchy.",
     "new_category": "New Category",
     "search_placeholder": "Search categories...",
     "all_statuses": "All Statuses",
     "active": "Active",
     "inactive": "Inactive",
+    "refresh": "Refresh",
     "create_category": "Create Category",
     "name": "Name",
-    "image": "Image",
+    "image": "Visual",
     "classes": "Classes",
+    "classes_count": "{{count}} classes",
     "status": "Status",
     "actions": "Actions",
     "loading": "Loading categories...",
@@ -170,8 +194,6 @@
     "no_categories": "No categories found.",
     "create_one_now": "Create one now",
     "subcategory": "Subcategory",
-    "prev": "Prev",
-    "next": "Next",
     "status_updated": "Status updated",
     "category_deleted": "Category deleted!",
     "update_failed": "Failed to update status",
@@ -179,14 +201,44 @@
     "category_name": "Category Name",
     "parent_category": "Parent Category",
     "status_label": "Status",
-    "category_image": "Category Image",
+    "category_image": "Category Icon",
+    "icon_label": "Category Icon",
+    "icon_placeholder": "Select an icon",
+    "icon_helper": "Icons appear on the admin dashboard and public site. Choose one that matches the category theme.",
+    "icon_required": "Category icon is required.",
     "upload_image": "Upload Image",
     "save_category": "Save Category",
     "update_category": "Update Category",
     "create_title": "Create New Category",
     "edit_title": "Edit Category",
     "none_top_level": "None (Top-Level)",
-    "processing": "Saving..."
+    "processing": "Saving...",
+    "confirm_status": "Set {{name}} to {{status}}?",
+    "confirm_delete": "Delete \"{{name}}\"? This action cannot be undone.",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "unknown_parent": "Unknown parent",
+    "not_available": "Not available",
+    "parent_label": "Parent: {{parent}}",
+    "showing_count": "Showing {{from}}–{{to}} of {{total}} categories",
+    "last_updated_notice": "Data updates every time you refresh this list.",
+    "view_details": "Category Details",
+    "details_subtitle": "Quick reference for this category's metadata.",
+    "close": "Close",
+    "slug_label": "Slug",
+    "created_at": "Created",
+    "updated_at": "Updated",
+    "child_of": "Child of {{parent}}",
+    "top_level": "Top-level category",
+    "no_image": "No icon available",
+    "image_alt": "Category visual for {{name}}",
+    "name_placeholder": "e.g. Pediatrics",
+    "image_validation_error": "Please choose a valid icon.",
+    "name_required": "Category name is required.",
+    "category_created": "Category created!",
+    "create_failed": "Failed to create category",
+    "category_updated": "Category updated!"
   },
   "instructorsPage": {
     "title": "Instructors",
@@ -338,6 +390,7 @@
     "mark_as_active": "Mark as Active",
     "set_as_default": "Set as Default",
     "save_language": "Save Language",
+    "no_permission": "You do not have permission to manage languages.",
     "language_added": "Language added",
     "language_exists": "Language code already exists.",
     "failed_to_add": "Failed to add language",
@@ -448,7 +501,53 @@
     "duration_exceeded": "Duration cannot exceed {{days}} days.",
     "ad_limit_reached": "Ad limit reached: maximum {{count}} active ads.",
     "plan_limit_ads": "Active ads: {{current}} / {{count}}",
-    "plan_limit_duration": "Max duration per ad: {{days}} days"
+    "plan_limit_duration": "Max duration per ad: {{days}} days",
+    "loading_plan_limits": "Loading your plan limits...",
+    "checking_plan_limits": "Checking your plan limits...",
+    "limit_load_failed": "Unable to verify your ad limits right now. Please try again shortly.",
+    "manage_ads_prompt": "Please deactivate an existing ad or upgrade your plan to create new ads.",
+    "auto_duration_hint": "Your plan limits each ad to {{days}} days.",
+    "auto_duration_schedule": "This ad will run from {{start}} to {{end}}."
+  },
+  "instructorPlansPage": {
+    "title": "Instructor Plans",
+    "subtitle": "Review your subscription and upgrade when you're ready.",
+    "current_plan_heading": "Active instructor plan",
+    "current_plan_badge": "Current Plan",
+    "current_plan_dates": "Active from {{start}} to {{end}}",
+    "manage_plan": "Manage plan",
+    "loading_summary": "Loading plan summary...",
+    "summary_error": "We couldn't load your plan summary.",
+    "retry": "Retry",
+    "no_plan_heading": "No active instructor plan",
+    "no_plan_body": "Choose a plan below to unlock instructor tools and advertising credits.",
+    "metrics_active_ads": "Active ads",
+    "metrics_active_ads_helper": "Using {{current}} of {{total}} slots",
+    "metrics_active_ads_unlimited": "Unlimited ad slots",
+    "metrics_classes": "Published classes",
+    "metrics_classes_helper": "{{current}} published · {{remaining}} remaining",
+    "metrics_classes_unlimited": "Unlimited class publishing",
+    "metrics_ad_credits": "Ad credits",
+    "metrics_ad_credits_helper": "{{remaining}} left of {{total}}",
+    "metrics_ad_credits_unlimited": "Unlimited ad credits",
+    "metrics_ad_duration": "Ad duration",
+    "metrics_ad_duration_value": "Up to {{days}} days per ad",
+    "metrics_ad_duration_unlimited": "No duration limit",
+    "metrics_branding_enabled": "Custom branding enabled",
+    "metrics_branding_disabled": "Custom branding not included",
+    "choose_plan_heading": "Pick the plan that matches your goals",
+    "choose_plan_subtitle": "Switch between monthly and yearly billing at any time.",
+    "monthly_label": "Monthly",
+    "yearly_label": "Yearly",
+    "loading_plans": "Loading plans...",
+    "no_plans": "No instructor plans are currently available.",
+    "badge_most_popular": "Most popular",
+    "plan_max_courses": "Publish up to {{count}} active classes",
+    "plan_max_courses_unlimited": "Publish unlimited active classes",
+    "plan_ad_credits": "Includes {{count}} ad credits",
+    "plan_ad_credits_unlimited": "Includes unlimited ad credits",
+    "select_plan_button": "Select plan",
+    "current_plan_button": "Current plan"
   },
   "plansPage": {
     "title": "Subscription Plans",
@@ -465,6 +564,7 @@
     "failed_to_delete": "Failed to delete plan",
     "delete_selected": "Delete Selected",
     "selected": "selected",
+    "clear_selection": "Clear",
     "plan_name": "Plan Name",
     "monthly_price": "Monthly Price",
     "yearly_price": "Yearly Price",
@@ -494,6 +594,8 @@
     "plan_not_found": "Plan not found",
     "edit": "Edit",
     "delete": "Delete",
+    "monthly_price_label": "Monthly: {{price}} {{currency}}",
+    "yearly_price_label": "Yearly: {{price}} {{currency}}",
     "loading": "Loading...",
     "confirm_delete_plan": "Are you sure you want to delete this plan?",
     "confirm_delete_selected": "Delete selected plans?"
@@ -706,7 +808,8 @@
     },
     "topContributor": {
       "title": "🏆 Top Contributor",
-      "meta": "{{contributions}} contributions • {{reputation}} reputation"
+      "meta": "{{contributions}} contributions • {{reputation}} reputation",
+      "empty": "No standout contributors yet this week."
     },
     "activity": {
       "title": "📈 Community Activity (Last 5 Days)",
@@ -762,6 +865,7 @@
     "title": "View Discussion",
     "back": "Back",
     "posted_by": "Posted by {{user}}",
+    "unknown_user": "Unknown user",
     "status": {
       "open": "open",
       "locked": "locked",
@@ -773,16 +877,33 @@
     "replies": "Replies",
     "no_replies": "No replies yet.",
     "confirm_delete": "Delete this discussion?",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "load_failed": "Unable to load this discussion.",
+    "lock_success": "Discussion locked.",
+    "lock_failed": "Failed to lock discussion.",
+    "resolve_success": "Discussion marked as resolved.",
+    "delete_success": "Discussion deleted.",
+    "delete_failed": "Failed to delete discussion."
   },
   "communityReportsPage": {
     "title": "Reported Posts",
     "heading": "Reported Content",
     "reported_by": "Reported by {{user}}",
     "review": "Review",
+    "resolve": "Resolve",
     "delete": "Delete",
+    "loading": "Loading reports...",
+    "load_failed": "Unable to load reports right now.",
+    "update_failed": "Failed to update report status.",
+    "resolved_success": "Report marked as resolved.",
+    "dismissed_success": "Report dismissed.",
     "confirm_delete": "Are you sure you want to delete this content?",
-    "no_reports": "No reports at the moment."
+    "no_reports": "No reports at the moment.",
+    "status": {
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed"
+    }
   },
   "communityTagsPage": {
     "title": "Tags",
@@ -863,6 +984,59 @@
     "search_placeholder": "Search students or classes",
     "preview": "Preview",
     "download": "Download"
+  },
+  "instructorBookingsPage": {
+    "subtitle": "Track your upcoming sessions, manage availability, and respond quickly to student requests.",
+    "search_placeholder": "Search by student or class",
+    "search_label": "Search bookings",
+    "status_label": "Filter by status",
+    "empty": {
+      "title": "No bookings match your filters.",
+      "subtitle": "Try adjusting your filters to see more results."
+    },
+    "errors": {
+      "load_failed": "Failed to load bookings. Please refresh to try again."
+    },
+    "toast": {
+      "load_failed": "Failed to load bookings",
+      "cancelled": "Booking cancelled",
+      "cancel_failed": "Failed to cancel booking"
+    },
+    "summary": {
+      "all": "All bookings",
+      "all_hint": "Everything currently on your calendar",
+      "pending_hint": "Waiting for your confirmation",
+      "approved_hint": "Students already notified",
+      "completed_hint": "Sessions you have already delivered",
+      "cancelled_hint": "Requests that were withdrawn or declined"
+    },
+    "filters": {
+      "all": "All"
+    },
+    "table": {
+      "student": "Student",
+      "class": "Class",
+      "date": "Date",
+      "time": "Time",
+      "status": "Status"
+    },
+    "labels": {
+      "you": "You",
+      "class": "Class",
+      "session": "Session",
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration",
+      "summary_meta": "{{classTitle}} • {{type}}",
+      "duration_minutes": "{{count}} mins"
+    }
+  },
+  "bookingStatuses": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "declined": "Declined"
   },
   "classStudentsPage": {
     "title": "Enrolled Students",
@@ -1056,10 +1230,88 @@
     "user_added": "User added successfully.",
     "user_add_failed": "Failed to add user."
   },
+  "adminGroupsPage": {
+    "title": "📋 Group Management",
+    "search_placeholder": "Search by name or creator...",
+    "export_csv": "Export CSV",
+    "csv_filename": "groups.csv",
+    "empty_state": "No groups match your criteria.",
+    "statuses": {
+      "pending": "Pending",
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended"
+    },
+    "filters": {
+      "status_all": "All Statuses",
+      "status_pending": "🕓 Pending",
+      "status_active": "✅ Active",
+      "status_inactive": "⏸ Inactive",
+      "status_suspended": "🚫 Suspended"
+    },
+    "sort": {
+      "newest": "📅 Newest",
+      "oldest": "📆 Oldest",
+      "members": "👥 Most Members"
+    },
+    "csv_headers": {
+      "id": "ID",
+      "name": "Name",
+      "status": "Status",
+      "members": "Members",
+      "visibility": "Visibility",
+      "created_at": "Created At"
+    },
+    "actions": {
+      "create_group": "+ Create Group",
+      "delete_selected": "Delete Selected ({{count}})",
+      "bulk_set_active": "Set Active",
+      "bulk_set_inactive": "Set Inactive",
+      "bulk_suspend": "Suspend",
+      "select_all_on_page": "Select All on Page",
+      "select": "Select",
+      "view": "View",
+      "approve": "Approve",
+      "deactivate": "Deactivate",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "delete": "Delete"
+    },
+    "group_card": {
+      "creator": "👤 {{name}}",
+      "members": "{{count}} members",
+      "created": "📅 Created: {{date}}",
+      "visibility": "🔓 Visibility: {{visibility}}",
+      "public": "Public",
+      "private": "Private",
+      "missing_value": "N/A"
+    },
+    "alerts": {
+      "status_update_success": "Group status set to {{status}}",
+      "status_update_error": "Failed to update status",
+      "delete_success": "Group deleted",
+      "delete_error": "Failed to delete group",
+      "bulk_delete_error": "Failed to delete {{count}} groups",
+      "bulk_delete_success": "Selected groups deleted",
+      "bulk_status_error": "Failed to update {{count}} groups",
+      "bulk_status_success": "Status updated to {{status}} for selected groups"
+    },
+    "confirm": {
+      "delete_title": "Delete Group",
+      "delete_message": "Are you sure you want to delete this group?",
+      "delete_selected_title": "Delete Selected Groups",
+      "delete_selected_message": "Delete selected groups?",
+      "change_status_title": "Change Status",
+      "change_status_message": "Change status of selected groups to {{status}}?",
+      "delete": "Delete",
+      "confirm": "Confirm"
+    }
+  },
   "groupsPage": {
     "explore_title": "Explore Public Groups",
     "join_group": "Join Group",
     "request_sent": "Request Sent",
+    "request_sent_pending": "Join request sent. Awaiting approval.",
     "your_group": "Your Group",
     "member": "Member",
     "no_groups": "No groups found.",
@@ -1073,7 +1325,87 @@
     "pending_requests": "{{count}} pending join request",
     "pending_requests_plural": "{{count}} pending join requests",
     "join_pending": "⏳ Join request pending approval",
-    "joined": "✅ You are a member of this group"
+    "joined": "✅ You are a member of this group",
+    "loading": "Loading groups...",
+    "load_failed": "Failed to load groups",
+    "refresh_failed": "Failed to refresh group memberships",
+    "create_group": "Create Group",
+    "requires_approval": "Approval required",
+    "members_label": "members",
+    "no_tags": "No tags",
+    "cancel_request": "Cancel request",
+    "awaiting_approval": "Awaiting approval",
+    "request_cancelled": "Join request cancelled",
+    "cancel_failed": "Failed to cancel request",
+    "joined_successfully": "Joined group successfully!",
+    "join_failed": "Failed to join group"
+  },
+  "groupsDetailPage": {
+    "loading": "⏳ Loading group...",
+    "groupNotFound": "Group not found.",
+    "loadError": "Failed to load group.",
+    "joinRequestSubmitted": "Join request sent!",
+    "joinSuccess": "Joined group successfully!",
+    "joinError": "Failed to join group",
+    "updateNameSuccess": "Group name updated",
+    "updateNameError": "Failed to update group",
+    "confirmDelete": "Are you sure you want to delete this group?",
+    "deleteSuccess": "Group deleted",
+    "deleteError": "Failed to delete group",
+    "pendingRequestsLabel": "{{count}} pending join request",
+    "pendingRequestsLabel_plural": "{{count}} pending join requests",
+    "editName": "Edit Name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "creator": "Creator",
+    "createdAt": "📅 {{date}}",
+    "deleteGroup": "Delete Group",
+    "tabs": {
+      "overview": "Overview",
+      "chat": "Chat",
+      "members": "Members",
+      "memberManagement": "Member Management"
+    },
+    "membersHeading": "👥 Members ({{count}})",
+    "pendingRequestsHeading": "Pending Requests",
+    "pendingRequestsAlert": "{{count}} new join request awaiting review"
+  },
+  "groupMembersList": {
+    "title": "👥 Group Members",
+    "actions": {
+      "kick": "Member removed",
+      "promote": "Member promoted",
+      "demote": "Member demoted",
+      "disable": "Member disabled",
+      "enable": "Member enabled",
+      "default": "Action completed"
+    },
+    "errors": {
+      "update": "Failed to update member"
+    },
+    "labels": {
+      "admin": "Admin",
+      "moderator": "Moderator",
+      "member": "Member",
+      "disabled": "[Disabled]"
+    },
+    "tooltips": {
+      "kick": "Remove member",
+      "disable": "Disable",
+      "enable": "Enable",
+      "promote": "Make admin",
+      "demote": "Demote to member"
+    }
+  },
+  "groupRequests": {
+    "loading": "Loading join requests...",
+    "empty": "No pending requests.",
+    "loadFailed": "Failed to load join requests",
+    "approved": "Request approved",
+    "rejected": "Request rejected",
+    "actionFailed": "Failed to process request",
+    "approve": "Approve",
+    "reject": "Reject"
   },
   "sidebar": {
     "Help Center": "Help Center",
@@ -1239,6 +1571,30 @@
     "payments": "Payments",
     "my_reviews": "My Reviews"
   },
+  "instructorReviewsPage": {
+    "title": "My Reviews",
+    "overallRating": "Overall Rating",
+    "reviewCount": "from {{count}} review",
+    "reviewCount_plural": "from {{count}} reviews",
+    "filters": {
+      "all": "All",
+      "rating": "{{count}} Star",
+      "rating_plural": "{{count}} Stars",
+      "recent": "Most Recent"
+    },
+    "loading": "Loading your reviews...",
+    "loadError": "We could not load your reviews right now.",
+    "toastError": "Unable to load your reviews. Please try again later.",
+    "noMatch": "No reviews match the selected filter.",
+    "emptyState": "You have not received any reviews yet.",
+    "studentFallback": "Student",
+    "recentFallback": "Recently",
+    "noComment": "No comment provided.",
+    "ratingBreakdown": {
+      "label": "{{count}} Star",
+      "label_plural": "{{count}} Stars"
+    }
+  },
   "emailConfigPage": {
     "title": "Email Configuration",
     "sender_details": "Sender Details",
@@ -1361,11 +1717,148 @@
     "field_description": "Description",
     "description_placeholder": "Briefly describe your learning needs, goals, and any specific requirements...",
     "description_hint": "The more details you provide, the better tutors can help",
+    "field_offer_type": "Offer Type",
+    "offer_type_class": "Class",
+    "offer_type_tutorial": "Tutorial",
+    "field_group_optional": "Group (optional)",
+    "group_placeholder_optional": "No group",
+    "loading_groups": "Loading your groups...",
+    "no_groups_available_optional": "You're not part of any groups yet. You can still post a request or create a group to collaborate.",
+    "groups_action_optional": "Manage groups",
+    "groups_load_failed": "Unable to load your groups. Please try again.",
+    "tag_add_failed": "Unable to add tag right now. Please try again.",
     "submitting": "Posting...",
     "submit": "Post Request",
     "cancel": "Cancel",
     "success_post": "Your request has been posted successfully!",
-    "error_post": "There was an error submitting your request. Please try again."
+    "error_post": "There was an error submitting your request. Please try again.",
+    "card_budget_label": "Budget",
+    "card_timeframe_label": "Timeframe",
+    "card_posted_label": "Posted",
+    "card_expires_label": "Expires",
+    "card_expired_label": "Expired",
+    "card_untitled": "Untitled offer",
+    "card_tags_label": "Tags",
+    "flexible_timeline": "Flexible timeline",
+    "posted_label": "Posted",
+    "type_label": "Type",
+    "status_label": "Status",
+    "loading": "Loading...",
+    "refreshing": "Refreshing offers",
+    "load_error": "We couldn't load offers right now.",
+    "retry": "Try again",
+    "back_to_offers": "Back to offers",
+    "responses_load_failed": "Unable to load responses right now.",
+    "messages_load_failed": "Unable to load messages right now.",
+    "responses_loading": "Loading responses...",
+    "no_responses_student": "No instructor has responded yet.",
+    "no_responses_instructor": "Be the first to respond to this offer.",
+    "messages_loading": "Loading messages...",
+    "no_messages": "No messages yet. Start the conversation below.",
+    "messages_disabled": "This offer is closed. Messaging is disabled.",
+    "attachments_disabled": "Attachments are not supported for offer messages yet.",
+    "response_create_failed": "Unable to start a conversation for this offer.",
+    "message_sent": "Message sent!",
+    "message_failed": "Failed to send message.",
+    "message_deleted": "Message deleted.",
+    "message_delete_failed": "Failed to delete message.",
+    "link_copied": "Link copied to clipboard!",
+    "link_copy_failed": "Unable to copy link.",
+    "confirm_close": "Close this offer?",
+    "closed_success": "Offer closed.",
+    "closed_failed": "Failed to close offer.",
+    "contact_instructor": "Contact Instructor",
+    "contact_student": "Contact Student",
+    "contact_unknown": "Contact details will appear once a response is selected.",
+    "manage_offer": "Manage offer",
+    "offer_closed_note": "This request is closed. You can reopen it at any time.",
+    "offer_open_note": "Close the request once you have found the right instructor.",
+    "already_closed": "Offer closed",
+    "close_offer": "Close offer",
+    "share_offer": "Share offer",
+    "copy_link": "Copy link",
+    "discussion_heading": "Offer discussion",
+    "replying_to": "Replying to",
+    "instructor_label": "Instructor",
+    "you_label": "You",
+    "cancelled": "cancelled"
+  },
+  "groupsCreatePage": {
+    "title": "Create a New Group",
+    "heading": "Create New Group",
+    "subtitle": "Fill in the details below to create your new group.",
+    "sections": {
+      "general": "General Information",
+      "invites": "Invite Members"
+    },
+    "labels": {
+      "name": "Group Name",
+      "type": "Group Type",
+      "description": "Description",
+      "avatar": "Group Avatar",
+      "category": "Category",
+      "maxSize": "Max Group Size",
+      "timezone": "Timezone",
+      "tags": "Tags",
+      "popularTags": "Popular tags:",
+      "searchMembers": "Search Members",
+      "selectedMembers": "Selected Members ({{count}})",
+      "selectedMembers_plural": "Selected Members ({{count}})",
+      "invitationMethods": "Invitation Methods"
+    },
+    "placeholders": {
+      "name": "Enter group name",
+      "type": "Select Type",
+      "description": "Tell members what this group is about...",
+      "category": "Select a category",
+      "maxSize": "No limit if empty",
+      "timezone": "e.g. Asia/Riyadh",
+      "tagInput": "Add a tag and press Enter",
+      "searchMembers": "Search by name, email, or phone..."
+    },
+    "options": {
+      "typePrivate": "Private (Invite Only)",
+      "typePublic": "Public (Anyone can request)"
+    },
+    "buttons": {
+      "upload": "Upload",
+      "change": "Change",
+      "addTag": "Add",
+      "submit": "Create Group",
+      "submitting": "Creating Group..."
+    },
+    "toasts": {
+      "success": "Group created successfully!",
+      "successWithInvites": "Group created. Invitations sent to {{count}} member.",
+      "successWithInvites_plural": "Group created. Invitations sent to {{count}} members.",
+      "additionalMethods": "Additional invite methods: {{methods}}",
+      "error": "Failed to create group"
+    },
+    "inviteMethods": {
+      "email": "Email",
+      "whatsapp": "WhatsApp"
+    }
+  },
+  "groupsLanding": {
+    "title": "Student Groups",
+    "intro": "Groups are where students collaborate with instructors, access exclusive learning materials, and stay aligned with their study plans. Join or create one to unlock more of Skillbridge.",
+    "benefits": {
+      "connect_title": "Connect with Mentors",
+      "connect_body": "Explore open groups hosted by experienced instructors. Joining gives you access to live Q&A, curated resources, and ongoing support.",
+      "connect_cta": "Browse groups",
+      "collaborate_title": "Organize Your Learning",
+      "collaborate_body": "Keep track of the communities you already belong to, review announcements, and follow up on assigned tasks.",
+      "collaborate_cta": "Go to my groups",
+      "lead_title": "Create Your Own Space",
+      "lead_body": "Starting a group lets you curate peers, invite instructors, and tailor content to your learning journey.",
+      "lead_cta": "Start a group"
+    },
+    "cta": {
+      "title": "Ready to dive in?",
+      "subtitle": "Choose a group that matches your goals—or launch one to lead the learning experience for others.",
+      "create": "Create a group",
+      "discover": "Discover groups"
+    }
   },
   "wishlistPage": {
     "title": "My Wishlist",
@@ -1412,7 +1905,6 @@
     "all_roles": "All Roles",
     "instructor": "Instructor",
     "student": "Student",
-    "sort_by_id": "Sort by ID",
     "search_title": "Search title...",
     "column_title": "Title",
     "column_user": "User",
@@ -1426,7 +1918,12 @@
     "offer_deleted": "Offer deleted",
     "delete_failed": "Failed to delete offer",
     "status_updated": "Status updated",
-    "status_update_failed": "Failed to update status"
+    "status_update_failed": "Failed to update status",
+    "sort_by_date": "Sort by Date",
+    "status_all": "All Statuses",
+    "status_open": "Open",
+    "status_closed": "Closed",
+    "status_cancelled": "Cancelled"
   },
   "adminOfferDetailsPage": {
     "back_to_list": "← Back to Offer List",
@@ -1709,7 +2206,29 @@
     "status": "Status",
     "performance_metrics": "Performance Metrics",
     "views_over_time": "Views Over Time",
-    "views_by_country": "Views by Country"
+    "views_by_country": "Views by Country",
+    "edit": "Edit",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "delete": "Delete",
+    "no_data": "No data available",
+    "no_media": "No media available",
+    "no_description": "No description provided.",
+    "no_target_roles": "Not specified",
+    "duration_range": "{{start}} → {{end}}",
+    "duration_unavailable": "Not scheduled",
+    "date_unavailable": "Not set",
+    "delete_confirmation": "Are you sure you want to delete \"{{title}}\"?",
+    "unknown_label": "Unknown",
+    "metrics": {
+      "views": "Views",
+      "ctr": "CTR",
+      "conversions": "Conversions",
+      "reach": "Reach",
+      "top_devices": "Top Devices",
+      "no_device_data": "No device data",
+      "unknown_device": "Unknown device"
+    }
   },
   "adsEditPage": {
     "title": "Edit Advertisement",
@@ -1907,7 +2426,99 @@
   },
   "schedulePage": {
     "title": "My Teaching Schedule",
+    "overview_heading": "Your week at a glance",
+    "next_event": "Next event",
+    "class_ref": "Class",
+    "overview_empty": "No upcoming classes or lessons yet. Once you schedule new sessions they will show up here.",
+    "refresh": "Refresh schedule",
+    "refreshing": "Refreshing...",
+    "filters_title": "Filter events",
+    "filter_all": "All events",
+    "filter_classes": "Classes",
+    "filter_lessons": "Lessons",
+    "total_events": "Total events",
+    "lessons_count": "Upcoming lessons",
+    "calendar_title": "Calendar",
+    "calendar_subtitle": "Tap any event to see quick actions and details.",
+    "lesson_label": "Lesson",
+    "class_label": "Class",
+    "event_label": "Event",
+    "status": {
+      "upcoming": "Upcoming",
+      "live": "Live now",
+      "completed": "Completed"
+    },
+    "part_of_class": "Part of",
+    "starts": "Starts",
+    "ends": "Ends",
+    "duration": "Duration",
+    "minutes": "{{count}} min",
+    "relative_time": "Relative time",
+    "enrolled": "Enrolled",
+    "join_live": "Join live session",
+    "joining": "Joining...",
+    "open_class": "Open class workspace",
+    "no_events_title": "Nothing scheduled",
+    "no_selection_title": "Select an event",
+    "no_selection_hint": "Choose an event from the calendar to view its details and actions.",
     "no_events": "No upcoming events"
+  },
+  "rolesPage": {
+    "title": "Roles Management",
+    "list": {
+      "heading": "Roles",
+      "add": "Add Role",
+      "confirmDelete": "Delete this role?"
+    },
+    "messages": {
+      "loadSuccess": "Roles loaded",
+      "loadError": "Failed to load roles",
+      "addSuccess": "Role added",
+      "addError": "Failed to add role",
+      "updateSuccess": "Role updated",
+      "updateError": "Failed to update role",
+      "deleteSuccess": "Role deleted",
+      "deleteError": "Failed to delete role",
+      "noPermissionManage": "You do not have permission to manage roles.",
+      "noPermissionPermissions": "You do not have permission to manage permissions.",
+      "noPermissionUpdatePermissions": "You do not have permission to update role permissions.",
+      "permissionsLoadError": "Failed to load permissions",
+      "roleLoadError": "Failed to load role",
+      "permissionExists": "Permission already exists",
+      "permissionSaveSuccess": "Permissions saved",
+      "permissionSaveError": "Failed to save permissions",
+      "permissionCreateSuccess": "Permission created",
+      "permissionCreateError": "Failed to create permission"
+    },
+    "permissionAssignment": {
+      "heading": "Permissions for {{role}}",
+      "checkAll": "Check All",
+      "uncheckAll": "Uncheck All",
+      "addPermission": "Add Permission",
+      "save": "Save Changes",
+      "addModal": {
+        "title": "Add New Permission",
+        "placeholder": "e.g. manage_users",
+        "cancel": "Cancel",
+        "add": "Add"
+      }
+    },
+    "modals": {
+      "add": {
+        "title": "Add New Role",
+        "namePlaceholder": "Role Name",
+        "descriptionPlaceholder": "Description",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "edit": {
+        "title": "Edit Role",
+        "namePlaceholder": "Role Name",
+        "descriptionPlaceholder": "Description",
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    }
   },
   "permissionsPage": {
     "title": "Permissions",
@@ -1918,6 +2529,7 @@
     "permission_exists": "Permission already exists",
     "permission_added": "Permission added",
     "permission_add_failed": "Failed to add permission",
+    "no_permission": "You do not have permission to manage permissions.",
     "permission_removed": "Permission removed",
     "permission_delete_failed": "Failed to delete",
     "no_permissions": "No permissions found",
@@ -2080,5 +2692,231 @@
     "empty_suggestion_prefix": "Try adjusting your filters or",
     "return_to_dashboard": "return to the dashboard",
     "empty_suggestion_suffix": "to explore more learning options."
+  },
+  "instructorBillingPage": {
+    "title": "Billing & Subscription",
+    "subtitle": "Review your current plan, usage, and payment history in one place.",
+    "loading": "Loading...",
+    "activePlan": {
+      "heading": "Current Instructor Plan",
+      "caption": "Manage your active subscription, limits, and analytics.",
+      "plan_label": "Plan",
+      "interval": "Interval: {{value}}",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "no_plan_title": "You do not have an active instructor plan yet.",
+      "no_plan_caption": "Choose a plan to unlock instructor ads, analytics, and premium publishing tools."
+    },
+    "usage": {
+      "ads": "Active Ads",
+      "max_duration": "Max duration per ad: {{value}} days",
+      "classes": "Published Classes",
+      "remaining_classes": "{{value}} class slots remaining",
+      "ad_credits": "Ad Credits Remaining",
+      "wallet_balance": "Available Wallet Balance",
+      "unlimited": "Unlimited"
+    },
+    "history": {
+      "heading": "Subscription History",
+      "caption": "Track renewals, upgrades, and cancellations.",
+      "empty": "No subscription history yet.",
+      "columns": {
+        "plan": "Plan",
+        "interval": "Interval",
+        "start": "Start",
+        "end": "End",
+        "status": "Status"
+      }
+    },
+    "payments": {
+      "heading": "Billing History",
+      "caption": "Includes plan subscriptions and marketplace purchases under your account.",
+      "empty": "No payments recorded yet.",
+      "unknown_method": "—",
+      "download_invoice": "Invoice",
+      "columns": {
+        "date": "Date",
+        "item": "Item",
+        "type": "Type",
+        "amount": "Amount",
+        "status": "Status",
+        "method": "Method",
+        "invoice": "Invoice"
+      }
+    },
+    "invoices": {
+      "heading": "Invoices",
+      "caption": "Download PDF copies for your records.",
+      "empty": "No invoices found.",
+      "invoice_label": "Invoice #{{id}}",
+      "download": "Download PDF"
+    },
+    "paymentTypes": {
+      "plan": "Instructor Plan",
+      "class": "Class",
+      "tutorial": "Tutorial",
+      "book": "Book",
+      "other": "Other"
+    },
+    "statusLabels": {
+      "paid": "Paid",
+      "awaiting_approval": "Awaiting Approval",
+      "pending_payment": "Pending Payment",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "active": "Active",
+      "unknown": "Unknown"
+    },
+    "labels": {
+      "interval_monthly": "Monthly",
+      "interval_yearly": "Yearly",
+      "interval_unknown": "Flexible"
+    },
+    "actions": {
+      "view_plans": "Browse plans",
+      "upgrade": "Upgrade Plan",
+      "cancel": "Cancel Plan",
+      "upgrading": "Upgrading...",
+      "canceling": "Canceling...",
+      "refresh": "Refresh data"
+    },
+    "messages": {
+      "summary_error": "We could not load your active plan details.",
+      "payments_error": "We could not load your payment history right now.",
+      "invoices_error": "We could not load invoices right now.",
+      "upgrade_success": "Plan upgraded successfully.",
+      "upgrade_failed": "Unable to upgrade plan. Please try again.",
+      "upgrade_unavailable": "You're already on the highest instructor plan.",
+      "upgrade_options_error": "We couldn't load upgrade options. Please try again from the plans page.",
+      "cancel_success": "Plan cancelled successfully.",
+      "cancel_failed": "Unable to cancel plan right now.",
+      "invoice_not_found": "No invoice is attached to this payment yet.",
+      "invoice_download_failed": "Unable to download invoice. Please try again.",
+      "wallet_error": "We could not update wallet data right now."
+    }
+  },
+  "studentBillingPage": {
+    "tabLabel": "Billing",
+    "title": "Billing & Payments",
+    "subtitle": "Track your subscription, purchases, and invoices in one place.",
+    "loading": "Loading...",
+    "activePlan": {
+      "plan_label": "Plan",
+      "interval": "Interval: {{value}}",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "no_plan_title": "No active student plan",
+      "no_plan_caption": "Choose a plan to unlock premium learning resources and exclusive discounts."
+    },
+    "labels": {
+      "interval_monthly": "Monthly",
+      "interval_yearly": "Yearly",
+      "interval_unknown": "Flexible"
+    },
+    "actions": {
+      "view_plans": "Browse plans",
+      "upgrade": "Upgrade Plan",
+      "cancel": "Cancel Plan",
+      "upgrading": "Upgrading...",
+      "canceling": "Canceling...",
+      "refresh": "Refresh data"
+    },
+    "stats": {
+      "total_spent": "Total Spent",
+      "pending_payments": "Pending Payments",
+      "last_purchase": "Last Purchase",
+      "plan_status": "Plan Status",
+      "none": "No purchases yet"
+    },
+    "history": {
+      "heading": "Plan History",
+      "caption": "Every upgrade, renewal, and cancellation is listed here.",
+      "empty": "No subscription history yet.",
+      "columns": {
+        "plan": "Plan",
+        "interval": "Interval",
+        "start": "Start",
+        "end": "End",
+        "status": "Status"
+      }
+    },
+    "payments": {
+      "heading": "Payment History",
+      "caption": "Includes class enrollments, books, tutorials, and subscriptions.",
+      "empty": "No payments recorded yet.",
+      "unknown_method": "—",
+      "download_invoice": "Invoice",
+      "invoice_reference": "Invoice #{{id}}",
+      "columns": {
+        "date": "Date",
+        "item": "Item",
+        "type": "Type",
+        "amount": "Amount",
+        "status": "Status",
+        "method": "Method",
+        "reference": "Reference",
+        "invoice": "Invoice"
+      }
+    },
+    "invoices": {
+      "heading": "Invoices",
+      "caption": "Download PDF receipts for your purchases.",
+      "empty": "No invoices available.",
+      "invoice_label": "Invoice #{{id}}",
+      "download": "Download PDF",
+      "labels": {
+        "issued": "Issued",
+        "total_due": "Total",
+        "payment_date": "Paid on",
+        "billed_to": "Billed To",
+        "billed_to_unknown": "Student",
+        "item_unknown": "Learning purchase",
+        "payment_method": "Payment Method",
+        "payment_status": "Status",
+        "payment_reference": "Reference",
+        "payment_type": "Type",
+        "payment_item": "Item"
+      },
+      "table": {
+        "item": "Item",
+        "type": "Type",
+        "status": "Status",
+        "method": "Method",
+        "reference": "Reference",
+        "total": "Total"
+      }
+    },
+    "paymentTypes": {
+      "plan": "Subscription Plan",
+      "class": "Class",
+      "tutorial": "Tutorial",
+      "book": "Book",
+      "other": "Other"
+    },
+    "statusLabels": {
+      "paid": "Paid",
+      "awaiting_approval": "Awaiting Approval",
+      "pending_payment": "Pending Payment",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "active": "Active",
+      "unknown": "Unknown"
+    },
+    "messages": {
+      "summary_error": "We could not load your plan details.",
+      "history_error": "We couldn’t load your subscription history right now.",
+      "payments_error": "We could not load your payment history right now.",
+      "invoices_error": "We could not load invoices right now.",
+      "upgrade_success": "Plan upgraded successfully.",
+      "upgrade_failed": "Unable to upgrade plan. Please try again.",
+      "upgrade_unavailable": "You're already on the highest student plan.",
+      "upgrade_options_error": "We couldn't load upgrade options. Please try again from the plans page.",
+      "cancel_success": "Plan cancelled successfully.",
+      "cancel_failed": "Unable to cancel plan right now.",
+      "invoice_not_found": "No invoice is attached to this payment yet.",
+      "invoice_download_failed": "Unable to download invoice. Please try again."
+    }
   }
 }

@@ -216,10 +216,15 @@ export async function getServerSideProps({ params }) {
     if (!data) {
       return { props: { initialInstructor: null, initialStats: { classes: 0, tutorials: 0 } } };
     }
+    const resolvedAvatar = data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png";
+    const resolvedDemoVideo = data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null;
     const formatted = {
       ...data,
-      avatar_url: data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png",
-      demo_video_url: data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null,
+      name: data?.full_name ?? data?.name ?? "",
+      avatar: resolvedAvatar,
+      avatar_url: resolvedAvatar,
+      demo_video_url: resolvedDemoVideo,
+      availableNow: Boolean(data?.is_online),
     };
 
     const classRes = await fetchPublishedClasses();

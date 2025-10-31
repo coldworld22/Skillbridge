@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { normalizeText } from "@/utils/text";
 
 const MAX_PREVIEW_LENGTH = 300;
 
-const TutorialOverview = ({ description = "" }) => {
+const TutorialOverview = ({ description }) => {
   const [expanded, setExpanded] = useState(false);
-  const isLong = description.length > MAX_PREVIEW_LENGTH;
-  const preview = isLong ? description.slice(0, MAX_PREVIEW_LENGTH) + "..." : description;
+  const safeDescription = useMemo(
+    () => normalizeText(description).trim(),
+    [description],
+  );
+  const isLong = safeDescription.length > MAX_PREVIEW_LENGTH;
+  const preview = isLong
+    ? `${safeDescription.slice(0, MAX_PREVIEW_LENGTH)}...`
+    : safeDescription;
 
   return (
     <div className="mb-12 bg-gray-800 rounded-lg p-6 shadow-md border border-gray-700">
@@ -13,7 +20,7 @@ const TutorialOverview = ({ description = "" }) => {
         📘 Tutorial Overview
       </h2>
       <p className="text-gray-300 leading-relaxed text-sm md:text-base transition-all duration-300">
-        {expanded || !isLong ? description : preview}
+        {expanded || !isLong ? safeDescription : preview}
       </p>
 
       {isLong && (

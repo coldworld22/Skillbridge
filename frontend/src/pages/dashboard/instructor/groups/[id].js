@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -9,9 +9,13 @@ import GroupPermissionSettings from "@/components/groups/GroupPermissionSettings
 import groupService from "@/services/groupService";
 import JoinRequestCard from "@/components/groups/JoinRequestCard";
 import useAuthStore from "@/store/auth/authStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function GroupDetailsPage() {
   const router = useRouter();
+  const { t } = useTranslation("dashboard");
   const { id: groupId } = router.query;
 
   const [group, setGroup] = useState(null);
@@ -24,75 +28,158 @@ export default function GroupDetailsPage() {
   const { user, hasHydrated } = useAuthStore();
 
   const [members, setMembers] = useState([]);
+  const [membersFetched, setMembersFetched] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
+  const previousPendingCount = useRef(0);
 
   useEffect(() => {
-    // Avoid running when navigating away from this page. When the route
-    // changes, Next.js reuses the component briefly with the new query
-    // params, which previously caused a redirect to the group explore page.
     if (router.pathname !== "/dashboard/instructor/groups/[id]") return;
-    if (!router.isReady || !groupId || !hasHydrated) return;
+    if (!router.isReady || !groupId) return;
+
+    let isMounted = true;
+    setLoading(true);
+    setMembersFetched(false);
 
     const load = async () => {
       try {
-        const data = await groupService.getGroupById(groupId);
-        if (!data) {
-          toast.error("Group not found.");
-          router.push("/dashboard/instructor/groups/explore");
+        const [groupResult, membersResult] = await Promise.allSettled([
+          groupService.getGroupById(groupId),
+          groupService.getGroupMembers(groupId),
+        ]);
+
+        const groupData =
+          groupResult.status === "fulfilled" ? groupResult.value : null;
+
+        if (!groupData) {
+          if (isMounted) {
+            toast.error(t("groupsDetailPage.groupNotFound"));
+            router.push("/dashboard/instructor/groups/explore");
+          }
           return;
         }
-        setGroup(data);
 
-        const mem = await groupService.getGroupMembers(groupId);
-        setMembers(mem);
+        if (!isMounted) return;
 
-        let role = null;
-        if (user) {
-          if (String(user.id) === String(data.creator_id)) {
-            setIsAdmin(true);
-            setJoinStatus("joined");
-            role = "admin";
-          } else {
-            const member = mem.find((m) => String(m.id) === String(user.id));
-            if (member) {
-              setJoinStatus("joined");
-              role = member.role;
-              if (member.role === "admin") setIsAdmin(true);
-            } else {
-              setJoinStatus("none");
-            }
-          }
+        setGroup(groupData);
+
+        if (membersResult.status === "fulfilled") {
+          setMembers(membersResult.value);
+        } else {
+          setMembers([]);
         }
-        setCurrentUserRole(role);
+        setMembersFetched(true);
       } catch (err) {
-        toast.error("Failed to load group.");
+        if (!isMounted) return;
+        toast.error(t("groupsDetailPage.loadError"));
         router.push("/dashboard/instructor/groups/explore");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     load();
-  }, [router.isReady, groupId, user, hasHydrated]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router.isReady, groupId, router.pathname, t]);
+
+  useEffect(() => {
+    if (!hasHydrated || !group) return;
+    if (!user) {
+      setJoinStatus("none");
+      setIsAdmin(false);
+      setCurrentUserRole(null);
+      return;
+    }
+    if (!membersFetched) return;
+
+    let role = null;
+    if (String(user.id) === String(group.creator_id)) {
+      setIsAdmin(true);
+      setJoinStatus("joined");
+      role = "admin";
+    } else {
+      const member = members.find((m) => String(m.id) === String(user.id));
+      if (member) {
+        setJoinStatus("joined");
+        role = member.role;
+        setIsAdmin(member.role === "admin");
+      } else {
+        setJoinStatus("none");
+        setIsAdmin(false);
+      }
+    }
+    setCurrentUserRole(role);
+  }, [group, members, user, hasHydrated, membersFetched]);
 
   useEffect(() => {
     if (!groupId || !isAdmin) return;
-    groupService
-      .getJoinRequestsForGroup(groupId)
-      .then((list) => setPendingCount(Array.isArray(list) ? list.length : 0))
-      .catch(() => setPendingCount(0));
+    let active = true;
+
+    const fetchRequests = async () => {
+      try {
+        const list = await groupService.getJoinRequestsForGroup(groupId);
+        if (!active) return;
+        setPendingCount(Array.isArray(list) ? list.length : 0);
+      } catch {
+        if (!active) return;
+        setPendingCount(0);
+      }
+    };
+
+    fetchRequests();
+    const interval = setInterval(fetchRequests, 10000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [groupId, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const prev = previousPendingCount.current;
+    if (pendingCount > prev && pendingCount > 0) {
+      toast(t("groupsDetailPage.pendingRequestsAlert", { count: pendingCount }));
+    }
+    previousPendingCount.current = pendingCount;
+  }, [pendingCount, isAdmin, t]);
 
   const handleJoin = async () => {
     try {
-      setJoinStatus("pending");
-      await groupService.joinGroup(groupId);
-      toast.success("Join request sent!");
+      const result = await groupService.joinGroup(groupId);
+      const isPending = result?.data?.status === "pending";
+      if (isPending) {
+        setJoinStatus("pending");
+      } else {
+        setJoinStatus("joined");
+        const role = result?.data?.role || "member";
+        setCurrentUserRole(role);
+        if (role === "admin") setIsAdmin(true);
+        try {
+          const refreshedMembers = await groupService.getGroupMembers(groupId);
+          setMembers(refreshedMembers);
+          setMembersFetched(true);
+        } catch {
+          // ignore refresh failure
+        }
+      }
+      const message =
+        result?.message ||
+        (isPending
+          ? t("groupsDetailPage.joinRequestSubmitted")
+          : t("groupsDetailPage.joinSuccess"));
+      toast.success(message);
     } catch (err) {
       setJoinStatus("none");
-      toast.error("Failed to send join request");
+      toast.error(
+        err?.response?.data?.message || t("groupsDetailPage.joinError")
+      );
     }
   };
 
@@ -102,28 +189,31 @@ export default function GroupDetailsPage() {
         name: newName,
       });
       setGroup(updated);
-      toast.success("Group name updated");
+      toast.success(t("groupsDetailPage.updateNameSuccess"));
       setEditingName(false);
     } catch (err) {
-      toast.error("Failed to update group");
+      toast.error(t("groupsDetailPage.updateNameError"));
     }
   };
 
   const handleDeleteGroup = async () => {
-    if (!confirm("Are you sure you want to delete this group?")) return;
+    if (!confirm(t("groupsDetailPage.confirmDelete", { name: group.name })))
+      return;
     try {
       await groupService.deleteGroup(group.id);
-      toast.success("Group deleted");
+      toast.success(t("groupsDetailPage.deleteSuccess"));
       router.push("/dashboard/instructor/groups/my-groups");
     } catch (err) {
-      toast.error("Failed to delete group");
+      toast.error(t("groupsDetailPage.deleteError"));
     }
   };
 
   if (loading || !group) {
     return (
       <InstructorLayout>
-        <div className="p-6 text-center text-gray-500">⏳ Loading group...</div>
+        <div className="p-6 text-center text-gray-500">
+          {t("groupsDetailPage.loading")}
+        </div>
       </InstructorLayout>
     );
   }
@@ -135,12 +225,19 @@ export default function GroupDetailsPage() {
     if (isAdmin) tabs.push("member-management");
   }
 
+  const tabLabels = {
+    overview: t("groupsDetailPage.tabs.overview"),
+    chat: t("groupsDetailPage.tabs.chat"),
+    members: t("groupsDetailPage.tabs.members"),
+    "member-management": t("groupsDetailPage.tabs.memberManagement"),
+  };
+
   return (
     <InstructorLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Link href="/dashboard/instructor/groups/my-groups">
           <button className="text-sm text-blue-600 hover:underline">
-            &larr; Back to My Groups
+            &larr; {t("groupsPage.back_to_my_groups")}
           </button>
         </Link>
 
@@ -149,7 +246,9 @@ export default function GroupDetailsPage() {
             <h1 className="text-2xl font-bold">{group.name}</h1>
             {pendingCount > 0 && (
               <div className="bg-red-100 text-red-800 px-3 py-1 rounded mt-2">
-                {pendingCount} pending join request{pendingCount > 1 ? 's' : ''}
+                {t("groupsDetailPage.pendingRequestsLabel", {
+                  count: pendingCount,
+                })}
               </div>
             )}
             {["admin", "moderator"].includes(currentUserRole) &&
@@ -161,7 +260,7 @@ export default function GroupDetailsPage() {
                   }}
                   className="text-sm text-blue-600 hover:underline"
                 >
-                  Edit Name
+                  {t("groupsDetailPage.editName")}
                 </button>
               )}
             {editingName && (
@@ -175,32 +274,37 @@ export default function GroupDetailsPage() {
                   onClick={handleSaveName}
                   className="bg-blue-600 text-white px-2 rounded text-sm"
                 >
-                  Save
+                  {t("groupsDetailPage.save")}
                 </button>
                 <button
                   onClick={() => setEditingName(false)}
                   className="text-sm text-gray-600"
                 >
-                  Cancel
+                  {t("groupsDetailPage.cancel")}
                 </button>
               </div>
             )}
             {(group.creator || group.creator_id) && (
               <p className="text-sm text-gray-500">
-                👑 Creator: <span>{group.creator || group.creator_id}</span>
+                👑 {t("groupsDetailPage.creator")}:{" "}
+                <span>{group.creator || group.creator_id}</span>
               </p>
             )}
           </div>
           <div className="text-right space-y-1">
             <span className="text-sm text-gray-500 block">
-              📅 {new Date(group.created_at).toLocaleDateString()}
+              {t("groupsDetailPage.createdAt", {
+                date: new Date(group.created_at).toLocaleDateString(
+                  router.locale || undefined,
+                ),
+              })}
             </span>
             {isAdmin && (
               <button
                 onClick={handleDeleteGroup}
                 className="text-sm text-red-600 hover:underline"
               >
-                Delete Group
+                {t("groupsDetailPage.deleteGroup")}
               </button>
             )}
           </div>
@@ -219,7 +323,7 @@ export default function GroupDetailsPage() {
             >
               {tab === "member-management" ? (
                 <>
-                  Member Management
+                  {tabLabels[tab] || tab}
                   {pendingCount > 0 && (
                     <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-600 text-white">
                       {pendingCount}
@@ -227,7 +331,7 @@ export default function GroupDetailsPage() {
                   )}
                 </>
               ) : (
-                tab.charAt(0).toUpperCase() + tab.slice(1)
+                tabLabels[tab] || tab
               )}
             </button>
           ))}
@@ -262,22 +366,24 @@ export default function GroupDetailsPage() {
                 onClick={handleJoin}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg"
               >
-                Join Group
+                {t("groupsPage.join_group")}
               </button>
             )}
             {joinStatus === "pending" && (
               <div className="text-yellow-700 font-semibold">
-                ⏳ Join request pending approval
+                {t("groupsPage.join_pending")}
               </div>
             )}
             {joinStatus === "joined" && (
               <div className="text-green-600 font-semibold">
-                ✅ You are a member of this group
+                {t("groupsPage.joined")}
               </div>
             )}
             <div className="pt-4">
               <h2 className="text-sm font-medium mb-1">
-                👥 Members ({members.length})
+                {t("groupsDetailPage.membersHeading", {
+                  count: members.length,
+                })}
               </h2>
               <div className="flex flex-col gap-2 mt-1">
                 {members.map((m) => (
@@ -300,7 +406,9 @@ export default function GroupDetailsPage() {
             <GroupChat groupId={group.id} groupName={group.name} />
             <div className="mt-6">
               <h2 className="text-sm font-medium mb-1">
-                👥 Members ({members.length})
+                {t("groupsDetailPage.membersHeading", {
+                  count: members.length,
+                })}
               </h2>
               <div className="flex flex-col gap-2 mt-1">
                 {members.map((m) => (
@@ -331,11 +439,24 @@ export default function GroupDetailsPage() {
         {activeTab === "member-management" && isAdmin && (
           <div className="space-y-4">
             <div className="pt-4">
-              <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
+              <h2 className="text-sm font-medium mb-1">
+                {t("groupsDetailPage.pendingRequestsHeading")}
+              </h2>
 
               <JoinRequestCard
                 groupId={group.id}
                 onCountChange={setPendingCount}
+                onActionComplete={async ({ action }) => {
+                  if (action === "approve") {
+                    try {
+                      const refreshed = await groupService.getGroupMembers(group.id);
+                      setMembers(refreshed);
+                      setMembersFetched(true);
+                    } catch (_) {
+                      // ignore refresh errors
+                    }
+                  }
+                }}
               />
             </div>
             <GroupPermissionSettings groupId={group.id} />
@@ -345,3 +466,9 @@ export default function GroupDetailsPage() {
     </InstructorLayout>
   );
 }
+
+export const getServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+  },
+});

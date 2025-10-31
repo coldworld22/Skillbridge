@@ -41,6 +41,7 @@ const getFeatureEntry = (plan, key) => {
       value: parseRawValue(raw.value),
       raw: raw.value,
       description: raw.description || null,
+      display: raw.description || raw.value,
     };
   }
   return null;
@@ -60,9 +61,11 @@ const formatPercentage = (value) => {
 
 const FeatureCell = ({ feature, plan }) => {
   const entry = feature.source === "plan"
-    ? { value: plan?.[feature.key] }
+    ? { value: plan?.[feature.key], display: plan?.[feature.key] }
     : getFeatureEntry(plan, feature.key);
   const value = entry?.value;
+  const display =
+    entry?.display ?? entry?.description ?? entry?.raw ?? value ?? "";
 
   switch (feature.type) {
     case "boolean":
@@ -80,13 +83,29 @@ const FeatureCell = ({ feature, plan }) => {
           </span>
         );
       }
+      if (display) {
+        return (
+          <span className="flex items-center gap-2 text-slate-300">
+            <FaQuestionCircle aria-hidden /> {display}
+          </span>
+        );
+      }
       return (
         <span className="flex items-center gap-2 text-slate-300">
           <FaQuestionCircle aria-hidden /> Contact sales
         </span>
       );
     case "number":
-      if (value === null || value === undefined || value === "") return <span className="text-slate-300">—</span>;
+      if (value === null || value === undefined || value === "") {
+        return (
+          <span className="text-slate-300">
+            {display || "—"}
+          </span>
+        );
+      }
+      if (Number(value) === 0 && display && display !== value) {
+        return <span className="text-slate-300">{display}</span>;
+      }
       return (
         <span className="text-white font-semibold">
           {value}
@@ -94,7 +113,16 @@ const FeatureCell = ({ feature, plan }) => {
         </span>
       );
     case "limit":
-      if (value === null || value === undefined || value === "") return <span className="text-slate-300">—</span>;
+      if (value === null || value === undefined || value === "") {
+        return (
+          <span className="text-slate-300">
+            {display || "—"}
+          </span>
+        );
+      }
+      if (Number(value) === 0 && display && display !== value) {
+        return <span className="text-slate-300">{display}</span>;
+      }
       if (
         (typeof value === "string" && value.toLowerCase() === "unlimited") ||
         value === Infinity
@@ -116,7 +144,13 @@ const FeatureCell = ({ feature, plan }) => {
         <span className="text-white font-semibold">{formatPercentage(value)}</span>
       );
     default:
-      if (value === null || value === undefined) return <span className="text-slate-300">—</span>;
+      if (value === null || value === undefined || value === "") {
+        return (
+          <span className="text-slate-300">
+            {display || "—"}
+          </span>
+        );
+      }
       return <span className="text-white font-semibold">{value}</span>;
   }
 };

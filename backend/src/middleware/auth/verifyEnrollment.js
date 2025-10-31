@@ -16,7 +16,16 @@ module.exports = async function verifyEnrollment(req, res, next) {
       const enrollment = await db("class_enrollments")
         .where({ class_id: classId, user_id: req.user.id })
         .first();
-      if (enrollment) isStudent = true;
+      if (enrollment) {
+        if (enrollment.status === "suspended") {
+          return res
+            .status(403)
+            .json({ message: "Enrollment suspended pending installment payment" });
+        }
+        if (enrollment.status !== "cancelled") {
+          isStudent = true;
+        }
+      }
     }
     const roles = req.user.roles || [req.user.role];
     const isAdmin = isAdminRole(roles);

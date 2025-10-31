@@ -8,8 +8,9 @@ const withBaseUrl = (url) => {
   return safeEncodeURI(`${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL || ""}${url}`);
 };
 
-const applyMediaBaseUrl = (items = [], keys = []) =>
-  items.map((item) => {
+const applyMediaBaseUrl = (items, keys = []) => {
+  if (!Array.isArray(items)) return items;
+  return items.map((item) => {
     const formatted = { ...item };
     keys.forEach((key) => {
       if (formatted[key]) {
@@ -18,102 +19,27 @@ const applyMediaBaseUrl = (items = [], keys = []) =>
     });
     return formatted;
   });
+};
 
 const formatPlan = (plan = {}) => {
-  const copy = { ...plan };
-  if (Array.isArray(copy.included_classes)) {
-    copy.included_classes = applyMediaBaseUrl(copy.included_classes, [
-      "cover_image",
-    ]);
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = applyMediaBaseUrl(copy.included_tutorials, [
+  return {
+    ...plan,
+    included_classes: applyMediaBaseUrl(plan.included_classes, ["cover_image"]),
+    included_tutorials: applyMediaBaseUrl(plan.included_tutorials, [
       "cover_image",
       "preview_video",
-    ]);
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = applyMediaBaseUrl(copy.included_books, [
+    ]),
+    included_books: applyMediaBaseUrl(plan.included_books, [
+      "cover_image",
       "cover_image_url",
-    ]);
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image: withBaseUrl(book.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image_url: withBaseUrl(book.cover_image_url || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image: withBaseUrl(book.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image: withBaseUrl(book.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image: withBaseUrl(book.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_tutorials)) {
-    copy.included_tutorials = copy.included_tutorials.map((tutorial) => ({
-      ...tutorial,
-      cover_image: withBaseUrl(tutorial.cover_image || ""),
-    }));
-  }
-  if (Array.isArray(copy.included_books)) {
-    copy.included_books = copy.included_books.map((book) => ({
-      ...book,
-      cover_image: withBaseUrl(book.cover_image || ""),
-    }));
-  }
-  return copy;
+    ]),
+  };
 };
 
 export const fetchPublicPlans = async (role) => {
-  const params = role ? { role } : {};
+  const normalizedRole =
+    role && String(role).toLowerCase() !== "all" ? role : undefined;
+  const params = normalizedRole ? { role: normalizedRole } : {};
   const { data } = await api.get("/plans", { params });
   const list = data?.data ?? [];
   return list.map(formatPlan);

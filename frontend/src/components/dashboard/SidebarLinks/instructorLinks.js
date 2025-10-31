@@ -93,7 +93,6 @@ export const instructorNavLinks = [
   {
     title: 'account',
     items: [
-      { label: 'profile', href: '/dashboard/instructor/profile', icon: GraduationCap },
       { label: 'settings', href: '/dashboard/instructor/settings', icon: Settings },
     ]
   }

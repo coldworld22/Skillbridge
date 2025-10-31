@@ -7,6 +7,8 @@ jest.mock('../book.service', () => ({
   updateBook: jest.fn(),
   getBookById: jest.fn(),
   clearBookTags: jest.fn(),
+  listBooks: jest.fn(),
+  updateBookTags: jest.fn(),
 }));
 jest.mock('../book.utils', () => ({
   processTags: jest.fn(() => []),
@@ -27,9 +29,13 @@ jest.mock('../../users/user.model', () => ({
   findStudents: jest.fn(),
   findContactInfo: jest.fn(),
 }));
+jest.mock('../../../utils/response', () => ({
+  sendSuccess: jest.fn(),
+}));
 
 const controller = require('../book.controller');
 const service = require('../book.service');
+const { sendSuccess } = require('../../../utils/response');
 
 const makeFiles = () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'book-test-'));
@@ -49,11 +55,11 @@ const makeFiles = () => {
   };
 };
 
-describe('book.controller file cleanup', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
+describe('book.controller file cleanup', () => {
   test('createBook removes uploaded files on error', async () => {
     const { dir, paths, files } = makeFiles();
     service.createBook.mockRejectedValue(new Error('fail'));
@@ -93,5 +99,48 @@ describe('book.controller file cleanup', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(Error));
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('book.controller access control', () => {
+  test('listBooks enforces active status filter for public requests', async () => {
+    service.listBooks.mockResolvedValue({ data: [], meta: {} });
+
+    const res = {};
+    await controller.listBooks(
+      { query: { status: 'pending', search: 'drafts' } },
+      res,
+      jest.fn()
+    );
+
+    expect(service.listBooks).toHaveBeenCalledWith(
+      expect.objectContaining({ search: 'drafts', status: 'active' })
+    );
+    expect(service.listBooks.mock.calls[0][0].status).toBe('active');
+    expect(sendSuccess).toHaveBeenCalledTimes(1);
+    const [passedRes, data, message, meta] = sendSuccess.mock.calls[0];
+    expect(passedRes).toBe(res);
+    expect(data).toEqual([]);
+    expect(message).toBe('Books fetched');
+    expect(meta).toEqual({});
+  });
+
+  test('instructors cannot change status via updateBook', async () => {
+    service.getBookById.mockResolvedValue({ id: 1, instructor_id: 'inst-1' });
+    service.updateBook.mockResolvedValue({ id: 1, title: 'Updated' });
+    service.updateBookTags.mockResolvedValue([]);
+
+    const req = {
+      params: { id: 1 },
+      body: { status: 'active', title: 'Updated' },
+      files: {},
+      user: { id: 'inst-1', role: 'instructor' },
+    };
+
+    await controller.updateBook(req, {}, jest.fn());
+
+    const [, payload] = service.updateBook.mock.calls[0];
+    expect(payload).not.toHaveProperty('status');
+    expect(payload).toMatchObject({ title: 'Updated' });
   });
 });

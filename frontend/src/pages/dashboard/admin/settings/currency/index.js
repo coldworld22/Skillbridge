@@ -14,6 +14,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 import withAuthProtection from "@/hooks/withAuthProtection";
+import usePermission from "@/hooks/usePermission";
 import {
   fetchCurrencies,
   updateCurrency,
@@ -27,6 +28,11 @@ const fetcher = () => fetchCurrencies();
 // ─────────────────────
 function CurrencyManagerPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'currenciesPage' });
+  const { can, requirePermission } = usePermission();
+  const canManage = can("manage_currencies");
+  const manageWarning = t('no_permission', {
+    defaultValue: 'You do not have permission to manage currencies.',
+  });
   const {
     data: currencies = [],
     error,
@@ -79,6 +85,9 @@ function CurrencyManagerPage() {
   // ─────────────────────
 
   const toggleActive = async (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
     try {
@@ -96,6 +105,9 @@ function CurrencyManagerPage() {
   };
 
   const setDefault = async (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     try {
       const currency = currencies.find((c) => c.id === id);
       await updateCurrency(id, { is_default: true });
@@ -111,6 +123,9 @@ function CurrencyManagerPage() {
   };
 
   const toggleAutoUpdate = async (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
     try {
@@ -128,6 +143,9 @@ function CurrencyManagerPage() {
   };
 
   const refreshRate = async (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
     try {
@@ -165,12 +183,18 @@ function CurrencyManagerPage() {
   };
 
   const openRateModal = (currency) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     setRateModal({ isOpen: true, id: currency.id, value: currency.exchange_rate, label: currency.label });
   };
 
   const closeRateModal = () => setRateModal({ isOpen: false, id: null, value: "" });
 
   const saveRate = async () => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const value = parseFloat(rateModal.value);
     if (isNaN(value) || value <= 0) {
       toast.error(t('invalid_rate'));
@@ -207,6 +231,9 @@ function CurrencyManagerPage() {
   };
 
   const deleteCurrency = (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const currency = currencies.find((c) => c.id === id);
     if (currency?.is_default) {
       toast.error(t('cannot_delete_default'));
@@ -232,14 +259,25 @@ function CurrencyManagerPage() {
   };
 
   const toggleSelect = (id) => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
     );
   };
 
-  const selectAll = () => setSelectedIds(filteredCurrencies.map((c) => c.id));
+  const selectAll = () => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
+    setSelectedIds(filteredCurrencies.map((c) => c.id));
+  };
   const clearAll = () => setSelectedIds([]);
   const bulkDelete = async () => {
+    if (!requirePermission("manage_currencies", manageWarning)) {
+      return;
+    }
     const deletables = selectedIds.filter(
       (id) => !currencies.find((c) => c.id === id)?.is_default
     );
@@ -275,7 +313,16 @@ function CurrencyManagerPage() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">💱 {t('title')}</h1>
           <Link href="/dashboard/admin/settings/currency/create">
-            <button className="bg-yellow-500 text-white px-4 py-2 rounded shadow flex items-center gap-2">
+            <button
+              className="bg-yellow-500 text-white px-4 py-2 rounded shadow flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={(event) => {
+                if (!requirePermission("manage_currencies", manageWarning)) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+              }}
+              disabled={!canManage}
+            >
               <FaPlus /> {t('add_currency')}
             </button>
           </Link>
@@ -309,7 +356,8 @@ function CurrencyManagerPage() {
               </span>
               <button
                 onClick={bulkDelete}
-                className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                className="bg-red-500 text-white px-3 py-1 rounded text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={!canManage}
               >
                 {t('delete_selected')}
               </button>
@@ -370,7 +418,7 @@ function CurrencyManagerPage() {
                 <td className="p-3">{c.code}</td>
                 <td className="p-3">{c.symbol}</td>
                 <td
-                  className="p-3 cursor-pointer"
+                  className={`p-3 ${canManage ? "cursor-pointer" : "cursor-not-allowed text-gray-500"}`}
                   onClick={() => openRateModal(c)}
                   title="Click to edit"
                 >
@@ -381,7 +429,8 @@ function CurrencyManagerPage() {
                   <button
                     onClick={() => toggleAutoUpdate(c.id)}
                     title="Toggle Auto Update"
-                    className={c.auto_update ? "text-green-600" : "text-gray-400"}
+                    className={`${c.auto_update ? "text-green-600" : "text-gray-400"} disabled:opacity-60 disabled:cursor-not-allowed`}
+                    disabled={!canManage}
                   >
                     {c.auto_update ? <FaToggleOn /> : <FaToggleOff />}
                   </button>
@@ -390,7 +439,8 @@ function CurrencyManagerPage() {
                   <button
                     onClick={() => toggleActive(c.id)}
                     title="Toggle Status"
-                    className={c.is_active ? "text-green-600" : "text-red-500"}
+                    className={`${c.is_active ? "text-green-600" : "text-red-500"} disabled:opacity-60 disabled:cursor-not-allowed`}
+                    disabled={!canManage}
                   >
                     {c.is_active ? t('active') : t('inactive')}
                   </button>
@@ -399,7 +449,8 @@ function CurrencyManagerPage() {
                   <button
                     onClick={() => setDefault(c.id)}
                     title="Set as Default"
-                    className={c.is_default ? "text-yellow-500" : "text-gray-400"}
+                    className={`${c.is_default ? "text-yellow-500" : "text-gray-400"} disabled:opacity-60 disabled:cursor-not-allowed`}
+                    disabled={!canManage}
                   >
                     <FaStar />
                   </button>
@@ -409,20 +460,32 @@ function CurrencyManagerPage() {
                   <div className="flex gap-2 justify-center">
                     <button
                       title="Refresh Rate"
-                      className="text-blue-500"
+                      className="text-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       onClick={() => refreshRate(c.id)}
+                      disabled={!canManage}
                     >
                       <FaSync />
                     </button>
                     <Link href={`/dashboard/admin/settings/currency/edit/${c.id}`}>
-                      <button title="Edit" className="text-yellow-600">
+                      <button
+                        title="Edit"
+                        className="text-yellow-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                        onClick={(event) => {
+                          if (!requirePermission("manage_currencies", manageWarning)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }
+                        }}
+                        disabled={!canManage}
+                      >
                         <FaEdit />
                       </button>
                     </Link>
                     <button
                       title="Delete"
-                      className="text-red-600"
+                      className="text-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
                       onClick={() => deleteCurrency(c.id)}
+                      disabled={!canManage}
                     >
                       <FaTrash />
                     </button>
@@ -472,7 +535,8 @@ function CurrencyManagerPage() {
                 </button>
                 <button
                   onClick={saveRate}
-                  className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  className="px-3 py-1 bg-yellow-500 text-white rounded disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!canManage}
                 >
                   {t('update')}
                 </button>
@@ -489,10 +553,9 @@ CurrencyManagerPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedCurrencyManagerPage = withAuthProtection(CurrencyManagerPage, [
-  "admin",
-  "superadmin",
-]);
+const ProtectedCurrencyManagerPage = withAuthProtection(CurrencyManagerPage, {
+  permissions: ["view_currencies"],
+});
 
 ProtectedCurrencyManagerPage.getLayout = CurrencyManagerPage.getLayout;
 

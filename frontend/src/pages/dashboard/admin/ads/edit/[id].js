@@ -64,6 +64,7 @@ export default function EditAdPage() {
         allowBrandingEnabled={allowBrandingEnabled}
         submitLabel={t("submit", { defaultValue: "Submit" })}
         tPrefix="adsEditPage"
+        requireTargetRoles={false}
       />
     </AdminLayout>
   );

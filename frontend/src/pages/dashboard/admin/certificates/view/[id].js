@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import CertificateTemplateRenderer from "@/components/certificates/CertificateTemplateRenderer";
 import { FaDownload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import {
   getCertificate,
@@ -74,6 +75,18 @@ export default function ViewCertificatePage() {
     }
   };
 
+  const template = certificate.template || {};
+  const certificateData = {
+    id: certificate.id,
+    studentName: certificate.studentName,
+    courseName: certificate.className || certificate.courseTitle,
+    issueDate: certificate.issueDate,
+    instructor: certificate.instructorName,
+    platformName: certificate.platformName,
+    grade: certificate.grade,
+    verificationUrl: certificate.verificationUrl,
+  };
+
   return (
     <AdminLayout>
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
@@ -97,11 +110,11 @@ export default function ViewCertificatePage() {
             </p>
 
             {/* Certificate Preview */}
-            <div className="mt-6 text-center">
-              <img
-                src={certificate.certificateUrl}
-                alt="Certificate Preview"
-                className="mx-auto rounded-lg shadow-md max-w-full h-auto"
+            <div className="mt-6">
+              <CertificateTemplateRenderer
+                template={template}
+                data={certificateData}
+                className="max-w-4xl mx-auto"
               />
             </div>
 

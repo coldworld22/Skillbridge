@@ -88,20 +88,55 @@ export default function GroupDetailsPage() {
 
   useEffect(() => {
     if (!groupId || !isAdmin) return;
-    groupService
-      .getJoinRequestsForGroup(groupId)
-      .then((list) => setPendingCount(Array.isArray(list) ? list.length : 0))
-      .catch(() => setPendingCount(0));
+    let active = true;
+
+    const fetchRequests = async () => {
+      try {
+        const list = await groupService.getJoinRequestsForGroup(groupId);
+        if (!active) return;
+        setPendingCount(Array.isArray(list) ? list.length : 0);
+      } catch {
+        if (!active) return;
+        setPendingCount(0);
+      }
+    };
+
+    fetchRequests();
+    const interval = setInterval(fetchRequests, 10000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [groupId, isAdmin]);
 
   const handleJoin = async () => {
     try {
-      setJoinStatus('pending');
-      await groupService.joinGroup(groupId);
-      toast.success('Join request sent!');
+      const result = await groupService.joinGroup(groupId);
+      const isPending = result?.data?.status === 'pending';
+      if (isPending) {
+        setJoinStatus('pending');
+      } else {
+        setJoinStatus('joined');
+        const role = result?.data?.role || 'member';
+        setCurrentUserRole(role);
+        if (role === 'admin') setIsAdmin(true);
+        try {
+          const refreshedMembers = await groupService.getGroupMembers(groupId);
+          setMembers(refreshedMembers);
+        } catch {
+          // ignore refresh errors; keep existing members list
+        }
+      }
+      const message = isPending
+        ? t('request_sent_pending', 'Join request sent. Awaiting approval.')
+        : result?.message || t('joined_successfully', 'Joined group successfully!');
+      toast.success(message);
     } catch (err) {
       setJoinStatus('none');
-      toast.error('Failed to send join request');
+      const message =
+        err?.response?.data?.message || t('join_failed', 'Failed to join group');
+      toast.error(message);
     }
   };
 
@@ -333,8 +368,20 @@ export default function GroupDetailsPage() {
             <div className="pt-4">
               <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
 
-              <JoinRequestCard groupId={group.id} onCountChange={setPendingCount} />
-
+              <JoinRequestCard
+                groupId={group.id}
+                onCountChange={setPendingCount}
+                onActionComplete={async ({ action }) => {
+                  if (action === 'approve') {
+                    try {
+                      const refreshed = await groupService.getGroupMembers(group.id);
+                      setMembers(refreshed);
+                    } catch (_) {
+                      // ignore refresh errors for now
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
         )}

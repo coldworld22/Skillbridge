@@ -124,7 +124,11 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
                   <ParticipantList chatId={chatId} userRole={userRole} />
                 )}
                 {isChatOpen && (
-                  <ChatDuringCall chatId={chatId} currentUserId={user?.id} />
+                  <ChatDuringCall
+                    chatId={chatId}
+                    currentUserId={user?.id}
+                    userRole={userRole}
+                  />
                 )}
               </div>
             )}

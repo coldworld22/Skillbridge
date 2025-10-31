@@ -27,10 +27,11 @@ function VerifyEmailPage() {
       return;
     }
     if (!user.profile_complete) {
-      const target =
-        roleProfilePaths[user.role?.toLowerCase()] || "/profile/edit";
-      router.replace(target);
-      return;
+      const target = roleProfilePaths[user.role?.toLowerCase()];
+      if (target) {
+        router.replace(target);
+        return;
+      }
     }
     if (user.is_email_verified) {
       router.replace("/website");
@@ -73,8 +74,7 @@ function VerifyEmailPage() {
     return null;
   }
 
-  const profileTarget =
-    roleProfilePaths[user.role?.toLowerCase()] || "/profile/edit";
+  const profileTarget = roleProfilePaths[user.role?.toLowerCase()];
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center px-4">
@@ -85,12 +85,18 @@ function VerifyEmailPage() {
         <p className="mt-4 text-sm text-gray-300 text-center">
           We&apos;ve sent a verification code to{" "}
           <span className="font-medium text-yellow-300">{user.email}</span>.
-          Enter the code below to finish setting up your account. If you need to
-          update your details first, you can{" "}
-          <Link href={profileTarget} className="text-yellow-400 underline">
-            complete your profile here
-          </Link>
-          .
+          Enter the code below to finish setting up your account.
+          {profileTarget ? (
+            <>
+              {" "}If you need to update your details first, you can{" "}
+              <Link href={profileTarget} className="text-yellow-400 underline">
+                complete your profile here
+              </Link>
+              .
+            </>
+          ) : (
+            <> If you need to update your details first, please visit your dashboard.</>
+          )}
         </p>
 
         <div className="mt-6 space-y-4">

@@ -4,5 +4,6 @@ const { verifyToken, isStudent } = require('../../../middleware/auth/authMiddlew
 
 router.post('/:classId', verifyToken, isStudent, ctrl.submitReview);
 router.get('/:classId', ctrl.getReviews);
+router.delete('/id/:reviewId', verifyToken, isStudent, ctrl.deleteReview);
 
 module.exports = router;

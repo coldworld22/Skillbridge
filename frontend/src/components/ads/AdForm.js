@@ -19,6 +19,8 @@ export default function AdForm({
   submitLabel = "Submit",
   tPrefix,
   hideSchedule = false,
+  maxDurationDays = null,
+  requireTargetRoles = true,
 }) {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: tPrefix });
   const { t: tp } = useTranslation("dashboard", { keyPrefix: "adsPage" });
@@ -40,6 +42,14 @@ export default function AdForm({
   useEffect(() => {
     setFormData((prev) => ({ ...prev, ...initialData }));
   }, [initialData]);
+
+  useEffect(() => {
+    if (!allowBrandingEnabled) {
+      setFormData((prev) =>
+        prev.allowBranding ? { ...prev, allowBranding: false } : prev
+      );
+    }
+  }, [allowBrandingEnabled]);
 
   const [error, setError] = useState(null);
   const [titleError, setTitleError] = useState(null);
@@ -84,6 +94,7 @@ export default function AdForm({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    setError(null);
     if (name === "targetRoles") {
       const role = value;
       setFormData((prev) => ({
@@ -100,16 +111,65 @@ export default function AdForm({
         priority: Math.max(0, Number(value)),
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => {
+        if (
+          maxDurationDays !== null &&
+          name === "endAt" &&
+          value &&
+          prev.startAt
+        ) {
+          const startTime = new Date(prev.startAt);
+          const selectedEnd = new Date(value);
+          const maxEnd = new Date(
+            startTime.getTime() + maxDurationDays * 24 * 60 * 60 * 1000
+          );
+          if (
+            !Number.isNaN(selectedEnd.getTime()) &&
+            !Number.isNaN(startTime.getTime()) &&
+            selectedEnd > maxEnd
+          ) {
+            setError(t("duration_exceeded", { days: maxDurationDays }));
+            return prev;
+          }
+        }
+
+        const next = { ...prev, [name]: value };
+
+        if (
+          maxDurationDays !== null &&
+          name === "startAt" &&
+          value &&
+          prev.endAt
+        ) {
+          const startTime = new Date(value);
+          const currentEnd = new Date(prev.endAt);
+          if (
+            !Number.isNaN(startTime.getTime()) &&
+            !Number.isNaN(currentEnd.getTime())
+          ) {
+            const maxEnd = new Date(
+              startTime.getTime() + maxDurationDays * 24 * 60 * 60 * 1000
+            );
+            if (currentEnd > maxEnd) {
+              next.endAt = maxEnd.toISOString().split("T")[0];
+            }
+          }
+        }
+
+        return next;
+      });
     }
   };
 
   // Only require a start date; leaving end date blank creates a continuous ad
   const isScheduleValid = hideSchedule || Boolean(formData.startAt);
 
+  const hasTargetRoles =
+    !requireTargetRoles || formData.targetRoles.length > 0;
+
   const isFormValid =
     formData.title &&
-    formData.targetRoles.length > 0 &&
+    hasTargetRoles &&
     isScheduleValid &&
     ((mediaType === "image" && (formData.image || initialData.image)) ||
       (mediaType === "video" && (videoFile || initialData.video)));
@@ -123,7 +183,7 @@ export default function AdForm({
     setUploadProgress(0);
 
     if (!isFormValid) {
-      if (formData.targetRoles.length === 0) {
+      if (requireTargetRoles && formData.targetRoles.length === 0) {
         setError(t("target_audience_required"));
       } else {
         setError(t("title_image_required"));
@@ -141,6 +201,28 @@ export default function AdForm({
       return;
     }
 
+    if (
+      !hideSchedule &&
+      maxDurationDays !== null &&
+      formData.startAt &&
+      formData.endAt
+    ) {
+      const start = new Date(formData.startAt);
+      const end = new Date(formData.endAt);
+      if (
+        !Number.isNaN(start.getTime()) &&
+        !Number.isNaN(end.getTime())
+      ) {
+        const diffDays = Math.ceil(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (diffDays > maxDurationDays) {
+          setError(t("duration_exceeded", { days: maxDurationDays }));
+          return;
+        }
+      }
+    }
+
     if (titleError || isCheckingTitle) return;
 
     setIsSubmitting(true);
@@ -149,15 +231,20 @@ export default function AdForm({
       const payload = new FormData();
       payload.append("title", formData.title);
       payload.append("description", formData.description);
-      payload.append("link_url", formData.link);
+      const trimmedLink = formData.link?.trim();
+      if (trimmedLink) {
+        payload.append("link_url", trimmedLink);
+      }
       if (formData.startAt) payload.append("start_at", formData.startAt);
       if (formData.endAt) payload.append("end_at", formData.endAt);
       payload.append("ad_type", formData.adType);
       payload.append("priority", String(formData.priority));
-      payload.append(
-        "allow_branding",
-        formData.allowBranding ? "true" : "false"
-      );
+      if (allowBrandingEnabled) {
+        payload.append(
+          "allow_branding",
+          formData.allowBranding ? "true" : "false"
+        );
+      }
       payload.append(
         "target_roles",
         JSON.stringify(formData.targetRoles)
@@ -191,6 +278,23 @@ export default function AdForm({
       setUploadProgress(0);
     }
   };
+
+  const startDateObj = formData.startAt
+    ? new Date(formData.startAt)
+    : null;
+  const maxEndDate =
+    !hideSchedule &&
+    maxDurationDays !== null &&
+    startDateObj &&
+    !Number.isNaN(startDateObj.getTime())
+      ? new Date(
+          startDateObj.getTime() +
+            maxDurationDays * 24 * 60 * 60 * 1000
+        )
+      : null;
+  const maxEndDateStr = maxEndDate
+    ? maxEndDate.toISOString().split("T")[0]
+    : undefined;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" dir={i18n.dir()}>
@@ -385,7 +489,7 @@ export default function AdForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                  {t("start_at")} *
+                  {t("start_date")} *
                 </label>
                 <input
                   type="date"
@@ -397,13 +501,15 @@ export default function AdForm({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                  {t("end_at")}
+                  {t("end_date")}
                 </label>
                 <input
                   type="date"
                   name="endAt"
                   value={formData.endAt}
                   onChange={handleChange}
+                  max={maxEndDateStr}
+                  min={formData.startAt || undefined}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -453,7 +559,7 @@ export default function AdForm({
               </span>
             </label>
           </div>
-          {formData.targetRoles.length === 0 && (
+          {requireTargetRoles && formData.targetRoles.length === 0 && (
             <p className="text-sm text-red-600 dark:text-red-400">
               {t("target_audience_required")}
             </p>
@@ -464,7 +570,7 @@ export default function AdForm({
       <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-gray-200">
-            ⚙️ {t("settings")}
+            ⚙️ {t("configuration")}
           </h2>
         </header>
         <div className="px-5 py-6 space-y-4">

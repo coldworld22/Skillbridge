@@ -9,7 +9,16 @@ exports.findById = (id) => {
 };
 
 exports.listByBook = (book_id) => {
-  return db("book_reviews").where({ book_id }).orderBy("created_at", "desc");
+  return db("book_reviews as br")
+    .leftJoin("users as u", "br.user_id", "u.id")
+    .select(
+      "br.*",
+      "u.full_name as reviewer_full_name",
+      "u.email as reviewer_email",
+      "u.avatar_url as reviewer_avatar"
+    )
+    .where("br.book_id", book_id)
+    .orderBy("br.created_at", "desc");
 };
 
 exports.update = (id, data) => {

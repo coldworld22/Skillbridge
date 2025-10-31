@@ -70,13 +70,13 @@ export const uploadAdminIdentity = async (file) => {
 
 /**
  * 🔐 Change admin password (in-session, no OTP).
- * 
- * @param {string} adminId - Admin UUID
- * @param {string} newPassword - New secure password
+ *
+ * @param {{ currentPassword: string, newPassword: string }} payload
  * @returns {Promise<{ message: string }>} Server response
  */
-export const changeAdminPassword = async (adminId, newPassword) => {
-  const res = await api.post(`/users/admin/reset-password/${adminId}`, {
+export const changeAdminPassword = async ({ currentPassword, newPassword }) => {
+  const res = await api.patch(`/users/admin/change-password`, {
+    currentPassword,
     newPassword,
   });
   return res.data;

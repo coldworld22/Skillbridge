@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { FaFilter, FaPlus, FaSearch, FaUsers } from "react-icons/fa";
+import { FaFilter, FaPlus, FaSearch, FaSyncAlt, FaUsers } from "react-icons/fa";
 import groupService from "@/services/groupService";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
@@ -9,25 +9,82 @@ import { useTranslation } from "next-i18next";
 const StudyGroups = () => {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const { user } = useAuthStore();
   const router = useRouter();
   const { t } = useTranslation("website");
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const all = await groupService.getPublicGroups();
-        setGroups(all);
-      } catch {}
-    };
-    load();
-  }, []);
+  const fetchGroups = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+    try {
+      const all = await groupService.getPublicGroups();
+      setGroups(Array.isArray(all) ? all : []);
+    } catch (error) {
+      console.error("Failed to fetch public groups", error);
+      setLoadError(t("groups_error"));
+      setGroups([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
 
-  const filtered = groups.filter(
-    (g) =>
-      g.name.toLowerCase().includes(search.toLowerCase()) ||
-      (g.tags || []).some((t) => t.toLowerCase().includes(search.toLowerCase()))
-  );
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    if (!normalizedSearch) return groups;
+    return groups.filter((group) => {
+      const name = String(group.title || group.name || "")
+        .toLowerCase();
+      const tags = Array.isArray(group.tags) ? group.tags : [];
+      const tagMatch = tags.some((tag) =>
+        String(tag).toLowerCase().includes(normalizedSearch)
+      );
+      return name.includes(normalizedSearch) || tagMatch;
+    });
+  }, [groups, normalizedSearch]);
+
+  const getDashboardSegment = () => {
+    const role = user?.role?.toLowerCase();
+    if (!role) return "student";
+    if (["admin", "superadmin"].includes(role)) return "admin";
+    return role;
+  };
+
+  const redirectToLogin = (nextPath) => {
+    router.push(`/auth/login?next=${encodeURIComponent(nextPath)}`);
+  };
+
+  const handleCreateGroup = () => {
+    if (!user) {
+      redirectToLogin("/dashboard/student/groups/create");
+      return;
+    }
+    const target = getDashboardSegment();
+    router.push(`/dashboard/${target}/groups/create`);
+  };
+
+  const handleExploreGroups = () => {
+    if (!user) {
+      redirectToLogin("/dashboard/student/groups/explore");
+      return;
+    }
+    const target = getDashboardSegment();
+    router.push(`/dashboard/${target}/groups/explore`);
+  };
+
+  const handleViewGroup = (groupId) => {
+    if (!user) {
+      redirectToLogin(`/dashboard/student/groups/${groupId}`);
+      return;
+    }
+    const target = getDashboardSegment();
+    router.push(`/dashboard/${target}/groups/${groupId}`);
+  };
 
   return (
     <motion.section 
@@ -74,7 +131,7 @@ const StudyGroups = () => {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push("/groups/create")}
+              onClick={handleCreateGroup}
               className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-gray-900 font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-300"
             >
               <FaPlus className="text-lg" />
@@ -84,13 +141,7 @@ const StudyGroups = () => {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                const role = user?.role?.toLowerCase() || 'student';
-                const target = ['admin', 'superadmin'].includes(role)
-                  ? 'admin'
-                  : role;
-                router.push(`/dashboard/${target}/groups/explore`);
-              }}
+              onClick={handleExploreGroups}
               className="flex items-center gap-2 text-amber-400 hover:text-amber-300 font-medium py-3 px-6 rounded-xl border border-amber-500 hover:border-amber-400 transition-colors"
             >
               <FaUsers />
@@ -100,13 +151,38 @@ const StudyGroups = () => {
         </div>
 
         {/* Groups Grid */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16">
+            <div className="inline-flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-full px-6 py-3 text-gray-300">
+              <FaSyncAlt className="animate-spin" />
+              <span>{t("groups_loading")}</span>
+            </div>
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-12">
+            <div className="bg-gray-800/60 rounded-2xl p-8 max-w-md mx-auto border border-red-500/30">
+              <h3 className="text-xl font-semibold text-red-300 mb-2">
+                {t("groups_error_title")}
+              </h3>
+              <p className="text-gray-300 mb-5">
+                {loadError}
+              </p>
+              <button
+                onClick={fetchGroups}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white font-medium transition"
+              >
+                <FaSyncAlt className="animate-spin" />
+                {t("groups_retry")}
+              </button>
+            </div>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-gray-800/50 rounded-2xl p-8 max-w-md mx-auto border border-dashed border-amber-500/30">
               <h3 className="text-xl font-bold text-gray-300 mb-2">{t("no_groups")}</h3>
               <p className="text-gray-400 mb-4">{t("no_groups_hint")}</p>
               <button
-                onClick={() => router.push("/groups/create")}
+                onClick={handleCreateGroup}
                 className="text-amber-400 hover:text-amber-300 font-medium underline"
               >
                 {t("create_first_group")}
@@ -148,9 +224,15 @@ const StudyGroups = () => {
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-xl font-bold text-white truncate mr-2">{group.name}</h3>
+                    <h3 className="text-xl font-bold text-white truncate mr-2">
+                      {group.title || group.name || t("group_untitled")}
+                    </h3>
                     <span className="flex items-center text-sm text-amber-400 bg-amber-900/30 px-2 py-1 rounded-full">
-                      <FaUsers className="mr-1" /> {group.memberCount || 0}
+                      <FaUsers className="mr-1" />{" "}
+                      {group.membersCount ??
+                        group.memberCount ??
+                        group.member_count ??
+                        0}
                     </span>
                   </div>
                   
@@ -175,13 +257,7 @@ const StudyGroups = () => {
                   </div>
 
                   <button
-                    onClick={() => {
-                      const role = user?.role?.toLowerCase() || "student";
-                      const target = ["admin", "superadmin"].includes(role)
-                        ? "admin"
-                        : role;
-                      router.push(`/dashboard/${target}/groups/${group.id}`);
-                    }}
+                    onClick={() => handleViewGroup(group.id)}
                     className="w-full py-2.5 text-center bg-gray-700 hover:bg-gray-600 text-amber-400 rounded-lg font-medium transition-colors"
                   >
                     {t("view_group_details")}

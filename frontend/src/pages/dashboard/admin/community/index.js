@@ -57,15 +57,20 @@ const StatCard = ({ label, value, color }) => (
   </div>
 );
 
+const normalizeStats = (data) => {
+  if (!data) return null;
+  return {
+    totalDiscussions: data?.totalDiscussions ?? 0,
+    pendingReports: data?.pendingReports ?? 0,
+    contributors: data?.contributors ?? 0,
+    repliesThisWeek: data?.repliesThisWeek ?? 0,
+    topContributor: data?.topContributor || null,
+  };
+};
+
 export default function AdminCommunityDashboard({ initialStats }) {
   const { t } = useTranslation("dashboard");
-  const [stats, setStats] = useState(initialStats ? {
-    totalDiscussions: initialStats.totalDiscussions,
-    pendingReports: initialStats.pendingReports,
-    contributors: initialStats.contributors,
-    repliesThisWeek: initialStats.repliesThisWeek,
-    topContributor: initialStats.topContributor || {},
-  } : null);
+  const [stats, setStats] = useState(normalizeStats(initialStats));
   const [activityData, setActivityData] = useState(initialStats?.activityData || []);
   const [error, setError] = useState(null);
   const load = useCallback(async () => {
@@ -73,14 +78,8 @@ export default function AdminCommunityDashboard({ initialStats }) {
       setError(null);
       const data = await fetchDashboardStats();
       if (data) {
-        setStats({
-          totalDiscussions: data.totalDiscussions,
-          pendingReports: data.pendingReports,
-          contributors: data.contributors,
-          repliesThisWeek: data.repliesThisWeek,
-          topContributor: data.topContributor || {},
-        });
-        setActivityData(data.activityData || []);
+        setStats(normalizeStats(data));
+        setActivityData(Array.isArray(data?.activityData) ? data.activityData : []);
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -131,10 +130,10 @@ export default function AdminCommunityDashboard({ initialStats }) {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-          <StatCard label={t("adminCommunityDashboardPage.stats.discussions")} value={stats.totalDiscussions} color="bg-yellow-500" />
-          <StatCard label={t("adminCommunityDashboardPage.stats.pendingReports")} value={stats.pendingReports} color="bg-red-500" />
-          <StatCard label={t("adminCommunityDashboardPage.stats.contributors")} value={stats.contributors} color="bg-blue-500" />
-          <StatCard label={t("adminCommunityDashboardPage.stats.repliesThisWeek")} value={stats.repliesThisWeek} color="bg-green-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.discussions")} value={stats.totalDiscussions ?? 0} color="bg-yellow-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.pendingReports")} value={stats.pendingReports ?? 0} color="bg-red-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.contributors")} value={stats.contributors ?? 0} color="bg-blue-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.repliesThisWeek")} value={stats.repliesThisWeek ?? 0} color="bg-green-500" />
         </div>
 
         {/* Navigation Cards */}
@@ -151,22 +150,26 @@ export default function AdminCommunityDashboard({ initialStats }) {
         {/* Top Contributor */}
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-10">
           <h3 className="text-lg font-semibold mb-3">{t("adminCommunityDashboardPage.topContributor.title")}</h3>
-          <div className="flex items-center gap-4">
-            <img
-              src={stats.topContributor.avatar || "/images/default-avatar.png"}
-              alt={stats.topContributor.name}
-              className="w-12 h-12 rounded-full border"
-            />
-            <div>
-              <p className="font-bold text-gray-800">{stats.topContributor.name}</p>
-              <p className="text-sm text-gray-500">
-                {t("adminCommunityDashboardPage.topContributor.meta", {
-                  contributions: stats.topContributor.contributions,
-                  reputation: stats.topContributor.reputation,
-                })}
-              </p>
+          {stats.topContributor && stats.topContributor.name ? (
+            <div className="flex items-center gap-4">
+              <img
+                src={stats.topContributor.avatar || "/images/default-avatar.png"}
+                alt={stats.topContributor.name}
+                className="w-12 h-12 rounded-full border object-cover"
+              />
+              <div>
+                <p className="font-bold text-gray-800">{stats.topContributor.name}</p>
+                <p className="text-sm text-gray-500">
+                  {t("adminCommunityDashboardPage.topContributor.meta", {
+                    contributions: stats.topContributor.contributions ?? 0,
+                    reputation: stats.topContributor.reputation ?? 0,
+                  })}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-sm text-gray-500">{t("adminCommunityDashboardPage.topContributor.empty", "No standout contributors yet this week.")}</p>
+          )}
         </div>
 
         {/* Activity Chart */}

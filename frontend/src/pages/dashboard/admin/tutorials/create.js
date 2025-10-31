@@ -62,8 +62,6 @@ function CreateTutorialPage() {
     isFree: false,
     currency: "",
     includedPlans: [],
-    allowInstallments: false,
-    installments: "2",
   });
 
   const [categories, setCategories] = useState([]);
@@ -80,11 +78,6 @@ function CreateTutorialPage() {
       currency: tTutorials("create.basic.select_currency", "Currency"),
       tags: tTutorials("create.basic.tags_label"),
       included_plans: tTutorials("create.basic.plan_access_label", "Included Plans"),
-      allow_installments: tTutorials(
-        "create.basic.allow_installments_label",
-        "Offer installment payments"
-      ),
-      installments: tTutorials("create.basic.installments_label", "Installments"),
       status: t("step_pricing_publish"),
     }),
     [t, tTutorials]
@@ -107,14 +100,6 @@ function CreateTutorialPage() {
                 .filter((id) => id !== null && id !== undefined)
                 .map((id) => String(id))
             : [],
-          allowInstallments: Boolean(
-            draft.allowInstallments ?? draft.allow_installments ?? false
-          ),
-          installments: draft.installments
-            ? String(draft.installments)
-            : draft.allowInstallments || draft.allow_installments
-            ? "2"
-            : "1",
         });
       } catch (err) {
         console.error("Failed to parse tutorialDraft", err);

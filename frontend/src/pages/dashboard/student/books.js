@@ -6,7 +6,6 @@ import useLibraryStore from "@/store/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import { API_BASE_URL } from "@/config/config";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { mapBookForWishlist } from "@/utils/bookMapping";
 import { buildUrl } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -17,7 +16,12 @@ import nextI18NextConfig from "../../../../next-i18next.config.js";
 const coerceText = (value, lang = "en") => {
   if (value == null) return "";
   const t = typeof value;
-  if (t === "string") return value;
+  if (t === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") return "";
+    return trimmed;
+  }
   if (t === "number" || t === "boolean") return String(value);
   if (Array.isArray(value)) return value.map((v) => coerceText(v, lang)).filter(Boolean).join(", ");
   if (t === "object") {
@@ -32,7 +36,13 @@ const coerceText = (value, lang = "en") => {
 
 const coerceUrl = (value, lang = "en") => {
   if (!value) return null;
-  if (typeof value === "string") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const lower = trimmed.toLowerCase();
+    if (lower === "null" || lower === "undefined" || lower === "false") return null;
+    return trimmed;
+  }
   if (typeof value === "object") {
     if (typeof value.url === "string") return value.url;
     if (typeof value.href === "string") return value.href;
@@ -56,24 +66,49 @@ const normalizeLibraryBook = (rawBook, lang = "en") => {
     book.cover_url ||
     book.cover_image ||
     book.cover;
-  const coverCandidate = coerceUrl(rawCover, lang);
-  const normalizedCover =
-    (typeof coverCandidate === "string" && buildUrl(coverCandidate)) ||
-    coverCandidate ||
-    "/images/default-book-cover.jpg";
-
   const rawPreview = book.preview_url || book.previewUrl;
-  const previewCandidate = coerceUrl(rawPreview, lang);
+  let previewCandidate = coerceUrl(rawPreview, lang);
+  if (!previewCandidate && Array.isArray(book.preview_pages)) {
+    for (const page of book.preview_pages) {
+      const resolved = coerceUrl(page, lang);
+      if (resolved) {
+        previewCandidate = resolved;
+        break;
+      }
+    }
+  }
   const previewUrl =
     (typeof previewCandidate === "string" && buildUrl(previewCandidate)) ||
     previewCandidate ||
     null;
+  const coverCandidate = coerceUrl(rawCover, lang);
+  const normalizedCover =
+    (typeof coverCandidate === "string" && buildUrl(coverCandidate)) ||
+    coverCandidate ||
+    previewUrl ||
+    "/images/default-book-cover.jpg";
 
-  const rawDownload = book.download_url || book.pdf_url || book.file_url;
+  const fallbackId =
+    book.id ??
+    book.book_id ??
+    book.bookId ??
+    book.library_id ??
+    book.libraryId ??
+    null;
+  const rawDownload =
+    book.downloadUrl ||
+    book.download_url ||
+    book.pdf_url ||
+    book.file_url;
   const downloadCandidate = coerceUrl(rawDownload, lang);
+  const fallbackDownload =
+    fallbackId && API_BASE_URL
+      ? `${String(API_BASE_URL).replace(/\/$/, "")}/library/download/${fallbackId}`
+      : null;
   const downloadUrl =
     (typeof downloadCandidate === "string" && buildUrl(downloadCandidate)) ||
     downloadCandidate ||
+    (fallbackDownload && buildUrl(fallbackDownload)) ||
     null;
 
   const rawTags = Array.isArray(book.tags)
@@ -113,13 +148,7 @@ const normalizeLibraryBook = (rawBook, lang = "en") => {
     lang
   );
 
-  const id =
-    book.id ??
-    book.book_id ??
-    book.bookId ??
-    book.library_id ??
-    book.libraryId ??
-    null;
+  const id = fallbackId;
 
   return {
     ...book,
@@ -130,6 +159,7 @@ const normalizeLibraryBook = (rawBook, lang = "en") => {
     preview_url: previewUrl,
     previewUrl,
     downloadUrl,
+    download_url: downloadUrl,
     tags,
     price,
     price_paid: pricePaid,
@@ -196,18 +226,42 @@ function toArray(value) {
 
 function BookCard({ book }) {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: "booksPage" });
+  const { t: tWebsite } = useTranslation("website");
   const wishlist = useBookWishlistStore((state) =>
     Array.isArray(state.wishlist) ? state.wishlist : []
   );
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const removeFromWishlist = useBookWishlistStore((state) => state.removeFromWishlist);
-  const [imageSrc, setImageSrc] = useState(
-    book.coverUrl || book.cover_image_url || "/images/default-book-cover.jpg"
-  );
+  const resolveCover = () =>
+    buildUrl(book.coverUrl) ||
+    buildUrl(book.cover_image_url) ||
+    buildUrl(book.cover_image) ||
+    buildUrl(book.cover) ||
+    (Array.isArray(book.preview_pages) &&
+      book.preview_pages
+        .map((entry) => buildUrl(coerceUrl(entry, i18n?.language)))
+        .find(Boolean)) ||
+    buildUrl(book.previewUrl) ||
+    buildUrl(book.preview_url) ||
+    book.coverUrl ||
+    book.cover_image_url ||
+    book.previewUrl ||
+    book.preview_url ||
+    "/images/default-book-cover.jpg";
+
+  const [imageSrc, setImageSrc] = useState(resolveCover);
 
   useEffect(() => {
-    setImageSrc(book.coverUrl || book.cover_image_url || "/images/default-book-cover.jpg");
-  }, [book.coverUrl, book.cover_image_url]);
+    setImageSrc(resolveCover());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    book.coverUrl,
+    book.cover_image_url,
+    book.cover_image,
+    book.cover,
+    book.previewUrl,
+    book.preview_url,
+  ]);
 
   const isWishlisted = wishlist.some((item) => item?.book_id === book.id);
 
@@ -217,19 +271,33 @@ function BookCard({ book }) {
     return formatCurrencyStable(price, currency, i18n?.language);
   }, [currency, price, i18n?.language]);
 
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
     if (isWishlisted) {
-      removeFromWishlist(book.id);
-      toast.success(t("removed_from_wishlist", { ns: "website" }));
+      const ok = await removeFromWishlist(book.id);
+      if (ok) {
+        toast.success(tWebsite("removed_from_wishlist"));
+      } else {
+        toast.error(
+          t("failed_to_update_wishlist", {
+            defaultValue: "Could not update your wishlist. Please try again.",
+          })
+        );
+      }
     } else {
-      addToWishlist(mapBookForWishlist(book));
-      toast.success(t("added_to_wishlist", { ns: "website" }));
+      const ok = await addToWishlist(book);
+      if (ok) {
+        toast.success(tWebsite("added_to_wishlist"));
+      } else {
+        toast.error(
+          t("failed_to_update_wishlist", {
+            defaultValue: "Could not update your wishlist. Please try again.",
+          })
+        );
+      }
     }
   };
 
-  const downloadFallback =
-    API_BASE_URL && book.id ? `${API_BASE_URL}/library/download/${book.id}` : null;
-  const downloadLink = book.downloadUrl || downloadFallback;
+  const downloadLink = book.downloadUrl || book.download_url || null;
   const previewLink = book.preview_url || null;
   const purchasedDateStr = book.purchasedAt
     ? formatDateUTC(book.purchasedAt, i18n?.language)
@@ -240,83 +308,90 @@ function BookCard({ book }) {
     t("unknown_author", { ns: "dashboard", defaultValue: "Unknown author" });
 
   return (
-    <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
+    <div className="mx-auto flex h-full w-full max-w-md flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
       <img
         src={imageSrc}
         alt={coerceText(book.title, i18n?.language) || "Book"}
-        className="w-full h-48 object-cover rounded-lg mb-4"
+        className="h-56 w-full rounded-xl object-cover"
         onError={() => setImageSrc("/images/default-book-cover.jpg")}
       />
-      <div className="flex-1">
-        <h3 className="text-lg font-semibold mb-1 line-clamp-2">{coerceText(book.title, i18n?.language) || t("unknown_title", { ns: "dashboard", defaultValue: "Untitled" })}</h3>
-        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+      <div className="flex flex-1 flex-col gap-3">
+        <div>
+          <h3 className="text-lg font-semibold leading-tight line-clamp-2">
+            {coerceText(book.title, i18n?.language) ||
+              t("unknown_title", { ns: "dashboard", defaultValue: "Untitled" })}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("by_author", { author: authorLabel })}
+          </p>
+        </div>
+        <p className="text-sm text-gray-600 line-clamp-3">
           {coerceText(book.shortDescription || book.short_description || book.description, i18n?.language)}
         </p>
-        <p className="text-sm text-gray-500 mb-1">
-          {t("by_author", { author: authorLabel })}
-        </p>
-        <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
+        <div className="flex flex-wrap gap-2">
           {book.tags?.map((tag, idx) => {
             const label = coerceText(tag, i18n?.language);
             if (!label) return null;
             return (
-              <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded">
+              <span key={idx} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                 {label}
               </span>
             );
           })}
         </div>
-        <div className="flex items-center gap-2 text-sm">
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="flex flex-col gap-1">
           {book.isFree || Number(price) === 0 ? (
-            <span className="text-green-600 font-medium">{t("free")}</span>
+            <span className="text-green-600 font-semibold">{t("free")}</span>
           ) : (
-            <span className="text-blue-600 font-medium">
+            <span className="text-blue-600 font-semibold">
               {t("purchased_for_amount", { price: formattedPrice })}
             </span>
           )}
+          {hasValidPurchaseDate && (
+            <span className="text-xs text-gray-400">
+              {t("purchased_on", {
+                date: purchasedDateStr,
+              })}
+            </span>
+          )}
         </div>
-        {hasValidPurchaseDate && (
-          <p className="text-xs text-gray-400 mt-1">
-            {t("purchased_on", {
-              date: purchasedDateStr,
-            })}
-          </p>
-        )}
-      </div>
-      <div className="mt-4 flex gap-3 flex-wrap">
-        {previewLink && (
-          <a
-            href={previewLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-indigo-600 hover:underline"
+        <div className="flex flex-wrap items-center gap-4">
+          {previewLink && (
+            <a
+              href={previewLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 font-medium text-indigo-600 hover:underline"
+            >
+              <FiEye className="text-lg" /> {t("preview")}
+            </a>
+          )}
+          {downloadLink && (
+            <a
+              href={downloadLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 font-medium text-green-600 hover:underline"
+            >
+              <FiDownload className="text-lg" /> {t("download")}
+            </a>
+          )}
+          <button
+            className={`flex items-center gap-1 font-medium ${
+              isWishlisted ? "text-red-500" : "text-red-400 hover:text-red-500"
+            }`}
+            onClick={handleWishlist}
+            aria-label={
+              isWishlisted
+                ? t("wishlist_remove", { defaultValue: "Remove from wishlist" })
+                : t("wishlist_add", { defaultValue: "Add to wishlist" })
+            }
           >
-            <FiEye className="text-lg" /> {t("preview")}
-          </a>
-        )}
-        {downloadLink && (
-          <a
-            href={downloadLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-green-600 hover:underline"
-          >
-            <FiDownload className="text-lg" /> {t("download")}
-          </a>
-        )}
-        <button
-          className={`flex items-center gap-1 ${
-            isWishlisted ? "text-red-500" : "text-red-400 hover:text-red-500"
-          }`}
-          onClick={handleWishlist}
-          aria-label={
-            isWishlisted
-              ? t("wishlist_remove", { defaultValue: "Remove from wishlist" })
-              : t("wishlist_add", { defaultValue: "Add to wishlist" })
-          }
-        >
-          <FiHeart />
-        </button>
+            <FiHeart />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -328,6 +403,8 @@ function BooksPage() {
   const loading = useLibraryStore((state) => state.loading);
   const error = useLibraryStore((state) => state.error);
   const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
+  const fetchWishlist = useBookWishlistStore((state) => state.fetchWishlist);
+  const wishlistHydrated = useBookWishlistStore((state) => state.hasHydrated);
 
   // Keep SSR/CSR markup consistent to avoid hydration errors.
   const [mounted, setMounted] = useState(false);
@@ -341,6 +418,11 @@ function BooksPage() {
     setHasRequested(true);
     fetchLibrary();
   }, [hasRequested, fetchLibrary]);
+
+  useEffect(() => {
+    if (wishlistHydrated) return;
+    fetchWishlist().catch(() => {});
+  }, [wishlistHydrated, fetchWishlist]);
 
   const normalizedBooks = useMemo(() => {
     if (!Array.isArray(books)) return [];
@@ -384,13 +466,17 @@ function BooksPage() {
       )}
 
       {uiLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <BookCardSkeleton key={index} />
-          ))}
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="grid justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="w-full max-w-md">
+                <BookCardSkeleton />
+              </div>
+            ))}
+          </div>
         </div>
       ) : normalizedBooks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
           <FiEye className="mb-4 text-3xl" />
           <p className="text-base font-medium">{t("no_books")}</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -400,13 +486,21 @@ function BooksPage() {
             })}
           </p>
         </div>
+      ) : normalizedBooks.length === 1 ? (
+        <BookCardBoundary key={String(normalizedBooks[0]?.id ?? 0)} book={normalizedBooks[0]}>
+          <div className="mx-auto w-full max-w-2xl">
+            <BookCard book={normalizedBooks[0]} />
+          </div>
+        </BookCardBoundary>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {normalizedBooks.map((book, index) => (
-            <BookCardBoundary key={String(book?.id ?? index)} book={book}>
-              <BookCard book={book} />
-            </BookCardBoundary>
-          ))}
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="grid justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {normalizedBooks.map((book, index) => (
+              <BookCardBoundary key={String(book?.id ?? index)} book={book}>
+                <BookCard book={book} />
+              </BookCardBoundary>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -436,7 +530,7 @@ export async function getServerSideProps(ctx) {
 
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard", "common"], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["dashboard", "common", "website"], nextI18NextConfig)),
     },
   };
 }

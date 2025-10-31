@@ -153,6 +153,17 @@ api.interceptors.response.use(
       lastNetworkToast = Date.now();
     }
 
+    if (error.response?.status === 403) {
+      const responseMessage =
+        error.response?.data?.message || error.response?.data?.error ||
+        (typeof error.response?.data === "string" ? error.response.data : null);
+      const message = responseMessage || "You do not have permission to perform this action.";
+      if (!isCanceled) {
+        toast.error(message);
+      }
+      return Promise.reject(error);
+    }
+
     const isAuthRoute = [
       "/auth/login",
       "/auth/register",

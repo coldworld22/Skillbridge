@@ -10,8 +10,8 @@ export default function IncompleteAlertModal() {
   useEffect(() => {
     if (!user) return;
 
-    // 🎯 Only show for Student or Instructor roles
-    const isRelevantRole = user.role === "Student" || user.role === "Instructor";
+    // 🎯 Only show for Student role (instructors no longer need profile completion modal)
+    const isRelevantRole = user.role === "Student";
 
     const needsProfile = !user.profile_complete || !user.is_email_verified;
 
@@ -31,10 +31,7 @@ export default function IncompleteAlertModal() {
         </p>
         <button
           onClick={() => {
-            const path = user.role === "Instructor"
-              ? "/dashboard/instructor/profile/edit"
-              : "/dashboard/student/profile/edit";
-            router.push(path);
+            router.push("/dashboard/student/profile/edit");
           }}
 
           className="bg-yellow-500 px-4 py-2 rounded text-gray-900 font-semibold"

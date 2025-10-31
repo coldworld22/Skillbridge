@@ -5,8 +5,9 @@ const logger = require('../../../utils/logger.js');
 const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
-
 const messageService = require("../../messages/messages.service");
+const { sendPasswordChangeEmails } = require("../passwordNotifications.service");
+const studentService = require("./student.service");
 
 
 /**
@@ -178,7 +179,9 @@ exports.changePassword = async (req, res) => {
       .json({ message: "New password must be at least 8 characters." });
   }
 
-  const [user] = await db("users").where({ id: userId }).select("password_hash");
+  const [user] = await db("users")
+    .where({ id: userId })
+    .select("password_hash", "email", "full_name", "role");
   if (!user) {
     return res.status(404).json({ message: "User not found." });
   }
@@ -207,5 +210,102 @@ exports.changePassword = async (req, res) => {
     message: "Your password was changed successfully",
   });
 
+  await sendPasswordChangeEmails({
+    targetUser: {
+      id: userId,
+      email: user.email,
+      full_name: user.full_name,
+      role: user.role || req.user.role,
+    },
+    actor: req.user,
+  });
+
   res.json({ message: "Password changed successfully." });
+};
+
+/**
+ * @desc Get consolidated student settings
+ * @route GET /api/users/student/settings
+ * @access Student
+ */
+exports.getSettings = async (req, res) => {
+  try {
+    const settings = await studentService.getStudentSettings(req.user.id);
+    res.json(settings);
+  } catch (error) {
+    logger.error("Failed to load student settings", error);
+    res.status(500).json({ message: "Failed to load student settings" });
+  }
+};
+
+/**
+ * @desc Update learning preferences
+ * @route PATCH /api/users/student/settings/learning
+ * @access Student
+ */
+exports.updateLearningPreferences = async (req, res) => {
+  try {
+    const learning = await studentService.updateLearningPreferences(
+      req.user.id,
+      req.body
+    );
+    res.json({ message: "Learning preferences updated", learning });
+  } catch (error) {
+    logger.error("Failed to update learning preferences", error);
+    res.status(500).json({ message: "Failed to update learning preferences" });
+  }
+};
+
+/**
+ * @desc Update privacy & security settings
+ * @route PATCH /api/users/student/settings/privacy
+ * @access Student
+ */
+exports.updatePrivacySettings = async (req, res) => {
+  try {
+    const privacy = await studentService.updatePrivacySettings(
+      req.user.id,
+      req.body
+    );
+    res.json({ message: "Privacy settings updated", privacy });
+  } catch (error) {
+    logger.error("Failed to update privacy settings", error);
+    res.status(500).json({ message: "Failed to update privacy settings" });
+  }
+};
+
+/**
+ * @desc Update UI preferences
+ * @route PATCH /api/users/student/settings/ui
+ * @access Student
+ */
+exports.updateUiPreferences = async (req, res) => {
+  try {
+    const ui = await studentService.updateUiPreferences(req.user.id, req.body);
+    res.json({ message: "UI preferences updated", ui });
+  } catch (error) {
+    logger.error("Failed to update UI preferences", error);
+    res.status(500).json({ message: "Failed to update UI preferences" });
+  }
+};
+
+/**
+ * @desc Update account information
+ * @route PATCH /api/users/student/settings/account
+ * @access Student
+ */
+exports.updateAccountInfo = async (req, res) => {
+  try {
+    const updated = await studentService.updateAccountInfo(
+      req.user.id,
+      req.body
+    );
+    res.json({
+      message: "Account information updated",
+      account: updated,
+    });
+  } catch (error) {
+    logger.error("Failed to update account information", error);
+    res.status(500).json({ message: "Failed to update account information" });
+  }
 };

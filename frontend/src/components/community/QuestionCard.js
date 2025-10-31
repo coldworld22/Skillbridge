@@ -1,62 +1,131 @@
-import { useRouter } from "next/router";
-import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaHeart, FaUser } from "react-icons/fa";
+import Link from "next/link";
+import {
+  FaArrowUp,
+  FaComment,
+  FaEye,
+  FaHeart,
+  FaCheckCircle,
+  FaAward,
+} from "react-icons/fa";
+
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 const QuestionCard = ({ question }) => {
-  const router = useRouter();
+  const createdLabel = formatDate(question.createdAt);
+  const updatedLabel =
+    question.updatedAt && question.updatedAt !== question.createdAt
+      ? formatDate(question.updatedAt)
+      : null;
 
-  const tags = Array.isArray(question.tags)
-    ? question.tags
-    : [];
-  const answersCount = typeof question.replies === "number"
-    ? question.replies
-    : 0;
-
-  const description = question.description || question.content || "";
+  const initials = question.user.name
+    ? question.user.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "AN";
 
   return (
-    <div
-      className="bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer"
-      onClick={() => router.push(`/community/question/${question.id}`)}
+    <Link
+      href={`/community/question/${question.id}`}
+      className="group block rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-sm transition hover:-translate-y-1 hover:border-yellow-400/50 hover:shadow-xl"
     >
-      {/* Votes */}
-      <div className="flex items-center space-x-2">
-        <FaArrowUp />
-        <span className="text-yellow-400 font-bold">{question.votes ?? 0}</span>
-        <FaArrowDown />
-        <span className="flex items-center gap-1 text-red-400 ml-4"><FaHeart /> {question.likes ?? 0}</span>
-      </div>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-white transition-colors group-hover:text-yellow-200">
+            {question.title}
+          </h2>
+          <p className="mt-3 text-sm text-slate-300">
+            {question.excerpt || "No description provided yet."}
+          </p>
+        </div>
+        <div className="text-right text-xs uppercase tracking-wider text-slate-500">
+          <span className="block font-semibold text-slate-200">
+            {createdLabel}
+          </span>
+          {updatedLabel && <span>Updated {updatedLabel}</span>}
+        </div>
+      </header>
 
-      {/* Question Content */}
-      <h2 className="text-lg font-bold text-white">{question.title}</h2>
-      <p className="text-gray-400">{description}</p>
-
-      {/* Tags */}
-      <div className="flex space-x-2 mt-2">
-        {tags.length > 0 ? (
-          tags.map((tag, index) => (
-            <span key={index} className="bg-yellow-600 px-2 py-1 rounded text-sm text-white">
-              {tag}
-            </span>
-          ))
-        ) : (
-          <span className="text-gray-500">No tags</span>
+      <div className="mt-5 flex flex-wrap gap-3 text-xs font-medium text-slate-200">
+        <span className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1">
+          <FaArrowUp className="text-yellow-300" />
+          {question.votes} votes
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1">
+          <FaComment className="text-emerald-300" />
+          {question.answersCount} answers
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1">
+          <FaEye className="text-slate-400" />
+          {question.views} views
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1">
+          <FaHeart className="text-rose-300" />
+          {question.likes} likes
+        </span>
+        {question.bounty > 0 && (
+          <span className="inline-flex items-center gap-2 rounded-full border border-yellow-400/50 bg-yellow-400/10 px-3 py-1 text-yellow-200">
+            <FaAward /> Bounty {question.bounty}
+          </span>
+        )}
+        {question.resolved && (
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-emerald-200">
+            <FaCheckCircle /> Resolved
+          </span>
         )}
       </div>
 
-      {/* Footer: Views, Answers Count, User Info */}
-      <div className="flex justify-between mt-3 text-gray-400 text-sm">
-        <span className="flex items-center gap-1"><FaEye /> {question.views ?? 0} views</span>
-        <span className="flex items-center gap-1"><FaComment /> {answersCount} answers</span>
-        <span className="flex items-center gap-1">
-          {question.user_avatar ? (
-            <img src={question.user_avatar} alt="avatar" className="w-5 h-5 rounded-full" />
+      {question.tags.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {question.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-slate-800 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-200 transition group-hover:border-yellow-400/40 group-hover:text-yellow-200"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <footer className="mt-6 flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-3">
+          {question.user.avatar ? (
+            <img
+              src={question.user.avatar}
+              alt={`${question.user.name} avatar`}
+              className="h-9 w-9 rounded-full border border-slate-700 object-cover"
+            />
           ) : (
-            <FaUser />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800 font-semibold text-slate-200">
+              {initials}
+            </div>
           )}
-          <span className="text-yellow-500">{question.user?.name || question.user_name || 'Anonymous'}</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-slate-200">
+              {question.user.name}
+            </span>
+            <span className="text-[11px] uppercase tracking-widest text-slate-500">
+              Asked {createdLabel}
+            </span>
+          </div>
+        </div>
+        <span className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+          View details
         </span>
-      </div>
-    </div>
+      </footer>
+    </Link>
   );
 };
 

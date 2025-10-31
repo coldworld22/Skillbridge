@@ -1,7 +1,11 @@
 import api from "@/services/api/api";
 
-export const fetchReviews = async (bookId) => {
-  const { data } = await api.get(`/book-reviews/books/${bookId}`);
+export const fetchReviews = async (bookId, config = {}) => {
+  const requestConfig = { ...config };
+  const { data } = await api.get(
+    `/book-reviews/books/${bookId}`,
+    requestConfig,
+  );
   return data?.data || { reviews: [], averageRating: 0 };
 };
 

@@ -74,6 +74,7 @@ router.get("/dashboard-stats", controller.getDashboardStats);
 // ─────────────────────────────────────────────
 // 📄 Admin Change any Password
 // ─────────────────────────────────────────────
+router.patch("/change-password", controller.changePassword);
 router.post("/reset-password/:userId", isSuperAdmin, controller.resetPasswordAsAdmin);
 
 // ─────────────────────────────────────────────

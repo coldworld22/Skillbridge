@@ -11,7 +11,9 @@ exports.getResponsesByOffer = (offerId) => {
     .select(
       "r.*",
       "u.full_name as instructor_name",
-      "u.avatar_url as instructor_avatar"
+      "u.avatar_url as instructor_avatar",
+      "u.email as instructor_email",
+      "u.phone as instructor_phone"
     )
     .where("r.offer_id", offerId)
     .orderBy("r.responded_at", "asc");

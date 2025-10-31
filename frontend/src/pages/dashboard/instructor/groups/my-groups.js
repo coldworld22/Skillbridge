@@ -39,10 +39,16 @@ export default function MyGroupsPage() {
       });
   }, [hasHydrated, user]);
 
+  const getCreatedAt = (group) => group.createdAt ?? group.created_at ?? null;
+
   const sortList = (list) => {
     const arr = [...list];
     if (sortBy === 'newest') {
-      arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      arr.sort(
+        (a, b) =>
+          (getCreatedAt(b) ? new Date(getCreatedAt(b)).getTime() : 0) -
+          (getCreatedAt(a) ? new Date(getCreatedAt(a)).getTime() : 0),
+      );
     } else if (sortBy === 'az') {
       arr.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -56,9 +62,14 @@ export default function MyGroupsPage() {
     groups.filter((g) => String(g.creator_id) !== String(user?.id))
   );
 
-  const cancelJoinRequest = (groupId) => {
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
-    toast.success('Join request cancelled.');
+  const cancelJoinRequest = async (groupId) => {
+    try {
+      await groupService.cancelJoinRequest(groupId);
+      setGroups((prev) => prev.filter((g) => g.id !== groupId));
+      toast.success('Join request cancelled.');
+    } catch (err) {
+      toast.error('Failed to cancel join request');
+    }
   };
 
   const renderGroupCard = (group) => (

@@ -18,6 +18,7 @@
   "your_cart": "سلة المشتريات",
   "view_cart": "عرض السلة",
   "loading": "جاري التحميل...",
+  "failed_live_session": "فشل بدء الجلسة المباشرة",
   "language_changed": "تم تغيير اللغة",
   "language_changed_to": "تم تغيير اللغة إلى {{name}}",
   "language_change_failed": "فشل تغيير اللغة",

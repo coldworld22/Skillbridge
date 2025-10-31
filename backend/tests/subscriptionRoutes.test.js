@@ -13,17 +13,26 @@ jest.mock('../src/modules/payments/payments.service', () => ({
   STATUS: { PAID: 'paid' },
 }));
 
+jest.mock('../src/modules/plans/plans.service', () => ({
+  getPlanById: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'user1' }; next(); },
 }));
 
 const service = require('../src/modules/subscriptions/subscription.service');
 const paymentsService = require('../src/modules/payments/payments.service');
+const plansService = require('../src/modules/plans/plans.service');
 const routes = require('../src/modules/subscriptions/subscriptions.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/user-subscriptions', routes);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('GET /api/user-subscriptions/me', () => {
   it('returns active subscriptions for authenticated user', async () => {
@@ -41,6 +50,11 @@ describe('POST /api/user-subscriptions', () => {
   it('creates or renews a subscription for the authenticated user', async () => {
     const mock = { id: 's1', plan_id: 'p1' };
     service.createOrRenewSubscription.mockResolvedValue(mock);
+    plansService.getPlanById.mockResolvedValue({
+      id: 'p1',
+      price_monthly: 9.99,
+      price_yearly: 99.99,
+    });
     paymentsService.getById.mockResolvedValue({
       id: 'pay1',
       user_id: 'user1',
@@ -65,12 +79,54 @@ describe('POST /api/user-subscriptions', () => {
 
   it('returns 400 if payment is missing or invalid', async () => {
     paymentsService.getById.mockResolvedValue(null);
+    plansService.getPlanById.mockResolvedValue({
+      id: 'p1',
+      price_monthly: 9.99,
+      price_yearly: 99.99,
+    });
 
     const res = await request(app)
       .post('/api/user-subscriptions')
       .send({ plan_id: 'p1', payment_id: 'bad' });
 
     expect(res.status).toBe(400);
+  });
+
+  it('allows subscribing to a free plan without a payment', async () => {
+    const mock = { id: 's-free', plan_id: 'p-free' };
+    service.createOrRenewSubscription.mockResolvedValue(mock);
+    plansService.getPlanById.mockResolvedValue({
+      id: 'p-free',
+      price_monthly: 0,
+      price_yearly: 0,
+    });
+
+    const res = await request(app)
+      .post('/api/user-subscriptions')
+      .send({ plan_id: 'p-free' });
+
+    expect(res.status).toBe(200);
+    expect(paymentsService.getById).not.toHaveBeenCalled();
+    expect(service.createOrRenewSubscription).toHaveBeenCalledWith({
+      user_id: 'user1',
+      plan_id: 'p-free',
+      interval: 'monthly',
+    });
+  });
+
+  it('requires payment when plan price is greater than zero', async () => {
+    plansService.getPlanById.mockResolvedValue({
+      id: 'p2',
+      price_monthly: 12,
+      price_yearly: 0,
+    });
+
+    const res = await request(app)
+      .post('/api/user-subscriptions')
+      .send({ plan_id: 'p2' });
+
+    expect(res.status).toBe(400);
+    expect(paymentsService.getById).not.toHaveBeenCalled();
   });
 });
 

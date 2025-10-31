@@ -5,6 +5,7 @@ const {
   parseFeatureValue,
   serializeFeatureValue,
   getFeaturePresentation,
+  buildPlanFeatureBundle,
 } = require("../planFeatureMetadata");
 
 describe("plan feature metadata", () => {
@@ -62,5 +63,31 @@ describe("plan feature metadata", () => {
   test("module order provides deterministic grouping", () => {
     expect(Array.isArray(MODULE_ORDER)).toBe(true);
     expect(MODULE_ORDER).toContain("ads");
+  });
+
+  test("buildPlanFeatureBundle groups features with parsed values", () => {
+    const plan = {
+      id: "plan-1",
+      target_role: "instructor",
+      max_courses: 3,
+      ad_credits: 12,
+      features: [
+        { id: "feat-1", feature_key: "groups_create", value: "true" },
+        { id: "feat-2", feature_key: "commission_rate", value: "0.2" },
+      ],
+    };
+    const bundle = buildPlanFeatureBundle(plan);
+    expect(bundle).toBeDefined();
+    expect(Array.isArray(bundle.sections)).toBe(true);
+    expect(bundle.sections.length).toBeGreaterThan(0);
+    expect(bundle.featureMap.groups_create.value).toBe(true);
+    expect(bundle.featureMap.commission_rate.value).toBeCloseTo(0.2);
+    expect(bundle.featureMap.ad_credits.value).toBe(12);
+    const classesSection = bundle.sections.find((section) => section.module === "classes");
+    expect(classesSection).toBeDefined();
+    const hasMaxCourses = classesSection.features.some(
+      (feature) => feature.feature_key === "max_courses"
+    );
+    expect(hasMaxCourses).toBe(true);
   });
 });

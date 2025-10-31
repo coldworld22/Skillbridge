@@ -14,10 +14,10 @@ exports.listLibrary = catchAsync(async (req, res) => {
 });
 
 exports.downloadBook = catchAsync(async (req, res) => {
-  const { bookId } = req.params;
+  const bookId = req.params.bookId || req.params.id || req.params.book_id;
   // Grant download if the student has purchased (or has been granted access via subscription)
-  const book = await service.getBookForDownload(bookId, req.user.id);
-  if (!book) {
+  const book = await service.getBookForDownload(req.user.id, bookId);
+  if (!book || !book.pdf_url) {
     // No purchase record found: deny access
     return res.status(403).json({ message: "Access denied" });
   }
@@ -66,6 +66,7 @@ exports.downloadBook = catchAsync(async (req, res) => {
     "Content-Disposition",
     `attachment; filename="${buildDownloadFilename(book.title)}"`
   );
+  res.setHeader("Cache-Control", "private, no-transform");
 
   const stream = fs.createReadStream(filePath);
   stream.on("error", () => {

@@ -17,6 +17,9 @@ const {
 const db = require("../../config/database");
 const { resolveAdPlanFeatures, normalizePlanKey } = require("./ads.utils");
 const { getActiveInstructorPlan } = require("../plans/instructor.helper");
+const {
+  getActiveSubscriptionForPlan,
+} = require("../plans/subscription.helper");
 
 const ALLOWED_INSTRUCTOR_AD_PLAN_KEYS = new Set([
   "basic",
@@ -38,15 +41,21 @@ const numericOrNull = (value) => {
 };
 
 const resolveInstructorPlanForAds = async (user) => {
-  const planId =
+  let planId =
     user.plan_id || user.plan?.id || user.subscription?.plan_id;
 
   let plan = planId ? await planService.getPlanById(planId) : null;
+  let subscriptionId =
+    user.subscription?.id || user.subscription_id || null;
 
   if (!plan) {
     const active = await getActiveInstructorPlan(user.id);
     if (active?.id) {
       plan = await planService.getPlanById(active.id);
+      subscriptionId = active.subscription_id || subscriptionId;
+      if (!planId) {
+        planId = active.id;
+      }
     }
   }
 
@@ -67,6 +76,15 @@ const resolveInstructorPlanForAds = async (user) => {
 
   if (!Array.isArray(plan.features)) {
     plan.features = [];
+  }
+
+  if (!subscriptionId) {
+    const activeSub = await getActiveSubscriptionForPlan(user.id, plan.id);
+    subscriptionId = activeSub?.subscription_id || null;
+  }
+
+  if (subscriptionId) {
+    plan.active_subscription_id = subscriptionId;
   }
 
   return plan;
@@ -235,6 +253,22 @@ exports.createAd = catchAsync(async (req, res) => {
       plan,
       req.user.id
     );
+    let activeSubscriptionId =
+      plan.active_subscription_id ||
+      (await getActiveSubscriptionForPlan(req.user.id, plan.id))
+        ?.subscription_id ||
+      null;
+    if (
+      allowance !== null &&
+      allowance !== undefined &&
+      !activeSubscriptionId
+    ) {
+      throw new AppError(
+        "An active subscription is required to use ad credits",
+        403
+      );
+    }
+    plan.active_subscription_id = activeSubscriptionId;
     if (remainingCredits !== null && remainingCredits <= 0) {
       throw new AppError("Insufficient ad credits", 403);
     }
@@ -247,6 +281,7 @@ exports.createAd = catchAsync(async (req, res) => {
           planId: plan.id,
           userId: req.user.id,
           allowance,
+          subscriptionId: plan.active_subscription_id,
           trx,
         });
         if (!result.consumed) {

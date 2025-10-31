@@ -100,8 +100,8 @@ export const fetchTutorialById = async (id) => {
     price: t.price,
     currency: t.currency,
     isFree: !t.is_paid,
-    allowInstallments: Boolean(t.allow_installments ?? t.allowInstallments ?? false),
-    installments: t.installments ? String(t.installments) : "1",
+    allowInstallments: false,
+    installments: "1",
     includedPlans: (() => {
       if (Array.isArray(t.included_plans)) return t.included_plans;
       if (typeof t.included_plans === "string") {

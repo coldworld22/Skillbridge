@@ -1,6 +1,6 @@
 // pages/payments/success.js
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
@@ -11,15 +11,54 @@ import { enrollInTutorial, fetchTutorialDetails } from '@/services/tutorialServi
 import { fetchPlanDetails } from '@/services/public/planService';
 import { fetchMyPayments } from '@/services/student/paymentService';
 import {
-  fetchInvoiceByPaymentId,
-  downloadInvoice,
+  fetchInvoiceByPaymentId as fetchStudentInvoiceByPaymentId,
+  downloadInvoice as downloadStudentInvoice,
 } from '@/services/student/invoiceService';
+import {
+  fetchInvoiceByPaymentId as fetchInstructorInvoiceByPaymentId,
+  downloadInvoice as downloadInstructorInvoice,
+} from '@/services/instructor/invoiceService';
 import { subscribeToPlan, fetchMySubscription } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
 import { useTranslation } from 'next-i18next';
 import useSubscriptionStore from '@/store/subscriptionStore';
+import useAuthStore from '@/store/auth/authStore';
+import { recordGoogleAdsConversion } from '@/utils/googleAds';
+
+const normalizeRole = (value) => {
+  if (!value) return null;
+  const str = String(value).trim().toLowerCase();
+  if (!str) return null;
+  if (str.includes('instructor')) return 'instructor';
+  if (str.includes('student')) return 'student';
+  return str;
+};
+
+const parseNumericValue = (value) => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.,-]+/g, '').replace(',', '.');
+    if (!cleaned) return undefined;
+    const num = Number(cleaned);
+    return Number.isNaN(num) ? undefined : num;
+  }
+  return undefined;
+};
+
+const pickFirstDefined = (...values) => {
+  for (const val of values) {
+    if (val === undefined || val === null) continue;
+    if (typeof val === 'string') {
+      if (val.trim() !== '') return val;
+    } else {
+      return val;
+    }
+  }
+  return undefined;
+};
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -38,9 +77,14 @@ export default function PaymentSuccessPage() {
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [bannerMessage, setBannerMessage] = useState(null);
   const [pendingPaymentFallback, setPendingPaymentFallback] = useState(null);
+  const [planRole, setPlanRole] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
+  const refreshUser = useAuthStore((state) => state.refreshUser);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const normalizedUserRole = useMemo(() => normalizeRole(userRole), [userRole]);
+  const conversionTrackedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -64,7 +108,7 @@ export default function PaymentSuccessPage() {
   const itemId = queryItemId || pendingPaymentFallback?.itemId || null;
   const payment_id = queryPaymentId || pendingPaymentFallback?.paymentId || null;
 
-  const confirmPlanSubscription = async () => {
+  const confirmPlanSubscription = useCallback(async () => {
     if (payment_id && paymentInfo?.status !== 'paid') return;
     try {
       const sub = await fetchMySubscription();
@@ -87,14 +131,22 @@ export default function PaymentSuccessPage() {
       setSubscriptionInfo(current);
       setSubscriptionError(null);
       await fetchSubscription();
+      if (typeof refreshUser === 'function') {
+        try {
+          await refreshUser();
+        } catch (err) {
+          console.warn('Failed to refresh user after subscription', err);
+        }
+      }
     } catch (_) {
       setSubscriptionError('Failed to activate subscription');
     }
-  };
+  }, [fetchSubscription, itemId, paymentInfo?.status, payment_id, refreshUser]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!itemType || !itemId) {
       await fetchLibrary();
+      setPlanRole(null);
       setLoading(false);
       return;
     }
@@ -102,8 +154,11 @@ export default function PaymentSuccessPage() {
     setFetchError(null);
 
     let payment = null;
+    let detectedPlanRole = null;
+
     try {
       if (itemType === 'class') {
+        setPlanRole(null);
         if (!payment_id) {
           try {
             await enrollInClass(itemId);
@@ -119,6 +174,7 @@ export default function PaymentSuccessPage() {
           setItemInfo(null);
         }
       } else if (itemType === 'book') {
+        setPlanRole(null);
         try {
           const details = await fetchBook(itemId);
           setItemInfo(details?.data ?? details);
@@ -126,6 +182,7 @@ export default function PaymentSuccessPage() {
           setItemInfo(null);
         }
       } else if (itemType === 'tutorial') {
+        setPlanRole(null);
         if (!payment_id) {
           try {
             await enrollInTutorial(itemId);
@@ -143,17 +200,38 @@ export default function PaymentSuccessPage() {
         try {
           const details = await fetchPlanDetails(itemId);
           const data = details?.data ?? details;
+          detectedPlanRole =
+            normalizeRole(data?.target_role) ||
+            normalizeRole(data?.role) ||
+            normalizeRole(data?.slug) ||
+            normalizeRole(pendingPaymentFallback?.role);
+          setPlanRole(detectedPlanRole);
           setItemInfo({ ...data, title: data.name });
         } catch (_) {
           setItemInfo(null);
+          setPlanRole(null);
         }
+      } else {
+        setPlanRole(null);
       }
 
       if (payment_id) {
         try {
+          const paymentsPromise = fetchMyPayments();
+          const invoiceRole =
+            itemType === 'plan'
+              ? normalizeRole(detectedPlanRole) ||
+                normalizeRole(pendingPaymentFallback?.role) ||
+                normalizedUserRole
+              : 'student';
+          const invoicePromise =
+            itemType === 'plan' && invoiceRole === 'instructor'
+              ? fetchInstructorInvoiceByPaymentId(payment_id)
+              : fetchStudentInvoiceByPaymentId(payment_id);
+
           const [payments, invoice] = await Promise.all([
-            fetchMyPayments(),
-            fetchInvoiceByPaymentId(payment_id),
+            paymentsPromise,
+            invoicePromise,
           ]);
           payment = payments.find(
             (p) => String(p.id) === String(payment_id)
@@ -163,9 +241,15 @@ export default function PaymentSuccessPage() {
         } catch (_) {
           setFetchError('Failed to load payment details');
         }
+      } else {
+        setPaymentInfo(null);
+        setInvoiceInfo(null);
       }
 
-      if (itemType === 'plan' && (!payment_id || payment?.status === 'paid')) {
+      if (
+        itemType === 'plan' &&
+        (!payment_id || payment?.status === 'paid')
+      ) {
         await confirmPlanSubscription();
       }
     } finally {
@@ -185,14 +269,134 @@ export default function PaymentSuccessPage() {
       await fetchLibrary();
       setLoading(false);
     }
-  };
+  }, [
+    fetchLibrary,
+    itemId,
+    itemType,
+    payment_id,
+    pendingPaymentFallback,
+    queryItemId,
+    queryItemType,
+    queryPaymentId,
+    removeItem,
+    confirmPlanSubscription,
+    normalizedUserRole,
+  ]);
 
   useEffect(() => {
     loadData();
-  }, [itemType, itemId, payment_id]);
+  }, [loadData]);
+
+  const resolvedPlanRole = useMemo(() => {
+    if (itemType !== 'plan') return null;
+    const candidates = [
+      normalizeRole(planRole),
+      normalizeRole(subscriptionInfo?.role),
+      normalizeRole(itemInfo?.target_role),
+      normalizeRole(itemInfo?.role),
+      normalizeRole(pendingPaymentFallback?.role),
+      normalizedUserRole,
+    ];
+    return candidates.find(Boolean) || null;
+  }, [
+    itemType,
+    planRole,
+    subscriptionInfo?.role,
+    itemInfo?.target_role,
+    itemInfo?.role,
+    pendingPaymentFallback,
+    normalizedUserRole,
+  ]);
+
+  useEffect(() => {
+    if (conversionTrackedRef.current) return;
+    if (loading) return;
+    if (!itemType && !paymentInfo && !pendingPaymentFallback) return;
+
+    const numericValue = pickFirstDefined(
+      parseNumericValue(paymentInfo?.amount),
+      parseNumericValue(paymentInfo?.total),
+      parseNumericValue(paymentInfo?.total_amount),
+      parseNumericValue(paymentInfo?.price),
+      parseNumericValue(pendingPaymentFallback?.amount),
+      parseNumericValue(itemInfo?.price),
+      parseNumericValue(itemInfo?.sale_price)
+    );
+
+    const currencyRaw = pickFirstDefined(
+      paymentInfo?.currency,
+      paymentInfo?.currency_code,
+      paymentInfo?.currencyCode,
+      pendingPaymentFallback?.currency,
+      paymentInfo?.currency_symbol
+    );
+    const currency =
+      typeof currencyRaw === 'string' && currencyRaw.trim()
+        ? currencyRaw.trim().toUpperCase()
+        : undefined;
+
+    const conversionParams = {
+      item_type: itemType || pendingPaymentFallback?.itemType || 'unknown',
+      item_id: itemId || pendingPaymentFallback?.itemId,
+    };
+
+    const transactionId = pickFirstDefined(
+      payment_id,
+      paymentInfo?.id,
+      paymentInfo?.payment_id,
+      pendingPaymentFallback?.paymentId
+    );
+    if (transactionId) {
+      conversionParams.transaction_id = transactionId;
+    }
+
+    if (numericValue !== undefined) {
+      conversionParams.value = numericValue;
+    }
+
+    if (currency) {
+      conversionParams.currency = currency;
+    }
+
+    if (resolvedPlanRole) {
+      conversionParams.plan_role = resolvedPlanRole;
+    }
+
+    let sent = false;
+    const events = ['purchase'];
+    const type = conversionParams.item_type;
+    if (type === 'plan') events.push('subscription');
+    if (type === 'class') events.push('class_enrollment');
+    if (type === 'tutorial') events.push('tutorial_enrollment');
+    if (type === 'book') events.push('book_purchase');
+
+    events.forEach((eventKey) => {
+      if (recordGoogleAdsConversion(eventKey, conversionParams)) {
+        sent = true;
+      }
+    });
+
+    if (sent) {
+      conversionTrackedRef.current = true;
+    }
+  }, [
+    loading,
+    itemType,
+    itemId,
+    payment_id,
+    paymentInfo,
+    pendingPaymentFallback,
+    itemInfo,
+    resolvedPlanRole,
+  ]);
 
   const handleDownloadInvoice = () => {
-    if (invoiceInfo?.id) downloadInvoice(invoiceInfo.id);
+    if (!invoiceInfo?.id) return;
+    if (itemType === 'plan' && resolvedPlanRole === 'instructor') {
+      downloadInstructorInvoice(invoiceInfo.id);
+    } else {
+      downloadStudentInvoice(invoiceInfo.id);
+    }
   };
 
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
@@ -231,7 +435,11 @@ export default function PaymentSuccessPage() {
         ? `Your subscription to ${planName} is now active.`
         : 'Your subscription is now active.';
     }
-    link = '/dashboard/student/settings?tab=billing';
+    const roleForRedirect = resolvedPlanRole || 'student';
+    link =
+      roleForRedirect === 'instructor'
+        ? '/dashboard/instructor/settings'
+        : '/dashboard/student/settings?tab=billing';
     linkLabel = 'Manage Billing';
   }
 
@@ -262,7 +470,7 @@ export default function PaymentSuccessPage() {
                 <FaChalkboardTeacher /> Instructor access and classroom link will be shown in your dashboard once class starts.
               </p>
               <p className="flex items-center gap-2 text-sm text-gray-300 mt-2">
-                <FaCalendarAlt /> You'll also receive updates via email, WhatsApp, SMS, and dashboard notifications.
+                <FaCalendarAlt /> You&apos;ll also receive updates via email, WhatsApp, SMS, and dashboard notifications.
               </p>
             </div>
           )}
@@ -345,7 +553,10 @@ export default function PaymentSuccessPage() {
           </Link>
 
           <p className="text-sm text-gray-500 mt-4">
-            Need help? <a href="/support" className="text-yellow-400 underline">Contact Support</a>
+            Need help?{' '}
+            <Link href="/support" className="text-yellow-400 underline">
+              Contact Support
+            </Link>
           </p>
         </div>
       </main>

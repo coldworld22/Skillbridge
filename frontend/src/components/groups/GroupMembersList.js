@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import groupService from "@/services/groupService";
 import toast from "react-hot-toast";
-import { FaUserSlash, FaVolumeMute, FaUserShield, FaBan } from "react-icons/fa";
+import { FaUserSlash, FaUserShield, FaBan } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 export default function GroupMembersList({
   groupId,
   currentUserId,
   currentUserRole,
 }) {
+  const { t } = useTranslation("dashboard");
   const [members, setMembers] = useState([]);
 
   useEffect(() => {
@@ -17,51 +19,60 @@ export default function GroupMembersList({
   const handleAction = async (memberId, action) => {
     try {
       const success = await groupService.manageMember(groupId, memberId, action);
-      if (success) {
+      if (!success && action !== "kick") {
+        throw new Error("Action failed");
+      }
+
+      if (action === "kick") {
+        setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      } else {
         setMembers((prev) =>
           prev.map((m) =>
             m.id === memberId
-              ? { ...m, ...getUpdatedRoleOrStatus(m, action) }
+              ? { ...m, ...getUpdatedRoleOrStatus(action) }
               : m,
           ),
         );
-
-        toast.success(actionMessage(action));
       }
+
+      toast.success(actionMessage(action));
     } catch (_) {
-      toast.error("Failed to update member");
+      toast.error(t("groupMembersList.errors.update"));
     }
   };
 
   const actionMessage = (action) => {
     switch (action) {
       case "kick":
-        return "Member removed";
-      case "mute":
-        return "Member muted";
-      case "unmute":
-        return "Member unmuted";
+        return t("groupMembersList.actions.kick");
       case "promote":
-        return "Member promoted";
+        return t("groupMembersList.actions.promote");
       case "demote":
-        return "Member demoted";
+        return t("groupMembersList.actions.demote");
       case "disable":
-        return "Member disabled";
+        return t("groupMembersList.actions.disable");
       case "enable":
-        return "Member enabled";
+        return t("groupMembersList.actions.enable");
       default:
-        return "Action completed";
+        return t("groupMembersList.actions.default");
     }
   };
 
-  const getUpdatedRoleOrStatus = (member, action) => {
+  const resolveRoleLabel = (role) => {
+    switch (role) {
+      case "admin":
+        return t("groupMembersList.labels.admin");
+      case "moderator":
+        return t("groupMembersList.labels.moderator");
+      case "member":
+        return t("groupMembersList.labels.member");
+      default:
+        return role;
+    }
+  };
+
+  const getUpdatedRoleOrStatus = (action) => {
     switch (action) {
-      case "kick":
-        return { removed: true };
-      case "mute":
-        return { muted: true };
-      case "unmute":
-        return { muted: false };
       case "promote":
         return { role: "admin" };
       case "demote":
@@ -77,81 +88,72 @@ export default function GroupMembersList({
 
   return (
     <div>
-      <h3 className="font-semibold mb-2">👥 Group Members</h3>
+      <h3 className="font-semibold mb-2">
+        {t("groupMembersList.title")}
+      </h3>
       <ul className="space-y-2">
-        {members
-          .filter((m) => !m.removed)
-          .map((member) => (
-            <li
-              key={member.id}
-              className="flex items-center justify-between text-sm border-b pb-2"
-            >
-              <div>
-                <strong>{member.name}</strong>
-                <span className="text-xs ml-2 text-gray-500">
-                  ({member.role})
+        {members.map((member) => (
+          <li
+            key={member.id}
+            className="flex items-center justify-between text-sm border-b pb-2"
+          >
+            <div>
+              <strong>{member.name}</strong>
+              <span className="text-xs ml-2 text-gray-500">
+                ({resolveRoleLabel(member.role)})
+              </span>
+              {member.disabled && (
+                <span className="ml-1 text-red-400">
+                  {t("groupMembersList.labels.disabled")}
                 </span>
-                {member.muted && (
-                  <span className="ml-1 text-red-400">[Muted]</span>
-                )}
-                {member.disabled && (
-                  <span className="ml-1 text-red-400">[Disabled]</span>
-                )}
-              </div>
-              {member.id !== currentUserId &&
-                ["admin", "moderator"].includes(currentUserRole) && (
-                  <div className="flex gap-2">
-                    <button
-                      title="Kick"
-                      onClick={() => handleAction(member.id, "kick")}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <FaUserSlash />
-                    </button>
-                    <button
-                      title={member.disabled ? "Enable" : "Disable"}
-                      onClick={() =>
-                        handleAction(
-                          member.id,
-                          member.disabled ? "enable" : "disable",
-                        )
-                      }
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <FaBan />
-                    </button>
-                    <button
-                      title={member.muted ? "Unmute" : "Mute"}
-                      onClick={() =>
-                        handleAction(
-                          member.id,
-                          member.muted ? "unmute" : "mute",
-                        )
-                      }
-                      className="text-yellow-500 hover:text-yellow-600"
-                    >
-                      <FaVolumeMute />
-                    </button>
-                    <button
-                      title={
-                        member.role === "admin"
-                          ? "Demote to Member"
-                          : "Make Admin"
-                      }
-                      onClick={() =>
-                        handleAction(
-                          member.id,
-                          member.role === "admin" ? "demote" : "promote",
-                        )
-                      }
-                      className="text-blue-500 hover:text-blue-600"
-                    >
-                      <FaUserShield />
-                    </button>
-                  </div>
-                )}
-            </li>
-          ))}
+              )}
+            </div>
+            {member.id !== currentUserId &&
+              ["admin", "moderator"].includes(currentUserRole) && (
+                <div className="flex gap-2">
+                  <button
+                    title={t("groupMembersList.tooltips.kick")}
+                    onClick={() => handleAction(member.id, "kick")}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <FaUserSlash />
+                  </button>
+                  <button
+                    title={
+                      member.disabled
+                        ? t("groupMembersList.tooltips.enable")
+                        : t("groupMembersList.tooltips.disable")
+                    }
+                    onClick={() =>
+                      handleAction(
+                        member.id,
+                        member.disabled ? "enable" : "disable",
+                      )
+                    }
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <FaBan />
+                  </button>
+                  <button
+                    title={
+                      member.role === "admin"
+                        ? t("groupMembersList.tooltips.demote")
+                        : t("groupMembersList.tooltips.promote")
+                    }
+                    onClick={() =>
+                      handleAction(
+                        member.id,
+                        member.role === "admin" ? "demote" : "promote",
+                      )
+                    }
+                    className="text-blue-500 hover:text-blue-600"
+                  >
+                    <FaUserShield />
+                  </button>
+                </div>
+              )}
+          </li>
+        ))}
       </ul>
     </div>
   );

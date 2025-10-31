@@ -58,11 +58,17 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 
 ### Initial admin passwords
 
-Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in
-`backend/.env` before running the seed scripts if you want to control the
-passwords for the seeded Admin and SuperAdmin accounts. When left unset, the
-seed process will generate secure random passwords and print them to the
-console.
+The seed process provisions two built-in accounts: `SuperAdmin` and `Admin`.
+Set `APP_DOMAIN` in `backend/.env` first so the generated email addresses
+(`support@<APP_DOMAIN>` and `admin@<APP_DOMAIN>`) match your domain.
+
+- `ADMIN_INITIAL_PASSWORD` (optional) lets you control the Admin user's
+  password. If the variable is omitted a secure random password is generated
+  and printed in the seed output.
+- The SuperAdmin user is currently created with the default password
+  `Javaheat@18880`. Change this password immediately after the first login, or
+  edit `backend/src/seeds/seed_superadmin_user.js` before seeding if you prefer
+  a different default.
 
 ### Frontend (optional)
 

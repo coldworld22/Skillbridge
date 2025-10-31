@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
@@ -11,6 +11,9 @@ import { clearCache } from '@/services/admin/cacheService';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
+import useAuthStore from '@/store/auth/authStore';
+import { shouldDisplayNavItem } from '@/config/adminRoutePermissions';
+import usePermission from '@/hooks/usePermission';
 
 export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
@@ -19,6 +22,8 @@ export default function Sidebar({ role = 'admin' }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+  const user = useAuthStore((state) => state.user);
+  const { requirePermission } = usePermission();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -29,6 +34,9 @@ export default function Sidebar({ role = 'admin' }) {
   }, [fetchAppConfig]);
 
   const handleClearCache = async () => {
+    if (!requirePermission('manage_cache', 'You do not have permission to clear cache.')) {
+      return;
+    }
     try {
       await clearCache();
     } catch (err) {
@@ -44,6 +52,27 @@ export default function Sidebar({ role = 'admin' }) {
   };
 
   const navLinks = navMap[role] || [];
+  const filteredNavLinks = useMemo(() => {
+    return (navLinks || [])
+      .map(({ title, items }) => {
+        const filteredItems = (items || [])
+          .map((item) => {
+            if (item.isDropdown) {
+              const filteredDropdown = (item.dropdown || []).filter((child) =>
+                shouldDisplayNavItem(user, child.requiredPermissions)
+              );
+              if (!filteredDropdown.length) return null;
+              return { ...item, dropdown: filteredDropdown };
+            }
+            return shouldDisplayNavItem(user, item.requiredPermissions) ? item : null;
+          })
+          .filter(Boolean);
+
+        if (!filteredItems.length) return null;
+        return { title, items: filteredItems };
+      })
+      .filter(Boolean);
+  }, [navLinks, user]);
 
   const toggleDropdown = (label) => {
     setActiveDropdown((prev) => (prev === label ? null : label));
@@ -70,7 +99,7 @@ export default function Sidebar({ role = 'admin' }) {
         </div>
 
         <nav className="space-y-2">
-          {navLinks.map(({ title, items }) => (
+          {filteredNavLinks.map(({ title, items }) => (
             <div key={title} className="mb-4">
               <h3 className="text-xs font-semibold text-yellow-500 dark:text-yellow-400 uppercase tracking-wide px-4 mb-1 flex items-center gap-1">
                 {t(`sidebar.${title}`)} <Plus size={14} />
@@ -146,15 +175,6 @@ export default function Sidebar({ role = 'admin' }) {
           ))}
         </nav>
       </div>
-
-      {['admin','superadmin'].includes(role) && (
-        <button
-          onClick={handleClearCache}
-          className="flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-        >
-          {t('sidebar.clear_cache')}
-        </button>
-      )}
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
         &copy; {new Date().getFullYear()} {appName}

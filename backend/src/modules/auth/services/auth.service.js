@@ -167,7 +167,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password }) => {
+exports.loginUser = async ({ email, password, ip }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -185,7 +185,7 @@ exports.loginUser = async ({ email, password }) => {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
   }
 
-  const user = await userModel.findByEmail(email);
+  let user = await userModel.findByEmail(email);
   if (!user) {
     recordFailedAttempt(email);
     throw new AppError("Invalid credentials", 401);
@@ -205,11 +205,44 @@ exports.loginUser = async ({ email, password }) => {
   failedLoginAttempts.delete(email);
 
   // Mark user as online on successful login
-  await userModel.updateUser(user.id, {
+  const now = new Date();
+  const loginUpdate = {
     is_online: true,
-    updated_at: new Date(),
-  });
-  user.is_online = true;
+    updated_at: now,
+    last_login_at: now,
+  };
+  if (ip) {
+    loginUpdate.last_login_ip = ip;
+  }
+
+  try {
+    const [updatedUser] = await db("users")
+      .where({ id: user.id })
+      .update(loginUpdate)
+      .returning("*");
+    if (updatedUser) {
+      user = { ...user, ...updatedUser };
+    } else {
+      user = { ...user, ...loginUpdate };
+    }
+  } catch (err) {
+    if (err.code === "42703") {
+      const [fallback] = await db("users")
+        .where({ id: user.id })
+        .update({
+          is_online: true,
+          updated_at: now,
+        })
+        .returning("*");
+      if (fallback) {
+        user = { ...user, ...fallback };
+      } else {
+        user = { ...user, is_online: true, updated_at: now };
+      }
+    } else {
+      throw err;
+    }
+  }
 
   const roles = await userModel.getUserRoles(user.id);
   const permissions = typeof userModel.getUserPermissions === "function"

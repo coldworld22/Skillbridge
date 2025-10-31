@@ -123,35 +123,101 @@ exports.togglePin = async (userId, id) => {
   return updated;
 };
 
-exports.logModerationEvent = async ({ userId, message, matchedWords }) => {
+exports.logModerationEvent = async ({
+  userId,
+  message,
+  matchedWords = [],
+  contextType = "direct_message",
+  contextId = null,
+  messageId = null,
+  severity = "medium",
+  status = "flagged",
+  notes = null,
+  metadata = {},
+  autoActionTaken = false,
+}) => {
+  const sanitizedMatches = Array.isArray(matchedWords)
+    ? matchedWords
+        .map((entry) => {
+          if (typeof entry === "string") return entry;
+          if (entry && typeof entry === "object") {
+            return {
+              term: entry.term ?? entry?.matched ?? null,
+              ruleId: entry.ruleId ?? null,
+              label: entry.label ?? null,
+              severity: entry.severity ?? null,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean)
+    : [];
+
+  const metadataPayload =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? metadata
+      : {};
+  if (!metadataPayload.matches && sanitizedMatches.length && typeof sanitizedMatches[0] === "object") {
+    metadataPayload.matches = sanitizedMatches;
+  }
+
+  const now = new Date();
   const [row] = await db("chat_moderation")
     .insert({
       user_id: userId,
       message,
-      matched_words: JSON.stringify(matchedWords),
-      created_at: new Date(),
+      matched_words: sanitizedMatches,
+      context_type: contextType,
+      context_id: contextId,
+      message_id: messageId,
+      severity,
+      status,
+      notes,
+      metadata: metadataPayload,
+      auto_action_taken: autoActionTaken,
+      created_at: now,
+      updated_at: now,
     })
     .returning("*");
 
-  const admins = await userModel.findAdmins();
-  const note = `Flagged chat message from user ${userId}: ${matchedWords.join(", ")}`;
-  const results = await Promise.allSettled(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "chat_moderation",
-        message: note,
-      })
-    )
-  );
-  results.forEach((r, idx) => {
-    if (r.status === "rejected") {
-      logger.error(
-        `Failed to notify admin ${admins[idx].id}:`,
-        r.reason?.message || r.reason
+  try {
+    const admins = await userModel.findAdmins();
+    if (admins.length) {
+      const summaryTerms = sanitizedMatches
+        .map((entry) =>
+          typeof entry === "string" ? entry : entry.term || entry.ruleId || "match"
+        )
+        .filter(Boolean)
+        .join(", ");
+      const contextPart = contextId ? `${contextType}:${contextId}` : contextType;
+      const note = [
+        `Moderation ${severity?.toUpperCase() || "INFO"} flagged user ${userId}`,
+        contextPart ? `context ${contextPart}` : null,
+        summaryTerms ? `terms: ${summaryTerms}` : null,
+      ]
+        .filter(Boolean)
+        .join(" – ");
+      const results = await Promise.allSettled(
+        admins.map((admin) =>
+          notificationService.createNotification({
+            user_id: admin.id,
+            type: "chat_moderation",
+            message: note,
+          })
+        )
       );
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          logger.error(
+            `Failed to notify admin ${admins[index].id}:`,
+            result.reason?.message || result.reason
+          );
+        }
+      });
     }
-  });
+  } catch (notifyErr) {
+    logger.error("Failed to broadcast moderation alert", notifyErr);
+  }
 
   return row;
 };

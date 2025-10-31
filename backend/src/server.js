@@ -263,24 +263,75 @@ app.use(session(sessionOptions));
 
 app.use(csrf);
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 const rateLimitWindowMs = Number(
   process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000
 );
 const rateLimitMax = Number(process.env.RATE_LIMIT_MAX || 1000);
+
+const parseSkipPrefixes = (raw) =>
+  (raw || "")
+    .split(",")
+    .map((prefix) => prefix.trim())
+    .filter(Boolean);
+
+const defaultSkipPrefixes = [
+  "/socket.io",
+  "/api/uploads",
+  "/api/messages",
+  "/api/notifications",
+  "/api/chat",
+  "/api/popup-announcements",
+  "/api/languages",
+  "/api/groups/my",
+];
+
+const configuredSkipPrefixes = parseSkipPrefixes(
+  process.env.RATE_LIMIT_SKIP_PREFIXES
+);
+const rateLimitSkipPrefixes = configuredSkipPrefixes.length
+  ? configuredSkipPrefixes
+  : defaultSkipPrefixes;
+
+const resolveClientIp = (req) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (Array.isArray(forwarded)) {
+    return forwarded[0];
+  }
+  if (typeof forwarded === "string" && forwarded.length) {
+    const first = forwarded.split(",")[0];
+    if (first) return first.trim();
+  }
+  return req.ip || req.connection?.remoteAddress || "";
+};
+
 const limiter = rateLimit({
   windowMs: rateLimitWindowMs,
   max: rateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) =>
-    req.method === "OPTIONS" ||
-    req.originalUrl.startsWith("/socket.io") ||
-    req.originalUrl.startsWith("/api/uploads"),
+  skip: (req) => {
+    if (req.method === "OPTIONS") return true;
+    const url = req.originalUrl || req.url || "";
+    return rateLimitSkipPrefixes.some((prefix) => url.startsWith(prefix));
+  },
+  keyGenerator: (req) => {
+    const baseIp = resolveClientIp(req);
+    const userId =
+      req.user?.id ||
+      req.session?.passport?.user ||
+      req.session?.user?.id ||
+      null;
+    if (userId) {
+      return `${userId}:${baseIp}`;
+    }
+    const ua = req.headers["user-agent"] || "";
+    return `${baseIp}:${ua.slice(0, 64)}`;
+  },
 });
 app.use(limiter);
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 
 
@@ -306,6 +357,10 @@ app.use("/uploads", blockPdfMiddleware);
 app.use("/api/uploads", blockPdfMiddleware);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Private-Network", "true");
+  res.setHeader(
+    "Permissions-Policy",
+    "microphone=(self), camera=(), geolocation=()"
+  );
   next();
 });
 

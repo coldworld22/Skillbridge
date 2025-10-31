@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import CertificateTemplateRenderer from "@/components/certificates/CertificateTemplateRenderer";
 import { FaCheckCircle, FaTimesCircle, FaDownload } from "react-icons/fa";
 import {
   getCertificate,
@@ -76,6 +77,18 @@ export default function AdminCertificateViewPage() {
   if (error) return <div className="text-center mt-32 text-red-500">{error}</div>;
   if (!certificate) return null;
 
+  const template = certificate.template || {};
+  const certificateData = {
+    id: certificate.id,
+    studentName: certificate.studentName,
+    courseName: certificate.className || certificate.courseTitle,
+    issueDate: certificate.issueDate,
+    instructor: certificate.instructorName,
+    platformName: certificate.platformName,
+    grade: certificate.grade,
+    verificationUrl: certificate.verificationUrl,
+  };
+
   return (
     <StudentLayout>
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
@@ -141,12 +154,12 @@ export default function AdminCertificateViewPage() {
 
           {/* Certificate Preview */}
           {status === "Issued" && (
-            <div className="mt-10 p-10 bg-yellow-100 rounded-lg shadow-md text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">🎉 Congratulations!</h2>
-              <p className="text-lg text-gray-700">{certificate.studentName}</p>
-              <p className="text-sm text-gray-600">has successfully completed</p>
-              <p className="font-bold text-xl text-gray-800 mt-2">{certificate.className}</p>
-              <p className="text-xs text-gray-500 mt-4">Issued on {new Date(certificate.issueDate).toLocaleDateString()}</p>
+            <div className="mt-10">
+              <CertificateTemplateRenderer
+                template={template}
+                data={certificateData}
+                className="max-w-4xl mx-auto"
+              />
             </div>
           )}
         </div>

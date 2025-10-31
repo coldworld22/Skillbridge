@@ -1,6 +1,6 @@
 import { FaSearch, FaFilter } from 'react-icons/fa';
 
-const statusOptions = [
+const defaultStatusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Pending', value: 'pending' },
   { label: 'Approved', value: 'approved' },
@@ -9,34 +9,61 @@ const statusOptions = [
   { label: 'Declined', value: 'declined' },
 ];
 
-export default function BookingFilters({ search, onSearchChange, statusFilter, onStatusFilter }) {
+const formatLabel = (option, counts) => {
+  if (!counts) return option.label;
+  const count = counts[option.value];
+  if (typeof count !== 'number') return option.label;
+  return `${option.label} (${count})`;
+};
+
+export default function BookingFilters({
+  search,
+  onSearchChange,
+  statusFilter,
+  onStatusFilter,
+  statusCounts,
+  options = defaultStatusOptions,
+  className = '',
+  searchPlaceholder = 'Search by student, instructor, or class',
+  searchLabel = 'Search bookings',
+  statusLabel = 'Filter by status',
+}) {
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-6">
-      <div className="flex items-center gap-2">
-        <FaSearch className="text-gray-400" />
+    <div
+      className={`flex flex-col gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between ${className}`}
+    >
+      <label className="flex w-full items-center gap-3 sm:max-w-md">
+        <span className="sr-only">{searchLabel}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+          <FaSearch />
+        </span>
         <input
           type="text"
-          placeholder="Search by student, instructor, or class"
+          placeholder={searchPlaceholder}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="border px-4 py-2 rounded w-full max-w-md"
+          className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
-      <div className="flex items-center gap-2">
-        <FaFilter className="text-gray-400" />
+      <label className="flex w-full items-center gap-3 sm:w-auto">
+        <span className="sr-only">{statusLabel}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+          <FaFilter />
+        </span>
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilter(e.target.value)}
-          className="border px-3 py-2 rounded"
+          aria-label={statusLabel}
+          className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-48"
         >
-          {statusOptions.map((option) => (
+          {options.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {formatLabel(option, statusCounts)}
             </option>
           ))}
         </select>
-      </div>
+      </label>
     </div>
   );
 }

@@ -8,7 +8,10 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "react-toastify";
 import { createDiscussion, searchTags, createReply } from "@/services/communityService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
+import { computeAvailableProviders } from "@/utils/aiProviders";
 import { askAI } from "@/services/aiService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 
 // ✅ Predefined Popular Tags for Suggestions
 const popularTags = ["React", "Next.js", "JavaScript", "Node.js", "API", "MongoDB", "Tailwind CSS"];
@@ -72,9 +75,13 @@ const AskQuestionPage = () => {
     const loadAI = async () => {
       try {
         const cfg = await fetchThirdPartyConfig();
-        const opts = [];
+        const { providers, defaultProvider } = computeAvailableProviders(cfg);
+        setAiOptions(providers.map((p) => p.key));
+        if (providers.length === 0) {
+          toast.info('No AI integrations available');
+          return;
+        }
         if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false) {
-          opts.push('chatgpt');
           if (Array.isArray(cfg.chatgpt.models)) {
             setChatGPTModels(cfg.chatgpt.models);
           } else if (cfg.chatgpt.model) {
@@ -83,16 +90,23 @@ const AskQuestionPage = () => {
             toast.warning('ChatGPT models not configured');
           }
         }
-        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false) opts.push('deepseek');
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false) opts.push('huggingface');
-        setAiOptions(opts);
-        if (opts.length === 0) toast.info('No AI integrations available');
+        setSelectedAI(defaultProvider || providers[0].key);
       } catch (err) {
         console.error(err);
       }
     };
     loadAI();
   }, []);
+
+  useEffect(() => {
+    if (selectedAI !== 'chatgpt') {
+      setSelectedModel('');
+      return;
+    }
+    if (!selectedModel && chatGPTModels.length === 1) {
+      setSelectedModel(chatGPTModels[0].name);
+    }
+  }, [selectedAI, chatGPTModels, selectedModel]);
 
   // ✅ Auto-Save Draft Every 2 Seconds
   useEffect(() => {
@@ -181,10 +195,12 @@ const AskQuestionPage = () => {
   };
 
   // ✅ Accept AI Answer & Convert to Community Question
-const handleAcceptAIResponse = () => {
-  setDescription(title);
-  setActiveTab("community");
-};
+  const handleAcceptAIResponse = () => {
+    if (editableResponse.trim()) {
+      setDescription(editableResponse);
+    }
+    setActiveTab("community");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -315,10 +331,10 @@ const handleAcceptAIResponse = () => {
                   <option key={opt} value={opt}>
                     {opt === 'chatgpt'
                       ? 'ChatGPT'
-                      : opt === 'huggingface'
-                      ? 'Hugging Face'
                       : opt === 'deepseek'
                       ? 'DeepSeek AI'
+                      : opt === 'gemini'
+                      ? 'Gemini'
                       : opt}
                   </option>
                 ))}
@@ -391,13 +407,10 @@ const handleAcceptAIResponse = () => {
 
 export default AskQuestionPage;
 
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
-
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["common"], nextI18NextConfig)),
     },
   };
 }

@@ -5,6 +5,9 @@ const verifyVideoCallAccess = require('../middleware/auth/verifyVideoCallAccess'
 const verifyHostRole = require('../middleware/auth/verifyHostRole');
 const db = require('../config/database');
 const { state } = require('../sockets');
+const logger = require('../utils/logger.js');
+const { analyzeText } = require('../modules/moderation/moderationEngine');
+const chatService = require('../modules/chat/chat.service');
 
 router.get('/:roomId/participants', verifyToken, verifyVideoCallAccess, async (req, res) => {
   try {
@@ -69,10 +72,28 @@ router.delete('/:roomId/participants/:id', verifyToken, verifyVideoCallAccess, v
 router.get('/:roomId/messages', verifyToken, verifyVideoCallAccess, async (req, res) => {
   try {
     const messages = await db('video_call_messages')
+      .select(
+        'id',
+        'room_id',
+        'sender_id',
+        'sender',
+        'text',
+        'timestamp',
+        'is_flagged',
+        'flag_severity',
+        'moderation_status',
+        'flag_metadata',
+        'flagged_at'
+      )
       .where({ room_id: req.params.roomId })
       .orderBy('timestamp', 'asc');
-    res.json(messages);
+    const enriched = messages.map((message) => ({
+      ...message,
+      redacted: message.moderation_status === 'blocked',
+    }));
+    res.json(enriched);
   } catch (err) {
+    logger.error('Failed to fetch video call messages', err);
     res.status(500).json({ message: 'Failed to fetch messages' });
   }
 });
@@ -80,21 +101,126 @@ router.get('/:roomId/messages', verifyToken, verifyVideoCallAccess, async (req, 
 router.post('/:roomId/messages', verifyToken, verifyVideoCallAccess, async (req, res) => {
   const { text } = req.body || {};
   const roomId = req.params.roomId;
-  if (!text?.trim())
+  const trimmed = text?.trim();
+  if (!trimmed) {
     return res.status(400).json({ message: 'Message text required' });
+  }
+
+  const senderName =
+    req.user.full_name || req.user.name || req.user.email || 'Participant';
+  const analysis = analyzeText(trimmed);
+  const flagged = Boolean(analysis.flagged);
+  const now = new Date();
+
+  let priorContextFlags = 0;
+  if (flagged) {
+    try {
+      const result = await db('chat_moderation')
+        .where({ user_id: req.user.id })
+        .andWhere('context_type', 'video_call')
+        .andWhere('context_id', roomId)
+        .count('id as count')
+        .first();
+      priorContextFlags = Number(result?.count ?? 0);
+    } catch (countErr) {
+      logger.error('Failed to resolve prior moderation count', countErr);
+    }
+  }
+
+  const moderationStatus = flagged
+    ? analysis.autopilot.shouldBlock
+      ? 'blocked'
+      : priorContextFlags >= 2
+      ? 'escalated'
+      : 'pending_review'
+    : 'visible';
+
+  const metadata = flagged
+    ? {
+        matches: analysis.matches,
+        heuristics: analysis.heuristics,
+        reason: analysis.reason,
+        score: analysis.score,
+        autopilot: analysis.autopilot,
+        repeat_offenses: priorContextFlags + 1,
+        repeat_window_hours: 24,
+        repeat_offender: priorContextFlags > 0,
+      }
+    : {};
+
   try {
-    const senderName = req.user.full_name || req.user.name || req.user.email || 'Participant';
     const [message] = await db('video_call_messages')
       .insert({
         room_id: roomId,
         sender_id: req.user.id,
         sender: senderName,
-        text: text.trim(),
+        text: trimmed,
+        is_flagged: flagged,
+        flag_severity: flagged ? analysis.severity : null,
+        moderation_status: moderationStatus,
+        flag_metadata: metadata,
+        flagged_at: flagged ? now : null,
       })
       .returning('*');
-    state.io.to(roomId).emit('call-message', message);
-    res.status(201).json(message);
+
+    const payload = {
+      ...message,
+      redacted: flagged && analysis.autopilot.shouldBlock,
+    };
+
+    if (flagged) {
+      chatService
+        .logModerationEvent({
+          userId: req.user.id,
+          message: trimmed,
+          matchedWords: analysis.matches,
+          contextType: 'video_call',
+          contextId: roomId,
+          messageId: message.id,
+          severity: analysis.severity || 'medium',
+          status: moderationStatus,
+          autoActionTaken: analysis.autopilot.shouldBlock,
+          metadata: {
+            ...metadata,
+            source: 'video_call_message',
+          },
+        })
+        .catch((err) => {
+          logger.error('Failed to log moderation event for video call', err);
+        });
+    }
+
+    if (state.io) {
+      try {
+        state.io.to(roomId).emit('call-message', payload);
+        if (flagged) {
+          state.io.to(roomId).emit('call-message-flagged', {
+            messageId: message.id,
+            roomId,
+            severity: analysis.severity,
+            matches: analysis.matches,
+            heuristics: analysis.heuristics,
+            reason: analysis.reason,
+            sender_id: req.user.id,
+            timestamp: message.timestamp,
+            autoActionTaken: analysis.autopilot.shouldBlock,
+            moderation_status: moderationStatus,
+            repeatOffenses: priorContextFlags + 1,
+            flag_metadata: metadata,
+          });
+        }
+      } catch (emitErr) {
+        logger.error('Failed to emit video call message events', emitErr);
+      }
+    } else if (flagged) {
+      logger.warn(
+        `Moderation flagged message ${message.id} in room ${roomId} but socket server is not initialised`
+      );
+    }
+
+    res.status(201).json(payload);
   } catch (err) {
+    logger.error('Failed to store video call message', err);
     res.status(500).json({ message: 'Failed to store message' });
   }
 });

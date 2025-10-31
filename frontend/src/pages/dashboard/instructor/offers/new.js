@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchOfferTags, createOfferTag } from "@/services/offerTagService";
 import { createOffer } from "@/services/offerService";
+import groupService from "@/services/groupService";
+import useAuthStore from "@/store/auth/authStore";
 
 const NewOfferPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     offerType: "class",
+    groupId: "",
     title: "",
     price: "",
     expiresAt: "",
@@ -19,12 +23,65 @@ const NewOfferPage = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [newTags, setNewTags] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [groupError, setGroupError] = useState("");
+  const { user, hasHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) {
+      router.replace("/auth/login");
+    } else if (user.role?.toLowerCase() !== "instructor") {
+      router.replace("/error/403");
+    }
+  }, [hasHydrated, user, router]);
 
   useEffect(() => {
     const search = tagInput.trim();
     if (!search) return setSuggestedTags([]);
     fetchOfferTags(search).then(setSuggestedTags).catch(() => {});
   }, [tagInput]);
+
+  useEffect(() => {
+    if (!hasHydrated || !user) return;
+    let active = true;
+    setIsLoadingGroups(true);
+    setGroupError("");
+
+    groupService
+      .getMyGroups()
+      .then((list) => {
+        if (!active) return;
+        setGroups(list);
+        if (!list.length) {
+          setForm((prev) =>
+            prev.groupId ? { ...prev, groupId: "" } : prev
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load groups", error);
+        if (!active) return;
+        setGroups([]);
+        setGroupError("We couldn’t load your groups. Please try again.");
+        setForm((prev) =>
+          prev.groupId ? { ...prev, groupId: "" } : prev
+        );
+      })
+      .finally(() => {
+        if (!active) return;
+        setIsLoadingGroups(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hasHydrated, user]);
+
+  if (!hasHydrated || !user || user.role?.toLowerCase() !== "instructor") {
+    return null;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,12 +123,19 @@ const NewOfferPage = () => {
         expires_at: form.expiresAt || undefined,
         tags: JSON.stringify(selectedTags),
       };
+      if (form.groupId) {
+        payload.group_id = form.groupId;
+      }
       await createOffer(payload);
       toast.success("Your service offer has been posted successfully!");
       router.push("/dashboard/instructor/offers");
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error("There was an error submitting your offer. Please try again.");
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "There was an error submitting your offer. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,6 +158,71 @@ const NewOfferPage = () => {
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <p className="text-xs text-gray-500">Be specific about what you need help with</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Group <span className="font-normal text-gray-500">(optional)</span>
+          </label>
+          {isLoadingGroups ? (
+            <div className="border border-dashed border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-500">
+              Loading your groups...
+            </div>
+          ) : groups.length ? (
+            <>
+              <select
+                name="groupId"
+                value={form.groupId}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="">No group</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.title || group.name || "Untitled group"}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Need a new space?{" "}
+                <Link
+                  href="/dashboard/instructor/groups/create"
+                  className="text-blue-600 underline hover:text-blue-700"
+                >
+                  Create a group
+                </Link>{" "}
+                or{" "}
+                <Link
+                  href="/dashboard/instructor/groups/explore"
+                  className="text-blue-600 underline hover:text-blue-700"
+                >
+                  join an existing one
+                </Link>
+                .
+              </p>
+            </>
+          ) : (
+            <div className="border border-blue-200 bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-800 space-y-2">
+              <p>You are not part of any groups yet. You can still post an offer, and optionally create or join a group to collaborate with students.</p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/instructor/groups/create"
+                  className="inline-flex items-center text-blue-800 underline"
+                >
+                  Create a group
+                </Link>
+                <Link
+                  href="/dashboard/instructor/groups/explore"
+                  className="inline-flex items-center text-blue-800 underline"
+                >
+                  Explore groups
+                </Link>
+              </div>
+            </div>
+          )}
+          {groupError && (
+            <p className="mt-2 text-sm text-red-600">{groupError}</p>
+          )}
         </div>
 
         <div>
@@ -201,7 +330,10 @@ const NewOfferPage = () => {
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              isLoadingGroups
+            }
             className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
           >
             {isSubmitting ? (

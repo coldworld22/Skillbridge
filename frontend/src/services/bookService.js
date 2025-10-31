@@ -18,7 +18,7 @@ export const normalizeBookFilters = (filters = {}) => {
 
     if (key === "priceRange") {
       const numeric = Number(value);
-      if (Number.isFinite(numeric) && numeric > 0) {
+      if (Number.isFinite(numeric) && numeric >= 0) {
         acc[key] = numeric;
       }
       return acc;
@@ -352,6 +352,22 @@ export const downloadBookPdf = async (id, suggestedTitle) => {
   }
 };
 
+export const fetchBookWishlist = async () => {
+  const { data } = await api.get("/books/wishlist");
+  const list = Array.isArray(data?.data) ? data.data : [];
+  return list.map(formatBook);
+};
+
+export const addBookToWishlist = async (bookId) => {
+  await api.post("/books/wishlist", { bookId });
+  return true;
+};
+
+export const removeBookFromWishlist = async (bookId) => {
+  await api.delete("/books/wishlist", { data: { bookId } });
+  return true;
+};
+
 export default {
   fetchBooks,
   fetchBook,
@@ -360,6 +376,9 @@ export default {
   updateBook,
   updateBookStatus,
   downloadBookPdf,
+  fetchBookWishlist,
+  addBookToWishlist,
+  removeBookFromWishlist,
 };
 
 // Re-export for testing and external usage

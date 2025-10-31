@@ -6,6 +6,16 @@ export const getTemplates = async () => {
   return res.data?.data || [];
 };
 
+export const getTemplateDefaults = async () => {
+  const res = await api.get("/certificate-templates/defaults");
+  return res.data?.data || {};
+};
+
+export const updateTemplateDefaults = async (payload) => {
+  const res = await api.put("/certificate-templates/defaults", payload);
+  return res.data?.data || {};
+};
+
 export const getTemplate = async (id) => {
   const res = await api.get(`/certificate-templates/${id}`);
   return res.data?.data || null;

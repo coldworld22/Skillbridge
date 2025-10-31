@@ -12,7 +12,7 @@ exports.INSTRUCTOR_FEATURE_VALIDATIONS = {
 exports.getActiveInstructorPlan = async (userId) => {
   const sub = await db("user_subscriptions as us")
     .join("plans as p", "us.plan_id", "p.id")
-    .select("p.*", "us.end_date")
+    .select("p.*", "us.end_date", "us.id as subscription_id")
     .where({ "us.user_id": userId, "us.status": "active" })
     .where("p.target_role", "instructor")
     .first();
@@ -20,4 +20,3 @@ exports.getActiveInstructorPlan = async (userId) => {
   if (sub.end_date && new Date(sub.end_date) < new Date()) return null;
   return sub;
 };
-

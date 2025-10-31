@@ -7,14 +7,7 @@ export const formatTutorial = (tut) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   const thumbnailPath = tut.thumbnail_url || tut.cover_image;
   const previewPath = tut.preview_video;
-  const allowInstallments = Boolean(
-    tut.allow_installments ?? tut.allowInstallments ?? false
-  );
-  const installmentCount = (() => {
-    const raw = tut.installments ?? tut.installment_count ?? 1;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
-  })();
+  const allowInstallments = false;
 
   const rawPrice =
     tut.price ??
@@ -75,8 +68,8 @@ export const formatTutorial = (tut) => {
     trending: Boolean(tut.trending),
     allow_installments: allowInstallments,
     allowInstallments,
-    installments: installmentCount,
-    // Normalize category fields so components can filter reliably
+    installments: 1,
+    // Normalize category fields so components can filter reliably without losing UUIDs
     categoryId: (() => {
       const id =
         tut.category_id != null
@@ -84,7 +77,9 @@ export const formatTutorial = (tut) => {
           : tut.categoryId != null
             ? tut.categoryId
             : null;
-      return id != null ? Number(id) : null;
+      if (id == null) return null;
+      const numericId = Number(id);
+      return Number.isFinite(numericId) ? numericId : String(id);
     })(),
     categoryName:
       tut.category || tut.category_name || tut.categoryName || null,

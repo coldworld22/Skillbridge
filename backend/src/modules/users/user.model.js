@@ -72,7 +72,9 @@ exports.findById = (id) => {
       "status",
       "profile_complete",
       "is_email_verified",
-      "is_phone_verified"
+      "is_phone_verified",
+      "last_login_at",
+      "last_login_ip"
     )
     .where({ id })
     .first();
@@ -158,16 +160,59 @@ exports.getUserRoles = async (userId) => {
     .join("roles", "user_roles.role_id", "roles.id")
     .where("user_roles.user_id", userId)
     .select("roles.name");
-  return rows.map((r) => r.name);
+
+  if (rows.length) {
+    return rows.map((r) => r.name);
+  }
+
+  const user = await db("users").where({ id: userId }).first("role");
+  return user?.role ? [user.role] : [];
 };
 
 exports.getUserPermissions = async (userId) => {
-  const rows = await db("user_roles")
+  const direct = await db("user_roles")
     .join("role_permissions", "user_roles.role_id", "role_permissions.role_id")
     .join("permissions", "role_permissions.permission_id", "permissions.id")
     .where("user_roles.user_id", userId)
     .select("permissions.code");
-  return [...new Set(rows.map((r) => r.code))];
+
+  let codes = direct.map((r) => r.code);
+  if (codes.length) {
+    return [...new Set(codes)];
+  }
+
+  const user = await db("users").where({ id: userId }).first("role");
+  if (!user?.role) return [];
+
+  const role = await db("roles")
+    .whereRaw("LOWER(name) = ?", [String(user.role).toLowerCase()])
+    .first("id");
+  if (!role) return [];
+
+  const fallback = await db("role_permissions")
+    .join("permissions", "role_permissions.permission_id", "permissions.id")
+    .where("role_permissions.role_id", role.id)
+    .select("permissions.code");
+
+  codes = fallback.map((r) => r.code);
+  if (codes.length) {
+    return [...new Set(codes)];
+  }
+
+  const normalizedRole = String(user.role).toLowerCase();
+  if (normalizedRole === "superadmin") {
+    const allCodes = await exports.getAllPermissionCodes();
+    return [...new Set(allCodes)];
+  }
+
+  if (normalizedRole === "admin") {
+    const viewCodes = await db("permissions")
+      .whereLike("code", "view_%")
+      .pluck("code");
+    return [...new Set(viewCodes)];
+  }
+
+  return [];
 };
 
 exports.getAllPermissionCodes = async () => {

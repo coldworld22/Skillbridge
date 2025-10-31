@@ -155,8 +155,8 @@ describe("bookService", () => {
     expect(book).toMatchObject({
       id: 3,
       price: 19.99,
-      coverUrl: "/images/default-book-cover.jpg",
-      cover_image_url: "/images/default-book-cover.jpg",
+      coverUrl: "/api/uploads/a.png",
+      cover_image_url: "/api/uploads/a.png",
       pdf_url: null,
       pdf_download_url: "/api/books/3/pdf",
       preview_url: "/api/uploads/p.pdf",

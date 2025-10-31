@@ -126,6 +126,16 @@ const FEATURE_METADATA = {
   },
 };
 
+const MODULE_LABELS = {
+  commerce: "Commerce & revenue",
+  messaging: "Messaging & outreach",
+  community: "Community & groups",
+  classes: "Online classes",
+  tutorials: "Tutorials",
+  library: "Digital library",
+  ads: "Advertising & promotion",
+};
+
 const MODULE_ORDER = [
   "commerce",
   "messaging",
@@ -375,11 +385,169 @@ const SYNTHETIC_PLAN_FEATURES = [
   },
 ];
 
+const GENERAL_SECTION_KEY = "general";
+
+const getModuleLabel = (key) => {
+  if (!key) return null;
+  return MODULE_LABELS[key] || humanizeKey(key);
+};
+
+const buildPlanFeatureEntries = (plan = {}) => {
+  const entries = [];
+  const features = Array.isArray(plan.features) ? plan.features : [];
+
+  features.forEach((feature) => {
+    if (!feature || !feature.feature_key) return;
+    const parsedValue = parseFeatureValue(feature.value);
+    const presentation = getFeaturePresentation(feature.feature_key, parsedValue);
+    const description =
+      feature.description && `${feature.description}`.trim().length
+        ? `${feature.description}`.trim()
+        : presentation.description || presentation.displayValue || "";
+
+    entries.push({
+      id: feature.id || null,
+      feature_key: feature.feature_key,
+      label: presentation.label,
+      module: presentation.module || null,
+      module_label: getModuleLabel(presentation.module || null),
+      value: presentation.displayValue,
+      description,
+      raw_value: feature.value,
+      parsed_value: parsedValue,
+      synthetic: false,
+    });
+  });
+
+  const role = plan.target_role ? `${plan.target_role}`.toLowerCase() : null;
+  SYNTHETIC_PLAN_FEATURES.forEach((def) => {
+    if (!def || (Array.isArray(def.roles) && def.roles.length && role && !def.roles.includes(role))) {
+      return;
+    }
+    if (Array.isArray(def.roles) && def.roles.length && !role) return;
+    const built = typeof def.build === "function" ? def.build(plan) : null;
+    if (!built || !built.value) return;
+    const description =
+      built.description && `${built.description}`.trim().length
+        ? `${built.description}`.trim()
+        : built.value;
+    entries.push({
+      id: `synthetic-${def.key}`,
+      feature_key: def.key,
+      label: def.label,
+      module: def.module || null,
+      module_label: getModuleLabel(def.module || null),
+      value: built.value,
+      description,
+      raw_value: built.raw ?? null,
+      parsed_value: built.parsed ?? null,
+      synthetic: true,
+    });
+  });
+
+  return entries;
+};
+
+const buildPlanFeatureSections = (entries = []) => {
+  if (!Array.isArray(entries) || !entries.length) return [];
+
+  const sections = new Map();
+  const ensureSection = (moduleKey) => {
+    const key = moduleKey || GENERAL_SECTION_KEY;
+    if (!sections.has(key)) {
+      sections.set(key, {
+        module: moduleKey || null,
+        features: [],
+      });
+    }
+    return sections.get(key);
+  };
+
+  entries.forEach((entry) => {
+    if (!entry || !entry.label) return;
+    const section = ensureSection(entry.module);
+    section.features.push({
+      id: entry.id,
+      feature_key: entry.feature_key,
+      label: entry.label,
+      description: entry.description,
+      value: entry.value,
+      raw_value: entry.raw_value,
+      parsed_value: entry.parsed_value,
+      synthetic: entry.synthetic,
+    });
+  });
+
+  sections.forEach((section) => {
+    section.features.sort((a, b) => {
+      const labelA = `${a.label || ""}`.toLowerCase();
+      const labelB = `${b.label || ""}`.toLowerCase();
+      if (labelA < labelB) return -1;
+      if (labelA > labelB) return 1;
+      return 0;
+    });
+  });
+
+  const orderedKeys = [];
+  MODULE_ORDER.forEach((moduleKey) => {
+    if (sections.has(moduleKey)) orderedKeys.push(moduleKey);
+  });
+  const dynamicKeys = Array.from(sections.keys()).filter(
+    (key) => key !== GENERAL_SECTION_KEY && !MODULE_ORDER.includes(key)
+  );
+  dynamicKeys.sort();
+  orderedKeys.push(...dynamicKeys);
+  if (sections.has(GENERAL_SECTION_KEY)) orderedKeys.push(GENERAL_SECTION_KEY);
+
+  return orderedKeys
+    .map((key) => {
+      const section = sections.get(key);
+      if (!section || !section.features.length) return null;
+      const moduleLabel = section.module ? getModuleLabel(section.module) : null;
+      return {
+        key,
+        module: section.module,
+        module_label: moduleLabel,
+        features: section.features,
+      };
+    })
+    .filter(Boolean);
+};
+
+const buildPlanFeatureBundle = (plan = {}) => {
+  const entries = buildPlanFeatureEntries(plan);
+  const sections = buildPlanFeatureSections(entries);
+  const featureMap = entries.reduce((acc, entry) => {
+    if (entry && entry.feature_key) {
+      acc[entry.feature_key] = {
+        value: entry.parsed_value ?? entry.value,
+        raw: entry.raw_value,
+        description: entry.description,
+        display: entry.value,
+        label: entry.label,
+        module: entry.module,
+        synthetic: entry.synthetic,
+      };
+    }
+    return acc;
+  }, {});
+
+  return {
+    entries,
+    sections,
+    featureMap,
+  };
+};
+
 module.exports = {
   FEATURE_METADATA,
   MODULE_ORDER,
+  MODULE_LABELS,
   SYNTHETIC_PLAN_FEATURES,
   parseFeatureValue,
   serializeFeatureValue,
   getFeaturePresentation,
+  buildPlanFeatureEntries,
+  buildPlanFeatureSections,
+  buildPlanFeatureBundle,
 };

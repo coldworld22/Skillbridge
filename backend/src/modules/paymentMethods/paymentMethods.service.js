@@ -87,6 +87,32 @@ exports.getByType = async (type) => {
   return null;
 };
 
+exports.ensureFreeMethod = async () => {
+  const existing = await exports.getByType("free");
+  if (existing && existing.active) return existing;
+
+  return db.transaction(async (trx) => {
+    if (existing && !existing.active) {
+      const [updated] = await trx("payment_methods_config")
+        .where({ id: existing.id })
+        .update({ active: true })
+        .returning("*");
+      return updated;
+    }
+
+    const [created] = await trx("payment_methods_config")
+      .insert({
+        name: "Free",
+        type: "free",
+        active: true,
+        is_default: false,
+        settings: JSON.stringify({}),
+      })
+      .returning("*");
+    return created;
+  });
+};
+
 exports.update = async (id, data) => {
   return db.transaction(async (trx) => {
     if (data.is_default) {

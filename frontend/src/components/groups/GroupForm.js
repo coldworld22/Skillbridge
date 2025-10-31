@@ -1,20 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import useAuthStore from '@/store/auth/authStore';
-import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
-import toast from 'react-hot-toast';
-import groupService from '@/services/groupService';
-import { fetchAllCategories } from '@/services/instructor/categoryService';
-import userService from '@/services/profile/userService';
-import { sendChatMessage } from '@/services/messageService';
-import { createNotification } from '@/services/notificationService';
-import useNotificationStore from '@/store/notifications/notificationStore';
-import useMessageStore from '@/store/messages/messageStore';
-import { API_BASE_URL } from '@/config/config';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import useAuthStore from "@/store/auth/authStore";
+import {
+  X,
+  Mail,
+  Smartphone,
+  Image as ImageIcon,
+  Tag,
+  Users,
+  ShieldCheck,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import groupService from "@/services/groupService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
+import userService from "@/services/profile/userService";
+import { API_BASE_URL } from "@/config/config";
 
 export default function GroupForm() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const { t } = useTranslation("dashboard", { keyPrefix: "groupsCreatePage" });
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('');
@@ -32,9 +38,7 @@ export default function GroupForm() {
   const [users, setUsers] = useState([]);
   const [maxSize, setMaxSize] = useState('');
   const [timezone, setTimezone] = useState('');
-
-  const fetchNotifications = useNotificationStore((s) => s.fetch);
-  const fetchMessages = useMessageStore((s) => s.fetch);
+  const [approvalRequired, setApprovalRequired] = useState(true);
 
   const getAvatarUrl = (user) => {
     const url =
@@ -87,6 +91,12 @@ export default function GroupForm() {
     search();
   }, [query]);
 
+  useEffect(() => {
+    if (type === 'private') {
+      setApprovalRequired(true);
+    }
+  }, [type]);
+
   const filteredUsers = users.filter(
     (u) => !['admin', 'superadmin'].includes(u.role?.toLowerCase())
   );
@@ -135,7 +145,7 @@ export default function GroupForm() {
       payload.append('name', groupName);
       payload.append('description', description);
       payload.append('visibility', type || 'public');
-      payload.append('requires_approval', type === 'public');
+      payload.append('requires_approval', approvalRequired ? 'true' : 'false');
       if (imageFile) payload.append('cover_image', imageFile);
       if (category) payload.append('category_id', category);
       if (tags.length) payload.append('tags', JSON.stringify(tags));
@@ -151,54 +161,22 @@ export default function GroupForm() {
         payload.append('invite_methods', JSON.stringify(inviteMethods));
       }
 
-      const group = await groupService.createGroup(payload);
-      toast.success('Group created successfully!');
+      await groupService.createGroup(payload);
 
       if (invitedUsers.length) {
-        const invitePromises = invitedUsers.map((member) => {
-          const msg = sendChatMessage(member.id, {
-            text: `You are invited to join the group ${groupName}`,
-          });
-          const notif = createNotification({
-            user_id: member.id,
-            type: 'group_invite',
-            message: `You are invited to join the group ${groupName}`,
-          });
-          return Promise.allSettled([msg, notif]).then((results) => ({
-            member,
-            results,
-          }));
-        });
-
-        const outcomes = await Promise.all(invitePromises);
-
-        let successCount = 0;
-        const failedMembers = [];
-        outcomes.forEach(({ member, results }) => {
-          const hasFailure = results.some((r) => r.status !== 'fulfilled');
-          if (hasFailure) {
-            const name =
-              member.name || member.email || member.username || `ID ${member.id}`;
-            failedMembers.push(name);
-          } else {
-            successCount += 1;
+        toast.success(
+          t("toasts.successWithInvites", { count: invitedUsers.length })
+        );
+        if (inviteMethods.length) {
+          const methodLabels = inviteMethods
+            .map((method) => t(`inviteMethods.${method}`))
+            .join(", ");
+          if (methodLabels) {
+            toast(t("toasts.additionalMethods", { methods: methodLabels }));
           }
-        });
-
-        if (inviteMethods.includes('email') || inviteMethods.includes('whatsapp')) {
-          toast(`Additional invite methods: ${inviteMethods.join(', ')}`);
         }
-
-        const summary = `Invites: ${successCount} succeeded${
-          failedMembers.length ? `, failed for ${failedMembers.join(', ')}` : ''
-        }`;
-        toast[failedMembers.length ? 'warn' : 'success'](summary);
-        if (failedMembers.length) {
-          console.error('Failed invites:', failedMembers);
-        }
-
-        fetchNotifications?.();
-        fetchMessages?.();
+      } else {
+        toast.success(t("toasts.success"));
       }
 
       const normalizedRole = user?.role?.toLowerCase();
@@ -212,22 +190,25 @@ export default function GroupForm() {
       await router.push(path);
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to create group');
+      toast.error(err.response?.data?.message || t("toasts.error"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-lg max-w-3xl mx-auto border border-gray-100">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 bg-white p-6 rounded-lg shadow-lg max-w-3xl mx-auto border border-gray-100"
+    >
       <div className="pb-4 border-b border-gray-200">
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <span className="bg-blue-100 text-blue-600 p-2 rounded-full">
             <Users size={20} />
           </span>
-          Create New Group
+          {t("heading")}
         </h2>
-        <p className="text-sm text-gray-500 mt-1">Fill in the details below to create your new group</p>
+        <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
       </div>
 
       {/* General Info Section */}
@@ -236,48 +217,87 @@ export default function GroupForm() {
           <div className="bg-blue-100 p-2 rounded-full">
             <Tag size={18} className="text-blue-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-700">General Information</h3>
+          <h3 className="text-lg font-semibold text-gray-700">
+            {t("sections.general")}
+          </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Group Name *</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {`${t("labels.name")} *`}
+            </label>
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               required
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              placeholder="Enter group name"
+              placeholder={t("placeholders.name")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Group Type *</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {`${t("labels.type")} *`}
+            </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               required
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             >
-              <option value="">Select Type</option>
-              <option value="private">Private (Invite Only)</option>
-              <option value="public">Public (Anyone can request)</option>
+              <option value="">{t("placeholders.type")}</option>
+              <option value="private">{t("options.typePrivate")}</option>
+              <option value="public">{t("options.typePublic")}</option>
             </select>
+          </div>
+          <div className="md:col-span-2">
+            <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4">
+              <input
+                type="checkbox"
+                id="requiresApproval"
+                checked={approvalRequired}
+                onChange={(e) => setApprovalRequired(e.target.checked)}
+                disabled={type === 'private'}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
+              />
+              <label htmlFor="requiresApproval" className="flex-1 cursor-pointer select-none">
+                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <ShieldCheck size={16} className="text-blue-500" />
+                  {t("labels.requiresApproval", "Require approval to join")}
+                </span>
+                <span className="mt-1 block text-xs text-gray-500">
+                  {type === 'private'
+                    ? t(
+                        "help.privateAlwaysApproval",
+                        "Private groups always require approval from an admin."
+                      )
+                    : t(
+                        "help.requireApprovalHint",
+                        "Keep this on so group admins approve every new member."
+                      )}
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.description")}
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              placeholder="Tell members what this group is about..."
+              placeholder={t("placeholders.description")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Group Avatar</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.avatar")}
+            </label>
             <div className="flex items-center gap-4">
               {imagePreview ? (
                 <div className="relative">
@@ -304,7 +324,7 @@ export default function GroupForm() {
               )}
               <label className="cursor-pointer">
                 <div className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-medium text-gray-700">
-                  {imagePreview ? 'Change' : 'Upload'}
+                  {imagePreview ? t("buttons.change") : t("buttons.upload")}
                 </div>
                 <input 
                   type="file" 
@@ -317,13 +337,15 @@ export default function GroupForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Category</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.category")}
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             >
-              <option value="">Select a category</option>
+              <option value="">{t("placeholders.category")}</option>
               {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -331,24 +353,28 @@ export default function GroupForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Max Group Size</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.maxSize")}
+            </label>
             <input
               type="number"
               min="1"
               value={maxSize}
               onChange={(e) => setMaxSize(e.target.value)}
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              placeholder="No limit if empty"
+              placeholder={t("placeholders.maxSize")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Timezone</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.timezone")}
+            </label>
             <input
               type="text"
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              placeholder="e.g. Asia/Riyadh"
+              placeholder={t("placeholders.timezone")}
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             />
           </div>
@@ -356,14 +382,16 @@ export default function GroupForm() {
 
         {/* Tags Section */}
         <div className="mt-4">
-          <label className="block text-sm font-medium mb-2 text-gray-700">Tags</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            {t("labels.tags")}
+          </label>
           <div className="flex gap-2 mb-3">
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleTagAdd()}
-              placeholder="Add a tag and press Enter"
+              placeholder={t("placeholders.tagInput")}
               className="flex-1 border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             />
             <button 
@@ -371,13 +399,15 @@ export default function GroupForm() {
               onClick={handleTagAdd} 
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
             >
-              Add
+              {t("buttons.addTag")}
             </button>
           </div>
           
           {availableTags.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-2">Popular tags:</p>
+              <p className="text-xs text-gray-500 mb-2">
+                {t("labels.popularTags")}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {availableTags.map((tag) => (
                   <button
@@ -419,16 +449,20 @@ export default function GroupForm() {
             <div className="bg-purple-100 p-2 rounded-full">
               <Mail size={18} className="text-purple-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-700">Invite Members</h3>
+            <h3 className="text-lg font-semibold text-gray-700">
+              {t("sections.invites")}
+            </h3>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">Search Members</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              {t("labels.searchMembers")}
+            </label>
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, email, or phone..."
+              placeholder={t("placeholders.searchMembers")}
               className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             />
           </div>
@@ -471,7 +505,9 @@ export default function GroupForm() {
           {invitedUsers.length > 0 && (
             <>
               <div className="mt-4">
-                <label className="block text-sm font-medium mb-2 text-gray-700">Selected Members ({invitedUsers.length})</label>
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  {t("labels.selectedMembers", { count: invitedUsers.length })}
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {invitedUsers.map((u) => (
                     <div key={u.id} className="flex items-center gap-2 bg-blue-50 rounded-full pl-2 pr-3 py-1 border border-blue-100">
@@ -495,11 +531,21 @@ export default function GroupForm() {
 
               <div className="mt-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Invitation Methods</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {t("labels.invitationMethods")}
+                  </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { value: 'email', icon: <Mail size={16} />, label: 'Email' },
-                      { value: 'whatsapp', icon: <Smartphone size={16} />, label: 'WhatsApp' },
+                      {
+                        value: "email",
+                        icon: <Mail size={16} />,
+                        label: t("inviteMethods.email"),
+                      },
+                      {
+                        value: "whatsapp",
+                        icon: <Smartphone size={16} />,
+                        label: t("inviteMethods.whatsapp"),
+                      },
                     ].map((method) => (
                       <label
                         key={method.value}
@@ -552,10 +598,10 @@ export default function GroupForm() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Creating Group...
+              {t("buttons.submitting")}
             </span>
           ) : (
-            'Create Group'
+            t("buttons.submit")
           )}
         </button>
       </div>
