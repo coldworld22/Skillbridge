@@ -118,7 +118,7 @@ const normalizeBankSettings = (rawSettings = {}) => {
 
 exports.getBankPayments = catchAsync(async (req, res) => {
   const { status } = req.query;
-  const data = await paymentsService.getAll(status, "bank");
+  const data = await paymentsService.getAll(status, "bank", req.tenant?.id);
   sendSuccess(res, data);
 });
 
@@ -246,6 +246,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   const paymentData = {
     id: uuidv4(),
     user_id,
+    tenant_id: req.tenant?.id || null,
     method_id: bankMethod.id,
     item_type,
     item_id,
@@ -345,15 +346,17 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
 });
 
 exports.approveBankPayment = catchAsync(async (req, res) => {
+  const tenantId = req.tenant?.id;
   const payment = await paymentsService.approveBankPayment(
     req.params.id,
-    req.body
+    req.body,
+    tenantId,
   );
 
   await grantAccess(payment);
   let refreshedPayment = payment;
   try {
-    const latest = await paymentsService.getById(payment.id);
+    const latest = await paymentsService.getById(payment.id, tenantId);
     if (latest) refreshedPayment = latest;
   } catch (err) {
     logger.warn("Failed to refresh bank payment after approval:", err);
@@ -413,7 +416,8 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
 exports.rejectBankPayment = catchAsync(async (req, res) => {
   const payment = await paymentsService.rejectBankPayment(
     req.params.id,
-    req.body
+    req.body,
+    req.tenant?.id,
   );
   sendSuccess(res, payment, "Bank payment rejected");
 });

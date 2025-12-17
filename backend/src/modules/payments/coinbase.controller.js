@@ -150,10 +150,12 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const charge = await coinbaseService.createCharge(apiKey, params);
 
   const chargeData = charge?.data || charge;
+  const tenantId = req.tenant?.id || null;
 
   const paymentData = {
     id: paymentId,
     user_id,
+    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -178,7 +180,8 @@ exports.handleWebhook = catchAsync(async (req, res) => {
   const paymentId = event?.data?.metadata?.payment_id;
   if (!paymentId) return res.status(400).end();
 
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment) return res.status(404).end();
   const method = await paymentMethodsService.getById(payment.method_id);
   const secret = resolveCoinbaseSecret(method?.settings);
@@ -196,13 +199,20 @@ exports.handleWebhook = catchAsync(async (req, res) => {
   }
   const wasPaid = payment.status === STATUS.PAID;
   if (Object.keys(statusUpdate).length) {
-    const updated = await paymentsService.update(paymentId, statusUpdate);
+    const updated = await paymentsService.update(
+      paymentId,
+      statusUpdate,
+      tenantId || payment.tenant_id,
+    );
     if (updated.status === STATUS.PAID) {
       if (!wasPaid) {
         await markCouponRedeemed(updated.coupon_id);
       }
       await grantAccess(updated);
-      const refreshed = await paymentsService.getById(updated.id);
+      const refreshed = await paymentsService.getById(
+        updated.id,
+        tenantId || payment.tenant_id,
+      );
       if (refreshed?.status === STATUS.PAID) {
         await creditInstructorFromPayment(refreshed);
       }

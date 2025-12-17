@@ -52,6 +52,12 @@ const resolveTenant = async (req, res, next) => {
       tenantId = req.headers["x-tenant-id"];
     } else {
       tenantId = await resolveTenantByHost(req.headers.host);
+      if (tenantId === null) {
+        const fallback = await db("tenants")
+          .where({ slug: "default" })
+          .first("id");
+        tenantId = fallback?.id || null;
+      }
     }
 
     if (!tenantId) {

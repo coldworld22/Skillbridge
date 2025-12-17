@@ -170,9 +170,12 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     throw new AppError('Unable to retrieve PayPal approval url', 500);
   }
 
+  const tenantId = req.tenant?.id || null;
+
   const paymentData = {
     id: paymentId,
     user_id,
+    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -193,7 +196,8 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   if (!orderId || !paymentId) {
     throw new AppError('Missing order information', 400);
   }
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment || payment.reference_id !== orderId) {
     throw new AppError('Payment not found', 404);
   }
@@ -207,7 +211,11 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   } else {
     statusUpdate.status = STATUS.REJECTED;
   }
-  const updated = await paymentsService.update(paymentId, statusUpdate);
+  const updated = await paymentsService.update(
+    paymentId,
+    statusUpdate,
+    tenantId || payment.tenant_id,
+  );
 
   if (!wasPaid && updated.status === STATUS.PAID) {
     await markCouponRedeemed(updated.coupon_id);

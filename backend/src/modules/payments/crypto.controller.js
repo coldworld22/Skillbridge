@@ -96,11 +96,14 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     params.cancel_url = `${process.env.FRONTEND_URL}/payments/error`;
   }
 
+  const tenantId = req.tenant?.id || null;
+
   const invoice = await nowPayments.createInvoice(settings.api_key, params);
 
   const paymentData = {
     id: paymentId,
     user_id,
+    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -124,7 +127,8 @@ exports.handleIPN = catchAsync(async (req, res) => {
   const paymentId = payload.order_id;
   if (!paymentId) return res.status(400).end();
 
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment) return res.status(404).end();
   const method = await paymentMethodsService.getById(payment.method_id);
   const secret = method?.settings?.ipn_secret;
@@ -141,13 +145,20 @@ exports.handleIPN = catchAsync(async (req, res) => {
   }
   if (Object.keys(statusUpdate).length) {
     const wasPaid = payment.status === STATUS.PAID;
-    const updated = await paymentsService.update(paymentId, statusUpdate);
+    const updated = await paymentsService.update(
+      paymentId,
+      statusUpdate,
+      tenantId || payment.tenant_id,
+    );
     if (updated.status === STATUS.PAID) {
       if (!wasPaid) {
         await markCouponRedeemed(updated.coupon_id);
       }
       await grantAccess(updated);
-      const refreshed = await paymentsService.getById(updated.id);
+      const refreshed = await paymentsService.getById(
+        updated.id,
+        tenantId || payment.tenant_id,
+      );
       if (refreshed?.status === STATUS.PAID) {
         await creditInstructorFromPayment(refreshed);
       }

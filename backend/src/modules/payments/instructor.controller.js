@@ -35,21 +35,27 @@ const resolveMinimumWithdrawalAmount = (config) => {
 
 exports.getSummary = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
+  const tenantId = req.tenant?.id;
 
-  const totals = await paymentsService.getInstructorTotals(instructorId);
+  const totals = await paymentsService.getInstructorTotals(
+    instructorId,
+    tenantId,
+  );
 
   let wallet = null;
   let payouts = [];
   let minimumWithdrawalAmount = 0;
 
   try {
-    wallet = await walletService.getByInstructor(instructorId);
+    wallet = await walletService.getByInstructor(instructorId, {
+      tenantId,
+    });
   } catch (err) {
     logger.warn("Wallet lookup failed for instructor summary:", err.message);
   }
 
   try {
-    payouts = await payoutsService.getByInstructor(instructorId);
+    payouts = await payoutsService.getByInstructor(instructorId, tenantId);
   } catch (err) {
     logger.warn("Payout history lookup failed for instructor summary:", err.message);
   }

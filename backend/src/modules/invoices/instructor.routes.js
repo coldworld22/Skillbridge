@@ -1,8 +1,19 @@
 const router = require("express").Router();
 const controller = require("./invoices.controller");
 const { verifyToken, isInstructor } = require("../../middleware/auth/authMiddleware");
+const {
+  resolveTenant,
+  ensureTenantMembership,
+  enforceTenantStatus,
+} = require("../../middleware/tenant");
 
-router.use(verifyToken, isInstructor);
+router.use(
+  verifyToken,
+  resolveTenant,
+  ensureTenantMembership(),
+  enforceTenantStatus(),
+  isInstructor,
+);
 
 router.get("/", controller.getMyInvoices);
 router.get("/payment/:paymentId", controller.getMyInvoiceByPaymentId);
