@@ -1,6 +1,7 @@
-const router = require('express').Router();
-const controller = require('./search.controller');
+const router = require("express").Router();
+const { resolveTenant } = require("../../middleware/tenant");
+const controller = require("./search.controller");
 
-router.get('/', controller.search);
+router.get("/", resolveTenant, controller.search);
 
 module.exports = router;
