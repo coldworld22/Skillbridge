@@ -511,6 +511,9 @@ exports.getInstructorTotals = async (instructorId, tenantId = null) => {
         "=",
         db.raw("?", ["class"])
       );
+      if (classesHasTenant && tenantId) {
+        this.andOn("c.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .leftJoin("tutorials as tut", function () {
       this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
@@ -518,11 +521,17 @@ exports.getInstructorTotals = async (instructorId, tenantId = null) => {
         "=",
         db.raw("?", ["tutorial"])
       );
+      if (tutorialsHasTenant && tenantId) {
+        this.andOn("tut.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     // Cast IDs to text so the payments.item_id text column can match the source tables
     .leftJoin("books as b", function () {
       this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
       this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
+      if (booksHasTenant && tenantId) {
+        this.andOn("b.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .where(function () {
       this.where("c.instructor_id", instructorId)

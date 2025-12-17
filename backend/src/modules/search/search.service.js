@@ -43,6 +43,7 @@ exports.searchBooks = async (q, tenantId) => {
         .orWhereRaw("short_description ILIKE ?", [term])
         .orWhereRaw("detailed_description ILIKE ?", [term]);
     })
+    .modify((query) => applyTenantScope(query, tenantId))
     .select("id", "title", "cover_image_url as cover")
     .limit(5);
 };
@@ -70,6 +71,7 @@ exports.searchOffers = async (q, tenantId) => {
         term,
       ]);
     })
+    .modify((query) => applyTenantScope(query, tenantId))
     .select("id", "title")
     .limit(5);
 };

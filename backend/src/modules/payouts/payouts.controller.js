@@ -42,6 +42,7 @@ exports.createPayout = catchAsync(async (req, res) => {
   }
   const payout = await service.create({
     id: uuidv4(),
+    tenant_id: req.tenant.id,
     instructor_id,
     amount,
     currency: currency || "USD",
@@ -52,24 +53,28 @@ exports.createPayout = catchAsync(async (req, res) => {
 });
 
 exports.getPayouts = catchAsync(async (_req, res) => {
-  const data = await service.getAll();
+  const data = await service.getAll(_req.tenant?.id);
   sendSuccess(res, data);
 });
 
 exports.getPayout = catchAsync(async (req, res) => {
-  const payout = await service.getById(req.params.id);
+  const payout = await service.getById(req.params.id, req.tenant?.id);
   if (!payout) throw new AppError("Payout not found", 404);
   sendSuccess(res, payout);
 });
 
 exports.updatePayout = catchAsync(async (req, res) => {
-  const existing = await service.getById(req.params.id);
+  const existing = await service.getById(req.params.id, req.tenant?.id);
   if (!existing) throw new AppError("Payout not found", 404);
 
   const updateData = { ...req.body };
   if (req.body.status === "approved" && existing.status !== "approved") {
     try {
-      await walletService.decrement(existing.instructor_id, existing.amount);
+      await walletService.decrement(
+        existing.instructor_id,
+        existing.amount,
+        req.tenant?.id,
+      );
     } catch (err) {
       if (err.message === "Insufficient balance") {
         throw new AppError("Insufficient wallet balance", 400);
@@ -78,24 +83,31 @@ exports.updatePayout = catchAsync(async (req, res) => {
     }
     updateData.processed_at = new Date();
   }
-  const payout = await service.update(req.params.id, updateData);
+  const payout = await service.update(
+    req.params.id,
+    updateData,
+    req.tenant?.id,
+  );
   sendSuccess(res, payout, "Payout updated");
 });
 
 exports.deletePayout = catchAsync(async (req, res) => {
-  await service.delete(req.params.id);
+  await service.delete(req.params.id, req.tenant?.id);
   sendSuccess(res, null, "Payout deleted");
 });
 
 // Instructor: Get wallet balance
 exports.getWallet = catchAsync(async (req, res) => {
-  const wallet = await walletService.getByInstructor(req.user.id);
+  const wallet = await walletService.getByInstructor(
+    req.user.id,
+    req.tenant?.id,
+  );
   sendSuccess(res, wallet || { balance: 0 });
 });
 
 // Instructor: Get payout history
 exports.getMyPayouts = catchAsync(async (req, res) => {
-  const payouts = await service.getByInstructor(req.user.id);
+  const payouts = await service.getByInstructor(req.user.id, req.tenant?.id);
   sendSuccess(res, payouts);
 });
 
@@ -123,8 +135,11 @@ exports.requestPayout = catchAsync(async (req, res) => {
     );
   }
 
-  const wallet = await walletService.getByInstructor(req.user.id);
-  const payouts = await service.getByInstructor(req.user.id);
+  const wallet = await walletService.getByInstructor(
+    req.user.id,
+    req.tenant?.id,
+  );
+  const payouts = await service.getByInstructor(req.user.id, req.tenant?.id);
   const normalizedPayouts = (payouts || []).map((p) => ({
     ...p,
     status: (p.status || "").toLowerCase(),
@@ -139,7 +154,10 @@ exports.requestPayout = catchAsync(async (req, res) => {
     .reduce((sum, payout) => sum + toNumber(payout.amount), 0);
   const reservedTotal = withdrawnTotal + pendingPayoutTotal;
 
-  const totals = await paymentsService.getInstructorTotals(req.user.id);
+  const totals = await paymentsService.getInstructorTotals(
+    req.user.id,
+    req.tenant?.id,
+  );
   const totalPaid = toNumber(totals.totalPaid);
 
   const computedAvailable = Math.max(0, totalPaid - reservedTotal);

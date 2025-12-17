@@ -39,6 +39,16 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isInstructor: (_req, _res, next) => next(),
 }));
 
+jest.mock('../../../../middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
 }));

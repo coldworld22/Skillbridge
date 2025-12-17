@@ -12,6 +12,15 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'user1' }; next(); },
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/notifications/notifications.service');
 const routes = require('../src/modules/notifications/notifications.routes');
 
@@ -26,7 +35,10 @@ describe('GET /api/notifications', () => {
     const res = await request(app).get('/api/notifications');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
-    expect(service.getUserNotifications).toHaveBeenCalledWith('user1');
+    expect(service.getUserNotifications).toHaveBeenCalledWith(
+      'user1',
+      'tenant-1'
+    );
   });
 });
 
@@ -37,7 +49,7 @@ describe('PATCH /api/notifications/:id/read', () => {
     const res = await request(app).patch('/api/notifications/1/read');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockNote);
-    expect(service.markAsRead).toHaveBeenCalledWith('1', 'user1');
+    expect(service.markAsRead).toHaveBeenCalledWith('1', 'user1', 'tenant-1');
   });
 });
 
@@ -49,7 +61,10 @@ describe('POST /api/notifications', () => {
     const res = await request(app).post('/api/notifications').send(payload);
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockNote);
-    expect(service.createNotification).toHaveBeenCalledWith(payload);
+    expect(service.createNotification).toHaveBeenCalledWith({
+      ...payload,
+      tenant_id: 'tenant-1',
+    });
   });
 });
 
@@ -60,6 +75,10 @@ describe('DELETE /api/notifications/:id', () => {
     const res = await request(app).delete('/api/notifications/1');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockNote);
-    expect(service.deleteNotification).toHaveBeenCalledWith('1', 'user1');
+    expect(service.deleteNotification).toHaveBeenCalledWith(
+      '1',
+      'user1',
+      'tenant-1'
+    );
   });
 });

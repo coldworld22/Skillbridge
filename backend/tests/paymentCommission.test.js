@@ -58,11 +58,19 @@ jest.mock('../src/modules/invoices/invoices.service', () => ({
 }));
 
 jest.mock('../src/modules/books/book.service', () => ({
-  getBookById: jest.fn().mockResolvedValue({ instructor_id: 'bookInst', price: 50 }),
+  getBookById: jest.fn().mockResolvedValue({
+    instructor_id: 'bookInst',
+    price: 50,
+    tenant_id: 'tenant-1',
+  }),
 }));
 
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
-  getTutorialById: jest.fn().mockResolvedValue({ instructor_id: 'tutInst', price: 200 }),
+  getTutorialById: jest.fn().mockResolvedValue({
+    instructor_id: 'tutInst',
+    price: 200,
+    tenant_id: 'tenant-1',
+  }),
 }));
 
 jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service', () => ({
@@ -70,7 +78,11 @@ jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service
 }));
 
 jest.mock('../src/modules/classes/class.service', () => ({
-  getClassById: jest.fn().mockResolvedValue({ instructor_id: 'inst1', price: 100 }),
+  getClassById: jest.fn().mockResolvedValue({
+    instructor_id: 'inst1',
+    price: 100,
+    tenant_id: 'tenant-1',
+  }),
 }));
 
 jest.mock('../src/modules/payouts/wallet.service', () => ({
@@ -96,6 +108,16 @@ jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'admin1' }; next(); },
   isAdmin: (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/payments/payments.service');
@@ -215,7 +237,12 @@ describe('wallet credit and debit', () => {
 
     expect(res.status).toBe(200);
     expect(classService.getClassById).toHaveBeenCalledWith('class1');
-    expect(walletService.increment).toHaveBeenCalledWith('inst1', 90);
+    expect(walletService.increment).toHaveBeenCalledWith(
+      'inst1',
+      90,
+      null,
+      'tenant-1'
+    );
   });
 
   it('credits instructor wallet on paid book payment', async () => {
@@ -233,7 +260,12 @@ describe('wallet credit and debit', () => {
 
     expect(res.status).toBe(200);
     expect(bookService.getBookById).toHaveBeenCalledWith('book1');
-    expect(walletService.increment).toHaveBeenCalledWith('bookInst', 45);
+    expect(walletService.increment).toHaveBeenCalledWith(
+      'bookInst',
+      45,
+      null,
+      'tenant-1'
+    );
   });
 
   it('credits instructor wallet on paid tutorial payment', async () => {
@@ -251,7 +283,12 @@ describe('wallet credit and debit', () => {
 
     expect(res.status).toBe(200);
     expect(tutorialService.getTutorialById).toHaveBeenCalledWith('tut1');
-    expect(walletService.increment).toHaveBeenCalledWith('tutInst', 160);
+    expect(walletService.increment).toHaveBeenCalledWith(
+      'tutInst',
+      160,
+      null,
+      'tenant-1'
+    );
   });
 
   it('debits wallet on approved payout', async () => {
@@ -262,8 +299,12 @@ describe('wallet credit and debit', () => {
     const res = await request(app).patch('/api/payouts/po1').send({ status: 'approved' });
 
     expect(res.status).toBe(200);
-    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 50);
-    expect(payoutService.update).toHaveBeenCalledWith('po1', expect.objectContaining({ status: 'approved' }));
+    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 50, 'tenant-1');
+    expect(payoutService.update).toHaveBeenCalledWith(
+      'po1',
+      expect.objectContaining({ status: 'approved' }),
+      'tenant-1'
+    );
   });
 
   it('rejects payout when balance insufficient', async () => {
@@ -273,7 +314,7 @@ describe('wallet credit and debit', () => {
     const res = await request(app).patch('/api/payouts/po2').send({ status: 'approved' });
 
     expect(res.status).toBe(400);
-    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 80);
+    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 80, 'tenant-1');
     expect(payoutService.update).not.toHaveBeenCalled();
   });
 });

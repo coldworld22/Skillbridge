@@ -27,6 +27,16 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isAdmin: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 const walletService = require('../src/modules/payouts/wallet.service');
 const payoutService = require('../src/modules/payouts/payouts.service');
 const paymentConfigService = require('../src/modules/paymentConfig/paymentConfig.service');
@@ -45,7 +55,10 @@ describe('GET /api/payouts/wallet', () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 100 });
     const res = await request(app).get('/api/payouts/wallet');
     expect(res.status).toBe(200);
-    expect(walletService.getByInstructor).toHaveBeenCalledWith('instr1');
+    expect(walletService.getByInstructor).toHaveBeenCalledWith(
+      'instr1',
+      'tenant-1'
+    );
     expect(res.body.data).toEqual({ balance: 100 });
   });
 });
@@ -55,7 +68,10 @@ describe('GET /api/payouts/history', () => {
     payoutService.getByInstructor.mockResolvedValue([{ id: 'p1' }]);
     const res = await request(app).get('/api/payouts/history');
     expect(res.status).toBe(200);
-    expect(payoutService.getByInstructor).toHaveBeenCalledWith('instr1');
+    expect(payoutService.getByInstructor).toHaveBeenCalledWith(
+      'instr1',
+      'tenant-1'
+    );
     expect(res.body.data).toEqual([{ id: 'p1' }]);
   });
 });
@@ -83,9 +99,16 @@ describe('POST /api/payouts/request', () => {
       .send({ amount: 50 });
 
     expect(res.status).toBe(200);
-    expect(walletService.getByInstructor).toHaveBeenCalledWith('instr1');
+    expect(walletService.getByInstructor).toHaveBeenCalledWith(
+      'instr1',
+      'tenant-1'
+    );
     expect(payoutService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ instructor_id: 'instr1', amount: 50 })
+      expect.objectContaining({
+        instructor_id: 'instr1',
+        amount: 50,
+        tenant_id: 'tenant-1',
+      })
     );
   });
 
