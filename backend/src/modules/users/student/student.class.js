@@ -88,6 +88,7 @@ class Student {
         const payment = await paymentsService.create(
           {
             user_id: this.userId,
+            tenant_id: cls.tenant_id,
             method_id: paymentMethodId,
             item_type: item.item_type,
             item_id: item.id,

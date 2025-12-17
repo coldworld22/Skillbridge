@@ -10,6 +10,11 @@ const hasTenantColumn = async () => {
   return hasTenantColumnPromise;
 };
 
+const applyTenantScope = (query, tenantId, alias = "p") => {
+  if (!tenantId) return query;
+  return query.andWhere(`${alias}.tenant_id`, tenantId);
+};
+
 exports.create = async (data) => {
   const tenantColumnExists = await hasTenantColumn();
   if (tenantColumnExists && !data?.tenant_id) {
@@ -44,6 +49,8 @@ exports.getAll = async (tenantId = null) => {
       }
     })
     .orderBy("p.requested_at", "desc");
+
+  return applyTenantScope(query, tenantId);
 };
 
 exports.getByInstructor = async (instructor_id, tenantId = null) => {
@@ -64,6 +71,8 @@ exports.getByInstructor = async (instructor_id, tenantId = null) => {
     })
     .select("*")
     .orderBy("requested_at", "desc");
+
+  return applyTenantScope(query, tenantId);
 };
 
 exports.getById = async (id, tenantId = null) => {

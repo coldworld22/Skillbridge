@@ -40,10 +40,12 @@ exports.createPayout = catchAsync(async (req, res) => {
   if (!instructor_id || !amount) {
     throw new AppError("Instructor and amount are required", 400);
   }
+  const tenantId = req.tenant?.id;
   const payout = await service.create({
     id: uuidv4(),
     tenant_id: req.tenant.id,
     instructor_id,
+    tenant_id: tenantId,
     amount,
     currency: currency || "USD",
     status: status || "pending",
@@ -114,6 +116,7 @@ exports.getMyPayouts = catchAsync(async (req, res) => {
 // Instructor: Request payout for self after validating funds
 exports.requestPayout = catchAsync(async (req, res) => {
   const { amount, currency, notes, instructor_id } = req.body;
+  const tenantId = req.tenant?.id;
 
   if (instructor_id && instructor_id !== req.user.id) {
     throw new AppError("Cannot request payout for another instructor", 403);
@@ -197,6 +200,7 @@ exports.requestPayout = catchAsync(async (req, res) => {
   const payout = await service.create({
     id: uuidv4(),
     instructor_id: req.user.id,
+    tenant_id: tenantId,
     amount: numericAmount,
     currency: currency || "USD",
     status: "pending",

@@ -85,6 +85,7 @@ exports.findInstallmentContext = async (userId, itemType, itemId, tenantId = nul
     .modify((query) => applyTenantScope(query, tenantId, hasTenantId, ""))
     .andWhere("installments", ">", 1)
     .orderBy("created_at", "asc")
+    .modify((qb) => applyTenantScope(qb, tenantId, "payments"))
     .first();
 
   if (!payment) {
@@ -156,6 +157,8 @@ exports.getAll = async (status, methodType, tenantId = null) => {
     )
     .orderBy("p.created_at", "desc");
 
+  applyTenantScope(query, tenantId);
+
   if (status) {
     query.where("p.status", status);
   }
@@ -193,10 +196,14 @@ exports.getByUser = async (userId, filters = {}, tenantId = null) => {
   let limit = null;
   let offset = null;
   let sortDirection = "desc";
+  let tenantId = tenantIdArg;
 
   if (typeof filters === "string") {
     statusFilter = filters;
   } else if (filters && typeof filters === "object") {
+    if (!tenantId && filters.tenantId) {
+      tenantId = filters.tenantId;
+    }
     statusFilter =
       filters.status === undefined ? null : String(filters.status);
     itemTypeFilter =

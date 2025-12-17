@@ -58,6 +58,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   const user_id = req.user.id;
+  const tenant_id = req.tenant?.id || null;
 
   const allowStatusOverride =
     req.user?.role && ["admin", "superadmin"].includes(req.user.role);
@@ -102,6 +103,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     status: statusToUse,
     reference_id: verifiedReference,
     receipt_url,
+    tenant_id,
     platform_fee,
     instructor_amount,
     paid_at: statusToUse === STATUS.PAID ? new Date() : null,
@@ -366,6 +368,7 @@ exports.getMyPayments = catchAsync(async (req, res) => {
 
   const tenantId = req.tenant?.id;
   const hasFilters = Object.keys(filters).length > 0;
+  const tenantId = req.tenant?.id;
   const data = hasFilters
     ? await service.getByUser(req.user.id, filters, tenantId)
     : await service.getByUser(req.user.id, {}, tenantId);

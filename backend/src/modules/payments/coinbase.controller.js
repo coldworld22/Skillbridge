@@ -154,6 +154,7 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const charge = await coinbaseService.createCharge(apiKey, params);
 
   const chargeData = charge?.data || charge;
+  const tenantId = req.tenant?.id || null;
 
   const paymentData = {
     id: paymentId,
@@ -183,7 +184,8 @@ exports.handleWebhook = catchAsync(async (req, res) => {
   const paymentId = event?.data?.metadata?.payment_id;
   if (!paymentId) return res.status(400).end();
 
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment) return res.status(404).end();
   const tenantId = payment.tenant_id || null;
   const method = await paymentMethodsService.getById(payment.method_id);

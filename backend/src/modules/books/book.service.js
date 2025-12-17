@@ -447,7 +447,7 @@ exports.checkout = async (studentId) => {
     const booksRaw = await trx('books')
       .whereIn('id', bookIds)
       .where('status', 'active')
-      .select('id', 'price', 'included_plans', 'instructor_id');
+      .select('id', 'price', 'included_plans', 'instructor_id', 'tenant_id');
     const books = booksRaw.map(normalizeBookRow);
 
     if (books.length !== bookIds.length) {
@@ -528,6 +528,7 @@ exports.checkout = async (studentId) => {
             amount: 0,
             status: PAYMENT_STATUS.PAID,
             source: 'subscription',
+            tenant_id: b.tenant_id,
           })
           .returning('*');
 
@@ -549,6 +550,7 @@ exports.checkout = async (studentId) => {
             amount: 0,
             status: PAYMENT_STATUS.PAID,
             source: 'subscription',
+            tenant_id: b.tenant_id,
           })
           .returning('*');
 
@@ -581,6 +583,7 @@ exports.checkout = async (studentId) => {
       const paymentData = {
         id: uuidv4(),
         user_id: studentId,
+        tenant_id: b.tenant_id,
         method_id: bankMethod.id,
         item_type: 'book',
         item_id: bookItemId,

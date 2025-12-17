@@ -101,6 +101,8 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     params.cancel_url = `${process.env.FRONTEND_URL}/payments/error`;
   }
 
+  const tenantId = req.tenant?.id || null;
+
   const invoice = await nowPayments.createInvoice(settings.api_key, params);
 
   const paymentData = {
@@ -130,7 +132,8 @@ exports.handleIPN = catchAsync(async (req, res) => {
   const paymentId = payload.order_id;
   if (!paymentId) return res.status(400).end();
 
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment) return res.status(404).end();
   const tenantId = payment.tenant_id || null;
   const method = await paymentMethodsService.getById(payment.method_id);

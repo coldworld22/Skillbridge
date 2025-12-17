@@ -873,6 +873,7 @@ exports.generateFromPayment = async (payment, user, tenantId = null) => {
   const baseRecord = {
     payment_id: payment.id,
     user_id: payment.user_id,
+    tenant_id: payment.tenant_id || existing?.tenant_id || null,
     amount: payment.amount,
     currency: payment.currency,
     pdf_url: pdfRelativePath,
