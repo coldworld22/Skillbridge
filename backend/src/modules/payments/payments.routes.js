@@ -1,9 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./payments.controller");
-const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware");
+const { verifyToken } = require("../../middleware/auth/authMiddleware");
+const {
+  resolveTenant,
+  ensureTenantMembership,
+  enforceTenantStatus,
+  requireEntitlement,
+} = require("../../middleware/tenant");
 
-router.use(verifyToken, isAdmin);
+router.use(
+  verifyToken,
+  resolveTenant,
+  ensureTenantMembership(),
+  enforceTenantStatus(),
+  requireEntitlement("payment.manage"),
+);
 
 router.post("/", controller.createPayment);
 router.get("/", controller.getPayments);
