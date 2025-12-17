@@ -1,0 +1,71 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+.transition-base {
+  transition: all $transition-base;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: $color-text;
+}
+
+.dark .form-label {
+  color: $color-muted-dark;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.input-floating {
+  display: block;
+  width: 100%;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background-color: #fff;
+  padding: 1.25rem 0.75rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #111827;
+  transition: all $transition-base;
+}
+
+.input-floating::placeholder {
+  color: transparent;
+}
+
+.input-floating:focus {
+  @include focus-ring($color-brand-500, 2px);
+  border-color: $color-brand-500;
+}
+
+.dark .input-floating {
+  border-color: $color-border-dark;
+  background-color: #1f2937;
+  color: #fff;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-ellipsis {
+  @include text-ellipsis(1);
+}

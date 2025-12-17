@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Class Lifecycle &amp; Certificate Workflow | SkillBridge Documentation</title>
+    <link rel="stylesheet" href="./assets/docs.css" />
+</head>
+<body class="docs docs-article">
+  <header class="docs-article-header">
+    <h1>SkillBridge Documentation</h1>
+    <p class="docs-meta">Browse the sidebar or return to the <a href="./index.html">docs hub</a>.</p>
+  </header>
+  <main class="docs-shell">
+    <button class="docs-nav-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+      </svg>
+      Browse guides
+    </button>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation sections">
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+        <li><a href="index.html">Documentation Hub</a></li>
+        <li><a href="installation.html">Installation Guide</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="deployment.html">Deployment Guide</a></li>
+        <li><a href="configuration-reference.html">Configuration Reference</a></li>
+        <li><a href="architecture.html">Backend Architecture Overview</a></li>
+        <li><a href="admin-alerts.html">Admin Alerts</a></li>
+        <li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+        <li><a href="admin-category-management.html">Admin Category Management</a></li>
+        <li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+        <li><a href="api-docs.html">API Overview</a></li>
+        <li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+        <li><a href="class-lifecycle-workflow.html">Class Lifecycle & Certificate Workflow</a></li>
+        <li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+        <li><a href="coupon-management.html">Coupon Management</a></li>
+        <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+        <li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+        <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+        <li><a href="release-checklist.html">Release Checklist</a></li>
+        <li><a href="student-enrollment-workflow.html">Student Class Purchase & Enrollment Workflow</a></li>
+        <li><a href="student-registration-guide.html">Student Registration & Class Enrollment Guide</a></li>
+        <li><a href="social-login-setup.html">Social Login Setup</a></li>
+        <li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+        <li><a href="changelog.html">Changelog</a></li>
+      </ul>
+    </nav>
+    <article class="docs-article">
+      <h1 id="class-lifecycle-certificate-workflow">Class Lifecycle &amp; Certificate Workflow</h1>
+<p>This guide explains the typical steps from creating a live class to issuing a certificate to each student.</p>
+<h2 id="1-instructor-creates-a-class">1. Instructor Creates a Class</h2>
+<ol>
+<li>The instructor logs in and navigates to their dashboard.</li>
+<li>From <strong>Create Class</strong> they provide details like title, schedule, price and max students.</li>
+<li>The backend route <code>POST /api/users/classes/admin</code> stores the class in <code>online_classes</code>.</li>
+<li>Once ready, the instructor publishes the class using <code>PATCH /api/users/classes/admin/:id/status</code>.</li>
+</ol>
+<h2 id="2-students-enroll">2. Students Enroll</h2>
+<ol>
+<li>Students register an account following the <a href="student-registration-guide.html">Student Registration Guide</a>.</li>
+<li>On the class page, a student can <strong>Add to Cart</strong> and complete checkout.</li>
+<li>After payment they are added to <code>class_enrollments</code> and can access the lessons and resources.</li>
+</ol>
+<h2 id="3-assignments-attendance">3. Assignments &amp; Attendance</h2>
+<ol>
+<li>The instructor creates assignments via <code>POST /api/users/classes/assignments/class/:classId</code>.</li>
+<li>Students submit work which is stored in <code>assignment_submissions</code>.</li>
+<li>Attendance for each lesson is recorded through the <code>/attendance</code> endpoints.</li>
+</ol>
+<h2 id="4-scoring">4. Scoring</h2>
+<ol>
+<li>Instructors can define a scoring policy using <code>POST /api/users/classes/scores/policy/:classId</code>.</li>
+<li>The policy sets weights for assignment grades, attendance and a final exam.</li>
+<li><code>GET /api/users/classes/scores/instructor/:classId</code> calculates scores for every enrolled student.</li>
+<li>Each student's results are saved in <code>student_class_scores</code> with the total percentage and pass/fail status.</li>
+</ol>
+<h2 id="5-certificates">5. Certificates</h2>
+<ol>
+<li>When a student passes, the instructor issues a certificate with <code>POST /api/users/classes/scores/instructor/:classId/students/:studentId/issue</code>.</li>
+<li>A new entry is created in <code>certificates</code> linked to the class and student.</li>
+<li>Students can view or download their certificate from the dashboard once issued.</li>
+</ol>
+    </article>
+  </main>
+  <script src="./assets/docs.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.row {
+  border-top: 1px solid $color-border;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.row:hover {
+  background: #f9fafb;
+}
+
+.cell {
+  padding: 0.5rem 1rem;
+  vertical-align: middle;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.truncate {
+  max-width: 16rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,990 @@
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import Navbar from "@/components/website/sections/Navbar";
+import Footer from "@/components/website/sections/Footer";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import TutorialHeader from "@/components/tutorials/detail/TutorialHeader";
+import TutorialOverview from "@/components/tutorials/detail/TutorialOverview";
+import InstructorBio from "@/components/tutorials/detail/InstructorBio";
+import ChapterList from "@/components/tutorials/detail/ChapterList";
+import dynamic from "next/dynamic";
+import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
+import CourseProgress from "@/components/classes/CourseProgress";
+import toast from "react-hot-toast";
+import useAuthStore from "@/store/auth/authStore";
+import useCartStore from "@/store/cart/cartStore";
+import useTutorialProgress from "@/hooks/useTutorialProgress";
+import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
+import { FaBookmark, FaHeart } from "react-icons/fa";
+import { formatCurrency } from "@/utils/currency";
+
+const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
+const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
+import BackButton from "@/components/tutorials/detail/BackButton";
+const ReviewsSection = dynamic(() => import("@/components/tutorials/detail/ReviewsSection"), { ssr: false });
+import TestQuiz from "@/components/tutorials/detail/TestQuiz";
+import VideoPreviewList from "@/components/tutorials/detail/VideoPreviewList";
+import {
+  fetchTutorialDetails,
+  fetchPublishedTutorials,
+  fetchTutorialAssignments,
+  fetchTutorialProgress,
+  enrollInTutorial,
+  addTutorialToWishlist,
+  removeTutorialFromWishlist,
+  getMyTutorialWishlist,
+  addTutorialToFavorites,
+  removeTutorialFromFavorites,
+  getMyTutorialFavorites,
+} from "@/services/tutorialService";
+import {
+  getNotifications,
+  markNotificationAsRead,
+} from "@/services/notificationService";
+import { buildUrl } from "@/utils/url";
+import Link from "next/link";
+import { normalizeText } from "@/utils/text";
+
+export async function handleShare(tutorial) {
+  const shareData = {
+    title: tutorial.title,
+    text: "Check out this tutorial on SkillBridge!",
+    url: typeof window !== "undefined" ? window.location.href : "",
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      toast.success("Shared successfully!");
+    } catch {
+      // ignore errors
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  }
+}
+
+export async function addTutorialToCart({
+  tutorial,
+  isLoggedIn,
+  userRole,
+  cartItems = [],
+  addItem,
+  router,
+  t,
+}) {
+  if (!tutorial) return;
+  if (!isLoggedIn) {
+    toast.error(t("login_first"));
+    router.push("/auth/login");
+    return;
+  }
+  if (userRole !== "student") {
+    toast.error("Only students can purchase");
+    return;
+  }
+
+  const alreadyInCart = cartItems.some((item) => item.id === tutorial.id);
+  if (alreadyInCart) {
+    toast.error("Already in cart");
+    return;
+  }
+
+  try {
+    const effectivePrice =
+      tutorial.discountPrice != null
+        ? tutorial.discountPrice
+        : tutorial.price ?? 0;
+
+    await addItem({
+      id: tutorial.id,
+      name: tutorial.title,
+      price: effectivePrice,
+      originalPrice: tutorial.price ?? effectivePrice,
+      discountPrice: tutorial.discountPrice ?? null,
+      currency: tutorial.currency ?? null,
+      item_type: "tutorial",
+    });
+    toast.success("Added to cart");
+    router.push("/cart");
+  } catch (err) {
+    console.error("Failed to add to cart", err);
+    toast.error("Failed to add to cart");
+  }
+}
+
+export default function TutorialDetail() {
+  const router = useRouter();
+  const { id } = router.query;
+  const [tutorial, setTutorial] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [testPassed, setTestPassed] = useState(false);
+  const [assignments, setAssignments] = useState([]);
+  const [assignmentStatus, setAssignmentStatus] = useState("idle");
+  const [assignmentErrorCode, setAssignmentErrorCode] = useState(null);
+  const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
+  const user = useAuthStore((state) => state.user);
+  const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
+  const isStudent = user?.role?.toLowerCase() === "student";
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [startTime, setStartTime] = useState(0);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [inFavorites, setInFavorites] = useState(false);
+
+  const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
+    useTutorialProgress(id, tutorial?.chapters ?? []);
+  const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
+  const renderCountRef = useRef(0);
+  const viewerRole = user?.role?.toLowerCase?.() ?? null;
+  const viewerStatus = useMemo(() => {
+    if (!isLoggedIn) return "guest";
+    if (!viewerRole || viewerRole === "student") {
+      return isEnrolled ? "student-enrolled" : "student-not-enrolled";
+    }
+    return viewerRole;
+  }, [isLoggedIn, viewerRole, isEnrolled]);
+  const shouldShowEnrollBanner =
+    !isEnrolled &&
+    (viewerStatus === "guest" || viewerStatus === "student-not-enrolled");
+  const isStaffViewer =
+    Boolean(isLoggedIn && viewerRole && viewerRole !== "student");
+  const playlist = useMemo(() => {
+    if (!tutorial) return [];
+    const items = [];
+    if (tutorial.preview) {
+      items.push({
+        id: "preview",
+        src: tutorial.preview,
+        title: t("preview_video_title", { defaultValue: "Preview Video" }),
+        chapterId: null,
+        isPreview: true,
+      });
+    }
+    (tutorial.chapters || []).forEach((ch) => {
+      items.push({
+        id: ch.id,
+        src: ch.videoUrl,
+        title: ch.title,
+        chapterId: ch.id,
+        isPreview: Boolean(ch.is_preview),
+        duration: ch.duration,
+      });
+    });
+    return items;
+  }, [tutorial, t]);
+
+  const previewOffset = tutorial?.preview ? 1 : 0;
+  const unlockedLimit = isEnrolled
+    ? playlist.length
+    : Math.min(playlist.length, tutorial?.preview ? 2 : 1);
+
+  renderCountRef.current += 1;
+  if (typeof window !== "undefined") {
+    const logCount = renderCountRef.current;
+    if (logCount <= 10 || logCount % 10 === 0) {
+      console.debug(
+        "[TutorialDetail render]",
+        logCount,
+        {
+          loading,
+          error,
+          hasTutorial: Boolean(tutorial),
+          assignmentsLength: Array.isArray(assignments) ? assignments.length : "n/a",
+          isLoggedIn,
+          isStudent,
+          isEnrolled,
+          viewerStatus,
+          assignmentStatus,
+          currentVideoIndex,
+          unlockedLimit,
+          playlistLength: playlist.length,
+        },
+      );
+    }
+  }
+
+  const enroll = async () => {
+    if (!tutorial) return;
+    if (!isLoggedIn) {
+      toast.error(t("login_first"));
+      router.push("/auth/login");
+      return;
+    }
+
+    try {
+      const res = await enrollInTutorial(tutorial.id);
+      const enrolledFlag =
+        res?.is_enrolled === true ||
+        res?.enrolled === true ||
+        res?.data?.is_enrolled === true ||
+        res?.data?.enrolled === true ||
+        res?.success === true;
+      setIsEnrolled(enrolledFlag);
+      if (enrolledFlag) toast.success(t("enroll_success"));
+      else toast.error(t("enroll_fail"));
+    } catch (err) {
+      console.error("Enrollment failed", err);
+      toast.error(t("enroll_fail"));
+    }
+  };
+
+  const handleAddToCart = useCallback(
+    () =>
+      addTutorialToCart({
+        tutorial,
+        isLoggedIn,
+        userRole: viewerRole,
+        cartItems: cartItems || [],
+        addItem,
+        router,
+        t,
+      }),
+    [tutorial, isLoggedIn, viewerRole, cartItems, addItem, router, t],
+  );
+
+
+  useEffect(() => {
+    if (!id) return;
+    let isActive = true;
+
+    const loadTutorial = async () => {
+      setLoading(true);
+      setError(null);
+      if (typeof window !== "undefined") {
+        console.debug("[TutorialDetail] load() invoked", { id });
+      }
+      try {
+        const data = await fetchTutorialDetails(id);
+        if (!isActive) return;
+        if (!data) {
+          setError(t("not_found"));
+          setLoading(false);
+          return;
+        }
+
+        const rawChapters = Array.isArray(data.chapters)
+          ? data.chapters
+          : data.chapters && typeof data.chapters === "object"
+            ? Object.values(data.chapters)
+            : [];
+
+        const chapters = rawChapters
+          .filter((chapter) => chapter && typeof chapter === "object")
+          .map((ch) => ({
+            ...ch,
+            videoUrl: buildUrl(ch.video_url || ch.videoUrl),
+          }));
+
+        const previewUrl = buildUrl(data.preview);
+
+        setTutorial({ ...data, chapters, preview: previewUrl });
+        if (typeof window !== "undefined") {
+          console.debug("[TutorialDetail] tutorial state set", {
+            tutorialId: data.id,
+            chapters: chapters.length,
+            hasPreview: Boolean(previewUrl),
+          });
+        }
+
+        const initialEnrollment = Boolean(
+          data?.is_enrolled || data?.enrolled || data?.isEnrolled,
+        );
+        setIsEnrolled(initialEnrollment);
+        setAssignmentStatus((status) =>
+          isLoggedIn
+            ? isStudent
+              ? status
+              : "restricted"
+            : "idle",
+        );
+        setAssignmentErrorCode(null);
+
+        const list = await fetchPublishedTutorials();
+        if (!isActive) return;
+        const others = (list?.data || list || []).filter(
+          (t) => String(t.id) !== String(data.id),
+        );
+        setRelated(others.slice(0, 3));
+      } catch (err) {
+        if (!isActive) return;
+        console.error(err);
+        setError(t("load_error"));
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTutorial();
+
+    return () => {
+      isActive = false;
+    };
+  }, [id, t]);
+
+  useEffect(() => {
+    if (!id || !tutorial?.id) return;
+    let isActive = true;
+
+    const resetAssignments = (status) => {
+      if (!isActive) return;
+      setAssignments((prev) =>
+        Array.isArray(prev) && prev.length ? [] : prev,
+      );
+      setInWishlist((prev) => (prev ? false : prev));
+      setInFavorites((prev) => (prev ? false : prev));
+      setIsEnrolled((prev) => (prev ? false : prev));
+      setAssignmentStatus((prev) => (prev === status ? prev : status));
+      setAssignmentErrorCode(null);
+    };
+
+    if (!isLoggedIn) {
+      resetAssignments("idle");
+      return;
+    }
+
+    if (!isStudent) {
+      resetAssignments("restricted");
+      return;
+    }
+
+    const syncStudentState = async () => {
+      setAssignmentStatus((prev) =>
+        prev === "loading" ? prev : "loading",
+      );
+      setAssignmentErrorCode(null);
+
+      let enrolledStatus = false;
+
+      try {
+        const status = await fetchTutorialProgress(id);
+        if (!isActive) return;
+        enrolledStatus = Boolean(
+          status?.is_enrolled || status?.enrolled || status?.success,
+        );
+        setIsEnrolled((prev) =>
+          prev === enrolledStatus ? prev : enrolledStatus,
+        );
+      } catch (err) {
+        if (!isActive) return;
+        console.error("Failed to fetch enrollment status", err);
+      }
+
+      if (!enrolledStatus) {
+        if (!isActive) return;
+        setAssignments((prev) =>
+          Array.isArray(prev) && prev.length ? [] : prev,
+        );
+        setAssignmentStatus((prev) =>
+          prev === "locked" ? prev : "locked",
+        );
+        setAssignmentErrorCode(null);
+      } else {
+        try {
+          const assignmentList = await fetchTutorialAssignments(id);
+          if (!isActive) return;
+          const normalizedAssignments = Array.isArray(assignmentList)
+            ? assignmentList
+            : [];
+          if (typeof window !== "undefined") {
+            console.debug("[TutorialDetail] assignments loaded", {
+              count: normalizedAssignments.length,
+            });
+          }
+          setAssignments((prev) => {
+            const prevIds = Array.isArray(prev)
+              ? prev.map((a) => a?.id).filter(Boolean)
+              : [];
+            const nextIds = normalizedAssignments
+              .map((a) => a?.id)
+              .filter(Boolean);
+            if (
+              prevIds.length === nextIds.length &&
+              prevIds.every((id, idx) => String(id) === String(nextIds[idx]))
+            ) {
+              return prev;
+            }
+            return normalizedAssignments;
+          });
+          setAssignmentStatus((prev) => {
+            const nextStatus = normalizedAssignments.length ? "ready" : "empty";
+            return prev === nextStatus ? prev : nextStatus;
+          });
+        } catch (err) {
+          if (!isActive) return;
+          console.error("Failed to load assignments", err);
+          const statusCode = err?.response?.status ?? err?.status ?? null;
+          if (typeof window !== "undefined") {
+            console.debug("[TutorialDetail] assignments request failed", {
+              status: statusCode,
+            });
+          }
+          setAssignments((prev) =>
+            Array.isArray(prev) && prev.length ? [] : prev,
+          );
+          const nextStatus = statusCode === 403 ? "forbidden" : "error";
+          setAssignmentStatus((prev) =>
+            prev === nextStatus ? prev : nextStatus,
+          );
+          setAssignmentErrorCode(statusCode);
+        }
+      }
+
+      const normalizeCollection = (input) => {
+        if (Array.isArray(input)) return input;
+        if (input && Array.isArray(input.data)) return input.data;
+        if (input && Array.isArray(input.items)) return input.items;
+        return [];
+      };
+
+      try {
+        const [wRaw, fRaw] = await Promise.all([
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+        ]);
+        if (!isActive) return;
+        const wishlistEntries = normalizeCollection(wRaw);
+        const favoriteEntries = normalizeCollection(fRaw);
+        const tutorialIdString = String(tutorial.id);
+        setInWishlist((prev) => {
+          const next = wishlistEntries.some(
+            (item) => String(item?.id) === tutorialIdString,
+          );
+          return prev === next ? prev : next;
+        });
+        setInFavorites((prev) => {
+          const next = favoriteEntries.some(
+            (item) => String(item?.id) === tutorialIdString,
+          );
+          return prev === next ? prev : next;
+        });
+      } catch (err) {
+        if (!isActive) return;
+        console.error("Failed to load user lists", err);
+      }
+    };
+
+    syncStudentState();
+
+    return () => {
+      isActive = false;
+    };
+  }, [id, tutorial?.id, isLoggedIn, isStudent]);
+  useEffect(() => {
+    if (!isEnrolled || !tutorial?.title) return;
+    const fetchNotifications = async () => {
+      try {
+        const raw = await getNotifications();
+        const notes = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.notifications)
+              ? raw.notifications
+              : [];
+        if (!notes.length) return;
+        const note = notes.find(
+          (n) =>
+            n?.type === "new_assignment" &&
+            n?.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
+        );
+        if (!note) return;
+        toast((t) => (
+          <span>
+            {note.message}{" "}
+            <Link
+              href="/dashboard/student/assignments"
+              className="underline text-blue-400"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              View
+            </Link>
+          </span>
+        ));
+        try {
+          await markNotificationAsRead(note.id);
+        } catch (err) {
+          // ignore mark read errors
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [isEnrolled, tutorial]);
+
+
+  // Sync playback time with the current item
+  useEffect(() => {
+    if (!playlist.length) {
+      setStartTime(0);
+      return;
+    }
+    const active = playlist[currentVideoIndex];
+    if (!active || !active.chapterId) {
+      setStartTime(0);
+      return;
+    }
+    const time = startTimeFor(active.chapterId);
+    setStartTime(time);
+  }, [playlist, currentVideoIndex, startTimeFor]);
+
+  // Restore last watched chapter when tutorial loads
+  useEffect(() => {
+    if (!tutorial) return;
+    if (!isEnrolled) return;
+    if (!Array.isArray(tutorial.chapters) || !tutorial.chapters.length) {
+      if (tutorial?.preview && currentVideoIndex !== 0) {
+        setCurrentVideoIndex(0);
+      }
+      return;
+    }
+    if (typeof progress.lastIndex === "number" && progress.lastIndex >= 0) {
+      const clamped = Math.min(
+        progress.lastIndex,
+        tutorial.chapters.length - 1
+      );
+      const targetIndex = (tutorial.preview ? 1 : 0) + clamped;
+      if (currentVideoIndex !== targetIndex) {
+        setCurrentVideoIndex(targetIndex);
+      }
+    }
+  }, [progress.lastIndex, tutorial, currentVideoIndex, isEnrolled]);
+
+  // Prevent unenrolled users from accessing locked videos
+  useEffect(() => {
+    if (isEnrolled) return;
+    if (!playlist.length) return;
+    if (unlockedLimit <= 0) {
+      if (currentVideoIndex !== 0) setCurrentVideoIndex(0);
+      return;
+    }
+    if (currentVideoIndex >= unlockedLimit) {
+      setCurrentVideoIndex(unlockedLimit - 1);
+    }
+  }, [isEnrolled, unlockedLimit, currentVideoIndex, playlist]);
+
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <div className="container mx-auto px-6 py-12 mt-16">
+          <TutorialSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <p className="text-lg text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (!tutorial) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-300">{t("not_found")}</p>
+      </div>
+    );
+  }
+
+  const currentItem = playlist[currentVideoIndex] || null;
+  const isCurrentLocked =
+    !isEnrolled &&
+    (unlockedLimit <= 0 || currentVideoIndex >= unlockedLimit);
+  const videoList = playlist.map((item, idx) => ({
+    id: item.chapterId ?? item.id ?? idx,
+    src: item.src,
+    title: item.title,
+    isPreview: item.isPreview,
+    locked: !isEnrolled && idx >= unlockedLimit,
+  }));
+  const currentVideo = !isCurrentLocked ? currentItem?.src : null;
+  const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
+
+  const totalChapters = Array.isArray(tutorial.chapters)
+    ? tutorial.chapters.length
+    : 0;
+  const progressPercentage = totalChapters
+    ? (progress.completedChapters.length / totalChapters) * 100
+    : 0;
+
+  const handleSelectVideo = (index) => {
+    if (!isEnrolled && index >= unlockedLimit) {
+      toast.error(
+        t("video_locked_toast", {
+          defaultValue: "Enroll to unlock this lesson",
+        })
+      );
+      return;
+    }
+    setCurrentVideoIndex(index);
+  };
+
+  const handleVideoTimeUpdate = (time) => {
+    if (!currentItem?.chapterId) return;
+    saveTime(currentItem.chapterId, time);
+    if (Array.isArray(tutorial.chapters)) {
+      const chapterIndex = tutorial.chapters.findIndex(
+        (ch) => ch.id === currentItem.chapterId
+      );
+      if (chapterIndex >= 0) {
+        setIndex(chapterIndex);
+      }
+    }
+  };
+
+  const handleVideoEnded = () => {
+    if (!currentItem?.chapterId) return;
+    if (!Array.isArray(tutorial.chapters)) return;
+    const chapterIndex = tutorial.chapters.findIndex(
+      (ch) => ch.id === currentItem.chapterId
+    );
+    if (chapterIndex >= 0) {
+      completeChapter(chapterIndex, currentItem.chapterId);
+    }
+  };
+
+  const currentChapterIndex = (() => {
+    if (!Array.isArray(tutorial.chapters) || !tutorial.chapters.length) {
+      return 0;
+    }
+    const idx = tutorial.chapters.findIndex(
+      (ch) => ch.id === currentItem?.chapterId
+    );
+    return idx >= 0 ? idx : 0;
+  })();
+
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inWishlist) {
+        await removeTutorialFromWishlist(tutorial.id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addTutorialToWishlist(tutorial.id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (err) {
+      toast.error('Failed to update wishlist');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inFavorites) {
+        await removeTutorialFromFavorites(tutorial.id);
+        setInFavorites(false);
+        toast.success('Removed from favorites');
+      } else {
+        await addTutorialToFavorites(tutorial.id);
+        setInFavorites(true);
+        toast.success('Added to favorites');
+      }
+    } catch (err) {
+      toast.error('Failed to update favorites');
+    }
+  };
+
+  return (
+    <div className="bg-gray-900 text-white min-h-screen">
+      <Head>
+        <title>{tutorial.title} | SkillBridge</title>
+        <meta
+          name="description"
+          content={normalizeText(tutorial.description).slice(0, 160)}
+        />
+      </Head>
+      <Navbar />
+      <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
+        <BackButton />
+
+        {!isLoggedIn && (
+          <div className="bg-blue-900/30 border border-blue-700 text-blue-200 px-4 py-3 rounded-md mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              {t("login_reminder", {
+                defaultValue:
+                  "Log in to purchase this tutorial, resume where you left off, and unlock the full learning experience.",
+              })}
+            </span>
+            <Link
+              href={`/auth/login?next=${encodeURIComponent(
+                router.asPath || `/tutorials/${tutorial.id}`,
+              )}`}
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-md transition"
+            >
+              {t("login_cta", { defaultValue: "Log in" })}
+            </Link>
+          </div>
+        )}
+
+        {shouldShowEnrollBanner && (
+          <EnrollBanner
+            onEnroll={enroll}
+            isPaid={Number(tutorial.price) > 0}
+            price={tutorial.price}
+            onAddToCart={handleAddToCart}
+            currency={tutorial.currency}
+          />
+        )}
+
+        {isStaffViewer && (
+          <div className="bg-gray-800/60 border border-gray-700 text-gray-300 px-4 py-3 rounded-md">
+            {t("staff_view_notice", {
+              defaultValue:
+                "You are viewing this tutorial with a staff role. Student-only interactions such as enrollment, quiz, and assignments are hidden.",
+            })}
+          </div>
+        )}
+
+
+        {playerVideos.length > 0 ? (
+          <CustomVideoPlayer
+            key={currentVideoIndex}
+            videos={playerVideos}
+            startTime={startTime}
+            onTimeUpdate={handleVideoTimeUpdate}
+            locked={isCurrentLocked}
+            onEnded={handleVideoEnded}
+            storageKey={tutorial?.id ? `tutorial-${tutorial.id}` : undefined}
+          />
+        ) : (
+          <div
+            className="bg-gray-800 text-gray-400 p-4 rounded"
+            data-testid="no-video"
+          >
+            No video available
+          </div>
+        )}
+
+        <VideoPreviewList
+          videos={videoList}
+          currentIndex={currentVideoIndex}
+          completed={progress.completedChapters}
+          onSelect={handleSelectVideo}
+        />
+
+        <div className="flex justify-end mb-4 gap-3">
+          <button
+            onClick={handleToggleFavorite}
+            aria-label={inFavorites ? "Remove from favorites" : "Add to favorites"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaHeart className={inFavorites ? "text-red-500" : "text-white"} />
+          </button>
+
+          <button
+            onClick={handleToggleWishlist}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaBookmark className={inWishlist ? "text-yellow-400" : "text-white"} />
+          </button>
+
+          <button
+            onClick={() => handleShare(tutorial)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          >
+            🔗 {t("share")}
+          </button>
+        </div>
+
+        <TutorialHeader
+          {...tutorial}
+          price={
+            Number(tutorial.price) > 0
+              ? formatCurrency(tutorial.price, { currency: tutorial.currency })
+              : t("free")
+          }
+        />
+        <InstructorBio
+          name={tutorial.instructor}
+          avatarUrl={tutorial.instructorAvatar}
+          instructorBio={tutorial.instructorBio}
+        />
+        <TutorialOverview description={tutorial.description} />
+        <CourseProgress percentage={progressPercentage} />
+
+        <ChapterList
+          chapters={tutorial.chapters}
+          currentIndex={currentChapterIndex}
+          completedChapters={progress.completedChapters}
+          onSelect={(index) => handleSelectVideo(index + previewOffset)}
+          isEnrolled={isEnrolled}
+        />
+
+        {isEnrolled ? (
+          <TestQuiz
+            tutorialId={tutorial.id}
+            onComplete={(finalScore) => {
+              if (finalScore >= 2) setTestPassed(true);
+            }}
+          />
+        ) : (
+          <div className="text-center text-gray-400" title={t("enroll_to_access_quiz")}> 
+            {t("quiz_locked")}
+          </div>
+        )}
+
+        {assignmentStatus !== "idle" && (
+          <div className="mt-6 text-center space-y-4">
+            {assignmentStatus === "loading" && (
+              <div className="text-gray-400">
+                {t("assignments_loading", {
+                  defaultValue: "Loading assignments...",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "locked" && (
+              <div className="text-gray-400">
+                {t("assignments_locked", {
+                  defaultValue: "Enroll in this tutorial to unlock assignments.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "restricted" && isStaffViewer && (
+              <div className="text-gray-400">
+                {t("assignments_staff_only", {
+                  defaultValue:
+                    "Assignments and the quiz are visible only to student accounts.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "forbidden" && (
+              <div className="text-red-400">
+                {t("assignments_forbidden", {
+                  defaultValue:
+                    "Assignments are currently locked for your account.",
+                })}
+                {assignmentErrorCode && (
+                  <span className="ml-2 text-xs text-red-300">
+                    {t("error_code", { defaultValue: "Error code" })}:{" "}
+                    {assignmentErrorCode}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {assignmentStatus === "error" && (
+              <div className="text-red-400">
+                {t("assignments_error", {
+                  defaultValue:
+                    "We couldn't load assignments right now. Please try again later.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "empty" && (
+              <div className="text-gray-400">
+                {t("assignments_empty", {
+                  defaultValue:
+                    "No assignments have been published for this tutorial yet.",
+                })}
+              </div>
+            )}
+
+            {assignmentStatus === "ready" && (
+              <>
+                {testPassed && isEnrolled ? (
+                  <div className="space-y-4">
+                    {assignments.map((assignment) => (
+                      <div key={assignment.id}>
+                        <Link
+                          href={`/dashboard/student/assignments/${assignment.id}`}
+                          className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition inline-block"
+                        >
+                          📚 {assignment.title || t("start_assignment")}
+                        </Link>
+                        {(assignment.due_date || assignment.dueDate) && (
+                          <p className="text-sm text-gray-400 mt-1">
+                            {t("assignments_due", { defaultValue: "Due" })}:{" "}
+                            {new Date(
+                              assignment.due_date || assignment.dueDate,
+                            ).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-400">
+                    {t("complete_quiz_unlock_assignments")}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {testPassed && isEnrolled ? (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => router.push(`/certificate/${tutorial.id}`)}
+              className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition"
+            >
+              🎉 {t("claim_certificate")}
+            </button>
+          </div>
+        ) : (
+          <div
+            className="mt-6 text-center text-gray-400"
+            title={t("pass_quiz_to_unlock_certificate")}
+          >
+            {t("certificate_locked")}
+          </div>
+        )}
+
+        <ReviewsSection tutorialId={tutorial.id} canReview={isEnrolled} />
+        <CommentsSection tutorialId={tutorial.id} canComment={isEnrolled} />
+        <RelatedTutorials tutorials={related} />
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'tutorials'], nextI18NextConfig)),
+    },
+  };
+}

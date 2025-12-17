@@ -1,0 +1,9 @@
+{
+  "fileTooLarge": "File size must be less than {{size}}",
+  "pngJpgWebpOnly": "Only PNG, JPG or WEBP files are allowed",
+  "pdfOnly": "PDF only",
+  "pdfOrImageOnly": "Only PDF or image files are allowed",
+  "eachFileLessThan": "Each file must be less than {{size}}",
+  "maxFiles": "You can upload up to {{count}} files",
+  "invalidFileType": "Invalid file type"
+}

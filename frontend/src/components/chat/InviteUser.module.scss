@@ -1,0 +1,35 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  border: none;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity $transition-fast;
+}
+
+.button:hover {
+  opacity: 0.92;
+}
+
+.whatsapp {
+  background: #16a34a;
+}
+
+.email {
+  background: #4b5563;
+}
+
+.icon {
+  font-size: 1rem;
+}

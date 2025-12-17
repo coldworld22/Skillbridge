@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkillBridge Documentation | SkillBridge Documentation</title>
+    <link rel="stylesheet" href="./assets/docs.css" />
+</head>
+<body class="docs docs-article">
+  <header class="docs-article-header">
+    <h1>SkillBridge Documentation</h1>
+    <p class="docs-meta">Browse the sidebar or return to the <a href="./index.html">docs hub</a>.</p>
+  </header>
+  <main class="docs-shell">
+    <button class="docs-nav-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+      </svg>
+      Browse guides
+    </button>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation sections">
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+        <li><a href="index.html">Documentation Hub</a></li>
+        <li><a href="installation.html">Installation Guide</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="deployment.html">Deployment Guide</a></li>
+        <li><a href="configuration-reference.html">Configuration Reference</a></li>
+        <li><a href="architecture.html">Backend Architecture Overview</a></li>
+        <li><a href="admin-alerts.html">Admin Alerts</a></li>
+        <li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+        <li><a href="admin-category-management.html">Admin Category Management</a></li>
+        <li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+        <li><a href="api-docs.html">API Overview</a></li>
+        <li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+        <li><a href="class-lifecycle-workflow.html">Class Lifecycle & Certificate Workflow</a></li>
+        <li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+        <li><a href="coupon-management.html">Coupon Management</a></li>
+        <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+        <li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+        <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+        <li><a href="release-checklist.html">Release Checklist</a></li>
+        <li><a href="student-enrollment-workflow.html">Student Class Purchase & Enrollment Workflow</a></li>
+        <li><a href="student-registration-guide.html">Student Registration & Class Enrollment Guide</a></li>
+        <li><a href="social-login-setup.html">Social Login Setup</a></li>
+        <li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+        <li><a href="changelog.html">Changelog</a></li>
+      </ul>
+    </nav>
+    <article class="docs-article">
+      <h1 id="skillbridge-documentation">SkillBridge Documentation</h1>
+<h2 id="installation">Installation</h2>
+<p>Choose the path that matches your environment:</p>
+<ul>
+<li><a href="./installation.html#deploy-from-the-customer-zip-package">Deploy from the customer ZIP package</a>
+  – ideal for cPanel/FTP hosts and managed servers where you upload a prepared
+  archive from the Memonet portal.</li>
+<li><a href="./installation.html#1-clone-the-repository">Install from Git</a> – clone the
+  repository, run the install script, and manage updates with Git.</li>
+</ul>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>SkillBridge requires the following tools on your workstation or server:</p>
+<ul>
+<li>Node.js 18 or later (npm 9+ is bundled)</li>
+<li>Docker Engine and the Docker Compose <strong>V2</strong> plugin (<code>docker compose</code> command)</li>
+<li>Git</li>
+<li>Redis or another session store for production deployments</li>
+</ul>
+<blockquote>
+<p><strong>Heads up:</strong> The legacy <code>docker-compose</code> v1 CLI is incompatible with recent
+Docker Engine releases and often fails with <code>KeyError: 'ContainerConfig'</code>
+when rebuilding containers. Install the Docker Compose V2 plugin or downgrade
+Docker Engine below version 27 before continuing. As a short-term workaround,
+run <a href="../scripts/run-compose.sh"><code>scripts/run-compose.sh</code></a>, which exports
+<code>DOCKER_API_VERSION=1.43</code> automatically when it has to fall back to the
+legacy binary.</p>
+</blockquote>
+<h3 id="install-the-required-tools">Install the required tools</h3>
+<p>Follow the commands for your operating system to install the prerequisites the
+installer enforces.</p>
+<h4 id="nodejs-18-includes-npm">Node.js 18+ (includes npm)</h4>
+<ul>
+<li><strong>macOS (Homebrew):</strong></li>
+</ul>
+<p><code>bash
+  brew install node@20
+  echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' &gt;&gt; ~/.zshrc</code></p>
+<ul>
+<li><strong>Ubuntu / Debian:</strong></li>
+</ul>
+<p><code>bash
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt-get install -y nodejs</code></p>
+<ul>
+<li><strong>Windows:</strong> Download the LTS installer from <a href="https://nodejs.org/">nodejs.org</a>,
+  run it, then restart your terminal and confirm with <code>node -v</code>.</li>
+</ul>
+<h4 id="docker-engine-and-docker-compose-v2">Docker Engine and Docker Compose V2</h4>
+<ul>
+<li>
+<p><strong>macOS / Windows:</strong> Install <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a>,
+  ensure it is running, and verify with <code>docker --version</code> and
+  <code>docker compose version</code>.</p>
+</li>
+<li>
+<p><strong>Ubuntu / Debian:</strong></p>
+</li>
+</ul>
+<p><code>bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  newgrp docker
+  sudo mkdir -p /usr/lib/docker/cli-plugins
+  sudo curl -SL "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-$(uname -m)" \
+    -o /usr/lib/docker/cli-plugins/docker-compose
+  sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
+  docker --version
+  docker compose version</code></p>
+<p>Docker Desktop already bundles Compose V2; Linux users install the plugin
+  manually as shown above.</p>
+<h4 id="git">Git</h4>
+<ul>
+<li><strong>macOS:</strong> <code>brew install git</code></li>
+<li><strong>Ubuntu / Debian:</strong> <code>sudo apt-get install -y git</code></li>
+<li><strong>Windows:</strong> Install <a href="https://git-scm.com/download/win">Git for Windows</a> and
+  select “Git from the command line” during setup.</li>
+</ul>
+<p>Open a fresh terminal after installing these tools so PATH changes take effect,
+then rerun <code>./install.sh</code> or revisit <code>/install</code> to confirm the checks pass.</p>
+<h3 id="install-from-zip-release">Install from ZIP release</h3>
+<p>If you downloaded the packaged CodeCanyon release (published as <strong>memonet</strong>)
+rather than cloning Git, follow these steps to get the archive running on a
+workstation or live server:</p>
+<ol>
+<li><strong>Upload the ZIP.</strong> Copy the release to the host. For remote servers use
+   <code>scp</code>/<code>rsync</code> (e.g. <code>scp SkillBridge-v1.0.0.zip deploy@example.com:/var/www</code>).</li>
+<li><strong>Extract into <code>SkillBridge/</code>.</strong> Unzip the archive, rename the extracted
+   folder to <code>SkillBridge</code>, and <code>cd</code> into it so <code>install.sh</code>, <code>docker-compose.yml</code>,
+   <code>backend/</code>, and <code>frontend/</code> sit in the project root.</li>
+<li><strong>Fix ownership and permissions.</strong> On Linux change ownership to the deploy
+   user (<code>sudo chown -R deploy:deploy SkillBridge</code>) and ensure helper scripts
+   are executable (<code>chmod +x install.sh scripts/*.sh</code>). Local macOS/Windows
+   users can usually skip the <code>chown</code> step.</li>
+<li><strong>Copy the <code>.env</code> templates.</strong> Duplicate <code>.env.example</code> files for the root,
+   backend (both <code>.env</code> and <code>.env.production</code>), and frontend (<code>frontend/.env.local</code>).
+   Update the values with your domain, database URL, SMTP credentials, and admin
+   account details. See <a href="./deployment.html">deployment.md</a> for production-only
+   settings such as TLS certificates and domain variables.</li>
+<li><strong>Run the installer.</strong> Execute <code>./install.sh</code> from the project root. The
+   script asks whether you are installing locally or in production and applies
+   migrations/seeds automatically. For unattended production use the CLI form
+   (<code>./install.sh production yourdomain.com</code>).</li>
+<li><strong>Start Docker services.</strong> Launch the stack with <code>docker compose up --build</code>
+   for local development or <code>docker compose up -d --build</code> on a live host. If
+   you skip the automated compose step, run the commands manually after the
+   installer exits. When you handle migrations yourself, apply them before
+   serving traffic:</li>
+</ol>
+<p><code>bash
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed</code></p>
+<p>The dedicated <a href="./installation.html#install-from-zip-release">installation guide</a>
+contains the same workflow with command examples and troubleshooting tips.</p>
+<h3 id="1-clone-the-repository">1. Clone the repository</h3>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>&lt;repo-url&gt;
+<span class="nb">cd</span><span class="w"> </span>SkillBridge
+</code></pre></div>
+
+<h3 id="2-configure-environment-variables">2. Configure environment variables</h3>
+<h4 id="automated-install-script">Automated install script</h4>
+<p>The root <code>install.sh</code> script streamlines both local and production setups. When
+you run it the script:</p>
+<ol>
+<li>Runs <code>scripts/check_prereqs.sh</code> to verify Node.js, npm, Docker, Docker Compose
+   V2, and Git. Fix the issue, acknowledge the warning at the prompt, or set
+   <code>ALLOW_PREREQ_FAILURES=true</code> to continue automatically.</li>
+<li>Copies <code>.env.example</code> files to <code>.env</code> when the target file is missing (root,
+   backend, backend production, and <code>frontend/.env.local</code>).</li>
+<li>Sources the resulting files so migrations, seeds, and helper scripts inherit
+   the configuration.</li>
+<li>Ensures <code>backend/uploads/app</code> exists before branding assets are written.</li>
+</ol>
+<p>Supply <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> via environment variables for
+non-interactive use. Optional flags include:</p>
+<ul>
+<li><code>SEED_DB=true</code> — run <code>npm --prefix backend run seed</code> after migrations.</li>
+<li><code>START_DEV_SERVICES=false</code> — skip the automatic <code>docker compose up</code> step in
+  development mode.</li>
+<li><code>SKIP_BACKEND_NPM_INSTALL=true</code> — skip the automatic backend dependency
+  install step when you manage packages separately.</li>
+</ul>
+<p>In production mode, the script ensures Docker services are running before it
+executes database migrations. In development mode it starts the compose stack in
+detached mode unless you opt out with <code>START_DEV_SERVICES=false</code>.</p>
+<p>Before running migrations the script installs backend dependencies with
+<code>npm --prefix backend install</code> so the Node.js helper scripts are available and
+creates <code>backend/uploads/app/</code> if it is missing.</p>
+<h4 id="backend">Backend</h4>
+<p>Copy the example file and adjust values as needed:</p>
+<div class="codehilite"><pre><span></span><code>cp<span class="w"> </span>backend/.env.example<span class="w"> </span>backend/.env
+</code></pre></div>
+
+<p>For deployments, Docker Compose also reads <code>backend/.env.production</code>. Copy
+<code>backend/.env.production.example</code> to <code>backend/.env.production</code> and fill in
+production database credentials and JWT secrets.</p>
+<p>Set the display name that should appear in installer prompts and outbound
+emails so the branding check passes:</p>
+<div class="codehilite"><pre><span></span><code>APP_NAME=SkillBridge
+</code></pre></div>
+
+<p>If you plan to disable transactional email during setup, set
+<code>DISABLE_EMAILS=true</code>. Otherwise provide SMTP credentials so the installer can
+verify connectivity:</p>
+<div class="codehilite"><pre><span></span><code>SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+</code></pre></div>
+
+<p>Create the uploads directory that stores logos and favicons and ensure it is
+writable by the backend service user:</p>
+<div class="codehilite"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>backend/uploads/app
+</code></pre></div>
+
+<p>Edit <code>backend/.env</code> and provide your secrets. <code>FRONTEND_URL</code> must match the
+exact origin (scheme, host, and port) where the frontend will run to avoid CORS
+errors. Separate multiple origins with commas, for example:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">FRONTEND_URL</span><span class="o">=</span>http://localhost:3000,https://example.com
+</code></pre></div>
+
+<p>Leave <code>NODE_ENV</code> unset so cookies work over HTTP locally. If you need
+cross-subdomain cookies without HTTPS, also set:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">COOKIE_SECURE</span><span class="o">=</span><span class="nb">false</span>
+<span class="nv">COOKIE_SAMESITE</span><span class="o">=</span>None
+</code></pre></div>
+
+<p>If additional domains need access to the API, add them to
+<code>EXTRA_CORS_ORIGINS</code> as a comma-separated list of URLs:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">EXTRA_CORS_ORIGINS</span><span class="o">=</span>https://admin.example.com,https://docs.example.com
+</code></pre></div>
+
+<p>Rate limiting defaults to 1,000 requests per IP every 15 minutes. Adjust the
+allowance if your deployment expects heavier bursts of traffic:</p>
+<div class="codehilite"><pre><span></span><code>RATE_LIMIT_MAX=2000
+RATE_LIMIT_WINDOW_MS=300000 # 5 minutes
+</code></pre></div>
+
+<p>A Redis instance (or compatible store) is required to persist sessions in
+production. Set <code>REDIS_URL</code> in <code>backend/.env</code> to point to your Redis server
+(for example <code>redis://localhost:6379</code>).</p>
+<p>The book filter's price range uses configurable defaults:</p>
+<div class="codehilite"><pre><span></span><code>BOOK_PRICE_RANGE_DEFAULT=100
+BOOK_PRICE_RANGE_MAX=500
+</code></pre></div>
+
+<p>These values are read in <code>backend/src/config/books.js</code> and mirrored on the
+frontend via <code>frontend/src/utils/constants.js</code>. When running the frontend
+outside Docker, add the <code>NEXT_PUBLIC_</code> variants to <code>frontend/.env.local</code>:</p>
+<div class="codehilite"><pre><span></span><code>NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
+NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
+</code></pre></div>
+
+<h5 id="installation-api">Installation API</h5>
+<p>The backend exposes protected setup endpoints at <code>/api/install</code> for automated
+deployments. Enable them by setting <code>INSTALL_API_ENABLED=true</code> in
+<code>backend/.env</code> and restarting the backend. Authenticate every request with an
+administrator JWT and call <code>POST /api/install/run</code> with a JSON body such as:</p>
+<div class="codehilite"><pre><span></span><code>{
+  "mode": "development"
+}
+</code></pre></div>
+<p>For production deployments include the domain:</p>
+<div class="codehilite"><pre><span></span><code>{
+  "mode": "production",
+  "domain": "skillbridge.example"
+}
+</code></pre></div>
+<p>If you configure <code>INSTALL_SETUP_SECRET</code>, clients must also send the same value
+in the <code>X-Install-Setup-Secret</code> header on every installer request. Remove or
+disable the API when setup is complete. The web wizard served from
+<code>/install/index.html</code> is a thin UI on top of the same endpoints.</p>
+<h5 id="initial-admin-passwords">Initial admin passwords</h5>
+<p>The seed process provisions <code>SuperAdmin</code> and <code>Admin</code> accounts. Define
+<code>APP_DOMAIN</code> first so their emails match your domain.</p>
+<ul>
+<li><code>ADMIN_INITIAL_PASSWORD</code> (optional) overrides the Admin password. When omitted a secure random value is generated and printed during seeding.</li>
+<li>The SuperAdmin account currently defaults to <code>Javaheat@18880</code>. Change it immediately after signing in, or edit <code>backend/src/seeds/seed_superadmin_user.js</code> before seeding.</li>
+</ul>
+<h4 id="frontend-optional">Frontend (optional)</h4>
+<p>When using Docker Compose the frontend automatically points to the API on port
+<code>5002</code>. If you start the Next.js app separately, create <code>frontend/.env.local</code>
+and set:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>http://localhost:5002/api
+<span class="nv">NEXT_PUBLIC_TRUSTED_ICON_HOSTS</span><span class="o">=</span>yourdomain.com,cdn.yourdomain.com
+</code></pre></div>
+
+<p><code>NEXT_PUBLIC_TRUSTED_ICON_HOSTS</code> defines a comma-separated list of allowed
+hosts for payment method icons. URLs outside this list will fall back to a
+default icon.</p>
+<p>The root <code>.env</code> file defaults <code>NEXT_PUBLIC_API_BASE_URL</code> to
+<code>http://localhost:5002/api</code> so Docker services can reach the backend container
+internally during development. For production builds use
+<code>frontend/.env.production</code> instead and remove or override the root <code>.env</code> so the
+frontend points to your public domain.</p>
+<h3 id="3-install-dependencies-optional">3. Install dependencies (optional)</h3>
+<p>For manual development outside of Docker:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>backend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>install
+<span class="nb">cd</span><span class="w"> </span>../frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>install
+<span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
+
+<h3 id="4-prepare-the-database">4. Prepare the database</h3>
+<p>Run migrations and seed data:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>backend
+npm<span class="w"> </span>run<span class="w"> </span>migrate
+npm<span class="w"> </span>run<span class="w"> </span>seed
+<span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
+
+<h3 id="5-launch-the-stack">5. Launch the stack</h3>
+<p>Start all services with Docker Compose:</p>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+
+<p>The containers expose the following URLs:</p>
+<ul>
+<li>Frontend: <code>http://localhost:3000</code></li>
+<li>Backend API: <code>http://localhost:5002/api</code></li>
+<li>PostgreSQL: <code>localhost:5432</code></li>
+<li>pgAdmin: <code>http://localhost:5050</code></li>
+<li>Redis: <code>localhost:6379</code></li>
+</ul>
+<p>Once running, open the frontend URL in your browser and create an account or log
+in.</p>
+<h4 id="web-based-installer-optional">Web-based installer (optional)</h4>
+<ol>
+<li>In <code>backend/.env</code>, set <code>ENABLE_INSTALL=true</code> and <code>INSTALL_API_ENABLED=true</code>.</li>
+<li>Configure Nginx to proxy the installer route to the backend:</li>
+</ol>
+<p><code>nginx
+   location ^~ /install/ {
+     proxy_pass http://backend:5002;
+     proxy_http_version 1.1;
+     proxy_set_header Host $host;
+     proxy_set_header X-Real-IP $remote_addr;
+     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+     proxy_set_header X-Forwarded-Proto $scheme;
+   }</code></p>
+<ol start="3">
+<li>Rebuild and start the containers if they are running.</li>
+<li>Log in with an administrator account.</li>
+<li>Visit <code>http://localhost:5002/install</code> (or your domain's <code>/install</code>) and
+   verify the page lists the prerequisite checks.</li>
+<li>Complete the <strong>Configuration</strong> step by supplying database, SMTP, branding,
+   and admin credentials.</li>
+<li>Run the installer. It updates <code>backend/.env</code>, uploads the logo, seeds
+   branding/email settings, and provisions the administrator account.</li>
+</ol>
+<h3 id="6-running-tests">6. Running tests</h3>
+<p>The project includes Jest suites for both the API and the frontend.</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>backend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span><span class="nb">test</span>
+<span class="nb">cd</span><span class="w"> </span>../frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+
+<h3 id="7-hosting-on-a-server">7. Hosting on a server</h3>
+<ol>
+<li>Provision a Linux server and install Docker and Docker Compose V2.</li>
+<li>Clone the repository on the server and configure environment variables as
+   described above.
+   - In <code>backend/.env</code>, set production values such as <code>NODE_ENV=production</code>,
+     <code>FRONTEND_URL=https://&lt;your-domain&gt;</code>, <code>COOKIE_SECURE=true</code>, and
+     <code>COOKIE_SAMESITE=None</code>.
+   - Create <code>frontend/.env.local</code> with
+     <code>NEXT_PUBLIC_API_BASE_URL=https://&lt;your-domain&gt;/api</code>.</li>
+<li>Adjust Nginx for your domain.
+   - Set the <code>APP_DOMAIN</code> environment variable so Nginx and the backend use your
+     domain.
+   - Obtain TLS certificates (for example via Let's Encrypt) and ensure the
+     paths in <code>ssl.conf</code> match the certificate locations.</li>
+<li>Run database migrations and seeds before starting the containers:</li>
+</ol>
+<p><code>bash
+   docker compose run --rm backend npm run migrate
+   docker compose run --rm backend npm run seed</code></p>
+<ol start="5">
+<li>Build and start the containers in detached mode:</li>
+</ol>
+<p><code>bash
+   docker compose up -d --build</code></p>
+<ol start="6">
+<li>Verify the deployment by visiting <code>https://&lt;your-domain&gt;</code> in a browser. The
+   API is available at <code>https://&lt;your-domain&gt;/api</code>.</li>
+</ol>
+<p>For updates, pull the latest changes and rebuild:</p>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>pull
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
+</code></pre></div>
+
+<h3 id="additional-references">Additional references</h3>
+<ul>
+<li><a href="deployment.html">Deployment Guide</a> — how to deploy SkillBridge.</li>
+<li><a href="architecture.html">Architecture Overview</a> — system components and data flow.</li>
+<li><a href="social-login-setup.html">Social Login Setup</a> — configure OAuth providers.</li>
+</ul>
+<h2 id="administration">Administration</h2>
+<ul>
+<li><a href="admin-alerts.html">Alerts Management</a> — configure system alerts.</li>
+<li><a href="admin-ads-management.html">Ads Management</a> — manage platform advertisements.</li>
+<li><a href="admin-category-management.html">Category Management</a> — organize course categories.</li>
+<li><a href="admin-third-party-integrations.html">Third-Party Integrations</a> — connect external services.</li>
+<li><a href="license-verification.html">License Verification</a> — verify instructor credentials.</li>
+<li><a href="messages-config.html">Messages Configuration</a> — customize message templates.</li>
+<li><a href="coupon-management.html">Coupon Management</a> — define promotional codes.</li>
+<li><a href="payment-icon-sources.html">Payment Icon Sources</a> — references for payment icons.</li>
+<li><a href="subscription-plan-style.html">Subscription Plan Styles</a> — style subscription options.</li>
+</ul>
+<h2 id="workflows">Workflows</h2>
+<ul>
+<li><a href="book-workflow.html">Book Workflow</a> — process for booking classes.</li>
+<li><a href="class-lifecycle-workflow.html">Class Lifecycle Workflow</a> — lifecycle of a class.</li>
+<li><a href="class-plan-coverage.html">Class Plan Coverage</a> — overview of plan coverage.</li>
+<li><a href="student-registration-guide.html">Student Registration Guide</a> — steps for new student sign-up.</li>
+<li><a href="student-enrollment-workflow.html">Student Enrollment Workflow</a> — enroll students into classes.</li>
+</ul>
+<h2 id="reference">Reference</h2>
+<ul>
+<li><a href="api-docs.html">API Documentation</a> — REST API endpoints.</li>
+<li><a href="changelog.html">Changelog</a> — record of notable changes.</li>
+<li><a href="release-checklist.html">Release Checklist</a> — tasks before a release.</li>
+</ul>
+    </article>
+  </main>
+  <script src="./assets/docs.js" defer></script>
+</body>
+</html>

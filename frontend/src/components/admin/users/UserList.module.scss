@@ -1,0 +1,72 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  text-align: center;
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.selectRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.selectLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.selectCount {
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.pageButton {
+  padding: 0.4rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all $transition-base;
+}
+
+.pageActive {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+}

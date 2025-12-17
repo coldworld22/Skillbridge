@@ -1,0 +1,16 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-soft;
+  padding: 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: $color-text;
+}

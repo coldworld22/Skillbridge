@@ -1,0 +1,510 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
+import { toast } from 'react-toastify';
+import { FaSpinner, FaUpload } from 'react-icons/fa';
+
+import InstructorLayout from '@/components/layouts/InstructorLayout';
+import FloatingInput from '@/components/shared/FloatingInput';
+import withAuthProtection from '@/hooks/withAuthProtection';
+
+import {
+  fetchInstructorClassById,
+  updateInstructorClass,
+} from '@/services/instructor/classService';
+import { fetchAllCategories } from '@/services/instructor/categoryService';
+import { fetchClassTags } from '@/services/instructor/classTagService';
+import { fetchStudentPlanIdentifiers } from '@/services/instructor/planService';
+import useAuthStore from '@/store/auth/authStore';
+
+const ReactQuill = dynamic(() => import('react-quill'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded" />,
+});
+import 'react-quill/dist/quill.snow.css';
+
+const derivePlanKey = (plan) => {
+  if (!plan) return null;
+  return plan.id || plan.slug || plan.identifier || plan.code || null;
+};
+
+function EditInstructorClass() {
+  const router = useRouter();
+  const { id } = router.query;
+  const { user } = useAuthStore();
+
+  const [formData, setFormData] = useState({
+    title: '',
+    instructor: user?.full_name || '',
+    category: '',
+    level: '',
+    language: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    price: '',
+    maxStudents: '',
+    isFree: false,
+    allowInstallments: false,
+    isPublished: false,
+    image: '',
+    imagePreview: '',
+    demoVideo: null,
+    demoPreview: '',
+    includedPlans: [],
+  });
+  const [categories, setCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [plans, setPlans] = useState([]);
+
+  const filteredTagSuggestions = useMemo(
+    () =>
+      allTags.filter(
+        (t) =>
+          tagInput &&
+          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+          !selectedTags.includes(t.name)
+      ),
+    [allTags, tagInput, selectedTags]
+  );
+
+  useEffect(() => {
+    fetchAllCategories({ status: 'active', limit: 100 })
+      .then((res) => setCategories(res?.data || []))
+      .catch(() => setCategories([]));
+    fetchClassTags()
+      .then(setAllTags)
+      .catch(() => setAllTags([]));
+    fetchStudentPlanIdentifiers()
+      .then((items) => setPlans(items || []))
+      .catch(() => setPlans([]));
+  }, []);
+
+  useEffect(() => {
+    if (!formData.isFree) return;
+    if (formData.includedPlans.length > 0) return;
+    if (!plans.length) return;
+    const defaults = Array.from(
+      new Set(plans.map((plan) => derivePlanKey(plan)).filter(Boolean))
+    );
+    if (!defaults.length) return;
+    setFormData((prev) => {
+      if (!prev.isFree || prev.includedPlans.length > 0) return prev;
+      return { ...prev, includedPlans: defaults };
+    });
+  }, [formData.isFree, formData.includedPlans.length, plans]);
+
+  useEffect(() => {
+    if (user?.full_name) {
+      setFormData((prev) => ({ ...prev, instructor: user.full_name }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchInstructorClassById(id);
+        if (data) {
+          setFormData((prev) => ({
+            ...prev,
+            title: data.title || '',
+            category: data.category_id || data.category || '',
+            level: data.level || '',
+            language: data.language || '',
+            description: data.description || '',
+            startDate: data.startDateInput || data.start_date || '',
+            endDate: data.endDateInput || data.end_date || '',
+            price: data.price ?? '',
+            maxStudents: data.max_students ?? '',
+            isFree: data.access_type === 'free' || data.price === 0,
+            allowInstallments: Boolean(data.allow_installments),
+            isPublished: data.publishStatus === 'published',
+            imagePreview: data.cover_image || '',
+            demoPreview: data.demo_video_url || '',
+            includedPlans: Array.isArray(data.included_plans) ? data.included_plans : [],
+          }));
+          if (Array.isArray(data.tags)) {
+            setSelectedTags(data.tags.map((t) => t.name));
+          }
+        }
+      } catch (err) {
+        toast.error('Failed to load class data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: reader.result,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFormData((prev) => ({
+      ...prev,
+      demoVideo: file,
+      demoPreview: URL.createObjectURL(file),
+    }));
+  };
+
+  const addTag = (tag) => {
+    if (tag && !selectedTags.includes(tag)) {
+      setSelectedTags((prev) => [...prev, tag]);
+      setTagInput('');
+    }
+  };
+  const removeTag = (tagToRemove) => {
+    setSelectedTags(selectedTags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const togglePlan = (planId) => {
+    if (!planId) return;
+    setFormData((prev) => ({
+      ...prev,
+      includedPlans: prev.includedPlans.includes(planId)
+        ? prev.includedPlans.filter((id) => id !== planId)
+        : [...prev.includedPlans, planId],
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!id) return;
+    if (formData.isFree && formData.includedPlans.length === 0) {
+      toast.error('Select at least one student plan for free access');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      setUploadProgress(0);
+      const payload = new FormData();
+      payload.append('title', formData.title);
+      if (formData.description) payload.append('description', formData.description);
+      if (formData.level) payload.append('level', formData.level);
+      if (formData.language) payload.append('language', formData.language);
+      if (formData.startDate) payload.append('start_date', formData.startDate);
+      if (formData.endDate) payload.append('end_date', formData.endDate);
+      payload.append('access_type', formData.isFree ? 'free' : 'paid');
+      if (formData.isFree) {
+        payload.append('price', '0');
+      } else if (formData.price || formData.price === 0) {
+        payload.append('price', Number(formData.price).toFixed(2));
+      }
+      payload.append('included_plans', JSON.stringify(formData.includedPlans || []));
+      if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
+      payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
+      payload.append('status', formData.isPublished ? 'published' : 'draft');
+      if (formData.category) payload.append('category_id', formData.category);
+      if (formData.image) payload.append('cover_image', formData.image);
+      if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+      if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+
+      await updateInstructorClass(id, payload);
+      toast.success('Class updated');
+      router.push(`/dashboard/instructor/online-classes/${id}/details`);
+    } catch (err) {
+      toast.error('Failed to update class');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold mb-4">Edit Class</h1>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
+              <FloatingInput label="Instructor" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                <div className="relative">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-1.5 inline-flex text-yellow-500 hover:text-yellow-700"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag(tagInput);
+                      }
+                    }}
+                    placeholder="Add tags..."
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                  />
+                  {filteredTagSuggestions.length > 0 && tagInput && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
+                      {filteredTagSuggestions.map((t) => (
+                        <div
+                          key={t.id}
+                          className="px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 cursor-pointer"
+                          onClick={() => addTag(t.name)}
+                        >
+                          {t.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleChange}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
+                >
+                  <option value="">Select Level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </div>
+
+              <FloatingInput label="Language" name="language" value={formData.language} onChange={handleChange} />
+
+              <FloatingInput label="Start Date" type="date" name="startDate" value={formData.startDate} onChange={handleChange} />
+
+              <FloatingInput label="End Date" type="date" name="endDate" value={formData.endDate} onChange={handleChange} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FloatingInput
+                  label="Price"
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  disabled={formData.isFree}
+                />
+                <FloatingInput
+                  label="Max Students"
+                  type="number"
+                  name="maxStudents"
+                  value={formData.maxStudents}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="isFree"
+                    checked={formData.isFree}
+                    onChange={handleChange}
+                    disabled={plans.length === 0}
+                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Free Class</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="allowInstallments"
+                    checked={formData.allowInstallments}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Allow Installments</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="isPublished"
+                    checked={formData.isPublished}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Publish Immediately</span>
+                </label>
+              </div>
+              <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50 space-y-2">
+                <p className="text-sm font-semibold text-gray-800">
+                  {formData.isFree
+                    ? 'Select student plans that unlock this class (required for free access).'
+                    : 'Optionally include this class in student plans so subscribers can join without paying.'}
+                </p>
+                {plans.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    No student plans available yet. Please contact an administrator.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {plans.map((plan) => {
+                      const planKey = derivePlanKey(plan);
+                      if (!planKey) return null;
+                      return (
+                        <label key={planKey} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                            checked={formData.includedPlans.includes(planKey)}
+                            onChange={() => togglePlan(planKey)}
+                          />
+                          <span>
+                            {plan.name || plan.slug}
+                            {plan.slug ? (
+                              <span className="ml-2 text-xs text-gray-500">({plan.slug})</span>
+                            ) : null}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-gray-600">
+                  {formData.isFree
+                    ? 'At least one plan must be selected for free classes.'
+                    : 'Leave all unchecked if this class is only available through direct purchase.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <ReactQuill
+                theme="snow"
+                value={formData.description}
+                onChange={(val) => setFormData((prev) => ({ ...prev, description: val }))}
+                className="bg-white rounded-md border-gray-300"
+                placeholder="Describe your class..."
+              />
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                  {formData.imagePreview ? (
+                    <img src={formData.imagePreview} alt="Preview" className="h-40 object-contain rounded" />
+                  ) : (
+                    <>
+                      <FaUpload className="text-gray-400 text-3xl" />
+                      <p className="text-sm text-gray-600">Upload Cover Image</p>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              </div>
+
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                  {formData.demoPreview ? (
+                    <video src={formData.demoPreview} className="h-40 w-full object-contain rounded" controls />
+                  ) : (
+                    <>
+                      <FaUpload className="text-gray-400 text-3xl" />
+                      <p className="text-sm text-gray-600">Upload Demo Video</p>
+                      <p className="text-xs text-gray-500">(Max 100MB, MP4 recommended)</p>
+                    </>
+                  )}
+                  <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2" /> Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+          {isSubmitting && (
+            <div className="w-full bg-gray-200 h-2 rounded mt-4">
+              <div className="bg-green-500 h-full rounded transition-all" style={{ width: `${uploadProgress}%` }} />
+            </div>
+          )}
+        </form>
+      )}
+    </div>
+  );
+}
+
+EditInstructorClass.getLayout = function getLayout(page) {
+  return <InstructorLayout>{page}</InstructorLayout>;
+};
+
+const ProtectedEditInstructorClass = withAuthProtection(EditInstructorClass, ['instructor']);
+ProtectedEditInstructorClass.getLayout = EditInstructorClass.getLayout;
+export default ProtectedEditInstructorClass;
+export { EditInstructorClass };

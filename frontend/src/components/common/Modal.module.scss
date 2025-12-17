@@ -1,0 +1,390 @@
+@use "../../styles/abstracts/variables" as *;
+
+.dialog {
+  position: relative;
+  z-index: 50;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.container {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.inner {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.panel {
+  width: 100%;
+  max-width: 28rem;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  box-shadow: $shadow-strong;
+  border: 1px solid $color-border;
+}
+
+:global(.dark) .panel {
+  background-color: $color-surface-dark;
+  border-color: $color-border-dark;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: $color-text;
+}
+
+.warningTitle {
+  color: #d97706;
+}
+
+.dangerTitle {
+  color: $color-danger;
+}
+
+.message {
+  color: $color-muted;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+:global(.dark) .message {
+  color: $color-muted-dark;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  color: $color-text;
+}
+
+.textarea {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.75rem;
+  margin: 1rem 0 1.25rem;
+  min-height: 7rem;
+  resize: vertical;
+  background: #fff;
+  color: $color-text;
+}
+
+.textInput {
+  border: none;
+  background: transparent;
+  color: inherit;
+  width: 100%;
+  outline: none;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: 2px solid rgba($color-brand-500, 0.5);
+  border-color: $color-brand-500;
+}
+
+:global(.dark) .input,
+:global(.dark) .textarea {
+  background: #111827;
+  border-color: $color-border-dark;
+  color: $color-text-dark;
+}
+
+.simpleOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.closeButton {
+  border: none;
+  background: transparent;
+  color: $color-muted;
+  cursor: pointer;
+}
+
+:global(.dark) .closeButton {
+  color: $color-muted-dark;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.55rem 0.65rem;
+  background: #f9fafb;
+  color: $color-text;
+}
+
+:global(.dark) .inputRow {
+  border-color: $color-border-dark;
+  background: #111827;
+  color: $color-text-dark;
+}
+
+.inputIcon {
+  color: $color-muted;
+}
+
+:global(.dark) .inputIcon {
+  color: $color-muted-dark;
+}
+
+.section {
+  margin-top: 1rem;
+}
+
+.list {
+  max-height: 15rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listItem {
+  padding: 0.75rem;
+  border-radius: $radius-md;
+  background: #f3f4f6;
+  color: $color-text;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.listItem:hover {
+  border-color: $color-border;
+}
+
+:global(.dark) .listItem {
+  background: #1f2937;
+  color: $color-text-dark;
+  border-color: $color-border-dark;
+}
+
+.listItemActive {
+  background: $color-brand-500;
+  color: #1f2937;
+}
+
+.listItemTitle {
+  font-weight: 700;
+}
+
+.muted {
+  color: $color-muted;
+  font-size: 0.95rem;
+}
+
+:global(.dark) .muted {
+  color: $color-muted-dark;
+}
+
+.mutedSmall {
+  color: $color-muted;
+  font-size: 0.85rem;
+}
+
+:global(.dark) .mutedSmall {
+  color: $color-muted-dark;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: $radius-sm;
+  background: #e5e7eb;
+  color: #111827;
+  font-size: 0.8rem;
+}
+
+:global(.dark) .badge {
+  background: #374151;
+  color: $color-text-dark;
+}
+
+.optionButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.optionButton {
+  padding: 0.5rem 0.85rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #f9fafb;
+  color: $color-text;
+  cursor: pointer;
+  transition: background-color $transition-base, color $transition-base, border-color $transition-base;
+}
+
+.optionButton:hover {
+  border-color: $color-brand-500;
+}
+
+.optionButtonActive {
+  background: $color-brand-500;
+  color: #1f2937;
+  border-color: $color-brand-500;
+}
+
+:global(.dark) .optionButton {
+  background: #111827;
+  border-color: $color-border-dark;
+  color: $color-text-dark;
+}
+
+.pillButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pillButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  background: #e5e7eb;
+  color: #111827;
+  border: 1px solid transparent;
+}
+
+.pillButton:hover {
+  border-color: $color-border;
+}
+
+:global(.dark) .pillButton {
+  background: #1f2937;
+  color: $color-text-dark;
+  border-color: $color-border-dark;
+}
+
+.ctaRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.subtitle {
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+.divider {
+  margin: 1rem 0;
+  height: 1px;
+  background: $color-border;
+}
+
+:global(.dark) .divider {
+  background: $color-border-dark;
+}
+.fadeEnter {
+  transition: opacity 200ms ease-out;
+}
+
+.fadeEnterFrom {
+  opacity: 0;
+}
+
+.fadeEnterTo {
+  opacity: 1;
+}
+
+.fadeLeave {
+  transition: opacity 150ms ease-in;
+}
+
+.fadeLeaveFrom {
+  opacity: 1;
+}
+
+.fadeLeaveTo {
+  opacity: 0;
+}
+
+.scaleEnter {
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.scaleEnterFrom {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.scaleEnterTo {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.scaleLeave {
+  transition: opacity 150ms ease-in, transform 150ms ease-in;
+}
+
+.scaleLeaveFrom {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.scaleLeaveTo {
+  opacity: 0;
+  transform: scale(0.95);
+}

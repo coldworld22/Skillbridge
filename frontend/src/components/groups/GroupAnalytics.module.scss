@@ -1,0 +1,45 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  margin-top: 1.5rem;
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+  box-shadow: $shadow-soft;
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.summary {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filterRow {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.checkboxLabel {
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}

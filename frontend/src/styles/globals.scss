@@ -1,0 +1,8 @@
+@use "./abstracts/variables";
+@use "./abstracts/mixins";
+@use "./base/index";
+@use "./utilities/helpers";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

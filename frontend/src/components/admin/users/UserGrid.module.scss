@@ -1,0 +1,14 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+}
+
+.empty {
+  color: $color-muted;
+  text-align: center;
+  width: 100%;
+  padding: 3rem 0;
+}

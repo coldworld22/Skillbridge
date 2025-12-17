@@ -1,0 +1,41 @@
+@use "sass:map";
+@use "./variables" as *;
+
+@mixin respond($breakpoint) {
+  $value: map.get($breakpoints, $breakpoint);
+
+  @if $value {
+    @media (min-width: $value) {
+      @content;
+    }
+  } @else {
+    @warn "No breakpoint named `#{$breakpoint}` found in $breakpoints map.";
+  }
+}
+
+@mixin focus-ring($color: $color-brand-500, $size: 2px) {
+  outline: none;
+  box-shadow: 0 0 0 $size rgba($color, 0.5);
+}
+
+@mixin surface(
+  $bg: $color-surface,
+  $text: $color-text,
+  $border: $color-border,
+  $radius: $radius-md,
+  $shadow: $shadow-soft
+) {
+  background-color: $bg;
+  color: $text;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: $shadow;
+}
+
+@mixin text-ellipsis($lines: 1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+}

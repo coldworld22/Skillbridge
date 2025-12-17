@@ -1,0 +1,37 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 1.15rem 0.75rem 0.5rem;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.input:focus {
+  outline: 2px solid rgba($color-brand-500, 0.35);
+  border-color: $color-brand-500;
+}
+
+.label {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.75rem;
+  font-size: 0.9rem;
+  color: $color-muted;
+  transition: all $transition-base;
+  pointer-events: none;
+}
+
+.labelRaised {
+  top: 0.2rem;
+  font-size: 0.75rem;
+  color: $color-text;
+  font-weight: 700;
+}

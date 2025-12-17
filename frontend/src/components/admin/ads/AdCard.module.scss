@@ -1,0 +1,146 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  position: relative;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-soft;
+  overflow: hidden;
+  transition: box-shadow $transition-base, border-color $transition-base;
+}
+
+.selectBox {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+}
+
+.selected {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+  border-color: #3b82f6;
+}
+
+:global(.dark) .card {
+  border-color: $color-border-dark;
+}
+
+.media {
+  width: 100%;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: $radius-lg $radius-lg 0 0;
+  background: #f3f4f6;
+}
+
+.emptyMedia {
+  width: 100%;
+  height: 10rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: $color-muted;
+  border-radius: $radius-lg $radius-lg 0 0;
+}
+
+.content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: $radius-sm;
+}
+
+.description {
+  color: $color-muted;
+  font-size: 0.9rem;
+}
+
+:global(.dark) .description {
+  color: $color-muted-dark;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: $color-muted;
+}
+
+.pill {
+  background: #f3f4f6;
+  color: $color-text;
+  padding: 0.2rem 0.5rem;
+  border-radius: $radius-sm;
+  border: 1px solid $color-border;
+}
+
+.role {
+  background: #e0f2fe;
+  color: #1d4ed8;
+  padding: 0.2rem 0.5rem;
+  border-radius: $radius-sm;
+  border: 1px solid transparent;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid $color-border;
+  background: #f9fafb;
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 $radius-lg $radius-lg;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $color-muted;
+}
+
+.actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.toggleInput {
+  width: 0.85rem;
+  height: 0.85rem;
+}

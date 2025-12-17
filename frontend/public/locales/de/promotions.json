@@ -1,0 +1,43 @@
+{
+  "promotions": "Promotions",
+  "special_offer": "Special Offer",
+  "loading_promotion_details": "Loading promotion details...",
+  "promotion_not_found": "Promotion Not Found",
+  "back_to_home": "⬅ Back to Home",
+  "offer_expires_in": "Offer expires in: {{time}}",
+  "offer_ends_in": "Offer ends in: {{time}}",
+  "offer_expired": "Offer Expired!",
+  "what_people_are_saying": "What People Are Saying:",
+  "enter_discount_code": "Enter Discount Code",
+  "applied_code": "Applied Code: {{code}}",
+  "claim_offer_now": "Claim Offer Now",
+  "mockPromotions": {
+    "1": {
+      "title": "🔥 Black Friday Deal: 50% Off!",
+      "description": "All courses now at half price!",
+      "reviews": [
+        "Great deal!",
+        "Loved it!",
+        "Highly recommended!"
+      ]
+    },
+    "2": {
+      "title": "📢 Python Bootcamp Enrollment Open!",
+      "description": "Join our advanced Python bootcamp!",
+      "reviews": [
+        "Super informative!",
+        "Best bootcamp!",
+        "Worth every penny!"
+      ]
+    },
+    "3": {
+      "title": "🚀 AI Masterclass Discount!",
+      "description": "Learn AI from top instructors!",
+      "reviews": [
+        "Perfect for beginners!",
+        "Very detailed",
+        "Loved the instructors!"
+      ]
+    }
+  }
+}

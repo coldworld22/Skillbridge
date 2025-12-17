@@ -1,0 +1,142 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  padding: 1.5rem;
+  background: #1f2937;
+  color: #ffffff;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #fbbf24;
+}
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.preview {
+  position: relative;
+}
+
+.avatar {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  border: 2px solid #fbbf24;
+  object-fit: cover;
+}
+
+.remove {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  border: none;
+  border-radius: 50%;
+  background: #dc2626;
+  color: #fff;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.uploadLabel {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  background: #374151;
+  color: #fbbf24;
+  border-radius: $radius-lg;
+  transition: background-color $transition-base;
+}
+
+.uploadLabel:hover {
+  background: #4b5563;
+}
+
+.helper {
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.field {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.error {
+  font-size: 0.8rem;
+  color: $color-danger;
+}
+
+.actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: $radius-lg;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.back {
+  background: #4b5563;
+  color: #ffffff;
+}
+
+.back:hover {
+  background: #374151;
+}
+
+.next {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.next:hover {
+  background: #f59e0b;
+}

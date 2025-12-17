@@ -1,0 +1,74 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: #ffffff;
+  box-shadow: $shadow-soft;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid $color-border;
+  object-fit: cover;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.role {
+  font-size: 0.8rem;
+  color: $color-muted;
+  text-transform: capitalize;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.select {
+  font-size: 0.9rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.25rem 0.5rem;
+}
+
+.remove {
+  border: none;
+  background: transparent;
+  color: $color-danger;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color $transition-fast;
+}
+
+.remove:hover {
+  color: darken($color-danger, 8%);
+}

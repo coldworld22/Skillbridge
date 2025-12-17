@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "sender": "Instructor",
+    "text": "Welcome to the course!",
+    "timestamp": "2024-02-17T10:00:00Z",
+    "replies": []
+  },
+  {
+    "id": 2,
+    "sender": "Student",
+    "text": "Thank you! Looking forward to learning.",
+    "timestamp": "2024-02-17T10:05:00Z",
+    "replies": []
+  }
+]

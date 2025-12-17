@@ -1,0 +1,29 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 0.65rem 0.75rem 0.65rem 2.5rem;
+  font-size: 0.95rem;
+  box-shadow: $shadow-soft;
+}
+
+.input:focus {
+  outline: 2px solid rgba($color-brand-500, 0.4);
+  border-color: $color-brand-500;
+}
+
+.icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-muted;
+  width: 1rem;
+  height: 1rem;
+}

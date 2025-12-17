@@ -1,0 +1,109 @@
+@use "../../styles/abstracts/variables" as *;
+@use "../../styles/abstracts/mixins" as *;
+
+.field {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background-color: #fff;
+  padding: 1.1rem 0.75rem 0.55rem;
+  font-size: 0.95rem;
+  color: $color-text;
+  transition: all $transition-base;
+}
+
+.input::placeholder {
+  color: transparent;
+}
+
+.input:focus {
+  border-color: $color-brand-500;
+  @include focus-ring($color-brand-500, 2px);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.withIcon {
+  padding-right: 2.75rem;
+}
+
+:global(.dark) .input {
+  background-color: #1f2937;
+  border-color: $color-border-dark;
+  color: #fff;
+}
+
+.label {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.55rem;
+  font-size: 0.875rem;
+  color: $color-muted;
+  transition: all $transition-base;
+  pointer-events: none;
+}
+
+.input:placeholder-shown + .label {
+  top: 0.85rem;
+  font-size: 1rem;
+  color: $color-muted;
+}
+
+.input:focus + .label,
+.input:not(:placeholder-shown) + .label {
+  top: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.input:focus + .label {
+  color: $color-brand-500;
+}
+
+:global(.dark) .label {
+  color: $color-muted-dark;
+}
+
+.select {
+  @extend .input;
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%236b7280' stroke-width='1.5' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+:global(.dark) .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23d1d5db' stroke-width='1.5' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.select + .label {
+  top: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.select:focus + .label {
+  color: $color-brand-500;
+}
+
+.iconButton {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-muted;
+}
+
+:global(.dark) .iconButton {
+  color: $color-muted-dark;
+}

@@ -1,0 +1,200 @@
+{
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirm_password": "تأكيد كلمة المرور",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "remember_me": "تذكرني",
+    "login_success": "تم تسجيل الدخول بنجاح",
+    "invalid_credentials": "بيانات الدخول غير صحيحة"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "my_profile": "ملفي الشخصي",
+    "online_classes": "الدورات المباشرة",
+    "assignments": "الواجبات",
+    "certificates": "الشهادات",
+    "groups": "المجموعات",
+    "offers": "العروض",
+    "community": "المجتمع",
+    "support": "الدعم",
+    "settings": "الإعدادات"
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "submit": "إرسال",
+    "upload": "رفع",
+    "preview": "معاينة",
+    "back": "عودة",
+    "next": "التالي"
+  },
+  "profile": {
+    "personal_info": "المعلومات الشخصية",
+    "verification": "التحقق",
+    "select_role": "اختر الدور",
+    "student_details": "تفاصيل الطالب",
+    "instructor_details": "تفاصيل المعلم",
+    "social_links": "روابط التواصل",
+    "final_review": "مراجعة نهائية",
+    "complete_profile": "أكمل ملفك الشخصي"
+  },
+  "classroom": {
+    "enrolled_classes": "الدورات المسجلة",
+    "join_class": "الانضمام إلى الدورة",
+    "view_lessons": "عرض الدروس",
+    "download_resources": "تحميل الموارد",
+    "mark_complete": "وضع علامة كمكتمل"
+  },
+  "assignments": {
+    "my_assignments": "واجباتي",
+    "submit_assignment": "تسليم الواجب",
+    "upload_file": "رفع ملف",
+    "grade": "الدرجة",
+    "feedback": "ملاحظات"
+  },
+  "certificates": {
+    "my_certificates": "شهاداتي",
+    "download_certificate": "تحميل الشهادة",
+    "verify_certificate": "التحقق من الشهادة"
+  },
+  "notifications": {
+    "no_notifications": "لا توجد إشعارات حالياً",
+    "view_all": "عرض الكل",
+    "new_assignment": "تم نشر واجب جديد \"{{title}}\" للدورة \"{{classTitle}}\"."
+  },
+  "errors": {
+    "required_field": "هذا الحقل مطلوب",
+    "invalid_email": "بريد إلكتروني غير صالح",
+    "upload_failed": "فشل في رفع الملف"
+  },
+  "success": {
+    "profile_updated": "تم تحديث الملف الشخصي بنجاح",
+    "assignment_submitted": "تم تسليم الواجب بنجاح",
+    "class_joined": "تم الانضمام إلى الدورة"
+  }
+,
+  "adminDashboardHome": {
+    "recentAlerts": "التنبيهات الأخيرة",
+    "unauthorizedUsageDetected": "تم اكتشاف استخدام غير مصرح به",
+    "flaggedChatInPythonClass": "دردشة تم الإبلاغ عنها في صف بايثون",
+    "apiKeyExpiringSoon": "مفتاح API سينتهي قريبًا",
+    "viewAllAlerts": "عرض جميع التنبيهات",
+    "flaggedMessages": "الرسائل المبلغ عنها",
+    "reviewMessages": "مراجعة الرسائل",
+    "licenseCheck": "فحص الترخيص",
+    "lastCheck": "آخر فحص: قبل ساعة",
+    "unauthorizedInstanceDetected": "تم اكتشاف مثال غير مصرح به واحد",
+    "seeDetails": "عرض التفاصيل",
+    "platformInsights": "رؤى المنصة",
+    "loadingStats": "جارٍ تحميل الإحصاءات...",
+    "totalUsers": "إجمالي المستخدمين",
+    "instructors": "المدربون",
+    "students": "الطلاب",
+    "tutorials": "الدروس التعليمية",
+    "classes": "الفصول"
+  },
+  "tutorials": {
+    "list": {
+      "loading": "جارٍ تحميل الدروس...",
+      "load_error": "فشل تحميل الدروس",
+      "heading": "📺 دروس مميزة",
+      "subheading": "أتقن مهارات جديدة من خلال مجموعتنا المختارة من الدروس بقيادة الخبراء",
+      "search_placeholder": "ابحث عن الدروس...",
+      "mobile_filters": "عوامل التصفية",
+      "desktop_search_placeholder": "ابحث عن الدروس أو المدرسين...",
+      "sort_by": "ترتيب حسب:",
+      "featured": "مميز",
+      "most_viewed": "الأكثر مشاهدة",
+      "top_rated": "الأعلى تقييماً",
+      "showing": "عرض",
+      "of": "من",
+      "tutorials": "درساً",
+      "clear_filters": "مسح جميع عوامل التصفية",
+      "premium_badge": "متميز",
+      "trending": "رائج",
+      "free": "مجاني",
+      "enrolled": "مسجل",
+      "empty_title": "لم يتم العثور على دروس",
+      "empty_description": "حاول تغيير عوامل التصفية أو كلمات البحث",
+      "reset_filters": "إعادة تعيين عوامل التصفية"
+    },
+    "detail": {
+      "login_first": "يرجى تسجيل الدخول أولاً",
+      "enroll_success": "تم التسجيل بنجاح!",
+      "enroll_fail": "فشل التسجيل",
+      "load_error": "فشل تحميل الدرس",
+      "not_found": "الدرس غير موجود",
+      "share": "مشاركة",
+      "share_message": "اطلع على هذا الدرس على SkillBridge!",
+      "share_success": "تمت المشاركة بنجاح!",
+      "quiz_locked": "الاختبار مقفل",
+      "enroll_to_access_quiz": "سجّل للوصول إلى الاختبار",
+      "start_assignment": "بدء الواجب",
+      "complete_quiz_unlock_assignments": "أكمل الاختبار لفتح الواجبات",
+      "claim_certificate": "احصل على الشهادة",
+      "pass_quiz_to_unlock_certificate": "اجتز الاختبار لفتح الشهادة",
+      "certificate_locked": "الشهادة مقفلة",
+      "free": "مجاني"
+    }
+  },
+  "dashboard": {
+      "tutorialEditPage": {
+        "loading": "جارٍ تحميل الدرس...",
+        "not_found": "الدرس غير موجود",
+        "save_changes": "حفظ التغييرات",
+        "update_success": "تم تحديث الدرس بنجاح",
+        "notification_updated": "تم تحديث الإشعار",
+        "update_failed": "فشل تحديث الدرس"
+      },
+      "appSettingsPage": {
+        "title": "إعدادات التطبيق",
+        "save": "حفظ الإعدادات",
+        "saving": "جاري الحفظ...",
+        "basic_settings": "الإعدادات الأساسية",
+        "application_name_label": "اسم التطبيق",
+        "site_title_label": "عنوان الموقع",
+        "contact_email_label": "البريد الإلكتروني للتواصل",
+        "app_name_placeholder": "تطبيقي الرائع",
+        "site_title_placeholder": "مرحباً بكم في تطبيقي",
+        "contact_email_placeholder": "contact@example.com",
+        "media_settings": "إعدادات الوسائط",
+        "application_logo": "شعار التطبيق",
+        "recommended_logo": "المقاس الموصى به: ‎300×100‎ بكسل (PNG شفاف)",
+        "choose_file": "اختر ملفاً",
+        "upload": "رفع",
+        "favicon": "أيقونة الموقع",
+        "recommended_favicon": "المقاس الموصى به: ‎64×64‎ بكسل (ICO أو PNG)",
+        "home_background": "خلفية الصفحة الرئيسية",
+        "recommended_home_bg": "المقاس الموصى به: ‎1600×900‎ بكسل",
+        "load_failed": "فشل تحميل الإعدادات",
+        "save_success": "تم حفظ الإعدادات بنجاح",
+        "save_failed": "فشل حفظ الإعدادات",
+        "logo_upload_success": "تم رفع الشعار بنجاح",
+        "logo_upload_failed": "فشل رفع الشعار",
+        "favicon_upload_success": "تم رفع الأيقونة بنجاح",
+        "favicon_upload_failed": "فشل رفع الأيقونة",
+        "background_upload_success": "تم رفع الخلفية بنجاح",
+        "background_upload_failed": "فشل رفع الخلفية"
+      },
+      "studentDashboardHome": {
+        "welcome_back": "مرحباً بعودتك، {{name}}!",
+        "enrolled_classes": "أنت ملتحق في {{count}} من الصفوف",
+        "class_number": "الصف {{num}}",
+        "learning_progress": "تقدم التعلم",
+        "upcoming_events": "الجلسات القادمة",
+        "no_upcoming_events": "لا توجد جلسات قادمة مجدولة",
+        "current_classes": "الصفوف الحالية",
+        "progress": "التقدم",
+        "next_session": "الجلسة التالية",
+        "view_class": "عرض الصف",
+        "no_classes": "لم تلتحق بأي صفوف بعد",
+        "no_session_scheduled": "لا يوجد تاريخ متاح"
+      }
+  }
+}

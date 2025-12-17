@@ -1,0 +1,9 @@
+{
+  "fileTooLarge": "文件大小必须小于 {{size}}",
+  "pngJpgWebpOnly": "仅允许 PNG、JPG 或 WebP 文件",
+  "pdfOnly": "仅允许 PDF 文件",
+  "pdfOrImageOnly": "仅允许 PDF 或图像文件",
+  "eachFileLessThan": "每个文件必须小于 {{size}}",
+  "maxFiles": "您最多可以上传 {{count}} 个文件",
+  "invalidFileType": "无效的文件类型"
+}

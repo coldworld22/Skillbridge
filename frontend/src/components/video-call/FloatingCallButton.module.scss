@@ -1,0 +1,24 @@
+@use "../../styles/abstracts/variables" as *;
+
+.button {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  background: #16a34a;
+  color: #ffffff;
+  padding: 1rem;
+  border: none;
+  border-radius: 999px;
+  box-shadow: $shadow-strong;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.button:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.icon {
+  font-size: 1.5rem;
+}

@@ -1,0 +1,41 @@
+@use "../styles/abstracts/variables" as *;
+
+.panel {
+  background: #1f2937;
+  color: #fff;
+  max-width: 40rem;
+}
+
+.title {
+  color: $color-brand-500;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.question {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.option {
+  min-width: 8rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.result {
+  margin-top: 0.75rem;
+}

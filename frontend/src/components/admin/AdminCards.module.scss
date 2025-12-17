@@ -1,0 +1,191 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  background: var(--bg-color);
+  color: var(--text-color);
+  padding: 1.5rem;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-soft;
+  border: 1px solid $color-border;
+}
+
+:global(.dark) .card {
+  border-color: $color-border-dark;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.title {
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin-bottom: 0.35rem;
+  color: $color-text;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f9fafb;
+  border-radius: $radius-xl;
+  padding: 1rem;
+  border: 1px solid $color-border;
+  transition: background-color $transition-base, border-color $transition-base;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: #f3f4f6;
+}
+
+:global(.dark) .item {
+  background: #111827;
+  border-color: $color-border-dark;
+}
+
+.icon {
+  color: #fff;
+  padding: 0.6rem;
+  border-radius: $radius-md;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.label {
+  color: $color-text;
+  font-weight: 600;
+}
+
+.muted {
+  color: $color-muted;
+}
+
+.count {
+  font-weight: 700;
+  color: $color-text;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: $radius-md;
+  transition: background-color $transition-base;
+  border: 1px solid transparent;
+}
+
+.row:hover {
+  background: #f3f4f6;
+  border-color: $color-border;
+}
+
+:global(.dark) .row:hover {
+  background: #1f2937;
+  border-color: $color-border-dark;
+}
+
+.rowLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $color-text;
+}
+
+.timestamp {
+  color: $color-muted;
+  font-size: 0.9rem;
+}
+
+:global(.dark) .timestamp {
+  color: $color-muted-dark;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: $radius-sm;
+  border: 1px solid transparent;
+}
+
+.spaced {
+  margin-top: 2rem;
+}
+
+.spacedSm {
+  margin-top: 1.5rem;
+}
+
+.indigoBg {
+  background: #6366f1;
+}
+
+.yellowBg {
+  background: #f59e0b;
+}
+
+.greenBg {
+  background: #10b981;
+}
+
+.blueBg {
+  background: #3b82f6;
+}
+
+.pinkBg {
+  background: #ec4899;
+}
+
+.grayBg {
+  background: #374151;
+}
+
+.indigoText {
+  color: #4f46e5;
+}
+
+.yellowText {
+  color: #d97706;
+}
+
+.greenText {
+  color: #047857;
+}
+
+.blueText {
+  color: #2563eb;
+}
+
+.pinkText {
+  color: #db2777;
+}
+
+.grayText {
+  color: #4b5563;
+}
+.statusApproved {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.statusPending {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.statusRejected {
+  background: #fef2f2;
+  color: #b91c1c;
+}

@@ -1,0 +1,52 @@
+@use "../../styles/abstracts/variables" as *;
+
+.loading {
+  text-align: center;
+  color: $color-muted;
+}
+
+.error {
+  text-align: center;
+  color: $color-danger;
+}
+
+.card {
+  border: 1px solid $color-border;
+  padding: 1rem;
+  border-radius: $radius-xl;
+  text-align: center;
+  box-shadow: $shadow-soft;
+  background: var(--bg-color);
+}
+
+.image {
+  width: 100%;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: $radius-lg;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.description {
+  color: $color-muted;
+  margin-top: 0.25rem;
+}
+
+.cta {
+  margin-top: 0.75rem;
+  display: inline-block;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5rem 0.85rem;
+  border-radius: $radius-md;
+  text-decoration: none;
+}
+
+.cta:hover {
+  background: #1d4ed8;
+}

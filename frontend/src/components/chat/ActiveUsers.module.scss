@@ -1,0 +1,50 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  padding: 1rem;
+  background: #111827;
+  color: #f9fafb;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #1f2937;
+  border-radius: $radius-md;
+}
+
+.icon {
+  color: #fbbf24;
+  font-size: 1.25rem;
+}
+
+.name {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.online {
+  color: #22c55e;
+}

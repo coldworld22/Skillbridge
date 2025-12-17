@@ -1,0 +1,6 @@
+[
+  { "id": 1, "name": "Instructor", "status": "online", "lastSeen": "" },
+  { "id": 2, "name": "Student 1", "status": "offline", "lastSeen": "2024-02-17T08:45:00Z" },
+  { "id": 3, "name": "Student 2", "status": "online", "lastSeen": "" },
+  { "id": 4, "name": "Student 3", "status": "offline", "lastSeen": "2024-02-17T09:30:00Z" }
+]

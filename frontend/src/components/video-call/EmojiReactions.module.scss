@@ -1,0 +1,55 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  position: absolute;
+  left: 50%;
+  bottom: 5rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.float {
+  position: absolute;
+  font-size: 1.9rem;
+}
+
+.bar {
+  display: flex;
+  gap: 1rem;
+  background: #1f2937;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  box-shadow: $shadow-strong;
+}
+
+.button {
+  padding: 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform $transition-fast;
+}
+
+.button:hover {
+  transform: scale(1.12);
+}
+
+.yellow {
+  color: #facc15;
+}
+
+.red {
+  color: #ef4444;
+}
+
+.blue {
+  color: #3b82f6;
+}
+
+.orange {
+  color: #f97316;
+}

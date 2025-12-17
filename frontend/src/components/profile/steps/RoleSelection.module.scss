@@ -1,0 +1,65 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  padding: 1.5rem;
+  background: #1f2937;
+  color: #ffffff;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #fbbf24;
+}
+
+.options {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.option {
+  flex: 1;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  background: #374151;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: border-color $transition-base, transform $transition-fast, background-color $transition-base;
+}
+
+.option:hover {
+  transform: translateY(-1px);
+}
+
+.selectedStudent {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.selectedInstructor {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #15803d;
+}
+
+.next {
+  padding: 0.65rem 1.1rem;
+  background: #fbbf24;
+  color: #111827;
+  border: none;
+  border-radius: $radius-lg;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.next:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}

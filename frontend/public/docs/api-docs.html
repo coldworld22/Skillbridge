@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Overview | SkillBridge Documentation</title>
+    <link rel="stylesheet" href="./assets/docs.css" />
+</head>
+<body class="docs docs-article">
+  <header class="docs-article-header">
+    <h1>SkillBridge Documentation</h1>
+    <p class="docs-meta">Browse the sidebar or return to the <a href="./index.html">docs hub</a>.</p>
+  </header>
+  <main class="docs-shell">
+    <button class="docs-nav-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+      </svg>
+      Browse guides
+    </button>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation sections">
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+        <li><a href="index.html">Documentation Hub</a></li>
+        <li><a href="installation.html">Installation Guide</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="deployment.html">Deployment Guide</a></li>
+        <li><a href="configuration-reference.html">Configuration Reference</a></li>
+        <li><a href="architecture.html">Backend Architecture Overview</a></li>
+        <li><a href="admin-alerts.html">Admin Alerts</a></li>
+        <li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+        <li><a href="admin-category-management.html">Admin Category Management</a></li>
+        <li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+        <li><a href="api-docs.html">API Overview</a></li>
+        <li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+        <li><a href="class-lifecycle-workflow.html">Class Lifecycle & Certificate Workflow</a></li>
+        <li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+        <li><a href="coupon-management.html">Coupon Management</a></li>
+        <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+        <li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+        <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+        <li><a href="release-checklist.html">Release Checklist</a></li>
+        <li><a href="student-enrollment-workflow.html">Student Class Purchase & Enrollment Workflow</a></li>
+        <li><a href="student-registration-guide.html">Student Registration & Class Enrollment Guide</a></li>
+        <li><a href="social-login-setup.html">Social Login Setup</a></li>
+        <li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+        <li><a href="changelog.html">Changelog</a></li>
+      </ul>
+    </nav>
+    <article class="docs-article">
+      <h1 id="api-overview">API Overview</h1>
+<p>The backend exposes a REST API under the <code>/api</code> prefix. Below is a brief outline of the main routes. For the complete specification see <code>backend/src/docs/swagger.yaml</code>.</p>
+<h2 id="authentication">Authentication</h2>
+<p><code>/api/auth</code></p>
+<ul>
+<li><code>POST /register</code> – create a new user</li>
+<li><code>POST /login</code> – authenticate and receive tokens</li>
+<li><code>POST /refresh</code> – refresh an access token (refresh token cookies expire after 30 days)</li>
+<li><code>POST /logout</code> – clear the refresh token</li>
+<li><code>POST /request-reset</code> – send a password reset OTP <em>(legacy)</em></li>
+<li><code>POST /forgot-password</code> – send a password reset OTP via email</li>
+<li><code>POST /verify-otp</code> – verify the reset code</li>
+<li><code>POST /reset-password</code> – update the password</li>
+</ul>
+<p><code>POST /login</code> and <code>POST /refresh</code> also issue a <code>csrfToken</code> cookie containing a
+random CSRF token. Clients must mirror this value in the <code>x-csrf-token</code> header
+on subsequent state‑changing requests (POST/PUT/PATCH/DELETE) to satisfy server
+CSRF validation.</p>
+<h2 id="csrf-token">CSRF Token</h2>
+<p><code>GET /api/csrf-token</code> – return a fresh CSRF token cookie. The endpoint responds
+with status <code>204</code> and no body.</p>
+<h2 id="users">Users</h2>
+<p><code>/api/users</code></p>
+<ul>
+<li><code>/categories</code> – browse and manage categories</li>
+<li><code>/tutorials</code> – public tutorial browsing and admin management</li>
+<li><code>/classes</code> – published classes and enrollment</li>
+<li><code>GET /api/users/classes</code> – list published classes</li>
+<li><code>GET /api/users/classes/:id</code> – view details for a published class</li>
+<li><code>POST /api/users/classes/admin</code> – create a class (instructor or admin)</li>
+<li><code>PUT /api/users/classes/admin/:id</code> – update a class</li>
+<li><code>DELETE /api/users/classes/admin/:id</code> – remove a class</li>
+<li><code>GET /api/users/classes/admin/my</code> – list classes for the logged in instructor</li>
+<li><code>/admin</code> – administrator dashboard features</li>
+<li><code>/instructor</code> – instructor tools</li>
+<li><code>/student</code> – student account endpoints</li>
+</ul>
+<h2 id="booking-management">Booking Management</h2>
+<p><code>/api/bookings/admin</code> – CRUD operations for session bookings (admin only).</p>
+<h2 id="payment-management">Payment Management</h2>
+<p><code>/api/payments/admin</code> – CRUD operations for user payments (admin only).</p>
+<p><code>/api/payments/student</code></p>
+<ul>
+<li><code>GET /api/payments/student</code> – list payments for the logged in student</li>
+<li><code>GET /api/payments/student/:id</code> – retrieve a payment belonging to the authenticated student</li>
+</ul>
+<h2 id="community-management">Community Management</h2>
+<p><code>/api/community/admin</code> – manage announcements, reports, tags and settings.</p>
+<h2 id="verification">Verification</h2>
+<p><code>/api/verify</code> – send and confirm OTP codes for email or phone verification.</p>
+<h2 id="health-check">Health Check</h2>
+<p><code>GET /</code> – returns a simple message confirming that the API is running.</p>
+<h2 id="offers">Offers</h2>
+<p><code>/api/offers</code></p>
+<ul>
+<li><code>GET /api/offers</code> – list open offers</li>
+<li><code>POST /api/offers</code> – create a new offer (auth required)</li>
+<li><code>GET /api/offers/:id</code> – view offer details</li>
+<li><code>PUT /api/offers/:id</code> – update an existing offer</li>
+<li><code>DELETE /api/offers/:id</code> – remove an offer</li>
+<li><code>GET /api/offers/:offerId/responses</code> – list responses for an offer</li>
+<li><code>POST /api/offers/:offerId/responses</code> – create a response</li>
+<li><code>GET /api/offers/:offerId/responses/:responseId/messages</code> – list offer messages</li>
+<li><code>POST /api/offers/:offerId/responses/:responseId/messages</code> – send a message</li>
+<li><code>DELETE /api/offers/:offerId/responses/:responseId/messages/:messageId</code> – delete a message you sent</li>
+</ul>
+    </article>
+  </main>
+  <script src="./assets/docs.js" defer></script>
+</body>
+</html>

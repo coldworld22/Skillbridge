@@ -1,0 +1,26 @@
+@use "../../styles/abstracts/variables" as *;
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-radius: $radius-md;
+  font-weight: 500;
+}
+
+.valid {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.invalid {
+  background: #fef2f2;
+  color: #b91c1c;
+}

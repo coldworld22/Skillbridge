@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillBridge Installer</title>
+    <style>
+      :root {
+        --accent: #facc15;
+        --accent-dark: #eab308;
+        --bg: #fef9c3;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #4b5563;
+        --border: #fde68a;
+        --code-bg: #0f172a;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #fff7d6, var(--bg));
+        color: var(--text);
+      }
+      main {
+        max-width: 840px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 4rem;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        color: var(--accent-dark);
+      }
+      .wizard-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.75rem;
+        box-shadow: 0 16px 30px rgba(234, 179, 8, 0.14);
+        position: relative;
+        overflow: hidden;
+      }
+      .wizard-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 16px;
+        pointer-events: none;
+        border: 2px solid rgba(250, 204, 21, 0.08);
+      }
+      .wizard-card > h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: #713f12;
+        font-weight: 600;
+        border-radius: 9999px;
+        padding: 0.2rem 0.8rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      label {
+        display: block;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        margin-top: 0.35rem;
+        background: #fffbeb;
+        transition: box-shadow 0.2s;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.35);
+      }
+      button {
+        background: linear-gradient(120deg, var(--accent), #fbbf24);
+        color: #78350f;
+        border: none;
+        border-radius: 999px;
+        padding: 0.75rem 1.6rem;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: 600;
+        box-shadow: 0 10px 18px rgba(250, 204, 21, 0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 22px rgba(250, 204, 21, 0.4);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      pre {
+        background: var(--code-bg);
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        margin-top: 1rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        border: 1px solid rgba(15, 23, 42, 0.35);
+      }
+      .hint {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+      }
+      .hidden {
+        display: none;
+      }
+      .prereq-list {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0 0;
+      }
+      .prereq-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        border: 1px solid rgba(234, 179, 8, 0.35);
+        border-radius: 12px;
+        padding: 0.7rem 0.85rem;
+        background: rgba(254, 240, 138, 0.35);
+        margin-bottom: 0.75rem;
+      }
+      .prereq-item.is-ok {
+        border-color: rgba(34, 197, 94, 0.45);
+        background: rgba(187, 247, 208, 0.35);
+      }
+      .prereq-item.is-fail {
+        border-color: rgba(248, 113, 113, 0.5);
+        background: rgba(254, 202, 202, 0.35);
+      }
+      .prereq-icon {
+        font-size: 1.3rem;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .prereq-icon.is-ok {
+        color: #15803d;
+      }
+      .prereq-icon.is-fail {
+        color: #b91c1c;
+      }
+      .prereq-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .prereq-label {
+        font-weight: 600;
+        color: var(--text);
+      }
+      .prereq-detail {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .progress {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        padding: 0;
+        margin: 0 0 2rem;
+        counter-reset: step;
+      }
+      .progress-step {
+        position: relative;
+        padding: 0.85rem 1rem;
+        background: rgba(250, 204, 21, 0.18);
+        border-radius: 12px;
+        border: 1px solid rgba(234, 179, 8, 0.3);
+        text-align: left;
+        font-weight: 600;
+        color: #854d0e;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        transition: background 0.2s, color 0.2s, transform 0.2s;
+      }
+      .progress-step::before {
+        counter-increment: step;
+        content: counter(step);
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(250, 204, 21, 0.45);
+        color: #713f12;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+      .progress-step.active {
+        background: rgba(250, 204, 21, 0.33);
+        color: #713f12;
+        transform: translateY(-2px);
+        border-color: rgba(202, 138, 4, 0.55);
+      }
+      .progress-step.active::before {
+        background: var(--accent);
+      }
+      .progress-step.completed {
+        background: #fde68a;
+        border-color: rgba(202, 138, 4, 0.75);
+      }
+      .progress-step.completed::before {
+        content: '✓';
+        background: #facc15;
+        color: #713f12;
+        font-size: 1.1rem;
+      }
+      .section-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 640px) {
+        main {
+          padding: 2rem 1rem 3rem;
+        }
+        .wizard-card {
+          padding: 1.5rem;
+        }
+        .progress {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="wizard-card">
+        <span class="badge">Installer</span>
+        <h1>SkillBridge Installation Wizard</h1>
+        <p class="hint">
+          Follow the three guided steps to validate your server, configure the
+          installer, and finish the setup. Progress updates automatically as you
+          complete each step.
+        </p>
+        <ol class="progress" id="stepProgress">
+          <li class="progress-step active" data-progress-step="1">
+            Check Requirements
+          </li>
+          <li class="progress-step" data-progress-step="2">
+            Enter Purchase Code
+          </li>
+          <li class="progress-step" data-progress-step="3">
+            Run Installation
+          </li>
+        </ol>
+      </header>
+
+      <section id="step1" class="wizard-card" data-step="1">
+        <h2>
+          <span class="badge">Step 1</span>
+          Check Requirements
+        </h2>
+        <p class="hint">
+          Verifies Node.js, Docker, Docker Compose, and Git on the server hosting the backend.
+          The check kicks off automatically and you can rerun it at any time.
+        </p>
+        <div class="section-actions">
+          <button id="checkBtn" type="button">Re-run Check</button>
+          <span class="hint">Need to fix something? Update the host and rerun.</span>
+        </div>
+        <ul id="prereqList" class="prereq-list hidden"></ul>
+        <pre id="prereqOutput">Running automatic checks…</pre>
+      </section>
+
+      <section id="step2" class="wizard-card hidden" data-step="2">
+        <h2>
+          <span class="badge">Step 2</span>
+          Enter Purchase Code
+        </h2>
+        <p id="authHint" class="hint">
+          Enter the license purchase code to unlock the installer. No account login is required.
+        </p>
+        <form id="authForm">
+          <label>
+            Purchase Code
+            <input
+              type="text"
+              name="purchaseCode"
+              placeholder="Codecanyon-style key (e.g. XXXX-XXXX-XXXX)"
+              value="Javaheat@18880"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+          <div class="section-actions">
+            <div class="hint">
+              Default code: <code>Javaheat@18880</code>. Replace it with your own license in production.
+            </div>
+            <button type="submit">Save Code &amp; Continue</button>
+          </div>
+        </form>
+        <pre id="authOutput" class="hidden"></pre>
+      </section>
+
+      <section id="step3" class="wizard-card hidden" data-step="3">
+        <h2>
+          <span class="badge">Step 3</span>
+          Configure SkillBridge
+        </h2>
+        <p class="hint">
+          The installer reads your existing environment files, runs database migrations and seeders,
+          and boots the Docker stack so the platform is ready on this host. Choose the mode that
+          matches your deployment target.
+        </p>
+        <form id="configForm">
+          <label>
+            Mode
+            <select name="mode" id="installMode">
+              <option value="development" selected>Development (Docker)</option>
+              <option value="production">Production</option>
+            </select>
+          </label>
+          <label id="domainField" class="hidden">
+            Domain (required for production)
+            <input
+              type="text"
+              name="domain"
+              placeholder="example.com"
+              autocomplete="off"
+            />
+          </label>
+          <div class="section-actions">
+            <span class="hint">
+              Production mode configures HTTPS redirects. Provide the primary domain.
+            </span>
+            <button type="submit">Run Install Script</button>
+          </div>
+        </form>
+        <pre id="installOutput"></pre>
+      </section>
+    </main>
+
+    <script src="install.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+@use "../../styles/abstracts/variables" as *;
+
+.page {
+  min-height: 100vh;
+  background: #0b0f19;
+  color: #f9fafb;
+}
+
+.main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 6.5rem 1.25rem 4rem;
+}
+
+.heading {
+  text-align: center;
+  font-size: 2.3rem;
+  font-weight: 900;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+}
+
+.state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #cbd5e1;
+}
+
+.stateIcon {
+  font-size: 3.5rem;
+  color: #fbbf24;
+  margin-bottom: 0.5rem;
+}
+
+.stateText {
+  font-size: 1.05rem;
+}
+
+.stateButton {
+  margin-top: 1rem;
+  padding: 0.75rem 1.2rem;
+  border-radius: $radius-lg;
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.stateButton:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.panel {
+  background: #111827;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  box-shadow: $shadow-soft;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.discountCard {
+  margin-top: 1.5rem;
+  background: #0f172a;
+  border-radius: $radius-md;
+  padding: 1rem;
+  border: 1px solid $color-border;
+}
+
+.discountTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+}
+
+.discountTitleIcon {
+  color: #fbbf24;
+}
+
+.discountRow {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.discountInput {
+  flex: 1;
+  min-width: 15rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #0b1324;
+  color: #f9fafb;
+}
+
+.applyBtn {
+  padding: 0.65rem 1rem;
+  border-radius: $radius-md;
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.applyBtn:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.applyBtn:active {
+  transform: translateY(0);
+}
+
+.discountFeedbackSuccess {
+  color: #22c55e;
+  margin-top: 0.5rem;
+}
+
+.discountFeedbackError {
+  color: #f87171;
+  margin-top: 0.5rem;
+}
+
+.summary {
+  margin-top: 1.25rem;
+  background: #0f172a;
+  border-radius: $radius-md;
+  padding: 1rem;
+  border: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.summaryAccent {
+  color: #fbbf24;
+  font-size: 1.1rem;
+}
+
+.summaryDivider {
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid $color-border;
+}
+
+.actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.checkoutBtn {
+  background: #22c55e;
+  color: #0b0f19;
+  padding: 0.75rem 1.2rem;
+  border-radius: $radius-lg;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.checkoutBtn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.checkoutBtn:active {
+  transform: translateY(0);
+}
+
+.confirmPage {
+  min-height: 100vh;
+  background: #0b0f19;
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 3rem 1rem;
+}
+
+.confirmIcon {
+  font-size: 3.75rem;
+  color: #22c55e;
+}
+
+.confirmTitle {
+  font-size: 2.1rem;
+  font-weight: 900;
+}
+
+.confirmText {
+  color: #9ca3af;
+}
+
+.homeBtn {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1.2rem;
+  border-radius: $radius-lg;
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.homeBtn:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.homeBtn:active {
+  transform: translateY(0);
+}

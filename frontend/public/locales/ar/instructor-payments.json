@@ -1,0 +1,339 @@
+{
+  "common": {
+    "status": {
+      "paid": "مدفوع",
+      "awaiting_approval": "بانتظار الموافقة",
+      "pending_payment": "قيد الدفع",
+      "rejected": "مرفوض",
+      "pending": "قيد الانتظار",
+      "approved": "موافق عليه",
+      "cancelled": "ملغى",
+      "unknown": "غير معروف"
+    },
+    "methods": {
+      "subscription": "اشتراك",
+      "manual_review": "مراجعة يدوية",
+      "currency_payment": "دفع {{currency}}",
+      "default": "دفع"
+    },
+    "filters": {
+      "all": "الكل",
+      "all_methods": "جميع الطرق",
+      "all_statuses": "جميع الحالات",
+      "paid": "مدفوع",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض",
+      "live": "مباشر",
+      "completed": "مكتمل",
+      "draft": "مسودة"
+    },
+    "labels": {
+      "available_balance": "الرصيد المتاح",
+      "minimum_withdrawal": "الحد الأدنى للسحب:",
+      "commission_vs_net": "📊 العمولة مقابل صافي الأرباح",
+      "commission_net_ratio": "العمولة: {{commission}}% | الصافي: {{net}}%",
+      "filter_status": "تصفية حسب الحالة:",
+      "start_date": "تاريخ البدء",
+      "end_date": "تاريخ الانتهاء"
+    },
+    "buttons": {
+      "export_csv": "تصدير CSV",
+      "download_tax_pdf": "تحميل ملف PDF الضريبي",
+      "request_withdrawal": "طلب سحب",
+      "save_settings": "حفظ الإعدادات",
+      "submit_request": "إرسال الطلب",
+      "submitting": "جارٍ الإرسال..."
+    },
+    "messages": {
+      "loading": {
+        "payments": "جارٍ تحميل بيانات المدفوعات...",
+        "history": "جارٍ تحميل سجل المدفوعات...",
+        "classes": "جارٍ تحميل أرباح الصفوف...",
+        "class_breakdown": "جارٍ تحميل تفصيل الصفوف...",
+        "books": "جارٍ تحميل أرباح الكتب...",
+        "tutorials": "جارٍ تحميل أرباح الدروس...",
+        "withdrawals": "جارٍ تحميل سجل السحوبات..."
+      },
+      "errors": {
+        "payments": "تعذر تحميل المدفوعات. يرجى المحاولة لاحقًا.",
+        "history": "يتعذر الآن تحميل سجل المدفوعات.",
+        "classes": "يتعذر الآن تحميل أرباح الصفوف.",
+        "class_breakdown": "يتعذر الآن تحميل تفصيل الصفوف.",
+        "books": "يتعذر الآن تحميل أرباح الكتب.",
+        "tutorials": "يتعذر الآن تحميل أرباح الدروس.",
+        "withdrawals": "يتعذر الآن تحميل السحوبات."
+      },
+      "info": {
+        "requests_above_balance": "سيتم رفض الطلبات التي تتجاوز رصيد محفظتك المتاح.",
+        "below_minimum_notice": "رصيدك الحالي أقل من الحد الأدنى للسحب. واصل الإنجاز لتفعيل السحب.",
+        "pdf_unavailable": "📄 لم يتم تنفيذ تصدير PDF بعد. يرجى التواصل مع الدعم إذا كنت بحاجة إلى الكشف.",
+        "payout_policy_link": "سياسة الدفع"
+      },
+      "success": {
+        "withdrawal_submitted": "تم إرسال طلب السحب بنجاح."
+      },
+      "validation": {
+        "invalid_amount": "يرجى إدخال مبلغ صالح.",
+        "exceeds_balance": "المبلغ المطلوب يتجاوز رصيد محفظتك المتاح.",
+        "below_minimum": "الحد الأدنى للسحب هو {{amount}}.",
+        "at_least_amount": "يجب ألا يقل عن {{amount}}."
+      }
+    },
+    "tables": {
+      "item_type": "نوع العنصر",
+      "orders": "الطلبات",
+      "gross": "الإجمالي",
+      "net": "الصافي",
+      "net_earned": "الصافي المكتسب",
+      "platform_fees": "رسوم المنصة",
+      "item": "العنصر",
+      "gross_amount": "المبلغ الإجمالي",
+      "platform_fee": "رسوم المنصة",
+      "net_amount": "المبلغ الصافي",
+      "date": "التاريخ",
+      "method": "الطريقة",
+      "status": "الحالة",
+      "title": "العنوان",
+      "students": "الطلاب",
+      "avg_price": "متوسط السعر",
+      "gross_earned": "الإجمالي المكتسب",
+      "net_earnings": "صافي الأرباح",
+      "commission": "العمولة",
+      "sales": "المبيعات",
+      "notes": "ملاحظات",
+      "requested": "تاريخ الطلب",
+      "processed": "تاريخ المعالجة",
+      "amount": "المبلغ",
+      "class": "الصف",
+      "students_paid": "الطلاب (مدفوع)",
+      "schedule": "الجدول",
+      "publish": "النشر",
+      "last_payment": "آخر دفعة",
+      "currency": "العملة"
+    },
+    "empty": {
+      "transactions": "لا توجد معاملات حتى الآن.",
+      "payments": "لا توجد مدفوعات مطابقة للمرشحات المحددة.",
+      "class_earnings": "لا توجد أرباح للصفوف في الفترة المحددة.",
+      "classes_filter": "لا توجد صفوف تطابق التصفية المحددة.",
+      "book_earnings": "لا توجد أرباح للكتب في الفترة المحددة.",
+      "tutorial_earnings": "لا توجد أرباح للدروس في الفترة المحددة.",
+      "withdrawals": "لا توجد طلبات سحب بعد."
+    },
+    "placeholders": {
+      "paypal_email": "مثال: user@example.com",
+      "bank_details": "مثال: IBAN + SWIFT"
+    },
+    "itemTypes": {
+      "class": "صف",
+      "book": "كتاب",
+      "tutorial": "درس",
+      "subscription": "اشتراك",
+      "other": "أخرى"
+    }
+  },
+  "dashboard": {
+    "title": "💰 مدفوعات المدرّس",
+    "cards": {
+      "lifetime_earnings": "إجمالي الأرباح",
+      "pending_earnings": "أرباح قيد الانتظار",
+      "paid_to_wallet": "مدفوع إلى المحفظة",
+      "total_withdrawn": "إجمالي المسحوبات",
+      "platform_fees": "رسوم المنصة",
+      "gross_revenue": "الإيراد الإجمالي"
+    },
+    "wallet": {
+      "title": "رصيد المحفظة الحالي"
+    },
+    "earnings_by_type": {
+      "title": "الأرباح حسب نوع العنصر",
+      "description": "تتبّع كيفية مساهمة كل منتج في إيراداتك."
+    },
+    "quick_links": {
+      "history": "📜 سجل المدفوعات",
+      "withdrawals": "🧾 طلبات السحب",
+      "settings": "⚙️ إعدادات الدفع",
+      "commissions": "📉 العمولة والاستقطاعات",
+      "classes": "🎥 أرباح الصفوف المباشرة",
+      "tutorials": "📘 أرباح الدروس",
+      "books": "📚 أرباح الكتب"
+    },
+    "transactions": {
+      "title": "سجل المعاملات",
+      "stats": {
+        "filtered": "المعاملات المصفّاة",
+        "net": "صافي الأرباح",
+        "fees": "رسوم المنصة",
+        "last_payment": "آخر دفعة"
+      },
+      "status_breakdown": {
+        "count": "{{count}} معاملة",
+        "net": "صافي {{amount}}"
+      },
+      "untitled": "بدون عنوان"
+    },
+    "export": {
+      "filename": "payments.csv",
+      "headers": {
+        "item": "العنصر",
+        "gross_amount": "المبلغ الإجمالي",
+        "platform_fee": "رسوم المنصة",
+        "net_amount": "المبلغ الصافي",
+        "date": "التاريخ",
+        "status": "الحالة",
+        "method": "الطريقة"
+      }
+    }
+  },
+  "history": {
+    "title": "📜 سجل المدفوعات",
+    "filters": {
+      "all": "الكل",
+      "paid": "مدفوع",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض"
+    },
+    "export": {
+      "filename": "payment_history.csv",
+      "headers": {
+        "item": "العنصر",
+        "gross_amount": "المبلغ الإجمالي",
+        "platform_fee": "رسوم المنصة",
+        "net_amount": "المبلغ الصافي",
+        "date": "التاريخ",
+        "method": "الطريقة",
+        "status": "الحالة"
+      }
+    },
+    "table": {
+      "untitled": "بدون عنوان"
+    }
+  },
+  "classes": {
+    "title": "🎥 أرباح الصفوف المباشرة",
+    "tabs": {
+      "classes": "الصفوف المباشرة",
+      "policy": "سياسة العمولة"
+    },
+    "export": {
+      "filename": "class_earnings.csv"
+    },
+    "policy_notice": "تُحتسب عمولة المنصة لكل تسجيل وقد تختلف عند استخدام القسائم أو الأسعار الخاصة.",
+    "policy_cta": "يرجى الرجوع إلى <link>سياسة الدفع</link> للحصول على التفاصيل الكاملة.",
+    "policy_link_href": "/help/payments"
+  },
+  "books": {
+    "title": "📚 أرباح الكتب",
+    "export": {
+      "filename": "book_earnings.csv"
+    },
+    "info_notice": "تشمل أرباح الكتب المشتريات المباشرة والوصول عبر الخطط عند توفره.",
+    "info_cta": "راجع <link>سياسة الدفع</link> لمعرفة المزيد حول كيفية احتساب أرباح الكتب.",
+    "policy_link_href": "/help/payments"
+  },
+  "tutorials": {
+    "title": "🎓 أرباح الدروس",
+    "export": {
+      "filename": "tutorial_earnings.csv"
+    },
+    "info_notice": "تُحتسب عمولة المنصة لكل عملية شراء للدرس وقد تختلف عند استخدام القسائم أو الخطط.",
+    "info_cta": "راجع <link>سياسة الدفع</link> لمزيد من التفاصيل.",
+    "policy_link_href": "/help/payments"
+  },
+  "classBreakdown": {
+    "title": "📚 أرباح الصفوف حسب الصف",
+    "filter_label": "تصفية حسب الحالة:",
+    "filters": {
+      "all": "الكل",
+      "live": "مباشر",
+      "completed": "مكتمل",
+      "draft": "مسودة"
+    },
+    "rows": {
+      "archived_title": "صف مؤرشف",
+      "archived_status": "مؤرشف"
+    }
+  },
+  "commissions": {
+    "title": "📉 عمولة المنصة والاستقطاعات",
+    "summary": {
+      "commission_rate": "نسبة عمولة المنصة",
+      "total_earnings": "الأرباح قبل الاستقطاعات",
+      "platform_cut": "العمولة المقتطعة",
+      "net_earnings": "صافي الأرباح بعد العمولة"
+    },
+    "info_note": "عمولة المنصة ثابتة عند 20٪. قد تختلف رسوم المعاملات والضرائب حسب طريقة الدفع وموقعك.",
+    "breakdown": {
+      "title": "تفصيل العمولة لكل صف",
+      "headers": {
+        "title": "العنوان",
+        "amount": "المبلغ",
+        "commission": "العمولة"
+      }
+    },
+    "deductions": {
+      "title": "استقطاعات إضافية"
+    },
+    "final_payout": "💵 صافي المبلغ بعد جميع الاستقطاعات",
+    "export": {
+      "filename": "class_commission_breakdown.csv"
+    }
+  },
+  "settings": {
+    "title": "⚙️ إعدادات الدفع",
+    "preferred_method": "الطريقة المفضلة",
+    "methods": {
+      "paypal": "باي بال",
+      "bank_transfer": "تحويل بنكي",
+      "stripe": "سترايب",
+      "moyasar": "مويصر",
+      "nft_wallet": "محفظة NFT"
+    },
+    "fields": {
+      "paypal_email": "بريد باي بال",
+      "iban": "رقم الآيبان",
+      "swift": "رمز SWIFT/BIC",
+      "bank_name": "اسم البنك",
+      "account_holder": "اسم صاحب الحساب",
+      "stripe_account_id": "معرّف حساب سترايب",
+      "moyasar_merchant_id": "معرّف تاجر مويصر",
+      "wallet_address": "عنوان محفظة الإيثريوم"
+    },
+    "alert": {
+      "base": "تم حفظ الإعدادات لـ {{method}}\n{{details}}",
+      "paypal": "البريد الإلكتروني: {{email}}",
+      "bank_transfer": "رقم الآيبان: {{iban}}\nرمز السويفت: {{swift}}",
+      "stripe": "معرّف حساب سترايب: {{id}}",
+      "moyasar": "معرّف التاجر: {{id}}",
+      "nft_wallet": "عنوان المحفظة: {{address}}",
+      "none": "(لم يتم إعداد تفاصيل)"
+    }
+  },
+  "withdrawals": {
+    "title": "💸 طلبات السحب",
+    "stats": {
+      "approved": "السحوبات المعتمدة",
+      "pending": "الطلبات قيد الانتظار"
+    },
+    "export": {
+      "filename": "withdrawals.csv"
+    }
+  },
+  "withdrawalsNew": {
+    "title": "📝 طلب سحب جديد",
+    "labels": {
+      "requests_above_balance": "سيتم رفض الطلبات التي تتجاوز رصيد محفظتك المتاح.",
+      "minimum_withdrawal": "الحد الأدنى للسحب:"
+    },
+    "form": {
+      "amount": "المبلغ",
+      "payment_method": "طريقة الدفع",
+      "paypal_email": "بريد باي بال",
+      "bank_details": "تفاصيل البنك (IBAN / SWIFT)"
+    },
+    "placeholders": {
+      "paypal_email": "مثال: user@example.com",
+      "bank_details": "مثال: IBAN + SWIFT"
+    }
+  }
+}

@@ -1,0 +1,169 @@
+@use "../../styles/abstracts/variables" as *;
+
+.chatInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.text {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #111827;
+  color: #fff;
+}
+
+.send {
+  background: $color-brand-500;
+  color: #111827;
+  padding: 0.5rem 1rem;
+  border-radius: $radius-md;
+  border: none;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.send:hover {
+  background: rgba($color-brand-500, 0.9);
+}
+
+.messageBox {
+  position: relative;
+  border: 1px solid $color-border;
+  background: var(--bg-color);
+  border-radius: $radius-lg;
+  padding: 0.75rem;
+  box-shadow: $shadow-soft;
+}
+
+.replyBar {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid #fbbf24;
+  background: #fef9c3;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  font-size: 0.9rem;
+}
+
+.replyText {
+  flex: 1;
+  min-width: 0;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.iconButton {
+  height: 2.25rem;
+  width: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: #e5e7eb;
+}
+
+.emojiPopover {
+  position: absolute;
+  bottom: 3.25rem;
+  left: 0;
+  z-index: 50;
+  width: 18rem;
+  border: 1px solid $color-border;
+  background: var(--bg-color);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-strong;
+}
+
+.textInput {
+  flex: 1;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.sendButton {
+  height: 2.25rem;
+  width: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  background: $color-brand-500;
+  color: #111827;
+  border: none;
+  cursor: pointer;
+}
+
+.emojiWrapper {
+  position: relative;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: $color-muted;
+  margin-top: 0.5rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.attachment {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.attachmentName {
+  font-style: italic;
+}
+
+.iconYellow {
+  color: $color-brand-500;
+}
+
+.iconGray {
+  color: #4b5563;
+}
+
+.iconDanger {
+  color: #dc2626;
+}

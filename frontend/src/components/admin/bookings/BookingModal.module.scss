@@ -1,0 +1,183 @@
+@use "../../../styles/abstracts/variables" as *;
+@use "../../../styles/abstracts/mixins" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 48rem;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border-radius: $radius-xl;
+  padding: 1.5rem;
+  box-shadow: $shadow-strong;
+  border: 1px solid $color-border;
+}
+
+:global(.dark) .card {
+  border-color: $color-border-dark;
+}
+
+.close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  color: $color-muted;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 0.35rem;
+}
+
+:global(.dark) .close {
+  color: $color-muted-dark;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  @include respond(sm) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: $color-muted;
+  font-size: 0.95rem;
+}
+
+:global(.dark) .subtitle {
+  color: $color-muted-dark;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.infoCard {
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1rem;
+}
+
+:global(.dark) .infoCard {
+  border-color: $color-border-dark;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+:global(.dark) .label {
+  color: $color-muted-dark;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.noteCard {
+  border: 1px solid $color-border;
+  background: #f9fafb;
+  border-radius: $radius-lg;
+  padding: 1rem;
+  color: $color-text;
+}
+
+:global(.dark) .noteCard {
+  border-color: $color-border-dark;
+  background: #111827;
+  color: $color-text-dark;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confirmBox {
+  margin-top: 1.5rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1rem;
+  background: #f9fafb;
+}
+
+:global(.dark) .confirmBox {
+  border-color: $color-border-dark;
+  background: #111827;
+}
+
+.confirmTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.textarea {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.75rem;
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.noteText {
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

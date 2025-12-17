@@ -1,0 +1,24 @@
+[
+    {
+      "id": 1,
+      "title": "🔥 Black Friday Deal: 50% Off!",
+      "description": "All courses now at half price!",
+      "image": "/shared/assets/images/ads/black-friday.jpg",
+      "link": "#"
+    },
+    {
+      "id": 2,
+      "title": "📢 Python Bootcamp Enrollment Open!",
+      "description": "Join our advanced Python bootcamp!",
+      "image": "/shared/assets/images/ads/python-bootcamp.jpg",
+      "link": "#"
+    },
+    {
+      "id": 3,
+      "title": "🚀 AI Masterclass Discount!",
+      "description": "Learn AI from top instructors!",
+      "image": "/shared/assets/images/ads/ai-masterclass.jpg",
+      "link": "#"
+    }
+  ]
+  

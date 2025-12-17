@@ -1,0 +1,144 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  padding: 1.5rem;
+  background: #1f2937;
+  color: #ffffff;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #fbbf24;
+}
+
+.field {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.uploadBlock {
+  margin-bottom: 1rem;
+  background: #374151;
+  padding: 1rem;
+  border-radius: $radius-lg;
+}
+
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #4b5563;
+  padding: 0.75rem;
+  border-radius: $radius-lg;
+  cursor: pointer;
+}
+
+.uploadRow:hover {
+  background: #6b7280;
+}
+
+.uploadLabel {
+  cursor: pointer;
+  color: #fbbf24;
+}
+
+.icon {
+  color: #fbbf24;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.remove {
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #ef4444;
+  font-size: 0.9rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.error {
+  font-size: 0.8rem;
+  color: $color-danger;
+  margin-top: 0.25rem;
+}
+
+.docList {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.docItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: $radius-lg;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.back {
+  background: #4b5563;
+  color: #ffffff;
+}
+
+.back:hover {
+  background: #374151;
+}
+
+.next {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.next:hover {
+  background: #f59e0b;
+}

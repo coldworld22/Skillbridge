@@ -1,0 +1,92 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1rem;
+  box-shadow: $shadow-soft;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $color-border;
+}
+
+.row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 1px solid $color-border;
+}
+
+.name {
+  font-weight: 600;
+  color: $color-text;
+}
+
+.meta {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.email {
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: $color-muted;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action {
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.approve {
+  color: #16a34a;
+}
+
+.reject {
+  color: #dc2626;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.muted {
+  color: $color-muted;
+  font-size: 0.9rem;
+}

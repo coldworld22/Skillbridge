@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Configuration Reference | SkillBridge Documentation</title>
+    <link rel="stylesheet" href="./assets/docs.css" />
+</head>
+<body class="docs docs-article">
+  <header class="docs-article-header">
+    <h1>SkillBridge Documentation</h1>
+    <p class="docs-meta">Browse the sidebar or return to the <a href="./index.html">docs hub</a>.</p>
+  </header>
+  <main class="docs-shell">
+    <button class="docs-nav-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+      </svg>
+      Browse guides
+    </button>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation sections">
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+        <li><a href="index.html">Documentation Hub</a></li>
+        <li><a href="installation.html">Installation Guide</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="deployment.html">Deployment Guide</a></li>
+        <li><a href="configuration-reference.html">Configuration Reference</a></li>
+        <li><a href="architecture.html">Backend Architecture Overview</a></li>
+        <li><a href="admin-alerts.html">Admin Alerts</a></li>
+        <li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+        <li><a href="admin-category-management.html">Admin Category Management</a></li>
+        <li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+        <li><a href="api-docs.html">API Overview</a></li>
+        <li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+        <li><a href="class-lifecycle-workflow.html">Class Lifecycle & Certificate Workflow</a></li>
+        <li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+        <li><a href="coupon-management.html">Coupon Management</a></li>
+        <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+        <li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+        <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+        <li><a href="release-checklist.html">Release Checklist</a></li>
+        <li><a href="student-enrollment-workflow.html">Student Class Purchase & Enrollment Workflow</a></li>
+        <li><a href="student-registration-guide.html">Student Registration & Class Enrollment Guide</a></li>
+        <li><a href="social-login-setup.html">Social Login Setup</a></li>
+        <li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+        <li><a href="changelog.html">Changelog</a></li>
+      </ul>
+    </nav>
+    <article class="docs-article">
+      <h1 id="configuration-reference">Configuration Reference</h1>
+<p>This guide lists the configuration files and environment variables that keep a SkillBridge deployment running. Use it as a quick checklist when you spin up a new environment, rotate secrets, or hand the project to another team.</p>
+<h2 id="where-configuration-lives">Where configuration lives</h2>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.env</code></td>
+<td>Shared variables loaded by Docker Compose. Good place for defaults that apply to both the backend and frontend during local development.</td>
+</tr>
+<tr>
+<td><code>backend/.env</code></td>
+<td>Runtime configuration for the Node.js API (port, domains, auth, SMTP, Redis, third-party keys). Loaded in every environment.</td>
+</tr>
+<tr>
+<td><code>backend/.env.production</code></td>
+<td>Overrides for production containers. Keep secrets here or supply them through your hosting platform&#39;s secret manager.</td>
+</tr>
+<tr>
+<td><code>frontend/.env.local</code></td>
+<td>Next.js build-time configuration for local development.</td>
+</tr>
+<tr>
+<td><code>frontend/.env.production</code></td>
+<td>Optional build-time overrides for production builds when you deploy the frontend separately.</td>
+</tr>
+<tr>
+<td><code>nginx/conf.d/*.conf</code></td>
+<td>Reverse-proxy rules and TLS paths. Update when your domain or certificate locations change.</td>
+</tr>
+</tbody>
+</table>
+<p>Keep these files out of version control whenever they contain secrets. Store rotations in your password manager or hosting provider&#39;s secret vault and document ownership so the team knows who can update them.</p>
+<h2 id="core-environment-variables">Core environment variables</h2>
+<h3 id="env-project-root"><code>.env</code> (project root)</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEXT_PUBLIC_API_BASE_URL</code></td>
+<td>Default API URL used by the frontend when running inside Docker. Override in per-environment files if the frontend lives elsewhere.</td>
+<td><code>http://backend:5002/api</code></td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_SOCKET_URL</code></td>
+<td>WebSocket endpoint used by the frontend. Set to a <code>ws://</code> or <code>wss://</code> URL that points to the backend.</td>
+<td><code>http://backend:5002</code></td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_PGADMIN_URL</code></td>
+<td>Helps the dashboard surface the pgAdmin URL.</td>
+<td><code>http://localhost:5050</code></td>
+</tr>
+<tr>
+<td><code>ALLOWED_ORIGINS</code></td>
+<td>Passed to Nginx so it can forward CORS headers. Use a comma-separated list without spaces.</td>
+<td><code>https://example.com,https://admin.example.com</code></td>
+</tr>
+<tr>
+<td><code>ENABLE_INSTALL</code>, <code>INSTALL_API_ENABLED</code></td>
+<td>Toggle the web installer (<code>/install</code>). Leave <code>false</code> once production setup is complete.</td>
+<td><code>true</code> during initial setup</td>
+</tr>
+</tbody>
+</table>
+<h3 id="backendenv"><code>backend/.env</code></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PORT</code></td>
+<td>Port the Express server listens on inside the container or VM.</td>
+<td><code>5002</code></td>
+</tr>
+<tr>
+<td><code>APP_DOMAIN</code></td>
+<td>Primary domain used in generated URLs and cookies.</td>
+<td><code>example.com</code></td>
+</tr>
+<tr>
+<td><code>FRONTEND_URL</code></td>
+<td>Comma-separated list of origins allowed to hit the API (for CORS and email links). Include every domain you serve.</td>
+<td><code>https://example.com,https://www.example.com</code></td>
+</tr>
+<tr>
+<td><code>SUPPORT_EMAIL</code></td>
+<td>From-address used for transactional emails.</td>
+<td><code>support@example.com</code></td>
+</tr>
+<tr>
+<td><code>COOKIE_DOMAIN</code></td>
+<td>Share auth cookies across subdomains. Required when the frontend lives on a different host.</td>
+<td><code>.example.com</code></td>
+</tr>
+<tr>
+<td><code>COOKIE_SECURE</code>, <code>COOKIE_SAMESITE</code></td>
+<td>Harden or relax cookie behaviour. Use <code>COOKIE_SECURE=true</code> / <code>COOKIE_SAMESITE=None</code> for HTTPS deployments.</td>
+<td><code>true</code>, <code>None</code></td>
+</tr>
+<tr>
+<td><code>JWT_SECRET</code>, <code>REFRESH_TOKEN_SECRET</code></td>
+<td>Secrets that sign access and refresh tokens. Rotate if compromised.</td>
+<td>random 64-character strings</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code> (or <code>PG*</code> variables)</td>
+<td>Connection string (or discrete components) for PostgreSQL. Required before migrations run.</td>
+<td><code>postgres://user:pass@postgres:5432/skillbridge</code></td>
+</tr>
+<tr>
+<td><code>REDIS_URL</code></td>
+<td>Session store connection string. Needed for production logins.</td>
+<td><code>redis://redis:6379/0</code></td>
+</tr>
+<tr>
+<td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>SMTP_SECURE</code></td>
+<td>Outbound mail settings for password reset, verification, and notifications.</td>
+<td>Mailtrap, SES, or another SMTP provider</td>
+</tr>
+<tr>
+<td><code>INSTALL_SETUP_SECRET</code></td>
+<td>Optional shared secret that the installer requires via the <code>X-Install-Setup-Secret</code> header.</td>
+<td>random token</td>
+</tr>
+<tr>
+<td><code>ADMIN_EMAIL</code>, <code>ADMIN_PASSWORD</code></td>
+<td>Optional non-interactive credentials consumed by <code>install.sh</code>. Leave unset to enter them manually.</td>
+<td><code>admin@example.com</code>, <code>S3curePass!</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="backendenvproduction"><code>backend/.env.production</code></h3>
+<p>Mirror sensitive values from <code>backend/.env</code>, but inject production-only overrides:</p>
+<ul>
+<li>Force <code>NODE_ENV=production</code>.</li>
+<li>Set <code>COOKIE_SECURE=true</code> and <code>COOKIE_SAMESITE=None</code> when the site runs over HTTPS.</li>
+<li>Point <code>FRONTEND_URL</code> and <code>SUPPORT_EMAIL</code> at public domains rather than localhost.</li>
+<li>Include payment gateway keys, SMS provider credentials, or other third-party tokens that only apply in production.</li>
+</ul>
+<h3 id="frontendenvlocal-and-envproduction"><code>frontend/.env.local</code> (and <code>.env.production</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEXT_PUBLIC_API_BASE_URL</code></td>
+<td>Base URL (with <code>/api</code>) used by the client when making requests. Must be absolute in production.</td>
+<td><code>https://example.com/api</code></td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_SOCKET_URL</code></td>
+<td>WebSocket endpoint for real-time updates.</td>
+<td><code>wss://example.com</code></td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_TRUSTED_ICON_HOSTS</code></td>
+<td>Comma-separated domains allowed to render payment icons.</td>
+<td><code>example.com,cdn.example.com</code></td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> (or other integrations)</td>
+<td>Any <code>NEXT_PUBLIC_*</code> variable is exposed to the browser. Use them for publishable keys only.</td>
+<td><code>pk_live_123</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="operational-toggles">Operational toggles</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Where</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ENABLE_INSTALL</code>, <code>INSTALL_API_ENABLED</code></td>
+<td><code>.env</code>, <code>backend/.env</code></td>
+<td>Disable both after the platform is online to prevent re-running the installer.</td>
+</tr>
+<tr>
+<td><code>CRON_ENABLED</code></td>
+<td><code>backend/.env</code></td>
+<td>Gate scheduled jobs like email digests. Useful on staging environments.</td>
+</tr>
+<tr>
+<td><code>ALLOW_REGISTRATION</code></td>
+<td><code>backend/.env</code></td>
+<td>Temporarily disable sign-ups during maintenance windows.</td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>backend/.env</code></td>
+<td>Adjust backend verbosity (<code>info</code>, <code>warn</code>, <code>error</code>, <code>debug</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="maintenance-checklist">Maintenance checklist</h2>
+<ol>
+<li><strong>Commit templates, not secrets.</strong> Only the <code>*.example</code> files belong in git. Copy them before running installs and keep the real <code>.env</code> files private.</li>
+<li><strong>Document rotations.</strong> When you rotate SMTP, JWT, or payment keys, record the timestamp and reason in your runbook so the next hand-off is painless.</li>
+<li><strong>Test after changes.</strong> Restart containers (<code>docker compose up -d --build</code>) and run smoke tests (<code>/api/health</code>, admin login, email send) after updating environment files.</li>
+<li><strong>Back up your <code>.env</code> files securely.</strong> Store encrypted copies alongside infrastructure documentation so they can be restored if the server is lost.</li>
+</ol>
+    </article>
+  </main>
+  <script src="./assets/docs.js" defer></script>
+</body>
+</html>

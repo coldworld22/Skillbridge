@@ -1,0 +1,467 @@
+@use "sass:color";
+@use "../../../styles/abstracts/variables" as *;
+
+$auth-bg: color.scale($color-bg-dark, $lightness: -25%);
+$auth-surface: color.scale($color-bg-dark, $lightness: -12%);
+$auth-input: color.scale($color-bg-dark, $lightness: -8%);
+$auth-border: color.scale($color-border-dark, $lightness: -10%);
+$auth-brand: $color-brand-500;
+$auth-brand-strong: color.scale($color-brand-500, $lightness: 10%);
+$auth-muted: $color-muted-dark;
+$auth-text: $color-text-dark;
+
+.authPage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: radial-gradient(circle at 20% 20%, rgba($auth-brand, 0.06), transparent 22%), radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.08), transparent 26%), $auth-bg;
+  color: $auth-text;
+  overflow: hidden;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: rgba($auth-surface, 0.9);
+  border: 1px solid rgba($auth-brand, 0.35);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+.compactCard {
+  max-width: 420px;
+}
+
+.logoRing {
+  width: 96px;
+  height: 96px;
+  border: 4px solid $auth-brand-strong;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $auth-bg;
+  overflow: hidden;
+  box-shadow: 0 18px 45px rgba($auth-brand, 0.25);
+  margin: 0 auto 8px;
+}
+
+.logoImg {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.title {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: $auth-brand;
+}
+
+.subtitle {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: $auth-muted;
+}
+
+.form {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  width: 100%;
+}
+
+.label {
+  display: block;
+  color: $auth-muted;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid $auth-border;
+  background: $auth-input;
+  color: $auth-text;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: $auth-brand;
+  box-shadow: 0 0 0 2px rgba($auth-brand, 0.2);
+}
+
+.input::placeholder {
+  color: color.scale($auth-muted, $lightness: -20%);
+}
+
+.eyeToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: color.scale($auth-muted, $lightness: -20%);
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.eyeToggle:hover {
+  color: $auth-brand;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: $auth-muted;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 6px;
+  border: 1px solid $auth-border;
+  background: $auth-bg;
+  accent-color: $auth-brand;
+}
+
+.link {
+  color: $auth-brand;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: $auth-brand-strong;
+}
+
+.primaryButton {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: $auth-brand;
+  color: $color-text;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 14px 36px rgba($auth-brand, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.primaryButton:hover {
+  background: $auth-brand-strong;
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.successButton {
+  background: $color-success;
+  color: $color-text;
+  box-shadow: 0 14px 36px rgba($color-success, 0.28);
+}
+
+.mutedButton {
+  background: $color-bg-dark;
+  color: $auth-text;
+  box-shadow: none;
+}
+
+.mutedButton:hover {
+  background: color.scale($color-bg-dark, $lightness: -5%);
+}
+
+.divider {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: color.scale($auth-muted, $lightness: -18%);
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: $color-bg-dark;
+}
+
+.dividerLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.socialRow {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.socialButton {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba($auth-brand, 0.32);
+  background: $auth-brand;
+  color: $color-text;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.socialButton:hover {
+  background: $auth-brand-strong;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba($auth-brand, 0.28);
+}
+
+.error {
+  font-size: 0.8rem;
+  color: $color-danger;
+}
+
+.helper {
+  font-size: 0.85rem;
+  color: $auth-muted;
+  text-align: center;
+}
+
+.smallText {
+  font-size: 0.85rem;
+  color: color.scale($auth-muted, $lightness: -18%);
+}
+
+.roleToggle {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: $auth-input;
+  border: 1px solid $auth-border;
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.roleButton {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: $auth-muted;
+  font-weight: 700;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.roleButtonActive {
+  background: $auth-brand;
+  color: $color-text;
+  box-shadow: 0 12px 30px rgba($auth-brand, 0.24);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba($auth-brand, 0.12);
+  color: $auth-brand-strong;
+  font-weight: 700;
+}
+
+.list {
+  margin-top: 8px;
+  padding-left: 18px;
+  color: $auth-brand;
+}
+
+.otp {
+  letter-spacing: 0.32em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.resend {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: $auth-muted;
+}
+
+.resend a {
+  color: $auth-brand;
+  text-decoration: none;
+}
+
+.successState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: $auth-muted;
+}
+
+.successIcon {
+  color: $auth-brand;
+  font-size: 56px;
+}
+
+.statusText {
+  margin-top: 24px;
+  text-align: center;
+  color: $auth-muted;
+}
+
+.phoneField {
+  width: 100%;
+}
+
+.phoneWrapper {
+  border: 1px solid $auth-border;
+  border-radius: 12px;
+  background: $auth-input;
+  padding: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.phoneWrapper:focus-within {
+  border-color: $auth-brand;
+  box-shadow: 0 0 0 2px rgba($auth-brand, 0.2);
+}
+
+.phoneField :global(.PhoneInput) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.phoneField :global(.PhoneInputInput) {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: $auth-text;
+  padding: 10px 8px;
+  font-size: 0.95rem;
+}
+
+.phoneField :global(.PhoneInputInput:focus) {
+  outline: none;
+}
+
+.phoneField :global(.PhoneInputCountrySelect) {
+  color: $auth-text;
+}
+
+.phoneField :global(.react-tel-input .form-control) {
+  width: 100% !important;
+  border-radius: 12px !important;
+  background: $auth-input !important;
+  border: 1px solid $auth-border !important;
+  color: $auth-text !important;
+  padding: 12px 12px 12px 58px !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.phoneField :global(.react-tel-input .form-control:focus) {
+  border-color: $auth-brand !important;
+  box-shadow: 0 0 0 2px rgba($auth-brand, 0.2) !important;
+}
+
+.phoneField :global(.react-tel-input .flag-dropdown) {
+  background: $auth-input !important;
+  border: 1px solid $auth-border !important;
+  border-radius: 12px 0 0 12px !important;
+}
+
+.phoneField :global(.react-tel-input .selected-flag) {
+  padding-left: 14px !important;
+}
+
+.backgroundCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba($auth-brand, 0.12);
+  color: $auth-brand-strong;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 24px;
+    border-radius: 18px;
+  }
+
+  .title {
+    font-size: 1.4rem;
+  }
+
+  .checkboxRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,177 @@
+// 📁 src/middleware/tenant.js
+// Tenant resolution and authorization helpers for multi-tenant enforcement.
+
+const db = require("../config/database");
+const logger = require("../utils/logger");
+
+const APP_DOMAIN = (process.env.APP_DOMAIN || "").toLowerCase();
+const APEX = APP_DOMAIN || "skillbridge.com";
+const APEX_NO_WWW = APEX.replace(/^www\./, "");
+const WILDCARD = `.${APEX_NO_WWW}`;
+const allowDevHeader = process.env.NODE_ENV !== "production";
+
+const isMutating = (method = "") =>
+  ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase());
+
+async function resolveTenantByHost(host) {
+  const bareHost = (host || "").split(":")[0].toLowerCase();
+  if (!bareHost) throw new Error("tenant_not_found");
+
+  // Custom domains first
+  const custom = await db("tenant_domains")
+    .where({ domain: bareHost, status: "verified" })
+    .first();
+  if (custom) return custom.tenant_id;
+
+  // Platform subdomains: {slug}.apex
+  if (bareHost.endsWith(WILDCARD)) {
+    const slug = bareHost.slice(0, -WILDCARD.length);
+    if (slug && slug !== "www") {
+      const tenant = await db("tenants").where({ slug }).first();
+      if (tenant) return tenant.id;
+    }
+  }
+
+  // Apex is not tenant scoped (marketing/login)
+  if (bareHost === APEX_NO_WWW || bareHost === `www.${APEX_NO_WWW}`) {
+    return null;
+  }
+
+  throw new Error("tenant_not_found");
+}
+
+/**
+ * Middleware: resolve tenant from host or dev header.
+ * Attaches req.tenant = { id, status, plan_id, slug }
+ */
+const resolveTenant = async (req, res, next) => {
+  try {
+    let tenantId = null;
+
+    if (allowDevHeader && req.headers["x-tenant-id"]) {
+      tenantId = req.headers["x-tenant-id"];
+    } else {
+      tenantId = await resolveTenantByHost(req.headers.host);
+    }
+
+    if (!tenantId) {
+      return res.status(404).json({ error: "tenant_not_found" });
+    }
+
+    const tenant = await db("tenants").where({ id: tenantId }).first();
+    if (!tenant) {
+      return res.status(404).json({ error: "tenant_not_found" });
+    }
+
+    req.tenant = {
+      id: tenant.id,
+      status: tenant.status,
+      plan_id: tenant.plan_id,
+      slug: tenant.slug,
+    };
+    return next();
+  } catch (err) {
+    logger.warn?.("tenant resolution failed", { error: err.message });
+    return res.status(404).json({ error: "tenant_not_found" });
+  }
+};
+
+/**
+ * Middleware: ensure user has active membership in tenant.
+ * Platform super_admin bypasses when explicitly allowed.
+ */
+const ensureTenantMembership = ({ allowPlatformSuper = true } = {}) => {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "unauthorized" });
+      }
+      if (!req.tenant?.id) {
+        return res.status(400).json({ error: "tenant_not_set" });
+      }
+
+      if (allowPlatformSuper && req.user.platform_role === "super_admin") {
+        req.role = "saas_super_admin";
+        return next();
+      }
+
+      const membership = await db("tenant_memberships")
+        .where({ tenant_id: req.tenant.id, user_id: req.user.id })
+        .first();
+
+      if (!membership || membership.status !== "active") {
+        return res.status(403).json({ error: "membership_required" });
+      }
+
+      req.role = membership.role;
+      req.membership = membership;
+      return next();
+    } catch (err) {
+      logger.warn?.("tenant membership check failed", { error: err.message });
+      return res.status(500).json({ error: "membership_check_failed" });
+    }
+  };
+};
+
+/**
+ * Middleware: block writes for suspended/cancelled tenants.
+ * Allow read-only and billing portal endpoints to continue.
+ */
+const enforceTenantStatus = ({ allowBillingPaths = [] } = {}) => {
+  return (req, res, next) => {
+    const status = req.tenant?.status;
+    if (!status) return next();
+
+    const isBillingPath = allowBillingPaths.some((pattern) =>
+      pattern.test(req.path || ""),
+    );
+
+    if (["suspended", "cancelled"].includes(status) && isMutating(req.method)) {
+      if (!isBillingPath) {
+        return res.status(423).json({ error: "tenant_suspended" });
+      }
+    }
+
+    return next();
+  };
+};
+
+const requireRole =
+  (roles = []) =>
+  (req, res, next) => {
+    if (!req.role || !roles.includes(req.role)) {
+      return res.status(403).json({ error: "role_forbidden" });
+    }
+    return next();
+  };
+
+const { can } = require("../services/entitlements");
+
+/**
+ * Entitlement guard using services/entitlements.can
+ */
+const requireEntitlement = (action) => async (req, res, next) => {
+  try {
+    const decision = await can(
+      { tenantId: req.tenant?.id, role: req.role, userId: req.user?.id },
+      action,
+    );
+    if (!decision.allow) {
+      return res
+        .status(403)
+        .json({ error: decision.reason || "entitlement_denied" });
+    }
+    return next();
+  } catch (err) {
+    logger.warn?.("entitlement check failed", { error: err.message, action });
+    return res.status(500).json({ error: "entitlement_check_failed" });
+  }
+};
+
+module.exports = {
+  resolveTenant,
+  ensureTenantMembership,
+  enforceTenantStatus,
+  requireRole,
+  requireEntitlement,
+};

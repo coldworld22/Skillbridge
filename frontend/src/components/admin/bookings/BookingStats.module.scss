@@ -1,0 +1,67 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: space-between;
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: 1rem;
+  box-shadow: $shadow-soft;
+}
+
+.icon {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.amber {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.indigo {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.emerald {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.rose {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $color-muted;
+}
+
+.value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: $color-text;
+}
+
+.description {
+  font-size: 0.8rem;
+  color: $color-muted;
+}

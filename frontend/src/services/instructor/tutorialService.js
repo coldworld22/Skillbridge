@@ -1,0 +1,110 @@
+import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
+
+const formatBase = (tut) => ({
+  ...tut,
+  thumbnail: tut.thumbnail_url
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.thumbnail_url}`
+    : tut.cover_image
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.cover_image}`
+    : null,
+  preview: tut.preview_video
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
+    : null,
+  instructor: tut.instructor_name || tut.instructor,
+  tags: tut.tags || [],
+  allowInstallments: false,
+  installments: "1",
+});
+
+const mapStatus = (tut) =>
+  tut.status === "draft"
+    ? "Draft"
+    : tut.moderation_status === "Approved"
+    ? "Approved"
+    : tut.moderation_status === "Rejected"
+    ? "Rejected"
+    : "Pending";
+
+export const fetchInstructorTutorials = async (config = {}) => {
+  const { data } = await api.get("/users/tutorials/admin/my", config);
+  const list = data?.data ?? [];
+  return list.map((t) => ({
+    ...formatBase(t),
+    status: mapStatus(t),
+    updatedAt: t.updated_at,
+    createdAt: t.created_at,
+    views: t.views || 0,
+    rating: t.rating || 0,
+    enrollments: t.enrollments || 0,
+    comments: t.comment_count || 0,
+    watchTime: t.watch_time || 0,
+  }));
+};
+
+export const createTutorial = async (formData) => {
+  const { data } = await api.post("/users/tutorials/admin", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
+};
+
+export const fetchInstructorTutorialById = async (id) => {
+  const { data } = await api.get(`/users/tutorials/admin/${id}`);
+  const tut = data?.data;
+  if (!tut) return null;
+  const { data: chData } = await api.get(
+    `/users/tutorials/chapters/tutorial/${id}`
+  );
+  const chapters = chData?.data || [];
+  return {
+    ...formatBase(tut),
+    status: mapStatus(tut),
+    updatedAt: tut.updated_at,
+    createdAt: tut.created_at,
+    views: tut.views || 0,
+    rating: tut.rating || 0,
+    enrollments: tut.enrollments || 0,
+    comments: tut.comment_count || 0,
+    watchTime: tut.watch_time || 0,
+    rejection_reason: tut.rejection_reason,
+    progress: tut.progress,
+    chapters,
+    includedPlans: (() => {
+      if (Array.isArray(tut.included_plans)) return tut.included_plans;
+      if (typeof tut.included_plans === "string") {
+        try {
+          const parsed = JSON.parse(tut.included_plans);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      }
+      return [];
+    })(),
+  };
+};
+
+export const updateTutorial = async (id, formData) => {
+  const { data } = await api.put(`/users/tutorials/admin/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
+};
+
+export const submitTutorialForReview = async (id) => {
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
+  return data?.data;
+};
+
+export const fetchInstructorTutorialAnalytics = async (id) => {
+  const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
+  return data?.data ?? {};
+};
+
+// Permanently delete one of the instructor's tutorials
+// Used from the instructor dashboard tutorials list
+export const deleteInstructorTutorial = async (id) => {
+  const { data } = await api.delete(`/users/tutorials/admin/${id}`);
+  return data?.data ?? null;
+};

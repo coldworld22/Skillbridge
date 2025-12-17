@@ -1,0 +1,50 @@
+@use "../../styles/abstracts/variables" as *;
+
+.section {
+  overflow: hidden;
+  border: 1px solid $color-border;
+  border-radius: $radius-xxl;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: $shadow-soft;
+  backdrop-filter: blur(6px);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $color-border;
+  background: linear-gradient(120deg, #111827, #0f172a, #111827);
+  color: #f3f4f6;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.subtitle {
+  margin-top: 0.25rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.body {
+  background: #fff;
+  padding: 0.75rem;
+}

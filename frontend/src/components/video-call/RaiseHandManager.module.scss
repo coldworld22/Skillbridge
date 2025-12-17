@@ -1,0 +1,73 @@
+@use "../../styles/abstracts/variables" as *;
+
+.panel {
+  position: absolute;
+  top: 6rem;
+  right: 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: $radius-xl;
+  max-width: 18rem;
+  box-shadow: $shadow-strong;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.clear {
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.empty {
+  color: $color-muted;
+  font-size: 0.9rem;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.lower {
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  padding: 0.25rem 0.55rem;
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  cursor: pointer;
+}

@@ -1,0 +1,44 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stackLg {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stackSm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  position: relative;
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: 1rem;
+}
+
+.cardClose {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.buttonIcon {
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}

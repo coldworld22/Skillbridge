@@ -1,0 +1,494 @@
+import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
+import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
+import { getCurrencies } from "@/services/currencyService";
+
+export default function BasicInfoStep({
+  tutorialData,
+  setTutorialData,
+  onNext,
+  categories = [],
+  plans = [],
+}) {
+  const { t } = useTranslation("tutorials");
+  const [errors, setErrors] = useState({});
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [currencyOptions, setCurrencyOptions] = useState([]);
+
+  useEffect(() => {
+    getCurrencies()
+      .then((currs) => {
+        setCurrencyOptions(currs);
+        const def = currs.find((c) => c.is_default) || currs[0];
+        if (def) {
+          setTutorialData((prev) => ({
+            ...prev,
+            currency: prev.currency || def.code,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [setTutorialData]);
+
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const handler = setTimeout(() => {
+      fetchTutorialTags(tagInput, controller.signal)
+        .then((tags) => {
+          const filtered = tags.filter(
+            (t) => !tutorialData.tags.includes(t.name)
+          );
+          setTagSuggestions(filtered);
+        })
+        .catch((err) => {
+          if (err.code !== "ERR_CANCELED" && err.name !== "CanceledError") {
+            setTagSuggestions([]);
+          }
+        });
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+      controller.abort();
+    };
+  }, [tagInput, tutorialData.tags]);
+
+  const handleChange = (field, value) => {
+    if (field === "lessonCount") {
+      const count = parseInt(value, 10);
+      setTutorialData((prev) => {
+        const lessons = isNaN(count) || count <= 0 ? 0 : count;
+        let chapters = prev.chapters || [];
+        if (chapters.length > lessons) {
+          chapters = chapters.slice(0, lessons);
+        } else if (chapters.length < lessons) {
+          chapters = chapters.concat(
+            Array.from({ length: lessons - chapters.length }, () => ({
+              title: "",
+              duration: "",
+              video: null,
+              videoUrl: "",
+              preview: false,
+            }))
+          );
+        }
+        return { ...prev, lessonCount: value, chapters };
+      });
+    } else if (field === "price") {
+      const clean = value.replace(/[^0-9.]/g, "");
+      setTutorialData((prev) => ({ ...prev, price: clean }));
+    } else if (field === "isFree") {
+      setTutorialData((prev) => ({
+        ...prev,
+        isFree: value,
+        installments: value ? "1" : prev.installments || "1",
+      }));
+    } else {
+      setTutorialData((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const addTag = (tag) => {
+    if (tag && !tutorialData.tags.includes(tag)) {
+      setTutorialData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+      const exists = tagSuggestions.some(
+        (t) => t.name.toLowerCase() === tag.toLowerCase()
+      );
+      if (!exists) {
+        createTutorialTag({ name: tag })
+          .then((newTag) =>
+            setTagSuggestions((prev) => [...prev, newTag])
+          )
+          .catch(() => {});
+      }
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTutorialData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tagToRemove),
+    }));
+  };
+
+  const togglePlan = (planId) => {
+    const normalizedId = String(planId);
+    setTutorialData((prev) => {
+      const current = Array.isArray(prev.includedPlans)
+        ? prev.includedPlans.map((id) => String(id))
+        : [];
+      const next = current.includes(normalizedId)
+        ? current.filter((id) => id !== normalizedId)
+        : [...current, normalizedId];
+      return { ...prev, includedPlans: next };
+    });
+  };
+
+  const validateAndContinue = () => {
+    const newErrors = {};
+
+    if (!tutorialData.title)
+      newErrors.title = t("create.basic.validation.title_required");
+    if (!tutorialData.shortDescription)
+      newErrors.shortDescription = t(
+        "create.basic.validation.short_desc_required"
+      );
+    if (!tutorialData.category)
+      newErrors.category = t("create.basic.validation.category_required");
+    if (!tutorialData.level)
+      newErrors.level = t("create.basic.validation.level_required");
+    if (!tutorialData.language)
+      newErrors.language = t("create.basic.validation.language_required");
+    if (
+      !tutorialData.lessonCount ||
+      isNaN(tutorialData.lessonCount) ||
+      tutorialData.lessonCount <= 0
+    ) {
+      newErrors.lessonCount = t(
+        "create.basic.validation.lessons_required"
+      );
+    }
+    if (
+      !tutorialData.isFree &&
+      (!tutorialData.price || isNaN(tutorialData.price))
+    ) {
+      newErrors.price = t("create.basic.validation.price_required");
+    }
+    if (!tutorialData.isFree && !tutorialData.currency) {
+      newErrors.currency = t(
+        "create.basic.validation.currency_required",
+        "Currency is required"
+      );
+    }
+    if (
+      tutorialData.isFree &&
+      (!tutorialData.includedPlans || tutorialData.includedPlans.length === 0)
+    ) {
+      newErrors.includedPlans = t("create.basic.validation.plan_required");
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      const lessons = parseInt(tutorialData.lessonCount || 0, 10);
+      const existing = tutorialData.chapters || [];
+      let chapters = existing.slice(0, lessons);
+      if (chapters.length < lessons) {
+        chapters = chapters.concat(
+          Array.from({ length: lessons - chapters.length }, () => ({
+            title: "",
+            duration: "",
+            video: null,
+            videoUrl: "",
+            preview: false,
+          }))
+        );
+      }
+      setTutorialData((prev) => ({ ...prev, chapters }));
+      onNext();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Title */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.title_label")}
+        </label>
+        <input
+          type="text"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.title}
+          onChange={(e) => handleChange("title", e.target.value)}
+          placeholder={t("create.basic.title_placeholder")}
+        />
+        {errors.title && (
+          <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+        )}
+      </div>
+
+      {/* Short Description */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.short_desc_label")}
+        </label>
+        <textarea
+          rows={4}
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.shortDescription}
+          onChange={(e) => handleChange("shortDescription", e.target.value)}
+          placeholder={t("create.basic.short_desc_placeholder")}
+        />
+        {errors.shortDescription && (
+          <p className="text-red-500 text-sm mt-1">{errors.shortDescription}</p>
+        )}
+      </div>
+
+      {/* Language */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.language_label")}
+        </label>
+        <input
+          type="text"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.language || ""}
+          onChange={(e) => handleChange("language", e.target.value)}
+          placeholder={t("create.basic.language_placeholder")}
+        />
+        {errors.language && (
+          <p className="text-red-500 text-sm mt-1">{errors.language}</p>
+        )}
+      </div>
+
+      {/* Category */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.category_label")}
+        </label>
+        <select
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.category}
+          onChange={(e) => {
+            const { value } = e.target;
+            const selected = categories.find((c) => String(c.id) === value);
+            handleChange("category", value);
+            handleChange("categoryName", selected ? selected.name : "");
+          }}
+        >
+          <option value="">
+            {t("create.basic.select_category")}
+          </option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={String(cat.id)}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+        {errors.category && (
+          <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+        )}
+      </div>
+
+      {/* Level */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.level_label")}
+        </label>
+        <select
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.level}
+          onChange={(e) => handleChange("level", e.target.value)}
+        >
+          <option value="">{t("create.basic.select_level")}</option>
+          <option value="Beginner">{t("create.basic.level_beginner")}</option>
+          <option value="Intermediate">
+            {t("create.basic.level_intermediate")}
+          </option>
+          <option value="Advanced">{t("create.basic.level_advanced")}</option>
+        </select>
+        {errors.level && (
+          <p className="text-red-500 text-sm mt-1">{errors.level}</p>
+        )}
+      </div>
+
+      {/* Number of Lessons */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.lessons_label")}
+        </label>
+        <input
+          type="number"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.lessonCount || ""}
+          onChange={(e) => handleChange("lessonCount", e.target.value)}
+          placeholder={t("create.basic.lessons_placeholder")}
+        />
+        {errors.lessonCount && (
+          <p className="text-red-500 text-sm mt-1">{errors.lessonCount}</p>
+        )}
+      </div>
+
+      {/* Tags */}
+      <div>
+        <label className="font-semibold">{t("create.basic.tags_label")}</label>
+        <div className="relative">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {tutorialData.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-1.5 inline-flex text-yellow-500 hover:text-yellow-700"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-1">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag(tagInput);
+                }
+              }}
+              placeholder={t("create.basic.add_tags_placeholder")}
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              type="button"
+              onClick={() => addTag(tagInput)}
+              className="px-3 py-2 bg-yellow-500 text-white rounded"
+            >
+              {t("create.basic.add_tag")}
+            </button>
+          </div>
+          {tagSuggestions.length > 0 && tagInput && (
+            <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
+              {tagSuggestions.map((t) => (
+                <div
+                  key={t.id}
+                  className="px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 cursor-pointer"
+                  onClick={() => addTag(t.name)}
+                >
+                  {t.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Is Free + Price */}
+      <div className="flex items-center gap-4">
+        <label className="font-semibold">{t("create.basic.is_free")}</label>
+        <input
+          type="checkbox"
+          checked={tutorialData.isFree}
+          onChange={(e) => handleChange("isFree", e.target.checked)}
+          className="form-checkbox h-5 w-5 text-yellow-500"
+        />
+      </div>
+
+      {!tutorialData.isFree && (
+        <div>
+          <label className="font-semibold">{t("create.basic.price_label")}</label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              className="w-full p-2 border rounded mt-1"
+              value={tutorialData.price}
+              onChange={(e) => handleChange("price", e.target.value)}
+              placeholder={t("create.basic.price_placeholder")}
+            />
+            <select
+              className="p-2 border rounded mt-1"
+              value={tutorialData.currency || ""}
+              onChange={(e) => handleChange("currency", e.target.value)}
+            >
+              <option value="">{t("create.basic.select_currency", "Select")}</option>
+              {currencyOptions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code}
+                </option>
+              ))}
+            </select>
+          </div>
+          {errors.price && (
+            <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+          )}
+          {errors.currency && (
+            <p className="text-red-500 text-sm mt-1">{errors.currency}</p>
+          )}
+
+        </div>
+      )}
+
+      {/* Included Plans */}
+      <div>
+        <label className="font-semibold">
+          {t("create.basic.plan_access_label", "Included Plans")}
+        </label>
+        {plans.length > 0 ? (
+          <div className="mt-2 space-y-3">
+            <p className="text-sm text-gray-600">
+              {tutorialData.isFree
+                ? t(
+                    "create.basic.plan_hint_free",
+                    "Select at least one student plan to grant free access."
+                  )
+                : t(
+                    "create.basic.plan_hint_paid",
+                    "Optional: limit this tutorial to specific student plans."
+                  )}
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {plans.map((plan) => (
+                <label key={plan.id} className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={
+                      Array.isArray(tutorialData.includedPlans) &&
+                      tutorialData.includedPlans.some(
+                        (id) => String(id) === String(plan.id)
+                      )
+                    }
+                    onChange={() => togglePlan(plan.id)}
+                    className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    {plan.name || plan.slug || plan.id}
+                    {plan.name && plan.slug ? (
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({plan.slug})
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 mt-1">
+            {t(
+              "create.basic.no_plans_hint",
+              "No student plans available yet. Create one to attach access."
+            )}
+          </p>
+        )}
+        {errors.includedPlans && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.includedPlans}
+          </p>
+        )}
+      </div>
+
+      {/* NEXT BUTTON */}
+      <div className="flex justify-end">
+        <button
+          onClick={validateAndContinue}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-8 py-3 rounded-full font-bold"
+        >
+          {t("create.basic.next")}
+        </button>
+      </div>
+    </div>
+  );
+}

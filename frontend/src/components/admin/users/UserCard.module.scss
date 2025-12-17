@@ -1,0 +1,204 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  position: relative;
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: $shadow-soft;
+}
+
+.checkbox {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.avatarWrap {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2px solid $color-border;
+  background: #fff;
+  box-shadow: $shadow-soft;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.name {
+  font-weight: 700;
+  color: $color-text;
+}
+
+.email {
+  color: $color-muted;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.roleSection {
+  margin-bottom: 0.5rem;
+}
+
+.roleIcon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.25rem;
+}
+
+.admin {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.superadmin {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.instructor {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.student {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.roleDefault {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.select {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.statusWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.switchRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statusLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.statusActive {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.statusInactive {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2.75rem;
+  height: 1.55rem;
+  border-radius: 9999px;
+  padding: 0.15rem 0.2rem;
+  background: #f87171;
+  transition: background-color $transition-base;
+}
+
+.toggleActive {
+  background: #22c55e;
+}
+
+.thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 9999px;
+  background: #fff;
+  transform: translateX(0);
+  transition: transform $transition-base;
+  box-shadow: $shadow-soft;
+}
+
+.thumbActive {
+  transform: translateX(1.25rem);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $color-muted;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: $color-muted;
+}
+
+.buttonIcon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.35rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

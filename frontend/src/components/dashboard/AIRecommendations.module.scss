@@ -1,0 +1,52 @@
+@use "../../styles/abstracts/variables" as *;
+
+.section {
+  margin-top: 2rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-brand-500;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $color-brand-500;
+  margin-bottom: 0.35rem;
+}
+
+.category {
+  color: $color-muted;
+}
+
+.button {
+  margin-top: 1rem;
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  border: none;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.button:hover {
+  background: #2563eb;
+}

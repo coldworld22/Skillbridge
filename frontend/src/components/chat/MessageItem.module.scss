@@ -1,0 +1,152 @@
+@use "../../styles/abstracts/variables" as *;
+
+.messageRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.sender {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+}
+
+.bubble {
+  position: relative;
+  max-width: 22rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  background: #ffffff;
+  color: $color-text;
+  font-size: 0.95rem;
+  box-shadow: $shadow-soft;
+}
+
+.senderBubble {
+  background: #fef3c7;
+  border-color: $color-brand-500;
+  color: #1f2937;
+}
+
+.receiverBubble {
+  background: #ffffff;
+}
+
+.senderName {
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.senderNameSender {
+  color: darken($color-brand-500, 18%);
+}
+
+.senderNameReceiver {
+  color: $color-muted;
+}
+
+.replyPreview {
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid $color-brand-500;
+  font-size: 0.8rem;
+  color: $color-muted;
+  font-style: italic;
+}
+
+.text {
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.image {
+  margin-top: 0.55rem;
+  max-width: 100%;
+  border-radius: $radius-md;
+  object-fit: cover;
+  box-shadow: $shadow-soft;
+}
+
+.fileLink {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: darken($color-brand-500, 5%);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.audioBox {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: #f9fafb;
+  padding: 0.5rem;
+}
+
+.audioIcon {
+  color: $color-brand-500;
+}
+
+.audioPlayer {
+  width: 10rem;
+}
+
+.actions {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: none;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: $color-muted;
+}
+
+.bubble:hover .actions {
+  display: inline-flex;
+}
+
+.action {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: color $transition-fast;
+}
+
+.action:hover {
+  color: $color-brand-500;
+}
+
+.actionDanger:hover {
+  color: $color-danger;
+}
+
+.meta {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: $color-muted;
+}
+
+.seen {
+  color: $color-brand-500;
+}

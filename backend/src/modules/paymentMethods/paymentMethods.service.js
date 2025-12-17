@@ -1,0 +1,344 @@
+const db = require("../../config/database");
+
+exports.create = async (data) => {
+  return db.transaction(async (trx) => {
+    if (data.is_default) {
+      await trx("payment_methods_config").update({ is_default: false });
+    }
+    const [row] = await trx("payment_methods_config").insert(data).returning("*");
+    return row;
+  });
+};
+
+exports.getAll = () => {
+  return db("payment_methods_config").select("*").orderBy("id");
+};
+
+exports.getActive = () => {
+  return db("payment_methods_config")
+    .where({ active: true })
+    .select("*")
+    .orderBy("id");
+};
+
+exports.getById = (id) => {
+  return db("payment_methods_config").where({ id }).first();
+};
+
+exports.getByType = async (type) => {
+  if (type === undefined || type === null) return null;
+
+  const normalized = String(type).trim().toLowerCase();
+  if (!normalized) return null;
+
+  const buildQuery = (withOrdering = true) => {
+    const query = db("payment_methods_config");
+    if (withOrdering && typeof query.orderBy === "function") {
+      query.orderBy("is_default", "desc");
+      query.orderBy("created_at", "asc");
+    }
+    return query;
+  };
+
+  const attempt = async (handler, withOrdering = true) => {
+    const query = buildQuery(withOrdering);
+    handler(query);
+    if (typeof query.first === "function") {
+      try {
+        return await query.first();
+      } catch (err) {
+        const message = String(err?.message || "");
+        const missingColumn = /(is_default|created_at)/i.test(message);
+        if (withOrdering && missingColumn) {
+          return attempt(handler, false);
+        }
+        throw err;
+      }
+    }
+    return null;
+  };
+
+  const matchByType = await attempt((query) => {
+    if (typeof query.whereRaw === "function") {
+      query.whereRaw("LOWER(type) = ?", normalized);
+    }
+  });
+  if (matchByType) return matchByType;
+
+  const matchByName = await attempt((query) => {
+    if (typeof query.whereRaw === "function") {
+      query.whereRaw("LOWER(name) = ?", normalized);
+    }
+  });
+  if (matchByName) return matchByName;
+
+  if (normalized.includes("bank")) {
+    const bankLike = await attempt((query) => {
+      if (typeof query.whereRaw === "function") {
+        query.whereRaw("LOWER(name) LIKE ?", "%bank%");
+        if (typeof query.orWhereRaw === "function") {
+          query.orWhereRaw("LOWER(type) LIKE ?", "%bank%");
+        }
+      }
+    });
+    if (bankLike) return bankLike;
+  }
+
+  return null;
+};
+
+exports.ensureFreeMethod = async () => {
+  const existing = await exports.getByType("free");
+  if (existing && existing.active) return existing;
+
+  return db.transaction(async (trx) => {
+    if (existing && !existing.active) {
+      const [updated] = await trx("payment_methods_config")
+        .where({ id: existing.id })
+        .update({ active: true })
+        .returning("*");
+      return updated;
+    }
+
+    const [created] = await trx("payment_methods_config")
+      .insert({
+        name: "Free",
+        type: "free",
+        active: true,
+        is_default: false,
+        settings: JSON.stringify({}),
+      })
+      .returning("*");
+    return created;
+  });
+};
+
+exports.update = async (id, data) => {
+  return db.transaction(async (trx) => {
+    if (data.is_default) {
+      await trx("payment_methods_config")
+        .whereNot({ id })
+        .update({ is_default: false });
+    }
+    const [row] = await trx("payment_methods_config")
+      .where({ id })
+      .update(data)
+      .returning("*");
+    return row;
+  });
+};
+
+exports.delete = (id) => {
+  return db("payment_methods_config").where({ id }).del();
+};
+
+function parseSettings(rawSettings) {
+  if (!rawSettings) return {};
+  if (typeof rawSettings === "object") return rawSettings;
+  if (typeof rawSettings === "string") {
+    try {
+      return JSON.parse(rawSettings);
+    } catch (err) {
+      return {};
+    }
+  }
+  return {};
+}
+
+const PAYPAL_CLIENT_ID_KEYS = [
+  "client_id",
+  "clientId",
+  "CLIENT_ID",
+  "paypal_client_id",
+  "paypalClientId",
+];
+
+const PAYPAL_CLIENT_SECRET_KEYS = [
+  "client_secret",
+  "clientSecret",
+  "CLIENT_SECRET",
+  "paypal_client_secret",
+  "paypalClientSecret",
+];
+
+const PAYPAL_MODE_KEYS = [
+  "mode",
+  "MODE",
+  "client_mode",
+  "clientMode",
+  "paypal_mode",
+  "paypalMode",
+];
+
+const INVALID_PAYPAL_VALUE_STRINGS = new Set(["undefined", "null", "none"]);
+
+function trimValue(value) {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  if (trimmed === "") return undefined;
+  if (INVALID_PAYPAL_VALUE_STRINGS.has(trimmed.toLowerCase())) return undefined;
+  return trimmed;
+}
+
+function pickFirstMatching(source, keys) {
+  if (!source) return undefined;
+  for (const key of keys) {
+    const value = trimValue(source[key]);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+function normalizePayPalMode(...candidates) {
+  for (const candidate of candidates) {
+    const value = trimValue(candidate);
+    if (!value) continue;
+    const normalized = value.toLowerCase();
+    if (normalized === "live" || normalized === "production" || normalized === "prod") {
+      return "live";
+    }
+    if (normalized === "sandbox" || normalized === "test" || normalized === "testing") {
+      return "sandbox";
+    }
+  }
+  return "sandbox";
+}
+
+function toCanonicalPayPalSettings(rawSettings, { fallbackToEnv = true } = {}) {
+  const source = rawSettings || {};
+  const env = fallbackToEnv ? process.env : {};
+
+  const clientId =
+    pickFirstMatching(source, PAYPAL_CLIENT_ID_KEYS) ||
+    trimValue(env?.PAYPAL_CLIENT_ID);
+  const clientSecret =
+    pickFirstMatching(source, PAYPAL_CLIENT_SECRET_KEYS) ||
+    trimValue(env?.PAYPAL_CLIENT_SECRET);
+  const modeCandidates = PAYPAL_MODE_KEYS.map((key) => trimValue(source[key]));
+  if (fallbackToEnv) {
+    modeCandidates.push(trimValue(env?.PAYPAL_MODE));
+  }
+  const hasModeCandidate = modeCandidates.some((value) => value !== undefined);
+  const mode = hasModeCandidate
+    ? normalizePayPalMode(...modeCandidates)
+    : fallbackToEnv
+    ? "sandbox"
+    : null;
+
+  return {
+    client_id: clientId || null,
+    client_secret: clientSecret || null,
+    mode,
+  };
+}
+
+function extractProvidedPayPalSettings(rawSettings) {
+  const source = rawSettings || {};
+  const provided = {};
+
+  const clientId = pickFirstMatching(source, PAYPAL_CLIENT_ID_KEYS);
+  if (clientId !== undefined) provided.client_id = clientId;
+
+  const clientSecret = pickFirstMatching(source, PAYPAL_CLIENT_SECRET_KEYS);
+  if (clientSecret !== undefined) provided.client_secret = clientSecret;
+
+  const modeCandidates = PAYPAL_MODE_KEYS.map((key) => trimValue(source[key])).filter(
+    (value) => value !== undefined
+  );
+  if (modeCandidates.length) {
+    provided.mode = normalizePayPalMode(...modeCandidates);
+  }
+
+  return provided;
+}
+
+exports.getPayPalSettings = async () => {
+  const row = await exports.getByType("paypal");
+  const settings = parseSettings(row?.settings);
+  return toCanonicalPayPalSettings(settings);
+};
+
+exports.updatePayPalSettings = async (settings) => {
+  const row = await exports.getByType("paypal");
+  if (!row) throw new Error("PayPal method not found");
+  const current = toCanonicalPayPalSettings(parseSettings(row.settings), {
+    fallbackToEnv: false,
+  });
+  const updates = extractProvidedPayPalSettings(settings);
+  const payload = {
+    ...current,
+    ...updates,
+  };
+  if (payload.mode !== null && payload.mode !== undefined) {
+    payload.mode = normalizePayPalMode(payload.mode);
+  }
+  const serializedPayload = JSON.stringify(payload);
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: serializedPayload })
+    .returning("settings");
+  if (typeof updated === "string") {
+    try {
+      return JSON.parse(updated);
+    } catch (err) {
+      return payload;
+    }
+  }
+  return updated || payload;
+};
+
+exports.getPayPalClientId = async () => {
+  const settings = await exports.getPayPalSettings();
+  return settings.client_id || null;
+};
+
+exports.getStripeSettings = async () => {
+  const row = await exports.getByType("stripe");
+  const settings = parseSettings(row?.settings);
+  return {
+    publishable_key:
+      settings.publishable_key || process.env.STRIPE_PUBLISHABLE_KEY,
+    secret_key: settings.secret_key || process.env.STRIPE_SECRET_KEY,
+  };
+};
+
+exports.updateStripeSettings = async (settings) => {
+  const row = await exports.getByType("stripe");
+  if (!row) throw new Error("Stripe method not found");
+  const newSettings = { ...parseSettings(row.settings), ...settings };
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: newSettings })
+    .returning("settings");
+  return updated;
+};
+
+exports.getCoinbaseSettings = async () => {
+  const row = await exports.getByType("coinbase");
+  const settings = parseSettings(row?.settings);
+  return {
+    api_key: settings.api_key || process.env.COINBASE_API_KEY || null,
+    api_secret:
+      settings.api_secret ||
+      settings.webhook_secret ||
+      process.env.COINBASE_WEBHOOK_SECRET ||
+      process.env.COINBASE_API_SECRET ||
+      null,
+  };
+};
+
+exports.updateCoinbaseSettings = async (settings) => {
+  const row = await exports.getByType("coinbase");
+  if (!row) throw new Error("Coinbase method not found");
+  const parsed = parseSettings(row.settings);
+  const updates = { ...settings };
+  if (updates.api_secret) {
+    updates.webhook_secret = updates.api_secret;
+  }
+  const newSettings = { ...parsed, ...updates };
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: newSettings })
+    .returning("settings");
+  return updated;
+};

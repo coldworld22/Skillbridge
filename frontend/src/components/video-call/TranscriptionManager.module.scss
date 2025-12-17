@@ -1,0 +1,43 @@
+@use "../../styles/abstracts/variables" as *;
+
+.panel {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 5rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  max-width: 20rem;
+  font-size: 0.9rem;
+  box-shadow: $shadow-strong;
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+.title {
+  color: #fbbf24;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 7.5rem;
+  overflow-y: auto;
+}
+
+.item {
+  color: #e5e7eb;
+}
+
+.timestamp {
+  color: #9ca3af;
+}
+
+.speaker {
+  color: #fbbf24;
+  font-weight: 700;
+}

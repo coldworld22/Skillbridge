@@ -1,0 +1,24 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  position: relative;
+}
+
+.button {
+  color: #f59e0b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color $transition-base;
+}
+
+.button:hover {
+  color: #d97706;
+}
+
+.popover {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 0;
+  z-index: 10;
+}

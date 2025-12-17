@@ -1,0 +1,308 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 7rem);
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  background: #ffffff;
+  box-shadow: $shadow-soft;
+}
+
+.header {
+  border-bottom: 1px solid $color-border;
+  background: #ffffff;
+}
+
+.pinned {
+  border-bottom: 1px solid $color-border;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.pinnedLabel {
+  font-weight: 600;
+}
+
+.pinnedItem {
+  margin-top: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid $color-brand-500;
+  font-size: 0.8rem;
+  color: $color-text;
+}
+
+.pinnedImage {
+  margin-top: 0.35rem;
+  max-width: 18rem;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  background: #f9fafb;
+  padding: 0.75rem 1rem;
+}
+
+.empty {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.messageRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.alignEnd {
+  justify-content: flex-end;
+}
+
+.avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  box-shadow: $shadow-soft;
+}
+
+.bubble {
+  position: relative;
+  max-width: 24rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  background: #ffffff;
+  color: $color-text;
+  font-size: 0.9rem;
+  box-shadow: $shadow-soft;
+}
+
+.bubbleSender {
+  background: #fef3c7;
+  border-color: $color-brand-500;
+  color: #1f2937;
+}
+
+.pinnedIcon {
+  position: absolute;
+  left: -0.65rem;
+  top: -0.65rem;
+  color: $color-brand-500;
+  font-size: 0.75rem;
+}
+
+.senderName {
+  margin-bottom: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.senderNameSender {
+  color: darken($color-brand-500, 18%);
+}
+
+.senderNameReceiver {
+  color: $color-muted;
+}
+
+.replyText {
+  margin-bottom: 0.35rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid $color-brand-500;
+  font-size: 0.78rem;
+  color: $color-muted;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.replyMedia {
+  margin-bottom: 0.35rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid $color-brand-500;
+}
+
+.replyImage {
+  max-width: 16rem;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+}
+
+.replyLink {
+  font-size: 0.78rem;
+  color: darken($color-brand-500, 5%);
+  text-decoration: underline;
+}
+
+.replyAudio {
+  padding-left: 0.5rem;
+  border-left: 2px solid $color-brand-500;
+}
+
+.attachmentImage {
+  margin-top: 0.35rem;
+  max-width: 100%;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+}
+
+.attachmentLink {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: darken($color-brand-500, 5%);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.attachmentAudio {
+  margin-top: 0.35rem;
+  width: 12rem;
+}
+
+.messageText {
+  margin-top: 0.25rem;
+  word-break: break-word;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.callWrapper {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.callButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.callButton {
+  border: none;
+  border-radius: $radius-md;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity $transition-fast;
+}
+
+.callButton:hover {
+  opacity: 0.9;
+}
+
+.join {
+  background: #16a34a;
+}
+
+.accept {
+  background: #16a34a;
+}
+
+.decline {
+  background: #ef4444;
+}
+
+.meta {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: $color-muted;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.metaIcon {
+  color: $color-muted;
+}
+
+.metaActions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.metaButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  transition: color $transition-fast;
+}
+
+.metaButton:hover {
+  color: $color-brand-500;
+}
+
+.delete:hover {
+  color: $color-danger;
+}
+
+.iconSmall {
+  font-size: 0.75rem;
+}
+
+.typing {
+  border-top: 1px solid $color-border;
+  background: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.replying {
+  border-top: 1px solid #fbbf24;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.closeReply {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color $transition-fast;
+}
+
+.closeReply:hover {
+  color: darken(#92400e, 8%);
+}
+
+.inputBar {
+  border-top: 1px solid $color-border;
+  background: #ffffff;
+  padding: 0.75rem;
+}

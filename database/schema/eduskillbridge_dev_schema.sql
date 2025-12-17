@@ -1,0 +1,3 @@
+-- Schema snapshot placeholder.
+-- Run the following command to refresh this file with the live structure:
+--   docker-compose exec -T db pg_dump -U skillbridge_user -s eduskillbridge_dev > database/schema/eduskillbridge_dev_schema.sql

@@ -1,0 +1,33 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: 1rem;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.list {
+  font-size: 0.95rem;
+  color: $color-muted;
+}
+
+.warning {
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  color: #b91c1c;
+  border-radius: $radius-xl;
+  padding: 1rem;
+  box-shadow: $shadow-soft;
+}
+
+.warningTitle {
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}

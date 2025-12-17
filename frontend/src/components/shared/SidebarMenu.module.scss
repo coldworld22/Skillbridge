@@ -1,0 +1,84 @@
+@use "../../styles/abstracts/variables" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 40;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 18rem;
+  background: linear-gradient(180deg, #fcd34d, #f59e0b);
+  color: #111827;
+  box-shadow: $shadow-strong;
+  z-index: 60;
+  padding-top: 5rem;
+  overflow-y: auto;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  padding: 0 1.5rem;
+}
+
+.section {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: $radius-lg;
+  background: rgba(255, 255, 255, 0.4);
+  color: inherit;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-base;
+}
+
+.link:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateX(2px);
+}
+
+.subheading {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 0.5rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.listItem {
+  display: flex;
+}

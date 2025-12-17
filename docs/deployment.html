@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deployment Guide | SkillBridge Documentation</title>
+    <link rel="stylesheet" href="./assets/docs.css" />
+</head>
+<body class="docs docs-article">
+  <header class="docs-article-header">
+    <h1>SkillBridge Documentation</h1>
+    <p class="docs-meta">Browse the sidebar or return to the <a href="./index.html">docs hub</a>.</p>
+  </header>
+  <main class="docs-shell">
+    <button class="docs-nav-toggle" type="button" aria-controls="docs-sidebar" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+      </svg>
+      Browse guides
+    </button>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation sections">
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="README.html">SkillBridge Documentation</a></li>
+        <li><a href="index.html">Documentation Hub</a></li>
+        <li><a href="installation.html">Installation Guide</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="deployment.html">Deployment Guide</a></li>
+        <li><a href="configuration-reference.html">Configuration Reference</a></li>
+        <li><a href="architecture.html">Backend Architecture Overview</a></li>
+        <li><a href="admin-alerts.html">Admin Alerts</a></li>
+        <li><a href="admin-ads-management.html">Admin Ads Management</a></li>
+        <li><a href="admin-category-management.html">Admin Category Management</a></li>
+        <li><a href="admin-third-party-integrations.html">Admin Third Party Integrations</a></li>
+        <li><a href="api-docs.html">API Overview</a></li>
+        <li><a href="book-workflow.html">Book Marketplace Module Workflow</a></li>
+        <li><a href="class-lifecycle-workflow.html">Class Lifecycle & Certificate Workflow</a></li>
+        <li><a href="class-plan-coverage.html">Class Plan Coverage</a></li>
+        <li><a href="coupon-management.html">Coupon Management</a></li>
+        <li><a href="license-verification.html">License Verification with CodeCanyon/Envato</a></li>
+        <li><a href="messages-config.html">Messaging Providers Configuration</a></li>
+        <li><a href="payment-icon-sources.html">Payment Icon Sources</a></li>
+        <li><a href="release-checklist.html">Release Checklist</a></li>
+        <li><a href="student-enrollment-workflow.html">Student Class Purchase & Enrollment Workflow</a></li>
+        <li><a href="student-registration-guide.html">Student Registration & Class Enrollment Guide</a></li>
+        <li><a href="social-login-setup.html">Social Login Setup</a></li>
+        <li><a href="subscription-plan-style.html">Subscription Plan Style Configuration</a></li>
+        <li><a href="changelog.html">Changelog</a></li>
+      </ul>
+    </nav>
+    <article class="docs-article">
+      <h1 id="deployment-guide">Deployment Guide</h1>
+<p>Follow these steps to run SkillBridge on a server or production host.</p>
+<h2 id="zip-package-deployments">ZIP package deployments</h2>
+<p>If you received the managed archive from Memonet, follow the
+<a href="./installation.html#deploy-from-the-customer-zip-package">ZIP installation workflow</a>
+to upload the bundle, prepare the environment files, and run the install
+scripts. That section covers cPanel/FTP uploads, SSH-based installs, and
+fallbacks for hosts that cannot run Docker. Use this approach when you do not
+have Git access on the production server or when you prefer to promote a tested
+bundle directly from the customer portal.</p>
+<h2 id="automated-nginx-and-ssl-setup">Automated Nginx and SSL setup</h2>
+<p>After pointing your domain DNS records to the server, run the installation
+wizard to configure Nginx and request Let's Encrypt certificates:</p>
+<div class="codehilite"><pre><span></span><code>./install.sh
+</code></pre></div>
+
+<p>The script prompts for the environment and, in production mode, the domain
+name. To run non-interactively you can provide arguments:</p>
+<div class="codehilite"><pre><span></span><code>./install.sh<span class="w"> </span>production<span class="w"> </span>yourdomain.com
+</code></pre></div>
+
+<p>In either case the script updates the domain placeholders in <code>nginx/conf.d</code>
+and uses <code>certbot</code> (or <code>acme.sh</code>) to generate certificates at the paths
+referenced in <code>nginx/conf.d/ssl.conf</code>.</p>
+<h2 id="configure-environment-variables">Configure environment variables</h2>
+<ol>
+<li><strong>Nginx</strong> – set the <code>ALLOWED_ORIGINS</code> environment variable to a
+   comma-separated list of origins that should be allowed by the reverse
+   proxy (e.g. <code>https://foo.com,https://bar.com</code>). After updating this list
+   reload Nginx so the new value takes effect:</li>
+</ol>
+<p><code>bash
+   docker compose exec nginx nginx -s reload</code></p>
+<ol start="2">
+<li>
+<p><strong>Backend</strong> – copy <code>backend/.env.example</code> to <code>backend/.env</code> and set:
+   - <code>PORT</code> – typically <code>5000</code> unless changed.
+   - <code>APP_DOMAIN</code> – your production domain (e.g. <code>yourdomain.com</code>).
+   - <code>SUPPORT_EMAIL</code> – address used for outbound messages.
+   - <code>FRONTEND_URL</code> – set this to the full URL of your frontend. You can
+     specify multiple domains separated by commas. For example:</p>
+<p><code>bash
+  # Example using a custom domain and server IP
+  APP_DOMAIN=yourdomain.com
+  FRONTEND_URL=https://${APP_DOMAIN},http://147.93.121.45
+  # Do not prefix with "FRONTEND_URL=" when using
+  # Docker Compose environment variables.</code></p>
+</li>
+</ol>
+<p>For production deployments, Docker Compose also loads variables from
+   <code>backend/.env.production</code>. Copy <code>backend/.env.production.example</code> to
+   <code>backend/.env.production</code> and fill in production secrets such as database
+   credentials and JWT keys.</p>
+<p>If the frontend and backend are on different subdomains, also set
+    <code>COOKIE_DOMAIN</code> so the authentication cookie can be shared. Example:</p>
+<div class="codehilite"><pre><span></span><code>```bash
+</code></pre></div>
+
+<p>COOKIE_DOMAIN=.${APP_DOMAIN}
+   ```</p>
+<p>When running over plain HTTP but using different subdomains (e.g. staging
+   environments), also add:</p>
+<p><code>bash
+   COOKIE_SECURE=false
+   COOKIE_SAMESITE=None</code></p>
+<div class="codehilite"><pre><span></span><code><span class="n">To</span><span class="w"> </span><span class="n">enable</span><span class="w"> </span><span class="n">password</span><span class="w"> </span><span class="n">recovery</span><span class="w"> </span><span class="n">via</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="n">provide</span><span class="w"> </span><span class="n">SMTP</span><span class="w"> </span><span class="n">settings</span><span class="w"> </span><span class="ow">or</span>
+<span class="n">configure</span><span class="w"> </span><span class="n">them</span><span class="w"> </span><span class="n">later</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="err">`</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">email</span><span class="o">-</span><span class="n">config</span><span class="err">`</span><span class="w"> </span><span class="n">endpoint</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">admin</span>
+<span class="n">dashboard</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="err">`</span><span class="o">/</span><span class="n">dashboard</span><span class="o">/</span><span class="n">admin</span><span class="o">/</span><span class="n">settings</span><span class="o">/</span><span class="n">email</span><span class="o">-</span><span class="n">config</span><span class="err">`</span><span class="o">.</span><span class="w"> </span><span class="n">At</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">minimum</span>
+<span class="n">the</span><span class="w"> </span><span class="n">backend</span><span class="w"> </span><span class="n">requires</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="n">variables</span><span class="p">:</span>
+
+<span class="err">```</span><span class="n">bash</span>
+<span class="n">SMTP_HOST</span><span class="o">=</span><span class="n">smtp</span><span class="o">.</span><span class="n">mailtrap</span><span class="o">.</span><span class="n">io</span>
+<span class="n">SMTP_PORT</span><span class="o">=</span><span class="mi">587</span>
+<span class="n">SMTP_SECURE</span><span class="o">=</span><span class="bp">false</span>
+<span class="n">SMTP_USER</span><span class="o">=</span><span class="n">your_smtp_username</span>
+<span class="n">SMTP_PASS</span><span class="o">=</span><span class="n">your_smtp_password</span>
+<span class="err">```</span>
+
+<span class="n">To</span><span class="w"> </span><span class="n">disable</span><span class="w"> </span><span class="n">sending</span><span class="w"> </span><span class="n">emails</span><span class="w"> </span><span class="p">(</span><span class="n">OTP</span><span class="w"> </span><span class="n">codes</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">logged</span><span class="w"> </span><span class="n">instead</span><span class="p">),</span><span class="w"> </span><span class="n">set</span><span class="p">:</span>
+
+<span class="err">```</span><span class="n">bash</span>
+<span class="n">DISABLE_EMAILS</span><span class="o">=</span><span class="bp">true</span>
+<span class="err">```</span>
+
+<span class="n">The</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="n">templates</span><span class="w"> </span><span class="n">include</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">logo</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">footer</span><span class="o">.</span><span class="w"> </span><span class="n">OTP</span><span class="w"> </span><span class="n">codes</span><span class="w"> </span><span class="n">expire</span>
+
+<span class="n">after</span><span class="w"> </span><span class="o">**</span><span class="mi">15</span><span class="w"> </span><span class="n">minutes</span><span class="o">**.</span><span class="w"> </span><span class="n">You</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">customize</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">logo</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">contact</span>
+<span class="n">email</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="err">`</span><span class="o">/</span><span class="n">dashboard</span><span class="o">/</span><span class="n">admin</span><span class="o">/</span><span class="n">settings</span><span class="o">/</span><span class="n">app</span><span class="err">`</span><span class="w"> </span><span class="n">so</span><span class="w"> </span><span class="n">outbound</span><span class="w"> </span><span class="n">emails</span><span class="w"> </span><span class="n">show</span><span class="w"> </span><span class="n">your</span>
+<span class="n">branding</span><span class="o">.</span>
+
+
+<span class="n">This</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">CORS</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">socket</span><span class="o">.</span><span class="n">io</span><span class="w"> </span><span class="n">connections</span><span class="o">.</span><span class="w"> </span><span class="n">If</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">still</span><span class="w"> </span><span class="n">points</span><span class="w"> </span><span class="n">to</span>
+<span class="err">`</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">3001</span><span class="err">`</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">may</span><span class="w"> </span><span class="n">see</span><span class="w"> </span><span class="err">`</span><span class="n">Network</span><span class="w"> </span><span class="n">Error</span><span class="err">`</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">CORS</span><span class="w"> </span><span class="n">errors</span><span class="w"> </span><span class="n">when</span>
+<span class="n">logging</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">deployed</span><span class="w"> </span><span class="n">site</span><span class="o">.</span>
+</code></pre></div>
+
+<ol start="3">
+<li><strong>Frontend</strong> – for Docker Compose production builds, set variables in
+  <code>frontend/.env.production</code>:</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="nv">APP_DOMAIN</span><span class="o">=</span>yourdomain.com
+<span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>https://<span class="si">${</span><span class="nv">APP_DOMAIN</span><span class="si">}</span>/api
+<span class="nv">NEXT_PUBLIC_PGADMIN_URL</span><span class="o">=</span>https://<span class="si">${</span><span class="nv">APP_DOMAIN</span><span class="si">}</span>/pgadmin
+</code></pre></div>
+
+<blockquote>
+<p><strong>Tip:</strong> When <code>APP_DOMAIN</code> is defined you can alternatively set
+<code>NEXT_PUBLIC_API_BASE_URL=/api</code>. During the build the relative value expands
+to <code>https://${APP_DOMAIN}/api</code>, letting reverse proxies expose the API at the
+same origin without hard-coding the domain in your environment file.</p>
+</blockquote>
+<p>Commit only placeholder values. Provide real production settings via
+environment variables or by mounting a <code>.env.production</code> file at deploy time
+so secrets stay out of version control. The root <code>.env</code> is intended for local
+development and defaults <code>NEXT_PUBLIC_API_BASE_URL</code> to
+<code>http://localhost:5002/api</code> for internal container communication. Remove or
+override this file in production so the frontend uses your public HTTPS
+domain.</p>
+<p>Without these variables the frontend defaults to <code>/api</code> which may point to the
+ wrong server when deployed.</p>
+<h3 id="production-example-eduskillbridgenet">Production example: eduskillbridge.net</h3>
+<p>To deploy the official site, copy <code>.env.example</code> to <code>.env</code> and
+<code>backend/.env.production.example</code> to <code>backend/.env.production</code>. Fill in the
+database credentials, JWT and refresh token secrets, and SMTP settings with
+values managed outside of version control. Configure the public URLs:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">APP_DOMAIN</span><span class="o">=</span>eduskillbridge.net
+<span class="nv">FRONTEND_URL</span><span class="o">=</span>https://eduskillbridge.net
+<span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>https://eduskillbridge.net/api
+<span class="nv">NEXT_PUBLIC_PGADMIN_URL</span><span class="o">=</span>https://eduskillbridge.net/pgadmin
+<span class="nv">NEXT_PUBLIC_SOCKET_URL</span><span class="o">=</span>wss://eduskillbridge.net
+</code></pre></div>
+
+<p>Keep these files out of git and store the secrets in your hosting
+environment or secrets manager.</p>
+<p>After updating these files, rebuild the Docker images or restart the server so
+that the environment changes take effect.</p>
+<h2 id="run-database-migrations">Run database migrations</h2>
+<p>Before starting the backend server or after pulling updates, apply any pending
+database migrations:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>--prefix<span class="w"> </span>backend<span class="w"> </span>run<span class="w"> </span>migrate
+</code></pre></div>
+
+<p>Running migrations separately keeps <code>startServer()</code> lightweight and ensures the
+database schema matches the application's expectations.</p>
+<blockquote>
+<p><strong>Important:</strong> Docker Compose no longer bind-mounts <code>backend/src/migrations</code>.
+When a release adds new migration files (for example the critical verification
+migrations <code>20250930160000</code> and <code>20250930160010</code>), rebuild the backend image so
+the container sees the updated migration directory before running <code>npm --prefix
+backend run migrate</code>:</p>
+<p><code>bash
+docker compose build backend &amp;&amp; docker compose up -d backend</code></p>
+<p>Otherwise the running container will still contain the previous migration set
+and Knex will report <strong>"The migration directory is corrupt..."</strong> because it
+cannot find the new files.</p>
+</blockquote>
+<h2 id="validate-your-deployment">Validate your deployment</h2>
+<p class="docs-callout"><strong>Before inviting users:</strong> Run these production smoke tests to make sure the environment is stable.</p>
+<ul class="docs-verify-list">
+<li>Check the API health endpoint with <code>curl https://&lt;domain&gt;/api/health</code> and confirm it returns <code>{&quot;status&quot;:&quot;ok&quot;}</code>.</li>
+<li>Sign in to the frontend, navigate to <code>/dashboard/admin</code>, and confirm pages load without console errors.</li>
+<li>Send a password reset email or test notification to verify SMTP credentials are correct.</li>
+<li>Run <code>docker compose ps</code> (or your process manager equivalent) to confirm backend, frontend, and worker processes are running.</li>
+<li>Review <code>docker compose logs backend</code> and <code>docker compose logs nginx</code> for warnings about migrations, CORS, or TLS.</li>
+</ul>
+<h2 id="preserve-uploaded-media">Preserve uploaded media</h2>
+<p>The admin panel lets you upload a logo and favicon under
+<code>/dashboard/admin/settings/app</code>. These files are stored inside the backend
+container under <code>/app/uploads</code>. To keep them after a container restart, mount the
+<code>backend/uploads</code> folder from the host. In <code>docker-compose.yml</code> add:</p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="nt">backend</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./backend/uploads:/app/uploads</span>
+</code></pre></div>
+
+<p>This ensures custom branding files persist across deployments.</p>
+<h2 id="preserve-database-and-pgadmin-data">Preserve database and pgAdmin data</h2>
+<p>PostgreSQL stores its data in the <code>postgres_data</code> volume and pgAdmin uses
+<code>pgadmin_data</code>. In production, avoid running <code>docker compose down -v</code> as the
+<code>-v</code> flag removes these volumes and wipes the database and pgAdmin settings.
+Use <code>docker compose stop</code> or <code>docker compose down</code> without <code>-v</code> to retain your
+data. Manually deleting the <code>postgres_data</code> or <code>pgadmin_data</code> volumes will also
+erase data. Consider mounting these volumes to external storage or setting up
+regular backups to protect critical information.</p>
+<h2 id="nextjs-image-domains">Next.js image domains</h2>
+<p>Uploads served from the backend domain are now automatically whitelisted for
+Next.js Image. The hostname and port are derived from
+<code>NEXT_PUBLIC_API_BASE_URL</code> at build time.  If you need to allow additional
+domains you can still extend <code>remotePatterns</code> in
+<code>frontend/next.config.mjs</code>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="knex-reports-the-migration-directory-is-corrupt">Knex reports "The migration directory is corrupt"</h3>
+<p>When Compose reuses an older backend image it may not contain the newest
+<code>backend/src/migrations</code> files.  Knex then aborts with errors like:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">The</span><span class="w"> </span><span class="n">migration</span><span class="w"> </span><span class="n">directory</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">corrupt</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">missing</span><span class="p">:</span>
+<span class="mi">20250930160000</span><span class="n">_alter_verifications_code_to_varchar255</span><span class="o">.</span><span class="n">js</span><span class="p">,</span>
+<span class="mi">20250930160010</span><span class="n">_alter_verifications_code_to_text</span><span class="o">.</span><span class="n">js</span>
+</code></pre></div>
+
+<p>To resolve this:</p>
+<ol>
+<li>Rebuild the backend image so the container bakes in the updated migration
+   list (pass <code>--no-cache</code> if you want to discard any cached layers):</li>
+</ol>
+<p><code>bash
+   docker compose build --no-cache backend &amp;&amp; docker compose up -d backend</code></p>
+<ol start="2">
+<li>Confirm the new container can see the migrations:</li>
+</ol>
+<p><code>bash
+   docker compose exec backend ls /app/src/migrations</code></p>
+<p>The output should include the verification migrations
+   <code>20250930160000_alter_verifications_code_to_varchar255.js</code> and
+   <code>20250930160010_alter_verifications_code_to_text.js</code>.</p>
+<ol start="3">
+<li>Re-run the migration command if it did not execute automatically during the
+   container start-up:</li>
+</ol>
+<p><code>bash
+   docker compose exec backend npm run migrate</code></p>
+<p>If the error persists, stop the backend service and remove the old container so
+Compose cannot reuse it (<code>docker compose rm -fs backend</code>), then repeat the
+build/start steps above.  Always rebuild the backend image after adding or
+renaming migration files because the directory is no longer bind-mounted into
+the container.</p>
+<h3 id="login-page-requests-httplocalhost5002">Login page requests <code>http://localhost:5002</code></h3>
+<p>If you deploy the frontend and see network errors pointing to
+<code>http://localhost:5002/api</code> it means the build did not have
+<code>NEXT_PUBLIC_API_BASE_URL</code> set.  Update <code>frontend/.env.local</code> with the correct
+backend URL and rebuild/restart the frontend container so the new value is
+picked up.</p>
+<h3 id="cors-errors-when-logging-in">CORS errors when logging in</h3>
+<p>If the browser console shows messages like <code>No 'Access-Control-Allow-Origin'</code> or
+<code>ERR_NETWORK</code> during login, your backend is rejecting the frontend's origin.
+Edit <code>backend/.env</code> and ensure the <code>FRONTEND_URL</code> variable lists the exact
+domain of your deployed site without a trailing slash. Include both the
+<code>www</code> and non-<code>www</code> variants if you use them. For example:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">FRONTEND_URL</span><span class="o">=</span>https://<span class="si">${</span><span class="nv">APP_DOMAIN</span><span class="si">}</span>,https://www.<span class="si">${</span><span class="nv">APP_DOMAIN</span><span class="si">}</span>
+</code></pre></div>
+
+<p>Restart the backend so the updated CORS settings take effect.
+If CORS errors occur when requesting a password reset, ensure the FRONTEND_URL contains your frontend's domain. The API only sends CORS headers for domains listed there.
+If you use Nginx or another reverse proxy, ensure it does <strong>not</strong> add its own
+<code>Access-Control-Allow-Origin</code> header. Duplicates will cause browsers to reject
+the response even if both values are identical.</p>
+<h3 id="home-page-shows-failed-to-load-tutorials-or-failed-to-load-categories">Home page shows "Failed to load tutorials" or "Failed to load categories"</h3>
+<p>These messages mean the frontend cannot reach the API. Verify that
+<code>NEXT_PUBLIC_API_BASE_URL</code> in <code>frontend/.env.local</code> points to your backend URL
+including the <code>/api</code> prefix.  Also confirm the backend server is running and
+that the <code>FRONTEND_URL</code> in <code>backend/.env</code> includes your frontend domain.</p>
+<h3 id="login-redirects-repeatedly">Login redirects repeatedly</h3>
+<p>If you briefly see the home page then get bounced back to the login form with
+browser console messages about CORS, your backend is not allowing the
+frontend's origin.  Double check that <code>FRONTEND_URL</code> in <code>backend/.env</code>
+matches the deployed domain exactly and restart the backend.  The
+<code>NEXT_PUBLIC_API_BASE_URL</code> in <code>frontend/.env.local</code> must also point to the
+backend including the <code>/api</code> prefix. When the frontend and API are on
+different subdomains, set <code>COOKIE_DOMAIN</code> in <code>backend/.env</code> to the shared
+base domain (e.g. <code>.${APP_DOMAIN}</code>) so the authentication cookie is
+available to both sites. If the site uses HTTP, also set:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">COOKIE_SECURE</span><span class="o">=</span><span class="nb">false</span>
+<span class="nv">COOKIE_SAMESITE</span><span class="o">=</span>None
+</code></pre></div>
+
+<p>This ensures the refresh token cookie is sent across subdomains without HTTPS.</p>
+<h3 id="failed-to-load-seo-settings-or-network-errors">"Failed to load SEO settings" or network errors</h3>
+<p>If the dashboard displays <strong>"Failed to load SEO settings"</strong> or other
+<code>ERR_NETWORK</code> messages, the frontend is usually pointed at the wrong API or the
+backend is not allowing the frontend's origin.</p>
+<ol>
+<li>Verify <code>NEXT_PUBLIC_API_BASE_URL</code> in your frontend <code>.env.local</code> or
+   <code>.env.production</code> matches your public backend URL with the <code>/api</code> suffix. See
+   the <a href="#production-example-eduskillbridgenet">production example</a> above for a
+   typical value using <code>${APP_DOMAIN}</code>.</li>
+<li>Ensure <code>FRONTEND_URL</code> in <code>backend/.env</code> lists the exact origin of your
+   frontend, including both <code>www</code> and non-<code>www</code> domains if applicable. Refer to
+   the earlier <code>FRONTEND_URL</code> snippet under <strong>Configure environment variables</strong>.</li>
+<li>Check the backend logs or browser console for CORS messages such as
+   <code>No 'Access-Control-Allow-Origin'</code> or <code>Origin ... not allowed by CORS</code> to
+   confirm which domain is being rejected.</li>
+</ol>
+<p>Updating these variables and restarting the affected service should resolve most
+SEO and networking issues.</p>
+    </article>
+  </main>
+  <script src="./assets/docs.js" defer></script>
+</body>
+</html>

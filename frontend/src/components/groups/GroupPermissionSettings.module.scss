@@ -1,0 +1,67 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  margin-top: 1.5rem;
+  border-top: 1px solid $color-border;
+  padding-top: 1rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.table {
+  width: 100%;
+  font-size: 0.95rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+.thead {
+  background: #f3f4f6;
+}
+
+.th,
+.td {
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.role {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.row {
+  border-top: 1px solid $color-border;
+}
+
+.checkboxCell {
+  text-align: center;
+}
+
+.button {
+  margin-top: 1rem;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: $radius-md;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.muted {
+  color: $color-muted;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}

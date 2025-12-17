@@ -1,0 +1,35 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  border: 1px solid $color-border;
+  padding: 1rem;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-soft;
+  transition: transform $transition-base, box-shadow $transition-base, border-color $transition-base;
+  background: var(--bg-color);
+}
+
+.card:hover {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba($color-brand-500, 0.5);
+  box-shadow: $shadow-strong;
+}
+
+.image {
+  width: 100%;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: $radius-lg;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-top: 0.5rem;
+  color: $color-text;
+}
+
+.description {
+  color: $color-muted;
+  margin-top: 0.35rem;
+}

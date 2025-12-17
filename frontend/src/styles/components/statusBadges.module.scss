@@ -1,0 +1,43 @@
+@use "../abstracts/variables" as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: $radius-sm;
+  font-weight: 700;
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.running {
+  background: #ecfdf3;
+  color: #065f46;
+  border-color: #bbf7d0;
+}
+
+.paused {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.scheduled {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.expired {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecdd3;
+}
+
+.default {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}

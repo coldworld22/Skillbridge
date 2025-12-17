@@ -1,0 +1,479 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #111827;
+  color: #ffffff;
+}
+
+.errorScreen,
+.waitingScreen {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.errorScreen {
+  color: #fca5a5;
+}
+
+.waitingScreen {
+  color: #fef3c7;
+}
+
+.waitingTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.waitingHint {
+  color: #facc15;
+  max-width: 26rem;
+  font-size: 0.95rem;
+}
+
+.buttonGhost {
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.buttonGhost:hover {
+  background: #374151;
+}
+
+.layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.mainRow {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .mainRow {
+    flex-direction: row;
+  }
+}
+
+.videoArea {
+  position: relative;
+  flex: 1;
+  border: 4px solid #fbbf24;
+  border-radius: $radius-xl;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.codeTag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #1f2937;
+  color: #fbbf24;
+  padding: 0.3rem 0.5rem;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+}
+
+.transcriptionBadge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 30;
+}
+
+.sidePanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 18rem;
+  background: #1f2937;
+  padding: 1rem;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-strong;
+  border: 2px solid #fbbf24;
+  z-index: 40;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .sidePanel {
+    position: static;
+    width: 18rem;
+    max-width: 18rem;
+  }
+}
+
+.controlsBar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.settingsPanel {
+  position: fixed;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-strong;
+  width: 18rem;
+  z-index: 50;
+}
+
+.breakoutPanel {
+  position: fixed;
+  bottom: 6rem;
+  left: 1rem;
+  width: 16rem;
+  background: #1f2937;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-strong;
+  font-size: 0.9rem;
+  z-index: 40;
+}
+
+.breakoutTitle {
+  color: #fbbf24;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.breakoutInput {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+.breakoutList {
+  max-height: 10rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.breakoutItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assignBtn {
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  border-radius: $radius-md;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.assignedPanel {
+  position: fixed;
+  bottom: 6rem;
+  right: 1rem;
+  background: #1f2937;
+  color: #ffffff;
+  padding: 0.8rem 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 40;
+}
+
+.assignedBtn {
+  border: none;
+  border-radius: $radius-md;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.join {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.leave {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.recordingBadge {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: #ef4444;
+  color: #ffffff;
+  padding: 0.45rem 0.75rem;
+  border-radius: $radius-md;
+  font-weight: 700;
+  box-shadow: $shadow-strong;
+  z-index: 50;
+}
+
+.handQueue {
+  position: fixed;
+  bottom: 9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+
+.topButtons {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+  z-index: 50;
+}
+
+.circleBtn {
+  border: none;
+  background: #374151;
+  color: #ffffff;
+  padding: 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.circleBtn:hover {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: $shadow-soft;
+}
+
+.pillCaptionsOn {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.pillCaptionsOff {
+  background: #374151;
+  color: #ffffff;
+}
+
+.pillHandOn {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.pillHandOff {
+  background: #374151;
+  color: #ffffff;
+}
+
+.pillHost {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.pillCoHost {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.ended {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100%;
+}
+
+.rejoin {
+  padding: 0.6rem 1rem;
+  border-radius: $radius-lg;
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.rejoin:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.statusBadge {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: $shadow-soft;
+  z-index: 50;
+}
+
+.live {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.offline {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.mediaError {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(185, 28, 28, 0.9);
+  color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  box-shadow: $shadow-strong;
+  font-size: 0.9rem;
+  z-index: 50;
+}
+
+.waitingCenter {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-strong;
+  max-width: 30rem;
+  width: 100%;
+  z-index: 50;
+}
+
+.waitingList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.waitingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #1f2937;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-lg;
+  font-size: 0.9rem;
+}
+
+.waitingMeta {
+  font-size: 0.8rem;
+  color: #d1d5db;
+}
+
+.waitingActions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.approve {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.reject {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.waitingMini {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 18rem;
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid #1f2937;
+  border-radius: $radius-xl;
+  padding: 1rem;
+  box-shadow: $shadow-strong;
+  z-index: 40;
+}
+
+.waitingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.waitingCount {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #fef9c3;
+  font-size: 0.75rem;
+}
+
+.pillBtn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}

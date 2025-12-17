@@ -1,0 +1,82 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toggle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #fcd34d, #f59e0b);
+  color: #111827;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0 0 $radius-xl $radius-xl;
+  box-shadow: $shadow-strong;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #f59e0b;
+  transition: transform $transition-base, box-shadow $transition-base;
+}
+
+.toggle:hover {
+  transform: translateX(-50%) scale(1.02);
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
+}
+
+.panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(180deg, #fcd34d, #fbbf24);
+  color: #111827;
+  box-shadow: $shadow-strong;
+  border-radius: 0 0 $radius-xl $radius-xl;
+  overflow: hidden;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.heading {
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.45);
+}

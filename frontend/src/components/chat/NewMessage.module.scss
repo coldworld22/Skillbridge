@@ -1,0 +1,33 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  background: #111827;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  background: #1f2937;
+  color: #f9fafb;
+  border: none;
+  border-radius: $radius-lg 0 0 $radius-lg;
+  padding: 0.6rem 0.8rem;
+}
+
+.button {
+  padding: 0.55rem 0.9rem;
+  border-radius: 0 $radius-lg $radius-lg 0;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}

@@ -1,0 +1,39 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.6));
+}
+
+.dialog {
+  position: relative;
+  width: 100%;
+  max-width: 72rem;
+  max-height: 90vh;
+  background: #fff;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-strong;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: $color-muted;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: $color-danger;
+}

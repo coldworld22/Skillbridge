@@ -1,0 +1,14 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+  color: #0f172a;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+}

@@ -1,0 +1,45 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  border: 1px solid $color-border;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  background: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.description {
+  color: $color-muted;
+}
+
+.tags {
+  color: #2563eb;
+  font-size: 0.95rem;
+}
+
+.button {
+  padding: 0.5rem 1rem;
+  border-radius: $radius-md;
+  border: none;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.disabled {
+  background: #d1d5db;
+  color: #4b5563;
+  cursor: not-allowed;
+}

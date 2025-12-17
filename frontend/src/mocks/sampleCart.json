@@ -1,0 +1,17 @@
+[
+    {
+      "id": 1,
+      "name": "Premium Course",
+      "price": 50,
+      "quantity": 1,
+      "icon": "FaBookOpen"
+    },
+    {
+      "id": 2,
+      "name": "E-Book",
+      "price": 20,
+      "quantity": 2,
+      "icon": "FaFileAlt"
+    }
+  ]
+  

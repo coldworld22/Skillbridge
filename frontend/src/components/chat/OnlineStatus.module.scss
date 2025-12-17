@@ -1,0 +1,17 @@
+@use "../../styles/abstracts/variables" as *;
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.icon {
+  margin-right: 0.4rem;
+  color: #9ca3af;
+}
+
+.online {
+  color: #22c55e;
+}

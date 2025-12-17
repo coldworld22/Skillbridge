@@ -1,0 +1,117 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.card {
+  background: var(--bg-color);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1rem;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.muted {
+  color: $color-muted;
+  font-size: 0.95rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: $radius-md;
+  font-size: 0.85rem;
+  background: #f3f4f6;
+  color: $color-text;
+}
+
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid $color-border;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  padding: 0.5rem 0.9rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+
+.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.textarea {
+  min-height: 6rem;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tagPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: $radius-md;
+  background: #eef2ff;
+  color: #4338ca;
+}

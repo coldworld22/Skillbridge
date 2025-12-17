@@ -1,0 +1,21 @@
+[
+    {
+      "id": 1,
+      "groupName": "React Developers",
+      "participants": ["John Doe", "Jane Smith", "Alice Brown"],
+      "messages": [
+        { "sender": "John Doe", "text": "Hello team!", "timestamp": "2024-02-17T10:00:00Z" },
+        { "sender": "Jane Smith", "text": "Hey John!", "timestamp": "2024-02-17T10:05:00Z" }
+      ]
+    },
+    {
+      "id": 2,
+      "groupName": "AI Enthusiasts",
+      "participants": ["Sarah Wilson", "Michael Green", "David Lee"],
+      "messages": [
+        { "sender": "Sarah Wilson", "text": "Anyone tried GPT-4?", "timestamp": "2024-02-17T11:00:00Z" },
+        { "sender": "Michael Green", "text": "Yes, it's amazing!", "timestamp": "2024-02-17T11:05:00Z" }
+      ]
+    }
+  ]
+  

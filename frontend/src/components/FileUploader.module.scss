@@ -1,0 +1,43 @@
+@use "../styles/abstracts/variables" as *;
+
+.wrapper {
+  background-color: #1f2937;
+  padding: 1rem;
+  border-radius: $radius-lg;
+}
+
+.uploadLabel {
+  cursor: pointer;
+  background-color: $color-brand-500;
+  color: #1f2937;
+  padding: 0.5rem 1rem;
+  border-radius: $radius-lg;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item {
+  background-color: #374151;
+  padding: 0.75rem;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+}
+
+.removeButton {
+  color: #f87171;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}

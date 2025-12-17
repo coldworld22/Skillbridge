@@ -1,0 +1,183 @@
+{
+  "list": {
+    "loading": "ट्यूटोरियल्स लोड हो रहे हैं...",
+    "load_error": "ट्यूटोरियल्स लोड करने में विफल",
+    "heading": "📺 प्रीमियम ट्यूटोरियल्स",
+    "subheading": "विशेषज्ञों द्वारा संचालित हमारे चयनित संग्रह के साथ नई कौशल में महारत हासिल करें",
+    "search_placeholder": "ट्यूटोरियल्स खोजें...",
+    "mobile_filters": "फ़िल्टर",
+    "desktop_search_placeholder": "ट्यूटोरियल्स, प्रशिक्षकों को खोजें...",
+    "sort_by": "क्रमबद्ध करें:",
+    "featured": "विशेष",
+    "most_viewed": "सबसे अधिक देखे गए",
+    "top_rated": "शीर्ष रेटेड",
+    "showing": "दिखा रहे हैं",
+    "of": "में से",
+    "tutorials": "ट्यूटोरियल्स",
+    "clear_filters": "सभी फ़िल्टर साफ़ करें",
+    "premium_badge": "प्रीमियम",
+    "trending": "ट्रेंडिंग",
+    "free": "नि:शुल्क",
+    "enrolled": "नामांकित",
+    "empty_title": "कोई ट्यूटोरियल नहीं मिला",
+    "empty_description": "अपने फ़िल्टर या खोज शब्दों को समायोजित करने का प्रयास करें",
+    "reset_filters": "फ़िल्टर रीसेट करें"
+  },
+  "detail": {
+    "login_first": "कृपया पहले लॉग इन करें",
+    "enroll_success": "सफलतापूर्वक नामांकन किया!",
+    "enroll_fail": "नामांकन विफल रहा",
+    "load_error": "ट्यूटोरियल लोड करने में विफल",
+    "not_found": "ट्यूटोरियल नहीं मिला",
+    "share": "साझा करें",
+    "share_message": "SkillBridge पर इस ट्यूटोरियल को देखें!",
+    "share_success": "सफलतापूर्वक साझा किया!",
+    "quiz_locked": "क्विज़ लॉक किया गया",
+    "enroll_to_access_quiz": "क्विज़ एक्सेस करने के लिए नामांकन करें",
+    "start_assignment": "असाइनमेंट शुरू करें",
+    "complete_quiz_unlock_assignments": "असाइनमेंट अनलॉक करने के लिए क्विज़ पूरा करें",
+    "claim_certificate": "अपना प्रमाणपत्र प्राप्त करें",
+    "pass_quiz_to_unlock_certificate": "प्रमाणपत्र अनलॉक करने के लिए क्विज़ पास करें",
+    "certificate_locked": "प्रमाणपत्र लॉक किया गया",
+    "free": "नि:शुल्क"
+  },
+  "create": {
+    "thumbnail_size_error": "❌ कृपया 10MB से कम का JPG/PNG फ़ाइल अपलोड करें।",
+    "basic": {
+      "title_label": "ट्यूटोरियल शीर्षक *",
+      "title_placeholder": "किसी भी भाषा में ट्यूटोरियल का शीर्षक लिखें...",
+      "short_desc_label": "संक्षिप्त विवरण *",
+      "short_desc_placeholder": "ट्यूटोरियल सामग्री का संक्षिप्त वर्णन करें...",
+      "language_label": "ट्यूटोरियल भाषा *",
+      "language_placeholder": "उदा., अंग्रेज़ी, अरबी, फ्रेंच...",
+      "category_label": "श्रेणी *",
+      "select_category": "एक श्रेणी चुनें",
+      "level_label": "स्तर *",
+      "select_level": "स्तर चुनें",
+      "level_beginner": "शुरुआती",
+      "level_intermediate": "मध्यवर्ती",
+      "level_advanced": "उन्नत",
+      "lessons_label": "पाठों की संख्या *",
+      "lessons_placeholder": "उदा., 5",
+      "tags_label": "टैग्स",
+      "add_tags_placeholder": "टैग जोड़ें...",
+      "add_tag": "जोड़ें",
+      "is_free": "क्या यह नि:शुल्क है?",
+      "price_label": "मूल्य (USD) *",
+      "price_placeholder": "मूल्य दर्ज करें, उदा., 19.99",
+      "next": "अगला ➡️",
+      "validation": {
+        "title_required": "शीर्षक आवश्यक है।",
+        "short_desc_required": "संक्षिप्त विवरण आवश्यक है।",
+        "category_required": "श्रेणी आवश्यक है।",
+        "level_required": "स्तर आवश्यक है।",
+        "language_required": "ट्यूटोरियल भाषा आवश्यक है।",
+        "lessons_required": "पाठों की संख्या आवश्यक है।",
+        "price_required": "मान्य मूल्य आवश्यक है।"
+      }
+    },
+    "curriculum": {
+      "heading": "📚 पाठ्यक्रम",
+      "remove_chapter": "अध्याय हटाएँ",
+      "chapter_title": "अध्याय शीर्षक",
+      "chapter_title_placeholder": "उदा. React का परिचय",
+      "duration_label": "अवधि (उदा. 5 मिनट)",
+      "duration_placeholder": "उदा. 10",
+      "upload_video": "अध्याय वीडियो अपलोड करें",
+      "allow_preview": "नि:शुल्क पूर्वावलोकन की अनुमति दें",
+      "add_chapter": "नया अध्याय जोड़ें",
+      "back": "⬅️ वापस",
+      "next": "अगला ➡️",
+      "video_upload_success": "🎬 वीडियो सफलतापूर्वक अपलोड हुआ!",
+      "video_upload_error": "वीडियो अपलोड करने में विफल"
+    },
+    "media": {
+      "upload_thumbnail": "📷 थंबनेल अपलोड करें",
+      "thumbnail_preview_alt": "थंबनेल पूर्वावलोकन",
+      "remove_thumbnail": "थंबनेल हटाएँ",
+      "select_image": "छवि चुनें",
+      "upload_preview_video": "🎥 पूर्वावलोकन वीडियो अपलोड करें",
+      "remove_preview_video": "पूर्वावलोकन वीडियो हटाएँ",
+      "select_video": "वीडियो चुनें",
+      "preview_video_error": "❌ कृपया 100MB से कम का MP4/WebM वीडियो अपलोड करें।",
+      "back": "⬅️ वापस",
+      "next": "➡️ अगला चरण"
+    },
+    "review": {
+      "heading": "✅ समीक्षा और प्रकाशित करें",
+      "back": "⬅️ वापस",
+      "sections": {
+        "basic_info": "मूल जानकारी",
+        "curriculum": "पाठ्यक्रम",
+        "media": "मीडिया",
+        "pricing": "मूल्य निर्धारण"
+      },
+      "labels": {
+        "title": "शीर्षक:",
+        "short_description": "संक्षिप्त विवरण:",
+        "category": "श्रेणी:",
+        "level": "स्तर:",
+        "tags": "टैग्स:"
+      },
+      "no_chapters": "अभी तक कोई अध्याय नहीं जोड़ा गया है।",
+      "free": "यह ट्यूटोरियल नि:शुल्क होगा",
+      "price_label": "मूल्य:",
+      "publish_tutorial": "ट्यूटोरियल प्रकाशित करें"
+    }
+  }
+  ,
+  "filters": {
+    "title": "फ़िल्टर",
+    "max_price": "अधिकतम कीमत: ${{price}}",
+    "categories": "श्रेणियाँ",
+    "difficulty_level": "कठिनाई स्तर",
+    "level_beginner": "शुरुआती",
+    "level_intermediate": "मध्यम",
+    "level_advanced": "उन्नत",
+    "reset": "फ़िल्टर रीसेट करें"
+  },
+  "card": {
+    "instructor": "प्रशिक्षक",
+    "lessons": "पाठ",
+    "completed": "पूर्ण",
+    "in_progress": "प्रगति पर",
+    "review": "समीक्षा",
+    "continue": "जारी रखें",
+    "new": "नया",
+    "untitled": "शीर्षक रहित ट्यूटोरियल",
+    "unknown_instructor": "अज्ञात",
+    "views": "दृश्य",
+    "general": "सामान्य",
+    "na": "लागू नहीं",
+    "unknown_duration": "अज्ञात अवधि",
+    "explore": "ट्यूटोरियल देखें",
+    "add_to_cart": "कार्ट में जोड़ें",
+    "added_to_cart": "कार्ट में जोड़ा गया",
+    "failed_to_add_to_cart": "कार्ट में जोड़ने में विफल"
+  },
+  "studentPage": {
+    "heading": "📚 मेरे ट्यूटोरियल",
+    "found": "{{count}} मिला",
+    "search_label": "ट्यूटोरियल खोजें",
+    "search_placeholder": "ट्यूटोरियल खोजें...",
+    "filter_label": "ट्यूटोरियल फ़िल्टर करें",
+    "filter": {
+      "all": "सभी",
+      "completed": "पूर्ण",
+      "in_progress": "प्रगति पर"
+    },
+    "sort_label": "ट्यूटोरियल क्रमित करें",
+    "sort": {
+      "title": "शीर्षक",
+      "rating": "रेटिंग",
+      "progress": "प्रगति"
+    },
+    "no_match": "आपके मानदंड से मेल खाने वाले कोई ट्यूटोरियल नहीं।",
+    "browse_all": "सभी ट्यूटोरियल ब्राउज़ करें"
+  },
+  "favoritesPage": {
+    "heading": "मेरे पसंदीदा ट्यूटोरियल",
+    "empty": "आपके पास कोई पसंदीदा ट्यूटोरियल नहीं है।",
+    "remove": "हटाएं"
+  }
+}

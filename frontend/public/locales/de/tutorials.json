@@ -1,0 +1,184 @@
+{
+  "list": {
+    "loading": "Loading tutorials...",
+    "load_error": "Failed to load tutorials",
+    "heading": "📺 Prime Tutorials",
+    "subheading": "Master new skills with our curated collection of expert-led tutorials",
+    "search_placeholder": "Search tutorials...",
+    "mobile_filters": "Filters",
+    "desktop_search_placeholder": "Search tutorials, instructors...",
+    "sort_by": "Sort by:",
+    "featured": "Featured",
+    "most_viewed": "Most Viewed",
+    "top_rated": "Top Rated",
+    "showing": "Showing",
+    "of": "of",
+    "tutorials": "tutorials",
+    "clear_filters": "Clear all filters",
+    "premium_badge": "PREMIUM",
+    "trending": "Trending",
+    "free": "Free",
+    "enrolled": "ENROLLED",
+    "empty_title": "No tutorials found",
+    "empty_description": "Try adjusting your filters or search terms",
+    "reset_filters": "Reset Filters"
+  },
+  "detail": {
+    "login_first": "Please login first",
+    "enroll_success": "Enrolled successfully!",
+    "enroll_fail": "Enrollment failed",
+    "load_error": "Failed to load tutorial",
+    "not_found": "Tutorial not found",
+    "share": "Share",
+    "share_message": "Check out this tutorial on SkillBridge!",
+    "share_success": "Shared successfully!",
+    "quiz_locked": "Quiz locked",
+    "enroll_to_access_quiz": "Enroll to access quiz",
+    "start_assignment": "Start Assignment",
+    "complete_quiz_unlock_assignments": "Complete the quiz to unlock assignments",
+    "claim_certificate": "Claim Your Certificate",
+    "pass_quiz_to_unlock_certificate": "Pass quiz to unlock certificate",
+    "certificate_locked": "Certificate locked",
+    "free": "Free"
+  },
+  "create": {
+    "thumbnail_size_error": "❌ Please upload a JPG/PNG file less than 10MB.",
+    "basic": {
+      "title_label": "Tutorial Title *",
+      "title_placeholder": "Write tutorial title in any language...",
+      "short_desc_label": "Short Description *",
+      "short_desc_placeholder": "Briefly describe the tutorial content...",
+      "language_label": "Tutorial Language *",
+      "language_placeholder": "e.g., English, Arabic, French...",
+      "category_label": "Category *",
+      "select_category": "Select a Category",
+      "level_label": "Level *",
+      "select_level": "Select Level",
+      "level_beginner": "Beginner",
+      "level_intermediate": "Intermediate",
+      "level_advanced": "Advanced",
+      "lessons_label": "Number of Lessons *",
+      "lessons_placeholder": "e.g., 5",
+      "tags_label": "Tags",
+      "add_tags_placeholder": "Add tags...",
+      "add_tag": "Add",
+      "is_free": "Is it Free?",
+      "price_label": "Price (USD) *",
+      "price_placeholder": "Enter price, e.g., 19.99",
+      "next": "Next ➡️",
+      "validation": {
+        "title_required": "Title is required.",
+        "short_desc_required": "Short description is required.",
+        "category_required": "Category is required.",
+        "level_required": "Level is required.",
+        "language_required": "Tutorial language is required.",
+        "lessons_required": "Number of lessons is required.",
+        "price_required": "Valid price is required."
+      }
+    },
+    "curriculum": {
+      "heading": "📚 Curriculum",
+      "remove_chapter": "Remove Chapter",
+      "chapter_title": "Chapter Title",
+      "chapter_title_placeholder": "e.g. Introduction to React",
+      "duration_label": "Duration (e.g. 5 min)",
+      "duration_placeholder": "e.g. 10",
+      "upload_video": "Upload Chapter Video",
+      "allow_preview": "Allow Free Preview",
+      "add_chapter": "Add New Chapter",
+      "back": "⬅️ Back",
+      "next": "Next ➡️",
+      "video_upload_success": "🎬 Video uploaded successfully!",
+      "video_upload_error": "Failed to upload video"
+    },
+    "media": {
+      "upload_thumbnail": "📷 Upload Thumbnail",
+      "thumbnail_preview_alt": "Thumbnail Preview",
+      "remove_thumbnail": "Remove Thumbnail",
+      "select_image": "Select Image",
+      "upload_preview_video": "🎥 Upload Preview Video",
+      "remove_preview_video": "Remove Preview Video",
+      "select_video": "Select Video",
+      "preview_video_error": "❌ Please upload an MP4/WebM video less than 100MB.",
+      "back": "⬅️ Back",
+      "next": "➡️ Next Step"
+    },
+    "review": {
+      "heading": "✅ Review & Publish",
+      "back": "⬅️ Back",
+      "sections": {
+        "basic_info": "Basic Info",
+        "curriculum": "Curriculum",
+        "media": "Media",
+        "pricing": "Pricing"
+      },
+      "labels": {
+        "title": "Title:",
+        "short_description": "Short Description:",
+        "category": "Category:",
+        "level": "Level:",
+        "tags": "Tags:"
+      },
+      "no_chapters": "No chapters added yet.",
+      "free": "This tutorial will be FREE",
+      "price_label": "Price:",
+      "publish_tutorial": "Publish Tutorial"
+    }
+  }
+  ,
+  "filters": {
+    "title": "Filter",
+    "max_price": "Maximaler Preis: ${{price}}",
+    "categories": "Kategorien",
+    "difficulty_level": "Schwierigkeitsgrad",
+    "level_beginner": "Anfänger",
+    "level_intermediate": "Mittelstufe",
+    "level_advanced": "Fortgeschritten",
+    "reset": "Filter zurücksetzen"
+  },
+  "card": {
+    "instructor": "Kursleiter",
+    "lessons": "Lektionen",
+    "completed": "Abgeschlossen",
+    "in_progress": "In Bearbeitung",
+    "review": "Bewerten",
+    "continue": "Fortfahren",
+    "new": "NEU",
+    "untitled": "Unbenannter Kurs",
+    "unknown_instructor": "Unbekannt",
+    "views": "Aufrufe",
+    "general": "Allgemein",
+    "na": "k.A.",
+    "unknown_duration": "Unbekannte Dauer",
+    "explore": "Kurs ansehen",
+    "add_to_cart": "In den Warenkorb",
+    "added_to_cart": "Zum Warenkorb hinzugefügt",
+    "failed_to_add_to_cart": "Zum Warenkorb hinzufügen fehlgeschlagen"
+  },
+  "studentPage": {
+    "heading": "📚 Meine Tutorials",
+    "found": "{{count}} gefunden",
+    "search_label": "Tutorials suchen",
+    "search_placeholder": "Tutorials suchen...",
+    "filter_label": "Tutorials filtern",
+    "filter": {
+      "all": "Alle",
+      "completed": "Abgeschlossen",
+      "in_progress": "In Bearbeitung"
+    },
+    "sort_label": "Tutorials sortieren",
+    "sort": {
+      "title": "Titel",
+      "rating": "Bewertung",
+      "progress": "Fortschritt"
+    },
+    "no_match": "Keine Tutorials entsprechen deinen Kriterien.",
+    "browse_all": "Alle Tutorials durchsuchen"
+  },
+  "favoritesPage": {
+    "heading": "Meine Lieblingstutorials",
+    "empty": "Du hast keine Lieblingstutorials.",
+    "remove": "Entfernen"
+  }
+}
+

@@ -1,0 +1,68 @@
+@use "../../styles/abstracts/variables" as *;
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+  color: #ffffff;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.activeLayout {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.videoArea {
+  flex: 1;
+}
+
+.sidebar {
+  width: 18rem;
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.button {
+  padding: 0.7rem 1.2rem;
+  border-radius: $radius-lg;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.secondary {
+  background: #111827;
+  border: 1px solid $color-border;
+  color: #ffffff;
+}

@@ -1,0 +1,9 @@
+{
+  "fileTooLarge": "Dateigröße muss kleiner als {{size}} sein",
+  "pngJpgWebpOnly": "Nur PNG-, JPG- oder WEBP-Dateien sind erlaubt",
+  "pdfOnly": "Nur PDF",
+  "pdfOrImageOnly": "Es sind nur PDF- oder Bilddateien erlaubt",
+  "eachFileLessThan": "Jede Datei muss kleiner als {{size}} sein",
+  "maxFiles": "Sie können bis zu {{count}} Dateien hochladen",
+  "invalidFileType": "Ungültiger Dateityp"
+}

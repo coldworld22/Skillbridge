@@ -1,0 +1,150 @@
+@use "../../styles/abstracts/variables" as *;
+
+.card {
+  background: #1f2937;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.list {
+  max-height: 12rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  padding-right: 0.35rem;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: #111827;
+  color: #ffffff;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.send {
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: $radius-md;
+  background: #16a34a;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.send:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.bubble {
+  padding: 0.6rem 0.7rem;
+  border-radius: $radius-lg;
+  max-width: 18rem;
+  border: 1px solid transparent;
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.self {
+  background: #fbbf24;
+  color: #1f2937;
+  margin-left: auto;
+}
+
+.flagged {
+  border-color: #ef4444;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.critical {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.high {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.medium {
+  background: #fbbf24;
+  color: #111827;
+}
+
+.low {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.flagDefault {
+  background: #fecdd3;
+  color: #7f1d1d;
+}
+
+.body {
+  margin-top: 0.25rem;
+}
+
+.mutedText {
+  font-style: italic;
+  color: #e5e7eb;
+}
+
+.flagInfo {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #fecaca;
+}
+
+.matches {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.match {
+  padding: 0.15rem 0.35rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #7f1d1d;
+  font-size: 0.7rem;
+}
+
+.repeat {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #fdba74;
+}

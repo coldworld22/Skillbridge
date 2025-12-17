@@ -1,0 +1,184 @@
+{
+  "list": {
+    "loading": "正在加载教程...",
+    "load_error": "加载教程失败",
+    "heading": "📺 高级教程",
+    "subheading": "通过我们精心策划的专家教程掌握新技能",
+    "search_placeholder": "搜索教程...",
+    "mobile_filters": "筛选",
+    "desktop_search_placeholder": "搜索教程、讲师...",
+    "sort_by": "排序：",
+    "featured": "精选",
+    "most_viewed": "最多观看",
+    "top_rated": "评分最高",
+    "showing": "显示",
+    "of": "共",
+    "tutorials": "个教程",
+    "clear_filters": "清除所有筛选",
+    "premium_badge": "高级",
+    "trending": "热门",
+    "free": "免费",
+    "enrolled": "已报名",
+    "empty_title": "未找到教程",
+    "empty_description": "尝试调整筛选条件或搜索词",
+    "reset_filters": "重置筛选"
+  },
+  "detail": {
+    "login_first": "请先登录",
+    "enroll_success": "报名成功！",
+    "enroll_fail": "报名失败",
+    "load_error": "加载教程失败",
+    "not_found": "未找到教程",
+    "share": "分享",
+    "share_message": "快来看 SkillBridge 上的这个教程！",
+    "share_success": "分享成功！",
+    "quiz_locked": "测验已锁定",
+    "enroll_to_access_quiz": "报名后即可访问测验",
+    "start_assignment": "开始作业",
+    "complete_quiz_unlock_assignments": "完成测验以解锁作业",
+    "claim_certificate": "领取您的证书",
+    "pass_quiz_to_unlock_certificate": "通过测验以解锁证书",
+    "certificate_locked": "证书已锁定",
+    "free": "免费"
+  },
+  "create": {
+    "thumbnail_size_error": "❌ 请上传小于 10MB 的 JPG/PNG 文件。",
+    "basic": {
+      "title_label": "教程标题 *",
+      "title_placeholder": "可以使用任何语言编写教程标题...",
+      "short_desc_label": "简短描述 *",
+      "short_desc_placeholder": "简要描述教程内容...",
+      "language_label": "教程语言 *",
+      "language_placeholder": "例如：英语、阿拉伯语、法语...",
+      "category_label": "类别 *",
+      "select_category": "选择类别",
+      "level_label": "等级 *",
+      "select_level": "选择等级",
+      "level_beginner": "初级",
+      "level_intermediate": "中级",
+      "level_advanced": "高级",
+      "lessons_label": "课时数 *",
+      "lessons_placeholder": "例如：5",
+      "tags_label": "标签",
+      "add_tags_placeholder": "添加标签...",
+      "add_tag": "添加",
+      "is_free": "是否免费？",
+      "price_label": "价格（美元） *",
+      "price_placeholder": "输入价格，例如 19.99",
+      "next": "下一步 ➡️",
+      "validation": {
+        "title_required": "标题为必填项。",
+        "short_desc_required": "简短描述为必填项。",
+        "category_required": "类别为必选项。",
+        "level_required": "等级为必选项。",
+        "language_required": "教程语言为必填项。",
+        "lessons_required": "课时数为必填项。",
+        "price_required": "必须提供有效价格。"
+      }
+    },
+    "curriculum": {
+      "heading": "📚 课程大纲",
+      "remove_chapter": "删除章节",
+      "chapter_title": "章节标题",
+      "chapter_title_placeholder": "例如：React 入门",
+      "duration_label": "时长（例如 5 分钟）",
+      "duration_placeholder": "例如：10",
+      "upload_video": "上传章节视频",
+      "allow_preview": "允许免费预览",
+      "add_chapter": "添加新章节",
+      "back": "⬅️ 返回",
+      "next": "下一步 ➡️",
+      "video_upload_success": "🎬 视频上传成功！",
+      "video_upload_error": "视频上传失败"
+    },
+    "media": {
+      "upload_thumbnail": "📷 上传封面",
+      "thumbnail_preview_alt": "封面预览",
+      "remove_thumbnail": "移除封面",
+      "select_image": "选择图片",
+      "upload_preview_video": "🎥 上传预览视频",
+      "remove_preview_video": "移除预览视频",
+      "select_video": "选择视频",
+      "preview_video_error": "❌ 请上传小于 100MB 的 MP4/WebM 视频。",
+      "back": "⬅️ 返回",
+      "next": "➡️ 下一步"
+    },
+    "review": {
+      "heading": "✅ 复查并发布",
+      "back": "⬅️ 返回",
+      "sections": {
+        "basic_info": "基本信息",
+        "curriculum": "课程大纲",
+        "media": "媒体",
+        "pricing": "定价"
+      },
+      "labels": {
+        "title": "标题：",
+        "short_description": "简短描述：",
+        "category": "类别：",
+        "level": "等级：",
+        "tags": "标签："
+      },
+      "no_chapters": "尚未添加章节。",
+      "free": "此教程将免费提供",
+      "price_label": "价格：",
+      "publish_tutorial": "发布教程"
+    }
+  }
+  ,
+  "filters": {
+    "title": "筛选",
+    "max_price": "最高价格：${{price}}",
+    "categories": "分类",
+    "difficulty_level": "难度等级",
+    "level_beginner": "初级",
+    "level_intermediate": "中级",
+    "level_advanced": "高级",
+    "reset": "重置筛选"
+  },
+  "card": {
+    "instructor": "讲师",
+    "lessons": "课时",
+    "completed": "已完成",
+    "in_progress": "进行中",
+    "review": "评价",
+    "continue": "继续",
+    "new": "新",
+    "untitled": "无标题教程",
+    "unknown_instructor": "未知",
+    "views": "次观看",
+    "general": "通用",
+    "na": "N/A",
+    "unknown_duration": "时长未知",
+    "explore": "查看教程",
+    "add_to_cart": "加入购物车",
+    "added_to_cart": "已加入购物车",
+    "failed_to_add_to_cart": "加入购物车失败"
+  },
+  "studentPage": {
+    "heading": "📚 我的教程",
+    "found": "找到 {{count}} 个",
+    "search_label": "搜索教程",
+    "search_placeholder": "搜索教程...",
+    "filter_label": "筛选教程",
+    "filter": {
+      "all": "全部",
+      "completed": "已完成",
+      "in_progress": "进行中"
+    },
+    "sort_label": "排序教程",
+    "sort": {
+      "title": "标题",
+      "rating": "评分",
+      "progress": "进度"
+    },
+    "no_match": "没有符合条件的教程。",
+    "browse_all": "浏览所有教程"
+  },
+  "favoritesPage": {
+    "heading": "我收藏的教程",
+    "empty": "您没有收藏的教程。",
+    "remove": "移除"
+  }
+}
+

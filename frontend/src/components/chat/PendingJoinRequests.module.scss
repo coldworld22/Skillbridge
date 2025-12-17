@@ -1,0 +1,74 @@
+@use "../../styles/abstracts/variables" as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.muted {
+  color: $color-muted;
+  font-size: 0.95rem;
+}
+
+.error {
+  color: $color-danger;
+  font-size: 0.95rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: var(--bg-color);
+  box-shadow: $shadow-soft;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid $color-border;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.link {
+  font-size: 0.9rem;
+  color: $color-text;
+  text-decoration: underline;
+}
+
+.approve {
+  color: #16a34a;
+}
+
+.reject {
+  color: $color-danger;
+}

@@ -1,0 +1,137 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid $color-border;
+  transition: background-color $transition-base;
+}
+
+.row:hover {
+  background: #f9fafb;
+}
+
+.title {
+  font-weight: 700;
+  color: $color-text;
+}
+
+.slug {
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.actions {
+  display: inline-flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.link {
+  color: #2563eb;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.danger {
+  color: $color-danger;
+}
+
+.form {
+  background: var(--bg-color);
+  padding: 1.5rem;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-soft;
+  border: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: $color-text;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-weight: 600;
+  color: $color-text;
+}
+
+.input,
+.select {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+}
+
+.submit {
+  align-self: flex-start;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: $radius-md;
+  padding: 0.6rem 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color $transition-base;
+}
+
+.submit:hover {
+  background: #1d4ed8;
+}
+
+.treeRoot {
+  padding-left: 1rem;
+}
+
+.treeItem {
+  margin-bottom: 0.4rem;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.chevron {
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.treeLabel {
+  font-weight: 600;
+  color: $color-text;
+}
+
+.treeChildren {
+  padding-left: 1.25rem;
+  border-left: 1px solid $color-border;
+  margin-top: 0.25rem;
+}

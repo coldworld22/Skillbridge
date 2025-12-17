@@ -1,0 +1,33 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 0% 0%, rgba(251, 191, 36, 0.06), transparent 24%), #0b1220;
+  color: #f8fafc;
+}
+
+.content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 8px;
+}
+
+.empty {
+  color: #94a3b8;
+  margin-top: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}

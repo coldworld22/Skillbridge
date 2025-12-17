@@ -1,0 +1,27 @@
+@use "../styles/abstracts/variables" as *;
+
+.page {
+  min-height: 100vh;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.content {
+  color: #fef9c3;
+  line-height: 1.6;
+}

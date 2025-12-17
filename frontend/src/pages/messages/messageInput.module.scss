@@ -1,0 +1,60 @@
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #0f172a;
+  border-radius: 14px;
+  gap: 0.5rem;
+}
+
+.emojiButton {
+  color: #fbbf24;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.emojiButton:hover {
+  color: #facc15;
+}
+
+.picker {
+  position: absolute;
+  bottom: 3.25rem;
+  left: 0;
+  z-index: 50;
+}
+
+.input {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  background: #1f2937;
+  color: #f8fafc;
+  border: 1px solid #111827;
+  border-radius: 10px;
+  outline: none;
+}
+
+.send {
+  padding: 0.65rem 0.9rem;
+  background: #22c55e;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.send:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}

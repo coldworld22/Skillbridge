@@ -1,0 +1,189 @@
+@use "../../styles/abstracts/variables" as *;
+
+.page {
+  min-height: 100vh;
+  background: #0b0f19;
+  color: #e5e7eb;
+}
+
+.section {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 6rem 1.25rem 3rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.breadcrumbLink {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color $transition-base;
+}
+
+.breadcrumbLink:hover {
+  color: #60a5fa;
+}
+
+.breadcrumbCurrent {
+  color: #fbbf24;
+  font-weight: 800;
+}
+
+.card {
+  background: #111827;
+  border-radius: $radius-lg;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: $shadow-soft;
+}
+
+.heroImage {
+  border-radius: $radius-lg;
+  display: block;
+  margin: 0 auto;
+  object-fit: cover;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #fbbf24;
+  margin-top: 1.25rem;
+}
+
+.description {
+  margin-top: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.countdown {
+  margin-top: 0.85rem;
+  color: #fca5a5;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.reviews {
+  margin-top: 1.25rem;
+  background: #0f172a;
+  border-radius: $radius-md;
+  padding: 1rem;
+  border: 1px solid $color-border;
+  text-align: left;
+}
+
+.reviewsTitle {
+  color: #fbbf24;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.reviewItem {
+  color: #e5e7eb;
+  font-style: italic;
+  margin-top: 0.4rem;
+}
+
+.discountRow {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.discountInput {
+  min-width: 15rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: #0b1324;
+  color: #f9fafb;
+}
+
+.applyBtn {
+  padding: 0.65rem 1rem;
+  border-radius: $radius-md;
+  border: none;
+  background: #22c55e;
+  color: #0b0f19;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.applyBtn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.applyBtn:active {
+  transform: translateY(0);
+}
+
+.claimBtn {
+  margin-top: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: $radius-lg;
+  background: #fbbf24;
+  color: #111827;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: $shadow-strong;
+  transition: background-color $transition-base, transform $transition-fast;
+}
+
+.claimBtn:hover {
+  background: #f59e0b;
+  transform: translateY(-2px);
+}
+
+.claimBtn:active {
+  transform: translateY(0);
+}
+
+.state {
+  min-height: 100vh;
+  background: #0b0f19;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stateTitle {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fca5a5;
+}
+
+.stateText {
+  color: #9ca3af;
+}
+
+.stateLink {
+  color: #60a5fa;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.stateLink:hover {
+  text-decoration: underline;
+}
