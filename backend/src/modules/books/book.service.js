@@ -511,7 +511,12 @@ exports.checkout = async (studentId) => {
           activeSubscriptionId
         );
         if (amount > 0 && b.instructor_id) {
-          await walletService.increment(b.instructor_id, amount, trx);
+          await walletService.increment(
+            b.instructor_id,
+            amount,
+            trx,
+            b?.tenant_id,
+          );
         }
 
         const [payment] = await trx('payments')

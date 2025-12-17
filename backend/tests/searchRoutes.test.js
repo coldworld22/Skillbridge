@@ -11,6 +11,13 @@ jest.mock('../src/modules/search/search.service', () => ({
   searchBlog: jest.fn(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+}));
+
 const service = require('../src/modules/search/search.service');
 const routes = require('../src/modules/search/search.routes');
 
@@ -30,8 +37,8 @@ describe('GET /api/search', () => {
     const res = await request(app).get('/api/search').query({ q: 'term' });
     expect(res.status).toBe(200);
     expect(res.body.data.classes).toEqual([{ id: 1 }]);
-    expect(service.searchClasses).toHaveBeenCalledWith('term');
-    expect(service.searchBooks).toHaveBeenCalledWith('term');
+    expect(service.searchClasses).toHaveBeenCalledWith('term', 'tenant-1');
+    expect(service.searchBooks).toHaveBeenCalledWith('term', 'tenant-1');
   });
 
   it('returns 400 if query missing', async () => {

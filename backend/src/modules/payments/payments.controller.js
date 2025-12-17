@@ -204,7 +204,12 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-        await creditInstructorWallet(item_type, item_id, instructor_amount);
+        await creditInstructorWallet(
+          item_type,
+          item_id,
+          instructor_amount,
+          req.tenant?.id,
+        );
         await handleEnrollment(item_type, user_id, item_id);
         await clearCartItem(user_id, item_id, item_type);
         await markCouponRedeemed(payment.coupon_id);
@@ -440,7 +445,7 @@ exports.updatePayment = catchAsync(async (req, res) => {
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
         }
-        await creditInstructorFromPayment(payment);
+        await creditInstructorFromPayment(payment, req.tenant?.id);
         await markCouponRedeemed(payment.coupon_id);
       } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;

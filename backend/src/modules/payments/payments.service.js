@@ -1,5 +1,6 @@
 const db = require("../../config/database");
 const AppError = require("../../utils/AppError");
+const logger = require("../../utils/logger.js");
 
 const STATUS = {
   PENDING_PAYMENT: "pending_payment",
@@ -447,8 +448,37 @@ exports.getByInstructor = async (
   return query;
 };
 
-exports.getInstructorTotals = async (instructorId) => {
+exports.getInstructorTotals = async (instructorId, tenantId = null) => {
+  const emptyTotals = {
+    totalPaid: 0,
+    totalPending: 0,
+    totalInstructorAmount: 0,
+    totalPlatformFee: 0,
+    totalGross: 0,
+  };
+
   const { hasPlatformFee, hasInstructorAmount } = await getPaymentColumnInfo();
+  const [paymentsHasTenant, classesHasTenant, tutorialsHasTenant, booksHasTenant] =
+    await Promise.all([
+      db.schema.hasColumn("payments", "tenant_id"),
+      db.schema.hasColumn("online_classes", "tenant_id"),
+      db.schema.hasColumn("tutorials", "tenant_id"),
+      db.schema.hasColumn("books", "tenant_id"),
+    ]);
+
+  if (
+    (paymentsHasTenant ||
+      classesHasTenant ||
+      tutorialsHasTenant ||
+      booksHasTenant) &&
+    !tenantId
+  ) {
+    logger.warn("Tenant context required to compute instructor totals", {
+      instructorId,
+    });
+    return emptyTotals;
+  }
+
   const instructorColumn = hasInstructorAmount
     ? "p.instructor_amount"
     : "p.amount";
@@ -459,6 +489,9 @@ exports.getInstructorTotals = async (instructorId) => {
         "=",
         db.raw("?", ["class"])
       );
+      if (classesHasTenant && tenantId) {
+        this.andOn("c.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .leftJoin("tutorials as tut", function () {
       this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
@@ -466,16 +499,27 @@ exports.getInstructorTotals = async (instructorId) => {
         "=",
         db.raw("?", ["tutorial"])
       );
+      if (tutorialsHasTenant && tenantId) {
+        this.andOn("tut.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     // Cast IDs to text so the payments.item_id text column can match the source tables
     .leftJoin("books as b", function () {
       this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
       this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
+      if (booksHasTenant && tenantId) {
+        this.andOn("b.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .where(function () {
       this.where("c.instructor_id", instructorId)
         .orWhere("tut.instructor_id", instructorId)
         .orWhere("b.instructor_id", instructorId);
+    })
+    .modify((query) => {
+      if (paymentsHasTenant && tenantId) {
+        query.andWhere("p.tenant_id", tenantId);
+      }
     })
     .select(
       db.raw(

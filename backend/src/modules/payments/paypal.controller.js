@@ -217,7 +217,7 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
     await grantAccess(updated);
     const refreshed = await paymentsService.getById(updated.id);
     if (refreshed?.status === STATUS.PAID) {
-      await creditInstructorFromPayment(refreshed);
+      await creditInstructorFromPayment(refreshed, req.tenant?.id);
     }
   }
 

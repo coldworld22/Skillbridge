@@ -2,8 +2,18 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./notifications.controller");
 const { verifyToken } = require("../../middleware/auth/authMiddleware");
+const {
+  resolveTenant,
+  ensureTenantMembership,
+  enforceTenantStatus,
+} = require("../../middleware/tenant");
 
-router.use(verifyToken);
+router.use(
+  verifyToken,
+  resolveTenant,
+  ensureTenantMembership(),
+  enforceTenantStatus(),
+);
 
 router.get("/", controller.getMyNotifications);
 router.post("/", controller.create);

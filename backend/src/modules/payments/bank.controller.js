@@ -359,7 +359,7 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     logger.warn("Failed to refresh bank payment after approval:", err);
   }
   if (refreshedPayment?.status === STATUS.PAID) {
-    await creditInstructorFromPayment(refreshedPayment);
+    await creditInstructorFromPayment(refreshedPayment, req.tenant?.id);
     await markCouponRedeemed(refreshedPayment?.coupon_id);
   }
   let user;

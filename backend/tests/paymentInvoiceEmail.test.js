@@ -46,7 +46,11 @@ beforeEach(() => {
   mailService.sendMail.mockResolvedValue();
   paymentConfigService.getSettings.mockResolvedValue({ platformCut: {} });
   userModel.findById.mockResolvedValue({ id: 'u1', email: 'u@test.com', full_name: 'User' });
-  bookService.getBookById.mockResolvedValue({ price: 100, instructor_id: 'i1' });
+  bookService.getBookById.mockResolvedValue({
+    price: 100,
+    instructor_id: 'i1',
+    tenant_id: 'tenant-1',
+  });
   paymentsService.approveBankPayment.mockResolvedValue({ id: 'p3', user_id: 'u1', item_type: 'book', item_id: 'b1', instructor_amount: 90 });
 });
 
@@ -72,7 +76,11 @@ describe('invoice email dispatch', () => {
 
   it('sends invoice email for zero-amount payments', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm2', type: 'free', active: true });
-    bookService.getBookById.mockResolvedValue({ price: 0, instructor_id: 'i1' });
+    bookService.getBookById.mockResolvedValue({
+      price: 0,
+      instructor_id: 'i1',
+      tenant_id: 'tenant-1',
+    });
     paymentsService.create.mockResolvedValue({ id: 'p2', user_id: 'u1', method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
 
     const req = { body: { method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, status: 'paid' }, user: { id: 'u1' } };
@@ -98,7 +106,11 @@ describe('invoice email dispatch', () => {
     paymentMethodsService.getByType.mockResolvedValue({ id: 'free', type: 'free', active: true });
     paymentsService.create.mockResolvedValue({ id: 'p4', user_id: 'u1', method_id: 'free', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
 
-    const req = { body: { item_type: 'book', item_id: 'b1', amount: 0 }, user: { id: 'u1' } };
+    const req = {
+      body: { item_type: 'book', item_id: 'b1', amount: 0 },
+      user: { id: 'u1' },
+      tenant: { id: 'tenant-1' },
+    };
     const res = mockRes();
     await paymentsController.createPayment(req, res, () => {});
     await new Promise(process.nextTick);
@@ -106,7 +118,12 @@ describe('invoice email dispatch', () => {
     expect(paymentMethodsService.getByType).toHaveBeenCalledWith('free');
     expect(paymentsService.create).toHaveBeenCalled();
     expect(paymentsService.create.mock.calls[0][0].status).toBe('paid');
-    expect(walletService.increment).toHaveBeenCalledWith('i1', 0);
+    expect(walletService.increment).toHaveBeenCalledWith(
+      'i1',
+      0,
+      null,
+      'tenant-1'
+    );
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
 
@@ -127,4 +144,3 @@ describe('invoice email dispatch', () => {
     );
   });
 });
-
