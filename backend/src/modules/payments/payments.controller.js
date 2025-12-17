@@ -52,6 +52,11 @@ const clearCartItem = async (userId, itemId, itemType) => {
 exports.createPayment = catchAsync(async (req, res) => {
   const { method_id, item_type, item_id, receipt_url } = req.body;
 
+  const tenantId = req.tenant?.id;
+  if (!tenantId) {
+    throw new AppError("Tenant context required", 400);
+  }
+
   const user_id = req.user.id;
 
   const allowStatusOverride =
@@ -88,6 +93,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   const createData = {
     id: uuidv4(),
     user_id,
+    tenant_id: tenantId,
     method_id: method?.id || method_id || null,
     item_type,
     item_id,
@@ -109,9 +115,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   } else if (subscriptionPlanId && subscriptionId) {
     createData.source = "subscription";
   }
-  const createArgs = [createData];
-  if (schedules.length) createArgs.push(schedules);
-  const payment = await service.create(...createArgs);
+  const payment = await service.create(createData, schedules, null, tenantId);
 
   if (scheduleToClose) {
     try {
@@ -257,7 +261,11 @@ exports.createPayment = catchAsync(async (req, res) => {
       if (!user) {
         user = await userModel.findById(user_id);
       }
-      const invoice = await invoiceService.generateFromPayment(payment, user);
+      const invoice = await invoiceService.generateFromPayment(
+        payment,
+        user,
+        tenantId,
+      );
       if (user?.email && !user?.invoice_email_opt_out && invoice) {
         const attachmentPath = resolveInvoicePath(invoice);
         const payload = {
@@ -289,7 +297,13 @@ exports.uploadReceipt = catchAsync(async (req, res) => {
 });
 
 exports.confirmPayment = catchAsync(async (req, res) => {
-  const payment = await service.getById(req.params.id);
+  const tenantId = req.tenant?.id;
+  const payment = await service.getById(req.params.id, tenantId);
+  if (tenantId) {
+    if (!payment || payment.tenant_id !== tenantId) {
+      throw new AppError("Payment not found", 404);
+    }
+  }
   if (!payment || payment.user_id !== req.user.id) {
     throw new AppError("Payment not found", 404);
   }
@@ -301,7 +315,7 @@ exports.confirmPayment = catchAsync(async (req, res) => {
   if (reference_id) {
     updateData.reference_id = reference_id;
   }
-  const updated = await service.update(req.params.id, updateData);
+  const updated = await service.update(req.params.id, updateData, tenantId);
   sendSuccess(res, updated, "Payment confirmation submitted");
 
   try {
@@ -320,8 +334,8 @@ exports.confirmPayment = catchAsync(async (req, res) => {
   }
 });
 
-exports.getPayments = catchAsync(async (_req, res) => {
-  const data = await service.getAll();
+exports.getPayments = catchAsync(async (req, res) => {
+  const data = await service.getAll(undefined, undefined, req.tenant?.id);
   sendSuccess(res, data);
 });
 
@@ -345,29 +359,31 @@ exports.getMyPayments = catchAsync(async (req, res) => {
     filters.sortDirection = sortDirection;
   }
 
+  const tenantId = req.tenant?.id;
   const hasFilters = Object.keys(filters).length > 0;
   const data = hasFilters
-    ? await service.getByUser(req.user.id, filters)
-    : await service.getByUser(req.user.id);
+    ? await service.getByUser(req.user.id, filters, tenantId)
+    : await service.getByUser(req.user.id, {}, tenantId);
   sendSuccess(res, data);
 });
 
 exports.getMyPayment = catchAsync(async (req, res) => {
-  const payment = await service.getById(req.params.id);
+  const payment = await service.getById(req.params.id, req.tenant?.id);
   if (!payment || payment.user_id !== req.user.id)
     throw new AppError("Payment not found", 404);
   sendSuccess(res, payment);
 });
 
 exports.getPayment = catchAsync(async (req, res) => {
-  const payment = await service.getById(req.params.id);
+  const payment = await service.getById(req.params.id, req.tenant?.id);
   if (!payment) throw new AppError("Payment not found", 404);
   sendSuccess(res, payment);
 });
 
 exports.updatePayment = catchAsync(async (req, res) => {
-  const existing = await service.getById(req.params.id);
-  const payment = await service.update(req.params.id, req.body);
+  const tenantId = req.tenant?.id;
+  const existing = await service.getById(req.params.id, tenantId);
+  const payment = await service.update(req.params.id, req.body, tenantId);
   if (!payment) throw new AppError("Payment not found", 404);
   sendSuccess(res, payment, "Payment updated");
 
@@ -394,11 +410,12 @@ exports.updatePayment = catchAsync(async (req, res) => {
         ) {
           try {
             if (typeof service.findInstallmentContext === "function") {
-              const context = await service.findInstallmentContext(
-                payment.user_id,
-                payment.item_type,
-                payment.item_id
-              );
+          const context = await service.findInstallmentContext(
+            payment.user_id,
+            payment.item_type,
+            payment.item_id,
+            tenantId,
+          );
               const schedule = context?.schedule;
               if (schedule) {
                 await paymentScheduleService.markPaid(schedule.id);
@@ -420,7 +437,11 @@ exports.updatePayment = catchAsync(async (req, res) => {
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
         try {
-          const invoice = await invoiceService.generateFromPayment(payment, user);
+          const invoice = await invoiceService.generateFromPayment(
+            payment,
+            user,
+            tenantId,
+          );
           if (user?.email && !user?.invoice_email_opt_out && invoice) {
             const attachmentPath = resolveInvoicePath(invoice);
             const payload = {
@@ -467,6 +488,6 @@ exports.updatePayment = catchAsync(async (req, res) => {
 });
 
 exports.deletePayment = catchAsync(async (req, res) => {
-  await service.delete(req.params.id);
+  await service.delete(req.params.id, req.tenant?.id);
   sendSuccess(res, null, "Payment deleted");
 });

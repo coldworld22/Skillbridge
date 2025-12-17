@@ -108,6 +108,11 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     throw new AppError('Unsupported currency', 400);
   }
 
+  const tenantId = req.tenant?.id;
+  if (!tenantId) {
+    throw new AppError('Tenant context required', 400);
+  }
+
   // For plan subscriptions, ensure the payment amount matches one of the
   // published plan prices. This mirrors the validation applied to other
   // purchasable items like classes or books.
@@ -173,6 +178,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   const paymentData = {
     id: paymentId,
     user_id,
+    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -184,7 +190,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     instructor_amount,
     coupon_id: coupon?.id || null,
   };
-  const payment = await paymentsService.create(paymentData);
+  const payment = await paymentsService.create(paymentData, [], null, tenantId);
   sendSuccess(res, { approval_url: approval, payment }, 'PayPal payment initiated');
 });
 
@@ -197,6 +203,7 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   if (!payment || payment.reference_id !== orderId) {
     throw new AppError('Payment not found', 404);
   }
+  const tenantId = payment.tenant_id || null;
   const wasPaid = payment.status === STATUS.PAID;
   const capture = await paypalService.captureOrder(orderId);
   const info = capture.purchase_units?.[0]?.payments?.captures?.[0];
@@ -207,7 +214,7 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   } else {
     statusUpdate.status = STATUS.REJECTED;
   }
-  const updated = await paymentsService.update(paymentId, statusUpdate);
+  const updated = await paymentsService.update(paymentId, statusUpdate, tenantId);
 
   if (!wasPaid && updated.status === STATUS.PAID) {
     await markCouponRedeemed(updated.coupon_id);
@@ -215,7 +222,7 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
 
   if (updated.status === STATUS.PAID) {
     await grantAccess(updated);
-    const refreshed = await paymentsService.getById(updated.id);
+    const refreshed = await paymentsService.getById(updated.id, tenantId);
     if (refreshed?.status === STATUS.PAID) {
       await creditInstructorFromPayment(refreshed);
     }
