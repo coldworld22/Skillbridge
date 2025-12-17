@@ -37,25 +37,23 @@ exports.getSummary = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
   const tenantId = req.tenant?.id;
 
-  const totals = await paymentsService.getInstructorTotals(
-    instructorId,
-    tenantId,
-  );
+  const totals = await paymentsService.getInstructorTotals(instructorId, tenantId);
 
   let wallet = null;
   let payouts = [];
   let minimumWithdrawalAmount = 0;
 
   try {
-    wallet = await walletService.getByInstructor(instructorId, {
-      tenantId,
-    });
+    wallet = await walletService.getByInstructor(instructorId, req.tenant?.id);
   } catch (err) {
     logger.warn("Wallet lookup failed for instructor summary:", err.message);
   }
 
   try {
-    payouts = await payoutsService.getByInstructor(instructorId, tenantId);
+    payouts = await payoutsService.getByInstructor(
+      instructorId,
+      req.tenant?.id,
+    );
   } catch (err) {
     logger.warn("Payout history lookup failed for instructor summary:", err.message);
   }
@@ -129,12 +127,13 @@ exports.getSummary = catchAsync(async (req, res) => {
 
 exports.getPayments = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
+  const tenantId = req.tenant?.id;
   const { status, itemType } = req.query;
 
   const payments = await paymentsService.getByInstructor(instructorId, {
     status,
     itemType,
-  });
+  }, tenantId);
 
   const formatted = payments.map((payment) => ({
     ...payment,

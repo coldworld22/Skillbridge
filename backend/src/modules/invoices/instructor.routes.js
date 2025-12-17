@@ -5,6 +5,7 @@ const {
   resolveTenant,
   ensureTenantMembership,
   enforceTenantStatus,
+  requireEntitlement,
 } = require("../../middleware/tenant");
 
 router.use(
@@ -12,6 +13,7 @@ router.use(
   resolveTenant,
   ensureTenantMembership(),
   enforceTenantStatus(),
+  requireEntitlement("payment.pay"),
   isInstructor,
 );
 

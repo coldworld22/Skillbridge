@@ -6,16 +6,16 @@ const {
   ensureTenantMembership,
   enforceTenantStatus,
   requireEntitlement,
-} = require("../../middleware/tenant");
+} = require('../../middleware/tenant');
 
-router.post('/webhook', resolveTenant, controller.handleWebhook);
+router.post('/webhook', controller.handleWebhook);
 router.post(
   '/initiate',
   verifyToken,
   resolveTenant,
   ensureTenantMembership(),
   enforceTenantStatus(),
-  requireEntitlement("payment.pay"),
+  requireEntitlement('payment.pay'),
   isStudent,
   controller.initiateCoinbasePayment,
 );
@@ -26,7 +26,7 @@ router.post(
   resolveTenant,
   ensureTenantMembership(),
   enforceTenantStatus(),
-  requireEntitlement("payment.pay"),
+  requireEntitlement('payment.pay'),
   isStudent,
   controller.initiateCoinbasePayment,
 );

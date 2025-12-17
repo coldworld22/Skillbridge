@@ -43,6 +43,7 @@ exports.createPayout = catchAsync(async (req, res) => {
   const tenantId = req.tenant?.id;
   const payout = await service.create({
     id: uuidv4(),
+    tenant_id: req.tenant.id,
     instructor_id,
     tenant_id: tenantId,
     amount,
@@ -53,8 +54,8 @@ exports.createPayout = catchAsync(async (req, res) => {
   sendSuccess(res, payout, "Payout request created");
 });
 
-exports.getPayouts = catchAsync(async (req, res) => {
-  const data = await service.getAll(req.tenant?.id);
+exports.getPayouts = catchAsync(async (_req, res) => {
+  const data = await service.getAll(_req.tenant?.id);
   sendSuccess(res, data);
 });
 
@@ -65,16 +66,17 @@ exports.getPayout = catchAsync(async (req, res) => {
 });
 
 exports.updatePayout = catchAsync(async (req, res) => {
-  const tenantId = req.tenant?.id;
-  const existing = await service.getById(req.params.id, tenantId);
+  const existing = await service.getById(req.params.id, req.tenant?.id);
   if (!existing) throw new AppError("Payout not found", 404);
 
   const updateData = { ...req.body };
   if (req.body.status === "approved" && existing.status !== "approved") {
     try {
-      await walletService.decrement(existing.instructor_id, existing.amount, {
-        tenantId,
-      });
+      await walletService.decrement(
+        existing.instructor_id,
+        existing.amount,
+        req.tenant?.id,
+      );
     } catch (err) {
       if (err.message === "Insufficient balance") {
         throw new AppError("Insufficient wallet balance", 400);
@@ -83,7 +85,11 @@ exports.updatePayout = catchAsync(async (req, res) => {
     }
     updateData.processed_at = new Date();
   }
-  const payout = await service.update(req.params.id, updateData, tenantId);
+  const payout = await service.update(
+    req.params.id,
+    updateData,
+    req.tenant?.id,
+  );
   sendSuccess(res, payout, "Payout updated");
 });
 
@@ -94,9 +100,10 @@ exports.deletePayout = catchAsync(async (req, res) => {
 
 // Instructor: Get wallet balance
 exports.getWallet = catchAsync(async (req, res) => {
-  const wallet = await walletService.getByInstructor(req.user.id, {
-    tenantId: req.tenant?.id,
-  });
+  const wallet = await walletService.getByInstructor(
+    req.user.id,
+    req.tenant?.id,
+  );
   sendSuccess(res, wallet || { balance: 0 });
 });
 
@@ -131,10 +138,11 @@ exports.requestPayout = catchAsync(async (req, res) => {
     );
   }
 
-  const wallet = await walletService.getByInstructor(req.user.id, {
-    tenantId,
-  });
-  const payouts = await service.getByInstructor(req.user.id, tenantId);
+  const wallet = await walletService.getByInstructor(
+    req.user.id,
+    req.tenant?.id,
+  );
+  const payouts = await service.getByInstructor(req.user.id, req.tenant?.id);
   const normalizedPayouts = (payouts || []).map((p) => ({
     ...p,
     status: (p.status || "").toLowerCase(),
@@ -151,7 +159,7 @@ exports.requestPayout = catchAsync(async (req, res) => {
 
   const totals = await paymentsService.getInstructorTotals(
     req.user.id,
-    tenantId,
+    req.tenant?.id,
   );
   const totalPaid = toNumber(totals.totalPaid);
 

@@ -1,71 +1,103 @@
 const db = require("../../config/database");
+const logger = require("../../utils/logger.js");
 
-const resolveTenantId = async (instructor_id, query, preferredTenantId) => {
-  if (preferredTenantId) return preferredTenantId;
+let hasTenantColumnPromise;
+let hasTenantMembershipTablePromise;
 
-  const existingWallet = await query("instructor_wallets")
-    .where({ instructor_id })
-    .first("tenant_id");
-  if (existingWallet?.tenant_id) return existingWallet.tenant_id;
+const hasTenantColumn = async () => {
+  if (!hasTenantColumnPromise) {
+    hasTenantColumnPromise = db.schema.hasColumn("instructor_wallets", "tenant_id");
+  }
+  return hasTenantColumnPromise;
+};
 
-  const profile = await query("instructor_profiles")
-    .where({ user_id: instructor_id })
-    .first("tenant_id");
-  if (profile?.tenant_id) return profile.tenant_id;
+const hasTenantMembershipTable = async () => {
+  if (!hasTenantMembershipTablePromise) {
+    hasTenantMembershipTablePromise = db.schema.hasTable("tenant_memberships");
+  }
+  return hasTenantMembershipTablePromise;
+};
 
-  const membership = await query("tenant_memberships")
-    .where({ user_id: instructor_id, status: "active" })
-    .first("tenant_id");
-
+const resolveTenantIdForUser = async (userId, tenantId, trx = db) => {
+  if (tenantId) return tenantId;
+  if (!(await hasTenantMembershipTable())) return null;
+  const membership = await trx("tenant_memberships")
+    .where({ user_id: userId, status: "active" })
+    .orderBy("created_at")
+    .first();
   return membership?.tenant_id || null;
 };
 
-exports.getByInstructor = async (instructor_id, { tenantId } = {}) => {
-  const baseQuery = db("instructor_wallets").where({ instructor_id });
-  if (tenantId) {
-    baseQuery.andWhere({ tenant_id: tenantId });
-  }
-  const wallet = await baseQuery.first();
-  if (wallet || tenantId) return wallet;
+exports.getByInstructor = async (instructor_id, tenantId = null) => {
+  const tenantColumnExists = await hasTenantColumn();
+  const resolvedTenantId = tenantColumnExists
+    ? await resolveTenantIdForUser(instructor_id, tenantId)
+    : null;
 
-  const resolvedTenantId = await resolveTenantId(instructor_id, db);
-  if (!resolvedTenantId) return wallet;
+  if (tenantColumnExists && !resolvedTenantId) {
+    logger.warn("Tenant context required to fetch instructor wallet", {
+      instructor_id,
+    });
+    return null;
+  }
 
   return db("instructor_wallets")
-    .where({ instructor_id, tenant_id: resolvedTenantId })
+    .where({ instructor_id })
+    .modify((query) => {
+      if (tenantColumnExists) {
+        query.andWhere("tenant_id", resolvedTenantId);
+      }
+    })
     .first();
 };
 
-exports.increment = async (instructor_id, amount, trx, options = {}) => {
-  const query = trx || db;
-  const tenantId = await resolveTenantId(
-    instructor_id,
-    query,
-    options.tenantId,
-  );
+exports.increment = async (instructor_id, amount, trx, tenantId = null) => {
+  const tenantColumnExists = await hasTenantColumn();
+  const resolvedTenantId = tenantColumnExists
+    ? await resolveTenantIdForUser(instructor_id, tenantId, trx || db)
+    : null;
 
-  if (!tenantId) {
-    throw new Error("tenant_id_required_for_wallet");
+  if (tenantColumnExists && !resolvedTenantId) {
+    logger.warn("Tenant context required to increment instructor wallet", {
+      instructor_id,
+    });
+    return null;
+  }
+
+  const query = trx || db;
+  const insertData = { instructor_id, balance: amount };
+  if (tenantColumnExists) {
+    insertData.tenant_id = resolvedTenantId;
   }
 
   const [row] = await query("instructor_wallets")
-    .insert({ instructor_id, tenant_id: tenantId, balance: amount })
-    .onConflict("instructor_id")
+    .insert(insertData)
+    .onConflict(["instructor_id", ...(tenantColumnExists ? ["tenant_id"] : [])])
     .merge({
       balance: query.raw("?? + ?", ["balance", amount]),
-      tenant_id: tenantId,
       updated_at: query.fn.now(),
     })
     .returning("*");
   return row;
 };
 
-exports.decrement = async (instructor_id, amount, options = {}) => {
+exports.decrement = async (instructor_id, amount, tenantId = null) => {
+  const tenantColumnExists = await hasTenantColumn();
+  const resolvedTenantId = tenantColumnExists
+    ? await resolveTenantIdForUser(instructor_id, tenantId)
+    : null;
+
+  if (tenantColumnExists && !resolvedTenantId) {
+    throw new Error("Tenant context required for wallet debit");
+  }
+
   return db.transaction(async (trx) => {
     const wallet = await trx("instructor_wallets")
       .where({ instructor_id })
-      .modify((qb) => {
-        if (options.tenantId) qb.andWhere({ tenant_id: options.tenantId });
+      .modify((query) => {
+        if (tenantColumnExists) {
+          query.andWhere("tenant_id", resolvedTenantId);
+        }
       })
       .forUpdate()
       .first();
@@ -99,10 +131,13 @@ exports.decrement = async (instructor_id, amount, options = {}) => {
 
     const [row] = await trx("instructor_wallets")
       .where({ instructor_id })
-      .andWhere({ tenant_id: tenantId })
+      .modify((query) => {
+        if (tenantColumnExists) {
+          query.andWhere("tenant_id", resolvedTenantId);
+        }
+      })
       .update({
         balance: trx.raw("?? - ?", ["balance", amount]),
-        tenant_id: tenantId,
         updated_at: trx.fn.now(),
       })
       .returning("*");

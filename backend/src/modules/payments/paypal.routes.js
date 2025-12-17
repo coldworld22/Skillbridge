@@ -6,7 +6,7 @@ const {
   ensureTenantMembership,
   enforceTenantStatus,
   requireEntitlement,
-} = require("../../middleware/tenant");
+} = require('../../middleware/tenant');
 
 router.post(
   '/create',
@@ -14,10 +14,10 @@ router.post(
   resolveTenant,
   ensureTenantMembership(),
   enforceTenantStatus(),
-  requireEntitlement("payment.pay"),
+  requireEntitlement('payment.pay'),
   isStudent,
   controller.createPayPalPayment,
 );
-router.get('/callback', resolveTenant, controller.handlePayPalCallback);
+router.get('/callback', controller.handlePayPalCallback);
 
 module.exports = router;

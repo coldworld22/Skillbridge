@@ -1,40 +1,59 @@
 const db = require("../../config/database");
 
-const applyTenantScope = (query, tenantId) => {
-  if (!tenantId) return query;
-  return query.andWhere({ tenant_id: tenantId });
+let tenantColumnPromise;
+
+const hasTenantColumn = async () => {
+  if (!tenantColumnPromise) {
+    tenantColumnPromise = db.schema.hasColumn("invoices", "tenant_id");
+  }
+  return tenantColumnPromise;
 };
 
-exports.create = async (data) => {
-  const [row] = await db("invoices").insert(data).returning("*");
+const applyTenantScope = async (query, tenantId) => {
+  if (tenantId && (await hasTenantColumn())) {
+    query.andWhere({ tenant_id: tenantId });
+  }
+  return query;
+};
+
+exports.create = async (data, tenantId = null) => {
+  const payload = { ...data };
+  if (tenantId && (await hasTenantColumn())) {
+    payload.tenant_id = tenantId;
+  }
+  const [row] = await db("invoices").insert(payload).returning("*");
   return row;
 };
 
-exports.getAll = (tenantId) => {
+exports.getAll = async (tenantId = null) => {
   const query = db("invoices").orderBy("created_at", "desc");
-  return applyTenantScope(query, tenantId);
+  await applyTenantScope(query, tenantId);
+  return query;
 };
 
-exports.getById = (id, tenantId) => {
+exports.getById = async (id, tenantId = null) => {
   const query = db("invoices").where({ id });
-  return applyTenantScope(query, tenantId).first();
+  await applyTenantScope(query, tenantId);
+  return query.first();
 };
 
-exports.getByUser = (user_id, tenantId) => {
+exports.getByUser = async (user_id, tenantId = null) => {
   const query = db("invoices")
     .where({ user_id })
     .orderBy("created_at", "desc");
-  return applyTenantScope(query, tenantId);
+  await applyTenantScope(query, tenantId);
+  return query;
 };
 
-exports.findByPayment = (payment_id, tenantId) => {
+exports.findByPayment = async (payment_id, tenantId = null) => {
   const query = db("invoices").where({ payment_id });
-  return applyTenantScope(query, tenantId).first();
+  await applyTenantScope(query, tenantId);
+  return query.first();
 };
 
-exports.update = async (id, data, tenantId) => {
+exports.update = async (id, data, tenantId = null) => {
   const query = db("invoices").where({ id });
-  const scoped = applyTenantScope(query, tenantId);
-  const [row] = await scoped.update(data).returning("*");
+  await applyTenantScope(query, tenantId);
+  const [row] = await query.update(data).returning("*");
   return row;
 };
