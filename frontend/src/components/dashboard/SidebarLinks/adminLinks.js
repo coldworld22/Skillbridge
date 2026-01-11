@@ -270,6 +270,12 @@ export const adminNavLinks = [
             requiredPermissions: [ADMIN_PERMISSIONS.APP_SETTINGS.VIEW],
           },
           {
+            label: 'tenant_domains',
+            href: '/dashboard/admin/settings/tenant-domains',
+            icon: Globe,
+            requiredPermissions: [ADMIN_PERMISSIONS.TENANT_DOMAINS.VIEW],
+          },
+          {
             label: 'footer_settings',
             href: '/dashboard/admin/settings/footer',
             icon: FileSignature,

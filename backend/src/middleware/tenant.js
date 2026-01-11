@@ -72,15 +72,9 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenantId) {
-      const host = (req.headers?.host || "").toLowerCase();
-      logger.warn?.("tenant match missing", {
-        host,
-        path: req.path,
-        headerTenant: req.headers?.["x-tenant-id"] || null,
-      });
-      metrics.incrementCounter("tenant_resolution_failure", {
-        host,
-        category: "missing_match",
+      metrics.increment("tenant_resolution_failed", {
+        reason: "missing_tenant_id",
+        host: req.headers?.host || null,
       });
       return res.status(404).json({ error: "tenant_not_found" });
     }
@@ -95,15 +89,10 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenant) {
-      const host = (req.headers?.host || "").toLowerCase();
-      logger.warn?.("tenant match missing", {
-        host,
-        path: req.path,
+      metrics.increment("tenant_resolution_failed", {
+        reason: "tenant_lookup_empty",
         tenantId,
-      });
-      metrics.incrementCounter("tenant_resolution_failure", {
-        host,
-        category: "missing_match",
+        host: req.headers?.host || null,
       });
       return res.status(404).json({ error: "tenant_not_found" });
     }
@@ -123,9 +112,10 @@ const resolveTenant = async (req, res, next) => {
       path: req.path,
       headerTenant: req.headers?.["x-tenant-id"] || null,
     });
-    metrics.incrementCounter("tenant_resolution_failure", {
-      host,
-      category: "resolution_error",
+    metrics.increment("tenant_resolution_failed", {
+      reason: "exception",
+      host: req.headers?.host || null,
+      path: req.path,
     });
     return res.status(404).json({ error: "tenant_not_found" });
   }
@@ -246,6 +236,7 @@ const requireEntitlement = (action) => async (req, res, next) => {
 };
 
 module.exports = {
+  resolveTenantByHost,
   resolveTenant,
   ensureTenantMembership,
   enforceTenantStatus,

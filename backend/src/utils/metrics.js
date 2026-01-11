@@ -1,26 +1,32 @@
 // 📁 src/utils/metrics.js
+// Lightweight in-process counters for operational visibility.
+
 const logger = require("./logger");
 
-const defaultTags = {
-  env: process.env.NODE_ENV || "development",
+const counters = new Map();
+
+const keyFor = (name, tags) => {
+  if (!tags || Object.keys(tags).length === 0) return name;
+  return `${name}:${JSON.stringify(tags)}`;
 };
 
-const formatTags = (tags = {}) =>
-  Object.fromEntries(
-    Object.entries({ ...defaultTags, ...tags }).filter(
-      ([, value]) => value !== undefined && value !== null && value !== "",
-    ),
-  );
-
-const incrementCounter = (name, tags = {}, value = 1) => {
-  const payload = {
-    metric: name,
-    type: "counter",
-    value,
-    tags: formatTags(tags),
-    timestamp: new Date().toISOString(),
-  };
-  logger.log?.("metric", JSON.stringify(payload));
+const increment = (name, tags = {}) => {
+  const key = keyFor(name, tags);
+  const next = (counters.get(key) || 0) + 1;
+  counters.set(key, next);
+  logger.warn?.("metric_increment", { name, count: next, ...tags });
+  return next;
 };
 
-module.exports = { incrementCounter };
+const snapshot = () => {
+  const data = {};
+  for (const [key, value] of counters.entries()) {
+    data[key] = value;
+  }
+  return data;
+};
+
+module.exports = {
+  increment,
+  snapshot,
+};

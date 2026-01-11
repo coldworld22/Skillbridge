@@ -210,29 +210,22 @@ app.use(async (req, res, next) => {
           .where({ domain: hostname, status: "verified" })
           .first();
         if (!custom) {
-          logger.warn?.("forbidden host header", {
-            host: hostHeader,
-            hostname,
+          logger.warn(
+            `Rejected request with invalid host header: ${hostHeader} (ip=${clientIp} request=${requestMeta})`,
+          );
+          metrics.increment("forbidden_host", {
+            host: hostname,
             ip: clientIp,
-            request: requestMeta,
-          });
-          metrics.incrementCounter("host_validation_failure", {
-            host: hostHeader,
-            category: "forbidden_host",
           });
           return res.status(403).json({ message: "Forbidden host" });
         }
       } catch (err) {
-        logger.warn?.("host validation failed", {
-          host: hostHeader,
-          hostname,
-          ip: clientIp,
-          request: requestMeta,
-          error: err.message,
-        });
-        metrics.incrementCounter("host_validation_failure", {
-          host: hostHeader,
-          category: "forbidden_host",
+        logger.warn(
+          `Host validation failed: ${hostHeader} (ip=${clientIp} request=${requestMeta})`,
+        );
+        metrics.increment("forbidden_host", {
+          host: hostname,
+          reason: "lookup_failed",
         });
         return res.status(403).json({ message: "Forbidden host" });
       }
