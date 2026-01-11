@@ -3,6 +3,7 @@
 
 const db = require("../config/database");
 const logger = require("../utils/logger");
+const metrics = require("../utils/metrics");
 
 const APP_DOMAIN = (process.env.APP_DOMAIN || "").toLowerCase();
 const APEX = APP_DOMAIN || "skillbridge.com";
@@ -58,7 +59,9 @@ const resolveTenant = async (req, res, next) => {
       try {
         tenantId = await resolveTenantByHost(req.headers.host);
       } catch (err) {
-        if (process.env.NODE_ENV === "test") {
+        if (req.user?.current_tenant_id) {
+          tenantId = req.user.current_tenant_id;
+        } else if (process.env.NODE_ENV === "test") {
           tenantId = DEFAULT_TEST_TENANT_ID;
         } else {
           throw err;
@@ -66,11 +69,19 @@ const resolveTenant = async (req, res, next) => {
       }
     }
 
+    if (!tenantId && req.user?.current_tenant_id) {
+      tenantId = req.user.current_tenant_id;
+    }
+
     if (!tenantId && process.env.NODE_ENV === "test") {
       tenantId = DEFAULT_TEST_TENANT_ID;
     }
 
     if (!tenantId) {
+      metrics.increment("tenant_resolution_failed", {
+        reason: "missing_tenant_id",
+        host: req.headers?.host || null,
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -84,6 +95,11 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenant) {
+      metrics.increment("tenant_resolution_failed", {
+        reason: "tenant_lookup_empty",
+        tenantId,
+        host: req.headers?.host || null,
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -95,11 +111,17 @@ const resolveTenant = async (req, res, next) => {
     };
     return next();
   } catch (err) {
+    const host = (req.headers?.host || "").toLowerCase();
     logger.warn?.("tenant resolution failed", {
       error: err.message,
-      host: req.headers?.host,
+      host,
       path: req.path,
       headerTenant: req.headers?.["x-tenant-id"] || null,
+    });
+    metrics.increment("tenant_resolution_failed", {
+      reason: "exception",
+      host: req.headers?.host || null,
+      path: req.path,
     });
     return res.status(404).json({ error: "tenant_not_found" });
   }
@@ -173,11 +195,14 @@ const enforceTenantStatus = ({ allowBillingPaths = [] } = {}) => {
     const isBillingPath = allowBillingPaths.some((pattern) =>
       pattern.test(req.path || ""),
     );
+    if (isBillingPath) return next();
 
     if (["suspended", "cancelled"].includes(status) && isMutating(req.method)) {
-      if (!isBillingPath) {
-        return res.status(423).json({ error: "tenant_suspended" });
-      }
+      return res.status(423).json({ error: "tenant_suspended" });
+    }
+
+    if (status === "grace" && isMutating(req.method)) {
+      return res.status(423).json({ error: "tenant_grace" });
     }
 
     return next();
@@ -194,6 +219,20 @@ const requireRole =
   };
 
 const { can } = require("../services/entitlements");
+const { sendQuotaExceeded } = require("../utils/quota");
+
+const sendEntitlementDenied = (res, decision, action) => {
+  if (decision?.reason === "limit_reached") {
+    return sendQuotaExceeded(res, {
+      action,
+      limit: decision.limit,
+      usage: decision.usage,
+    });
+  }
+  return res
+    .status(403)
+    .json({ error: decision?.reason || "entitlement_denied" });
+};
 
 /**
  * Entitlement guard using services/entitlements.can
@@ -208,9 +247,7 @@ const requireEntitlement = (action) => async (req, res, next) => {
       action,
     );
     if (!decision.allow) {
-      return res
-        .status(403)
-        .json({ error: decision.reason || "entitlement_denied" });
+      return sendEntitlementDenied(res, decision, action);
     }
     return next();
   } catch (err) {
@@ -220,9 +257,11 @@ const requireEntitlement = (action) => async (req, res, next) => {
 };
 
 module.exports = {
+  resolveTenantByHost,
   resolveTenant,
   ensureTenantMembership,
   enforceTenantStatus,
   requireRole,
   requireEntitlement,
+  sendEntitlementDenied,
 };

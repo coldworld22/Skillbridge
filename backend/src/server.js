@@ -1,5 +1,6 @@
 require("./config/loadEnv");
 const logger = require("./utils/logger.js");
+const metrics = require("./utils/metrics");
 require("./utils/dns");
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -212,12 +213,20 @@ app.use(async (req, res, next) => {
           logger.warn(
             `Rejected request with invalid host header: ${hostHeader} (ip=${clientIp} request=${requestMeta})`,
           );
+          metrics.increment("forbidden_host", {
+            host: hostname,
+            ip: clientIp,
+          });
           return res.status(403).json({ message: "Forbidden host" });
         }
       } catch (err) {
         logger.warn(
           `Host validation failed: ${hostHeader} (ip=${clientIp} request=${requestMeta})`,
         );
+        metrics.increment("forbidden_host", {
+          host: hostname,
+          reason: "lookup_failed",
+        });
         return res.status(403).json({ message: "Forbidden host" });
       }
     }

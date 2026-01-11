@@ -28,6 +28,9 @@ import { studentNavLinks } from "@/components/dashboard/SidebarLinks/studentLink
 export default function Header() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const memberships = useAuthStore((state) => state.memberships);
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const switchTenant = useAuthStore((state) => state.switchTenant);
   const userRole = user?.role?.toLowerCase();
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
@@ -39,6 +42,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [switchingTenantId, setSwitchingTenantId] = useState(null);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
@@ -81,6 +85,26 @@ export default function Header() {
       }, 1200);
     } catch (err) {
       toast.error(t('logout_failed'));
+    }
+  };
+
+  const handleTenantSwitch = async (tenantId) => {
+    if (!tenantId || tenantId === currentTenantId) return;
+    try {
+      setSwitchingTenantId(tenantId);
+      await switchTenant(tenantId);
+      toast.success(
+        t("tenant_switched", { defaultValue: "Tenant context updated." })
+      );
+      setDropdownOpen(false);
+    } catch (err) {
+      toast.error(
+        t("tenant_switch_failed", {
+          defaultValue: "Unable to switch tenant right now.",
+        })
+      );
+    } finally {
+      setSwitchingTenantId(null);
     }
   };
 
@@ -599,6 +623,52 @@ export default function Header() {
                       <span>{t('edit_profile')}</span>
                     </Link>
                   </li>
+                  {memberships?.length > 0 && (
+                    <li className="px-3 py-2">
+                      <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-2">
+                        {t("tenant_switcher", {
+                          defaultValue: "Tenant",
+                        })}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {memberships.map((membership) => {
+                          const label =
+                            membership.tenant_name ||
+                            membership.tenant_slug ||
+                            membership.tenant_id;
+                          const isActive =
+                            membership.tenant_id === currentTenantId;
+                          return (
+                            <button
+                              key={membership.tenant_id}
+                              type="button"
+                              onClick={() => handleTenantSwitch(membership.tenant_id)}
+                              disabled={switchingTenantId === membership.tenant_id}
+                              className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition ${
+                                isActive
+                                  ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/30"
+                                  : "border-transparent hover:border-yellow-200 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                              }`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                  {label}
+                                </span>
+                                <span className="text-[11px] text-gray-400">
+                                  {membership.role}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-semibold text-yellow-600">
+                                {isActive
+                                  ? t("active", { defaultValue: "Active" })
+                                  : t("switch", { defaultValue: "Switch" })}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  )}
                   <li
                     className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-700 text-red-600 dark:text-red-400"
                     onClick={handleLogout}

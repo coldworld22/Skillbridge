@@ -5,6 +5,7 @@ const AppError = require("../../../utils/AppError");
 const sanitizeUser = require("../utils/sanitizeUser");
 const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
+const appConfigService = require("../../appConfig/appConfig.service");
 
 const SALT_ROUNDS = 12;
 
@@ -41,6 +42,11 @@ exports.loginOrRegister = async ({
   avatarUrl,
   tenant_id = null,
 }) => {
+  const settings = (await appConfigService.getSettings()) || {};
+  const allowNewTenantCreation = Boolean(
+    settings.allow_new_tenant_creation ?? settings.allowNewTenantCreation,
+  );
+  const inviteOnly = Boolean(settings.invite_only ?? settings.inviteOnly);
   let account = await userModel.findBySocialAccount(provider, providerId);
   let user;
 
@@ -53,6 +59,12 @@ exports.loginOrRegister = async ({
       if (existing) {
         user = existing;
       }
+    }
+    if (!user && (inviteOnly || !allowNewTenantCreation)) {
+      throw new AppError(
+        "No active tenant membership found. Please accept an invite or contact your admin.",
+        403,
+      );
     }
     if (!user) {
       const hashed = await bcrypt.hash(providerId, SALT_ROUNDS);
@@ -98,11 +110,22 @@ exports.loginOrRegister = async ({
   const roles = await ensureRoleAssignments(user);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const membershipRows = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: user.id, status: "active" });
+  const membershipRows = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": user.id, "tm.status": "active" });
   const memberships = Array.isArray(membershipRows) ? membershipRows : [];
-  if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
+  if (
+    process.env.NODE_ENV !== "test" &&
+    memberships.length === 0 &&
+    !allowNewTenantCreation
+  ) {
     throw new AppError(
       "No active tenant membership found. Please accept an invite or contact your admin.",
       403,
@@ -121,7 +144,11 @@ exports.loginOrRegister = async ({
     memberships,
     current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    user.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
 
   const now = new Date();
   const loginUpdate = {
@@ -173,6 +200,8 @@ exports.loginOrRegister = async ({
     accessToken,
     refreshToken,
     user: safeUser,
+    memberships,
+    currentTenantId,
     onboarding: {
       profile_complete: user.profile_complete,
       is_email_verified: user.is_email_verified,
