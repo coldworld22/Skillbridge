@@ -12,6 +12,23 @@ const { sendMail } = require("../../../services/mailService");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 
+const INVITE_EXPIRY_DAYS = Number.parseInt(
+  process.env.TENANT_INVITE_EXPIRY_DAYS || "7",
+  10,
+);
+
+const isInviteExpired = (membership) => {
+  if (!membership?.created_at || Number.isNaN(INVITE_EXPIRY_DAYS)) {
+    return false;
+  }
+  const createdAt = new Date(membership.created_at);
+  if (Number.isNaN(createdAt.getTime())) return false;
+  const expiresAt = new Date(
+    createdAt.getTime() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+  );
+  return expiresAt < new Date();
+};
+
 router.use(
   verifyToken,
   resolveTenant,
@@ -91,6 +108,9 @@ router.post("/accept", async (req, res, next) => {
       .where({ tenant_id, user_id: userId })
       .first();
     if (!membership) throw new AppError("Invite not found", 404);
+    if (membership.status === "revoked" || isInviteExpired(membership)) {
+      throw new AppError("Invite expired", 410);
+    }
     if (membership.status === "active") {
       return res.json({ message: "Already a member", data: membership });
     }
