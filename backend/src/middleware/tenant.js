@@ -3,6 +3,7 @@
 
 const db = require("../config/database");
 const logger = require("../utils/logger");
+const metrics = require("../utils/metrics");
 
 const APP_DOMAIN = (process.env.APP_DOMAIN || "").toLowerCase();
 const APEX = APP_DOMAIN || "skillbridge.com";
@@ -71,6 +72,10 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenantId) {
+      metrics.increment("tenant_resolution_failed", {
+        reason: "missing_tenant_id",
+        host: req.headers?.host || null,
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -84,6 +89,11 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenant) {
+      metrics.increment("tenant_resolution_failed", {
+        reason: "tenant_lookup_empty",
+        tenantId,
+        host: req.headers?.host || null,
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -100,6 +110,11 @@ const resolveTenant = async (req, res, next) => {
       host: req.headers?.host,
       path: req.path,
       headerTenant: req.headers?.["x-tenant-id"] || null,
+    });
+    metrics.increment("tenant_resolution_failed", {
+      reason: "exception",
+      host: req.headers?.host || null,
+      path: req.path,
     });
     return res.status(404).json({ error: "tenant_not_found" });
   }
