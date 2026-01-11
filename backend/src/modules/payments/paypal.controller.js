@@ -113,6 +113,11 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     throw new AppError('Unsupported currency', 400);
   }
 
+  const tenantId = req.tenant?.id;
+  if (!tenantId) {
+    throw new AppError('Tenant context required', 400);
+  }
+
   // For plan subscriptions, ensure the payment amount matches one of the
   // published plan prices. This mirrors the validation applied to other
   // purchasable items like classes or books.
