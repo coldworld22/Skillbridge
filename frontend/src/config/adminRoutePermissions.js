@@ -64,6 +64,7 @@ const SETTINGS_SLUG_PERMISSIONS = {
   "popup-announcement": ADMIN_PERMISSIONS.POPUPS,
   certificates: ADMIN_PERMISSIONS.CERTIFICATE_TEMPLATES,
   thirdParty: ADMIN_PERMISSIONS.THIRD_PARTY_CONFIG,
+  "tenant-domains": ADMIN_PERMISSIONS.TENANT_DOMAINS,
 };
 
 const sanitizePath = (rawPath) => {
@@ -148,4 +149,3 @@ export const shouldDisplayNavItem = (user, requiredPermissions = []) => {
   const userPerms = user?.permissions || [];
   return requiredPermissions.some((perm) => userPerms.includes(perm));
 };
-
