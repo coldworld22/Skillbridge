@@ -172,6 +172,63 @@ data. Manually deleting the `postgres_data` or `pgadmin_data` volumes will also
 erase data. Consider mounting these volumes to external storage or setting up
 regular backups to protect critical information.
 
+## Backup and restore (tenant-aware)
+
+SkillBridge ships with database backup and restore scripts:
+
+- `scripts/backup_db.sh` — generates a full backup or a tenant-scoped backup.
+- `scripts/restore_db.sh` — restores a backup SQL file.
+
+Both scripts use `DATABASE_URL` when set, or fall back to the `db` container
+from Docker Compose.
+
+### Full database backup
+
+```bash
+./scripts/backup_db.sh --output backups/skillbridge_full.sql
+```
+
+### Tenant-scoped backup
+
+Use the tenant UUID to export only rows tied to that tenant (plus referenced
+tenant configuration and users).
+
+```bash
+./scripts/backup_db.sh --output backups/tenant_123.sql --tenant-id 00000000-0000-0000-0000-000000000001
+```
+
+The script validates the tenant ID format and verifies the tenant exists before
+writing the backup.
+
+### Restore a backup
+
+```bash
+./scripts/restore_db.sh --input backups/skillbridge_full.sql
+```
+
+For tenant-scoped backups, pass the tenant ID that the backup was created for:
+
+```bash
+./scripts/restore_db.sh --input backups/tenant_123.sql --tenant-id 00000000-0000-0000-0000-000000000001
+```
+
+The restore script reads the tenant ID header and refuses to restore if the
+value does not match.
+
+### Recovery steps and verification checks
+
+1. **Stop application traffic** (or place the system in maintenance mode).
+2. **Restore the backup** using the commands above.
+3. **Run migrations** to ensure the schema matches the application:
+   ```bash
+   npm --prefix backend run migrate
+   ```
+4. **Restart services** and verify the environment:
+   - `curl https://<domain>/api/health` returns `{"status":"ok"}`.
+   - Log in to `/dashboard/admin` and confirm tenant data loads.
+   - Run `docker compose logs backend` to confirm there are no migration or
+     tenant resolution errors.
+
 ## Next.js image domains
 
 Uploads served from the backend domain are now automatically whitelisted for
