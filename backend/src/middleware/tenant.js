@@ -105,9 +105,10 @@ const resolveTenant = async (req, res, next) => {
     };
     return next();
   } catch (err) {
+    const host = (req.headers?.host || "").toLowerCase();
     logger.warn?.("tenant resolution failed", {
       error: err.message,
-      host: req.headers?.host,
+      host,
       path: req.path,
       headerTenant: req.headers?.["x-tenant-id"] || null,
     });
