@@ -262,9 +262,11 @@ exports.updateAvatar = async (req, res) => {
             }
         }
 
-        await db("users")
-            .where({ id: targetId })
-            .update({ avatar_url: avatarUrl });
+        const updateData = { avatar_url: avatarUrl };
+        if (req.tenant?.id) {
+            updateData.tenant_id = req.tenant.id;
+        }
+        await db("users").where({ id: targetId }).update(updateData);
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
