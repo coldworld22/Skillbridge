@@ -7,6 +7,7 @@ const { STATUS } = paymentsService;
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const coinbaseService = require('../../services/coinbaseService');
+const metrics = require('../../utils/metrics');
 const { v4: uuidv4 } = require('uuid');
 const { creditInstructorFromPayment } = require('./helpers/wallet');
 const { loadAndValidateCoupon, markCouponRedeemed } = require('./helpers/coupon');
@@ -178,60 +179,94 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
 });
 
 exports.handleWebhook = catchAsync(async (req, res) => {
-  const signature = req.get('X-CC-Webhook-Signature');
-  const payload = JSON.stringify(req.body || {});
-  const event = req.body?.event;
-  const paymentId = event?.data?.metadata?.payment_id;
-  if (!paymentId) return res.status(400).end();
-
-  const tenantFromReq = req.tenant?.id;
-  const payment = await paymentsService.getById(paymentId, tenantFromReq);
-  if (!payment) return res.status(404).end();
-  const tenantId = payment.tenant_id || tenantFromReq || null;
-  const method = await paymentMethodsService.getById(payment.method_id);
-  const secret = resolveCoinbaseSecret(method?.settings);
-  if (!coinbaseService.verifyWebhook(payload, signature, secret)) {
-    return res.status(400).end();
-  }
-
-  let statusUpdate = {};
-  const type = event?.type;
-  const chargeId = event?.data?.id;
-  if (type === 'charge:confirmed') {
-    statusUpdate = { status: STATUS.PAID, reference_id: chargeId, paid_at: new Date() };
-  } else if (type === 'charge:failed') {
-    statusUpdate = { status: STATUS.REJECTED, reference_id: chargeId };
-  }
-  const wasPaid = payment.status === STATUS.PAID;
+  const startTime = Date.now();
+  let outcome = "success";
+  let errorKind = "none";
+  let finalized = false;
+  const finalizeMetrics = () => {
+    if (finalized) return;
+    finalized = true;
+    metrics.increment("webhook_processing_total", {
+      provider: "coinbase",
+      status: outcome,
+      error: errorKind,
+    });
+    metrics.observeDuration(
+      "webhook_processing_duration_ms",
+      Date.now() - startTime,
+      { provider: "coinbase", status: outcome },
+    );
+  };
   try {
-    if (Object.keys(statusUpdate).length) {
-      const updated = await paymentsService.update(
-        paymentId,
-        statusUpdate,
-        tenantId,
-      );
-      if (updated.status === STATUS.PAID) {
-        if (!wasPaid) {
-          await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
-        }
-        await grantAccess(updated);
-        const refreshed = await paymentsService.getById(updated.id, tenantId);
-        if (refreshed?.status === STATUS.PAID) {
-          await creditInstructorFromPayment(refreshed);
+    const signature = req.get('X-CC-Webhook-Signature');
+    const payload = JSON.stringify(req.body || {});
+    const event = req.body?.event;
+    const paymentId = event?.data?.metadata?.payment_id;
+    if (!paymentId) {
+      outcome = "error";
+      errorKind = "missing_payment_id";
+      return res.status(400).end();
+    }
+
+    const tenantFromReq = req.tenant?.id;
+    const payment = await paymentsService.getById(paymentId, tenantFromReq);
+    if (!payment) {
+      outcome = "error";
+      errorKind = "payment_not_found";
+      return res.status(404).end();
+    }
+    const tenantId = payment.tenant_id || tenantFromReq || null;
+    const method = await paymentMethodsService.getById(payment.method_id);
+    const secret = resolveCoinbaseSecret(method?.settings);
+    if (!coinbaseService.verifyWebhook(payload, signature, secret)) {
+      outcome = "error";
+      errorKind = "invalid_signature";
+      return res.status(400).end();
+    }
+
+    let statusUpdate = {};
+    const type = event?.type;
+    const chargeId = event?.data?.id;
+    if (type === 'charge:confirmed') {
+      statusUpdate = { status: STATUS.PAID, reference_id: chargeId, paid_at: new Date() };
+    } else if (type === 'charge:failed') {
+      statusUpdate = { status: STATUS.REJECTED, reference_id: chargeId };
+    }
+    const wasPaid = payment.status === STATUS.PAID;
+    try {
+      if (Object.keys(statusUpdate).length) {
+        const updated = await paymentsService.update(
+          paymentId,
+          statusUpdate,
+          tenantId,
+        );
+        if (updated.status === STATUS.PAID) {
+          if (!wasPaid) {
+            await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
+          }
+          await grantAccess(updated);
+          const refreshed = await paymentsService.getById(updated.id, tenantId);
+          if (refreshed?.status === STATUS.PAID) {
+            await creditInstructorFromPayment(refreshed);
+          }
         }
       }
+    } catch (err) {
+      outcome = "error";
+      errorKind = "processing_exception";
+      logger.error("Failed to process Coinbase webhook", err);
     }
-  } catch (err) {
-    logger.error("Failed to process Coinbase webhook", err);
-  }
-  if (
-    process.env.NODE_ENV === "test" &&
-    statusUpdate.status === STATUS.PAID
-  ) {
-    const { grantAccess } = require("./paymentAccess");
-    if (typeof grantAccess === "function") {
-      await grantAccess(payment);
+    if (
+      process.env.NODE_ENV === "test" &&
+      statusUpdate.status === STATUS.PAID
+    ) {
+      const { grantAccess } = require("./paymentAccess");
+      if (typeof grantAccess === "function") {
+        await grantAccess(payment);
+      }
     }
+    res.json({ ok: true });
+  } finally {
+    finalizeMetrics();
   }
-  res.json({ ok: true });
 });

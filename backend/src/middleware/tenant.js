@@ -194,6 +194,7 @@ const requireRole =
   };
 
 const { can } = require("../services/entitlements");
+const metrics = require("../utils/metrics");
 
 /**
  * Entitlement guard using services/entitlements.can
@@ -208,13 +209,27 @@ const requireEntitlement = (action) => async (req, res, next) => {
       action,
     );
     if (!decision.allow) {
+      const reason = decision.reason || "entitlement_denied";
+      logger.warn?.("entitlement denied", {
+        action,
+        reason,
+        tenantId: req.tenant?.id,
+        userId: req.user?.id,
+        role: req.role,
+      });
+      metrics.increment("entitlement_denied_total", {
+        action,
+        reason,
+        role: req.role || "unknown",
+      });
       return res
         .status(403)
-        .json({ error: decision.reason || "entitlement_denied" });
+        .json({ error: reason });
     }
     return next();
   } catch (err) {
     logger.warn?.("entitlement check failed", { error: err.message, action });
+    metrics.increment("entitlement_check_error_total", { action });
     return res.status(500).json({ error: "entitlement_check_failed" });
   }
 };
