@@ -288,9 +288,12 @@ exports.updateAvatar = async (req, res) => {
     }
   }
 
-  await db("users")
-    .where({ id: existing.id })
-    .update({ avatar_url: filePath, updated_at: new Date() });
+  const updateData = { avatar_url: filePath, updated_at: new Date() };
+  if (req.tenant?.id) {
+    updateData.tenant_id = req.tenant.id;
+  }
+
+  await db("users").where({ id: existing.id }).update(updateData);
 
   res.json({ message: "Avatar updated", avatar_url: filePath });
 };

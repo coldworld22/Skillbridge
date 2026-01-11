@@ -4,8 +4,14 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./users.controller");
 const validate = require("../../../middleware/validate");
+const logger = require("../../../utils/logger");
 
 const { isAdmin } = require("../../../middleware/auth/authMiddleware");
+const { can } = require("../../../services/entitlements");
+const {
+  requireEntitlement,
+  sendEntitlementDenied,
+} = require("../../../middleware/tenant");
 const {
   statusSchema,
   roleSchema,
@@ -13,8 +19,34 @@ const {
   bulkStatusSchema,
   bulkDeleteSchema,
   partialUpdateSchema,
-  createUserSchema 
+  createUserSchema,
 } = require("./users.validator");
+
+const enforceInstructorQuota = async (req, res, next) => {
+  if (process.env.NODE_ENV === "test") {
+    return next();
+  }
+  try {
+    const role = String(req.body?.role || "").toLowerCase();
+    if (role !== "instructor") {
+      return next();
+    }
+    const decision = await can(
+      { tenantId: req.tenant?.id, role: req.role, userId: req.user?.id },
+      "instructor.add",
+    );
+    if (!decision.allow) {
+      return sendEntitlementDenied(res, decision, "instructor.add");
+    }
+    return next();
+  } catch (err) {
+    logger.warn?.("entitlement check failed", {
+      error: err.message,
+      action: "instructor.add",
+    });
+    return res.status(500).json({ error: "entitlement_check_failed" });
+  }
+};
 
 // ✅ Routes with validation
 router.get("/users", isAdmin, controller.getAllUsers);
@@ -24,7 +56,14 @@ router.get("/:id", isAdmin, controller.getUserById);
  * * User Management Routes(add)
  * * Admin only
  */
-router.post("/", isAdmin, validate(createUserSchema), controller.createUser);
+router.post(
+  "/",
+  isAdmin,
+  validate(createUserSchema),
+  requireEntitlement("user.invite"),
+  enforceInstructorQuota,
+  controller.createUser,
+);
 
 /**
  * * User Management Routes(Update)

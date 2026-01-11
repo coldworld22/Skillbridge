@@ -32,6 +32,9 @@ const {
 const paymentScheduleService = require("./paymentSchedule.service");
 const { markCouponRedeemed } = require("./helpers/coupon");
 const db = require("../../config/database");
+const { resolveUploadFilePath } = require("../../utils/uploads");
+const { subtractStorageUsage } = require("../../middleware/storage");
+const fs = require("fs");
 const resolveInvoicePath = (invoice) => {
   if (!invoice) return null;
   if (invoice.file_path) return invoice.file_path;
@@ -496,6 +499,25 @@ exports.updatePayment = catchAsync(async (req, res) => {
 });
 
 exports.deletePayment = catchAsync(async (req, res) => {
-  await service.delete(req.params.id, req.tenant?.id);
+  const tenantId = req.tenant?.id || null;
+  const payment = await service.getById(req.params.id, tenantId);
+  await service.delete(req.params.id, tenantId);
+
+  if (payment?.receipt_url && payment.receipt_url.includes("/uploads/")) {
+    const receiptPath = resolveUploadFilePath(payment.receipt_url);
+    if (receiptPath) {
+      try {
+        const stat = await fs.promises.stat(receiptPath);
+        await fs.promises.unlink(receiptPath);
+        if (tenantId && stat?.size) {
+          await subtractStorageUsage(tenantId, stat.size);
+        }
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          logger.warn("Failed to delete payment receipt", err.message);
+        }
+      }
+    }
+  }
   sendSuccess(res, null, "Payment deleted");
 });

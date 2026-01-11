@@ -66,10 +66,10 @@ router.post(
   ensureTenantMembership(),
   enforceTenantStatus(),
   isAdmin,
+  requireEntitlement("class.create"),
   upload,
   checkAndConsumeStorage(),
   validate(validator.create),
-  requireEntitlement("class.create"),
   controller.createClass,
 );
 router.get(
@@ -137,10 +137,10 @@ router.put(
   ensureTenantMembership(),
   enforceTenantStatus(),
   isAdmin,
+  requireEntitlement("class.update"),
   upload,
   checkAndConsumeStorage(),
   validate(validator.adminUpdate),
-  requireEntitlement("class.update"),
   controller.updateClass,
 );
 router.delete(
@@ -193,10 +193,10 @@ router.post(
   ensureTenantMembership(),
   enforceTenantStatus(),
   isInstructor,
+  requireEntitlement("class.create"),
   upload,
   checkAndConsumeStorage(),
   validate(validator.create),
-  requireEntitlement("class.create"),
   controller.createClass,
 );
 router.get(
