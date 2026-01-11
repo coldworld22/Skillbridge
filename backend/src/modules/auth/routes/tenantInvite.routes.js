@@ -9,25 +9,45 @@ const {
 } = require("../../../middleware/tenant");
 const AppError = require("../../../utils/AppError");
 const { sendMail } = require("../../../services/mailService");
+const { frontendBase } = require("../../../utils/frontend");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 
-const INVITE_EXPIRY_DAYS = Number.parseInt(
-  process.env.TENANT_INVITE_EXPIRY_DAYS || "7",
-  10,
-);
+router.post("/accept-token", async (req, res, next) => {
+  try {
+    const token = req.body?.token || req.query?.token;
+    if (!token) throw new AppError("Invite token is required", 400);
 
-const isInviteExpired = (membership) => {
-  if (!membership?.created_at || Number.isNaN(INVITE_EXPIRY_DAYS)) {
-    return false;
+    const membership = await db("tenant_memberships")
+      .where({ invite_token: token })
+      .first();
+    if (!membership) throw new AppError("Invite not found", 404);
+
+    if (membership.status === "active") {
+      return res.json({ message: "Already a member", data: membership });
+    }
+
+    const [updated] = await db("tenant_memberships")
+      .where({ id: membership.id })
+      .update({
+        status: "active",
+        invite_token: null,
+        updated_at: new Date(),
+      })
+      .returning("*");
+
+    const tenant = await db("tenants")
+      .where({ id: membership.tenant_id })
+      .first(["id", "name", "slug"]);
+
+    res.json({
+      message: "Membership activated",
+      data: { ...(updated || membership), tenant },
+    });
+  } catch (err) {
+    next(err);
   }
-  const createdAt = new Date(membership.created_at);
-  if (Number.isNaN(createdAt.getTime())) return false;
-  const expiresAt = new Date(
-    createdAt.getTime() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
-  );
-  return expiresAt < new Date();
-};
+});
 
 router.use(
   verifyToken,
@@ -68,6 +88,7 @@ router.post("/", async (req, res, next) => {
         .json({ message: "User already invited", data: existingMembership });
     }
 
+    const inviteToken = uuidv4();
     const payload = {
       id: uuidv4(),
       tenant_id: req.tenant.id,
@@ -75,6 +96,7 @@ router.post("/", async (req, res, next) => {
       role: role,
       status: "pending",
       invited_by: req.user.id,
+      invite_token: inviteToken,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -83,10 +105,11 @@ router.post("/", async (req, res, next) => {
       .returning("*");
 
     try {
+      const inviteLink = `${frontendBase}/auth/accept-invite?token=${inviteToken}`;
       await sendMail({
         to: normalizedEmail,
         subject: "You have been invited",
-        html: `<p>You have been invited to join ${req.tenant.slug || "our platform"}.</p>`,
+        html: `<p>You have been invited to join ${req.tenant.slug || "our platform"}.</p><p><a href="${inviteLink}">Accept invite</a></p>`,
       });
     } catch (_) {
       /* ignore mail errors */

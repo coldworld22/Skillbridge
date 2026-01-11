@@ -47,6 +47,7 @@ document ownership so the team knows who can update them.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Outbound mail settings for password reset, verification, and notifications. | Mailtrap, SES, or another SMTP provider |
 | `INSTALL_SETUP_SECRET` | Optional shared secret that the installer requires via the `X-Install-Setup-Secret` header. | random token |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Optional non-interactive credentials consumed by `install.sh`. Leave unset to enter them manually. | `admin@example.com`, `S3curePass!` |
+| `TENANT_DOMAIN_SEEDS` | JSON array of tenant domain mappings used by the seed and validation scripts. Each entry should include `domain` plus `tenant_id` or `tenant_slug`. | `[{"domain":"acme.example.com","tenant_slug":"acme","status":"verified"}]` |
 
 ### `backend/.env.production`
 

@@ -171,10 +171,20 @@ exports.logout = catchAsync(async (req, res) => {
  * @access Authenticated
  */
 exports.listMemberships = catchAsync(async (req, res) => {
-  const memberships = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: req.user.id });
-  res.json({ data: memberships });
+  const memberships = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": req.user.id });
+  res.json({
+    data: memberships,
+    currentTenantId: req.user?.current_tenant_id || null,
+  });
 });
 
 /**

@@ -266,6 +266,72 @@ $auth-text: $color-text-dark;
   text-align: center;
 }
 
+.membershipSection {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba($auth-brand, 0.25);
+  background: rgba($auth-input, 0.35);
+}
+
+.membershipTitle {
+  font-size: 0.85rem;
+  color: $auth-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.membershipList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.membershipItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba($auth-bg, 0.4);
+  color: $auth-text;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.membershipItem:hover {
+  border-color: rgba($auth-brand, 0.5);
+  background: rgba($auth-brand, 0.08);
+}
+
+.membershipActive {
+  border-color: rgba($auth-brand, 0.6);
+  background: rgba($auth-brand, 0.12);
+}
+
+.membershipInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.membershipName {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.membershipMeta {
+  font-size: 0.75rem;
+  color: $auth-muted;
+}
+
+.membershipRadio {
+  accent-color: $auth-brand;
+}
+
 .smallText {
   font-size: 0.85rem;
   color: color.scale($auth-muted, $lightness: -18%);
