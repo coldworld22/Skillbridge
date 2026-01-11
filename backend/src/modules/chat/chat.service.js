@@ -4,14 +4,33 @@ const notificationService = require("../notifications/notifications.service");
 const userModel = require("../users/user.model");
 const messageService = require("../messages/messages.service");
 
-exports.searchUsers = async (currentUserId, term) => {
+let messageTenantColumnPromise;
+const hasMessageTenantColumn = async () => {
+  if (!messageTenantColumnPromise) {
+    messageTenantColumnPromise = db.schema.hasColumn("messages", "tenant_id");
+  }
+  return messageTenantColumnPromise;
+};
+
+const applyTenantScope = (query, tenantId, hasTenantId, alias = "messages") => {
+  if (tenantId && hasTenantId) {
+    query.andWhere(`${alias}.tenant_id`, tenantId);
+  }
+  return query;
+};
+
+exports.searchUsers = async (currentUserId, term, tenantId = null) => {
+  const hasTenantId = await hasMessageTenantColumn();
   const subquery = db("messages")
     .select("sender_id")
     .count("id as count")
     .where({ receiver_id: currentUserId, read: false })
+    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, "messages"))
     .groupBy("sender_id")
     .as("unread");
 
+  const tenantFilter = hasTenantId && tenantId ? " AND tenant_id = ?" : "";
+  const tenantParams = hasTenantId && tenantId ? [tenantId] : [];
   const lastMessageSub = db.raw(
     `(
       SELECT DISTINCT ON (other_user)
@@ -24,11 +43,11 @@ exports.searchUsers = async (currentUserId, term) => {
           message,
           sent_at
         FROM messages
-        WHERE sender_id = ? OR receiver_id = ?
+        WHERE (sender_id = ? OR receiver_id = ?)${tenantFilter}
       ) m
       ORDER BY other_user, sent_at DESC
     ) as last_msg`,
-    [currentUserId, currentUserId, currentUserId]
+    [currentUserId, currentUserId, currentUserId, ...tenantParams]
   );
 
   return db("users")
@@ -55,17 +74,30 @@ exports.searchUsers = async (currentUserId, term) => {
           .orWhere("users.phone", "ilike", t);
       }
     })
+    .modify((query) => {
+      if (tenantId) {
+        query.whereExists(function () {
+          this.select(1)
+            .from("tenant_memberships as tm")
+            .whereRaw("tm.user_id = users.id")
+            .andWhere("tm.tenant_id", tenantId)
+            .andWhere("tm.status", "active");
+        });
+      }
+    })
     .whereNot("users.id", currentUserId)
     .whereNotIn("users.role", ["Admin", "SuperAdmin"])
     .limit(20);
 };
 
-exports.getConversation = async (userId, otherId) => {
+exports.getConversation = async (userId, otherId, tenantId = null) => {
+  const hasTenantId = await hasMessageTenantColumn();
   await db("messages")
     .where({ sender_id: otherId, receiver_id: userId, read: false })
+    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, "messages"))
     .update({ read: true, read_at: new Date() });
 
-  return db({ m: "messages" })
+  const convoQuery = db({ m: "messages" })
     .leftJoin({ r: "messages" }, "m.reply_to_id", "r.id")
     .select(
       "m.*",
@@ -78,6 +110,8 @@ exports.getConversation = async (userId, otherId) => {
         .orWhere({ "m.sender_id": otherId, "m.receiver_id": userId });
     })
     .orderBy("m.sent_at");
+  applyTenantScope(convoQuery, tenantId, hasTenantId, "m");
+  return convoQuery;
 };
 
 exports.sendMessage = async ({
@@ -87,6 +121,7 @@ exports.sendMessage = async ({
   file_url,
   audio_url,
   reply_to_id,
+  tenant_id,
 }) =>
   messageService.createMessage({
     sender_id,
@@ -95,29 +130,35 @@ exports.sendMessage = async ({
     file_url,
     audio_url,
     reply_to_id,
+    tenant_id,
   });
 
-exports.deleteMessage = async (userId, id) => {
+exports.deleteMessage = async (userId, id, tenantId = null) => {
+  const hasTenantId = await hasMessageTenantColumn();
   const [row] = await db("messages")
     .where({ id })
     .andWhere(function () {
       this.where({ sender_id: userId }).orWhere({ receiver_id: userId });
     })
+    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, "messages"))
     .del()
     .returning("*");
   return row;
 };
 
-exports.togglePin = async (userId, id) => {
+exports.togglePin = async (userId, id, tenantId = null) => {
+  const hasTenantId = await hasMessageTenantColumn();
   const msg = await db("messages")
     .where({ id })
     .andWhere(function () {
       this.where({ sender_id: userId }).orWhere({ receiver_id: userId });
     })
+    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, "messages"))
     .first();
   if (!msg) return null;
   const [updated] = await db("messages")
     .where({ id })
+    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, "messages"))
     .update({ pinned: !msg.pinned })
     .returning("*");
   return updated;

@@ -153,9 +153,11 @@ exports.updateAvatar = async (req, res) => {
     }
 
     const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
-    await db("users")
-      .where({ id: req.user.id })
-      .update({ avatar_url: avatarUrl });
+    const updateData = { avatar_url: avatarUrl };
+    if (tenantId) {
+      updateData.tenant_id = tenantId;
+    }
+    await db("users").where({ id: req.user.id }).update(updateData);
     res.json({ avatar_url: avatarUrl });
   } catch (error) {
     logger.error(error);

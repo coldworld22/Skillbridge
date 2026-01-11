@@ -127,4 +127,5 @@ module.exports = {
   sumUploadedBytes,
   getStorageUsage,
   addStorageUsage,
+  subtractStorageUsage,
 };
