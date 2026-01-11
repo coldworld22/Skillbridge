@@ -154,6 +154,10 @@ export const ADMIN_PERMISSIONS = Object.freeze({
     VIEW: "view_third_party_config",
     MANAGE: "manage_third_party_config",
   },
+  TENANT_DOMAINS: {
+    VIEW: "tenant.domain.manage",
+    MANAGE: "tenant.domain.manage",
+  },
   COMMUNITY_GROUPS: {
     VIEW: "view_groups",
     MANAGE: "manage_groups",
@@ -163,4 +167,3 @@ export const ADMIN_PERMISSIONS = Object.freeze({
 export const ADMIN_PERMISSION_LIST = Object.freeze(
   Object.values(ADMIN_PERMISSIONS).flatMap((entry) => Object.values(entry))
 );
-

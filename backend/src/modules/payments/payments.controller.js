@@ -32,6 +32,9 @@ const {
 const paymentScheduleService = require("./paymentSchedule.service");
 const { markCouponRedeemed } = require("./helpers/coupon");
 const db = require("../../config/database");
+const { resolveUploadFilePath } = require("../../utils/uploads");
+const { subtractStorageUsage } = require("../../middleware/storage");
+const fs = require("fs");
 const resolveInvoicePath = (invoice) => {
   if (!invoice) return null;
   if (invoice.file_path) return invoice.file_path;
@@ -58,11 +61,13 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   const user_id = req.user.id;
+  const tenant_id = req.tenant?.id || null;
 
   const allowStatusOverride =
     req.user?.role && ["admin", "superadmin"].includes(req.user.role);
   const validation = await validatePaymentData(req.body, user_id, {
     allowStatusOverride,
+    tenantId,
   });
   const {
     method,
@@ -102,6 +107,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     status: statusToUse,
     reference_id: verifiedReference,
     receipt_url,
+    tenant_id,
     platform_fee,
     instructor_amount,
     paid_at: statusToUse === STATUS.PAID ? new Date() : null,
@@ -136,7 +142,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    await markCouponRedeemed(payment.coupon_id);
+    await markCouponRedeemed(payment.coupon_id, tenantId);
   }
 
   let user;
@@ -208,10 +214,15 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-        await creditInstructorWallet(item_type, item_id, instructor_amount);
+        await creditInstructorWallet(
+          item_type,
+          item_id,
+          instructor_amount,
+          req.tenant?.id,
+        );
         await handleEnrollment(item_type, user_id, item_id);
         await clearCartItem(user_id, item_id, item_type);
-        await markCouponRedeemed(payment.coupon_id);
+        await markCouponRedeemed(payment.coupon_id, tenantId);
       }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {
@@ -456,13 +467,13 @@ exports.updatePayment = catchAsync(async (req, res) => {
               }
               payload.attachments = [attachment];
             }
-            await mailService.sendMail(payload);
-          }
-        } catch (err) {
-          logger.error("Failed to generate invoice:", err);
-        }
-        await creditInstructorFromPayment(payment);
-        await markCouponRedeemed(payment.coupon_id);
+        await mailService.sendMail(payload);
+      }
+    } catch (err) {
+      logger.error("Failed to generate invoice:", err);
+    }
+        await creditInstructorFromPayment(payment, req.tenant?.id);
+        await markCouponRedeemed(payment.coupon_id, tenantId);
       } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;
         subject = "Payment Rejected";
@@ -488,6 +499,25 @@ exports.updatePayment = catchAsync(async (req, res) => {
 });
 
 exports.deletePayment = catchAsync(async (req, res) => {
-  await service.delete(req.params.id, req.tenant?.id);
+  const tenantId = req.tenant?.id || null;
+  const payment = await service.getById(req.params.id, tenantId);
+  await service.delete(req.params.id, tenantId);
+
+  if (payment?.receipt_url && payment.receipt_url.includes("/uploads/")) {
+    const receiptPath = resolveUploadFilePath(payment.receipt_url);
+    if (receiptPath) {
+      try {
+        const stat = await fs.promises.stat(receiptPath);
+        await fs.promises.unlink(receiptPath);
+        if (tenantId && stat?.size) {
+          await subtractStorageUsage(tenantId, stat.size);
+        }
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          logger.warn("Failed to delete payment receipt", err.message);
+        }
+      }
+    }
+  }
   sendSuccess(res, null, "Payment deleted");
 });

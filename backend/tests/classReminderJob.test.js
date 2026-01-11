@@ -2,8 +2,8 @@ jest.mock('../src/modules/classes/class.service', () => ({
   getClassesStartingBetween: jest.fn(),
 }));
 
-jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
-  getByClass: jest.fn(),
+jest.mock('../src/modules/classes/notifications/classNotification.service', () => ({
+  getSubscribersWithContact: jest.fn(),
 }));
 
 jest.mock('../src/services/smsService', () => ({
@@ -15,7 +15,7 @@ jest.mock('../src/utils/email', () => ({
 }));
 
 const classService = require('../src/modules/classes/class.service');
-const enrollmentService = require('../src/modules/classes/enrollments/classEnrollment.service');
+const classNotificationService = require('../src/modules/classes/notifications/classNotification.service');
 const smsService = require('../src/services/smsService');
 const { sendClassReminderEmail } = require('../src/utils/email');
 const startClassReminderJob = require('../src/jobs/classReminderJob');
@@ -37,13 +37,13 @@ describe('classReminderJob', () => {
     const cls = { id: 1, title: 'Math', start_date: '2023-01-01T00:00:00Z' };
     const student = { email: 's@example.com', phone: '123', locale: 'en-US' };
     classService.getClassesStartingBetween.mockResolvedValue([cls]);
-    enrollmentService.getByClass.mockResolvedValue([student]);
+    classNotificationService.getSubscribersWithContact.mockResolvedValue([student]);
 
     startClassReminderJob();
     await new Promise(setImmediate);
 
     expect(classService.getClassesStartingBetween).toHaveBeenCalled();
-    expect(enrollmentService.getByClass).toHaveBeenCalledWith(cls.id);
+    expect(classNotificationService.getSubscribersWithContact).toHaveBeenCalledWith(cls.id);
     expect(smsService.sendSMS).toHaveBeenCalledWith({
       to: '123',
       text: expect.stringContaining('Reminder'),
@@ -56,4 +56,3 @@ describe('classReminderJob', () => {
     );
   });
 });
-

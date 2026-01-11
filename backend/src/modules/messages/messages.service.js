@@ -11,6 +11,52 @@ const MESSAGE_RETENTION_MS =
   60 *
   1000;
 
+let messageColumnInfoPromise;
+const getMessageColumnInfo = async () => {
+  if (!messageColumnInfoPromise) {
+    messageColumnInfoPromise = Promise.all([
+      db.schema.hasColumn("messages", "tenant_id"),
+      db.schema.hasTable("tenant_memberships"),
+      db.schema.hasTable("tenants"),
+    ]).then(([hasTenantId, hasMemberships, hasTenants]) => ({
+      hasTenantId,
+      hasMemberships,
+      hasTenants,
+    }));
+  }
+  return messageColumnInfoPromise;
+};
+
+const resolveTenantId = async ({ tenant_id, sender_id, receiver_id }) => {
+  if (tenant_id) return tenant_id;
+  const { hasMemberships, hasTenants } = await getMessageColumnInfo();
+  if (hasMemberships) {
+    const senderMembership = await db("tenant_memberships")
+      .select("tenant_id")
+      .where({ user_id: sender_id })
+      .orderBy("created_at", "asc")
+      .first();
+    if (senderMembership?.tenant_id) return senderMembership.tenant_id;
+
+    const receiverMembership = await db("tenant_memberships")
+      .select("tenant_id")
+      .where({ user_id: receiver_id })
+      .orderBy("created_at", "asc")
+      .first();
+    if (receiverMembership?.tenant_id) return receiverMembership.tenant_id;
+  }
+
+  if (hasTenants) {
+    const fallback = await db("tenants")
+      .select("id")
+      .orderBy("created_at", "asc")
+      .first();
+    return fallback?.id || null;
+  }
+
+  return null;
+};
+
 exports.createMessage = async (
   {
     sender_id,
@@ -21,6 +67,7 @@ exports.createMessage = async (
     file_url = null,
     audio_url = null,
     reply_to_id = null,
+    tenant_id = null,
   },
   trx = null,
   emit = true,
@@ -67,6 +114,25 @@ exports.createMessage = async (
     audio_url,
     reply_to_id,
   };
+
+  const { hasTenantId } = await getMessageColumnInfo();
+  if (hasTenantId) {
+    payload.tenant_id = await resolveTenantId({
+      tenant_id,
+      sender_id,
+      receiver_id,
+    });
+    if (!payload.tenant_id) {
+      logger.warn("Skipping message: tenant_id missing for scoped table", {
+        sender_id,
+        receiver_id,
+        type,
+      });
+      return null;
+    }
+  } else if (payload.tenant_id !== undefined) {
+    delete payload.tenant_id;
+  }
 
   const run = async (transaction) => {
     const [row] = await transaction("messages")

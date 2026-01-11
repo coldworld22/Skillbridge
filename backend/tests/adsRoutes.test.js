@@ -18,6 +18,10 @@ jest.mock('../src/modules/plans/instructor.helper', () => ({
   getActiveInstructorPlan: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('../src/modules/plans/subscription.helper', () => ({
+  getActiveSubscriptionForPlan: jest.fn().mockResolvedValue({ subscription_id: 'sub1' }),
+}));
+
 jest.mock('../src/modules/ads/ads.service', () => ({
   getAds: jest.fn(),
   createAd: jest.fn(),
@@ -48,6 +52,22 @@ jest.mock('../src/utils/email', () => ({
   sendAdSubmissionEmail: jest.fn(),
   sendAdApprovalEmail: jest.fn(),
   sendNewAdAdminEmail: jest.fn(),
+}));
+
+jest.mock('../src/middleware/storage', () => ({
+  checkAndConsumeStorage: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/modules/ads/adsUploadMiddleware', () => (req, _res, next) => next());
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => {
+    req.tenant = { id: 'tenant-1' };
+    next();
+  },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => {

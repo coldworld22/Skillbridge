@@ -136,6 +136,7 @@ beforeAll(async () => {
     table.float('price');
     table.string('language');
     table.string('instructor_id');
+    table.string('tenant_id');
     table.timestamp('created_at');
     table.string('cover_image_url');
     table.string('pdf_url');
@@ -147,6 +148,7 @@ beforeAll(async () => {
     table.uuid('student_id');
     table.integer('book_id');
     table.integer('quantity').defaultTo(1);
+    table.string('tenant_id');
   });
 
   await db.schema.createTable('categories', (table) => {
@@ -160,6 +162,7 @@ beforeAll(async () => {
     table.integer('book_id');
     table.decimal('price_paid').notNullable().defaultTo(0);
     table.timestamp('purchased_at');
+    table.string('tenant_id');
   });
 
   await db.schema.createTable('payment_methods_config', (table) => {
@@ -188,6 +191,7 @@ beforeAll(async () => {
     table.decimal('platform_fee', 10, 2).defaultTo(0);
     table.decimal('instructor_amount', 10, 2).defaultTo(0);
     table.timestamp('paid_at');
+    table.string('tenant_id');
   });
 
   const books = [
@@ -198,6 +202,7 @@ beforeAll(async () => {
       short_description: 'ShortDesc1',
       detailed_description: 'DetailedDesc1',
       instructor_id: '1',
+      tenant_id: 'tenant-1',
       created_at: new Date('2023-01-01'),
       price: 10,
       status: 'active',
@@ -210,6 +215,7 @@ beforeAll(async () => {
       short_description: 'ShortMatch',
       detailed_description: 'DetailedDesc2',
       instructor_id: '2',
+      tenant_id: 'tenant-1',
       created_at: new Date('2023-01-02'),
       price: 15,
       status: 'active',
@@ -222,6 +228,7 @@ beforeAll(async () => {
       short_description: 'ShortDesc3',
       detailed_description: 'DetailedMatch',
       instructor_id: '1',
+      tenant_id: 'tenant-1',
       created_at: new Date('2023-01-03'),
       price: 20,
       status: 'active',
@@ -323,6 +330,7 @@ describe('checkout', () => {
       short_description: 'ShortDesc4',
       detailed_description: 'DetailedDesc4',
       instructor_id: '1',
+      tenant_id: 'tenant-1',
       created_at: new Date('2023-01-04'),
       price: 25,
       status: 'inactive',

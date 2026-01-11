@@ -62,6 +62,8 @@ const ensureInstructorScope = async (user, payload, existingCoupon = null) => {
 };
 
 exports.createCoupon = catchAsync(async (req, res) => {
+  const tenantId = req.tenant?.id;
+  if (!tenantId) throw new AppError("Tenant required", 400);
   const instructor = isInstructorUser(req.user);
   const payload = {
     id: uuidv4(),
@@ -91,7 +93,7 @@ exports.createCoupon = catchAsync(async (req, res) => {
   }
 
   try {
-    const coupon = await service.createCoupon(payload);
+    const coupon = await service.createCoupon(payload, tenantId);
     sendSuccess(res, coupon, "Coupon created");
   } catch (err) {
     if (err?.code === "23505") {
@@ -104,7 +106,7 @@ exports.createCoupon = catchAsync(async (req, res) => {
 exports.getCoupons = catchAsync(async (req, res) => {
   const instructor = isInstructorUser(req.user);
   const coupons = await service.getCoupons(
-    instructor ? { instructorId: req.user.id } : {}
+    instructor ? { instructorId: req.user.id, tenantId: req.tenant?.id } : { tenantId: req.tenant?.id }
   );
   sendSuccess(res, coupons);
 });
@@ -113,6 +115,7 @@ exports.getCoupon = catchAsync(async (req, res) => {
   const instructor = isInstructorUser(req.user);
   const coupon = await service.getCouponByIdScoped(req.params.id, {
     instructorId: instructor ? req.user.id : undefined,
+    tenantId: req.tenant?.id,
   });
   if (!coupon) throw new AppError("Coupon not found", 404);
   sendSuccess(res, coupon);
@@ -120,7 +123,9 @@ exports.getCoupon = catchAsync(async (req, res) => {
 
 exports.updateCoupon = catchAsync(async (req, res) => {
   const instructor = isInstructorUser(req.user);
-  const scope = instructor ? { instructorId: req.user.id } : {};
+  const scope = instructor
+    ? { instructorId: req.user.id, tenantId: req.tenant?.id }
+    : { tenantId: req.tenant?.id };
   const existing = await service.getCouponByIdScoped(req.params.id, scope);
   if (!existing) throw new AppError("Coupon not found", 404);
 
@@ -182,7 +187,9 @@ exports.updateCoupon = catchAsync(async (req, res) => {
 
 exports.deleteCoupon = catchAsync(async (req, res) => {
   const instructor = isInstructorUser(req.user);
-  const scope = instructor ? { instructorId: req.user.id } : {};
+  const scope = instructor
+    ? { instructorId: req.user.id, tenantId: req.tenant?.id }
+    : { tenantId: req.tenant?.id };
 
   const deleted = await service.deleteCoupon(req.params.id, scope);
   if (!deleted) {
@@ -201,7 +208,9 @@ exports.getInstructorTargets = catchAsync(async (req, res) => {
 
 exports.validateCode = catchAsync(async (req, res) => {
   const { code, item_type, item_id } = req.params;
-  const coupon = await service.findByCode(code);
+  const tenantId = req.tenant?.id;
+  if (!tenantId) throw new AppError("tenant_not_set", 400);
+  const coupon = await service.findByCode(code, tenantId);
   if (!coupon) throw new AppError("Invalid coupon", 404);
   if (item_type && coupon.applies_to && coupon.applies_to !== item_type) {
     throw new AppError("Coupon not valid for this item type", 400);

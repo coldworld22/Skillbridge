@@ -44,13 +44,16 @@ exports.getSummary = catchAsync(async (req, res) => {
   let minimumWithdrawalAmount = 0;
 
   try {
-    wallet = await walletService.getByInstructor(instructorId);
+    wallet = await walletService.getByInstructor(instructorId, req.tenant?.id);
   } catch (err) {
     logger.warn("Wallet lookup failed for instructor summary:", err.message);
   }
 
   try {
-    payouts = await payoutsService.getByInstructor(instructorId);
+    payouts = await payoutsService.getByInstructor(
+      instructorId,
+      req.tenant?.id,
+    );
   } catch (err) {
     logger.warn("Payout history lookup failed for instructor summary:", err.message);
   }

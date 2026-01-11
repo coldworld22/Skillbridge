@@ -19,6 +19,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
+const appConfigService = require("../../appConfig/appConfig.service");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -63,20 +64,96 @@ function cleanupFailedAttempts() {
 
 setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
 
+async function getRegistrationGuardrails() {
+  const settings = (await appConfigService.getSettings()) || {};
+  return {
+    inviteOnly: Boolean(settings.invite_only ?? settings.inviteOnly),
+  };
+}
+
+async function ensureInviteOrMembership(userId) {
+  return db("tenant_memberships")
+    .where({ user_id: userId })
+    .whereIn("status", ["pending", "active"])
+    .first();
+}
+
 /**
  * Register a new user
  */
 exports.registerUser = async (data) => {
   // Check duplicate email
+  const { inviteOnly } = await getRegistrationGuardrails();
   const existingEmail = await userModel.findByEmail(data.email);
-  if (existingEmail) throw new AppError("Email is already in use", 409);
+  if (existingEmail) {
+    if (!inviteOnly) {
+      throw new AppError("Email is already in use", 409);
+    }
+
+    const membership = await ensureInviteOrMembership(existingEmail.id);
+    if (!membership) {
+      throw new AppError(
+        "Registration is invite-only. Please contact your administrator.",
+        403,
+      );
+    }
+
+    if (existingEmail.password_hash) {
+      throw new AppError("Email is already in use", 409);
+    }
+
+    if (data.phone) {
+      const existingPhone = await userModel.findByPhone(data.phone);
+      if (existingPhone && existingPhone.id !== existingEmail.id) {
+        throw new AppError("Phone number is already in use", 409);
+      }
+    }
+
+    const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
+    const roleName = existingEmail.role || data.role || "Student";
+    const [updatedUser] = await userModel.updateUser(existingEmail.id, {
+      full_name: data.full_name,
+      email: data.email,
+      phone: data.phone || null,
+      password_hash: hashed,
+      role: roleName,
+      status: existingEmail.status || "pending",
+      is_email_verified: existingEmail.is_email_verified || false,
+      is_phone_verified: existingEmail.is_phone_verified || false,
+      profile_complete: false,
+      updated_at: new Date(),
+    });
+
+    const roleRow = await db("roles").where({ name: roleName }).first();
+    if (roleRow) {
+      await db("user_roles")
+        .insert({ user_id: existingEmail.id, role_id: roleRow.id })
+        .onConflict(["user_id", "role_id"])
+        .ignore();
+    }
+
+    const roles = await userModel.getUserRoles(existingEmail.id);
+    const permissions =
+      typeof userModel.getUserPermissions === "function"
+        ? await userModel.getUserPermissions(existingEmail.id)
+        : [];
+    const safeUser = sanitizeUserUtil(updatedUser || existingEmail);
+    return { user: { ...safeUser, roles, permissions } };
+  }
 
   // ✅ Check duplicate phone
-  const existingPhone = await userModel.findByPhone(data.phone);
   if (data.phone) {
     const existingPhone = await userModel.findByPhone(data.phone);
-    if (existingPhone)
+    if (existingPhone) {
       throw new AppError("Phone number is already in use", 409);
+    }
+  }
+
+  if (inviteOnly) {
+    throw new AppError(
+      "Registration is invite-only. Please contact your administrator.",
+      403,
+    );
   }
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
@@ -167,7 +244,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password, ip }) => {
+exports.loginUser = async ({ email, password, ip, tenant_id }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -250,17 +327,43 @@ exports.loginUser = async ({ email, password, ip }) => {
       ? await userModel.getUserPermissions(user.id)
       : [];
   const tokenRoles = roles.length ? roles : [user.role];
-  const memberships = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: user.id, status: "active" });
+  const membershipRows = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": user.id, "tm.status": "active" });
+  const memberships = Array.isArray(membershipRows) ? membershipRows : [];
+  if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
+    throw new AppError(
+      "No active tenant membership found. Please accept an invite or contact your admin.",
+      403,
+    );
+  }
+
+  const requestedTenant = tenant_id || null;
+  const membershipTenantIds = new Set(memberships.map((m) => m.tenant_id));
+  const currentTenantId =
+    (requestedTenant && membershipTenantIds.has(requestedTenant)
+      ? requestedTenant
+      : null) || memberships[0]?.tenant_id || null;
   const accessToken = generateAccessToken({
     id: user.id,
     role: tokenRoles[0],
     roles: tokenRoles,
     platform_role: user.platform_role || "none",
     memberships,
+    current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    user.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -275,6 +378,8 @@ exports.loginUser = async ({ email, password, ip }) => {
     accessToken,
     refreshToken,
     user: { ...safeUser, roles, permissions },
+    memberships,
+    currentTenantId,
     onboarding: {
       profile_complete: user.profile_complete,
       is_email_verified: user.is_email_verified,
@@ -306,9 +411,12 @@ function generateRefreshToken(payload, jti) {
   });
 }
 
-async function issueRefreshToken(userId, role) {
+async function issueRefreshToken(userId, role, currentTenantId = null) {
   const jti = uuidv4();
-  const token = generateRefreshToken({ id: userId, role }, jti);
+  const token = generateRefreshToken(
+    { id: userId, role, current_tenant_id: currentTenantId },
+    jti,
+  );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await db("refresh_tokens").insert({
@@ -347,17 +455,31 @@ exports.rotateRefreshToken = async (token) => {
   const roles = await userModel.getUserRoles(decoded.id);
   const tokenRoles = roles.length ? roles : [decoded.role];
   const user = await db("users").where({ id: decoded.id }).first();
-  const memberships = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: decoded.id, status: "active" });
+  const memberships = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": decoded.id, "tm.status": "active" });
+  const currentTenantId =
+    decoded.current_tenant_id || memberships[0]?.tenant_id || null;
   const accessToken = generateAccessToken({
     id: decoded.id,
     role: tokenRoles[0],
     roles: tokenRoles,
     platform_role: user?.platform_role || "none",
     memberships,
+    current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(decoded.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    decoded.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
   return { decoded, refreshToken, accessToken };
 };
 

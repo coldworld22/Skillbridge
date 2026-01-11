@@ -74,9 +74,14 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new AppError('Amount must be a positive number', 400);
   }
+  const tenantId = req.tenant?.id;
+  if (!tenantId) {
+    throw new AppError('Tenant context required', 400);
+  }
   const coupon = await loadAndValidateCoupon(coupon_id, {
     itemType: item_type,
     itemId: item_id,
+    tenantId,
   });
   const wantsInstallments = Boolean(allow_installments);
   const requestedInstallments = Number(installments);
@@ -199,11 +204,12 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   if (!orderId || !paymentId) {
     throw new AppError('Missing order information', 400);
   }
-  const payment = await paymentsService.getById(paymentId);
+  const tenantId = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment || payment.reference_id !== orderId) {
     throw new AppError('Payment not found', 404);
   }
-  const tenantId = payment.tenant_id || null;
+  const resolvedTenantId = payment.tenant_id || tenantId || null;
   const wasPaid = payment.status === STATUS.PAID;
   const capture = await paypalService.captureOrder(orderId);
   const info = capture.purchase_units?.[0]?.payments?.captures?.[0];
@@ -214,17 +220,17 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   } else {
     statusUpdate.status = STATUS.REJECTED;
   }
-  const updated = await paymentsService.update(paymentId, statusUpdate, tenantId);
+  const updated = await paymentsService.update(paymentId, statusUpdate, resolvedTenantId);
 
   if (!wasPaid && updated.status === STATUS.PAID) {
-    await markCouponRedeemed(updated.coupon_id);
+    await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
   }
 
   if (updated.status === STATUS.PAID) {
     await grantAccess(updated);
-    const refreshed = await paymentsService.getById(updated.id, tenantId);
+    const refreshed = await paymentsService.getById(updated.id, resolvedTenantId);
     if (refreshed?.status === STATUS.PAID) {
-      await creditInstructorFromPayment(refreshed);
+      await creditInstructorFromPayment(refreshed, req.tenant?.id);
     }
   }
 

@@ -50,6 +50,7 @@ const determineClassInstallmentDueDate = (cls) => {
 };
 
 async function validatePaymentData(body, userId, options = {}) {
+  const tenantId = options?.tenantId || null;
   const allowStatusOverride = Boolean(options?.allowStatusOverride);
   const {
     method_id,
@@ -98,7 +99,7 @@ async function validatePaymentData(body, userId, options = {}) {
   }
 
   let verifiedAmount = numericAmount;
-  const verifiedCurrency = enforceBaseCurrency(currency);
+  let verifiedCurrency = enforceBaseCurrency(currency);
   let finalStatus = numericAmount === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT;
   if (allowStatusOverride && status && method.type !== "stripe") {
     finalStatus = status;
@@ -158,7 +159,7 @@ async function validatePaymentData(body, userId, options = {}) {
 
   let coupon = null;
   if (coupon_id) {
-    coupon = await couponService.getCouponById(coupon_id);
+    coupon = await couponService.getCouponById(coupon_id, tenantId);
     if (!coupon) throw new AppError("Invalid coupon", 400);
     if (coupon.applies_to && coupon.applies_to !== item_type) {
       throw new AppError("Coupon not valid for this item type", 400);

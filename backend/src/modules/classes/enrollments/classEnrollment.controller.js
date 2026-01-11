@@ -15,6 +15,7 @@ const { creditInstructorSubscription } = require("../../payments/helpers/wallet"
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
   const user_id = req.user.id;
+  const tenantId = req.tenant?.id;
   let result;
 
   await db.transaction(async (trx) => {
@@ -126,6 +127,7 @@ exports.enroll = catchAsync(async (req, res) => {
         status: paymentsService.STATUS.PAID,
         paid_at: new Date(),
         amount: 0,
+        tenant_id: tenantId || cls.tenant_id,
       });
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.
@@ -146,6 +148,7 @@ exports.enroll = catchAsync(async (req, res) => {
         status: paymentsService.STATUS.PAID,
         paid_at: new Date(),
         amount: 0,
+        tenant_id: tenantId || cls.tenant_id,
       });
       await creditInstructorSubscription(
         "class",
@@ -159,6 +162,7 @@ exports.enroll = catchAsync(async (req, res) => {
           user_id,
           item_id: classItemId,
           item_type: "class",
+          tenant_id: tenantId || cls.tenant_id,
           status: paymentsService.STATUS.PAID,
         })
         .first();

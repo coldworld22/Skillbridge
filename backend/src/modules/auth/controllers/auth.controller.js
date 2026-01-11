@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const socialLoginConfigService = require("../../socialLoginConfig/socialLoginConfig.service");
 const recaptchaService = require("../../recaptcha/recaptcha.service");
 const authMiddleware = require("../../../middleware/auth/authMiddleware");
+const db = require("../../../config/database");
 
 // 🔧 Cookie options used in login and logout
 const {
@@ -79,7 +80,7 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError("Failed reCAPTCHA verification", 400);
     }
   }
-  const { accessToken, refreshToken, user, onboarding } =
+  const { accessToken, refreshToken, user, onboarding, memberships, currentTenantId } =
     await authService.loginUser({
       ...req.body,
       ip: req.ip,
@@ -88,7 +89,14 @@ exports.login = catchAsync(async (req, res) => {
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
     .cookie("token", accessToken, accessCookieOptions)
-    .json({ message: "Login successful", accessToken, user, onboarding });
+    .json({
+      message: "Login successful",
+      accessToken,
+      user,
+      memberships,
+      currentTenantId,
+      onboarding,
+    });
 });
 
 /**
@@ -156,6 +164,59 @@ exports.logout = catchAsync(async (req, res) => {
     .clearCookie("csrfToken", csrfCookieOptions)
     .clearCookie("token", accessCookieOptions)
     .json({ message: "Logged out successfully" });
+});
+
+/**
+ * @desc List tenant memberships for current user
+ * @access Authenticated
+ */
+exports.listMemberships = catchAsync(async (req, res) => {
+  const memberships = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": req.user.id });
+  res.json({
+    data: memberships,
+    currentTenantId: req.user?.current_tenant_id || null,
+  });
+});
+
+/**
+ * @desc Switch active tenant; returns a new access token scoped to that tenant
+ * @access Authenticated
+ */
+exports.switchTenant = catchAsync(async (req, res) => {
+  const { tenant_id } = req.body || {};
+  if (!tenant_id) {
+    throw new AppError("tenant_id is required", 400);
+  }
+  const memberships =
+    req.user?.memberships ||
+    (await db("tenant_memberships")
+      .select("tenant_id", "role", "status")
+      .where({ user_id: req.user.id, status: "active" }));
+  const membershipTenantIds = new Set(memberships.map((m) => m.tenant_id));
+  if (!membershipTenantIds.has(tenant_id)) {
+    throw new AppError("Tenant membership not found", 403);
+  }
+  const payload = {
+    id: req.user.id,
+    role: req.user.role,
+    roles: req.user.roles || [req.user.role],
+    platform_role: req.user.platform_role || "none",
+    memberships,
+    current_tenant_id: tenant_id,
+  };
+  const accessToken = authService.generateAccessToken(payload);
+  res
+    .cookie("token", accessToken, accessCookieOptions)
+    .json({ message: "Tenant switched", currentTenantId: tenant_id, accessToken });
 });
 
 /**

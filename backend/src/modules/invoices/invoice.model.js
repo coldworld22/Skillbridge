@@ -18,11 +18,8 @@ const applyTenantScope = async (query, tenantId) => {
 
 exports.create = async (data, tenantId = null) => {
   const payload = { ...data };
-  const hasTenant = await hasTenantColumn();
-  if (tenantId && hasTenant) {
+  if (tenantId && (await hasTenantColumn())) {
     payload.tenant_id = tenantId;
-  } else if (!hasTenant && payload.tenant_id !== undefined) {
-    delete payload.tenant_id;
   }
   const [row] = await db("invoices").insert(payload).returning("*");
   return row;

@@ -4,24 +4,43 @@ const jwt = require('jsonwebtoken');
 
 // Mock database
 jest.mock('../src/config/database', () => {
+  const chain = {
+    where: jest.fn().mockReturnThis(),
+    first: jest.fn().mockResolvedValue(null),
+    update: jest.fn().mockReturnThis(),
+    returning: jest.fn().mockResolvedValue([]),
+    insert: jest.fn().mockResolvedValue([]),
+    select: jest.fn().mockReturnThis(),
+  };
   const mockDb = jest.fn((table) => {
     if (table === 'roles') {
-      return { where: jest.fn().mockReturnThis(), first: jest.fn().mockResolvedValue({ id: 1 }) };
+      return {
+        ...chain,
+        first: jest.fn().mockResolvedValue({ id: 1 }),
+      };
     }
     if (table === 'user_roles') {
-      return { insert: jest.fn().mockResolvedValue() };
+      return { ...chain, insert: jest.fn().mockResolvedValue() };
     }
     if (table === 'refresh_tokens') {
-      return { insert: jest.fn().mockResolvedValue() };
+      return { ...chain, insert: jest.fn().mockResolvedValue() };
     }
     if (table === 'blacklisted_tokens') {
       return {
-        where: jest.fn().mockReturnThis(),
+        ...chain,
         first: jest.fn().mockResolvedValue(null),
         insert: jest.fn().mockResolvedValue(),
       };
     }
-    return {};
+    if (table === 'tenant_memberships') {
+      return {
+        ...chain,
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        first: jest.fn().mockResolvedValue(null),
+      };
+    }
+    return { ...chain };
   });
   mockDb.fn = { now: jest.fn() };
   return mockDb;

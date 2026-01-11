@@ -44,7 +44,7 @@ describe('payment amount validation', () => {
   it('rejects zero amount with non-free method', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
 
-    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 0 }, user: { id: 'u1' } };
+    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 0 }, user: { id: 'u1' }, tenant: { id: 'tenant1' } };
     const res = mockRes();
     const next = jest.fn();
 
@@ -60,7 +60,7 @@ describe('payment amount validation', () => {
   it('rejects negative amount with non-free method', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
 
-    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: -10 }, user: { id: 'u1' } };
+    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: -10 }, user: { id: 'u1' }, tenant: { id: 'tenant1' } };
     const res = mockRes();
     const next = jest.fn();
 
@@ -76,7 +76,7 @@ describe('payment amount validation', () => {
   it('rejects bank payment via createPayment', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'bank', active: true });
 
-    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 10 }, user: { id: 'u1' } };
+    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 10 }, user: { id: 'u1' }, tenant: { id: 'tenant1' } };
     const res = mockRes();
     const next = jest.fn();
 

@@ -214,6 +214,9 @@ const ACTIONS = {
   "user.asset.upload": {
     roles: ["tenant_admin", "instructor", "student"],
   },
+  "tenant.domain.manage": {
+    roles: ["tenant_admin"],
+  },
 };
 
 const BLOCKED_STATES = new Set(["suspended", "cancelled"]);
@@ -292,7 +295,7 @@ async function can({ tenantId, role, userId }, action) {
   if (BLOCKED_STATES.has(sub.state))
     return deny("subscription_blocked", { state: sub.state });
   if (LIMITED_STATES.has(sub.state) && isWriteAction(action)) {
-    // customize behavior during grace; here we allow unless plan/limits block
+    return deny("subscription_grace", { state: sub.state });
   }
 
   if (rule.feature) {

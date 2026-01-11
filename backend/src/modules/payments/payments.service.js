@@ -85,6 +85,7 @@ exports.findInstallmentContext = async (userId, itemType, itemId, tenantId = nul
     .modify((query) => applyTenantScope(query, tenantId, hasTenantId, ""))
     .andWhere("installments", ">", 1)
     .orderBy("created_at", "asc")
+    .modify((qb) => applyTenantScope(qb, tenantId, "payments"))
     .first();
 
   if (!payment) {
@@ -156,6 +157,8 @@ exports.getAll = async (status, methodType, tenantId = null) => {
     )
     .orderBy("p.created_at", "desc");
 
+  applyTenantScope(query, tenantId);
+
   if (status) {
     query.where("p.status", status);
   }
@@ -187,16 +190,20 @@ exports.getAll = async (status, methodType, tenantId = null) => {
   return query;
 };
 
-exports.getByUser = async (userId, filters = {}, tenantId = null) => {
+exports.getByUser = async (userId, filters = {}, tenantIdArg = null) => {
   let statusFilter = null;
   let itemTypeFilter = null;
   let limit = null;
   let offset = null;
   let sortDirection = "desc";
+  let tenantId = tenantIdArg;
 
   if (typeof filters === "string") {
     statusFilter = filters;
   } else if (filters && typeof filters === "object") {
+    if (!tenantId && filters.tenantId) {
+      tenantId = filters.tenantId;
+    }
     statusFilter =
       filters.status === undefined ? null : String(filters.status);
     itemTypeFilter =
@@ -511,6 +518,9 @@ exports.getInstructorTotals = async (instructorId, tenantId = null) => {
         "=",
         db.raw("?", ["class"])
       );
+      if (classesHasTenant && tenantId) {
+        this.andOn("c.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .leftJoin("tutorials as tut", function () {
       this.on("p.item_id", "=", db.raw("tut.id::text")).andOn(
@@ -518,11 +528,17 @@ exports.getInstructorTotals = async (instructorId, tenantId = null) => {
         "=",
         db.raw("?", ["tutorial"])
       );
+      if (tutorialsHasTenant && tenantId) {
+        this.andOn("tut.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     // Cast IDs to text so the payments.item_id text column can match the source tables
     .leftJoin("books as b", function () {
       this.on(db.raw("p.item_type"), db.raw("?", ["book"]));
       this.on(db.raw("p.item_id::text"), "=", db.raw("b.id::text"));
+      if (booksHasTenant && tenantId) {
+        this.andOn("b.tenant_id", "=", db.raw("?", [tenantId]));
+      }
     })
     .where(function () {
       this.where("c.instructor_id", instructorId)

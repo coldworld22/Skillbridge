@@ -873,6 +873,7 @@ exports.generateFromPayment = async (payment, user, tenantId = null) => {
   const baseRecord = {
     payment_id: payment.id,
     user_id: payment.user_id,
+    tenant_id: payment.tenant_id || existing?.tenant_id || null,
     amount: payment.amount,
     currency: payment.currency,
     pdf_url: pdfRelativePath,
@@ -884,11 +885,10 @@ exports.generateFromPayment = async (payment, user, tenantId = null) => {
   if (existing) {
     saved = await model.update(id, baseRecord, tenantContext);
   } else {
-    const createPayload = { id, created_at: new Date(), ...baseRecord };
-    if (tenantContext) {
-      createPayload.tenant_id = tenantContext;
-    }
-    saved = await model.create(createPayload, tenantContext);
+    saved = await model.create(
+      { id, created_at: new Date(), ...baseRecord, tenant_id: tenantContext },
+      tenantContext,
+    );
   }
 
   return withFilePath({ ...saved, pdf_url: pdfRelativePath });

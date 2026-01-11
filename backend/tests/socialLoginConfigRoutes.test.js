@@ -31,6 +31,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isAdmin: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/socialLoginConfig/socialLoginConfig.service');
 const routes = require('../src/modules/socialLoginConfig/socialLoginConfig.routes');
 

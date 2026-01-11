@@ -26,6 +26,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 const paymentsService = require('../src/modules/payments/payments.service');
 const methodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
@@ -55,7 +62,10 @@ describe('POST /api/payments/crypto/initiate', () => {
     expect(plansService.getPlanById).toHaveBeenCalledWith('plan1');
     expect(res.body.data.invoice_url).toBe('https://crypto.test/invoice');
     expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100 })
+      expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100 }),
+      expect.any(Array),
+      null,
+      'tenant1'
     );
   });
 });

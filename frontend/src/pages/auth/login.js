@@ -36,12 +36,18 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading, r
   const { t } = useTranslation("auth");
   const user = useAuthStore((state) => state.user);
   const login = useAuthStore((state) => state.login);
+  const memberships = useAuthStore((state) => state.memberships);
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const switchTenant = useAuthStore((state) => state.switchTenant);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const { executeRecaptcha } = useGoogleReCaptcha() || {};
   const [logoErrored, setLogoErrored] = useState(false);
+  const [showMemberships, setShowMemberships] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState(null);
+  const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
 
   const logoSrc = useMemo(() => {
     if (logoErrored) return "/images/logo.png";
@@ -70,10 +76,15 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading, r
   });
 
   useEffect(() => {
-    if (!router.isReady || !hasHydrated || !user) return;
+    if (!router.isReady || !hasHydrated || !user || showMemberships) return;
     const destination = getPostLoginDestination({ user, redirectPath });
     router.replace(destination);
-  }, [router.isReady, hasHydrated, user, redirectPath, router]);
+  }, [router.isReady, hasHydrated, user, redirectPath, router, showMemberships]);
+
+  useEffect(() => {
+    if (!memberships?.length) return;
+    setSelectedTenantId((prev) => prev || currentTenantId || memberships[0]?.tenant_id);
+  }, [memberships, currentTenantId]);
 
   useEffect(() => {
     fetchAppConfig();
@@ -101,10 +112,23 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading, r
         fetchNotifications();
       }
 
+      const { memberships: nextMemberships, currentTenantId: nextTenantId } =
+        useAuthStore.getState();
       const destination = getPostLoginDestination({
         user: loggedInUser,
         redirectPath,
       });
+
+      if (nextMemberships?.length > 0) {
+        setShowMemberships(true);
+        setSelectedTenantId(nextTenantId || nextMemberships[0]?.tenant_id);
+        if (nextMemberships.length === 1) {
+          setTimeout(() => {
+            router.push(destination);
+          }, 500);
+        }
+        return;
+      }
 
       // 🚀 Redirect after a short delay so the toast is visible
       setTimeout(() => {
@@ -139,6 +163,32 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading, r
 
 
 
+
+  const handleTenantContinue = async () => {
+    if (!selectedTenantId) return;
+    const destination = getPostLoginDestination({
+      user: useAuthStore.getState().user,
+      redirectPath,
+    });
+    if (selectedTenantId === currentTenantId) {
+      router.push(destination);
+      return;
+    }
+    try {
+      setIsSwitchingTenant(true);
+      await switchTenant(selectedTenantId);
+      router.push(destination);
+    } catch (err) {
+      logger.error("Failed to switch tenant", err);
+      toast.error(
+        t("tenant_switch_failed", {
+          defaultValue: "Unable to switch tenant. Please try again.",
+        })
+      );
+    } finally {
+      setIsSwitchingTenant(false);
+    }
+  };
 
   return (
     <div className={styles.authPage}>
@@ -212,6 +262,62 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading, r
           <span className={styles.dividerLine} aria-hidden />
         </div>
         <SocialLogin redirectPath={redirectPath} />
+
+        {memberships?.length > 0 && (
+          <div className={styles.membershipSection}>
+            <p className={styles.membershipTitle}>
+              {t("available_memberships", { defaultValue: "Available memberships" })}
+            </p>
+            <div className={styles.membershipList}>
+              {memberships.map((membership) => {
+                const label =
+                  membership.tenant_name ||
+                  membership.tenant_slug ||
+                  membership.tenant_id;
+                return (
+                  <label
+                    key={membership.tenant_id}
+                    className={`${styles.membershipItem} ${
+                      selectedTenantId === membership.tenant_id
+                        ? styles.membershipActive
+                        : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tenant"
+                      className={styles.membershipRadio}
+                      value={membership.tenant_id}
+                      checked={selectedTenantId === membership.tenant_id}
+                      onChange={() => setSelectedTenantId(membership.tenant_id)}
+                    />
+                    <div className={styles.membershipInfo}>
+                      <span className={styles.membershipName}>{label}</span>
+                      <span className={styles.membershipMeta}>
+                        {membership.role}
+                        {membership.status ? ` • ${membership.status}` : ""}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+            {showMemberships && memberships.length > 1 && (
+              <motion.button
+                type="button"
+                onClick={handleTenantContinue}
+                disabled={isSwitchingTenant || !selectedTenantId}
+                whileHover={{ scale: isSwitchingTenant ? 1 : 1.02 }}
+                whileTap={{ scale: isSwitchingTenant ? 1 : 0.98 }}
+                className={`${styles.primaryButton} ${styles.mutedButton}`}
+              >
+                {isSwitchingTenant
+                  ? t("switching_tenant", { defaultValue: "Switching..." })
+                  : t("continue", { defaultValue: "Continue" })}
+              </motion.button>
+            )}
+          </div>
+        )}
 
         <p className={`${styles.helper} ${styles.smallText}`}>
           {t("dont_have_account")}{" "}

@@ -73,6 +73,6 @@ router.get(
 );
 
 // Accept optional item type and id parameters for validation
-router.get("/code/:code/:item_type?/:item_id?", controller.validateCode);
+router.get("/code/:code/:item_type?/:item_id?", resolveTenant, controller.validateCode);
 
 module.exports = router;

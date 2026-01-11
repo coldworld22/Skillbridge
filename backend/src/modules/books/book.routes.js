@@ -5,6 +5,12 @@ const upload = require("./bookUploadMiddleware");
 const validate = require("../../middleware/validate");
 const validation = require("./validation/bookValidation");
 const {
+  resolveTenant,
+  ensureTenantMembership,
+  enforceTenantStatus,
+  requireEntitlement,
+} = require("../../middleware/tenant");
+const {
   verifyToken,
   isAdmin,
   isStudent,
@@ -27,7 +33,11 @@ router.get("/:id", controller.getBook);
 router.post(
   "/",
   verifyToken,
+  resolveTenant,
+  ensureTenantMembership(),
+  enforceTenantStatus(),
   isInstructorOrAdmin,
+  requireEntitlement("book.create"),
   upload,
   validate({ body: validation.createBook }),
   controller.createBook

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { getFullProfile } from '@/services/profile/profileService';
-import { refreshAccessToken } from '@/services/auth/authService';
+import { fetchMemberships, refreshAccessToken } from '@/services/auth/authService';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
@@ -16,6 +16,8 @@ export default function SocialSuccess() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
+  const setMemberships = useAuthStore((state) => state.setMemberships);
+  const setCurrentTenantId = useAuthStore((state) => state.setCurrentTenantId);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const { t } = useTranslation('auth');
   const redirectPath = useMemo(() => {
@@ -34,6 +36,13 @@ export default function SocialSuccess() {
         const res = await getFullProfile();
         const profile = res.data;
         setUser(profile);
+        try {
+          const membershipRes = await fetchMemberships();
+          setMemberships(membershipRes?.data || []);
+          setCurrentTenantId(membershipRes?.currentTenantId || null);
+        } catch (membershipErr) {
+          console.warn("Failed to load memberships after social login", membershipErr);
+        }
         if (profile.profile_complete && profile.is_email_verified) {
           fetchNotifications();
         }

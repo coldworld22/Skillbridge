@@ -164,10 +164,18 @@ router.use(
   require("../modules/invoices/instructor.routes"),
 );
 router.use(
+  "/api/tenant-domains",
+  require("../modules/tenantDomains/tenantDomains.routes"),
+);
+router.use(
   "/api/admin/payments/bank",
   require("../modules/payments/bank.admin.routes"),
 );
 router.use("/api/admin/cache", require("./cache.routes"));
+router.use(
+  "/api/admin/tenant-subscriptions",
+  require("../modules/tenantSubscriptions/tenantSubscriptions.routes"),
+);
 router.use(
   "/api/payments/config",
   require("../modules/paymentConfig/paymentConfig.routes"),

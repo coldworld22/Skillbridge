@@ -30,6 +30,7 @@ const parseIncludedPlans = (value) => {
 exports.enroll = catchAsync(async (req, res) => {
   const { userId, tutorialId } = requireUserAndTutorial(req);
   const user_id = userId;
+  const tenantId = req.tenant?.id;
 
   const tutorial = await db("tutorials").where({ id: tutorialId }).first();
   if (!tutorial) throw new AppError("Tutorial not found", 404);
@@ -119,6 +120,7 @@ exports.enroll = catchAsync(async (req, res) => {
         item_type: "tutorial",
         source: "subscription",
         amount: 0,
+        tenant_id: tenantId || tutorial.tenant_id,
       });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
@@ -126,6 +128,7 @@ exports.enroll = catchAsync(async (req, res) => {
           user_id,
           item_type: "tutorial",
           item_id: tutorialItemId,
+          tenant_id: tenantId || tutorial.tenant_id,
         })
         .first();
       if (!payment) throw new AppError("Payment required", 402);

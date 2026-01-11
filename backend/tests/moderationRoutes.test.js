@@ -8,9 +8,16 @@ jest.mock('../src/modules/moderation/moderation.service', () => ({
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'admin1' };
+    req.user = { id: 'admin1', role: 'admin', roles: ['admin'] };
     next();
   },
+}));
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/moderation/moderation.service');

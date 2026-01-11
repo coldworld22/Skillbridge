@@ -67,18 +67,21 @@ async function initStrategies() {
           clientID: google.clientId || process.env.GOOGLE_CLIENT_ID || '',
           clientSecret: google.clientSecret || process.env.GOOGLE_CLIENT_SECRET || '',
           callbackURL: google.redirectUrl || '/api/auth/google/callback',
+          passReqToCallback: true,
         },
-        async (_accessToken, _refreshToken, profile, done) => {
+        async (req, _accessToken, _refreshToken, profile, done) => {
           try {
             const { id, displayName, emails, photos } = profile;
             const email = emails && emails[0] && emails[0].value;
             const avatarUrl = photos && photos[0] && photos[0].value;
+            const tenantId = req?.query?.tenant_id || null;
             const result = await socialAuthService.loginOrRegister({
               provider: 'google',
               providerId: id,
               email,
               fullName: displayName,
               avatarUrl,
+              tenant_id: tenantId,
             });
             return done(null, result);
           } catch (err) {
@@ -163,4 +166,3 @@ async function initStrategies() {
 }
 
 module.exports = { passport, initStrategies };
-

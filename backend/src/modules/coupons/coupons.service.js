@@ -1,7 +1,31 @@
 const db = require("../../config/database");
 
-exports.createCoupon = async (data) => {
-  const payload = { ...data };
+let hasTenantColumnPromise;
+const hasTenantColumn = async () => {
+  if (!hasTenantColumnPromise) {
+    hasTenantColumnPromise = db.schema.hasColumn("coupons", "tenant_id");
+  }
+  return hasTenantColumnPromise;
+};
+
+const requireTenant = async (tenantId) => {
+  if ((await hasTenantColumn()) && !tenantId) {
+    throw new Error("tenant_id is required for coupon operations");
+  }
+  return tenantId;
+};
+
+const applyTenantScope = async (query, tenantId) => {
+  const scopedTenant = await requireTenant(tenantId);
+  if (scopedTenant) {
+    query.andWhere({ tenant_id: scopedTenant });
+  }
+  return query;
+};
+
+exports.createCoupon = async (data, tenantId = null) => {
+  await requireTenant(tenantId);
+  const payload = { ...data, tenant_id: tenantId || data.tenant_id };
   if (payload.starts_at && !(payload.starts_at instanceof Date)) {
     payload.starts_at = new Date(payload.starts_at);
   }
@@ -15,37 +39,42 @@ exports.createCoupon = async (data) => {
   return row;
 };
 
-exports.getCoupons = ({ instructorId } = {}) => {
+exports.getCoupons = async ({ instructorId, tenantId } = {}) => {
   const query = db("coupons").orderBy("created_at", "desc");
+  await applyTenantScope(query, tenantId);
   if (instructorId) {
-    query.where({ instructor_id: instructorId });
+    query.andWhere({ instructor_id: instructorId });
   }
   return query;
 };
 
-exports.getCouponById = (id) => {
-  return db("coupons").where({ id }).first();
+exports.getCouponById = async (id, tenantId = null) => {
+  const query = db("coupons").where({ id });
+  await applyTenantScope(query, tenantId);
+  return query.first();
 };
 
-exports.getCouponByIdScoped = (id, { instructorId } = {}) => {
+exports.getCouponByIdScoped = async (id, { instructorId, tenantId } = {}) => {
   const query = db("coupons").where({ id });
+  await applyTenantScope(query, tenantId);
   if (instructorId) query.andWhere({ instructor_id: instructorId });
   return query.first();
 };
 
-exports.findByCode = (code) => {
-  return db("coupons").whereRaw("LOWER(code) = LOWER(?)", [code]).first();
+exports.findByCode = async (code, tenantId = null) => {
+  const query = db("coupons").whereRaw("LOWER(code) = LOWER(?)", [code]);
+  await applyTenantScope(query, tenantId);
+  return query.first();
 };
 
-exports.incrementUsage = async (id) => {
-  const [row] = await db("coupons")
-    .where({ id })
-    .increment("times_used", 1)
-    .returning("*");
+exports.incrementUsage = async (id, tenantId = null) => {
+  const query = db("coupons").where({ id });
+  await applyTenantScope(query, tenantId);
+  const [row] = await query.increment("times_used", 1).returning("*");
   return row;
 };
 
-exports.updateCoupon = async (id, data, { instructorId } = {}) => {
+exports.updateCoupon = async (id, data, { instructorId, tenantId } = {}) => {
   const payload = { ...data };
   if (payload.starts_at === "") payload.starts_at = null;
   if (payload.expires_at === "") payload.expires_at = null;
@@ -59,13 +88,15 @@ exports.updateCoupon = async (id, data, { instructorId } = {}) => {
   if (payload.usage_limit === undefined) delete payload.usage_limit;
 
   const query = db("coupons").where({ id });
+  await applyTenantScope(query, tenantId);
   if (instructorId) query.andWhere({ instructor_id: instructorId });
   const [row] = await query.update(payload).returning("*");
   return row;
 };
 
-exports.deleteCoupon = (id, { instructorId } = {}) => {
+exports.deleteCoupon = async (id, { instructorId, tenantId } = {}) => {
   const query = db("coupons").where({ id });
+  await applyTenantScope(query, tenantId);
   if (instructorId) query.andWhere({ instructor_id: instructorId });
   return query.del();
 };

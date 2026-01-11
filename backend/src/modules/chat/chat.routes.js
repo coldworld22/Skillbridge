@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./chat.controller");
 const { verifyToken } = require("../../middleware/auth/authMiddleware");
+const { resolveTenant, ensureTenantMembership } = require("../../middleware/tenant");
+const { checkAndConsumeStorage } = require("../../middleware/storage");
 const upload = require("./chatUpload.middleware");
 const validate = require("../../middleware/validate");
 const validator = require("./chat.validator");
@@ -14,7 +16,7 @@ const mapFilesToBody = (req, _res, next) => {
   next();
 };
 
-router.use(verifyToken);
+router.use(verifyToken, resolveTenant, ensureTenantMembership());
 
 router.get("/users", controller.searchUsers);
 router.post(
@@ -28,6 +30,7 @@ router.post(
   upload,
   mapFilesToBody,
   validate(validator.sendMessage),
+  checkAndConsumeStorage(),
   controller.sendMessage
 );
 router.delete("/messages/:id", controller.deleteMessage);

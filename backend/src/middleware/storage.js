@@ -3,6 +3,7 @@
 
 const db = require("../config/database");
 const logger = require("../utils/logger");
+const { sendQuotaExceeded } = require("../utils/quota");
 
 async function getStorageLimit(tenantId) {
   const sub = await db("subscriptions as s")
@@ -104,8 +105,8 @@ const checkAndConsumeStorage = () => {
 
       const used = await getStorageUsage(tenantId);
       if (used + uploadBytes > limit) {
-        return res.status(403).json({
-          error: "storage_limit_exceeded",
+        return sendQuotaExceeded(res, {
+          feature: "storage_bytes",
           usage: used,
           limit,
           attempt: uploadBytes,
@@ -126,4 +127,5 @@ module.exports = {
   sumUploadedBytes,
   getStorageUsage,
   addStorageUsage,
+  subtractStorageUsage,
 };

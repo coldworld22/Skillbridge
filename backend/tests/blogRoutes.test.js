@@ -15,12 +15,32 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isAdmin: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/storage', () => ({
+  checkAndConsumeStorage: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/modules/blog/blogUploadMiddleware', () => ({
+  single: () => (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/blog/blog.service');
 const routes = require('../src/modules/blog/blog.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/blog', routes);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  service.findBySlug.mockResolvedValue(null);
+});
 
 describe('GET /api/blog', () => {
   it('returns posts', async () => {

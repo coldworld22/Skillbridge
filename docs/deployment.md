@@ -131,6 +131,49 @@ npm --prefix backend run migrate
 Running migrations separately keeps `startServer()` lightweight and ensures the
 database schema matches the application's expectations.
 
+## Seed tenant domains and update DNS/ingress
+
+Staging and production environments should explicitly seed custom tenant
+domains and point DNS records at the correct ingress/edge host so tenant routing
+works consistently.
+
+1. **Seed tenant domains.** Add a JSON array to `backend/.env` (or your secret
+   manager) describing each domain. Use `tenant_id` for stable IDs or
+   `tenant_slug` if you want the seed script to look up the tenant:
+
+   ```bash
+   TENANT_DOMAIN_SEEDS='[
+     {"domain":"acme.skillbridge.example","tenant_slug":"acme","status":"verified"},
+     {"domain":"training.skillbridge.example","tenant_id":"<uuid>","status":"verified"}
+   ]'
+   ```
+
+   Then run:
+
+   ```bash
+   npm --prefix backend run seed
+   ```
+
+2. **Update DNS/ingress.** For each tenant domain, create a CNAME (or ingress
+   host rule) pointing at the environment's frontend entrypoint:
+
+   - **Production:** `tenant-domain` → `eduskillbridge.net`
+   - **Staging:** `tenant-domain` → your staging frontend host (e.g.
+     `staging.eduskillbridge.net`)
+
+   Ensure your ingress or load balancer is configured to accept the tenant
+   hostnames and terminate TLS for them.
+
+3. **Validate host routing.** Compare expected tenant IDs against what the
+   backend resolves from the Host header:
+
+   ```bash
+   npm --prefix backend run validate:tenant-domains
+   ```
+
+   The script logs each `domain`, `expected`, and `actual` tenant ID so you can
+   confirm routing is correct.
+
 ## Validate your deployment
 
 > **Before inviting users:** Run these production smoke tests to make sure the
@@ -171,6 +214,63 @@ Use `docker compose stop` or `docker compose down` without `-v` to retain your
 data. Manually deleting the `postgres_data` or `pgadmin_data` volumes will also
 erase data. Consider mounting these volumes to external storage or setting up
 regular backups to protect critical information.
+
+## Backup and restore (tenant-aware)
+
+SkillBridge ships with database backup and restore scripts:
+
+- `scripts/backup_db.sh` — generates a full backup or a tenant-scoped backup.
+- `scripts/restore_db.sh` — restores a backup SQL file.
+
+Both scripts use `DATABASE_URL` when set, or fall back to the `db` container
+from Docker Compose.
+
+### Full database backup
+
+```bash
+./scripts/backup_db.sh --output backups/skillbridge_full.sql
+```
+
+### Tenant-scoped backup
+
+Use the tenant UUID to export only rows tied to that tenant (plus referenced
+tenant configuration and users).
+
+```bash
+./scripts/backup_db.sh --output backups/tenant_123.sql --tenant-id 00000000-0000-0000-0000-000000000001
+```
+
+The script validates the tenant ID format and verifies the tenant exists before
+writing the backup.
+
+### Restore a backup
+
+```bash
+./scripts/restore_db.sh --input backups/skillbridge_full.sql
+```
+
+For tenant-scoped backups, pass the tenant ID that the backup was created for:
+
+```bash
+./scripts/restore_db.sh --input backups/tenant_123.sql --tenant-id 00000000-0000-0000-0000-000000000001
+```
+
+The restore script reads the tenant ID header and refuses to restore if the
+value does not match.
+
+### Recovery steps and verification checks
+
+1. **Stop application traffic** (or place the system in maintenance mode).
+2. **Restore the backup** using the commands above.
+3. **Run migrations** to ensure the schema matches the application:
+   ```bash
+   npm --prefix backend run migrate
+   ```
+4. **Restart services** and verify the environment:
+   - `curl https://<domain>/api/health` returns `{"status":"ok"}`.
+   - Log in to `/dashboard/admin` and confirm tenant data loads.
+   - Run `docker compose logs backend` to confirm there are no migration or
+     tenant resolution errors.
 
 ## Next.js image domains
 

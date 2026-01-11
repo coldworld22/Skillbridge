@@ -39,3 +39,10 @@ exports.getConfig = catchAsync(async (_req, res) => {
   const cfg = settings?.googleAdSense;
   sendSuccess(res, buildResponse(cfg));
 });
+
+exports.saveConfig = catchAsync(async (req, res) => {
+  const payload = req.body || {};
+  const settings = await service.updateSettings({ googleAdSense: payload });
+  const saved = settings?.googleAdSense || payload;
+  sendSuccess(res, buildResponse(saved), "AdSense config saved");
+});
