@@ -15,136 +15,176 @@ const createAuthStore = (set, get) => {
   return {
     user: null,
     accessToken: null,
+    memberships: [],
+    currentTenantId: null,
     onboarding: null,
     hasHydrated: !isClient,
 
-      setUser: (userData) =>
-        set({
-          user: userData,
-          onboarding: userData
-            ? {
-                profile_complete: userData.profile_complete,
-                is_email_verified: userData.is_email_verified,
-                complete:
-                  Boolean(userData.profile_complete) &&
-                  Boolean(userData.is_email_verified),
-              }
-            : null,
-        }),
-      setToken: (token) => set({ accessToken: token }),
-      markHydrated: () => set({ hasHydrated: true }),
+    setUser: (userData) =>
+      set({
+        user: userData,
+        onboarding: userData
+          ? {
+              profile_complete: userData.profile_complete,
+              is_email_verified: userData.is_email_verified,
+              complete:
+                Boolean(userData.profile_complete) &&
+                Boolean(userData.is_email_verified),
+            }
+          : null,
+      }),
+    setToken: (token) => set({ accessToken: token }),
+    setMemberships: (memberships = []) => set({ memberships }),
+    setCurrentTenantId: (tenantId) => set({ currentTenantId: tenantId }),
+    markHydrated: () => set({ hasHydrated: true }),
 
-      isAuthenticated: () => !!get().accessToken && !!get().user,
+    isAuthenticated: () => !!get().accessToken && !!get().user,
 
-      login: async (credentials) => {
-        logger.log("🔑 authStore.login invoked");
-        const { accessToken, user, onboarding } = await authService.loginUser(credentials);
+    login: async (credentials) => {
+      logger.log("🔑 authStore.login invoked");
+      const { accessToken, user, onboarding, memberships, currentTenantId } =
+        await authService.loginUser(credentials);
+      if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
+        user.avatar_url = null;
+      }
+      set({
+        accessToken,
+        user,
+        memberships: memberships || [],
+        currentTenantId: currentTenantId || null,
+        onboarding:
+          onboarding ||
+          {
+            profile_complete: user.profile_complete,
+            is_email_verified: user.is_email_verified,
+            complete:
+              Boolean(user.profile_complete) &&
+              Boolean(user.is_email_verified),
+          },
+      });
+      return user;
+    },
+
+    /**
+     * Log in using an already issued access token.
+     * Stores the token, fetches the profile and notifications.
+     */
+    loginWithToken: async (token) => {
+      set({ accessToken: token });
+      try {
+        const res = await getFullProfile();
+        let user = res.data;
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;
         }
+        let memberships = [];
+        let currentTenantId = null;
+        try {
+          const membershipRes = await authService.fetchMemberships();
+          memberships = membershipRes?.data || [];
+          currentTenantId = membershipRes?.currentTenantId || null;
+        } catch (err) {
+          logger.warn?.("Failed to fetch memberships", err);
+        }
         set({
-          accessToken,
           user,
-          onboarding:
-            onboarding ||
-            {
-              profile_complete: user.profile_complete,
-              is_email_verified: user.is_email_verified,
-              complete:
-                Boolean(user.profile_complete) &&
-                Boolean(user.is_email_verified),
-            },
+          memberships,
+          currentTenantId,
+          onboarding: {
+            profile_complete: user.profile_complete,
+            is_email_verified: user.is_email_verified,
+            complete:
+              Boolean(user.profile_complete) &&
+              Boolean(user.is_email_verified),
+          },
         });
+        const fetchNotifications = useNotificationStore.getState().fetch;
+        fetchNotifications?.();
         return user;
-      },
+      } catch (err) {
+        logger.error("❌ loginWithToken error", { message: err?.message });
+        set({
+          accessToken: null,
+          user: null,
+          memberships: [],
+          currentTenantId: null,
+          onboarding: null,
+        });
+      }
+    },
 
-      /**
-       * Log in using an already issued access token.
-       * Stores the token, fetches the profile and notifications.
-       */
-      loginWithToken: async (token) => {
-        set({ accessToken: token });
+    refreshUser: async () => {
+      try {
+        const res = await getFullProfile();
+        const fresh = res.data;
+        if (fresh.avatar_url?.startsWith("blob:") || fresh.avatar_url === "null") {
+          fresh.avatar_url = null;
+        }
+        set({
+          user: fresh,
+          onboarding: {
+            profile_complete: fresh.profile_complete,
+            is_email_verified: fresh.is_email_verified,
+            complete:
+              Boolean(fresh.profile_complete) &&
+              Boolean(fresh.is_email_verified),
+          },
+        });
+        return fresh;
+      } catch (err) {
+        logger.error("❌ refreshUser error", { message: err?.message });
+      }
+    },
+
+    register: async (data) => {
+      await authService.registerUser(data);
+    },
+
+    switchTenant: async (tenantId) => {
+      const { accessToken, currentTenantId } =
+        await authService.switchTenant(tenantId);
+      set({
+        accessToken,
+        currentTenantId: currentTenantId || tenantId,
+      });
+      return currentTenantId;
+    },
+
+    logout: async (skipRequest = false) => {
+      if (!skipRequest) {
         try {
-          const res = await getFullProfile();
-          let user = res.data;
-          if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
-            user.avatar_url = null;
-          }
-          set({
-            user,
-            onboarding: {
-              profile_complete: user.profile_complete,
-              is_email_verified: user.is_email_verified,
-              complete:
-                Boolean(user.profile_complete) &&
-                Boolean(user.is_email_verified),
-            },
-          });
-          const fetchNotifications = useNotificationStore.getState().fetch;
-          fetchNotifications?.();
-          return user;
-        } catch (err) {
-          logger.error("❌ loginWithToken error", { message: err?.message });
-          set({ accessToken: null, user: null, onboarding: null });
-        }
-      },
+          await authService.logoutUser();
+        } catch (_) {}
+      }
 
-      refreshUser: async () => {
+      // Stop polling intervals when logging out
+      const notifStop = useNotificationStore.getState().stopPolling;
+      const msgStop = useMessageStore.getState().stopPolling;
+      notifStop?.();
+      msgStop?.();
+      try {
+        const libraryState = useLibraryStore.getState?.();
+        libraryState?.clear?.();
+      } catch (err) {
+        logger.warn?.("Failed to reset library store during logout", err);
+      }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth");
         try {
-          const res = await getFullProfile();
-          const fresh = res.data;
-          if (fresh.avatar_url?.startsWith("blob:") || fresh.avatar_url === "null") {
-            fresh.avatar_url = null;
-          }
-          set({
-            user: fresh,
-            onboarding: {
-              profile_complete: fresh.profile_complete,
-              is_email_verified: fresh.is_email_verified,
-              complete:
-                Boolean(fresh.profile_complete) &&
-                Boolean(fresh.is_email_verified),
-            },
-          });
-          return fresh;
+          localStorage.removeItem("library-store");
         } catch (err) {
-          logger.error("❌ refreshUser error", { message: err?.message });
+          logger.warn?.("Failed to clear persisted library store", err);
         }
-      },
-
-      register: async (data) => {
-        await authService.registerUser(data);
-      },
-
-      logout: async (skipRequest = false) => {
-        if (!skipRequest) {
-          try {
-            await authService.logoutUser();
-          } catch (_) {}
-        }
-
-        // Stop polling intervals when logging out
-        const notifStop = useNotificationStore.getState().stopPolling;
-        const msgStop = useMessageStore.getState().stopPolling;
-        notifStop?.();
-        msgStop?.();
-        try {
-          const libraryState = useLibraryStore.getState?.();
-          libraryState?.clear?.();
-        } catch (err) {
-          logger.warn?.("Failed to reset library store during logout", err);
-        }
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth");
-          try {
-            localStorage.removeItem("library-store");
-          } catch (err) {
-            logger.warn?.("Failed to clear persisted library store", err);
-          }
-        }
-        set({ accessToken: null, user: null, onboarding: null });
-      },
-    };
+      }
+      set({
+        accessToken: null,
+        user: null,
+        memberships: [],
+        currentTenantId: null,
+        onboarding: null,
+      });
+    },
+  };
 };
 
 const useAuthStore = create(

@@ -101,3 +101,35 @@ export const logoutUser = async () => {
   const res = await api.post("/auth/logout");
   return res.data;
 };
+
+/**
+ * 🧾 Fetch tenant memberships for the authenticated user.
+ *
+ * @returns {Promise<{ data: Array, currentTenantId: string | null }>}
+ */
+export const fetchMemberships = async () => {
+  const res = await api.get("/auth/memberships");
+  return res.data;
+};
+
+/**
+ * 🔄 Switch active tenant context.
+ *
+ * @param {string} tenantId
+ * @returns {Promise<{ accessToken: string, currentTenantId: string }>}
+ */
+export const switchTenant = async (tenantId) => {
+  const res = await api.post("/auth/switch-tenant", { tenant_id: tenantId });
+  return res.data;
+};
+
+/**
+ * ✉️ Accept a tenant invite using an invite token.
+ *
+ * @param {string} token
+ * @returns {Promise<{ message: string, data: object }>}
+ */
+export const acceptTenantInviteToken = async (token) => {
+  const res = await api.post("/auth/tenant-invites/accept-token", { token });
+  return res.data;
+};

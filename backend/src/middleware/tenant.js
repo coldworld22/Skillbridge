@@ -59,12 +59,18 @@ const resolveTenant = async (req, res, next) => {
       try {
         tenantId = await resolveTenantByHost(req.headers.host);
       } catch (err) {
-        if (process.env.NODE_ENV === "test") {
+        if (req.user?.current_tenant_id) {
+          tenantId = req.user.current_tenant_id;
+        } else if (process.env.NODE_ENV === "test") {
           tenantId = DEFAULT_TEST_TENANT_ID;
         } else {
           throw err;
         }
       }
+    }
+
+    if (!tenantId && req.user?.current_tenant_id) {
+      tenantId = req.user.current_tenant_id;
     }
 
     if (!tenantId && process.env.NODE_ENV === "test") {

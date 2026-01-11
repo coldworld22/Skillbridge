@@ -110,9 +110,16 @@ exports.loginOrRegister = async ({
   const roles = await ensureRoleAssignments(user);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const membershipRows = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: user.id, status: "active" });
+  const membershipRows = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": user.id, "tm.status": "active" });
   const memberships = Array.isArray(membershipRows) ? membershipRows : [];
   if (
     process.env.NODE_ENV !== "test" &&
@@ -137,7 +144,11 @@ exports.loginOrRegister = async ({
     memberships,
     current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    user.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
 
   const now = new Date();
   const loginUpdate = {
@@ -189,6 +200,8 @@ exports.loginOrRegister = async ({
     accessToken,
     refreshToken,
     user: safeUser,
+    memberships,
+    currentTenantId,
     onboarding: {
       profile_complete: user.profile_complete,
       is_email_verified: user.is_email_verified,
