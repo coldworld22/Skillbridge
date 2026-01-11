@@ -9,7 +9,8 @@
     "migrate": "node src/migrate.js",
     "knex:migrate": "knex migrate:latest --knexfile knexfile.js",
     "seed": "knex seed:run --knexfile knexfile.js",
-    "knex:seed": "knex seed:run --knexfile knexfile.js"
+    "knex:seed": "knex seed:run --knexfile knexfile.js",
+    "validate:tenant-domains": "node src/scripts/validateTenantDomains.js"
   },
   "keywords": [],
   "author": "",
