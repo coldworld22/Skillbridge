@@ -3,6 +3,7 @@
 
 const db = require("../config/database");
 const logger = require("../utils/logger");
+const metrics = require("../utils/metrics");
 
 const APP_DOMAIN = (process.env.APP_DOMAIN || "").toLowerCase();
 const APEX = APP_DOMAIN || "skillbridge.com";
@@ -71,6 +72,16 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenantId) {
+      const host = (req.headers?.host || "").toLowerCase();
+      logger.warn?.("tenant match missing", {
+        host,
+        path: req.path,
+        headerTenant: req.headers?.["x-tenant-id"] || null,
+      });
+      metrics.incrementCounter("tenant_resolution_failure", {
+        host,
+        category: "missing_match",
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -84,6 +95,16 @@ const resolveTenant = async (req, res, next) => {
     }
 
     if (!tenant) {
+      const host = (req.headers?.host || "").toLowerCase();
+      logger.warn?.("tenant match missing", {
+        host,
+        path: req.path,
+        tenantId,
+      });
+      metrics.incrementCounter("tenant_resolution_failure", {
+        host,
+        category: "missing_match",
+      });
       return res.status(404).json({ error: "tenant_not_found" });
     }
 
@@ -95,11 +116,16 @@ const resolveTenant = async (req, res, next) => {
     };
     return next();
   } catch (err) {
+    const host = (req.headers?.host || "").toLowerCase();
     logger.warn?.("tenant resolution failed", {
       error: err.message,
-      host: req.headers?.host,
+      host,
       path: req.path,
       headerTenant: req.headers?.["x-tenant-id"] || null,
+    });
+    metrics.incrementCounter("tenant_resolution_failure", {
+      host,
+      category: "resolution_error",
     });
     return res.status(404).json({ error: "tenant_not_found" });
   }
