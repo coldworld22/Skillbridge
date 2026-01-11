@@ -46,6 +46,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'payment-uuid'),
 }));
@@ -93,7 +100,8 @@ describe('POST /api/payments/coinbase/webhook', () => {
     expect(res.status).toBe(200);
     expect(paymentsService.update).toHaveBeenCalledWith(
       'p1',
-      expect.objectContaining({ status: STATUS.PAID, reference_id: 'ch_1' })
+      expect.objectContaining({ status: STATUS.PAID, reference_id: 'ch_1' }),
+      null
     );
     expect(grantAccess).toHaveBeenCalled();
   });
@@ -118,7 +126,8 @@ describe('POST /api/payments/coinbase/webhook', () => {
     expect(res.status).toBe(200);
     expect(paymentsService.update).toHaveBeenCalledWith(
       'p2',
-      expect.objectContaining({ status: STATUS.REJECTED, reference_id: 'ch_2' })
+      expect.objectContaining({ status: STATUS.REJECTED, reference_id: 'ch_2' }),
+      null
     );
   });
 
@@ -194,7 +203,10 @@ describe('POST /api/payments/coinbase/initiate', () => {
         method_id: 'coinbase-method',
         reference_id: 'charge_1',
         receipt_url: 'https://coinbase/charge_1',
-      })
+      }),
+      expect.any(Array),
+      null,
+      'tenant1'
     );
   });
 
@@ -222,7 +234,10 @@ describe('POST /api/payments/coinbase/initiate', () => {
       expect.any(Object)
     );
     expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ method_id: 'coinbase-method' })
+      expect.objectContaining({ method_id: 'coinbase-method' }),
+      expect.any(Array),
+      null,
+      'tenant1'
     );
   });
 });

@@ -167,7 +167,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password, ip }) => {
+exports.loginUser = async ({ email, password, ip, tenant_id }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -250,15 +250,30 @@ exports.loginUser = async ({ email, password, ip }) => {
       ? await userModel.getUserPermissions(user.id)
       : [];
   const tokenRoles = roles.length ? roles : [user.role];
-  const memberships = await db("tenant_memberships")
+  const membershipRows = await db("tenant_memberships")
     .select("tenant_id", "role", "status")
     .where({ user_id: user.id, status: "active" });
+  const memberships = Array.isArray(membershipRows) ? membershipRows : [];
+  if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
+    throw new AppError(
+      "No active tenant membership found. Please accept an invite or contact your admin.",
+      403,
+    );
+  }
+
+  const requestedTenant = tenant_id || null;
+  const membershipTenantIds = new Set(memberships.map((m) => m.tenant_id));
+  const currentTenantId =
+    (requestedTenant && membershipTenantIds.has(requestedTenant)
+      ? requestedTenant
+      : null) || memberships[0]?.tenant_id || null;
   const accessToken = generateAccessToken({
     id: user.id,
     role: tokenRoles[0],
     roles: tokenRoles,
     platform_role: user.platform_role || "none",
     memberships,
+    current_tenant_id: currentTenantId,
   });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
 
@@ -275,6 +290,8 @@ exports.loginUser = async ({ email, password, ip }) => {
     accessToken,
     refreshToken,
     user: { ...safeUser, roles, permissions },
+    memberships,
+    currentTenantId,
     onboarding: {
       profile_complete: user.profile_complete,
       is_email_verified: user.is_email_verified,

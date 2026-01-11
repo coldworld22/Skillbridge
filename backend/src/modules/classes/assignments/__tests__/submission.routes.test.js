@@ -15,6 +15,7 @@ jest.mock('../../../../config/database', () => {
 jest.mock('../submission.service', () => ({
   getByAssignment: jest.fn(),
   getSubmissionForUser: jest.fn(),
+  getSubmissionById: jest.fn(),
   createSubmission: jest.fn(),
   updateSubmission: jest.fn(),
   deleteSubmission: jest.fn(),
@@ -29,6 +30,19 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isInstructor: (_req, _res, next) => next(),
 }));
 
+jest.mock('../../../../middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../../../../middleware/auth/verifyAssignmentOwnership', () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/auth/verifySubmissionOwnership', () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/storage', () => ({
+  checkAndConsumeStorage: () => (_req, _res, next) => next(),
+}));
+
 const routes = require('../../class.routes');
 
 const app = express();
@@ -39,6 +53,7 @@ describe('Assignment submission routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.getSubmissionForUser.mockResolvedValue(null);
+    service.getSubmissionById.mockResolvedValue({ id: '1', file_url: null });
   });
 
   test('list submissions by assignment', async () => {

@@ -6,8 +6,15 @@ jest.mock('../src/modules/payments/payments.service', () => ({
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (_req, _res, next) => next(),
+  verifyToken: (req, _res, next) => { req.user = { id: 'admin1' }; next(); },
   isAdmin: (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/payments/payments.service');

@@ -45,8 +45,8 @@ describe('paypalService', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           intent: CheckoutPaymentIntent.Capture,
-          purchase_units: [
-            { amount: { currency_code: 'USD', value: '10.00' } },
+          purchaseUnits: [
+            { amount: { currencyCode: 'USD', value: '10.00' } },
           ],
         }),
         prefer: 'return=representation',
@@ -60,8 +60,8 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchase_units: [
-            { amount: { currency_code: 'USD', value: '12.35' } },
+          purchaseUnits: [
+            { amount: { currencyCode: 'USD', value: '12.35' } },
           ],
         }),
       })
@@ -75,8 +75,8 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchase_units: [
-            { amount: { currency_code: 'JPY', value: '100' } },
+          purchaseUnits: [
+            { amount: { currencyCode: 'JPY', value: '100' } },
           ],
         }),
       })
@@ -85,8 +85,8 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          purchase_units: [
-            { amount: { currency_code: 'KWD', value: '7.988' } },
+          purchaseUnits: [
+            { amount: { currencyCode: 'KWD', value: '7.988' } },
           ],
         }),
       })
@@ -103,9 +103,9 @@ describe('paypalService', () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          application_context: {
-            return_url: 'https://example.com/return',
-            cancel_url: 'https://example.com/cancel',
+          applicationContext: {
+            returnUrl: 'https://example.com/return',
+            cancelUrl: 'https://example.com/cancel',
           },
         }),
       })

@@ -102,27 +102,11 @@ exports.decrement = async (instructor_id, amount, tenantId = null) => {
       .forUpdate()
       .first();
 
-    const tenantId = await resolveTenantId(
-      instructor_id,
-      trx,
-      options.tenantId || wallet?.tenant_id,
-    );
-
-    if (!tenantId) {
-      throw new Error("tenant_id_required_for_wallet");
-    }
-
-    if (wallet && wallet.tenant_id && wallet.tenant_id !== tenantId) {
+    if (tenantColumnExists && wallet && wallet.tenant_id !== resolvedTenantId) {
       throw new Error("wallet_tenant_mismatch");
     }
 
-    let effectiveWallet = wallet;
-    if (wallet && wallet.tenant_id && wallet.tenant_id !== tenantId) {
-      effectiveWallet = await trx("instructor_wallets")
-        .where({ instructor_id, tenant_id: tenantId })
-        .forUpdate()
-        .first();
-    }
+    const effectiveWallet = wallet;
 
     const balance = effectiveWallet ? Number(effectiveWallet.balance) : 0;
     if (balance < Number(amount)) {

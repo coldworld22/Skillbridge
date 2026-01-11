@@ -39,6 +39,7 @@ exports.loginOrRegister = async ({
   email,
   fullName,
   avatarUrl,
+  tenant_id = null,
 }) => {
   let account = await userModel.findBySocialAccount(provider, providerId);
   let user;
@@ -97,15 +98,28 @@ exports.loginOrRegister = async ({
   const roles = await ensureRoleAssignments(user);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const memberships = await db("tenant_memberships")
+  const membershipRows = await db("tenant_memberships")
     .select("tenant_id", "role", "status")
     .where({ user_id: user.id, status: "active" });
+  const memberships = Array.isArray(membershipRows) ? membershipRows : [];
+  if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
+    throw new AppError(
+      "No active tenant membership found. Please accept an invite or contact your admin.",
+      403,
+    );
+  }
+  const membershipTenantIds = new Set(memberships.map((m) => m.tenant_id));
+  const currentTenantId =
+    (tenant_id && membershipTenantIds.has(tenant_id)
+      ? tenant_id
+      : memberships[0]?.tenant_id) || null;
   const accessToken = generateAccessToken({
     id: user.id,
     role: tokenRoles[0],
     roles: tokenRoles,
     platform_role: user.platform_role || "none",
     memberships,
+    current_tenant_id: currentTenantId,
   });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
 

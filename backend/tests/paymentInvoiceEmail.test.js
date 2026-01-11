@@ -109,7 +109,7 @@ describe('invoice email dispatch', () => {
   });
 
   it('handles zero-amount payments without a method', async () => {
-    bookService.getBookById.mockResolvedValue({ price: 0, instructor_id: 'i1' });
+    bookService.getBookById.mockResolvedValue({ price: 0, instructor_id: 'i1', tenant_id: 'tenant-1' });
     paymentMethodsService.getByType.mockResolvedValue({ id: 'free', type: 'free', active: true });
     paymentsService.create.mockResolvedValue({ id: 'p4', user_id: 'u1', method_id: 'free', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
 
@@ -125,7 +125,7 @@ describe('invoice email dispatch', () => {
       'i1',
       0,
       null,
-      'tenant-1'
+      defaultTenant.id
     );
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });

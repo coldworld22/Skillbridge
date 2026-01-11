@@ -70,6 +70,8 @@ describe("languages.service", () => {
       }),
     }));
 
-    await expect(service.list()).rejects.toThrow(boom);
+    await expect(service.list()).rejects.toThrow(
+      "Unable to access the language catalog. Please try again after the database connection is restored."
+    );
   });
 });

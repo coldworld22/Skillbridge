@@ -48,12 +48,13 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
   if (!SUPPORTED_FIAT.includes(currencyCode)) {
     throw new AppError('Unsupported currency', 400);
   }
+  const tenantId = req.tenant?.id;
   const coupon = await loadAndValidateCoupon(coupon_id, {
     itemType: item_type,
     itemId: item_id,
+    tenantId,
   });
 
-  const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new AppError('Tenant context required', 400);
   }
@@ -101,8 +102,6 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     params.cancel_url = `${process.env.FRONTEND_URL}/payments/error`;
   }
 
-  const tenantId = req.tenant?.id || null;
-
   const invoice = await nowPayments.createInvoice(settings.api_key, params);
 
   const paymentData = {
@@ -135,7 +134,7 @@ exports.handleIPN = catchAsync(async (req, res) => {
   const tenantId = req.tenant?.id;
   const payment = await paymentsService.getById(paymentId, tenantId);
   if (!payment) return res.status(404).end();
-  const tenantId = payment.tenant_id || null;
+  const resolvedTenantId = payment.tenant_id || tenantId || null;
   const method = await paymentMethodsService.getById(payment.method_id);
   const secret = method?.settings?.ipn_secret;
   if (!nowPayments.verifyIpnSignature(payload, signature, secret)) {
@@ -154,14 +153,14 @@ exports.handleIPN = catchAsync(async (req, res) => {
     const updated = await paymentsService.update(
       paymentId,
       statusUpdate,
-      tenantId,
+      resolvedTenantId,
     );
     if (updated.status === STATUS.PAID) {
       if (!wasPaid) {
-        await markCouponRedeemed(updated.coupon_id);
+        await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
       }
       await grantAccess(updated);
-      const refreshed = await paymentsService.getById(updated.id, tenantId);
+      const refreshed = await paymentsService.getById(updated.id, resolvedTenantId);
       if (refreshed?.status === STATUS.PAID) {
         await creditInstructorFromPayment(refreshed, req.tenant?.id);
       }

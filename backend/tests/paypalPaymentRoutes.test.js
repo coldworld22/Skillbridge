@@ -26,9 +26,20 @@ jest.mock('../src/modules/plans/plans.service', () => ({
   getPlanById: jest.fn(),
 }));
 
+jest.mock('../src/modules/classes/class.service', () => ({
+  getClassById: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'u1' }; next(); },
   isStudent: (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 const paymentsService = require('../src/modules/payments/payments.service');
@@ -36,6 +47,7 @@ const methodsService = require('../src/modules/paymentMethods/paymentMethods.ser
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const paypalService = require('../src/services/paypalService');
 const plansService = require('../src/modules/plans/plans.service');
+const classService = require('../src/modules/classes/class.service');
 const routes = require('../src/modules/payments/paypal.routes');
 
 const app = express();
@@ -45,6 +57,11 @@ const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);
 
 describe('POST /api/payments/paypal/create', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    classService.getClassById.mockResolvedValue({ price: 100 });
+  });
+
   it('creates order and stores payment record', async () => {
     methodsService.getByType.mockResolvedValue({ id: 'm2', settings: {} });
     configService.getSettings.mockResolvedValue({ platformCut: { class: 15 } });
@@ -54,20 +71,23 @@ describe('POST /api/payments/paypal/create', () => {
     });
     paymentsService.create.mockResolvedValue({ id: 'p1' });
 
-    const res = await request(app)
-      .post('/api/payments/paypal/create')
-      .send({ item_type: 'class', item_id: 'c1', amount: 100 });
+  const res = await request(app)
+    .post('/api/payments/paypal/create')
+    .send({ item_type: 'class', item_id: 'c1', amount: 100 });
 
-    expect(res.status).toBe(200);
-    expect(res.body.data.approval_url).toBe('https://paypal.test/approve');
-    expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        reference_id: 'o1',
-        platform_fee: 15,
-        instructor_amount: 85,
-      })
-    );
-  });
+  expect(res.status).toBe(200);
+  expect(res.body.data.approval_url).toBe('https://paypal.test/approve');
+  expect(paymentsService.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      reference_id: 'o1',
+      platform_fee: 15,
+      instructor_amount: 85,
+    }),
+    expect.any(Array),
+    null,
+    'tenant1'
+  );
+});
 
   it('validates plan price and initiates payment', async () => {
     methodsService.getByType.mockResolvedValue({ id: 'm2', settings: {} });
@@ -88,10 +108,13 @@ describe('POST /api/payments/paypal/create', () => {
       .send({ item_type: 'plan', item_id: 'plan1', amount: 100 });
 
     expect(res.status).toBe(200);
-    expect(plansService.getPlanById).toHaveBeenCalledWith('plan1');
-    expect(res.body.data.approval_url).toBe('https://paypal.test/plan');
-    expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100 })
-    );
-  });
+  expect(plansService.getPlanById).toHaveBeenCalledWith('plan1');
+  expect(res.body.data.approval_url).toBe('https://paypal.test/plan');
+  expect(paymentsService.create).toHaveBeenCalledWith(
+    expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100 }),
+    expect.any(Array),
+    null,
+    'tenant1'
+  );
+});
 });

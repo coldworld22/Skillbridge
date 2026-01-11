@@ -31,6 +31,13 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   },
 }));
 
+jest.mock('../../../../middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 const routes = require('../public.routes');
 jest.mock('../../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
 const planService = require('../../../plans/plans.service');

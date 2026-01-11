@@ -106,6 +106,7 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const coupon = await loadAndValidateCoupon(coupon_id, {
     itemType: item_type,
     itemId: item_id,
+    tenantId: req.tenant?.id,
   });
 
   const tenantId = req.tenant?.id;
@@ -154,7 +155,6 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const charge = await coinbaseService.createCharge(apiKey, params);
 
   const chargeData = charge?.data || charge;
-  const tenantId = req.tenant?.id || null;
 
   const paymentData = {
     id: paymentId,
@@ -184,10 +184,10 @@ exports.handleWebhook = catchAsync(async (req, res) => {
   const paymentId = event?.data?.metadata?.payment_id;
   if (!paymentId) return res.status(400).end();
 
-  const tenantId = req.tenant?.id;
-  const payment = await paymentsService.getById(paymentId, tenantId);
+  const tenantFromReq = req.tenant?.id;
+  const payment = await paymentsService.getById(paymentId, tenantFromReq);
   if (!payment) return res.status(404).end();
-  const tenantId = payment.tenant_id || null;
+  const tenantId = payment.tenant_id || tenantFromReq || null;
   const method = await paymentMethodsService.getById(payment.method_id);
   const secret = resolveCoinbaseSecret(method?.settings);
   if (!coinbaseService.verifyWebhook(payload, signature, secret)) {
@@ -203,20 +203,22 @@ exports.handleWebhook = catchAsync(async (req, res) => {
     statusUpdate = { status: STATUS.REJECTED, reference_id: chargeId };
   }
   const wasPaid = payment.status === STATUS.PAID;
-  if (Object.keys(statusUpdate).length) {
-    const updated = await paymentsService.update(
-      paymentId,
-      statusUpdate,
-      tenantId,
-    );
-    if (updated.status === STATUS.PAID) {
-      if (!wasPaid) {
-        await markCouponRedeemed(updated.coupon_id);
-      }
-      await grantAccess(updated);
-      const refreshed = await paymentsService.getById(updated.id, tenantId);
-      if (refreshed?.status === STATUS.PAID) {
-        await creditInstructorFromPayment(refreshed);
+  try {
+    if (Object.keys(statusUpdate).length) {
+      const updated = await paymentsService.update(
+        paymentId,
+        statusUpdate,
+        tenantId,
+      );
+      if (updated.status === STATUS.PAID) {
+        if (!wasPaid) {
+          await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
+        }
+        await grantAccess(updated);
+        const refreshed = await paymentsService.getById(updated.id, tenantId);
+        if (refreshed?.status === STATUS.PAID) {
+          await creditInstructorFromPayment(refreshed);
+        }
       }
     }
   } catch (err) {

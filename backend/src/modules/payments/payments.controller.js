@@ -64,6 +64,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     req.user?.role && ["admin", "superadmin"].includes(req.user.role);
   const validation = await validatePaymentData(req.body, user_id, {
     allowStatusOverride,
+    tenantId,
   });
   const {
     method,
@@ -138,7 +139,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.status === STATUS.PAID) {
-    await markCouponRedeemed(payment.coupon_id);
+    await markCouponRedeemed(payment.coupon_id, tenantId);
   }
 
   let user;
@@ -218,7 +219,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         );
         await handleEnrollment(item_type, user_id, item_id);
         await clearCartItem(user_id, item_id, item_type);
-        await markCouponRedeemed(payment.coupon_id);
+        await markCouponRedeemed(payment.coupon_id, tenantId);
       }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {
@@ -368,7 +369,6 @@ exports.getMyPayments = catchAsync(async (req, res) => {
 
   const tenantId = req.tenant?.id;
   const hasFilters = Object.keys(filters).length > 0;
-  const tenantId = req.tenant?.id;
   const data = hasFilters
     ? await service.getByUser(req.user.id, filters, tenantId)
     : await service.getByUser(req.user.id, {}, tenantId);
@@ -464,13 +464,13 @@ exports.updatePayment = catchAsync(async (req, res) => {
               }
               payload.attachments = [attachment];
             }
-            await mailService.sendMail(payload);
-          }
-        } catch (err) {
-          logger.error("Failed to generate invoice:", err);
-        }
+        await mailService.sendMail(payload);
+      }
+    } catch (err) {
+      logger.error("Failed to generate invoice:", err);
+    }
         await creditInstructorFromPayment(payment, req.tenant?.id);
-        await markCouponRedeemed(payment.coupon_id);
+        await markCouponRedeemed(payment.coupon_id, tenantId);
       } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;
         subject = "Payment Rejected";

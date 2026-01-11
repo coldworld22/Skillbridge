@@ -23,6 +23,15 @@ jest.mock('../src/modules/payments/paymentAccess', () => ({
   grantAccess: jest.fn(),
 }));
 
+jest.mock('../src/modules/plans/plans.service', () => ({
+  getPlanById: jest.fn(async (id) => ({
+    id,
+    price_monthly: 100,
+    price_yearly: 200,
+    features: [],
+  })),
+}));
+
 const paymentAccess = require('../src/modules/payments/paymentAccess');
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -32,6 +41,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   },
   isStudent: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: '00000000-0000-0000-0000-000000000001' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
 const studentRoutes = require('../src/modules/payments/bank.routes');
@@ -98,6 +114,7 @@ describe('bank payment approval flow', () => {
       table.float('instructor_amount').defaultTo(0);
       table.string('coupon_id');
       table.jsonb('bank_details');
+      table.uuid('tenant_id');
       table.timestamp('paid_at');
       table.timestamps(true, true);
     });

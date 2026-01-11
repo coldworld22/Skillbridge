@@ -33,6 +33,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/payments/payments.service');
 const methodService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
@@ -51,7 +58,7 @@ describe('GET /api/payments/student', () => {
     const res = await request(app).get('/api/payments/student');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
-    expect(service.getByUser).toHaveBeenCalledWith('user1');
+    expect(service.getByUser).toHaveBeenCalledWith('user1', {}, 'tenant-1');
   });
 });
 
@@ -67,7 +74,7 @@ describe('GET /api/payments/student/:id', () => {
     const res = await request(app).get('/api/payments/student/p1');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(payment);
-    expect(service.getById).toHaveBeenCalledWith('p1');
+    expect(service.getById).toHaveBeenCalledWith('p1', 'tenant-1');
   });
 
   it('returns 404 when payment belongs to another user', async () => {

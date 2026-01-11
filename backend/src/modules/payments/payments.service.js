@@ -190,7 +190,7 @@ exports.getAll = async (status, methodType, tenantId = null) => {
   return query;
 };
 
-exports.getByUser = async (userId, filters = {}, tenantId = null) => {
+exports.getByUser = async (userId, filters = {}, tenantIdArg = null) => {
   let statusFilter = null;
   let itemTypeFilter = null;
   let limit = null;

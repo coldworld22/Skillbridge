@@ -6,10 +6,10 @@ const couponService = require("../../coupons/coupons.service");
  * Loads a coupon by ID and ensures it can be applied to the requested item.
  * Returns `null` when no coupon was supplied.
  */
-async function loadAndValidateCoupon(couponId, { itemType, itemId }) {
+async function loadAndValidateCoupon(couponId, { itemType, itemId, tenantId }) {
   if (!couponId) return null;
 
-  const coupon = await couponService.getCouponById(couponId);
+  const coupon = await couponService.getCouponById(couponId, tenantId);
   if (!coupon) throw new AppError("Invalid coupon", 400);
 
   if (coupon.applies_to && coupon.applies_to !== itemType) {
@@ -35,10 +35,10 @@ async function loadAndValidateCoupon(couponId, { itemType, itemId }) {
   return coupon;
 }
 
-async function markCouponRedeemed(couponId) {
+async function markCouponRedeemed(couponId, tenantId = null) {
   if (!couponId) return;
   try {
-    await couponService.incrementUsage(couponId);
+    await couponService.incrementUsage(couponId, tenantId);
   } catch (err) {
     logger.error("Failed to increment coupon usage:", err);
   }

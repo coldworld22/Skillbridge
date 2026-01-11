@@ -40,11 +40,14 @@ const library = require('../../library/library.service');
 
 describe('payments.controller.createPayment - book immediate paid', () => {
   test('records book purchase in library when paid', async () => {
-    const req = { user: { id: 'u1' }, body: { item_type: 'book', item_id: 5, amount: 0 } };
+    const req = {
+      user: { id: 'u1' },
+      tenant: { id: 'tenant-1' },
+      body: { item_type: 'book', item_id: 5, amount: 0 },
+    };
     const res = { status: jest.fn(() => res), json: jest.fn() };
     controller.createPayment(req, res, (e) => { throw e; });
     await new Promise((r) => setImmediate(r));
     expect(library.recordPurchase).toHaveBeenCalledWith('u1', 5, 0);
   });
 });
-

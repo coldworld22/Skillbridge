@@ -20,6 +20,7 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   updateTutorial: jest.fn(),
   addTutorialTags: jest.fn(),
   getTutorialTags: jest.fn(),
+  getTutorialById: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/tutorials/tutorialTag.service', () => ({
@@ -40,9 +41,14 @@ describe('updateTutorial tag transactions', () => {
     service.updateTutorial.mockReset();
     service.addTutorialTags.mockReset();
     service.getTutorialTags.mockReset();
+    service.getTutorialById.mockReset();
     tagService.findByName.mockReset();
     tagService.createTag.mockReset();
     db.transaction.mockResolvedValue(db.__trx);
+    service.getTutorialById.mockResolvedValue({
+      id: '1',
+      tenant_id: 'tenant-1',
+    });
   });
 
   const baseReq = {
@@ -50,6 +56,7 @@ describe('updateTutorial tag transactions', () => {
     body: { tags: ['Tag1'] },
     files: {},
     user: { id: 'admin', role: 'admin' },
+    tenant: { id: 'tenant-1' },
   };
 
   it('commits transaction when tag update succeeds', async () => {
@@ -61,11 +68,10 @@ describe('updateTutorial tag transactions', () => {
     const next = jest.fn();
     await controller.updateTutorial(baseReq, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    const trx = await db.transaction.mock.results[0].value;
     expect(db.transaction).toHaveBeenCalled();
     expect(db.__commit).toHaveBeenCalled();
     expect(db.__rollback).not.toHaveBeenCalled();
-    expect(service.addTutorialTags).toHaveBeenCalledWith('1', ['t1'], trx);
+    expect(service.addTutorialTags).toHaveBeenCalledWith('1', ['t1'], db.__trx);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -77,10 +83,8 @@ describe('updateTutorial tag transactions', () => {
     const next = jest.fn();
     await controller.updateTutorial(baseReq, res, next);
     await new Promise((resolve) => setImmediate(resolve));
-    const trx = await db.transaction.mock.results[0].value;
     expect(db.__rollback).toHaveBeenCalled();
     expect(db.__commit).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
   });
 });
-

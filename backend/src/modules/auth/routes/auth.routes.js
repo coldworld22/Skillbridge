@@ -7,6 +7,7 @@ const socialAuthController = require("../controllers/socialAuth.controller");
 const validate = require("../../../middleware/validate");
 const authValidation = require("../validators/auth.validator");
 const { limitAuthRequests } = require("../../../middleware/rateLimiter");
+const { verifyToken } = require("../../../middleware/auth/authMiddleware");
 
 /**
  * @route   POST /auth/register
@@ -35,6 +36,20 @@ router.post("/refresh", authController.refreshToken);
  * @access  Public
  */
 router.post("/logout", authController.logout);
+
+/**
+ * @route   GET /auth/memberships
+ * @desc    List tenant memberships for the authenticated user
+ * @access  Private
+ */
+router.get("/memberships", verifyToken, authController.listMemberships);
+
+/**
+ * @route   POST /auth/switch-tenant
+ * @desc    Switch active tenant and return updated access token
+ * @access  Private
+ */
+router.post("/switch-tenant", verifyToken, authController.switchTenant);
 
 /**
  * @route   POST /auth/request-reset
@@ -122,5 +137,10 @@ router.post("/apple/callback", socialAuthController.appleCallback);
 router.get("/github", socialAuthController.githubAuth);
 router.get("/github/callback", socialAuthController.githubCallback);
 
+// Tenant invites (authenticated)
+router.use(
+  "/tenant-invites",
+  require("../routes/tenantInvite.routes"),
+);
 
 module.exports = router;

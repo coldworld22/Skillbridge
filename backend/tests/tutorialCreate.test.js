@@ -1,9 +1,18 @@
 jest.mock('../src/config/database', () => {
-  const mockDb = jest.fn(() => ({
-    where: jest.fn().mockReturnThis(),
-    whereRaw: jest.fn().mockReturnThis(),
-    first: jest.fn().mockResolvedValue(null),
-  }));
+  const buildQuery = () => {
+    const query = {
+      where: jest.fn().mockReturnThis(),
+      whereRaw: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      modify: jest.fn((cb) => {
+        cb(query);
+        return query;
+      }),
+      first: jest.fn().mockResolvedValue(null),
+    };
+    return query;
+  };
+  const mockDb = jest.fn(() => buildQuery());
   mockDb.transaction = jest.fn(async (cb) => {
     await cb({});
   });
@@ -171,8 +180,14 @@ describe('createTutorial', () => {
 
   it('rejects duplicate titles regardless of case', async () => {
     const whereRaw = jest.fn().mockReturnThis();
+    const andWhere = jest.fn().mockReturnThis();
     const first = jest.fn().mockResolvedValue({ id: 'existing' });
-    db.mockImplementationOnce(() => ({ whereRaw, first }));
+    const query = { whereRaw, andWhere, first };
+    query.modify = jest.fn((cb) => {
+      cb(query);
+      return query;
+    });
+    db.mockImplementationOnce(() => query);
 
     const req = {
       body: {
@@ -193,4 +208,3 @@ describe('createTutorial', () => {
     expect(service.createTutorialWithRelations).not.toHaveBeenCalled();
   });
 });
-

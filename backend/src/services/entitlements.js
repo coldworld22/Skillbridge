@@ -214,6 +214,9 @@ const ACTIONS = {
   "user.asset.upload": {
     roles: ["tenant_admin", "instructor", "student"],
   },
+  "tenant.domain.manage": {
+    roles: ["tenant_admin"],
+  },
 };
 
 const BLOCKED_STATES = new Set(["suspended", "cancelled"]);

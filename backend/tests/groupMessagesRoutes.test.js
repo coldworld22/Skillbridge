@@ -25,6 +25,22 @@ jest.mock('../src/modules/messages/messages.service', () => ({
   createMessage: jest.fn(),
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+  enforceTenantStatus: () => (_req, _res, next) => next(),
+  requireEntitlement: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/storage', () => ({
+  checkAndConsumeStorage: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/modules/groups/groupMessageUpload.middleware', () => (req, _res, next) => {
+  req.files = req.files || { file: [{ filename: 'upload.png' }] };
+  next();
+});
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'u1', full_name: 'User One' };

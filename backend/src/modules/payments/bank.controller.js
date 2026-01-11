@@ -176,6 +176,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   const coupon = await loadAndValidateCoupon(coupon_id, {
     itemType: item_type,
     itemId: item_id,
+    tenantId,
   });
 
   // Verify amount matches catalog price
@@ -368,7 +369,7 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   }
   if (refreshedPayment?.status === STATUS.PAID) {
     await creditInstructorFromPayment(refreshedPayment, req.tenant?.id);
-    await markCouponRedeemed(refreshedPayment?.coupon_id);
+    await markCouponRedeemed(refreshedPayment?.coupon_id, tenantId);
   }
   let user;
   try {

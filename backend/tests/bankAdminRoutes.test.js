@@ -2,6 +2,10 @@ const request = require('supertest');
 const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
+  STATUS: {
+    PAID: 'paid',
+    AWAITING_APPROVAL: 'awaiting_approval',
+  },
   approveBankPayment: jest.fn(),
 }));
 
@@ -90,6 +94,7 @@ describe('POST /api/admin/payments/bank/:id/approve', () => {
       item_type: 'book',
       item_id: 'book1',
       instructor_amount: 45,
+      status: 'paid',
     });
 
     const res = await request(app)
@@ -113,6 +118,7 @@ describe('POST /api/admin/payments/bank/:id/approve', () => {
       item_type: 'tutorial',
       item_id: 'tut1',
       instructor_amount: 160,
+      status: 'paid',
     });
 
     const res = await request(app)
