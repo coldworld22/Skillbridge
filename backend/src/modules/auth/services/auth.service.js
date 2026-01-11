@@ -19,6 +19,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
+const appConfigService = require("../../appConfig/appConfig.service");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -63,20 +64,96 @@ function cleanupFailedAttempts() {
 
 setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
 
+async function getRegistrationGuardrails() {
+  const settings = (await appConfigService.getSettings()) || {};
+  return {
+    inviteOnly: Boolean(settings.invite_only ?? settings.inviteOnly),
+  };
+}
+
+async function ensureInviteOrMembership(userId) {
+  return db("tenant_memberships")
+    .where({ user_id: userId })
+    .whereIn("status", ["pending", "active"])
+    .first();
+}
+
 /**
  * Register a new user
  */
 exports.registerUser = async (data) => {
   // Check duplicate email
+  const { inviteOnly } = await getRegistrationGuardrails();
   const existingEmail = await userModel.findByEmail(data.email);
-  if (existingEmail) throw new AppError("Email is already in use", 409);
+  if (existingEmail) {
+    if (!inviteOnly) {
+      throw new AppError("Email is already in use", 409);
+    }
+
+    const membership = await ensureInviteOrMembership(existingEmail.id);
+    if (!membership) {
+      throw new AppError(
+        "Registration is invite-only. Please contact your administrator.",
+        403,
+      );
+    }
+
+    if (existingEmail.password_hash) {
+      throw new AppError("Email is already in use", 409);
+    }
+
+    if (data.phone) {
+      const existingPhone = await userModel.findByPhone(data.phone);
+      if (existingPhone && existingPhone.id !== existingEmail.id) {
+        throw new AppError("Phone number is already in use", 409);
+      }
+    }
+
+    const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
+    const roleName = existingEmail.role || data.role || "Student";
+    const [updatedUser] = await userModel.updateUser(existingEmail.id, {
+      full_name: data.full_name,
+      email: data.email,
+      phone: data.phone || null,
+      password_hash: hashed,
+      role: roleName,
+      status: existingEmail.status || "pending",
+      is_email_verified: existingEmail.is_email_verified || false,
+      is_phone_verified: existingEmail.is_phone_verified || false,
+      profile_complete: false,
+      updated_at: new Date(),
+    });
+
+    const roleRow = await db("roles").where({ name: roleName }).first();
+    if (roleRow) {
+      await db("user_roles")
+        .insert({ user_id: existingEmail.id, role_id: roleRow.id })
+        .onConflict(["user_id", "role_id"])
+        .ignore();
+    }
+
+    const roles = await userModel.getUserRoles(existingEmail.id);
+    const permissions =
+      typeof userModel.getUserPermissions === "function"
+        ? await userModel.getUserPermissions(existingEmail.id)
+        : [];
+    const safeUser = sanitizeUserUtil(updatedUser || existingEmail);
+    return { user: { ...safeUser, roles, permissions } };
+  }
 
   // ✅ Check duplicate phone
-  const existingPhone = await userModel.findByPhone(data.phone);
   if (data.phone) {
     const existingPhone = await userModel.findByPhone(data.phone);
-    if (existingPhone)
+    if (existingPhone) {
       throw new AppError("Phone number is already in use", 409);
+    }
+  }
+
+  if (inviteOnly) {
+    throw new AppError(
+      "Registration is invite-only. Please contact your administrator.",
+      403,
+    );
   }
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);

@@ -5,6 +5,7 @@ const AppError = require("../../../utils/AppError");
 const sanitizeUser = require("../utils/sanitizeUser");
 const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
+const appConfigService = require("../../appConfig/appConfig.service");
 
 const SALT_ROUNDS = 12;
 
@@ -41,6 +42,11 @@ exports.loginOrRegister = async ({
   avatarUrl,
   tenant_id = null,
 }) => {
+  const settings = (await appConfigService.getSettings()) || {};
+  const allowNewTenantCreation = Boolean(
+    settings.allow_new_tenant_creation ?? settings.allowNewTenantCreation,
+  );
+  const inviteOnly = Boolean(settings.invite_only ?? settings.inviteOnly);
   let account = await userModel.findBySocialAccount(provider, providerId);
   let user;
 
@@ -53,6 +59,12 @@ exports.loginOrRegister = async ({
       if (existing) {
         user = existing;
       }
+    }
+    if (!user && (inviteOnly || !allowNewTenantCreation)) {
+      throw new AppError(
+        "No active tenant membership found. Please accept an invite or contact your admin.",
+        403,
+      );
     }
     if (!user) {
       const hashed = await bcrypt.hash(providerId, SALT_ROUNDS);
@@ -102,7 +114,11 @@ exports.loginOrRegister = async ({
     .select("tenant_id", "role", "status")
     .where({ user_id: user.id, status: "active" });
   const memberships = Array.isArray(membershipRows) ? membershipRows : [];
-  if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
+  if (
+    process.env.NODE_ENV !== "test" &&
+    memberships.length === 0 &&
+    !allowNewTenantCreation
+  ) {
     throw new AppError(
       "No active tenant membership found. Please accept an invite or contact your admin.",
       403,
