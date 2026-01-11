@@ -195,11 +195,14 @@ const enforceTenantStatus = ({ allowBillingPaths = [] } = {}) => {
     const isBillingPath = allowBillingPaths.some((pattern) =>
       pattern.test(req.path || ""),
     );
+    if (isBillingPath) return next();
 
     if (["suspended", "cancelled"].includes(status) && isMutating(req.method)) {
-      if (!isBillingPath) {
-        return res.status(423).json({ error: "tenant_suspended" });
-      }
+      return res.status(423).json({ error: "tenant_suspended" });
+    }
+
+    if (status === "grace" && isMutating(req.method)) {
+      return res.status(423).json({ error: "tenant_grace" });
     }
 
     return next();
