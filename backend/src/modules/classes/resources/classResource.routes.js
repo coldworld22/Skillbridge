@@ -33,9 +33,9 @@ router.post(
   enforceTenantStatus(),
   isInstructorOrAdmin,
   verifyClassOwnership,
+  requireEntitlement("class.resource.manage"),
   upload.single("file"),
   checkAndConsumeStorage(),
-  requireEntitlement("class.resource.manage"),
   controller.createResource,
 );
 

@@ -194,6 +194,20 @@ const requireRole =
   };
 
 const { can } = require("../services/entitlements");
+const { sendQuotaExceeded } = require("../utils/quota");
+
+const sendEntitlementDenied = (res, decision, action) => {
+  if (decision?.reason === "limit_reached") {
+    return sendQuotaExceeded(res, {
+      action,
+      limit: decision.limit,
+      usage: decision.usage,
+    });
+  }
+  return res
+    .status(403)
+    .json({ error: decision?.reason || "entitlement_denied" });
+};
 
 /**
  * Entitlement guard using services/entitlements.can
@@ -208,9 +222,7 @@ const requireEntitlement = (action) => async (req, res, next) => {
       action,
     );
     if (!decision.allow) {
-      return res
-        .status(403)
-        .json({ error: decision.reason || "entitlement_denied" });
+      return sendEntitlementDenied(res, decision, action);
     }
     return next();
   } catch (err) {
@@ -225,4 +237,5 @@ module.exports = {
   enforceTenantStatus,
   requireRole,
   requireEntitlement,
+  sendEntitlementDenied,
 };
