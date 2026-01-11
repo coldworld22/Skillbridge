@@ -258,8 +258,9 @@ const loadItemDetails = async (payment) => {
   return null;
 };
 
-exports.generateFromPayment = async (payment, user) => {
-  const existingRaw = await model.findByPayment(payment.id);
+exports.generateFromPayment = async (payment, user, tenantId = null) => {
+  const tenantContext = tenantId || payment?.tenant_id || null;
+  const existingRaw = await model.findByPayment(payment.id, tenantContext);
   const existing = withFilePath(existingRaw);
 
   const existingLayoutVersion =
@@ -881,18 +882,23 @@ exports.generateFromPayment = async (payment, user) => {
 
   let saved;
   if (existing) {
-    saved = await model.update(id, baseRecord);
+    saved = await model.update(id, baseRecord, tenantContext);
   } else {
-    saved = await model.create({ id, created_at: new Date(), ...baseRecord });
+    const createPayload = { id, created_at: new Date(), ...baseRecord };
+    if (tenantContext) {
+      createPayload.tenant_id = tenantContext;
+    }
+    saved = await model.create(createPayload, tenantContext);
   }
 
   return withFilePath({ ...saved, pdf_url: pdfRelativePath });
 };
 
-exports.getInvoices = () =>
-  model.getAll().then((rows) => rows.map(withFilePath));
-exports.getInvoice = (id) => model.getById(id).then(withFilePath);
-exports.getInvoicesByUser = (user_id) =>
-  model.getByUser(user_id).then((rows) => rows.map(withFilePath));
-exports.getInvoiceByPaymentId = (payment_id) =>
-  model.findByPayment(payment_id).then(withFilePath);
+exports.getInvoices = (tenantId = null) =>
+  model.getAll(tenantId).then((rows) => rows.map(withFilePath));
+exports.getInvoice = (id, tenantId = null) =>
+  model.getById(id, tenantId).then(withFilePath);
+exports.getInvoicesByUser = (user_id, tenantId = null) =>
+  model.getByUser(user_id, tenantId).then((rows) => rows.map(withFilePath));
+exports.getInvoiceByPaymentId = (payment_id, tenantId = null) =>
+  model.findByPayment(payment_id, tenantId).then(withFilePath);

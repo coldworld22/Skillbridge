@@ -109,6 +109,11 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
     itemId: item_id,
   });
 
+  const tenantId = req.tenant?.id;
+  if (!tenantId) {
+    throw new AppError('Tenant context required', 400);
+  }
+
   if (item_type === 'plan') {
     await ensurePlanAmountMatches(item_id, numericAmount, { coupon });
   }
@@ -154,6 +159,7 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const paymentData = {
     id: paymentId,
     user_id,
+    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -166,7 +172,7 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
     instructor_amount,
     coupon_id: coupon?.id || null,
   };
-  const payment = await paymentsService.create(paymentData);
+  const payment = await paymentsService.create(paymentData, [], null, tenantId);
 
   sendSuccess(res, { hosted_url: chargeData.hosted_url, payment }, 'Coinbase payment initiated');
 });
@@ -180,6 +186,7 @@ exports.handleWebhook = catchAsync(async (req, res) => {
 
   const payment = await paymentsService.getById(paymentId);
   if (!payment) return res.status(404).end();
+  const tenantId = payment.tenant_id || null;
   const method = await paymentMethodsService.getById(payment.method_id);
   const secret = resolveCoinbaseSecret(method?.settings);
   if (!coinbaseService.verifyWebhook(payload, signature, secret)) {
@@ -196,13 +203,17 @@ exports.handleWebhook = catchAsync(async (req, res) => {
   }
   const wasPaid = payment.status === STATUS.PAID;
   if (Object.keys(statusUpdate).length) {
-    const updated = await paymentsService.update(paymentId, statusUpdate);
+    const updated = await paymentsService.update(
+      paymentId,
+      statusUpdate,
+      tenantId,
+    );
     if (updated.status === STATUS.PAID) {
       if (!wasPaid) {
         await markCouponRedeemed(updated.coupon_id);
       }
       await grantAccess(updated);
-      const refreshed = await paymentsService.getById(updated.id);
+      const refreshed = await paymentsService.getById(updated.id, tenantId);
       if (refreshed?.status === STATUS.PAID) {
         await creditInstructorFromPayment(refreshed);
       }
