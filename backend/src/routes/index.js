@@ -173,6 +173,10 @@ router.use(
 );
 router.use("/api/admin/cache", require("./cache.routes"));
 router.use(
+  "/api/admin/tenant-subscriptions",
+  require("../modules/tenantSubscriptions/tenantSubscriptions.routes"),
+);
+router.use(
   "/api/payments/config",
   require("../modules/paymentConfig/paymentConfig.routes"),
 );
