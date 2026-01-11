@@ -131,6 +131,9 @@ router.post("/accept", async (req, res, next) => {
       .where({ tenant_id, user_id: userId })
       .first();
     if (!membership) throw new AppError("Invite not found", 404);
+    if (membership.status === "revoked" || isInviteExpired(membership)) {
+      throw new AppError("Invite expired", 410);
+    }
     if (membership.status === "active") {
       return res.json({ message: "Already a member", data: membership });
     }
