@@ -250,9 +250,16 @@ exports.loginUser = async ({ email, password, ip, tenant_id }) => {
       ? await userModel.getUserPermissions(user.id)
       : [];
   const tokenRoles = roles.length ? roles : [user.role];
-  const membershipRows = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: user.id, status: "active" });
+  const membershipRows = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": user.id, "tm.status": "active" });
   const memberships = Array.isArray(membershipRows) ? membershipRows : [];
   if (process.env.NODE_ENV !== "test" && memberships.length === 0) {
     throw new AppError(
@@ -275,7 +282,11 @@ exports.loginUser = async ({ email, password, ip, tenant_id }) => {
     memberships,
     current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    user.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -323,9 +334,12 @@ function generateRefreshToken(payload, jti) {
   });
 }
 
-async function issueRefreshToken(userId, role) {
+async function issueRefreshToken(userId, role, currentTenantId = null) {
   const jti = uuidv4();
-  const token = generateRefreshToken({ id: userId, role }, jti);
+  const token = generateRefreshToken(
+    { id: userId, role, current_tenant_id: currentTenantId },
+    jti,
+  );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await db("refresh_tokens").insert({
@@ -364,17 +378,31 @@ exports.rotateRefreshToken = async (token) => {
   const roles = await userModel.getUserRoles(decoded.id);
   const tokenRoles = roles.length ? roles : [decoded.role];
   const user = await db("users").where({ id: decoded.id }).first();
-  const memberships = await db("tenant_memberships")
-    .select("tenant_id", "role", "status")
-    .where({ user_id: decoded.id, status: "active" });
+  const memberships = await db("tenant_memberships as tm")
+    .leftJoin("tenants as t", "tm.tenant_id", "t.id")
+    .select(
+      "tm.tenant_id",
+      "tm.role",
+      "tm.status",
+      db.raw("t.name as tenant_name"),
+      db.raw("t.slug as tenant_slug"),
+    )
+    .where({ "tm.user_id": decoded.id, "tm.status": "active" });
+  const currentTenantId =
+    decoded.current_tenant_id || memberships[0]?.tenant_id || null;
   const accessToken = generateAccessToken({
     id: decoded.id,
     role: tokenRoles[0],
     roles: tokenRoles,
     platform_role: user?.platform_role || "none",
     memberships,
+    current_tenant_id: currentTenantId,
   });
-  const refreshToken = await issueRefreshToken(decoded.id, tokenRoles[0]);
+  const refreshToken = await issueRefreshToken(
+    decoded.id,
+    tokenRoles[0],
+    currentTenantId,
+  );
   return { decoded, refreshToken, accessToken };
 };
 
