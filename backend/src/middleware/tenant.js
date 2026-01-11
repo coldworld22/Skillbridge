@@ -252,6 +252,7 @@ const requireEntitlement = (action) => async (req, res, next) => {
     return next();
   } catch (err) {
     logger.warn?.("entitlement check failed", { error: err.message, action });
+    metrics.increment("entitlement_check_error_total", { action });
     return res.status(500).json({ error: "entitlement_check_failed" });
   }
 };
