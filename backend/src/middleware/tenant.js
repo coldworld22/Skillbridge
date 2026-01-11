@@ -220,6 +220,7 @@ const requireEntitlement = (action) => async (req, res, next) => {
 };
 
 module.exports = {
+  resolveTenantByHost,
   resolveTenant,
   ensureTenantMembership,
   enforceTenantStatus,

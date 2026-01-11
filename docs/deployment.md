@@ -131,6 +131,49 @@ npm --prefix backend run migrate
 Running migrations separately keeps `startServer()` lightweight and ensures the
 database schema matches the application's expectations.
 
+## Seed tenant domains and update DNS/ingress
+
+Staging and production environments should explicitly seed custom tenant
+domains and point DNS records at the correct ingress/edge host so tenant routing
+works consistently.
+
+1. **Seed tenant domains.** Add a JSON array to `backend/.env` (or your secret
+   manager) describing each domain. Use `tenant_id` for stable IDs or
+   `tenant_slug` if you want the seed script to look up the tenant:
+
+   ```bash
+   TENANT_DOMAIN_SEEDS='[
+     {"domain":"acme.skillbridge.example","tenant_slug":"acme","status":"verified"},
+     {"domain":"training.skillbridge.example","tenant_id":"<uuid>","status":"verified"}
+   ]'
+   ```
+
+   Then run:
+
+   ```bash
+   npm --prefix backend run seed
+   ```
+
+2. **Update DNS/ingress.** For each tenant domain, create a CNAME (or ingress
+   host rule) pointing at the environment's frontend entrypoint:
+
+   - **Production:** `tenant-domain` → `eduskillbridge.net`
+   - **Staging:** `tenant-domain` → your staging frontend host (e.g.
+     `staging.eduskillbridge.net`)
+
+   Ensure your ingress or load balancer is configured to accept the tenant
+   hostnames and terminate TLS for them.
+
+3. **Validate host routing.** Compare expected tenant IDs against what the
+   backend resolves from the Host header:
+
+   ```bash
+   npm --prefix backend run validate:tenant-domains
+   ```
+
+   The script logs each `domain`, `expected`, and `actual` tenant ID so you can
+   confirm routing is correct.
+
 ## Validate your deployment
 
 > **Before inviting users:** Run these production smoke tests to make sure the
