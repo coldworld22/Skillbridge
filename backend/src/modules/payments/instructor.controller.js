@@ -35,9 +35,11 @@ const resolveMinimumWithdrawalAmount = (config) => {
 
 exports.getSummary = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
-  const tenantId = req.tenant?.id;
 
-  const totals = await paymentsService.getInstructorTotals(instructorId, tenantId);
+  const totals = await paymentsService.getInstructorTotals(
+    instructorId,
+    req.tenant?.id || null
+  );
 
   let wallet = null;
   let payouts = [];
@@ -127,13 +129,13 @@ exports.getSummary = catchAsync(async (req, res) => {
 
 exports.getPayments = catchAsync(async (req, res) => {
   const instructorId = req.user.id;
-  const tenantId = req.tenant?.id;
   const { status, itemType } = req.query;
 
   const payments = await paymentsService.getByInstructor(instructorId, {
     status,
     itemType,
-  }, tenantId);
+    tenantId: req.tenant?.id || null,
+  });
 
   const formatted = payments.map((payment) => ({
     ...payment,

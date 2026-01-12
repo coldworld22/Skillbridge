@@ -1,20 +1,8 @@
 const router = require("express").Router();
 const controller = require("./invoices.controller");
-const { verifyToken } = require("../../middleware/auth/authMiddleware");
-const {
-  resolveTenant,
-  ensureTenantMembership,
-  enforceTenantStatus,
-  requireEntitlement,
-} = require("../../middleware/tenant");
+const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware");
 
-router.use(
-  verifyToken,
-  resolveTenant,
-  ensureTenantMembership(),
-  enforceTenantStatus(),
-  requireEntitlement("payment.manage"),
-);
+router.use(verifyToken, isAdmin);
 
 router.get("/", controller.getInvoices);
 router.get("/:id", controller.getInvoice);

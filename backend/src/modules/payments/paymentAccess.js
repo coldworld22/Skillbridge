@@ -19,9 +19,13 @@ exports.grantAccess = async (payment) => {
       if (cls?.max_students) {
         const count = await enrollmentService.countEnrollments(payment.item_id);
         if (count >= cls.max_students) {
-          await paymentsService.update(payment.id, {
-            status: STATUS.AWAITING_APPROVAL,
-          });
+          await paymentsService.update(
+            payment.id,
+            {
+              status: STATUS.AWAITING_APPROVAL,
+            },
+            payment.tenant_id || null
+          );
           logger.warn(
             `Class ${payment.item_id} is at capacity. Payment ${payment.id} flagged for review`
           );

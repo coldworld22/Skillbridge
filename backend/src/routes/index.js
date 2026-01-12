@@ -168,6 +168,10 @@ router.use(
   require("../modules/tenantDomains/tenantDomains.routes"),
 );
 router.use(
+  "/api/tenant-subscriptions",
+  require("../modules/tenantSubscriptions/tenantSubscriptions.routes"),
+);
+router.use(
   "/api/admin/payments/bank",
   require("../modules/payments/bank.admin.routes"),
 );

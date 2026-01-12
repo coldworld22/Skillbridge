@@ -5,19 +5,8 @@ const {
   verifyToken,
   isInstructor,
 } = require("../../middleware/auth/authMiddleware");
-const {
-  resolveTenant,
-  ensureTenantMembership,
-  enforceTenantStatus,
-} = require("../../middleware/tenant");
 
-router.use(
-  verifyToken,
-  resolveTenant,
-  ensureTenantMembership(),
-  enforceTenantStatus(),
-  isInstructor,
-);
+router.use(verifyToken, isInstructor);
 
 router.get("/summary", controller.getSummary);
 router.get("/", controller.getPayments);
