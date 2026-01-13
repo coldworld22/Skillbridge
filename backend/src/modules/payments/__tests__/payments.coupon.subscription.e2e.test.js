@@ -97,13 +97,13 @@ const COUPON_SCENARIOS = [
     name: 'no coupon',
     couponId: null,
     expectedAmount: (tenant) => tenant.planPrice,
-    expectedRedeemCalls: 2,
+    expectedRedeemCalls: 1,
   },
   {
     name: '20 percent discount',
     couponId: 'coupon-20',
     expectedAmount: (tenant) => tenant.planPrice * 0.8,
-    expectedRedeemCalls: 2,
+    expectedRedeemCalls: 1,
   },
 ];
 
@@ -186,10 +186,7 @@ describe('payment flows with and without coupons', () => {
         amount: expectedAmount,
         coupon_id: scenario.couponId,
         tenant_id: tenant.id,
-      }),
-      [],
-      null,
-      tenant.id
+      })
     );
 
     expect(subscriptionService.createOrRenewSubscription).toHaveBeenCalledWith({

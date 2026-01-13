@@ -90,14 +90,14 @@ const backfillFromMemberships = async (knex, tableName, config) => {
     `
       UPDATE ${tableName} AS t
       SET tenant_id = tm.tenant_id
-      FROM LATERAL (
-        SELECT tenant_id
+      FROM (
+        SELECT DISTINCT ON (user_id) user_id, tenant_id
         FROM tenant_memberships
-        WHERE user_id = t.${userColumn}
-        ORDER BY created_at ASC
-        LIMIT 1
+        ORDER BY user_id, created_at ASC
       ) tm
-      WHERE t.tenant_id IS NULL AND tm.tenant_id IS NOT NULL
+      WHERE t.${userColumn} = tm.user_id
+        AND t.tenant_id IS NULL
+        AND tm.tenant_id IS NOT NULL
     `,
   );
 };
