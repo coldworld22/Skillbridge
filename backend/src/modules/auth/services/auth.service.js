@@ -21,6 +21,27 @@ const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
 const appConfigService = require("../../appConfig/appConfig.service");
 
+let refreshTenantColumnPromise;
+const hasRefreshTenantColumn = async () => {
+  if (!refreshTenantColumnPromise) {
+    refreshTenantColumnPromise = db.schema
+      .hasColumn("refresh_tokens", "tenant_id")
+      .catch(() => false);
+  }
+  return refreshTenantColumnPromise;
+};
+
+const resolveTenantForUser = async (userId, tenantId = null) => {
+  if (tenantId) return tenantId;
+  const membership = await db("tenant_memberships")
+    .where({ user_id: userId, status: "active" })
+    .orderBy("created_at")
+    .first();
+  if (membership?.tenant_id) return membership.tenant_id;
+  const firstTenant = await db("tenants").select("id").orderBy("created_at").first();
+  return firstTenant?.id || null;
+};
+
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
 // ─────────────────────────────────────────────────────────────
@@ -419,13 +440,21 @@ async function issueRefreshToken(userId, role, currentTenantId = null) {
   );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  await db("refresh_tokens").insert({
+  const payload = {
     id: jti,
     user_id: userId,
     token_hash: tokenHash,
     expires_at: expiresAt,
     created_at: new Date(),
-  });
+  };
+  if (await hasRefreshTenantColumn()) {
+    const tenantId = await resolveTenantForUser(userId, currentTenantId);
+    if (!tenantId) {
+      throw new AppError("tenant_id is required for refresh tokens", 400);
+    }
+    payload.tenant_id = tenantId;
+  }
+  await db("refresh_tokens").insert(payload);
   return token;
 }
 
