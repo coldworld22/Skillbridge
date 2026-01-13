@@ -1,4 +1,4 @@
-const db = require("../../config/database");
+const db = require("../../../config/database");
 const walletService = require("../../payouts/wallet.service");
 const logger = require("../../../utils/logger.js");
 const { calculateInstructorAmount } = require("./planRevenue");
