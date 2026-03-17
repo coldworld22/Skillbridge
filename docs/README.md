@@ -32,3 +32,4 @@
 - [Changelog](changelog.md) — record of notable changes.
 - [Release Checklist](release-checklist.md) — tasks before a release.
 - [Plan Feature Catalog](plan-feature-catalog.md) — plan capabilities and limits.
+- [SaaS Readiness Gap Analysis](saas-readiness-gap-analysis.md) — prioritized checklist to close gaps before full SaaS scale.

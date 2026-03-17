@@ -50,6 +50,8 @@ Markdown guides that are also bundled in HTML form for convenience.
   backend flow for validating purchase codes.
 - [Payment icon sources](./payment-icon-sources.md) – attribution for bundled
   assets.
+- [SaaS readiness gap analysis](./saas-readiness-gap-analysis.md) – prioritized
+  roadmap to close platform gaps before scaling commercially.
 
 Looking for something else? Browse the rest of the `docs/` directory or use the
 sidebar navigation in any HTML guide. All Markdown files are converted to HTML
