@@ -6,6 +6,7 @@
 - [Architecture Overview](architecture.md) — system components and data flow.
 - [Social Login Setup](social-login-setup.md) — configure OAuth providers.
 - [Tenant Onboarding Guide](tenant-onboarding-guide.md) — onboarding, trials, domains, and support playbooks.
+- [SaaS Readiness Gap Analysis](saas-readiness-gap-analysis.md) — audit of current SaaS maturity and missing capabilities.
 
 ## Administration
 - [Alerts Management](admin-alerts.md) — configure system alerts.
