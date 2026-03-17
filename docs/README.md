@@ -28,6 +28,7 @@
 - [Plans System Overview](plans-system-overview.md) — plan lifecycle and billing logic.
 
 ## Reference
+- [SaaS Readiness Gap Analysis](saas-readiness-gap-analysis.md) — prioritized checklist to reach full SaaS maturity.
 - [API Documentation](api-docs.md) — REST API endpoints.
 - [Changelog](changelog.md) — record of notable changes.
 - [Release Checklist](release-checklist.md) — tasks before a release.
