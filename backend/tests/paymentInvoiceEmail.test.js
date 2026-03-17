@@ -40,7 +40,7 @@ const plansService = require('../src/modules/plans/plans.service');
 const subscriptionService = require('../src/modules/subscriptions/subscription.service');
 const notificationService = require('../src/modules/notifications/notifications.service');
 
-const defaultTenant = { id: 'tenant-test' };
+const defaultTenant = { id: 'tenant-1' };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -90,12 +90,7 @@ describe('invoice email dispatch', () => {
     await paymentsController.createPayment(req, res, () => {});
     await new Promise(process.nextTick);
 
-    expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 0, status: 'paid' }),
-      expect.any(Array),
-      null,
-      defaultTenant.id
-    );
+    expect(paymentsService.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 0, status: 'paid' }));
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
 

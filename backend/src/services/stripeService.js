@@ -18,6 +18,8 @@ async function getClient() {
   return stripeClient;
 }
 
+exports.getClient = getClient;
+
 exports.charge = async ({ token, amount, currency = 'USD' }) => {
   const client = await getClient();
   const normalizedCurrency = normalizeCurrency(currency);

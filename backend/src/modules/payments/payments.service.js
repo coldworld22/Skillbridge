@@ -1,6 +1,5 @@
 const db = require("../../config/database");
 const AppError = require("../../utils/AppError");
-const logger = require("../../utils/logger");
 
 const STATUS = {
   PENDING_PAYMENT: "pending_payment",
@@ -29,31 +28,35 @@ const getPaymentColumnInfo = async () => {
   return paymentColumnInfoPromise;
 };
 
-const applyTenantScope = (query, tenantId, hasTenantId, alias = "p") => {
-  if (tenantId && hasTenantId) {
-    const column = alias ? `${alias}.tenant_id` : "tenant_id";
-    query.andWhere(column, tenantId);
+const normalizeTenantPayload = async (payload, tenantId = null) => {
+  const { hasTenantId } = await getPaymentColumnInfo();
+  const data = { ...payload };
+  if (hasTenantId) {
+    const resolvedTenant = tenantId || data.tenant_id || null;
+    if (!resolvedTenant) {
+      throw new AppError("tenant_id is required for payments");
+    }
+    data.tenant_id = resolvedTenant;
+  } else {
+    delete data.tenant_id;
+  }
+  return data;
+};
+
+const applyTenantScope = (query, tenantId, columnInfo, alias = "p") => {
+  if (columnInfo?.hasTenantId && tenantId) {
+    query.andWhere(`${alias}.tenant_id`, tenantId);
   }
   return query;
 };
 
-exports.create = async (data, schedules = [], trx, tenantId = null) => {
+exports.create = async (data, schedules = [], trx) => {
   const normalizeItemId = (value) =>
     value === undefined || value === null ? value : String(value);
-  const record = { ...data, item_id: normalizeItemId(data.item_id) };
-  const { hasTenantId } = await getPaymentColumnInfo();
-  if (hasTenantId) {
-    record.tenant_id =
-      record.tenant_id || data.tenant_id || data.tenantId || tenantId || null;
-    if (!record.tenant_id) {
-      logger.warn?.("payments.create missing tenant_id for scoped table", {
-        item_type: data.item_type,
-        item_id: data.item_id,
-      });
-    }
-  } else if (record.tenant_id !== undefined) {
-    delete record.tenant_id;
-  }
+  const record = await normalizeTenantPayload(
+    { ...data, item_id: normalizeItemId(data.item_id) },
+    data?.tenant_id || null
+  );
   const run = async (transaction) => {
     const [row] = await transaction("payments").insert(record).returning("*");
     if (schedules.length) {
@@ -70,11 +73,19 @@ exports.create = async (data, schedules = [], trx, tenantId = null) => {
   return db.transaction(run);
 };
 
-exports.findInstallmentContext = async (userId, itemType, itemId, tenantId = null) => {
+exports.findInstallmentContext = async (
+  userId,
+  itemType,
+  itemId,
+  tenantId = null
+) => {
   if (!userId || !itemType || itemId === undefined || itemId === null) {
     return { payment: null, schedule: null };
   }
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  if (columnInfo.hasTenantId && !tenantId) {
+    return { payment: null, schedule: null };
+  }
   const normalizedItemId = String(itemId);
   const payment = await db("payments")
     .where({
@@ -82,10 +93,9 @@ exports.findInstallmentContext = async (userId, itemType, itemId, tenantId = nul
       item_type: itemType,
       item_id: normalizedItemId,
     })
-    .modify((query) => applyTenantScope(query, tenantId, hasTenantId, ""))
     .andWhere("installments", ">", 1)
     .orderBy("created_at", "asc")
-    .modify((qb) => applyTenantScope(qb, tenantId, "payments"))
+    .modify((qb) => applyTenantScope(qb, tenantId, columnInfo, "payments"))
     .first();
 
   if (!payment) {
@@ -102,8 +112,13 @@ exports.findInstallmentContext = async (userId, itemType, itemId, tenantId = nul
 };
 
 exports.getAll = async (status, methodType, tenantId = null) => {
+  const columnInfo = await getPaymentColumnInfo();
   const { hasPlatformFee, hasInstructorAmount, hasSource, hasTenantId } =
-    await getPaymentColumnInfo();
+    columnInfo;
+
+  if (hasTenantId && !tenantId) {
+    return [];
+  }
 
   const query = db({ p: "payments" })
     .leftJoin("users as u", "p.user_id", "u.id")
@@ -157,7 +172,7 @@ exports.getAll = async (status, methodType, tenantId = null) => {
     )
     .orderBy("p.created_at", "desc");
 
-  applyTenantScope(query, tenantId);
+  applyTenantScope(query, tenantId, columnInfo);
 
   if (status) {
     query.where("p.status", status);
@@ -166,8 +181,6 @@ exports.getAll = async (status, methodType, tenantId = null) => {
   if (methodType) {
     query.andWhere("m.type", methodType);
   }
-
-  applyTenantScope(query, tenantId, hasTenantId);
 
   if (hasPlatformFee) {
     query.select("p.platform_fee");
@@ -230,8 +243,13 @@ exports.getByUser = async (userId, filters = {}, tenantIdArg = null) => {
     statusFilter = String(filters);
   }
 
+  const columnInfo = await getPaymentColumnInfo();
   const { hasPlatformFee, hasInstructorAmount, hasSource, hasTenantId } =
-    await getPaymentColumnInfo();
+    columnInfo;
+
+  if (hasTenantId && !tenantId) {
+    return [];
+  }
 
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
@@ -283,7 +301,7 @@ exports.getByUser = async (userId, filters = {}, tenantIdArg = null) => {
     )
     .where("p.user_id", userId);
 
-  applyTenantScope(query, tenantId, hasTenantId);
+  applyTenantScope(query, tenantId, columnInfo);
 
   if (statusFilter) {
     query.andWhere("p.status", statusFilter);
@@ -325,37 +343,48 @@ exports.getByUser = async (userId, filters = {}, tenantIdArg = null) => {
 };
 
 exports.getById = async (id, tenantId = null) => {
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
   const query = db("payments").where({ id });
-  applyTenantScope(query, tenantId, hasTenantId, "");
+  applyTenantScope(query, tenantId, columnInfo);
   return query.first();
 };
 
 exports.update = async (id, data, tenantId = null) => {
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  const tenantScope = tenantId || data?.tenant_id || null;
+  if (columnInfo.hasTenantId && !tenantScope) {
+    throw new AppError("tenant_id is required to update payments");
+  }
+  const payload = await normalizeTenantPayload(data, tenantScope);
   const query = db("payments").where({ id });
-  applyTenantScope(query, tenantId, hasTenantId, "");
-  const [row] = await query.update(data).returning("*");
+  applyTenantScope(query, tenantScope, columnInfo);
+  const [row] = await query.update(payload).returning("*");
   return row;
 };
 
 exports.delete = async (id, tenantId = null) => {
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  if (columnInfo.hasTenantId && !tenantId) {
+    throw new AppError("tenant_id is required to delete payments");
+  }
   const query = db("payments").where({ id });
-  applyTenantScope(query, tenantId, hasTenantId, "");
+  applyTenantScope(query, tenantId, columnInfo);
   return query.del();
 };
 
 exports.approveBankPayment = async (
   id,
   { amount, item_id, item_type } = {},
-  tenantId = null,
+  tenantId = null
 ) => {
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  if (columnInfo.hasTenantId && !tenantId) {
+    throw new AppError("tenant_id is required to approve payments");
+  }
   return db.transaction(async (trx) => {
-    const baseQuery = trx("payments").where({ id }).forUpdate();
-    applyTenantScope(baseQuery, tenantId, hasTenantId, "");
-    const payment = await baseQuery.first();
+    const paymentQuery = trx("payments").where({ id }).forUpdate();
+    applyTenantScope(paymentQuery, tenantId, columnInfo, "payments");
+    const payment = await paymentQuery.first();
     if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
@@ -374,9 +403,9 @@ exports.approveBankPayment = async (
       throw new AppError("Payment item type does not match order", 400);
     }
 
-    const scopedUpdate = trx("payments").where({ id });
-    applyTenantScope(scopedUpdate, tenantId, hasTenantId, "");
-    const [row] = await scopedUpdate
+    const updateQuery = trx("payments").where({ id });
+    applyTenantScope(updateQuery, tenantId, columnInfo, "payments");
+    const [row] = await updateQuery
       .update({ status: STATUS.PAID, paid_at: new Date() })
       .returning("*");
 
@@ -387,13 +416,16 @@ exports.approveBankPayment = async (
 exports.rejectBankPayment = async (
   id,
   { amount, item_id, item_type } = {},
-  tenantId = null,
+  tenantId = null
 ) => {
-  const { hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  if (columnInfo.hasTenantId && !tenantId) {
+    throw new AppError("tenant_id is required to reject payments");
+  }
   return db.transaction(async (trx) => {
-    const baseQuery = trx("payments").where({ id }).forUpdate();
-    applyTenantScope(baseQuery, tenantId, hasTenantId, "");
-    const payment = await baseQuery.first();
+    const paymentQuery = trx("payments").where({ id }).forUpdate();
+    applyTenantScope(paymentQuery, tenantId, columnInfo, "payments");
+    const payment = await paymentQuery.first();
     if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
@@ -412,9 +444,9 @@ exports.rejectBankPayment = async (
       throw new AppError("Payment item type does not match order", 400);
     }
 
-    const scopedUpdate = trx("payments").where({ id });
-    applyTenantScope(scopedUpdate, tenantId, hasTenantId, "");
-    const [row] = await scopedUpdate
+    const updateQuery = trx("payments").where({ id });
+    applyTenantScope(updateQuery, tenantId, columnInfo, "payments");
+    const [row] = await updateQuery
       .update({ status: STATUS.REJECTED })
       .returning("*");
 
@@ -424,11 +456,15 @@ exports.rejectBankPayment = async (
 
 exports.getByInstructor = async (
   instructorId,
-  { status, itemType } = {},
-  tenantId = null,
+  { status, itemType, tenantId = null } = {}
 ) => {
+  const columnInfo = await getPaymentColumnInfo();
   const { hasPlatformFee, hasInstructorAmount, hasSource, hasTenantId } =
-    await getPaymentColumnInfo();
+    columnInfo;
+
+  if (hasTenantId && !tenantId) {
+    return [];
+  }
 
   const query = db({ p: "payments" })
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
@@ -475,7 +511,7 @@ exports.getByInstructor = async (
     })
     .orderBy("p.created_at", "desc");
 
-  applyTenantScope(query, tenantId, hasTenantId);
+  applyTenantScope(query, tenantId, columnInfo);
 
   if (status) {
     query.andWhere("p.status", status);
@@ -507,11 +543,31 @@ exports.getByInstructor = async (
 };
 
 exports.getInstructorTotals = async (instructorId, tenantId = null) => {
-  const { hasPlatformFee, hasInstructorAmount, hasTenantId } = await getPaymentColumnInfo();
+  const columnInfo = await getPaymentColumnInfo();
+  const { hasPlatformFee, hasInstructorAmount, hasTenantId } = columnInfo;
+
+  if (hasTenantId && !tenantId) {
+    return {
+      totalPaid: 0,
+      totalPending: 0,
+      totalInstructorAmount: 0,
+      totalPlatformFee: 0,
+      totalGross: 0,
+    };
+  }
+
+  const [classesHasTenant, tutorialsHasTenant, booksHasTenant] =
+    await Promise.all([
+      db.schema.hasColumn("online_classes", "tenant_id").catch(() => false),
+      db.schema.hasColumn("tutorials", "tenant_id").catch(() => false),
+      db.schema.hasColumn("books", "tenant_id").catch(() => false),
+    ]);
+
   const instructorColumn = hasInstructorAmount
     ? "p.instructor_amount"
     : "p.amount";
-  const baseQuery = db({ p: "payments" })
+
+  const query = db({ p: "payments" })
     .leftJoin("online_classes as c", function () {
       this.on("p.item_id", "=", db.raw("c.id::text")).andOn(
         "p.item_type",
@@ -546,24 +602,23 @@ exports.getInstructorTotals = async (instructorId, tenantId = null) => {
         .orWhere("b.instructor_id", instructorId);
     });
 
-  applyTenantScope(baseQuery, tenantId, hasTenantId);
+  applyTenantScope(query, tenantId, columnInfo);
 
-  const [row] = await baseQuery
-    .select(
-      db.raw(
-        `COALESCE(SUM(CASE WHEN p.status = ? THEN ${instructorColumn} ELSE 0 END), 0) as total_paid`,
-        [STATUS.PAID]
-      ),
-      db.raw(
-        `COALESCE(SUM(CASE WHEN p.status <> ? THEN ${instructorColumn} ELSE 0 END), 0) as total_pending`,
-        [STATUS.PAID]
-      ),
-      db.raw(`COALESCE(SUM(${instructorColumn}), 0) as total_instructor_amount`),
-      hasPlatformFee
-        ? db.raw("COALESCE(SUM(p.platform_fee), 0) as total_platform_fee")
-        : db.raw("0 as total_platform_fee"),
-      db.raw("COALESCE(SUM(p.amount), 0) as total_gross")
-    );
+  const [row] = await query.select(
+    db.raw(
+      `COALESCE(SUM(CASE WHEN p.status = ? THEN ${instructorColumn} ELSE 0 END), 0) as total_paid`,
+      [STATUS.PAID]
+    ),
+    db.raw(
+      `COALESCE(SUM(CASE WHEN p.status <> ? THEN ${instructorColumn} ELSE 0 END), 0) as total_pending`,
+      [STATUS.PAID]
+    ),
+    db.raw(`COALESCE(SUM(${instructorColumn}), 0) as total_instructor_amount`),
+    hasPlatformFee
+      ? db.raw("COALESCE(SUM(p.platform_fee), 0) as total_platform_fee")
+      : db.raw("0 as total_platform_fee"),
+    db.raw("COALESCE(SUM(p.amount), 0) as total_gross")
+  );
 
   return {
     totalPaid: Number(row?.total_paid || 0),

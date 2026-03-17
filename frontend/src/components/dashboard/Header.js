@@ -7,6 +7,7 @@ import {
   Search,
   Home,
   LogOut,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/router";
@@ -24,6 +25,7 @@ import LinkText from "@/components/shared/LinkText";
 import { adminNavLinks } from "@/components/dashboard/SidebarLinks/adminLinks";
 import { instructorNavLinks } from "@/components/dashboard/SidebarLinks/instructorLinks";
 import { studentNavLinks } from "@/components/dashboard/SidebarLinks/studentLinks";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -32,7 +34,7 @@ export default function Header() {
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
   const switchTenant = useAuthStore((state) => state.switchTenant);
   const userRole = user?.role?.toLowerCase();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -43,10 +45,12 @@ export default function Header() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const [switchingTenantId, setSwitchingTenantId] = useState(null);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const msgRef = useRef(null);
   const searchContainerRef = useRef(null);
+  const languageRef = useRef(null);
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
@@ -113,6 +117,16 @@ export default function Header() {
     setDark(newDark);
     document.documentElement.classList.toggle("dark", newDark);
     localStorage.setItem("theme", newDark ? "dark" : "light");
+  };
+
+  const changeLang = async (code) => {
+    try {
+      await i18n.changeLanguage(code);
+      toast.success(t("language_updated", { defaultValue: "Language updated" }));
+      setLanguageOpen(false);
+    } catch (err) {
+      toast.error(t("language_update_failed", { defaultValue: "Failed to switch language" }));
+    }
   };
 
   const routeTitleMap = {
@@ -313,6 +327,19 @@ export default function Header() {
     startMessagePolling,
   ]);
 
+  useEffect(() => {
+    const handler = (event) => {
+      if (
+        languageRef.current &&
+        !languageRef.current.contains(event.target)
+      ) {
+        setLanguageOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
       <div className="flex items-center gap-4">
@@ -394,6 +421,30 @@ export default function Header() {
                     })}
                   </div>
                 )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="relative" ref={languageRef}>
+          <button
+            onClick={() => setLanguageOpen((prev) => !prev)}
+            className="text-gray-500 hover:text-yellow-500 transition"
+            aria-haspopup="true"
+            aria-expanded={languageOpen}
+          >
+            <Globe className="w-5 h-5" />
+          </button>
+          <AnimatePresence>
+            {languageOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 w-56 p-3"
+              >
+                <LanguageSwitcher changeLang={changeLang} />
               </motion.div>
             )}
           </AnimatePresence>

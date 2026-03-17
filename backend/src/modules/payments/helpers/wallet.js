@@ -1,47 +1,41 @@
+const db = require("../../../config/database");
 const walletService = require("../../payouts/wallet.service");
-const bookService = require("../../books/book.service");
-const classService = require("../../classes/class.service");
-const tutorialService = require("../../users/tutorials/tutorial.service");
 const logger = require("../../../utils/logger.js");
 const { calculateInstructorAmount } = require("./planRevenue");
+
+const fetchInstructorContext = async (item_type, item_id, trx = db) => {
+  const query = trx;
+  if (item_type === "book") {
+    return query("books")
+      .where({ id: item_id })
+      .first(["instructor_id", "tenant_id"]);
+  }
+  if (item_type === "class") {
+    return query("online_classes")
+      .where({ id: item_id })
+      .first(["instructor_id", "tenant_id"]);
+  }
+  if (item_type === "tutorial") {
+    return query("tutorials")
+      .where({ id: item_id })
+      .first(["instructor_id", "tenant_id"]);
+  }
+  return null;
+};
 
 async function creditInstructorWallet(item_type, item_id, amount, tenantId = null) {
   const numericAmount = Number(amount);
   if (!Number.isFinite(numericAmount) || numericAmount < 0) return;
   try {
-    if (item_type === "book") {
-      const book = await bookService.getBookById(item_id);
-      if (book?.instructor_id) {
-        const targetTenantId = tenantId || book?.tenant_id;
-        await walletService.increment(
-          book.instructor_id,
-          numericAmount,
-          null,
-          targetTenantId,
-        );
-      }
-    } else if (item_type === "class") {
-      const cls = await classService.getClassById(item_id);
-      if (cls?.instructor_id) {
-        const targetTenantId = tenantId || cls?.tenant_id;
-        await walletService.increment(
-          cls.instructor_id,
-          numericAmount,
-          null,
-          targetTenantId,
-        );
-      }
-    } else if (item_type === "tutorial") {
-      const tut = await tutorialService.getTutorialById(item_id);
-      if (tut?.instructor_id) {
-        const targetTenantId = tenantId || tut?.tenant_id;
-        await walletService.increment(
-          tut.instructor_id,
-          numericAmount,
-          null,
-          targetTenantId,
-        );
-      }
+    const context = await fetchInstructorContext(item_type, item_id);
+    if (context?.instructor_id) {
+      const targetTenantId = tenantId || context.tenant_id;
+      await walletService.increment(
+        context.instructor_id,
+        numericAmount,
+        null,
+        targetTenantId,
+      );
     }
   } catch (err) {
     logger.error("Failed to credit instructor wallet:", err);
@@ -84,19 +78,9 @@ async function creditInstructorSubscription(
 
     let instructorId;
     let tenantId;
-    if (item_type === "class") {
-      const cls = await classService.getClassById(item_id);
-      instructorId = cls?.instructor_id;
-      tenantId = cls?.tenant_id;
-    } else if (item_type === "tutorial") {
-      const tut = await tutorialService.getTutorialById(item_id);
-      instructorId = tut?.instructor_id;
-      tenantId = tut?.tenant_id;
-    } else if (item_type === "book") {
-      const book = await bookService.getBookById(item_id);
-      instructorId = book?.instructor_id;
-      tenantId = book?.tenant_id;
-    }
+    const record = await fetchInstructorContext(item_type, item_id, trx || db);
+    instructorId = record?.instructor_id;
+    tenantId = record?.tenant_id;
 
     if (instructorId) {
       await walletService.increment(instructorId, amount, trx, tenantId);
@@ -139,7 +123,7 @@ async function creditTutorialSubscription(
     }
     const amount = await calculateInstructorAmount(...args);
     if (amount <= 0) return;
-    const tut = await tutorialService.getTutorialById(tutorialId);
+    const tut = await fetchInstructorContext("tutorial", tutorialId, trx || db);
     if (tut?.instructor_id) {
       await walletService.increment(
         tut.instructor_id,

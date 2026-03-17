@@ -1,18 +1,19 @@
-const logger = require('../../utils/logger.js');
-const catchAsync = require('../../utils/catchAsync');
-const AppError = require('../../utils/AppError');
-const { sendSuccess } = require('../../utils/response');
-const paymentsService = require('./payments.service');
+const logger = require("../../utils/logger.js");
+const catchAsync = require("../../utils/catchAsync");
+const AppError = require("../../utils/AppError");
+const { sendSuccess } = require("../../utils/response");
+const paymentsService = require("./payments.service");
 const { STATUS } = paymentsService;
-const paymentConfigService = require('../paymentConfig/paymentConfig.service');
-const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
-const coinbaseService = require('../../services/coinbaseService');
-const metrics = require('../../utils/metrics');
-const { v4: uuidv4 } = require('uuid');
-const { creditInstructorFromPayment } = require('./helpers/wallet');
-const { loadAndValidateCoupon, markCouponRedeemed } = require('./helpers/coupon');
-const { ensurePlanAmountMatches } = require('./helpers/planPricing');
-const { enforceBaseCurrency } = require('./helpers/currency');
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
+const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
+const coinbaseService = require("../../services/coinbaseService");
+const metrics = require("../../utils/metrics");
+const { v4: uuidv4 } = require("uuid");
+const { grantAccess } = require("./paymentAccess");
+const { creditInstructorFromPayment } = require("./helpers/wallet");
+const { loadAndValidateCoupon, markCouponRedeemed } = require("./helpers/coupon");
+const { ensurePlanAmountMatches } = require("./helpers/planPricing");
+const { enforceBaseCurrency } = require("./helpers/currency");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -20,27 +21,44 @@ const DEFAULT_PLATFORM_CUT = {
   tutorial: 20,
 };
 
-const ALLOWED_ITEM_TYPES = ['class', 'book', 'tutorial', 'plan'];
+const ALLOWED_ITEM_TYPES = ["class", "book", "tutorial", "plan"];
 const SUPPORTED_FIAT = [
-  'USD','EUR','GBP','JPY','CNY','SAR','AED','KWD','INR','CAD','AUD','CHF','QAR','EGP','TRY','KRW','SGD','RUB',
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CNY",
+  "SAR",
+  "AED",
+  "KWD",
+  "INR",
+  "CAD",
+  "AUD",
+  "CHF",
+  "QAR",
+  "EGP",
+  "TRY",
+  "KRW",
+  "SGD",
+  "RUB",
 ];
 
 const toSettingsObject = (rawSettings) => {
   if (!rawSettings) return {};
-  if (typeof rawSettings === 'string') {
+  if (typeof rawSettings === "string") {
     try {
       return JSON.parse(rawSettings);
     } catch (_err) {
       return {};
     }
   }
-  if (typeof rawSettings === 'object') return rawSettings;
+  if (typeof rawSettings === "object") return rawSettings;
   return {};
 };
 
 const pickFirstString = (...values) => {
   for (const value of values) {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const trimmed = value.trim();
       if (trimmed) return trimmed;
     }
@@ -72,7 +90,7 @@ const resolveCoinbaseApiKey = (rawSettings) => {
       settings.api_key,
       settings.apiKey,
       settings.API_KEY,
-      settings['api-key'],
+      settings["api-key"],
       settings.key,
       settings.coinbase_api_key,
       settings.coinbaseApiKey,
@@ -90,61 +108,58 @@ const resolveCoinbaseApiKey = (rawSettings) => {
 exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   const { item_type, item_id, amount, currency, coupon_id } = req.body;
   const user_id = req.user?.id;
+  const tenantId = req.tenant?.id || null;
   if (!user_id || !item_type || !item_id || amount === undefined) {
-    throw new AppError('Missing required fields', 400);
+    throw new AppError("Missing required fields", 400);
   }
   if (!ALLOWED_ITEM_TYPES.includes(item_type)) {
-    throw new AppError('Invalid item type', 400);
+    throw new AppError("Invalid item type", 400);
   }
   const numericAmount = Number(amount);
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-    throw new AppError('Amount must be a positive number', 400);
+    throw new AppError("Amount must be a positive number", 400);
   }
   const currencyCode = enforceBaseCurrency(currency);
   if (!SUPPORTED_FIAT.includes(currencyCode)) {
-    throw new AppError('Unsupported currency', 400);
+    throw new AppError("Unsupported currency", 400);
   }
   const coupon = await loadAndValidateCoupon(coupon_id, {
     itemType: item_type,
     itemId: item_id,
-    tenantId: req.tenant?.id,
+    tenantId,
   });
 
-  const tenantId = req.tenant?.id;
-  if (!tenantId) {
-    throw new AppError('Tenant context required', 400);
-  }
-
-  if (item_type === 'plan') {
+  if (item_type === "plan") {
     await ensurePlanAmountMatches(item_id, numericAmount, { coupon });
   }
 
-  const method = await paymentMethodsService.getByType('coinbase');
+  const method = await paymentMethodsService.getByType("coinbase");
   if (!method) {
-    throw new AppError('Coinbase payment method not configured', 400);
+    throw new AppError("Coinbase payment method not configured", 400);
   }
   const apiKey = resolveCoinbaseApiKey(method.settings);
   if (!apiKey) {
-    throw new AppError('Coinbase payment method missing API key', 500);
+    throw new AppError("Coinbase payment method missing API key", 500);
   }
 
   let platform_fee = 0;
   let instructor_amount = numericAmount;
   try {
     const cfg = await paymentConfigService.getSettings();
-    const cut = cfg?.platformCut?.[item_type] ?? DEFAULT_PLATFORM_CUT[item_type] ?? 0;
+    const cut =
+      cfg?.platformCut?.[item_type] ?? DEFAULT_PLATFORM_CUT[item_type] ?? 0;
     platform_fee = (numericAmount * cut) / 100;
     instructor_amount = numericAmount - platform_fee;
   } catch (err) {
-    logger.error('Failed to load payment settings:', err);
+    logger.error("Failed to load payment settings:", err);
   }
 
   const paymentId = uuidv4();
 
   const params = {
-    name: 'Course Purchase',
-    description: 'Access to Prime Content',
-    pricing_type: 'fixed_price',
+    name: "Course Purchase",
+    description: "Access to Prime Content",
+    pricing_type: "fixed_price",
     local_price: { amount: numericAmount, currency: currencyCode },
     metadata: { payment_id: paymentId },
   };
@@ -154,13 +169,11 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
   }
 
   const charge = await coinbaseService.createCharge(apiKey, params);
-
   const chargeData = charge?.data || charge;
 
   const paymentData = {
     id: paymentId,
     user_id,
-    tenant_id: tenantId,
     method_id: method.id,
     item_type,
     item_id,
@@ -172,10 +185,15 @@ exports.initiateCoinbasePayment = catchAsync(async (req, res) => {
     platform_fee,
     instructor_amount,
     coupon_id: coupon?.id || null,
+    tenant_id: tenantId,
   };
-  const payment = await paymentsService.create(paymentData, [], null, tenantId);
+  const payment = await paymentsService.create(paymentData);
 
-  sendSuccess(res, { hosted_url: chargeData.hosted_url, payment }, 'Coinbase payment initiated');
+  sendSuccess(
+    res,
+    { hosted_url: chargeData.hosted_url, payment },
+    "Coinbase payment initiated"
+  );
 });
 
 exports.handleWebhook = catchAsync(async (req, res) => {
@@ -194,11 +212,12 @@ exports.handleWebhook = catchAsync(async (req, res) => {
     metrics.observeDuration(
       "webhook_processing_duration_ms",
       Date.now() - startTime,
-      { provider: "coinbase", status: outcome },
+      { provider: "coinbase", status: outcome }
     );
   };
+
   try {
-    const signature = req.get('X-CC-Webhook-Signature');
+    const signature = req.get("X-CC-Webhook-Signature");
     const payload = JSON.stringify(req.body || {});
     const event = req.body?.event;
     const paymentId = event?.data?.metadata?.payment_id;
@@ -208,7 +227,7 @@ exports.handleWebhook = catchAsync(async (req, res) => {
       return res.status(400).end();
     }
 
-    const tenantFromReq = req.tenant?.id;
+    const tenantFromReq = req.tenant?.id || null;
     const payment = await paymentsService.getById(paymentId, tenantFromReq);
     if (!payment) {
       outcome = "error";
@@ -227,44 +246,50 @@ exports.handleWebhook = catchAsync(async (req, res) => {
     let statusUpdate = {};
     const type = event?.type;
     const chargeId = event?.data?.id;
-    if (type === 'charge:confirmed') {
-      statusUpdate = { status: STATUS.PAID, reference_id: chargeId, paid_at: new Date() };
-    } else if (type === 'charge:failed') {
+    if (type === "charge:confirmed") {
+      statusUpdate = {
+        status: STATUS.PAID,
+        reference_id: chargeId,
+        paid_at: new Date(),
+      };
+    } else if (type === "charge:failed") {
       statusUpdate = { status: STATUS.REJECTED, reference_id: chargeId };
     }
+
     const wasPaid = payment.status === STATUS.PAID;
-    try {
-      if (Object.keys(statusUpdate).length) {
+    if (Object.keys(statusUpdate).length) {
+      try {
         const updated = await paymentsService.update(
           paymentId,
           statusUpdate,
-          tenantId,
+          tenantId
         );
         if (updated.status === STATUS.PAID) {
           if (!wasPaid) {
-            await markCouponRedeemed(updated.coupon_id, req.tenant?.id);
+            await markCouponRedeemed(updated.coupon_id, tenantId);
           }
           await grantAccess(updated);
           const refreshed = await paymentsService.getById(updated.id, tenantId);
           if (refreshed?.status === STATUS.PAID) {
-            await creditInstructorFromPayment(refreshed);
+            await creditInstructorFromPayment(refreshed, tenantId);
           }
         }
+      } catch (err) {
+        outcome = "error";
+        errorKind = "processing_exception";
+        logger.error("Failed to process Coinbase webhook", err);
       }
-    } catch (err) {
-      outcome = "error";
-      errorKind = "processing_exception";
-      logger.error("Failed to process Coinbase webhook", err);
     }
+
     if (
       process.env.NODE_ENV === "test" &&
       statusUpdate.status === STATUS.PAID
     ) {
-      const { grantAccess } = require("./paymentAccess");
       if (typeof grantAccess === "function") {
         await grantAccess(payment);
       }
     }
+
     res.json({ ok: true });
   } finally {
     finalizeMetrics();

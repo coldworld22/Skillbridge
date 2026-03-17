@@ -18,42 +18,33 @@ const applyTenantScope = async (query, tenantId) => {
 
 exports.create = async (data, tenantId = null) => {
   const payload = { ...data };
-  if (tenantId && (await hasTenantColumn())) {
+  const hasTenant = await hasTenantColumn();
+  if (tenantId && hasTenant) {
     payload.tenant_id = tenantId;
+  } else if (!hasTenant && payload.tenant_id !== undefined) {
+    delete payload.tenant_id;
   }
   const [row] = await db("invoices").insert(payload).returning("*");
   return row;
 };
 
-exports.getAll = async (tenantId = null) => {
-  const query = db("invoices").orderBy("created_at", "desc");
-  await applyTenantScope(query, tenantId);
-  return query;
+exports.getAll = () => {
+  return db("invoices").orderBy("created_at", "desc");
 };
 
-exports.getById = async (id, tenantId = null) => {
-  const query = db("invoices").where({ id });
-  await applyTenantScope(query, tenantId);
-  return query.first();
+exports.getById = (id) => {
+  return db("invoices").where({ id }).first();
 };
 
-exports.getByUser = async (user_id, tenantId = null) => {
-  const query = db("invoices")
-    .where({ user_id })
-    .orderBy("created_at", "desc");
-  await applyTenantScope(query, tenantId);
-  return query;
+exports.getByUser = (user_id) => {
+  return db("invoices").where({ user_id }).orderBy("created_at", "desc");
 };
 
-exports.findByPayment = async (payment_id, tenantId = null) => {
-  const query = db("invoices").where({ payment_id });
-  await applyTenantScope(query, tenantId);
-  return query.first();
+exports.findByPayment = (payment_id) => {
+  return db("invoices").where({ payment_id }).first();
 };
 
-exports.update = async (id, data, tenantId = null) => {
-  const query = db("invoices").where({ id });
-  await applyTenantScope(query, tenantId);
-  const [row] = await query.update(data).returning("*");
+exports.update = async (id, data) => {
+  const [row] = await db("invoices").where({ id }).update(data).returning("*");
   return row;
 };

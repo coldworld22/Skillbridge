@@ -118,7 +118,8 @@ const normalizeBankSettings = (rawSettings = {}) => {
 
 exports.getBankPayments = catchAsync(async (req, res) => {
   const { status } = req.query;
-  const data = await paymentsService.getAll(status, "bank", req.tenant?.id);
+  const tenantId = req.tenant?.id || null;
+  const data = await paymentsService.getAll(status, "bank", tenantId);
   sendSuccess(res, data);
 });
 
@@ -140,18 +141,18 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     reference_id,
   } = req.body;
   const user_id = req.user?.id;
+  const tenantId = req.tenant?.id || null;
 
   const receiptUrl = req.file
     ? `/uploads/payment-receipts/${req.file.filename}`
     : undefined;
 
-  const tenantId = req.tenant?.id;
-  if (!tenantId) {
-    throw new AppError("Tenant context required", 400);
-  }
-
   if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError("Missing required fields", 400);
+  }
+
+  if (!tenantId) {
+    throw new AppError("Tenant context required", 400);
   }
 
   if (!ALLOWED_ITEM_TYPES.includes(item_type)) {
@@ -252,7 +253,6 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   const paymentData = {
     id: uuidv4(),
     user_id,
-    tenant_id: tenantId,
     method_id: bankMethod.id,
     item_type,
     item_id,
@@ -263,13 +263,14 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     instructor_amount,
     bank_details,
     coupon_id: coupon?.id || null,
+    tenant_id: tenantId,
   };
 
   const ref = reference || reference_id;
   if (ref) paymentData.reference_id = ref;
   if (receiptUrl) paymentData.receipt_url = receiptUrl;
 
-  const payment = await paymentsService.create(paymentData, [], null, tenantId);
+  const payment = await paymentsService.create(paymentData);
 
   let user;
   try {
@@ -352,11 +353,11 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
 });
 
 exports.approveBankPayment = catchAsync(async (req, res) => {
-  const tenantId = req.tenant?.id;
+  const tenantId = req.tenant?.id || null;
   const payment = await paymentsService.approveBankPayment(
     req.params.id,
     req.body,
-    tenantId,
+    tenantId
   );
 
   await grantAccess(payment);
@@ -368,7 +369,7 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     logger.warn("Failed to refresh bank payment after approval:", err);
   }
   if (refreshedPayment?.status === STATUS.PAID) {
-    await creditInstructorFromPayment(refreshedPayment, req.tenant?.id);
+    await creditInstructorFromPayment(refreshedPayment, tenantId);
     await markCouponRedeemed(refreshedPayment?.coupon_id, tenantId);
   }
   let user;
@@ -393,11 +394,7 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
 
   try {
     if (user) {
-      const invoice = await invoiceService.generateFromPayment(
-        payment,
-        user,
-        tenantId,
-      );
+      const invoice = await invoiceService.generateFromPayment(payment, user);
       if (user.email && !user.invoice_email_opt_out && invoice) {
         const attachmentPath =
           invoice.file_path || invoice.pdf_url || null;
@@ -424,10 +421,11 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
 });
 
 exports.rejectBankPayment = catchAsync(async (req, res) => {
+  const tenantId = req.tenant?.id || null;
   const payment = await paymentsService.rejectBankPayment(
     req.params.id,
     req.body,
-    req.tenant?.id,
+    tenantId
   );
   sendSuccess(res, payment, "Bank payment rejected");
 });

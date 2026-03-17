@@ -12,3 +12,4 @@ backend/uploads/
 frontend/.next/
 backend/coverage/
 frontend/coverage/
+skillbridge_schema.sql

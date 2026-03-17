@@ -1,98 +1,75 @@
 # SaaS readiness gap analysis
 
-This document is a practical audit of SkillBridge's current state and what is still missing to operate confidently as a **full SaaS platform**.
+This checklist is a practical "what is still missing" guide to move SkillBridge from a feature-rich product to a production-grade SaaS business.
 
-## What is already in place
+## Current baseline (already in place)
 
-### 1) Multi-tenant request isolation and membership checks
-- Host/header-based tenant resolution is implemented in middleware.
-- Tenant membership and role checks are enforced before tenant actions.
-- Tenant status (`active`, `grace`, `suspended`, `cancelled`) can block write operations.
+SkillBridge already includes several strong SaaS foundations:
 
-### 2) Subscription + billing surface
-- Dedicated routes and docs exist for subscriptions, tenant subscriptions, invoices, and payment processors (Stripe/PayPal).
-- Plan/feature catalog documentation exists with role-aware plans and entitlement-focused behavior.
+- Multi-tenant schema primitives (`tenants`, `tenant_memberships`, `tenant_domains`, `subscriptions`) and tenant scoping in the migration SQL.
+- Tenant domain seeding and validation flow in deployment docs (`TENANT_DOMAIN_SEEDS`, `validate:tenant-domains`).
+- Plan + feature-gating architecture (`plans`, `plan_features`, `user_subscriptions`, `plan_usage_metrics`).
+- Operational docs for deployment, backups/restores, onboarding, and trial/upgrade playbooks.
 
-### 3) Delivery baseline
-- CI pipeline exists for backend and frontend (lint/build/test with coverage artifact upload).
-- Deployment and installation docs/scripts are present.
+This means the platform is **SaaS-capable**, but still needs hardening across billing automation, observability, compliance, and enterprise controls to be considered "full SaaS".
 
-## Critical gaps to close for “full SaaS” maturity
+## Gap matrix
 
-The items below are the highest-leverage missing pieces for production-grade SaaS operations.
+| Area | Current signal in repo | Missing for full SaaS | Priority |
+|---|---|---|---|
+| Tenant isolation guarantees | Tenant columns/constraints and scoped uniqueness exist in migrations. | Add DB-level row-level security (RLS), automated tenant-isolation tests, and per-request tenant guardrails to prevent cross-tenant reads/writes by mistake. | P0 |
+| Billing lifecycle automation | Subscription and plan models exist. | Add end-to-end billing state machine: webhook idempotency, dunning/retries, proration, cancellation at period end, and invoice reconciliation automation. | P0 |
+| Tenant self-serve onboarding | Onboarding playbook exists for operators. | Add self-serve tenant creation + guided setup wizard (domain connect, branding, SMTP, first admin) without manual support dependency. | P0 |
+| Observability & SLOs | Health endpoint and log checks are documented. | Add centralized metrics/traces, error budgets, alert routing, synthetic checks, and a public/internal status page workflow. | P0 |
+| Backup/DR posture | Backup/restore scripts are documented. | Add scheduled automated backups, regular restore drills, RPO/RTO targets, cross-region/object-storage backups, and auditable recovery reports. | P0 |
+| Security/compliance | Core auth/security deps are present (helmet, rate limit, sessions). | Add SOC2/GDPR-ready controls: data retention policy, DPA tooling, right-to-erasure workflows, audit evidence collection, secret rotation cadence, and formal vuln management SLA. | P0 |
+| Access & identity (B2B) | Role system exists (student/instructor/admin/super admin). | Add enterprise SSO (SAML/OIDC), SCIM or bulk user provisioning, domain claim/verification UI, and fine-grained RBAC for tenant admins. | P1 |
+| Revenue operations | Coupons/trials/plans documented. | Add finance-grade reporting (MRR/ARR/churn/cohorts), tax/VAT handling, failed-payment recovery funnels, and revenue recognition exports. | P1 |
+| Product analytics | Analytics service exists in backend. | Add tenant-level product analytics dashboards, funnel tracking, feature-adoption metrics, and experiment flags for pricing/activation optimization. | P1 |
+| Customer support at scale | Support playbooks and escalation steps documented. | Add in-app support tooling: tenant context panel, event timeline, impersonation with audit trail, and SLA policy enforcement. | P1 |
+| Release safety | Basic release checklist and tests are documented. | Add CI quality gates (lint/test/build), migration safety checks, canary/staged deploy flow, and rollback automation. | P1 |
+| Platform extensibility | Third-party integrations are configurable. | Add audited integration lifecycle: API key rotation UX, permission scopes, integration health checks, and tenant-specific webhook management UI. | P2 |
 
-### A. Tenant data security hardening (P0)
-1. **Database-level tenant isolation strategy should be formalized and verified**
-   - Add an explicit standard for tenant scoping in every query path (or move sensitive tables to RLS/DB policies where feasible).
-   - Add automated tests proving cross-tenant reads/writes are impossible for each core module.
-2. **Session and token hardening checklist**
-   - Enforce key rotation policy for JWT/refresh secrets.
-   - Add explicit token revocation strategy for compromised sessions.
+## 30/60/90 day execution plan
 
-### B. Revenue operations completeness (P0)
-1. **Billing lifecycle automation**
-   - Ensure lifecycle webhooks are fully handled (trial ending, payment failed, chargebacks, cancellation at period end, plan downgrade proration rules).
-2. **Dunning and retry policy**
-   - Implement documented retry schedule + customer communications for failed renewals.
-3. **Finance reconciliation**
-   - Add scheduled reconciliation report between internal subscription records and payment processor events.
+### First 30 days (must-have risk reduction)
 
-### C. Reliability + operations readiness (P0)
-1. **Backup/restore runbook + automated restore tests**
-   - Backups must be verifiably restorable, not just scheduled.
-2. **SLOs + alert thresholds**
-   - Define service-level objectives for API availability, checkout success, and login success.
-3. **Incident management process**
-   - Add a short documented incident flow (severity levels, owner, comms cadence, postmortem template).
+1. **Define tenant safety contract**
+   - Document a single tenant resolution source of truth for HTTP, jobs, and scripts.
+   - Add integration tests for "cannot access other tenant's data" on top APIs.
+2. **Close billing reliability gaps**
+   - Implement webhook idempotency keys and replay-safe handlers.
+   - Add subscription lifecycle tests (trial → active → grace → suspended/cancelled).
+3. **Stand up observability minimum**
+   - Emit structured logs with tenant IDs and request IDs.
+   - Add dashboards + paging alerts for API latency, 5xx rate, and queue failures.
+4. **Automate backups**
+   - Schedule backups daily, verify checksums, and run monthly restore drills.
 
-### D. Compliance + trust controls (P1)
-1. **Data retention and deletion policy**
-   - Define retention windows for logs, user content, and analytics data.
-2. **Tenant self-service privacy actions**
-   - Add auditable workflows for data export and account/org deletion requests.
-3. **Audit trail coverage**
-   - Ensure admin and billing-critical actions are immutable and queryable.
+### Days 31-60 (self-serve + enterprise readiness)
 
-### E. Product SaaS essentials (P1)
-1. **Self-serve workspace lifecycle**
-   - Improve end-to-end tenant onboarding: create workspace, verify domain, configure brand, choose plan, invite team.
-2. **Feature-gate observability**
-   - Add visibility into entitlement denials and quota exhaustion by tenant/plan to reduce support load.
-3. **In-app upgrade/downgrade UX and safeguards**
-   - Clear impacts preview (limits/features), effective date, and rollback handling.
+1. Build self-serve tenant onboarding wizard.
+2. Add tenant admin RBAC matrix and permission editor.
+3. Start SSO (OIDC first, then SAML) and domain claim UX.
+4. Implement audit exports and right-to-erasure runbook for compliance.
 
-## Suggested 30/60/90-day execution plan
+### Days 61-90 (scale + revenue optimization)
 
-### First 30 days
-- Create a tenant-isolation test matrix for all critical endpoints.
-- Ship billing webhook state machine for failure/cancellation/trial transitions.
-- Publish backup restore drill doc and run first restore simulation.
+1. Ship SaaS KPI dashboards (MRR, expansion, churn, failed payment funnel).
+2. Add canary deployment + automated rollback hooks.
+3. Publish internal status/incident playbook and customer-facing incident templates.
+4. Add integration health monitoring and webhook retry/dead-letter handling.
 
-### Day 31–60
-- Add dunning automation and finance reconciliation reports.
-- Ship audit log expansion for admin/billing/security actions.
-- Define and monitor core SLOs with alerting.
+## Definition of "full SaaS" for SkillBridge
 
-### Day 61–90
-- Launch tenant self-service data export/deletion workflows.
-- Improve self-serve tenant onboarding (domain, invites, branding, plan).
-- Add success dashboards: conversion, churn, failed renewals, quota friction.
+Use this as the go/no-go checklist:
 
-## Quick scorecard (current estimate)
+- [ ] Any tenant can sign up, configure domain/branding, and invite team members without support.
+- [ ] Billing updates are fully automated and resilient to retries/failures.
+- [ ] No cross-tenant data access is possible by code-path mistakes (tested + enforced).
+- [ ] SLOs, alerting, and incident workflows are in place and exercised.
+- [ ] Backups/restores are automated and proven on a recurring cadence.
+- [ ] Compliance and security operations are documented, measured, and auditable.
+- [ ] Enterprise identity (SSO/provisioning) is available for B2B tenants.
 
-| Area | Status | Notes |
-|---|---|---|
-| Multi-tenancy foundation | Strong | Middleware-based tenant resolution and role enforcement are present. |
-| Billing capabilities | Medium | Payment and plan surfaces exist; lifecycle automation depth should be expanded. |
-| Reliability operations | Medium-Low | CI exists; operational drills/SLO/incident playbooks should be strengthened. |
-| Compliance posture | Medium-Low | Needs clearer retention/export/deletion and broader immutable audit coverage. |
-| Self-serve SaaS experience | Medium | Core pieces exist, but end-to-end tenant lifecycle can be made more autonomous. |
-
-## Definition of “full SaaS” for SkillBridge
-
-SkillBridge should be considered “full SaaS ready” when:
-1. Tenant isolation is proven by automated tests across critical domains.
-2. Subscription lifecycle transitions are automated and reconciled with payment providers.
-3. Backups, restore drills, SLOs, and incident operations are documented and routinely executed.
-4. Privacy/compliance workflows (export/delete/retention) are available and auditable.
-5. Tenants can self-serve onboarding, upgrades, team management, and domain setup with minimal support intervention.
+When all boxes are checked, SkillBridge is not only multi-tenant technically, but operationally mature as a full SaaS platform.

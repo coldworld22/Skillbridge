@@ -1,34 +1,10 @@
 const router = require('express').Router();
 const controller = require('./crypto.controller');
 const { verifyToken, isStudent } = require('../../middleware/auth/authMiddleware');
-const {
-  resolveTenant,
-  ensureTenantMembership,
-  enforceTenantStatus,
-  requireEntitlement,
-} = require('../../middleware/tenant');
 
 router.post('/ipn', controller.handleIPN);
-router.post(
-  '/initiate',
-  verifyToken,
-  resolveTenant,
-  ensureTenantMembership(),
-  enforceTenantStatus(),
-  requireEntitlement('payment.pay'),
-  isStudent,
-  controller.initiateCryptoPayment,
-);
+router.post('/initiate', verifyToken, isStudent, controller.initiateCryptoPayment);
 // Alias to support `/api/payments/nowpayments/create`
-router.post(
-  '/create',
-  verifyToken,
-  resolveTenant,
-  ensureTenantMembership(),
-  enforceTenantStatus(),
-  requireEntitlement('payment.pay'),
-  isStudent,
-  controller.initiateCryptoPayment,
-);
+router.post('/create', verifyToken, isStudent, controller.initiateCryptoPayment);
 
 module.exports = router;

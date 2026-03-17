@@ -3,6 +3,7 @@ const router = express.Router();
 const controller = require("./bank.controller");
 const {
   verifyToken,
+  isAdmin,
 } = require("../../middleware/auth/authMiddleware");
 const {
   resolveTenant,
@@ -17,6 +18,7 @@ router.use(
   ensureTenantMembership(),
   enforceTenantStatus(),
   requireEntitlement("payment.manage"),
+  isAdmin,
 );
 
 router.get("/", controller.getBankPayments);
