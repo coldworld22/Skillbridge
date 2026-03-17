@@ -31,4 +31,5 @@
 - [API Documentation](api-docs.md) — REST API endpoints.
 - [Changelog](changelog.md) — record of notable changes.
 - [Release Checklist](release-checklist.md) — tasks before a release.
+- [SaaS Readiness Gap Report](saas-readiness-gap-report.md) — prioritized checklist to reach full SaaS maturity.
 - [Plan Feature Catalog](plan-feature-catalog.md) — plan capabilities and limits.
