@@ -25,15 +25,15 @@ This repository is intentionally built like a real system (not a demo): tenant i
 ## Architecture
 
 ```mermaid
-flowchart LR
-  browser[Browser] -->|HTTPS| nginx[Nginx (TLS + routing)]
-  nginx --> web[Next.js 15 (frontend)]
-  nginx --> api[Express API (/api)]
+graph LR
+  browser["Browser"] -->|HTTPS| nginx["Nginx - TLS + routing"]
+  nginx --> web["Next.js 15 - frontend"]
+  nginx --> api["Express API - /api"]
   api --> db[(PostgreSQL)]
   api <--> redis[(Redis: sessions/cache)]
-  api <--> sio[Socket.IO (/socket.io)]
-  api --> uploads[(Uploads/media)]
-  api --> docs[Static docs (/docs)]
+  api <--> sio["Socket.IO - /socket.io"]
+  api --> uploads["Uploads/media"]
+  api --> docs["Static docs - /docs"]
 ```
 
 Key design points:

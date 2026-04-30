@@ -5,15 +5,15 @@ SkillBridge is a **multi-tenant learning + commerce platform**: a Next.js fronte
 ## High-level topology
 
 ```mermaid
-flowchart LR
-  browser[Browser] -->|HTTPS| nginx[Nginx (TLS + routing)]
-  nginx --> web[Next.js (frontend)]
-  nginx --> api[Express API (/api)]
+graph LR
+  browser["Browser"] -->|HTTPS| nginx["Nginx - TLS + routing"]
+  nginx --> web["Next.js - frontend"]
+  nginx --> api["Express API - /api"]
   api --> db[(PostgreSQL)]
   api <--> redis[(Redis: sessions/cache)]
-  api <--> sio[Socket.IO (/socket.io)]
-  api --> uploads[(Uploads/media)]
-  api --> docs[Static docs (/docs)]
+  api <--> sio["Socket.IO - /socket.io"]
+  api --> uploads["Uploads/media"]
+  api --> docs["Static docs - /docs"]
 ```
 
 Notes:
