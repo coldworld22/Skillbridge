@@ -1,10 +1,14 @@
 .env
+backend/.env*
+!backend/.env.example
+!backend/.env.production.example
 node_modules/
 npm-debug.log*
 dist/
 coverage/
 uploads/
 *.log
+*.bak
 .DS_Store
 backend/node_modules/
 frontend/node_modules/

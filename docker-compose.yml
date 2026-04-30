@@ -50,7 +50,6 @@ services:
     env_file:
       - ./.env
       - ./backend/.env
-      - ./backend/.env.production
     ports:
       - "5002:5002"
     environment:

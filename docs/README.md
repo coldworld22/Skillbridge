@@ -30,7 +30,8 @@
 
 ## Reference
 - [SaaS Readiness Gap Analysis](saas-readiness-gap-analysis.md) — prioritized checklist to reach full SaaS maturity.
-- [API Documentation](api-docs.md) — REST API endpoints.
+- [API Summary](api.md) — conventions + main route groups (high-signal).
+- [API Documentation](api-docs.md) — additional REST API notes.
 - [Changelog](changelog.md) — record of notable changes.
 - [Release Checklist](release-checklist.md) — tasks before a release.
 - [SaaS Readiness Gap Report](saas-readiness-gap-report.md) — prioritized checklist to reach full SaaS maturity.
