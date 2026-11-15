@@ -113,6 +113,6 @@ describe('duplicate enrollment prevention', () => {
     expect(enrollmentService.findEnrollment).not.toHaveBeenCalled();
     expect(enrollmentService.createEnrollment).not.toHaveBeenCalled();
     expect(enrollmentService.updateEnrollment).not.toHaveBeenCalled();
-    expect(paymentsService.update).toHaveBeenCalledWith('p1', { status: 'awaiting_approval' });
+    expect(paymentsService.update).toHaveBeenCalledWith('p1', { status: 'awaiting_approval' }, null);
   });
 });

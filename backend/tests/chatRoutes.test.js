@@ -15,6 +15,15 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'user1' }; next(); },
 }));
 
+jest.mock('../src/middleware/tenant', () => ({
+  resolveTenant: (req, _res, next) => { req.tenant = { id: 'tenant-1' }; next(); },
+  ensureTenantMembership: () => (_req, _res, next) => next(),
+}));
+
+jest.mock('../src/middleware/storage', () => ({
+  checkAndConsumeStorage: () => (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/chat/chat.service');
 const routes = require('../src/modules/chat/chat.routes');
 
@@ -34,7 +43,7 @@ describe('GET /api/chat/users', () => {
     const res = await request(app).get('/api/chat/users?q=j');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(users);
-    expect(service.searchUsers).toHaveBeenCalledWith('user1', 'j');
+    expect(service.searchUsers).toHaveBeenCalledWith('user1', 'j', 'tenant-1');
   });
 });
 
@@ -45,7 +54,7 @@ describe('GET /api/chat/:userId', () => {
     const res = await request(app).get('/api/chat/2');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(convo);
-    expect(service.getConversation).toHaveBeenCalledWith('user1', '2');
+    expect(service.getConversation).toHaveBeenCalledWith('user1', '2', 'tenant-1');
   });
 });
 
@@ -64,6 +73,7 @@ describe('POST /api/chat/:userId', () => {
       file_url: null,
       audio_url: null,
       reply_to_id: null,
+      tenant_id: 'tenant-1',
     });
   });
 
@@ -99,7 +109,7 @@ describe('DELETE /api/chat/messages/:id', () => {
     service.deleteMessage.mockResolvedValue(msg);
     const res = await request(app).delete('/api/chat/messages/1');
     expect(res.status).toBe(200);
-    expect(service.deleteMessage).toHaveBeenCalledWith('user1', '1');
+    expect(service.deleteMessage).toHaveBeenCalledWith('user1', '1', 'tenant-1');
   });
 });
 
@@ -109,7 +119,7 @@ describe('PATCH /api/chat/messages/:id/pin', () => {
     service.togglePin.mockResolvedValue(msg);
     const res = await request(app).patch('/api/chat/messages/1/pin');
     expect(res.status).toBe(200);
-    expect(service.togglePin).toHaveBeenCalledWith('user1', '1');
+    expect(service.togglePin).toHaveBeenCalledWith('user1', '1', 'tenant-1');
   });
 });
 

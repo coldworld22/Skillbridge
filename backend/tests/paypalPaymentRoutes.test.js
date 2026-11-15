@@ -52,6 +52,8 @@ const routes = require('../src/modules/payments/paypal.routes');
 
 const app = express();
 app.use(express.json());
+// Tenant is resolved by the parent router in production; emulate that here.
+app.use((req, _res, next) => { req.tenant = { id: 'tenant1' }; next(); });
 app.use('/api/payments/paypal', routes);
 const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);
@@ -82,10 +84,8 @@ describe('POST /api/payments/paypal/create', () => {
       reference_id: 'o1',
       platform_fee: 15,
       instructor_amount: 85,
-    }),
-    expect.any(Array),
-    null,
-    'tenant1'
+      tenant_id: 'tenant1',
+    })
   );
 });
 
@@ -111,10 +111,6 @@ describe('POST /api/payments/paypal/create', () => {
   expect(plansService.getPlanById).toHaveBeenCalledWith('plan1');
   expect(res.body.data.approval_url).toBe('https://paypal.test/plan');
   expect(paymentsService.create).toHaveBeenCalledWith(
-    expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100 }),
-    expect.any(Array),
-    null,
-    'tenant1'
-  );
+    expect.objectContaining({ item_type: 'plan', item_id: 'plan1', amount: 100, tenant_id: 'tenant1' }));
 });
 });

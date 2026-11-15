@@ -1,7 +1,7 @@
 const request = require('supertest');
 const express = require('express');
 
-let tenantMembershipHandler = (_req, _res, next) => next();
+let mockTenantMembershipHandler = (_req, _res, next) => next();
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
   getById: jest.fn(),
@@ -45,7 +45,7 @@ jest.mock('../src/middleware/tenant', () => ({
     next();
   },
   ensureTenantMembership: jest.fn(() => (req, res, next) =>
-    tenantMembershipHandler(req, res, next),
+    mockTenantMembershipHandler(req, res, next),
   ),
   enforceTenantStatus: () => (_req, _res, next) => next(),
   requireEntitlement: () => (_req, _res, next) => next(),
@@ -81,7 +81,7 @@ app.use('/api/payment-methods', routes);
 describe('Payment methods routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    tenantMembershipHandler = (_req, _res, next) => next();
+    mockTenantMembershipHandler = (_req, _res, next) => next();
   });
 
   it('subtracts storage when replacing an icon', async () => {
@@ -129,7 +129,7 @@ describe('Payment methods routes', () => {
   });
 
   it('requires tenant membership authorization', async () => {
-    tenantMembershipHandler = (_req, res) =>
+    mockTenantMembershipHandler = (_req, res) =>
       res.status(403).json({ message: 'tenant_membership_required' });
 
     const res = await request(app).get('/api/payment-methods');

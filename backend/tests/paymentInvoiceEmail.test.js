@@ -25,6 +25,12 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({ getTutoria
 jest.mock('../src/modules/invoices/invoices.service', () => ({ generateFromPayment: jest.fn() }));
 jest.mock('../src/modules/payments/paymentAccess', () => ({ grantAccess: jest.fn() }));
 
+// Instructor details are read straight from the database by the wallet helper.
+jest.mock('../src/config/database', () =>
+  require('./helpers/fakeDb').createFakeDb({
+    books: { instructor_id: 'i1', tenant_id: 'tenant-1' },
+  }));
+
 const paymentsController = require('../src/modules/payments/payments.controller');
 const bankController = require('../src/modules/payments/bank.controller');
 
