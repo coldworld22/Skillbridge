@@ -324,7 +324,7 @@ const NewOfferPage = () => {
             placeholder="Provide details about the service you will deliver..."
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           ></textarea>
-          <p className="text-xs text-gray-500">The more details you provide, the better matches you'll get</p>
+          <p className="text-xs text-gray-500">The more details you provide, the better matches you&apos;ll get</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 pt-4">

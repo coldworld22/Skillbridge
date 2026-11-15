@@ -1,5 +1,6 @@
 // 📁 src/pages/auth/register.js
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
@@ -192,9 +193,9 @@ function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading
 
         <p className={`${styles.helper} ${styles.smallText}`}>
           {t("already_have_account")}{" "}
-          <a href="/auth/login" className={styles.link}>
+          <Link href="/auth/login" className={styles.link}>
             {t("login")}
-          </a>
+          </Link>
         </p>
       </motion.div>
     </div>

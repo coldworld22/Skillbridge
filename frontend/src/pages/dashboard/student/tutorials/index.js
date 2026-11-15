@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -225,12 +226,12 @@ function StudentTutorialsPage() {
       {sorted.length === 0 && (
         <div className="text-center text-gray-500">
           <p>{tr("studentPage.no_match", "No tutorials match your criteria.")}</p>
-          <a
+          <Link
             href="/dashboard/student/tutorials"
             className="text-blue-600 hover:underline text-sm mt-2 inline-block"
           >
             {tr("studentPage.browse_all", "Browse all tutorials")}
-          </a>
+          </Link>
         </div>
       )}
     </div>

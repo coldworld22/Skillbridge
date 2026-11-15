@@ -117,7 +117,7 @@ export default function AdminCommunityReportsPage() {
                     <h4 className="font-semibold text-red-600 flex items-center gap-2">
                       <FaExclamationCircle /> {report.reason}
                     </h4>
-                    <p className="text-sm text-gray-700 mt-2">"{report.content}"</p>
+                    <p className="text-sm text-gray-700 mt-2">&quot;{report.content}&quot;</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {t("reported_by", { user: report.user })}
                     </p>

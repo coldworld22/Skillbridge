@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name -- inline jest.mock component stubs */
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react';
 import { act } from 'react';

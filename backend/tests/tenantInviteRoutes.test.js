@@ -67,6 +67,7 @@ describe("tenant invite routes", () => {
       table.text("role").notNullable();
       table.text("status").notNullable();
       table.uuid("invited_by");
+      table.uuid("invite_token").unique();
       table.timestamp("created_at");
       table.timestamp("updated_at");
       table.unique(["tenant_id", "user_id"]);

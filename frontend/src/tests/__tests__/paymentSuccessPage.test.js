@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name -- inline jest.mock component stubs */
 import { render, waitFor } from '@testing-library/react';
 import PaymentSuccessPage from '../../pages/payments/success';
 import { enrollInClass, fetchClassDetails } from '../../services/classService';

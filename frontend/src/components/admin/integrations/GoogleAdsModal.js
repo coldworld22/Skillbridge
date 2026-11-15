@@ -205,7 +205,7 @@ export default function GoogleAdsModal({ initialData = {}, onClose, onSave }) {
                         className={modalStyles.input}
                       />
                       <p className={modalStyles.mutedSmall}>
-                        Used in code when triggering conversions (example: <code>recordGoogleAdsConversion('signup')</code>).
+                        Used in code when triggering conversions (example: <code>recordGoogleAdsConversion(&apos;signup&apos;)</code>).
                       </p>
                     </div>
                     <div>

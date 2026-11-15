@@ -67,6 +67,8 @@ const { STATUS } = require('../src/modules/payments/payments.service');
 
 const app = express();
 app.use(express.json());
+// Tenant is resolved by the parent router in production; emulate that here.
+app.use((req, _res, next) => { req.tenant = { id: 'tenant1' }; next(); });
 app.use('/api/payments/coinbase', routes);
 const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);
@@ -101,7 +103,7 @@ describe('POST /api/payments/coinbase/webhook', () => {
     expect(paymentsService.update).toHaveBeenCalledWith(
       'p1',
       expect.objectContaining({ status: STATUS.PAID, reference_id: 'ch_1' }),
-      null
+      'tenant1'
     );
     expect(grantAccess).toHaveBeenCalled();
   });
@@ -127,7 +129,7 @@ describe('POST /api/payments/coinbase/webhook', () => {
     expect(paymentsService.update).toHaveBeenCalledWith(
       'p2',
       expect.objectContaining({ status: STATUS.REJECTED, reference_id: 'ch_2' }),
-      null
+      'tenant1'
     );
   });
 
@@ -203,10 +205,8 @@ describe('POST /api/payments/coinbase/initiate', () => {
         method_id: 'coinbase-method',
         reference_id: 'charge_1',
         receipt_url: 'https://coinbase/charge_1',
-      }),
-      expect.any(Array),
-      null,
-      'tenant1'
+        tenant_id: 'tenant1',
+      })
     );
   });
 
@@ -234,10 +234,6 @@ describe('POST /api/payments/coinbase/initiate', () => {
       expect.any(Object)
     );
     expect(paymentsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ method_id: 'coinbase-method' }),
-      expect.any(Array),
-      null,
-      'tenant1'
-    );
+      expect.objectContaining({ method_id: 'coinbase-method', tenant_id: 'tenant1' }));
   });
 });

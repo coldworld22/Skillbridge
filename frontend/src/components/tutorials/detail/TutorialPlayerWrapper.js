@@ -74,7 +74,7 @@ const TutorialPlayerWrapper = () => {
 
         {allCompleted && (
           <div className="bg-green-900 p-4 mt-6 text-center rounded-lg text-yellow-300 animate-pulse">
-            \ud83c\udf89 Congratulations! You've completed all chapters and unlocked your certificate!
+            \ud83c\udf89 Congratulations! You&apos;ve completed all chapters and unlocked your certificate!
           </div>
         )}
       </div>

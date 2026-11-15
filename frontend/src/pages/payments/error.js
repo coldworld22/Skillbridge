@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { useEffect } from "react";
 import styles from "./payments.module.scss";
 
@@ -36,12 +37,12 @@ export default function PaymentError() {
         <p className={styles.subtitle}>{reason}</p>
 
         <div className={styles.ctaRow} style={{ marginTop: '1rem' }}>
-          <a href="/payments/checkout" className={`${styles.button} ${styles.buttonPrimary}`}>
+          <Link href="/payments/checkout" className={`${styles.button} ${styles.buttonPrimary}`}>
             Retry Payment
-          </a>
-          <a href="/" className={`${styles.button} ${styles.buttonGhost}`}>
+          </Link>
+          <Link href="/" className={`${styles.button} ${styles.buttonGhost}`}>
             Back to Home
-          </a>
+          </Link>
         </div>
 
         {/* Optional */}

@@ -20,19 +20,24 @@ jest.mock("../src/modules/users/user.model", () => ({
   updateUser: jest.fn(),
 }));
 
-const membershipRows = [
+const mockMembershipRows = [
   { tenant_id: "tenant-a", role: "student", status: "active" },
   { tenant_id: "tenant-b", role: "admin", status: "active" },
 ];
 
+jest.mock("../src/modules/appConfig/appConfig.service", () => ({
+  getSettings: jest.fn().mockResolvedValue({}),
+}));
+
 jest.mock("../src/config/database", () => {
-  return jest.fn((table) => {
-    if (table === "tenant_memberships") {
-      return {
-        select: jest.fn(() => ({
-          where: jest.fn().mockResolvedValue(membershipRows),
-        })),
+  const mockDb = jest.fn((table) => {
+    if (table === "tenant_memberships as tm") {
+      const query = {
+        leftJoin: jest.fn(() => query),
+        select: jest.fn(() => query),
+        where: jest.fn().mockResolvedValue(mockMembershipRows),
       };
+      return query;
     }
     if (table === "users") {
       return {
@@ -47,6 +52,8 @@ jest.mock("../src/config/database", () => {
     }
     return {};
   });
+  mockDb.raw = jest.fn((sql) => sql);
+  return mockDb;
 });
 
 const socialAuthService = require("../src/modules/auth/services/socialAuth.service");
@@ -81,7 +88,7 @@ describe("social auth tenant id propagation", () => {
     expect(authService.generateAccessToken).toHaveBeenCalledWith(
       expect.objectContaining({
         current_tenant_id: "tenant-b",
-        memberships: membershipRows,
+        memberships: mockMembershipRows,
       }),
     );
     expect(result.accessToken).toBe("access-token");

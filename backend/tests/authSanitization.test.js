@@ -11,6 +11,7 @@ jest.mock('../src/config/database', () => {
     returning: jest.fn().mockResolvedValue([]),
     insert: jest.fn().mockResolvedValue([]),
     select: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
   };
   const mockDb = jest.fn((table) => {
     if (table === 'roles') {
@@ -43,6 +44,8 @@ jest.mock('../src/config/database', () => {
     return { ...chain };
   });
   mockDb.fn = { now: jest.fn() };
+  mockDb.raw = jest.fn((sql) => sql);
+  mockDb.schema = { hasColumn: jest.fn().mockResolvedValue(false) };
   return mockDb;
 });
 

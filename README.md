@@ -1,5 +1,13 @@
 # SkillBridge — multi-tenant learning + commerce platform
 
+[![CI](https://github.com/coldworld22/Skillbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/coldworld22/Skillbridge/actions/workflows/ci.yml)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js%2015-000000?logo=nextdotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 SkillBridge is a production-minded educational platform for running branded academies with **payments**, **live/online classes**, **assignments**, **certificates**, **role-based dashboards**, **messaging**, and **AI assistance**.
 
 This repository is intentionally built like a real system (not a demo): tenant isolation enforced server-side, hardened request pipeline (CORS/host allowlists, rate limits, CSRF), modular backend boundaries, and multiple payment providers.
@@ -89,19 +97,10 @@ npm --prefix backend run knex:seed
 Or (review before running):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/coldworld22/Skillbridge/master/install.sh | bash
 ```
 
 The backend can also serve a lightweight install UI at `/install` when enabled via `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true`.
-
-## Screenshots
-
-Add screenshots under `docs/assets/screenshots/` and link them here (recommended set):
-
-- Student dashboard (enrollment, progress, certificates)
-- Instructor class builder (lessons/resources/assignments)
-- Admin operations (tenants, payments, cache flush)
-- Community + AI assistance
 
 ## Links
 
@@ -110,5 +109,6 @@ Add screenshots under `docs/assets/screenshots/` and link them here (recommended
 - Installation: `docs/installation.md`
 - Deployment: `docs/deployment.md`
 - Tenant operations: `docs/tenant-onboarding-guide.md`
+- Database schema: `docs/database-schema-overview.md`
 - Backend notes: `backend/README.md`
 - Docs index: `docs/README.md`

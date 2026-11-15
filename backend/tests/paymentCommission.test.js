@@ -120,14 +120,19 @@ jest.mock('../src/middleware/tenant', () => ({
   requireEntitlement: () => (_req, _res, next) => next(),
 }));
 
+// Instructor details are read straight from the database by the wallet helper.
+jest.mock('../src/config/database', () =>
+  require('./helpers/fakeDb').createFakeDb({
+    online_classes: { instructor_id: 'inst1', tenant_id: 'tenant-1' },
+    books: { instructor_id: 'bookInst', tenant_id: 'tenant-1' },
+    tutorials: { instructor_id: 'tutInst', tenant_id: 'tenant-1' },
+  }));
+
 const service = require('../src/modules/payments/payments.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const routes = require('../src/modules/payments/payments.routes');
 const walletService = require('../src/modules/payouts/wallet.service');
 const payoutService = require('../src/modules/payouts/payouts.service');
-const classService = require('../src/modules/classes/class.service');
-const bookService = require('../src/modules/books/book.service');
-const tutorialService = require('../src/modules/users/tutorials/tutorial.service');
 const payoutRoutes = require('../src/modules/payouts/payouts.routes');
 
 const app = express();
@@ -228,7 +233,6 @@ describe('wallet credit and debit', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(classService.getClassById).toHaveBeenCalledWith('class1');
     expect(walletService.increment).toHaveBeenCalledWith(
       'inst1',
       90,
@@ -251,7 +255,6 @@ describe('wallet credit and debit', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(bookService.getBookById).toHaveBeenCalledWith('book1');
     expect(walletService.increment).toHaveBeenCalledWith(
       'bookInst',
       45,
@@ -274,7 +277,6 @@ describe('wallet credit and debit', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(tutorialService.getTutorialById).toHaveBeenCalledWith('tut1');
     expect(walletService.increment).toHaveBeenCalledWith(
       'tutInst',
       160,

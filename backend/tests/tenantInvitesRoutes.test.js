@@ -6,19 +6,22 @@ const { v4: uuidv4 } = require('uuid');
 const db = newDb();
 db.public.registerFunction({ name: 'uuid_generate_v4', returns: 'uuid', implementation: uuidv4 });
 const mockDb = db.adapters.createKnex();
+// Ids must be real UUIDs: the in-memory tables use uuid columns.
+const mockTenantId = uuidv4();
+const mockAdminId = uuidv4();
 
 jest.mock('../src/config/database', () => mockDb);
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'admin-1', role: 'admin', roles: ['admin'] };
+    req.user = { id: mockAdminId, role: 'admin', roles: ['admin'] };
     next();
   },
 }));
 
 jest.mock('../src/middleware/tenant', () => ({
   resolveTenant: (req, _res, next) => {
-    req.tenant = { id: 'tenant-1', slug: 'tenant1' };
+    req.tenant = { id: mockTenantId, slug: 'tenant1' };
     next();
   },
   ensureTenantMembership: () => (_req, _res, next) => next(),
@@ -56,6 +59,7 @@ describe('tenant invites routes', () => {
       table.string('role').notNullable();
       table.string('status').notNullable();
       table.uuid('invited_by');
+      table.uuid('invite_token').unique();
       table.timestamps(true, true);
       table.unique(['tenant_id', 'user_id']);
     });
@@ -89,9 +93,10 @@ describe('tenant invites routes', () => {
   });
 
   test('accepts an invite and activates membership', async () => {
+    // The invited user is the one who is signed in (see the verifyToken mock).
     const [user] = await mockDb('users')
       .insert({
-        id: uuidv4(),
+        id: mockAdminId,
         email: 'invited@example.com',
         full_name: 'Invited',
         role: 'student',
