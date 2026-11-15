@@ -13,6 +13,17 @@ const { frontendBase } = require("../../../utils/frontend");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 
+// Pending invites can be accepted for this many days after they were sent.
+const INVITE_TTL_DAYS = 7;
+const INVITE_TTL_MS = INVITE_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+const isInviteExpired = (membership) => {
+  if (!membership || membership.status !== "pending") return false;
+  const sentAt = new Date(membership.created_at);
+  if (Number.isNaN(sentAt.getTime())) return false;
+  return Date.now() - sentAt.getTime() > INVITE_TTL_MS;
+};
+
 router.post("/accept-token", async (req, res, next) => {
   try {
     const token = req.body?.token || req.query?.token;
