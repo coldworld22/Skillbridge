@@ -2,13 +2,34 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: skillbridge
+          POSTGRES_PASSWORD: skillbridge
+          POSTGRES_DB: skillbridge_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U skillbridge" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    env:
+      NODE_ENV: test
+      TEST_DATABASE_URL: postgres://skillbridge:skillbridge@localhost:5432/skillbridge_test
+      DATABASE_URL: postgres://skillbridge:skillbridge@localhost:5432/skillbridge_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-only-jwt-secret
+      JWT_REFRESH_SECRET: ci-only-refresh-secret
+      SESSION_SECRET: ci-only-session-secret
     defaults:
       run:
         working-directory: backend
@@ -25,6 +46,8 @@ jobs:
         run: npm run lint --if-present
       - name: Build
         run: npm run build --if-present
+      - name: Run migrations
+        run: npx knex migrate:latest --env test
       - name: Run tests
         run: npm test -- --coverage
       - name: Upload coverage
@@ -36,6 +59,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -53,7 +77,7 @@ jobs:
       - name: Build
         run: npm run build --if-present
       - name: Run tests
-        run: npm test -- --coverage
+        run: npm test -- --coverage --ci --forceExit
       - name: Upload coverage
         if: success()
         uses: actions/upload-artifact@v4

@@ -1,5 +1,6 @@
 # SkillBridge — multi-tenant learning + commerce platform
 
+[![CI](https://github.com/coldworld22/Skillbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/coldworld22/Skillbridge/actions/workflows/ci.yml)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js%2015-000000?logo=nextdotjs&logoColor=white)
