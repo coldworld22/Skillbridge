@@ -1,10 +1,18 @@
+/* eslint-disable react/display-name -- inline jest.mock component stubs */
 import { render, screen, waitFor } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { fetchPlanDetails } from '../../services/public/planService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 
+// Checkout is behind auth; these tests cover the checkout UI, not the auth redirect.
+jest.mock('../../hooks/withAuthProtection', () => ({
+  __esModule: true,
+  default: (Component) => Component,
+}));
+
 jest.mock('next/router', () => ({
   useRouter: () => ({
+    pathname: '/payments/checkout',
     query: { itemId: '1', itemType: 'plan' },
     isReady: true,
     push: jest.fn(),

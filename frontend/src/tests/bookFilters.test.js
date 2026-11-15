@@ -1,6 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BooksPage from '@/pages/marketplace/books';
 
+jest.mock('next/router', () => ({
+  useRouter: () => ({
+    pathname: '/marketplace/books',
+    asPath: '/marketplace/books',
+    query: {},
+    isReady: true,
+    push: jest.fn(),
+    replace: jest.fn(),
+  }),
+}));
+
 jest.mock('../services/bookService', () => ({
   fetchBooks: jest.fn(() => Promise.resolve({ books: [] }))
 }));
@@ -68,7 +79,7 @@ describe('BooksPage filters', () => {
     await waitFor(() => expect(fetchBooks).toHaveBeenCalled());
     fetchBooks.mockClear();
 
-    fireEvent.click(screen.getByText('set-category'));
+    fireEvent.click(screen.getAllByText('set-category')[0]);
     await waitFor(() => expect(fetchBooks).toHaveBeenCalled());
     let args = fetchBooks.mock.calls[0][0];
     expect(args.filters).toHaveProperty('category', 'cat1');
@@ -76,7 +87,7 @@ describe('BooksPage filters', () => {
 
     fetchBooks.mockClear();
 
-    fireEvent.click(screen.getByText('set-price'));
+    fireEvent.click(screen.getAllByText('set-price')[0]);
     await waitFor(() => expect(fetchBooks).toHaveBeenCalled());
     args = fetchBooks.mock.calls[0][0];
     expect(args.filters).toHaveProperty('priceRange', 30);

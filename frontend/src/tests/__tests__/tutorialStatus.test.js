@@ -10,7 +10,8 @@ describe('loadTutorialStatus', () => {
   beforeEach(() => {
     localStorage.clear();
     fetchTutorialProgress.mockReset();
-    useAuthStore.setState({ user: { id: 1 } });
+    // Progress is only fetched from the API for students.
+    useAuthStore.setState({ user: { id: 1, role: 'student' } });
   });
 
   it('falls back to localStorage when API is unavailable', async () => {
