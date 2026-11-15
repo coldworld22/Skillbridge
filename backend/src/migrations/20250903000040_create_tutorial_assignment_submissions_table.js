@@ -18,7 +18,9 @@ exports.up = function(knex) {
       .onDelete('CASCADE');
     table.string('file_url');
     table.integer('grade');
+    table.text('text_answer');
     table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
 };
 
