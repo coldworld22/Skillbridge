@@ -18,7 +18,7 @@ export default function LikesPage() {
       <div className={styles.content}>
         <h1 className={styles.title}>Liked Classes</h1>
         {likes.length === 0 ? (
-          <p className={styles.empty}>You haven't liked any classes yet.</p>
+          <p className={styles.empty}>You haven&apos;t liked any classes yet.</p>
         ) : (
           <div className={styles.grid}>
             {likes.map((course) => (

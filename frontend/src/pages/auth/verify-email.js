@@ -134,7 +134,7 @@ function VerifyEmailPage() {
         </div>
 
         <p className={`${styles.helper} ${styles.smallText}`}>
-          Didn&apos;t get the email? Check your spam folder or click "Send Verification Email" again.
+          Didn&apos;t get the email? Check your spam folder or click &quot;Send Verification Email&quot; again.
         </p>
       </div>
     </div>

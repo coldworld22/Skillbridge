@@ -310,7 +310,7 @@ const ChatSidebar = ({
               </div>
             ))}
           {users.filter((user) => !user.lastMessage && !user.last_message).length === 0 && (
-            <p className={styles.empty}>You're all caught up with recent chats.</p>
+            <p className={styles.empty}>You&apos;re all caught up with recent chats.</p>
           )}
         </div>
       </section>

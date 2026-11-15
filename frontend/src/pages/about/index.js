@@ -1,4 +1,5 @@
 import PageHead from '@/components/common/PageHead';
+import Link from 'next/link';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import styles from './about.module.scss';
@@ -19,7 +20,7 @@ export default function AboutUsPage() {
       <section className={styles.mission}>
         <h2 className={styles.missionTitle}>Our Mission</h2>
         <p className={styles.missionText}>
-          We're on a mission to make high-quality education accessible, flexible, and smart through AI, community, and expert-led content.
+          We&apos;re on a mission to make high-quality education accessible, flexible, and smart through AI, community, and expert-led content.
         </p>
       </section>
 
@@ -49,9 +50,9 @@ export default function AboutUsPage() {
           <a href="/register" className={styles.primary}>
             Get Started
           </a>
-          <a href="/contact" className={styles.secondary}>
+          <Link href="/contact" className={styles.secondary}>
             Contact Us
-          </a>
+          </Link>
         </div>
       </section>
       </div>

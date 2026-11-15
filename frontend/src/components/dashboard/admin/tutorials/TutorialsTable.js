@@ -64,7 +64,7 @@ function TutorialsTable({
                     </div>
                     <h3 className="text-lg font-medium text-gray-900">No tutorials found</h3>
                     <p className="mt-1 text-gray-500 max-w-md">
-                      Try adjusting your search or filter to find what you're looking for.
+                      Try adjusting your search or filter to find what you&apos;re looking for.
                     </p>
                     <Button
                       onClick={() => {

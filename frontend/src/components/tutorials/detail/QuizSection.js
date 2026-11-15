@@ -137,7 +137,7 @@ const TestQuiz = ({
                     Your Score: <span className="text-yellow-300">{score}</span> / {totalQuestions}
                 </p>
                 {score === totalQuestions ? (
-                    <p className="text-green-300 mt-2">Perfect! You're ready for your certificate! 🏆</p>
+                    <p className="text-green-300 mt-2">Perfect! You&apos;re ready for your certificate! 🏆</p>
                 ) : (
                     <p className="text-red-300 mt-2">Keep practicing to improve your score! 💪</p>
                 )}

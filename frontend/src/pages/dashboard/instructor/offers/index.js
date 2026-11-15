@@ -257,7 +257,7 @@ const InstructorOfferDashboard = () => {
                   <FaChalkboardTeacher className="inline-block text-4xl" />
                 </div>
                 <h4 className="text-lg font-medium text-gray-700 mb-1">No offers yet</h4>
-                <p className="text-gray-500 mb-4">You haven't posted any course offers</p>
+                <p className="text-gray-500 mb-4">You haven&apos;t posted any course offers</p>
                 <Link href="/dashboard/instructor/offers/new" legacyBehavior>
                   <a className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <FaPlus /> Create your first offer

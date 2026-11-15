@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { createRef, useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -45,7 +45,7 @@ export default function Home() {
     { component: Footer }, // ✅ Removed last section before the footer
   ];
 
-  const sectionRefs = useRef(sections.map(() => useRef(null)));
+  const sectionRefs = useRef(sections.map(() => createRef()));
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data

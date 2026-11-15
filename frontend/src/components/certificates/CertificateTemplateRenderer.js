@@ -151,7 +151,7 @@ export default function CertificateTemplateRenderer({
           </p>
 
           <h3 className="text-2xl italic text-gray-700">
-            "{courseName}"
+            &quot;{courseName}&quot;
           </h3>
 
           {grade && (
